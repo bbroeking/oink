@@ -4,11 +4,10 @@
 // mechanics live on the season tab; this is the campfire version. (No dates:
 // S1 deliberately has no Judgement-Day countdown.)
 
-import { View, Text, StyleSheet } from "react-native";
-import { Sticker } from "../ui/Sticker";
-import { Glyph, type GlyphName } from "../ui/Glyph";
+import { View, StyleSheet } from "react-native";
+import { Body, Glyph, Kicker, Sticker, type GlyphName } from "@/components/ui";
 import { CREW_CAP_WORD } from "@/constants/crews";
-import { FONTS, ROW_TILTS, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { ART_SIZE, RADII, ROW_TILTS, SPACE } from "@/constants/theme";
 
 const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
 	{
@@ -41,13 +40,13 @@ export function SeasonStory() {
 					key={b.kicker}
 					color={i % 2 === 0 ? "paper" : "cream"}
 					rotate={ROW_TILTS[i % ROW_TILTS.length]}
-					radius={14}
+					radius={RADII.lg}
 					style={styles.card}
 				>
-					<Glyph name={b.g} size={26} />
+					<Glyph name={b.g} size={ART_SIZE.glyphSm} />
 					<View style={styles.textCol}>
-						<Text style={styles.kicker}>{"★ "}{b.kicker}</Text>
-						<Text style={styles.line}>{b.line}</Text>
+						<Kicker style={styles.kicker}>{b.kicker}</Kicker>
+						<Body>{b.line}</Body>
 					</View>
 				</Sticker>
 			))}
@@ -65,15 +64,5 @@ const styles = StyleSheet.create({
 		paddingVertical: SPACE.md,
 	},
 	textCol: { flex: 1, minWidth: 0 },
-	kicker: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		marginBottom: 2,
-	},
-	line: {
-		...TYPE.body,
-		fontFamily: FONTS.body,
-		color: WHIMSY.ink,
-	},
+	kicker: { marginBottom: SPACE.xxs },
 });

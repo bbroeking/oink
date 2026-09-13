@@ -29,39 +29,41 @@
 // Ordered ascending by priority. Keep it that way — the order in this literal
 // is the human-readable precedence list.
 export const POPUP_PRIORITIES = {
-	// ── user-initiated ──
-	// Barn.tsx — the buried-truffle sheet is opened by a player tap, so it
-	// preempts whatever passive popup is up (the queue drains it, then shows
-	// the sheet). Highest precedence in the app.
-	truffleSheet: 5,
+  // ── user-initiated ──
+  // Barn.tsx — the buried-truffle sheet is opened by a player tap, so it
+  // preempts whatever passive popup is up (the queue drains it, then shows
+  // the sheet). Highest precedence in the app.
+  truffleSheet: 5,
 
-	// ── events & ceremonies ──
-	schism: 10, // app/_layout.tsx — herd schism verdict.
-	finale: 20, // app/_layout.tsx — season finale verdict.
-	// app/(tabs)/season.tsx — season-end recap. CEREMONY (stamps ceremonyGate).
-	// Sits just after the finale verdict (20) so the chain is verdict → recap.
-	seasonEnd: 25,
-	// app/_layout.tsx — Great Hunger intro. CEREMONY (stamps ceremonyGate).
-	// Slotted just ABOVE the recap (25) so on the season-flip login it can
-	// never co-present over the recap: recap → intro.
-	hungerIntro: 27,
-	// app/_layout.tsx — one-time Slop Club companion launch reveal. CEREMONY.
-	pigFriendsLaunch: 28,
-	rituals: 30, // app/_layout.tsx — ritual reveals.
+  // ── events & ceremonies ──
+  schism: 10, // app/_layout.tsx — herd schism verdict.
+  finale: 20, // app/_layout.tsx — season finale verdict.
+  // app/(tabs)/season.tsx — season-end recap. CEREMONY (stamps ceremonyGate).
+  // Sits just after the finale verdict (20) so the chain is verdict → recap.
+  seasonEnd: 25,
+  // app/_layout.tsx — Great Hunger intro. CEREMONY (stamps ceremonyGate).
+  // Slotted just ABOVE the recap (25) so on the season-flip login it can
+  // never co-present over the recap: recap → intro.
+  hungerIntro: 27,
+  // app/_layout.tsx — one-time Slop Club companion launch reveal. CEREMONY.
+  pigFriendsLaunch: 28,
+  rituals: 30, // app/_layout.tsx — ritual reveals.
 
-	// ── housekeeping & flourishes ──
-	// app/_layout.tsx — achievement digest. Housekeeping: held for
-	// next login when a ceremony fired this session (ceremonyGate).
-	achievements: 40,
-	mysteryHat: 48, // components/MysteryHatReveal.tsx — mystery hat reveal.
-	luckyPig: 55, // Barn.tsx — lucky-pig burst modal.
+  // ── housekeeping & flourishes ──
+  // app/_layout.tsx — achievement digest. Housekeeping: held for
+  // next login when a ceremony fired this session (ceremonyGate).
+  achievements: 40,
+  habitatExpansionDiscovery: 44, // app/_layout.tsx — one-time Barn catalog expansion.
+  mysteryHat: 48, // components/MysteryHatReveal.tsx — mystery hat reveal.
+  luckyPig: 55, // Barn.tsx — lucky-pig burst modal.
 } as const;
 
 export type PopupSlotId = keyof typeof POPUP_PRIORITIES;
 
 // No priority collisions are currently intentional. Keep this explicit list so
 // the registry test catches any accidental tie added later.
-export const KNOWN_PRIORITY_COLLISIONS: readonly (readonly PopupSlotId[])[] = [];
+export const KNOWN_PRIORITY_COLLISIONS: readonly (readonly PopupSlotId[])[] =
+  [];
 
 // ── CEREMONY SLOTS (ceremonyGate stampers) ──────────────────────────────────
 // The flip-day CEREMONIES. When one PRESENTS it stamps utils/ceremonyGate.ts
@@ -73,7 +75,7 @@ export const KNOWN_PRIORITY_COLLISIONS: readonly (readonly PopupSlotId[])[] = []
 // slots carry that responsibility so the invariant is discoverable here, in one
 // place, next to the numbers. Keep in sync with those stamping effects.
 export const CEREMONY_SLOT_IDS: ReadonlySet<string> = new Set<PopupSlotId>([
-	"seasonEnd",
-	"hungerIntro",
-	"pigFriendsLaunch",
+  "seasonEnd",
+  "hungerIntro",
+  "pigFriendsLaunch",
 ]);

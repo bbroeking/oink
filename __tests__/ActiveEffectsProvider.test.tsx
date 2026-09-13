@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/globals -- test harness captures the provider action from a probe */
 // Guards the "cleanse doesn't refresh the Barn" fix: ActiveEffectsProvider
 // shares ONE active-effects instance across the tab subtree, so a cleanse()
 // from any consumer clears curses for EVERY consumer. Previously each surface
@@ -11,7 +12,7 @@ import TestRenderer, { act } from "react-test-renderer";
 // useFocusEffect → run the refresh callback once on mount (simulates the
 // screen focusing). Return undefined so React doesn't see a non-function
 // cleanup (refresh() returns a Promise).
-jest.mock("@react-navigation/native", () => ({
+jest.mock("expo-router/react-navigation", () => ({
 	useFocusEffect: (cb: () => void) => {
 		const react = require("react");
 		react.useEffect(() => {

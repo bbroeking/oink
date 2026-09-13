@@ -45,14 +45,6 @@ describe("notification distillation", () => {
 		expect(barn).toContain("setSixSevenTick");
 	});
 
-	it("renders one post-visit scrim for hoofprints and kindness", () => {
-		const visit = read("components/BarnVisitModal.tsx");
-		expect(
-			visit.match(/style=\{styles\.stampScrim\}/g) ?? []
-		).toHaveLength(1);
-		expect(visit).toContain("kindnessOffer ?");
-		expect(visit).toContain("The hoofprint says plenty");
-	});
 
 	it("shows unseen achievements in one digest instead of a carousel", () => {
 		const layout = read("app/_layout.tsx");

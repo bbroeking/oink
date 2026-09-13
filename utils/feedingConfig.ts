@@ -34,29 +34,29 @@
 // nothing for a test to mock unless it exercises the fetch/cache paths.
 
 import {
-	PATCH_OPEN_SECS,
-	ROOTING_WINDOW_OFFSET_SECS,
-	ROOTING_WINDOW_SECS,
+  PATCH_OPEN_SECS,
+  ROOTING_WINDOW_OFFSET_SECS,
+  ROOTING_WINDOW_SECS,
 } from "@/constants/dig";
 import { createConfigCell } from "@/utils/configCell";
 
 export interface FeedingSchedule {
-	/** Omitted/"uniform" is the deployed legacy clock; commuter is the v2 clock. */
-	mode?: "uniform" | "commuter_eastern";
-	/** Full window length, seconds (compiled default 28800 — 8h). */
-	windowSecs: number;
-	/** Open (diggable) span at the head of each window, seconds (default 14400). */
-	openSecs: number;
-	/** Anchor offset from the epoch, seconds (default 7200 — 02/10/18 UTC). */
-	offsetSecs: number;
+  /** Omitted/"uniform" is the deployed legacy clock; commuter is the v2 clock. */
+  mode?: "uniform" | "commuter_eastern" | "commuter_local";
+  /** Full window length, seconds (compiled default 28800 — 8h). */
+  windowSecs: number;
+  /** Open (diggable) span at the head of each window, seconds (default 14400). */
+  openSecs: number;
+  /** Anchor offset from the epoch, seconds (default 7200 — 02/10/18 UTC). */
+  offsetSecs: number;
 }
 
 // The compiled fallback — always the same numbers as constants/dig.ts.
 export const DEFAULT_FEEDING_SCHEDULE: FeedingSchedule = Object.freeze({
-	mode: "uniform",
-	windowSecs: ROOTING_WINDOW_SECS,
-	openSecs: PATCH_OPEN_SECS,
-	offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
+  mode: "uniform",
+  windowSecs: ROOTING_WINDOW_SECS,
+  openSecs: PATCH_OPEN_SECS,
+  offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
 });
 
 // Last-fetched server values, persisted so a cold start keeps a rolled-out
@@ -70,8 +70,8 @@ const FETCH_MIN_MS = 5000;
 
 // Coerce a server/cache field to a positive-ish integer, or NaN.
 function intField(v: unknown): number {
-	const n = typeof v === "number" ? v : NaN;
-	return Number.isFinite(n) ? Math.floor(n) : NaN;
+  const n = typeof v === "number" ? v : NaN;
+  return Number.isFinite(n) ? Math.floor(n) : NaN;
 }
 
 /**
@@ -80,31 +80,37 @@ function intField(v: unknown): number {
  * a bad row keeps the previous schedule, never a broken clock.
  */
 export function sanitizeFeedingSchedule(raw: unknown): FeedingSchedule | null {
-	if (raw == null || typeof raw !== "object") return null;
-	const r = raw as Record<string, unknown>;
-	if (r.mode === "commuter_eastern") {
-		return {
-			mode: "commuter_eastern",
-			windowSecs: ROOTING_WINDOW_SECS,
-			openSecs: PATCH_OPEN_SECS,
-			offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
-		};
-	}
-	const windowSecs = intField(r.window_secs);
-	const openSecs = intField(r.open_secs);
-	const offsetSecs = intField(r.offset_secs);
-	if (!Number.isFinite(windowSecs) || windowSecs <= 0) return null;
-	if (!Number.isFinite(openSecs) || openSecs <= 0 || openSecs > windowSecs) return null;
-	if (!Number.isFinite(offsetSecs) || offsetSecs < 0 || offsetSecs >= windowSecs) return null;
-	return { mode: "uniform", windowSecs, openSecs, offsetSecs };
+  if (raw == null || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (r.mode === "commuter_eastern" || r.mode === "commuter_local") {
+    return {
+      mode: r.mode,
+      windowSecs: ROOTING_WINDOW_SECS,
+      openSecs: PATCH_OPEN_SECS,
+      offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
+    };
+  }
+  const windowSecs = intField(r.window_secs);
+  const openSecs = intField(r.open_secs);
+  const offsetSecs = intField(r.offset_secs);
+  if (!Number.isFinite(windowSecs) || windowSecs <= 0) return null;
+  if (!Number.isFinite(openSecs) || openSecs <= 0 || openSecs > windowSecs)
+    return null;
+  if (
+    !Number.isFinite(offsetSecs) ||
+    offsetSecs < 0 ||
+    offsetSecs >= windowSecs
+  )
+    return null;
+  return { mode: "uniform", windowSecs, openSecs, offsetSecs };
 }
 
 const cell = createConfigCell<FeedingSchedule>({
-	key: "feeding_schedule",
-	fallback: DEFAULT_FEEDING_SCHEDULE,
-	sanitize: sanitizeFeedingSchedule,
-	cacheKey: CACHE_KEY,
-	minRefreshMs: FETCH_MIN_MS,
+  key: "feeding_schedule",
+  fallback: DEFAULT_FEEDING_SCHEDULE,
+  sanitize: sanitizeFeedingSchedule,
+  cacheKey: CACHE_KEY,
+  minRefreshMs: FETCH_MIN_MS,
 });
 
 /** The live schedule every window function reads (module-level, no context). */
@@ -115,7 +121,8 @@ export const feedingSchedule: () => FeedingSchedule = cell.read;
  * actually moved — the caller uses that to trigger the clock re-derive.
  * Exported as the test seam for override-propagation coverage.
  */
-export const applyFeedingSchedule: (next: FeedingSchedule) => boolean = cell.apply;
+export const applyFeedingSchedule: (next: FeedingSchedule) => boolean =
+  cell.apply;
 
 /**
  * Hydrate from the AsyncStorage cache — the last server values this install

@@ -112,7 +112,10 @@ BEGIN
 
 	-- ── 3. Attribution + instant drain: a real dig writes race_digs AND moves
 	--     hunger_drain immediately (no banking branch, no banked key) ─────────
-	SELECT * INTO cyc FROM public.race_current_cycle();
+	-- Attribution follows the authoritative patch clock. Around the Monday
+	-- 00:00 UTC race boundary, the open 02:00-anchored Feeding block can still
+	-- belong to Sunday, so real now() is not necessarily the dig's cycle.
+	SELECT * INTO cyc FROM public.race_cycle_at(public._patch_now());
 	SELECT total INTO before_drain FROM public.hunger_drain WHERE id = true;
 	PERFORM set_config('smoke.uid', la::text, true);
 	PERFORM public.open_rooting();
@@ -129,11 +132,12 @@ BEGIN
 	               WHERE cycle_key = cyc.cycle_key AND user_id = la AND crew_id = aa
 	                 AND finds = jsonb_array_length(res->'credited')) THEN
 		RAISE EXCEPTION 'race_digs attribution row missing for la'; END IF;
-
 	-- ── 4. Standings: quorum split, dense ties, bot exclusion, mine ──────────
 	-- Current-cycle seeds: E avg 10.0 (rank 1), F & H tie at 6.0 (both rank 2,
 	-- dense), G 1 digger (unranked). A row attributed to the bot crew must
 	-- vanish. (c001 from smoke 15 is also ranked at ~3-4 avg — tolerated.)
+	PERFORM set_config('ttp.fake_now', '', true);
+	SELECT * INTO cyc FROM public.race_current_cycle();
 	INSERT INTO public.race_digs (cycle_key, user_id, window_index, crew_id, finds) VALUES
 		(cyc.cycle_key, e1, 900, ee, 12), (cyc.cycle_key, e2, 900, ee, 8),
 		(cyc.cycle_key, '00000000-0000-0000-0000-00000000de12', 900, ff, 8),
@@ -175,6 +179,9 @@ BEGIN
 	-- pays BOTH in one pass (prev2 has zero ranked crews — payout row only).
 	SELECT * INTO prev  FROM public.race_cycle_at(cyc.starts_at  - interval '1 second');
 	SELECT * INTO prev2 FROM public.race_cycle_at(prev.starts_at - interval '1 second');
+	-- Earlier clock-pinned smokes can land in one of these weeks when the harness
+	-- runs across a Monday boundary. Keep the exact payout table self-contained.
+	DELETE FROM public.race_digs WHERE cycle_key IN (prev.cycle_key, prev2.cycle_key);
 	INSERT INTO public.race_digs (cycle_key, user_id, window_index, crew_id, finds) VALUES
 		(prev2.cycle_key, j1, 700, '00000000-0000-0000-0000-00000000dd10', 11),
 		(prev.cycle_key, la, 800, aa, 12), (prev.cycle_key, ma, 800, aa, 8),

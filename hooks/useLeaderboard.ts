@@ -18,7 +18,7 @@
 // ranked rows. Behavior is unchanged from the inlined version.
 
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import type { TitlePlacement } from "@/constants/title_types";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";

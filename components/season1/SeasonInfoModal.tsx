@@ -4,35 +4,30 @@
 // Sounder → pass). Opened from the two icon buttons in the page header:
 // scroll = the tale, gift = the earnables. One modal, two topics — the chrome
 // (backdrop, card, dismiss) is identical, only the content swaps.
+//
+// The chrome is `AdaptiveModalScaffold` + `Sticker` + `DialogCloseRow` [C-09,
+// spec §3.4]: the scaffold owns the Modal, the scrim, the safe-area frame and
+// the scroll path, which is why the old hand-tuned `screenH * 0.6` cap is gone.
 
+import { StyleSheet } from "react-native";
 import {
-	Modal,
-	View,
-	Text,
-	ScrollView,
-	StyleSheet,
-	useWindowDimensions,
-} from "react-native";
-import { Sticker } from "../ui/Sticker";
-import { Button } from "../ui/Button";
+	AdaptiveModalScaffold,
+	Button,
+	DialogCloseRow,
+	Kicker,
+	PageTitle,
+	Sticker,
+	useUnmanagedModalHold,
+} from "@/components/ui";
 import { SeasonStory } from "./SeasonStory";
 import { SpoilsShowcase } from "./SpoilsShowcase";
-import { useUnmanagedModalHold } from "../ui/PopupQueue";
-import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	SPACE,
-	STICKER_SHADOW,
-	WHIMSY,
-	RADII,
-} from "@/constants/theme";
+import { RADII, SPACE, TILT } from "@/constants/theme";
 
 export type SeasonInfoTopic = "story" | "spoils";
 
 const COPY: Record<SeasonInfoTopic, { kicker: string; title: string }> = {
-	story: { kicker: "★ what's happening ★", title: "The Season of the Hunger" },
-	spoils: { kicker: "★ the truffle exchange ★", title: "What you can earn" },
+	story: { kicker: "what's happening", title: "The Season of the Hunger" },
+	spoils: { kicker: "the truffle exchange", title: "What you can earn" },
 };
 
 export function SeasonInfoModal({
@@ -50,79 +45,54 @@ export function SeasonInfoModal({
 	// stays mounted with visible={false} when topic is null).
 	useUnmanagedModalHold(topic != null);
 	const copy = topic ? COPY[topic] : null;
-	// Cap the scroll region to a fraction of the screen so the whole card —
-	// title above, dismiss button below — always fits within the centered
-	// backdrop and nothing clips off the top/bottom edges (matches the
-	// screenH-fraction cap in GreatHungerIntroModal). Leaves ~40% for title,
-	// button, card padding and the backdrop's own inset.
-	const { height: screenH } = useWindowDimensions();
-	const scrollMaxH = Math.round(screenH * 0.6);
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={topic != null}
-			transparent
-			animationType="fade"
 			onRequestClose={onDismiss}
+			maxWidth={400}
+			bare
 		>
-			<View style={styles.backdrop}>
-				<Sticker
-					color="paper"
-					rotate={-0.8}
-					radius={RADII.xxl}
-					border={3}
-					style={[styles.card, STICKER_SHADOW]}
+			<Sticker
+				color="paper"
+				rotate={TILT.dialog}
+				radius={RADII.xxl}
+				border={3}
+				style={styles.card}
+			>
+				<DialogCloseRow onPress={onDismiss} label="Back to the season" />
+				{copy && (
+					<>
+						<Kicker align="center" style={styles.kicker}>
+							{copy.kicker} ★
+						</Kicker>
+						<PageTitle align="center" style={styles.headline}>
+							{copy.title}
+						</PageTitle>
+					</>
+				)}
+				{topic === "story" && <SeasonStory />}
+				{topic === "spoils" && <SpoilsShowcase />}
+				<Button
+					size="md"
+					variant="primary"
+					full
+					onPress={onDismiss}
+					style={styles.dismiss}
 				>
-					{copy && (
-						<>
-							<Text style={styles.kicker}>{copy.kicker}</Text>
-							<Text style={styles.headline}>{copy.title}</Text>
-						</>
-					)}
-					<ScrollView
-						style={[styles.scroll, { maxHeight: scrollMaxH }]}
-						contentContainerStyle={styles.scrollContent}
-						showsVerticalScrollIndicator={false}
-					>
-						{topic === "story" && <SeasonStory />}
-						{topic === "spoils" && <SpoilsShowcase />}
-					</ScrollView>
-					<Button size="md" variant="primary" full onPress={onDismiss}>
-						Back to the season
-					</Button>
-				</Sticker>
-			</View>
-		</Modal>
+					Back to the season
+				</Button>
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
-	},
 	card: {
 		width: "100%",
-		maxWidth: 400,
 		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.lg,
+		paddingBottom: SPACE.lg,
 	},
-	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: SPACE.md,
-	},
-	// maxHeight is set inline from the screen height; keep only the spacing
-	// below the scroll region here. A small top margin keeps the first
-	// (tilted) beat card off the headline above it.
-	scroll: { marginTop: SPACE.xs, marginBottom: SPACE.md },
-	// Top pad gives the first tilted sticker corner room to clear the title;
-	// trailing pad so the last beat card clears the fade edge / dismiss button
-	// when the story overflows and scrolls.
-	scrollContent: { paddingTop: SPACE.xs, paddingBottom: SPACE.xs },
+	kicker: { marginBottom: SPACE.xs },
+	headline: { marginBottom: SPACE.md },
+	dismiss: { marginTop: SPACE.md },
 });

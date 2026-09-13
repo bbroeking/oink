@@ -108,7 +108,7 @@ export function AnchorDebugOverlay({
 }
 
 const styles = StyleSheet.create({
-	fill: { ...StyleSheet.absoluteFillObject, zIndex: 50 },
+	fill: { ...StyleSheet.absoluteFill, zIndex: 50 },
 	dot: {
 		position: "absolute",
 		width: 8,

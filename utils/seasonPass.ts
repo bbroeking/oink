@@ -49,6 +49,7 @@ export interface SeasonState {
 	xp?: number;
 	current_tier?: number;
 	premium_unlocked?: boolean;
+	motes?: number;
 	wallow_count?: number;
 	season_wallow_count?: number;
 	can_wallow?: boolean;

@@ -6,23 +6,32 @@
 // (20260704300000, HELD) via useTruffles; until it's applied the sheet shows
 // the cozy "opens with the season" state.
 //
+// The chrome is the `Sheet` panel — grabber, title row, close affordance,
+// scrolling body and a pinned footer. It used to hand-roll all of that on a
+// raw `animationType="slide"` Modal, which is exactly the grey-flash opening
+// SlideUpSheet's header comment exists to prevent. [C-09] (2026-09-11)
+//
 // Dressing art routes through EXCHANGE_ART so Batch-7 art (banner/shelf)
 // drops in with zero code changes.
 import { useEffect, useState } from "react";
 import {
 	View,
-	Text,
 	Image,
-	Pressable,
-	Modal,
 	StyleSheet,
-	ScrollView,
-	Dimensions,
 	type ImageSourcePropType,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Icon } from "@/components/ui/Icon";
-import { HAT_IMAGES, RARITY_COLORS } from "@/constants/hats";
+import {
+	Button,
+	EmptyState,
+	Hand,
+	Label,
+	Sheet,
+	Sticker,
+	T,
+	Tag,
+} from "@/components/ui";
+import { HAT_IMAGES } from "@/constants/hats";
 import {
 	RARITY_TO_TIER,
 	EXCHANGE_TIER_LABEL,
@@ -30,24 +39,28 @@ import {
 import { restockWhisper } from "@/utils/truffleExchange";
 import {
 	WHIMSY,
-	FONTS,
-	SHADOW_SM,
-	MODAL_BACKDROP_BG,
 	RADII,
 	SPACE,
-	TYPE,
-	PAGE_PAD,
+	BORDER,
+	RARITY_BADGE,
 	RARITY_BG_SOLID,
+	UI_COLORS,
 } from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
 import { observeFieldGuide } from "@/utils/fieldGuide";
-import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
 
 // Batch-7 dressing slots (docs/great-hunger-art-manifest.md → exchange/).
 const EXCHANGE_ART: { banner: ImageSourcePropType | null; shelf: ImageSourcePropType | null } = {
 	banner: null,
 	shelf: null,
 };
+
+// Drawing geometry for the shelf: two cards to a row, a 4:3-ish thumbnail
+// well, and the golden-truffle sprite riding a price button. Art sizes, not
+// spacing steps — named so no style line carries a bare number.
+const CARD_WIDTH = "48%";
+const THUMB_ASPECT = 1.35;
+const PRICE_MARK = 16;
 
 interface Props {
 	open: boolean;
@@ -56,11 +69,6 @@ interface Props {
 }
 
 export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
-	// Unmanaged native Modal (direct-tap, outside the popup queue): hold the queue
-	// while open so a foreground poll can't present a queued popup over it — the
-	// #50152 wedge (issue #4).
-	useUnmanagedModalHold(open);
-	const screenH = Dimensions.get("window").height;
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [note, setNote] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -69,8 +77,6 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 	useEffect(() => {
 		if (open) observeFieldGuide("exchange");
 	}, [open]);
-
-	if (!open) return null;
 
 	const onRedeem = async (hatId: string, price: number) => {
 		if (busy) return;
@@ -98,218 +104,200 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 	};
 
 	return (
-		<Modal visible transparent animationType="slide" onRequestClose={onClose}>
-			<View style={styles.backdrop}>
-				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-				<View style={[styles.sheet, { maxHeight: screenH * 0.85 }]}>
-					<View style={styles.grabber} />
-					<Text style={styles.kicker}>THE TRUFFLE EXCHANGE</Text>
-					<Text style={styles.title}>Spend your golden truffles</Text>
-
-					<View style={styles.pouchRow}>
-						<View style={styles.pouchChip}>
-							{HAT_IMAGES.golden_truffle ? (
-								<Image source={HAT_IMAGES.golden_truffle} style={styles.pouchImg} resizeMode="contain" />
-							) : null}
-							<Text style={styles.pouchCount}>{truffles.balance}</Text>
-						</View>
-						{truffles.available && truffles.restockAt ? (
-							<Text style={styles.restock}>{restockWhisper(truffles.restockAt)}</Text>
-						) : null}
-					</View>
-
-					{!truffles.available ? (
-						<View style={styles.closed}>
-							<Text style={styles.closedTitle}>The stall is still being built.</Text>
-							<Text style={styles.closedSub}>
-								The Exchange opens with the season — dig truffles at every feeding so your
-								pouch is heavy on opening day.
-							</Text>
-						</View>
-					) : (
-						<ScrollView style={{ flexGrow: 0 }} showsVerticalScrollIndicator={false}>
-							<View style={styles.shelf}>
-								{truffles.items.map((item) => {
-									const rarityColor = RARITY_COLORS[item.rarity] ?? WHIMSY.muteSoft;
-									const thumbFill = RARITY_BG_SOLID[item.rarity] ?? WHIMSY.cream;
-									const tier = RARITY_TO_TIER[item.rarity] ?? "muddy";
-									const img = HAT_IMAGES[item.id];
-									const isConfirming = confirming === item.id;
-									const canAfford = truffles.balance >= item.price;
-									return (
-										<View
-											key={item.id}
-											style={[styles.card, { borderColor: rarityColor }, item.owned && styles.cardOwned]}
-										>
-											<Text style={[styles.tierTag, { color: rarityColor }]}>
-												{EXCHANGE_TIER_LABEL[tier]}
-											</Text>
-											<View style={[styles.thumbWrap, { backgroundColor: thumbFill }]}>
-												{img ? <Image source={img} style={styles.thumb} resizeMode="contain" /> : null}
-											</View>
-											<Text style={styles.name} numberOfLines={1}>
-												{item.name}
-											</Text>
-											{item.owned ? (
-												<View style={styles.ownedBadge}>
-													<Icon name="check" size={12} color={WHIMSY.ink} strokeWidth={2.4} />
-													<Text style={styles.ownedText}>yours</Text>
-												</View>
-											) : isConfirming ? (
-												<Pressable
-													disabled={busy}
-													onPress={() => onRedeem(item.id, item.price)}
-													style={({ pressed }) => [
-														styles.buyBtn,
-														styles.confirmBtn,
-														pressed && { opacity: 0.85 },
-													]}
-												>
-													<Text style={styles.buyText}>
-														{busy ? "Trading…" : `Trade ${item.price}?`}
-													</Text>
-												</Pressable>
-											) : (
-												<Pressable
-													onPress={() => {
-														Haptics.selectionAsync().catch(() => {});
-														setNote(null);
-														setConfirming(item.id);
-													}}
-													style={({ pressed }) => [
-														styles.buyBtn,
-														!canAfford && styles.buyBtnOff,
-														pressed && { opacity: 0.85 },
-													]}
-												>
-													{HAT_IMAGES.golden_truffle ? (
-														<Image
-															source={HAT_IMAGES.golden_truffle}
-															style={styles.priceImg}
-															resizeMode="contain"
-														/>
-													) : null}
-													<Text style={[styles.buyText, !canAfford && styles.buyTextOff]}>
-														{item.price}
-													</Text>
-												</Pressable>
-											)}
-										</View>
-									);
-								})}
-							</View>
-						</ScrollView>
-					)}
-
-					{note ? <Text style={styles.note}>{note}</Text> : null}
-					<Text style={styles.footnote}>Earned at the feedings, never bought.</Text>
-
-					<Pressable
+		<Sheet
+			open={open}
+			onClose={onClose}
+			kicker="THE TRUFFLE EXCHANGE"
+			title="Spend your golden truffles"
+			closeLabel="Close the Truffle Exchange"
+			footer={
+				// Pinned, like the panel pinned them before: the outcome line and
+				// the "never bought" promise sit with the CTA rather than scrolling
+				// away under the shelf.
+				<View>
+					{note ? (
+						<T
+							role="kicker"
+							tone="accent"
+							align="center"
+							accessibilityLiveRegion="polite"
+							style={styles.note}
+						>
+							{note}
+						</T>
+					) : null}
+					<Hand tone="secondary" align="center" style={styles.footnote}>
+						Earned at the feedings, never bought.
+					</Hand>
+					<Button
+						variant="gold"
+						full
 						onPress={onClose}
-						style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
+						accessibilityLabel="Done at the Truffle Exchange"
+						accessibilityHint="Closes the Exchange. Your truffles stay in your pouch."
+						style={styles.doneBtn}
 					>
-						<Text style={styles.doneText}>Done</Text>
-					</Pressable>
+						Done
+					</Button>
 				</View>
+			}
+		>
+			<View style={styles.pouchRow}>
+				{/* The pouch balance. `coin` would prefix the Snout Coin, and truffles
+				    are emphatically NOT snouts — `art` puts the real currency's own
+				    sprite in the mark slot. */}
+				<Tag
+					art={HAT_IMAGES.golden_truffle}
+					label={String(truffles.balance)}
+					tone="sun"
+					accessibilityLabel={`${truffles.balance} golden ${
+						truffles.balance === 1 ? "truffle" : "truffles"
+					} in your pouch`}
+				/>
+				{truffles.available && truffles.restockAt ? (
+					<T role="kicker" tone="secondary">
+						{restockWhisper(truffles.restockAt)}
+					</T>
+				) : null}
 			</View>
-		</Modal>
+
+			{!truffles.available ? (
+				<EmptyState
+					glyph="zzz"
+					color="cream2"
+					title="The stall is still being built."
+					sub="The Exchange opens with the season — dig truffles at every feeding so your pouch is heavy on opening day."
+				/>
+			) : (
+				<View style={styles.shelf}>
+					{truffles.items.map((item) => {
+						const rarityColor =
+							RARITY_BADGE[item.rarity]?.ink ?? UI_COLORS.uiMuted;
+						const thumbFill = RARITY_BG_SOLID[item.rarity] ?? WHIMSY.cream;
+						const tier = RARITY_TO_TIER[item.rarity] ?? "muddy";
+						const img = HAT_IMAGES[item.id];
+						const isConfirming = confirming === item.id;
+						const canAfford = truffles.balance >= item.price;
+						const cost = `${item.price} golden ${
+							item.price === 1 ? "truffle" : "truffles"
+						}`;
+						return (
+							<Sticker
+								key={item.id}
+								// An owned card is spent, not broken: cream2 and mute ink,
+								// the "trotted on" treatment — never an opacity crush. [C-07]
+								color={item.owned ? "cream2" : "cream"}
+								rotate={0}
+								radius={RADII.lg}
+								border={BORDER.ink}
+								shadow="none"
+								style={[styles.card, { borderColor: rarityColor }]}
+							>
+								<Label style={[styles.tierTag, { color: rarityColor }]}>
+									{EXCHANGE_TIER_LABEL[tier]}
+								</Label>
+								<View style={[styles.thumbWrap, { backgroundColor: thumbFill }]}>
+									{img ? <Image source={img} style={styles.thumb} resizeMode="contain" /> : null}
+								</View>
+								<Label
+									align="center"
+									numberOfLines={1}
+									tone={item.owned ? "secondary" : "primary"}
+									style={styles.name}
+								>
+									{item.name}
+								</Label>
+								{item.owned ? (
+									<Tag
+										label="yours"
+										icon="check"
+										tone="sage"
+										style={styles.ownedBadge}
+									/>
+								) : isConfirming ? (
+									<Button
+										size="xs"
+										variant="primary"
+										disabled={busy}
+										onPress={() => onRedeem(item.id, item.price)}
+										accessibilityLabel={`Confirm trading ${cost} for ${item.name}`}
+										accessibilityHint="Spends the truffles and puts the item in your trunk."
+										accessibilityState={{ busy }}
+										style={styles.buyBtn}
+									>
+										{busy ? "Trading…" : `Trade ${item.price}?`}
+									</Button>
+								) : (
+									<Button
+										size="xs"
+										// Can't afford it yet? The control keeps its whole shape
+										// and goes to sleep — it still answers, with the honest
+										// "you have N, it wants M" line. [C-07]
+										variant={canAfford ? "gold" : "locked"}
+										onPress={() => {
+											Haptics.selectionAsync().catch(() => {});
+											setNote(null);
+											setConfirming(item.id);
+										}}
+										icon={
+											HAT_IMAGES.golden_truffle ? (
+												<Image
+													source={HAT_IMAGES.golden_truffle}
+													style={styles.priceImg}
+													resizeMode="contain"
+												/>
+											) : undefined
+										}
+										accessibilityLabel={`${item.name}, ${cost}`}
+										accessibilityHint={
+											canAfford
+												? "Asks you to confirm the trade."
+												: "You don't have enough truffles yet."
+										}
+										style={styles.buyBtn}
+									>
+										{String(item.price)}
+									</Button>
+								)}
+							</Sticker>
+						);
+					})}
+				</View>
+			)}
+		</Sheet>
 	);
 }
 
-const INK = WHIMSY.ink;
 const styles = StyleSheet.create({
-	backdrop: { flex: 1, backgroundColor: MODAL_BACKDROP_BG, justifyContent: "flex-end", padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
-	sheet: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.xxl,
-		padding: PAGE_PAD,
-		paddingTop: SPACE.md - 2,
-		...SHADOW_SM,
-	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
-	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	title: { ...TYPE.pageTitle, color: INK },
-
-	pouchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: SPACE.sm + 2, marginBottom: SPACE.md },
-	pouchChip: {
+	pouchRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: SPACE.xs + 2,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.lg,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs + 1,
-		...SHADOW_SM,
+		justifyContent: "space-between",
+		marginBottom: SPACE.md,
 	},
-	pouchImg: { width: 22, height: 22 },
-	pouchCount: { ...TYPE.numeral, color: INK },
-	restock: { ...TYPE.kicker, color: WHIMSY.mute },
-
-	closed: {
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 1.5,
-		borderColor: INK,
-		borderRadius: RADII.lg,
-		padding: SPACE.lg,
-		marginBottom: SPACE.xs + 2,
-		transform: [{ rotate: "-0.6deg" }],
-	},
-	closedTitle: { ...TYPE.cardTitle, color: INK },
-	closedSub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs },
-
 	shelf: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.md, justifyContent: "space-between" },
 	card: {
-		width: "48%",
-		borderWidth: 2,
-		borderRadius: RADII.lg,
-		backgroundColor: WHIMSY.cream,
+		width: CARD_WIDTH,
 		padding: SPACE.sm,
-		paddingBottom: SPACE.sm + 2,
 		alignItems: "center",
 	},
-	cardOwned: { opacity: 0.75 },
-	tierTag: { ...TYPE.kickerPill, letterSpacing: 1.2, alignSelf: "flex-start" },
-	thumbWrap: { width: "100%", aspectRatio: 1.35, alignItems: "center", justifyContent: "center", borderRadius: RADII.sm, marginTop: SPACE.xs },
+	tierTag: { alignSelf: "flex-start" },
+	thumbWrap: {
+		width: "100%",
+		aspectRatio: THUMB_ASPECT,
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: RADII.sm,
+		marginTop: SPACE.xs,
+	},
 	thumb: { width: "70%", height: "82%" },
-	name: { ...TYPE.label, letterSpacing: 0.2, color: INK, marginTop: SPACE.xs + 2, textAlign: "center" },
+	name: { marginTop: SPACE.sm },
 
-	ownedBadge: { flexDirection: "row", alignItems: "center", gap: SPACE.xs, marginTop: SPACE.xs + 2 },
-	ownedText: { ...TYPE.label, fontFamily: FONTS.hand, letterSpacing: 0, color: WHIMSY.mute },
+	ownedBadge: { marginTop: SPACE.sm },
+	buyBtn: { marginTop: SPACE.sm },
+	priceImg: { width: PRICE_MARK, height: PRICE_MARK },
 
-	buyBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs + 1,
-		marginTop: SPACE.xs + 2,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: INK,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs,
-	},
-	buyBtnOff: { backgroundColor: WHIMSY.cream2, opacity: 0.7 },
-	confirmBtn: { backgroundColor: WHIMSY.roseDeep },
-	priceImg: { width: 16, height: 16 },
-	buyText: { ...TYPE.numeral, fontSize: 14, color: INK },
-	buyTextOff: { color: WHIMSY.mute },
-
-	note: { ...TYPE.kicker, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.sm + 2 },
-	footnote: { ...TYPE.label, fontFamily: FONTS.hand, letterSpacing: 0, color: WHIMSY.mute, textAlign: "center", marginTop: SPACE.sm },
-
-	doneBtn: {
-		marginTop: SPACE.md,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.lg,
-		paddingVertical: SPACE.md,
-		alignItems: "center",
-		...SHADOW_SM,
-	},
-	doneText: { ...TYPE.numeral, color: INK },
+	note: { marginBottom: SPACE.sm },
+	footnote: { marginBottom: SPACE.sm },
+	doneBtn: { marginTop: SPACE.xs },
 });

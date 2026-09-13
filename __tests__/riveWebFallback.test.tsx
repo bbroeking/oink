@@ -5,11 +5,11 @@ import { RivePig } from "@/components/ui/RivePig.web";
 import { RiveRuntimeProbe } from "@/components/prototypes/RiveRuntimeProbe.web";
 
 describe("Rive web fallback", () => {
-	it("renders the raster pig without evaluating the native runtime", () => {
+	it("keeps Reduce Motion on raster without mounting a browser canvas", () => {
 		let renderer: TestRenderer.ReactTestRenderer;
 		act(() => {
 			renderer = TestRenderer.create(
-				<RivePig source={123} animation="idle" pigId="rosie" />,
+				<RivePig source={123} animation="idle" pigId="rosie" reduceMotion />,
 			);
 		});
 
@@ -29,7 +29,7 @@ describe("Rive web fallback", () => {
 		expect(
 			renderer!.root.findByProps({
 				children:
-					"The native Rive probe runs only in an iOS development build. Web uses the raster pig until its dedicated Rive adapter is ready.",
+					"The native Rive probe runs only in an iOS development build. Open the Rosie motion gallery to inspect the web renderer and asset status.",
 			}),
 		).toBeTruthy();
 

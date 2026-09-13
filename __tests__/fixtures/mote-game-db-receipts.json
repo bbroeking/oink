@@ -1,0 +1,365 @@
+{
+  "source": "throwaway-postgres-actual-rpc-shape",
+  "receipts": [
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 229,
+        "revision": 25
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "5b6da6f5-6a7f-4f12-b27c-4a1927811b71",
+        "request_id": "reveal-all-1",
+        "mode": "reveal",
+        "stake_motes": 1,
+        "outcome": "legacy_resource",
+        "motes_returned": 0,
+        "net_motes": -1,
+        "motes_remaining": 229,
+        "wallet_revision": 25,
+        "contraption_id": "auto_tickler",
+        "resource_id": "clockwork_acorn",
+        "resource_amount": 1,
+        "resource_balance": 77,
+        "newly_unlocked": false,
+        "reel_stops": [
+          3,
+          3,
+          3
+        ],
+        "reel_value": 3,
+        "paytable_version": "reveal-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 228,
+        "revision": 26
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "04ac1596-c82a-471e-b97c-1ca4d8ca9c82",
+        "request_id": "reveal-all-2",
+        "mode": "reveal",
+        "stake_motes": 1,
+        "outcome": "legacy_resource",
+        "motes_returned": 0,
+        "net_motes": -1,
+        "motes_remaining": 228,
+        "wallet_revision": 26,
+        "contraption_id": "auto_tickler",
+        "resource_id": "clockwork_acorn",
+        "resource_amount": 2,
+        "resource_balance": 79,
+        "newly_unlocked": false,
+        "reel_stops": [
+          5,
+          5,
+          5
+        ],
+        "reel_value": 5,
+        "paytable_version": "reveal-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 227,
+        "revision": 27
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "9e96609c-289a-4be5-bdbc-dae705ac0d97",
+        "request_id": "reveal-all-3",
+        "mode": "reveal",
+        "stake_motes": 1,
+        "outcome": "legacy_resource",
+        "motes_returned": 0,
+        "net_motes": -1,
+        "motes_remaining": 227,
+        "wallet_revision": 27,
+        "contraption_id": "auto_tickler",
+        "resource_id": "clockwork_acorn",
+        "resource_amount": 3,
+        "resource_balance": 82,
+        "newly_unlocked": false,
+        "reel_stops": [
+          10,
+          10,
+          10
+        ],
+        "reel_value": 10,
+        "paytable_version": "reveal-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 226,
+        "revision": 28
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "212d6c68-3906-4126-bfad-7d7243502c3b",
+        "request_id": "reveal-all-4",
+        "mode": "reveal",
+        "stake_motes": 1,
+        "outcome": "legacy_resource",
+        "motes_returned": 0,
+        "net_motes": -1,
+        "motes_remaining": 226,
+        "wallet_revision": 28,
+        "contraption_id": "auto_tickler",
+        "resource_id": "clockwork_acorn",
+        "resource_amount": 5,
+        "resource_balance": 87,
+        "newly_unlocked": false,
+        "reel_stops": [
+          25,
+          25,
+          25
+        ],
+        "reel_value": 25,
+        "paytable_version": "reveal-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 130,
+        "revision": 10
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "2127af72-5bad-4a37-bd6c-92c9b4255e49",
+        "request_id": "all-1-loss",
+        "mode": "wager",
+        "stake_motes": 1,
+        "outcome": "loss",
+        "motes_returned": 0,
+        "net_motes": -1,
+        "motes_remaining": 130,
+        "wallet_revision": 10,
+        "contraption_id": null,
+        "resource_id": null,
+        "resource_amount": 0,
+        "resource_balance": null,
+        "newly_unlocked": false,
+        "reel_stops": [
+          0,
+          1,
+          2
+        ],
+        "reel_value": null,
+        "paytable_version": "wager-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 130,
+        "revision": 11
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "b6aad821-c4c2-420c-809f-7ac2e637bacc",
+        "request_id": "all-1-returned_stake",
+        "mode": "wager",
+        "stake_motes": 1,
+        "outcome": "returned_stake",
+        "motes_returned": 1,
+        "net_motes": 0,
+        "motes_remaining": 130,
+        "wallet_revision": 11,
+        "contraption_id": null,
+        "resource_id": null,
+        "resource_amount": 0,
+        "resource_balance": null,
+        "newly_unlocked": false,
+        "reel_stops": [
+          0,
+          0,
+          0
+        ],
+        "reel_value": null,
+        "paytable_version": "wager-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 131,
+        "revision": 12
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "50ccdd30-c5b3-43b3-bc2d-37cb62f506e0",
+        "request_id": "all-1-small",
+        "mode": "wager",
+        "stake_motes": 1,
+        "outcome": "small",
+        "motes_returned": 2,
+        "net_motes": 1,
+        "motes_remaining": 131,
+        "wallet_revision": 12,
+        "contraption_id": null,
+        "resource_id": null,
+        "resource_amount": 0,
+        "resource_balance": null,
+        "newly_unlocked": false,
+        "reel_stops": [
+          1,
+          1,
+          1
+        ],
+        "reel_value": null,
+        "paytable_version": "wager-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 133,
+        "revision": 13
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "80ac42d9-6d0c-49f4-be50-6929479a9b36",
+        "request_id": "all-1-big",
+        "mode": "wager",
+        "stake_motes": 1,
+        "outcome": "big",
+        "motes_returned": 3,
+        "net_motes": 2,
+        "motes_remaining": 133,
+        "wallet_revision": 13,
+        "contraption_id": "auto_tickler",
+        "resource_id": "clockwork_acorn",
+        "resource_amount": 1,
+        "resource_balance": 23,
+        "newly_unlocked": false,
+        "reel_stops": [
+          2,
+          2,
+          2
+        ],
+        "reel_value": null,
+        "paytable_version": "wager-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    },
+    {
+      "ok": true,
+      "wallet": {
+        "motes": 142,
+        "revision": 14
+      },
+      "receipt": {
+        "protocol_version": 2,
+        "spin_id": "06f31ded-1a09-4cea-9abc-611f4bca63a4",
+        "request_id": "all-1-jackpot",
+        "mode": "wager",
+        "stake_motes": 1,
+        "outcome": "jackpot",
+        "motes_returned": 10,
+        "net_motes": 9,
+        "motes_remaining": 142,
+        "wallet_revision": 14,
+        "contraption_id": "auto_tickler",
+        "resource_id": "clockwork_acorn",
+        "resource_amount": 5,
+        "resource_balance": 28,
+        "newly_unlocked": false,
+        "reel_stops": [
+          3,
+          3,
+          3
+        ],
+        "reel_value": null,
+        "paytable_version": "wager-v1",
+        "presentation_version": "mote-animation-v4",
+        "created_at": "2026-09-06T21:09:40.245788+00:00"
+      },
+      "replayed": false
+    }
+  ],
+  "legacy_receipts": [
+    {
+      "mode": "reveal",
+      "outcome": "legacy_resource",
+      "spin_id": "4d99ab58-48f1-4509-aaaa-614f8830146b",
+      "net_motes": -1,
+      "created_at": "2026-01-01T00:00:00+00:00",
+      "reel_stops": null,
+      "reel_value": null,
+      "request_id": "legacy-tickle-history",
+      "resource_id": null,
+      "stake_motes": 1,
+      "contraption_id": null,
+      "motes_returned": 0,
+      "newly_unlocked": false,
+      "reward_tickles": 3,
+      "motes_remaining": 7,
+      "resource_amount": null,
+      "tickles_balance": 12,
+      "wallet_revision": null,
+      "paytable_version": null,
+      "protocol_version": 1,
+      "resource_balance": null,
+      "presentation_version": "mote-animation-v3"
+    },
+    {
+      "mode": "reveal",
+      "outcome": "legacy_resource",
+      "spin_id": "c5285e35-6d1d-41dc-90ef-63eeb2c803be",
+      "net_motes": -1,
+      "created_at": "2026-09-06T21:10:49.16198+00:00",
+      "reel_stops": [
+        3,
+        3,
+        3
+      ],
+      "reel_value": 3,
+      "request_id": "legacy-reveal-one",
+      "resource_id": "clockwork_acorn",
+      "stake_motes": 1,
+      "contraption_id": "auto_tickler",
+      "motes_returned": 0,
+      "newly_unlocked": false,
+      "reward_tickles": null,
+      "motes_remaining": 130,
+      "resource_amount": 1,
+      "tickles_balance": 0,
+      "wallet_revision": 8,
+      "paytable_version": null,
+      "protocol_version": 1,
+      "resource_balance": null,
+      "presentation_version": "mote-animation-v3"
+    }
+  ]
+}

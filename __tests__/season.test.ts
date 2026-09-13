@@ -9,6 +9,12 @@ import {
 	SEASON_0_UNLOCKS,
 } from "../utils/season";
 import { currentRelease, RELEASE_NOTES } from "../constants/release_notes";
+import {
+	HERO_SURFACES,
+	PRIMARY_ACTIONS,
+	seasonHeroSurface,
+	seasonPrimaryAction,
+} from "../utils/seasonHero";
 
 const at = (iso: string) => new Date(`${iso}T12:00:00Z`);
 
@@ -105,5 +111,56 @@ describe("currentRelease — the drip", () => {
 				RELEASE_NOTES[i].availableFrom >= RELEASE_NOTES[i - 1].availableFrom
 			).toBe(true);
 		}
+	});
+});
+
+// ── The one-hero rule (C-26) ────────────────────────────────────────────────
+// At most one surface per screen wears the full sun highlight (design-system
+// spec §3.4). The Season scroll stacks eleven decision surfaces, so wave 4 gave
+// HungerHero / FeedingAction / SounderHomeCard / SounderStepCard a `hero` prop
+// fed from ONE derivation. These pin both halves: the precedence, and the
+// invariant that every state elects exactly one surface — never zero, never two.
+describe("the season tab's one hero", () => {
+	const state = (
+		digAvailable: boolean,
+		readyTierCount: number,
+		inCrew: boolean,
+	) => seasonPrimaryAction({ digAvailable, readyTierCount, inCrew });
+
+	test("an open, untaken dig outranks everything else", () => {
+		expect(state(true, 3, true)).toBe("dig");
+		expect(state(true, 0, false)).toBe("dig");
+	});
+
+	test("a ready reward wins once the patch is closed or already dug", () => {
+		expect(state(false, 1, true)).toBe("claim");
+		expect(state(false, 1, false)).toBe("claim");
+	});
+
+	test("a herdless pig with nothing ready is asked to join", () => {
+		expect(state(false, 0, false)).toBe("join");
+	});
+
+	test("a crewed pig with nothing to do lands on browse", () => {
+		expect(state(false, 0, true)).toBe("browse");
+	});
+
+	test("every primary action elects exactly one hero surface", () => {
+		const elected = PRIMARY_ACTIONS.map(seasonHeroSurface);
+		for (const action of PRIMARY_ACTIONS) {
+			const hero = seasonHeroSurface(action);
+			// Exactly one surface is the hero, and it is a real surface.
+			expect(HERO_SURFACES).toContain(hero);
+			expect(HERO_SURFACES.filter((s) => s === hero)).toHaveLength(1);
+		}
+		// …and across the four states no surface is elected twice, so no card can
+		// be reached by two different "you are the hero" paths.
+		expect(new Set(elected).size).toBe(PRIMARY_ACTIONS.length);
+	});
+
+	test("the four states cover every hero surface", () => {
+		expect(PRIMARY_ACTIONS.map(seasonHeroSurface).sort()).toEqual(
+			[...HERO_SURFACES].sort(),
+		);
 	});
 });

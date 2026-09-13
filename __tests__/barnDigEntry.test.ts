@@ -2,10 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = path.resolve(__dirname, "..");
-const barnEntry = fs.readFileSync(
-  path.join(ROOT, "components/BarnSounderChip.tsx"),
+// The crewed/uncrewed decision + the in-place patch mounting live in the hook
+// now; the Barn's dig control is one consumer of it. The retired
+// BarnSounderChip (and the Updates tray that mounted it) are gone.
+const digEntry = fs.readFileSync(
+  path.join(ROOT, "hooks/useDigEntry.ts"),
   "utf8",
 );
+const barn = fs.readFileSync(path.join(ROOT, "components/Barn.tsx"), "utf8");
 const feedingCta = fs.readFileSync(
   path.join(ROOT, "components/mudwar/useFeedingCta.tsx"),
   "utf8",
@@ -21,18 +25,30 @@ const patch = fs.readFileSync(
 
 describe("Barn Truffle Patch entry", () => {
   test("crewed players can open the dig directly from Home", () => {
-    expect(barnEntry).toContain(
-      'const crewed = step === "first_dig" || step === "done"',
+    expect(digEntry).toContain(
+      'const crewed = coopDig && (step === "first_dig" || step === "done")',
     );
-    expect(barnEntry).toContain('? "Dig for Golden Truffles"');
-    expect(barnEntry).toContain("onPress={cta.start}");
-    expect(barnEntry).toContain("{cta.modal}");
+    expect(digEntry).toContain('? "Dig for Golden Truffles"');
+    expect(digEntry).toContain("void start();");
+    expect(digEntry).toContain("modal: cta.modal,");
+    // The Barn's one dig control consumes the hook — label, hint and the single
+    // mounted patch — instead of jumping to the Season tab.
+    expect(barn).toContain("const dig = useDigEntry();");
+    expect(barn).toContain('accessibilityLabel="Truffle Patch"');
+    expect(barn).toContain("accessibilityHint={dig.hint}");
+    expect(barn).toMatch(/\{dig\.visible \? \(\s*<Sticker/);
+    expect(barn).toContain("{dig.modal}");
   });
 
   test("the direct action preserves honest unavailable states", () => {
-    expect(barnEntry).toContain('"Dug this feeding"');
-    expect(barnEntry).toContain("`Dig opens in ${cta.countdown}`");
-    expect(barnEntry).toContain("accessibilityState={{ disabled: !open }}");
+    expect(digEntry).toContain('"Dug this feeding"');
+    expect(digEntry).toContain("`Dig opens in ${cta.countdown}`");
+    expect(digEntry).toContain(
+      "const open = crewed && cta.phaseOpen && !cta.dugThisWindow",
+    );
+    expect(digEntry).toContain("const visible = !crewed || !cta.dugThisWindow");
+    // A refused dig surfaces its reason rather than doing nothing.
+    expect(barn).toContain('showToast("Truffle Patch", digNote)');
   });
 
   test("mounted Home and Season entry points reconcile on focus", () => {
@@ -43,8 +59,10 @@ describe("Barn Truffle Patch entry", () => {
   });
 
   test("states the personal and shared payoff before and after a dig", () => {
-    expect(barnEntry).toContain('"Dig for Golden Truffles"');
-    expect(barnEntry).toContain("Golden Truffles · +20 Pass XP · Sounder spoils");
+    expect(digEntry).toContain('"Dig for Golden Truffles"');
+    expect(digEntry).toContain(
+      "Golden Truffles · +20 Pass XP · Sounder spoils",
+    );
     expect(seasonFeeding).toContain("Golden Truffles + relics · +20 Pass XP");
     expect(seasonFeeding).toContain(
       "15-Truffle stage reward and your Sounder's Monday payout",

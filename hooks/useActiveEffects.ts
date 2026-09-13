@@ -13,7 +13,7 @@
 // in) can suspend fetch + sub while it has nothing to render.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { rpc } from "@/utils/rpc";
 import { usePostgresChanges } from "./usePostgresChanges";
 import { observeFieldGuide } from "@/utils/fieldGuide";

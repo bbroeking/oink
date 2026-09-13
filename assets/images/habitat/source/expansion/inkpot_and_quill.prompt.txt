@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: transparent furnishing sprite for a cozy mobile Barn-decorating game
+Primary request: Isolated transparent PNG: faceted teal glass inkpot, cream-black quill, parchment scrap, brass nib, berry wax seal; diagonal writing cluster; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.
+Subject: Inkpot and Quill. A teal inkpot and striped feather wait beside one unfinished sentence.
+Style/medium: polished cozy storybook gouache and soft cel illustration, matching existing Tickle the Pig habitat furniture; warm brown contours, rounded chunky geometry, tactile painted materials, consistent upper-left light
+Composition/framing: exactly one complete isolated object centered with generous transparent margins; correct surface_decor Barn perspective; readable at phone scale
+Scene/backdrop: actual transparent alpha background
+Constraints: preserve every named color, material, and detail; full silhouette entirely inside canvas; no crop; no floor, cast shadow, room, wall, background, checkerboard, text, labels, watermark, border, grid, or extra object

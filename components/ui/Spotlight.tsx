@@ -36,6 +36,7 @@ import {
 	type ReactNode,
 } from "react";
 import {
+	AccessibilityInfo,
 	Dimensions,
 	Modal,
 	Pressable,
@@ -50,6 +51,7 @@ import {
 import Svg, { Defs, Mask, Path, Rect } from "react-native-svg";
 import Animated, {
 	Easing,
+	type SharedValue,
 	useAnimatedProps,
 	useAnimatedStyle,
 	useSharedValue,
@@ -57,7 +59,16 @@ import Animated, {
 	withSequence,
 	withTiming,
 } from "react-native-reanimated";
-import { FONTS, RADII, SPACE, STICKER_SHADOW, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	BORDER,
+	FONTS,
+	OPACITY,
+	RADII,
+	SPACE,
+	STICKER_SHADOW,
+	TYPE,
+	WHIMSY,
+} from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 // A measured target rect in WINDOW coordinates (measureInWindow: page-absolute,
@@ -199,8 +210,12 @@ interface SpotlightOverlayProps {
 	onTargetPress?: () => void;
 	/** Fired when the player taps the scrim (dead zone) — default just wiggles. */
 	onScrimPress?: () => void;
-	/** Optional dismiss affordance (a quiet "skip" line under the caption). */
-	onDismiss?: () => void;
+	/**
+	 * The escape hatch, REQUIRED. A coach-mark that insists on one tap and offers
+	 * no way out is a trap — every spotlight ships a "maybe later" line, and the
+	 * back button resolves to the same handler. [A-09]
+	 */
+	onDismiss: () => void;
 	/** Corner radius of the cut hole; defaults to a soft RADII.lg. */
 	holeRadius?: number;
 }
@@ -243,6 +258,15 @@ export function SpotlightOverlay({
 			false
 		);
 	}, [rect, reduceMotion, pulse]);
+
+	// The caption is the whole instruction, and it appears in a Modal that a
+	// screen reader may not move focus into on its own. Announce it when the
+	// spotlight lights up (not motion — this fires under Reduce Motion too).
+	const lit = !!rect;
+	useEffect(() => {
+		if (!lit) return;
+		AccessibilityInfo.announceForAccessibility(caption);
+	}, [lit, caption]);
 
 	// The caption wiggle — a quick shake when the player taps the dead scrim, a
 	// gentle "not there, HERE" nudge. Held at 0 when reduced.
@@ -308,11 +332,14 @@ export function SpotlightOverlay({
 			visible
 			animationType="fade"
 			statusBarTranslucent
-			// No onRequestClose dismiss path by default — the coach-mark is only
-			// satisfied by the real tap. A back-press falls to the optional dismiss.
-			onRequestClose={() => onDismiss?.()}
+			// The coach-mark is satisfied by the real tap; a back-press falls to the
+			// same escape hatch the "maybe later" line offers.
+			onRequestClose={onDismiss}
 		>
 			<View
+				// The spotlight owns the screen while it's lit — everything behind it
+				// is inert, and the screen reader must agree. [A-09]
+				accessibilityViewIsModal
 				style={StyleSheet.absoluteFill}
 				// The single responder that governs the whole scrim. Its decision is
 				// made from raw page coords, so the "hole" is a hit-test, not a masked
@@ -409,7 +436,7 @@ function HaloRing({
 	width: number;
 	height: number;
 	radius: number;
-	pulse: Animated.SharedValue<number>;
+	pulse: SharedValue<number>;
 }) {
 	// The ring lives in a small box sized to the ring and positioned so its OWN
 	// center lands on the hole center — so a plain `scale` transform (which pivots
@@ -500,14 +527,14 @@ function CaptionCard({
 	wiggle,
 }: {
 	caption: string;
-	onDismiss?: () => void;
+	onDismiss: () => void;
 	holeCx: number;
 	holeTop: number;
 	holeBottom: number;
 	below: boolean;
 	winWidth: number;
 	winHeight: number;
-	wiggle: Animated.SharedValue<number>;
+	wiggle: SharedValue<number>;
 }) {
 	// Center the card on the hole horizontally, then clamp so it never runs off an
 	// edge (PAGE-pad worth of margin on each side).
@@ -556,15 +583,16 @@ function CaptionCard({
 			{below && arrow}
 			<View style={styles.card}>
 				<Text style={styles.captionText}>{caption}</Text>
-				{onDismiss && (
-					<Pressable
-						onPress={onDismiss}
-						hitSlop={8}
-						style={({ pressed }) => pressed && { opacity: 0.6 }}
-					>
-						<Text style={styles.skip}>maybe later ›</Text>
-					</Pressable>
-				)}
+				<Pressable
+					onPress={onDismiss}
+					hitSlop={SPACE.sm}
+					accessibilityRole="button"
+					accessibilityLabel="Maybe later"
+					accessibilityHint="Dismisses this tip"
+					style={({ pressed }) => pressed && { opacity: OPACITY.dim }}
+				>
+					<Text style={styles.skip}>maybe later ›</Text>
+				</Pressable>
 			</View>
 			{!below && arrow}
 		</Animated.View>
@@ -621,7 +649,7 @@ const styles = StyleSheet.create({
 		width: CARD_WIDTH,
 		backgroundColor: WHIMSY.paper,
 		borderColor: WHIMSY.ink,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderRadius: RADII.lg,
 		paddingHorizontal: SPACE.lg,
 		paddingVertical: SPACE.md,

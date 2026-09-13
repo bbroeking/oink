@@ -2,7 +2,7 @@
 
 **Purpose:** Test whether preparation creates curiosity-driven replay, not whether the tester can follow instructions.
 
-**Prototype:** https://bbroeking.github.io/oink/idle-lab.html?variant=A
+**Prototype:** https://ticklethepig.com/adventures?fresh=1
 
 ## The question
 
@@ -25,11 +25,8 @@ Do not accept button clicks alone as evidence. A tester may comply without carin
 - Five fresh testers are enough to expose the largest comprehension and motivation failures.
 - At least three should not have heard the Beyond the Hedge pitch.
 - Test one person at a time.
-- Rotate the starting interface:
-  - Testers 1 and 4 start with A - Pack the Bag.
-  - Testers 2 and 5 start with B - Walk the Verge.
-  - Tester 3 starts with C - Welcome Home.
-- Let testers use the bottom arrows after their first return.
+- Give every tester the same fresh Adventure-only link and let them use the
+  Previous / Next rail without explanation.
 
 This is directional design evidence, not statistical product validation.
 
@@ -43,8 +40,8 @@ Do not mention the Dry Bag, Rain-Glass, Hedge Bell, idle-game research, desired 
 
 ## Before the session
 
-1. Open the assigned variant in a fresh tab.
-2. Press **Reset Clover Verge**.
+1. Open the `?fresh=1` link in a fresh tab.
+2. Press **Start fresh** if the browser has already resumed another session.
 3. Do not explain the Wicker Basket, Dry Bag, Wooden Spoon, Rain-Glass, or Hedge Bell.
 4. Do not show the playtest criteria or verdict questions in advance.
 5. Say only:
@@ -102,7 +99,7 @@ Strong evidence:
 
 - The tester connects Creek Glass to the Dry Bag.
 - They connect the ring to the Wooden Spoon, fencepost, or a farther trip.
-- They choose Good Wander or Day Out for a fictional reason, not “eight hours must pay more.”
+- They choose Good Wander for a fictional reason, not “a longer timer must pay more.”
 
 ### Stage 4 - Hedge Bell return
 
@@ -120,7 +117,7 @@ Then let the tester complete the in-page verdict sheet and copy the playtest tra
 ## Facilitator note sheet
 
     Tester:
-    Starting variant:
+    Device / viewport:
 
     FIRST IMPRESSION
     - First thing noticed:
@@ -148,8 +145,8 @@ Then let the tester complete the in-page verdict sheet and copy the playtest tra
     - Primary motivation in their words:
 
     INTERFACE
-    - Strongest variant:
-    - Element to borrow from another variant:
+    - First hesitation:
+    - Strongest moment:
     - Confusion or friction:
 
     TRACE
@@ -171,16 +168,17 @@ Do not expand to a second destination until a five-person round meets all core t
 - **Curiosity:** Four of five say they would send Rosie again and name a place, clue, creature, or story they hope to encounter.
 - **Anti-optimization:** No more than one of five describes better quantity, rarity, or efficiency as the primary reason to resend.
 
-### Interface threshold
+### Flow threshold
 
-Do not select a winner by vote alone. Prefer the variant that produces:
+Prefer revisions that produce:
 
 1. The most independent preparation hypotheses.
 2. The clearest Tool-versus-Pack explanations.
 3. The strongest recall of Rosie's story and the headline Find.
 4. The shortest hesitation before a curiosity-driven resend.
 
-If one variant wins comprehension and another wins affection, combine their winning hierarchy only after documenting that trade-off.
+Do not add another screen to solve a comprehension problem until the existing
+place clue, choice copy, return cause, and replay question have each been tested.
 
 ## Failure interpretations
 
@@ -189,7 +187,7 @@ If one variant wins comprehension and another wins affection, combine their winn
 | Tester hunts for percentages              | Preparation language feels like hidden math | Strengthen visible place conditions and verbs                   |
 | Tester misses Rain-Glass                  | Headline Find overwhelms the Near-Discovery | Reduce supporting text and stage the clue separately            |
 | Tester picks Dry Bag only after prompting | Causality is readable but not motivating    | Make loss and future possibility more concrete                  |
-| Tester chooses Day Out for “better loot”  | Durations read as reward tiers              | Rename trip shapes and show different landmarks, not value      |
+| Tester chooses Good Wander for “better loot” | Trip shapes read as reward tiers          | Show different landmarks, not value                             |
 | Tester cannot name the Find               | Object lacks identity or ceremony           | Strengthen name, fiction, silhouette, and Home consequence      |
 | Tester treats Hedge Bell as completion    | Post-Wonder world promise is weak           | Show the opened route and one unresolved relationship           |
 | Tester follows every CTA mechanically     | Interface is solving the game               | Remove solution labels and ask the player to reopen preparation |

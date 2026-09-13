@@ -12,9 +12,9 @@ import { fileURLToPath, URL } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const outputDirectory = mkdtempSync(join(tmpdir(), "oink-rive-web-smoke-"));
-const forbiddenRuntimeMarkers = ["rive-react-native", "RiveReactNativeView"];
+const forbiddenRuntimeMarkers = ["rive-react-native", "RiveReactNativeView", "HybridRiveView", "NitroModules"];
 const approvedWebRuntime = "@rive-app/react-webgl2";
-const nativeImportPattern = /(?:from\s*|require\()\s*["']rive-react-native["']/;
+const nativeImportPattern = /(?:from\s*|require\()\s*["'](?:rive-react-native|@rive-app\/react-native)["']/;
 
 function collectSourceFiles(directory) {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

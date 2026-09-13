@@ -12,133 +12,160 @@
 //   • nothing active — renders null (no clutter)
 //
 // Lives at the top of the Inbox segment in the Friends hub.
+//
+// Audit A-10 ("one concept, three drawings"): the row this file used to
+// hand-roll — Sticker + corner pill + RitualIconWell + sender avatar + a
+// per-row Cleanse pill — is now the shared `EffectCard size="row"`. The Barn
+// strip, this panel and the Hoofprints sheet draw the same object the same way;
+// they differ only in the surface that carries them.
+//
+// Audit A-05: `cleanse_curses` is ONE charge that wipes every active curse, so
+// the panel carries ONE Cleanse control (it used to repeat an identical pill on
+// every curse row) and that control states its cost on its face, in its label,
+// and its consequence in its hint.
 import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Sticker } from "./ui/Sticker";
+import { StyleSheet, View } from "react-native";
+import { Button } from "./ui/Button";
+import { EffectCard } from "./ui/EffectCard";
+import { SectionHeader } from "./ui/SectionHeader";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { RitualIconWell } from "./ui/RitualIconWell";
+import { showToast } from "./ui/Toast";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
-import { effectMeta } from "../utils/activeEffects";
-import {
-	FONTS,
-	WHIMSY,
-	ROW_TILTS,
-	RADII,
-	SPACE,
-	UI_COLORS,
-} from "@/constants/theme";
-import { SectionHeader } from "./ui/SectionHeader";
+import { useRitualCaster, type UseRitualCaster } from "@/hooks/useRitualCaster";
+import { effectMeta, toEffectCardEffect, type Effect } from "../utils/activeEffects";
+import { untilDailyReset } from "@/utils/rituals";
+import { SPACE } from "@/constants/theme";
+
+// What a cleanse costs. One number, spoken on the button's face and again in
+// its accessibility label, so the price is never only in the fine print.
+const CLEANSE_COST = 5;
+// The coin riding the Cleanse button's label — the cap-height match for the
+// small button's 13pt text (`DialogButtonRow` sizes its coin the same way).
+const COIN_SIZE = 13;
+
+// Bless back — the shortest path from "someone blessed you" to "I blessed them
+// back". `my_active_effects` returns `sender_id`, so the Inbox already knows who
+// to reach; before this the answer was Friends → row → sheet → segment → Cast.
+// One door per blessing row, casting today's blessing through the shared caster.
+function BlessBack({
+	effect,
+	caster,
+}: {
+	effect: Effect;
+	caster: UseRitualCaster;
+}) {
+	const [busy, setBusy] = useState(false);
+	const senderId = effect.sender_id;
+	const { senderName } = effectMeta(effect);
+	const usage = caster.usage("bless");
+	const ritual = caster.today("bless");
+	const outcome = senderId ? caster.outcomeFor("bless", senderId) : undefined;
+	const capped = usage?.remaining === 0 || outcome?.kind === "capped";
+	const settled = outcome?.kind === "sent" || outcome?.kind === "done";
+
+	if (!senderId) return null;
+
+	const press = async () => {
+		if (busy) return;
+		setBusy(true);
+		const r = await caster.cast("bless", senderId, senderName);
+		setBusy(false);
+		if (r.kind === "sent") {
+			showToast({ tone: "success", title: r.text });
+		} else if (r.kind === "done") {
+			showToast({
+				tone: "fail",
+				title: `${senderName} already has today's blessing`,
+				text: `Next blessing in ${untilDailyReset()} — one per friend a day.`,
+			});
+		} else if (r.kind === "capped") {
+			showToast({
+				tone: "fail",
+				title: "Today's blessings are spent",
+				text: `Your next is in ${untilDailyReset()}.`,
+			});
+		} else {
+			showToast({ tone: "fail", title: r.text });
+		}
+	};
+
+	const label = capped
+		? usage
+			? `All ${usage.cap} blessings used today`
+			: "No blessings left today"
+		: outcome?.kind === "sent"
+			? `Blessed ${senderName} with ${ritual.name} today`
+			: outcome?.kind === "done"
+				? `${senderName} already has today's blessing; next in ${untilDailyReset()}`
+				: `Bless ${senderName} back`;
+
+	return (
+		<Button
+			variant="gold"
+			size="sm"
+			onPress={press}
+			loading={busy}
+			disabled={capped || settled}
+			accessibilityLabel={label}
+			accessibilityHint={
+				capped || settled
+					? undefined
+					: `Sends today's blessing, ${ritual.name}, straight back — it can't be taken back.`
+			}
+			accessibilityState={{ disabled: busy || capped || settled }}
+			testID={`bless-back-${senderId}`}
+			style={styles.blessBack}
+		>
+			{settled ? "Blessed back" : `Bless ${senderName} back`}
+		</Button>
+	);
+}
 
 export function ActiveEffects() {
-	const { effects, curses, cleanse, formatLeft } = useActiveEffectsContext();
-	// Inline Cleanse pill no longer fires the RPC directly — opens
-	// the shared CleanseModal so a stray tap doesn't instantly burn
-	// 5 snouts. The hook owns the optimistic update + the RPC.
+	const { effects, curses, cleanse } = useActiveEffectsContext();
+	const caster = useRitualCaster();
+	// The Cleanse control no longer fires the RPC directly — it opens the shared
+	// CleanseModal so a stray tap doesn't instantly burn 5 snouts. The hook owns
+	// the optimistic update + the RPC.
 	const [cleanseOpen, setCleanseOpen] = useState(false);
 
 	// Nothing active → render nothing (the empty state is just absence).
 	if (effects.length === 0) return null;
 
+	const cursed = curses.length > 0;
+
 	return (
 		<View>
-			<SectionHeader
-				kicker="left by your friends"
-				title="Hoofprints on you"
-				ruleWidth={132}
-			/>
-			{effects.map((e, i) => {
-				const { blessed, meta, senderName, initial } = effectMeta(e);
-				return (
-					<Sticker
-						key={`${e.source}-${e.kind}-${i}`}
-						color="paper"
-						rotate={ROW_TILTS[i % ROW_TILTS.length]}
-						radius={RADII.md}
-						style={[
-							styles.row,
-							blessed ? styles.rowBless : styles.rowCurse,
-						]}
-					>
-						{/* Corner pill — Blessing (lilac-deep) / Curse (ink).
-						    Anchored top-left so the card's nature reads
-						    instantly even before you parse the icon. */}
-						<View
-							style={[
-								styles.cornerPill,
-								blessed ? styles.cornerPillBless : styles.cornerPillCurse,
-							]}
-						>
-							<Text style={styles.cornerPillText}>
-								{blessed ? "Blessing" : "Curse"}
-							</Text>
-						</View>
-						{/* Icon well — no corner badge here: the corner pill
-						    above already labels the kind in text. */}
-						<RitualIconWell
-							icon={meta?.icon}
-							blessed={blessed}
-							size={44}
-							badge={false}
-						/>
-						<View style={{ flex: 1, minWidth: 0 }}>
-							<Text style={styles.name} numberOfLines={1}>
-								{meta?.name ?? e.kind}
-							</Text>
-							<Text style={styles.blurb} numberOfLines={2}>
-								{meta?.blurb ?? ""}
-							</Text>
-							{/* Sender attribution — small avatar initial + name */}
-							<View style={styles.senderRow}>
-								<View
-									style={[
-										styles.senderAvatar,
-										blessed
-											? styles.senderAvatarBless
-											: styles.senderAvatarCurse,
-									]}
-								>
-									<Text style={styles.senderInitial}>{initial}</Text>
-								</View>
-								<Text style={styles.senderName} numberOfLines={1}>
-									<Text style={styles.senderNameBold}>{senderName}</Text>
-									{blessed ? " blessed you" : " cursed you"}
-								</Text>
-							</View>
-						</View>
-						<View style={styles.rowRight}>
-							<Text
-								style={[
-									styles.countdown,
-									blessed ? styles.cdBless : styles.cdCurse,
-								]}
-							>
-								{formatLeft(e.expires_at, true)}
-							</Text>
-							{/* Per-curse Cleanse pill — opens the shared
-							    CleanseModal as a confirm step. cleanse_curses
-							    is one-shot (wipes every active curse in a
-							    single 5-snout charge). */}
-							{!blessed && (
-								<Pressable
-									onPress={() => setCleanseOpen(true)}
-									hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-									style={({ pressed }) => [
-										styles.inlineCleanseBtn,
-										pressed && { opacity: 0.7 },
-									]}
-								>
-									<SnoutCoin size={12} />
-									<Text style={styles.inlineCleanseBtnText}>
-										Cleanse · 5
-									</Text>
-								</Pressable>
-							)}
-						</View>
-					</Sticker>
-				);
-			})}
-			{cleanseOpen && curses.length > 0 && (
+			<SectionHeader kicker="left by your friends" title="Hoofprints on you" />
+			<View style={styles.list}>
+				{effects.map((e, i) => (
+					<View key={`${e.source}-${e.kind}-${i}`}>
+						<EffectCard effect={toEffectCardEffect(e)} size="row" index={i} />
+						{e.source === "blessing" && <BlessBack effect={e} caster={caster} />}
+					</View>
+				))}
+			</View>
+			{cursed && (
+				<Button
+					variant="gold"
+					size="sm"
+					icon={<SnoutCoin size={COIN_SIZE} />}
+					onPress={() => setCleanseOpen(true)}
+					accessibilityLabel={`Cleanse, ${CLEANSE_COST} snouts`}
+					accessibilityHint={
+						curses.length === 1
+							? "Opens the confirm step. Spends 5 snouts to lift the curse on you."
+							: `Opens the confirm step. Spends 5 snouts to lift all ${curses.length} curses on you.`
+					}
+					accessibilityState={{ disabled: false }}
+					testID="active-effects-cleanse"
+					style={styles.cleanse}
+				>
+					{`Cleanse · ${CLEANSE_COST}`}
+				</Button>
+			)}
+			{cleanseOpen && cursed && (
 				<CleanseModal
 					curses={curses}
 					onDismiss={() => setCleanseOpen(false)}
@@ -150,110 +177,17 @@ export function ActiveEffects() {
 }
 
 const styles = StyleSheet.create({
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 10,
-		paddingHorizontal: SPACE.md,
-		paddingTop: SPACE.lg,
-		paddingBottom: SPACE.md,
-		marginBottom: 10,
-		// Slight overflow allowance for the corner pill so it can hang
-		// above the top border without being clipped.
-		overflow: "visible",
+	list: {
+		gap: SPACE.sm,
 	},
-	rowBless: { borderColor: WHIMSY.sun, borderWidth: 2, backgroundColor: WHIMSY.lilac },
-	rowCurse: { borderColor: WHIMSY.curseGreen, borderWidth: 2, backgroundColor: WHIMSY.cream },
-	// Floating tag — hangs off the top-left of each effect card so the
-	// card's nature (Blessing / Curse) reads before any other parsing.
-	cornerPill: {
-		position: "absolute",
-		top: -10,
-		left: 14,
-		paddingHorizontal: 10,
-		paddingVertical: 2,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 1.5, height: 1.5 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
-		zIndex: 2,
+	cleanse: {
+		alignSelf: "flex-end",
+		marginTop: SPACE.md,
 	},
-	cornerPillBless: { backgroundColor: WHIMSY.lilacDeep },
-	cornerPillCurse: { backgroundColor: WHIMSY.ink },
-	cornerPillText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1,
-		textTransform: "uppercase",
-		color: WHIMSY.paper,
+	// Tucked under the blessing it answers — close enough to read as part of
+	// that row, not as a second action for the whole panel.
+	blessBack: {
+		alignSelf: "flex-end",
+		marginTop: SPACE.xs,
 	},
-	name: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-	blurb: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
-	countdown: { fontFamily: FONTS.whimsy, fontSize: 12 },
-	cdBless: { color: UI_COLORS.warningText },
-	cdCurse: { color: WHIMSY.curseGreen },
-	// Right column for each effect card — stacks the countdown above
-	// the (curse-only) inline Cleanse pill.
-	rowRight: {
-		alignItems: "flex-end",
-		gap: 6,
-	},
-	// Per-curse inline Cleanse pill — gold sun pill with the snout
-	// coin + label.
-	inlineCleanseBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingVertical: 6,
-		paddingHorizontal: 10,
-	},
-	inlineCleanseBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-	},
-	senderRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		marginTop: 6,
-	},
-	senderAvatar: {
-		width: 18,
-		height: 18,
-		borderRadius: 9,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	senderAvatarBless: { backgroundColor: WHIMSY.sun },
-	senderAvatarCurse: { backgroundColor: WHIMSY.sage },
-	senderInitial: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-	},
-	senderName: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		opacity: 0.85,
-		flex: 1,
-		minWidth: 0,
-	},
-	senderNameBold: { fontFamily: FONTS.bodyExtra, opacity: 1 },
 });

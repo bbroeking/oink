@@ -15,7 +15,7 @@
 import { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
-import { AccentNote, CrewPortrait, CrewRow, HandLink, RowStatus, SunPill } from "./CrewRow";
+import { AccentNote, CrewPortrait, CrewRow, HandLink, RowStatus, SunPill } from "./ui";
 import type { UseCrew } from "@/hooks/useCrew";
 import type { JoinableCrew } from "@/utils/crews";
 import { CREW_CAP } from "@/constants/crews";
@@ -89,6 +89,8 @@ export function JoinableSounders({
 									<HandLink
 										onPress={() => takeBack(asked.id)}
 										disabled={busyId !== null}
+										accessibilityLabel={`Take back your ask to ${c.name}`}
+										accessibilityHint="Withdraws the knock; you can ask again later"
 									>
 										take it back
 									</HandLink>
@@ -99,8 +101,15 @@ export function JoinableSounders({
 									// A door you can't knock on yet: at the ask cap, quiet the
 									// button (the hint below says why).
 									disabled={busyId !== null || atAskCap}
+									glyph="arrowRight"
+									accessibilityLabel={`Ask to join ${c.name}`}
+									accessibilityHint={
+										atAskCap
+											? ASK_LIMIT_HINT
+											: "Knocks on this Sounder — a member opens the door"
+									}
 								>
-									{busyId === c.id ? "Asking…" : "ask to join ›"}
+									{busyId === c.id ? "Asking…" : "ask to join"}
 								</SunPill>
 							)
 						}

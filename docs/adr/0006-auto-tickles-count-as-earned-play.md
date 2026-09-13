@@ -1,0 +1,3 @@
+# Auto-Tickles count as earned play
+
+Auto-Tickler activity counts toward `tickles_earned` and competitive standings and awards the normal Snout just like active tickling. It does not advance or preserve Streak, which still requires a manual tickle. The Contraption consumes real regenerated Tickles only above the player's personal cap-minus-five reserve, and its timed service is powered exclusively by helper-specific charge earned from Motes. We accept that an earned random Machine result can affect standings because the point of the Contraption is genuine idle power, not cosmetic convenience; therefore Motes and charges must remain unpurchasable, server-authoritative, duration-bounded, and visible in receipts.

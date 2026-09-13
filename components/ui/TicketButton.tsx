@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -186,9 +185,7 @@ export function TicketButton({
                 <Text style={[styles.actionLabel, { color: colors.text }]}>
                   {visibleLabel}
                 </Text>
-                {loading ? (
-                  <ActivityIndicator size="small" color={colors.text} />
-                ) : showChevron ? (
+                {showChevron && !loading ? (
                   <View style={styles.iconWell}>
                     <Icon
                       name={inactive ? "lock" : "arrowRight"}

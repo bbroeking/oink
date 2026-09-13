@@ -2,8 +2,8 @@
 // tab. Fetches my_weekly_bounties on focus and renders a BountyCard
 // per active bounty.
 import React, { useCallback, useState } from "react";
-import { View, StyleSheet } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View } from "react-native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { rpc } from "@/utils/rpc";
 import { BountyCard, type WeeklyBounty } from "./BountyCard";
 import { ROW_TILTS } from "@/constants/theme";
@@ -49,7 +49,9 @@ export function BountyBoard() {
 	if (loaded && bounties.length === 0) return null;
 
 	return (
-		<View style={styles.wrap}>
+		// No own bottom margin — the season tab's list gap (SPACE.sm) owns the
+		// seam to the next section; a second margin here double-counted it.
+		<View>
 			<SectionHeader
 				kicker="weekly board"
 				title="Bounties"
@@ -67,9 +69,3 @@ export function BountyBoard() {
 		</View>
 	);
 }
-
-const styles = StyleSheet.create({
-	// No own bottom margin — the season tab's list gap (SPACE.sm) owns the
-	// seam to the next section; a second margin here double-counted it.
-	wrap: {},
-});

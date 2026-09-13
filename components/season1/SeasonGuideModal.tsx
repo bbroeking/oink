@@ -7,21 +7,30 @@
 // obfuscation layer from hooks/useHungerMeter: display numbers are the raw
 // server totals × HUNGER_CREDIT_SCALE, so the real (tiny, tunable)
 // thresholds never show and can be retuned mid-season.
+//
+// Chrome: `AdaptiveModalScaffold` + `Sticker` + `DialogCloseRow` — the scaffold
+// owns the Modal, the scrim, the safe-area frame and the scroll path, so the
+// hand-rolled backdrop / card / maxHeight trio is gone [C-09, spec §3.4].
 
 import { useState } from "react";
+import { StyleSheet, View } from "react-native";
 import {
-	Modal,
-	View,
-	Text,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-} from "react-native";
-import { Sticker } from "../ui/Sticker";
-import { Glyph, type GlyphName } from "../ui/Glyph";
-import { Button } from "../ui/Button";
-import { ConfirmDialog } from "../ui/ConfirmDialog";
-import { useUnmanagedModalHold } from "../ui/PopupQueue";
+	AdaptiveModalScaffold,
+	Avatar,
+	BodySm,
+	Button,
+	ConfirmDialog,
+	DialogCloseRow,
+	Hand,
+	Kicker,
+	Label,
+	ListRow,
+	PageTitle,
+	Sticker,
+	Tag,
+	useUnmanagedModalHold,
+	type GlyphName,
+} from "@/components/ui";
 import { CREW_CAP_WORD } from "@/constants/crews";
 import {
 	useHungerMeter,
@@ -30,16 +39,7 @@ import {
 	HUNGER_LEVEL_CREDIT_PREVIEW,
 	formatCredit,
 } from "@/hooks/useHungerMeter";
-import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	RADII,
-	SPACE,
-	STICKER_SHADOW,
-	TYPE,
-	WHIMSY,
-} from "@/constants/theme";
+import { AVATAR_SIZE, RADII, SPACE, TILT } from "@/constants/theme";
 
 const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
@@ -77,7 +77,7 @@ export function SeasonGuideModal({
 	visible: boolean;
 	onDismiss: () => void;
 	/** When set (caller is in a Sounder), a quiet leave action shows in the
-	    footer with a two-tap Alert confirm. */
+	    footer with a two-tap in-world confirm. */
 	onLeave?: () => void;
 }) {
 	// Unmanaged native Modal (season-tab guide, outside the popup queue): hold the
@@ -98,7 +98,12 @@ export function SeasonGuideModal({
 	};
 
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+		<AdaptiveModalScaffold
+			visible={visible}
+			onRequestClose={onDismiss}
+			maxWidth={400}
+			bare
+		>
 			<ConfirmDialog
 				open={leaveConfirm}
 				title="Leave your Sounder?"
@@ -109,153 +114,119 @@ export function SeasonGuideModal({
 				onConfirm={doLeave}
 				onCancel={() => setLeaveConfirm(false)}
 			/>
-			<View style={styles.backdrop}>
-				<Sticker
-					color="paper"
-					rotate={-0.8}
-					radius={20}
-					border={3}
-					style={[styles.card, STICKER_SHADOW]}
-				>
-					<Text style={styles.kicker}>★ the season, in five steps ★</Text>
-					<Text style={styles.headline}>The Season of the Hunger</Text>
+			<Sticker
+				color="paper"
+				rotate={TILT.dialog}
+				radius={RADII.xxl}
+				border={3}
+				style={styles.card}
+			>
+				<DialogCloseRow onPress={onDismiss} label="To the patch" />
+				<Kicker align="center" style={styles.kicker}>
+					the season, in five steps ★
+				</Kicker>
+				<PageTitle align="center" style={styles.headline}>
+					The Season of the Hunger
+				</PageTitle>
 
-					<ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-						{STEPS.map((s, i) => (
-							<View key={s.title} style={styles.stepRow}>
-								<View style={styles.stepGlyph}>
-									<Glyph name={s.g} size={22} />
-								</View>
-								<View style={styles.stepText}>
-									<Text style={styles.stepTitle}>
-										{i + 1}. {s.title}
-									</Text>
-									<Text style={styles.stepLine}>{s.line}</Text>
-								</View>
-							</View>
-						))}
+				{STEPS.map((s, i) => (
+					<View key={s.title} style={styles.stepRow}>
+						<Avatar
+							size={AVATAR_SIZE[1]}
+							fill="cream"
+							glyph={s.g}
+							label={s.title}
+						/>
+						<View style={styles.stepText}>
+							<Label style={styles.stepTitle}>
+								{i + 1}. {s.title}
+							</Label>
+							<BodySm tone="secondary">{s.line}</BodySm>
+						</View>
+					</View>
+				))}
 
-						{/* The ladder — gorged → famished, counted in tickles
-						    reclaimed. He ate the valley's tickles; the barnyard
-						    steals every last one back. */}
-						<Text style={styles.ladderKicker}>★ steal back the tickles ★</Text>
-						{HUNGER_STAGES.map((stage, i) => {
-							const here = meter.available && meter.stageIndex === i;
-							return (
-								<View key={stage} style={[styles.ladderRow, here && styles.ladderRowHere]}>
-									<Text style={[styles.ladderName, here && styles.ladderHereText]}>
+				{/* The ladder — gorged → famished, counted in tickles
+				    reclaimed. He ate the valley's tickles; the barnyard
+				    steals every last one back. */}
+				<Kicker align="center" style={styles.ladderKicker}>
+					steal back the tickles ★
+				</Kicker>
+				<View style={styles.ladder}>
+					{HUNGER_STAGES.map((stage, i) => {
+						const here = meter.available && meter.stageIndex === i;
+						return (
+							<ListRow
+								key={stage}
+								tilt={false}
+								fill={here ? "sun" : "paper"}
+								selected={here}
+								title={
+									<Label>
 										{HUNGER_LEVEL_NAME[stage]}
 										{here ? " — he is here" : ""}
-									</Text>
-									<Text style={[styles.ladderCredit, here && styles.ladderHereText]}>
-										{formatCredit(HUNGER_LEVEL_CREDIT_PREVIEW[i])}
-									</Text>
-								</View>
-							);
-						})}
-						<Text style={styles.ladderFoot}>
-							He ate the valley's tickles. Every dig and blessing pries
-							them back — starve him from Gorged to Famished.
-						</Text>
-					</ScrollView>
+									</Label>
+								}
+								trailing={
+									<Tag
+										label={formatCredit(HUNGER_LEVEL_CREDIT_PREVIEW[i])}
+										tone={here ? "sun" : "paper"}
+									/>
+								}
+							/>
+						);
+					})}
+				</View>
+				<Hand tone="secondary" align="center" style={styles.ladderFoot}>
+					He ate the valley&apos;s tickles. Every dig and blessing pries
+					them back — starve him from Gorged to Famished.
+				</Hand>
 
-					<Button size="md" variant="primary" full onPress={onDismiss}>
-						To the patch
+				<Button
+					size="md"
+					variant="primary"
+					full
+					onPress={onDismiss}
+					style={styles.cta}
+				>
+					To the patch
+				</Button>
+				{onLeave && (
+					<Button
+						size="sm"
+						variant="handLink"
+						onPress={confirmLeave}
+						accessibilityLabel="Leave your Sounder"
+						accessibilityHint="Asks you to confirm before you stop digging with this herd"
+						style={styles.leave}
+					>
+						leave your Sounder ›
 					</Button>
-					{onLeave && (
-						<Pressable onPress={confirmLeave} hitSlop={8} style={({ pressed }) => [styles.leaveRow, pressed && { opacity: 0.6 }]}>
-							<Text style={styles.leaveLink}>leave your Sounder ›</Text>
-						</Pressable>
-					)}
-				</Sticker>
-			</View>
-		</Modal>
+				)}
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
-	},
 	card: {
 		width: "100%",
-		maxWidth: 400,
 		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.lg,
+		paddingBottom: SPACE.lg,
 	},
-	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
-	headline: {
-		...TYPE.pageTitle,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: SPACE.md,
-	},
-	scroll: { maxHeight: 420, marginTop: SPACE.xs, marginBottom: SPACE.md },
+	kicker: { marginBottom: SPACE.xs },
+	headline: { marginBottom: SPACE.md },
 	stepRow: {
 		flexDirection: "row",
 		alignItems: "flex-start",
 		gap: SPACE.md,
 		marginBottom: SPACE.md,
 	},
-	stepGlyph: {
-		width: 36,
-		height: 36,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream,
-		alignItems: "center",
-		justifyContent: "center",
-	},
 	stepText: { flex: 1, minWidth: 0 },
-	stepTitle: {
-		...TYPE.label,
-		fontSize: 14,
-		color: WHIMSY.ink,
-		marginBottom: 1,
-	},
-	stepLine: { ...TYPE.bodySm, fontFamily: FONTS.body, color: WHIMSY.mute },
-	ladderKicker: {
-		...KICKER_TEXT,
-		textAlign: "center",
-		marginTop: SPACE.sm,
-		marginBottom: SPACE.sm,
-	},
-	ladderRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.cream2,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: 6,
-		marginBottom: 5,
-	},
-	ladderRowHere: {
-		borderColor: WHIMSY.ink,
-		borderWidth: 2,
-		backgroundColor: WHIMSY.sun,
-	},
-	ladderName: { flex: 1, ...TYPE.label, color: WHIMSY.ink },
-	ladderCredit: { ...TYPE.hand, fontFamily: FONTS.whimsy, lineHeight: undefined, color: WHIMSY.mute },
-	ladderHereText: { color: WHIMSY.ink },
-	ladderFoot: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: SPACE.sm,
-	},
-	leaveRow: { alignSelf: "center", marginTop: SPACE.sm, paddingVertical: 4 },
-	leaveLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
+	stepTitle: { marginBottom: SPACE.xxs },
+	ladderKicker: { marginTop: SPACE.sm, marginBottom: SPACE.sm },
+	ladder: { gap: SPACE.sm },
+	ladderFoot: { marginTop: SPACE.sm },
+	cta: { marginTop: SPACE.md },
+	leave: { alignSelf: "center", marginTop: SPACE.sm },
 });

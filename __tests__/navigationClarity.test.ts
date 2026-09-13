@@ -37,8 +37,11 @@ describe("first-session clarity", () => {
 	});
 
 	test("the leaderboard uses a descriptive visible label", () => {
-		expect(friendsHub).toContain(
-			'{ key: "board", label: "Rankings", icon: "ranks" }',
+		// The segment defs moved onto `SegmentedControl` (one object per line,
+		// with an accessibility hint), so match the facts rather than the old
+		// single-line literal. [B-06] (2026-09-11)
+		expect(friendsHub).toMatch(
+			/key: "board",\s*\n?\s*label: "Rankings",\s*\n?\s*icon: "ranks"/,
 		);
 		expect(friendsHub).toContain(
 			'board: { kicker: "all-time tickles", title: "Rankings" }',

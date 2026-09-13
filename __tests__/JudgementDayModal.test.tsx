@@ -4,6 +4,7 @@
 
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const mockRpc = jest.fn();
 jest.mock("../utils/supabase", () => ({
@@ -26,9 +27,20 @@ function textOf(tree: TestRenderer.ReactTestInstance): string {
 	return out.join("");
 }
 
+// The ceremony now mounts through AdaptiveModalScaffold, which reads the
+// safe-area insets — so the harness supplies a provider with fixed metrics.
+const METRICS = {
+	frame: { x: 0, y: 0, width: 320, height: 568 },
+	insets: { top: 20, left: 0, right: 0, bottom: 16 },
+};
+
 async function renderAct(node: React.ReactElement) {
 	let r!: TestRenderer.ReactTestRenderer;
-	await act(async () => { r = TestRenderer.create(node); });
+	await act(async () => {
+		r = TestRenderer.create(
+			<SafeAreaProvider initialMetrics={METRICS}>{node}</SafeAreaProvider>
+		);
+	});
 	return r;
 }
 

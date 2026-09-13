@@ -8,7 +8,7 @@
 // render the looming, un-dented boss rather than an error or a blank.
 
 import { useCallback, useEffect, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { rpc } from "@/utils/rpc";
 
 export type HungerStage =

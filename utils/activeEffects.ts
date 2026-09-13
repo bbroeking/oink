@@ -6,6 +6,7 @@
 // Pure helpers live here so they're trivially unit-testable; the
 // stateful hook (useActiveEffects) composes them in `hooks/`.
 
+import type { EffectCardEffect } from "@/components/ui/EffectCard";
 import { rpc } from "./rpc";
 import {
 	BLESSING_META,
@@ -38,6 +39,23 @@ export function effectMeta(e: Effect) {
 	const senderName = e.sender_username ?? (blessed ? "a friend" : "someone");
 	const initial = (e.sender_username ?? "?").slice(0, 1).toUpperCase();
 	return { blessed, meta, senderName, initial };
+}
+
+// Server row → the `EffectCard` display shape. The card renders a blessing or a
+// curse; it does not know `source` / `expires_at` / `sender_username`. Lives
+// beside `effectMeta` because every effect surface needs the same mapping —
+// the Barn strip, the Inbox panel and the Hoofprints sheet each used to derive
+// it their own way (audit A-10).
+export function toEffectCardEffect(e: Effect): EffectCardEffect {
+	const { blessed, meta, senderName } = effectMeta(e);
+	return {
+		kind: blessed ? "bless" : "curse",
+		name: meta?.name ?? e.kind,
+		from: senderName,
+		expiresAt: e.expires_at,
+		icon: meta?.icon,
+		blurb: meta?.blurb,
+	};
 }
 
 // Fetch + cast the live effects on the caller. Always resolves with

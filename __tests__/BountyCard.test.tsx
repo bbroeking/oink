@@ -51,11 +51,13 @@ describe("BountyCard", () => {
 
 	// The redesigned card uses compact copy: "1/3" not "1 / 3", "Claim"
 	// not "Claim reward", and an Icon "check" mark on its own when claimed.
-	test("in-progress shows the progress count + the … placeholder", async () => {
+	// The wave-4 pass moved the count onto the CTA and deleted the "…"
+	// placeholder, which meant both "busy" and "not ready yet" (C-27).
+	test("in-progress shows the progress count, not an ellipsis", async () => {
 		const r = await renderAct(<BountyCard bounty={base} tilt={0} />);
 		const text = textOf(r.root);
 		expect(text).toContain("1/3");
-		expect(text).toContain("…");
+		expect(text).not.toContain("…");
 		act(() => r.unmount());
 	});
 
@@ -78,10 +80,14 @@ describe("BountyCard", () => {
 		act(() => r.unmount());
 	});
 
-	test("progress count clamps to goal even if progress overshoots", async () => {
+	// The count now rides the CTA, so an overshooting bounty reads as ready and
+	// the clamp is guarded on the meter instead — it may never fill past goal.
+	test("progress clamps to goal even if progress overshoots", async () => {
 		const over = { ...base, progress: 9 };
 		const r = await renderAct(<BountyCard bounty={over} tilt={0} />);
-		expect(textOf(r.root)).toContain("3/3");
+		const bar = r.root.findByProps({ accessibilityRole: "progressbar" });
+		expect(bar.props.accessibilityValue).toEqual({ min: 0, max: 3, now: 3 });
+		expect(textOf(r.root)).toContain("Claim");
 		act(() => r.unmount());
 	});
 

@@ -30,12 +30,12 @@ describe("interaction analytics", () => {
 	it("accepts a registered event/surface pair and small allow-listed properties", () => {
 		expect(
 			isValidInteractionEvent({
-				eventName: "visit_stamp_left",
+				eventName: "barn_tickle_succeeded",
 				surface: "visit",
 				targetKind: "pig",
 				targetUserId: "123e4567-e89b-42d3-a456-426614174000",
-				contentId: "heart_stamp",
-				experiment: "guestbook_v1",
+				contentId: "tickle_1",
+				experiment: "visit_v1",
 				properties: { variant: "treatment", count: 1 },
 			})
 		).toBe(true);

@@ -1,25 +1,37 @@
 // "What's new" modal. Opened manually from Me → Settings so release notes
 // remain available without interrupting a login.
+//
+// Rebuilt on the dialog shell (design-system spec §2 row 05, audit E22): the
+// hand-rolled Modal + backdrop + `maxHeight: 380` scroll is now
+// `AdaptiveModalScaffold`, which sizes itself from the live window, respects
+// the safe areas and always gives dense content a scroll path. The only way out
+// used to be a "Got it" button below that scroll — a long release could bury
+// its own exit — so the scaffold's `DialogCloseRow` rides above the scroll and
+// a backdrop tap dismisses too. Each note is a `ListRow`, so the list reads as
+// scrapbook rather than as a bulleted spec.
+//
+// `visible` / `onClose` are unchanged: Account.tsx drives both.
 import React from "react";
-import {
-	Modal,
-	View,
-	Text,
-	Image,
-	StyleSheet,
-	Pressable,
-	ScrollView,
-} from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Sticker } from "./ui/Sticker";
-import { Icon, type IconName } from "./ui/Icon";
+import {
+	AdaptiveModalScaffold,
+	Avatar,
+	Button,
+	Icon,
+	Kicker,
+	ListRow,
+	SectionTitle,
+	T,
+	type IconName,
+} from "./ui";
 import { releaseIcon, releaseIconName } from "../constants/emojiArt";
 import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	WHIMSY,
+	ART_SIZE,
+	AVATAR_SIZE,
+	PAGE_PAD,
+	SPACE,
+	UI_COLORS,
 } from "@/constants/theme";
 import {
 	currentRelease,
@@ -31,6 +43,34 @@ interface Props {
 	visible: boolean;
 	release?: ReleaseNote;
 	onClose: () => void;
+}
+
+// The print marks a release note may carry as typography. Spec §6: ★ ✦ · are
+// typography, ✓ ✕ ♥ are semantic — anything outside this list falls back to ✦
+// rather than rendering the authored emoji.
+const PRINT_GLYPHS = ["★", "✦", "♥", "✓", "✕", "•", "→"];
+
+// The mark on a note's row: art PNG first, then a fitting vector Icon, then a
+// print glyph — never a raw emoji codepoint.
+function NoteMark({ emoji, title }: { emoji?: string; title: string }) {
+	const art = releaseIcon(emoji);
+	const iconName = releaseIconName(emoji) as IconName | null;
+	const printGlyph = emoji && PRINT_GLYPHS.includes(emoji) ? emoji : "✦";
+	return (
+		<Avatar size={AVATAR_SIZE[0]} fill="paper" label={title}>
+			{art ? (
+				<Image source={art} style={styles.mark} resizeMode="contain" />
+			) : iconName ? (
+				<Icon
+					name={iconName}
+					size={ART_SIZE.glyphSm}
+					color={UI_COLORS.textPrimary}
+				/>
+			) : (
+				<T role="cardTitle">{printGlyph}</T>
+			)}
+		</Avatar>
+	);
 }
 
 export function ReleaseNotesModal({
@@ -45,129 +85,60 @@ export function ReleaseNotesModal({
 		onClose();
 	};
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-			<View style={styles.backdrop}>
-				<View style={styles.card}>
-					<Sticker color="paper" rotate={-1} radius={18} style={styles.sticker}>
-						<Text style={styles.kicker}>★ what's new</Text>
-						<Text style={styles.headline}>{release.headline}</Text>
-						<Text style={styles.dateText}>v{release.version} · {release.date}</Text>
-						<ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
-							{release.items.map((it, i) => {
-								// Resolve the leading glyph WITHOUT ever rendering a
-								// raw emoji: art PNG first, then a fitting vector Icon,
-								// then a print glyph (keep the design glyphs the note
-								// already carries — ✦ ★ etc. — and ★-fallback the rest).
-								const art = releaseIcon(it.emoji);
-								const iconName = releaseIconName(it.emoji);
-								const PRINT_GLYPHS = ["★", "✦", "♥", "✓", "✕", "•", "→"];
-								const printGlyph =
-									it.emoji && PRINT_GLYPHS.includes(it.emoji)
-										? it.emoji
-										: "✦";
-								return (
-								<View key={i} style={styles.item}>
-									<View style={styles.emojiWrap}>
-										{art ? (
-											<Image source={art} style={styles.emojiImg} />
-										) : iconName ? (
-											<Icon
-												name={iconName as IconName}
-												size={20}
-												color={WHIMSY.ink}
-											/>
-										) : (
-											<Text style={styles.emoji}>{printGlyph}</Text>
-										)}
-									</View>
-									<View style={{ flex: 1, minWidth: 0 }}>
-										<Text style={styles.itemTitle}>{it.title}</Text>
-										<Text style={styles.itemBody}>{it.body}</Text>
-									</View>
-								</View>
-								);
-							})}
-						</ScrollView>
-						<Pressable
-							onPress={handleClose}
-							style={({ pressed }) => [
-								styles.gotItBtn,
-								pressed && { opacity: 0.85 },
-							]}
-						>
-							<Text style={styles.gotItText}>Got it</Text>
-						</Pressable>
-					</Sticker>
-				</View>
+		<AdaptiveModalScaffold
+			visible={visible}
+			onRequestClose={handleClose}
+			showCloseButton
+			closeLabel="Close what's new"
+			dismissOnBackdrop
+			testID="release-notes"
+			contentContainerStyle={styles.content}
+		>
+			<Kicker>what's new</Kicker>
+			<SectionTitle accessibilityRole="header">{release.headline}</SectionTitle>
+			<T role="kicker" tone="secondary" style={styles.dateLine}>
+				v{release.version} · {release.date}
+			</T>
+			<View style={styles.items}>
+				{release.items.map((it, i) => (
+					<ListRow
+						key={i}
+						index={i}
+						leading={<NoteMark emoji={it.emoji} title={it.title} />}
+						title={it.title}
+						sub={it.body}
+					/>
+				))}
 			</View>
-		</Modal>
+			<Button
+				variant="lilac"
+				onPress={handleClose}
+				style={styles.gotIt}
+				accessibilityHint="Closes what's new and marks this release read."
+			>
+				Got it
+			</Button>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		padding: 18,
-		backgroundColor: MODAL_BACKDROP_BG,
+	content: {
+		paddingHorizontal: PAGE_PAD,
+		paddingBottom: PAGE_PAD,
 	},
-	card: { width: "100%", maxWidth: 420 },
-	sticker: { paddingHorizontal: 18, paddingVertical: 18, ...STICKER_SHADOW },
-	kicker: { ...KICKER_TEXT, marginBottom: 4 },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		marginBottom: 2,
+	dateLine: {
+		marginBottom: SPACE.md,
 	},
-	dateText: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginBottom: 12,
+	items: {
+		gap: SPACE.sm,
 	},
-	item: {
-		flexDirection: "row",
-		gap: 10,
-		paddingVertical: 8,
+	mark: {
+		width: ART_SIZE.glyphSm,
+		height: ART_SIZE.glyphSm,
 	},
-	emojiWrap: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	emoji: { fontSize: 18 },
-	emojiImg: { width: 26, height: 26, resizeMode: "contain" },
-	itemTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
-	itemBody: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		lineHeight: 18,
-		marginTop: 2,
-	},
-	gotItBtn: {
-		marginTop: 14,
-		paddingHorizontal: 22,
-		paddingVertical: 11,
-		borderRadius: 12,
-		backgroundColor: WHIMSY.lilac,
+	gotIt: {
+		marginTop: SPACE.lg,
 		alignSelf: "center",
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	gotItText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		letterSpacing: 0.4,
 	},
 });

@@ -1,4 +1,9 @@
-# Pair Flames — UI Design Brief
+# Pair Flames — superseded
+
+This brief is retained as historical art direction. The 2026-08-29 founder
+decision replaced Pair Flames with visit-specific, either-friend Visit Streaks.
+Use `docs/design/visit-streaks-ui.md` for current behavior; the staged flame art
+and matching milestone-cosmetic direction below remain useful visual source.
 
 > Shaped 2026-07-15 with the founder (flame home = friend rows · milestones =
 > art stages AND worn cosmetics · lapse tone = soft ember trace). Companion to

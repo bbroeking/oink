@@ -19,6 +19,14 @@
 //   import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 //   const coopDig = useFeatureFlag("coop_dig");
 
+// Mote Machine visibility. The wallet, credit trigger, and spin receipts stay
+// intact while this is false so Shimmer Pockets can keep accruing Motes for a
+// later relaunch. Player-facing Mote copy, entry points, and direct route access
+// all gate on this single flag.
+// Hidden 2026-09-11 after the UI audit (finding D-06: `MoteWageringScreen` fails
+// design specificity) pending a rebuild on the design-system primitives.
+export const MOTE_MACHINE_VISIBLE = false;
+
 // Slop Club / premium-pass PURCHASE CTAs. Flipped live 2026-07-17: the
 // storefront is real — RevenueCat App Store app + appl_ key wired,
 // ASC products (monthly/yearly/season_pass) staged to ride the 1.3
@@ -33,3 +41,21 @@ export const PURCHASES_LIVE = true;
 // lit for everyone in 1.3 (build 149). The flag is gone; the coach-mark's only
 // remaining gates are the per-install seen-stamp and the Season-tab "join a
 // Sounder" step. See hooks/useJoinSpotlight.ts.
+
+// Slop Club Lounge visibility (`app/lounge.tsx` — the walkable members' field:
+// tap-to-walk Rosie, realtime peers, emotes, the two-pig seesaw).
+//
+// Dark-launched 2026-09-11 (wave 4, route decision). The screen is finished
+// enough to walk around in and is still being built — the lounge sprite
+// pipeline is live work — so it is NOT retired: the route's body stays, and
+// this flag is the one switch that opens it. Until it flips, `/lounge` redirects
+// to Shop (no entry point routes here today, so only a deep link can arrive).
+// Serves **Connect** — the Lounge exists so members can be in one place at the
+// same time and wave at each other; it ships when that reads as ours, and not
+// as a half-drawn field, which is the same bar the Mote Machine was held to.
+export const LOUNGE_VISIBLE = false;
+
+// Personal Barn housing ships to everyone in the next binary. The legacy
+// server habitat flag is intentionally not used by this client, so old builds
+// remain dark until players upgrade. No tester override is required.
+export const HABITAT_VISIBLE = true;

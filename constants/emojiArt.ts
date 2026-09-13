@@ -43,6 +43,8 @@ export const ACHIEVEMENT_ICON: Record<string, number> = {
 	first_truffle_heirloom: require("../assets/images/uniques/first_truffle.png"),
 	thin_portrait_heirloom: require("../assets/images/uniques/thin_portrait.png"),
 	burrow_book_complete: require("../assets/images/uniques/tiny_crown.png"),
+	// A Feeding bell for answering every possible weekly call to the patch.
+	every_last_feeding: require("../assets/images/emoji/bell.png"),
 };
 
 export function achievementIcon(id: string | null | undefined): number {

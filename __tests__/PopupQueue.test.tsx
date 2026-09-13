@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/globals, react-hooks/immutability -- probes expose queue handles to the harness */
 // PopupQueue state-machine tests. The queue must SERIALIZE every native-modal
 // presentation: a slot's visible may only flip true after the previously
 // presented modal was hidden AND the full POPUP_HANDOFF_GAP_MS drain elapsed —

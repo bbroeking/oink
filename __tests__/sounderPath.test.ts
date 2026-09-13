@@ -17,7 +17,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 }));
 // The hook side-imports these; stub the module boundary so importing
 // deriveSounderStep doesn't drag in native deps.
-jest.mock("@react-navigation/native", () => ({ useFocusEffect: jest.fn() }));
+jest.mock("expo-router/react-navigation", () => ({ useFocusEffect: jest.fn() }));
 jest.mock("../utils/supabase", () => ({
 	supabase: { auth: { getSession: jest.fn() } },
 }));

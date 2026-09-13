@@ -8,6 +8,8 @@
 // callers pass the same flag here (per-user dev overrides can preview the
 // S1 art but the server's cast follows the global — cosmetic-only skew).
 
+import { formatHM } from "./duration";
+
 export type BlessingKind =
 	| "warm_tea"
 	| "sun_beam"
@@ -157,4 +159,20 @@ export function dailyRitual(mode: RitualMode, d: Date = new Date(), s1 = false) 
 	}
 	const kind = dailyCurseKind(d);
 	return { kind, ...CURSE_META[kind] };
+}
+
+// What `dailyRitual` hands back: the day's kind plus its display meta.
+export type TodayRitual = { kind: BlessingKind | CurseKind } & RitualMeta;
+
+// Rituals reset at UTC midnight (the daily cap keys on the UTC date). "7h 23m"
+// until you can bless/curse again — a snapshot taken when the caller renders.
+// Lives here rather than in RitualPicker because the friend-row doors, the
+// picker and the Inbox all speak the same reset.
+export function untilDailyReset(d: Date = new Date()): string {
+	const next = Date.UTC(
+		d.getUTCFullYear(),
+		d.getUTCMonth(),
+		d.getUTCDate() + 1
+	);
+	return formatHM(next - d.getTime());
 }

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
+import { useFocusEffect } from "expo-router/react-navigation";
 import {
 	View,
 	StyleSheet,
@@ -7,11 +8,10 @@ import {
 	Platform,
 	SafeAreaView,
 	Pressable,
-	Text,
 	Animated,
 	AppState,
+	Share,
 } from "react-native";
-import Svg, { Polygon, Rect, Line } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -21,25 +21,40 @@ import { observeFieldGuide, observeSnouts } from "@/utils/fieldGuide";
 import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/crews";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
-import { Icon } from "./ui/Icon";
-import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
-import { usePopupSlot, POPUP_TEARDOWN_MS } from "./ui/PopupQueue";
-import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
-import { Sticker, Tape } from "./ui/Sticker";
 import {
-  WHIMSY,
-  FONTS,
-  SPACE,
-  PAGE_PAD,
-  SHADOW_SM,
-  RADII,
-  COLORS,
+	BarnOverlay,
+	Glyph,
+	glyphSource,
+	Hand,
+	Icon,
+	Label,
+	PageBackground,
+	POPUP_TEARDOWN_MS,
+	Sticker,
+	T,
+	Tag,
+	Tape,
+	usePopupActive,
+	usePopupSlot,
+	type GlyphName,
+} from "./ui";
+import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
+import {
+	AVATAR_SIZE,
+	BORDER,
+	MOTION,
+	PAGE_PAD,
+	PRESSED,
+	RADII,
+	SHADOW_SM,
+	SPACE,
+	TAP_MIN,
+	TILT,
+	WHIMSY,
 } from "@/constants/theme";
+import { MOTION_DURATION, useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { HAT_IMAGES } from "@/constants/hats";
-import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
-import { BarnOverlay } from "./ui/BarnOverlay";
-import { BarnUpdatesTray } from "./BarnUpdatesTray";
 import { BarnBountyChip } from "./BarnBountyChip";
 import {
 	alignmentLabel,
@@ -48,21 +63,33 @@ import {
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
+import {
+	barnTickleTicketFontSize,
+	formatBarnTickleTotal,
+} from "@/utils/tickleDisplay";
 import { formatClockMS } from "@/utils/duration";
 import { wallowRegenPercent, wallowWaitReductionLabel } from "@/utils/wallow";
+import { BarnStructure } from "./BarnStructure";
+import { HabitatDoorTransition } from "./habitat/HabitatDoorTransition";
+import { useBarnThreshold } from "@/hooks/useBarnThreshold";
+import { useHabitatAccount } from "@/hooks/useHabitatAccount";
+import { useHabitatJournal } from "@/hooks/useHabitatJournal";
 import { TruffleButton } from "./TruffleButton";
 import { BuryTruffleSheet } from "./BuryTruffleSheet";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
+import { useDigEntry } from "@/hooks/useDigEntry";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
 import { useActiveEffectsContext } from "@/hooks/ActiveEffectsProvider";
 import { usePigRoster } from "@/hooks/usePigRoster";
-import { BarnGuestbook } from "./BarnGuestbook";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { AdRefillOffer } from "@/features/rewarded-ads/AdRefillOffer";
 import { createAdMobRewardedProvider } from "@/features/rewarded-ads/admobAdapter";
 import { createSupabaseRewardedAdBackend } from "@/features/rewarded-ads/supabaseAdapter";
+import { isSixSevenTickleMilestone } from "@/utils/sixSeven";
+import { runOptimisticHomeTickle } from "@/utils/homeTickleConnection";
+import { useHomeHabitatPigPublisher } from "@/hooks/useHabitatPigBridge";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
 // useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
@@ -77,6 +104,87 @@ const laughSound2 = require("../assets/sounds/laugh_2.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Drawing geometry, not spacing. Each of these is the size of a PICTURE — an
+// SVG's own frame, a particle sprite, the square the bridged pig is staged in —
+// so it takes a name here rather than borrowing a step off the spacing scale.
+// The tickle particle rides the portrait-mark frame so it reads at the same
+// weight as the glyphs on the stat tickets.
+const PARTICLE_SIZE = AVATAR_SIZE[1];
+const PARTICLE_HALF = PARTICLE_SIZE / 2;
+// The square the Habitat bridge stages the pig in.
+const PIG_STAGE = 300;
+// Where the barn's SPRITE BOX sits above the bottom of `swipeContainer`, chosen
+// so the barn's walls stand on the same ground line as Rosie's trotters — one
+// horizon, not two things floating at two heights. Measured off the frames
+// rather than eyeballed:
+//   • `swipeContainer`'s only child is SwipeElement, whose container carries
+//     `marginVertical: SPACE.xl` (24) around a 300×300 stage — so the stage's
+//     bottom edge already sits 24pt up from the container's bottom.
+//   • Rosie is `contain`-fit inside that stage with a hair of baked transparent
+//     margin under her trotters (~10pt at 300 scale) → her foot line ≈ 34pt up.
+//   • `BARN_STRUCTURE_SIZE` used to be the in-code drawing (114×104) plus 4pt of
+//     sticker-shadow room, with the walls ending 2pt short of the art's own
+//     bottom — so the barn's baseline sat ≈6pt above the bottom of its box.
+// 34 − 6 = 28 would put the baseline exactly on her trotters — on a 17 Pro that
+// landed 11pt low (Rosie's feet sit higher in her stage than the paper math
+// said) and the tab bar cropped the walls. Measured off the screenshot instead:
+// 48 set the base a hair above her foot line, which is also the perspective
+// read we want (the barn stands behind her, a step up the hill) and clears the
+// tab bar. A drawing measurement, not a spacing step, so it carries its own
+// name.
+// PAINTED ART, +6: `barn_body.png`'s alpha bbox is the FULL 354×333 frame (no
+// transparent margin under the sill, checked with PIL), and the sprite box is
+// now the body itself — so the baseline moved from ≈6pt above the box bottom to
+// 0. 48 + 6 = 54 keeps the painted barn standing on exactly the horizon the
+// drawn one did. (2026-09-12)
+const BARN_GROUND_OFFSET = 54;
+// Where the dig button parks, measured off the barn so the two corner objects
+// share one horizon: the barn's baseline (BARN_GROUND_OFFSET) plus the art up to
+// its roof band (the painted eaves flare ≈59pt up the 111pt body; 78 clears
+// them, so the button rides just off the roofline rather than on it). That puts the
+// button opposite the roofline, clear of the barn on the left, clear of the tab
+// bar below, and high enough on the right that it rides the empty margin beside
+// Rosie's stage rather than her body. Drawing measurements, not spacing steps.
+const DIG_BUTTON_INSET = BARN_GROUND_OFFSET + 78;
+// Above the pig: the button is a control sitting in front of the scene, and a
+// tap in that corner must be a dig, not a tickle.
+const DIG_BUTTON_Z = 4;
+// The truffle riding the button — art, so it takes a picture size.
+const DIG_GLYPH_SIZE = 24;
+// Reduce Motion: one glyph, fading in place, for this long. [A-07]
+const REST_FLOAT_MS = 600;
+// Mark sizes on the stat ticket + the toast. A glyph is art, so its size is a
+// picture size, not a spacing step: the coin's chip, the streak flames beside
+// the numeral, the tiny flame on the DAYS badge, the toast's heart.
+const COIN_GLYPH = 20;
+const STREAK_GLYPH = 11;
+const TOAST_GLYPH = 18;
+const RECOVERY_ICON = 20;
+// The strip of tape pinning each ticket to the scene.
+const TAPE_W = 56;
+const TAPE_H = 16;
+// The streak stamp's corner geometry. It is pressed onto the ticket's top-right
+// EDGE — outside the card on both axes — because that is the whole point of the
+// direction: a stamp overlapping the corner can never add a row to the card, so
+// the two tickets keep one height however long the streak runs. Drawing
+// measurements (a mark's placement), not spacing steps. (2026-09-12)
+// The ticket's height floor: numeral line + two-line kicker + the card's
+// vertical padding, so a one-line and a two-line ticket read as one pair. A
+// drawing measurement, not a spacing step. (2026-09-12)
+const TICKET_MIN_HEIGHT = 92;
+const STAMP_TILT = 6;
+const STAMP_TILT_DEG = `${STAMP_TILT}deg`;
+const STAMP_TOP = -12;
+const STAMP_RIGHT = -8;
+// Above the card it is stamped on, so the corner it covers is a share, not a
+// tickle-bank breakdown.
+const STAMP_Z = 5;
+// How far above its resting place the toast starts (and returns to). A travel
+// distance, not a margin.
+const TOAST_OFFSET = -20;
+// The toast card's scrapbook angle — the first step of the shared row tilt.
+const TOAST_TILT = TILT.row[0];
 
 // ── HeartFloats ────────────────────────────────────────────────
 // Tap-feedback particles that drift up + fade out above the pig.
@@ -106,6 +214,11 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 		};
 		const [floats, setFloats] = useState<Float[]>([]);
 		const nextId = useRef(0);
+		// The burst is decoration. Under Reduce Motion it collapses to ONE glyph
+		// that fades in place: the tap keeps a visible payoff, it just stops
+		// drifting, spinning and scaling. [A-07]
+		const motion = useMotionPolicy();
+		const decorative = motion.allowDecorativeMotion;
 
 		// One tap spawns a HANDFUL — staggered emit so they trickle
 		// out rather than appearing as a solid block. Spread, rise,
@@ -113,17 +226,23 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 		// the burst doesn't read as a clone army.
 		React.useImperativeHandle(ref, () => ({
 			spawn: () => {
-				const burstSize = 7 + Math.floor(Math.random() * 3); // 7–9 per tap
+				// 7–9 per tap while decorative motion is allowed; exactly one,
+				// still and centred, at rest.
+				const burstSize = decorative ? 7 + Math.floor(Math.random() * 3) : 1;
 				const burst = Array.from({ length: burstSize }, (_, index) => ({
 					id: nextId.current++,
-					dx: Math.random() * 160 - 80,
-					rise: -(95 + Math.random() * 45),
-					rot: Math.random() * 50 - 25,
-					scaleMax: 0.85 + Math.random() * 0.45,
-					duration: 950 + Math.floor(Math.random() * 350),
+					dx: decorative ? Math.random() * 160 - 80 : 0,
+					rise: decorative ? -(95 + Math.random() * 45) : 0,
+					rot: decorative ? Math.random() * 50 - 25 : 0,
+					scaleMax: decorative ? 0.85 + Math.random() * 0.45 : 1,
+					duration: motion.duration(
+						950 + Math.floor(Math.random() * 350),
+						REST_FLOAT_MS,
+					),
 					char: Math.random() < 0.1 ? "✦" : "♥",
 					anim: new Animated.Value(0),
-					stagger: index === 0 ? 0 : Math.floor(Math.random() * 120),
+					stagger:
+						decorative && index > 0 ? Math.floor(Math.random() * 120) : 0,
 				}));
 				const burstIds = new Set(burst.map((particle) => particle.id));
 
@@ -153,7 +272,9 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 				{floats.map((f) => {
 					const translateY = f.anim.interpolate({
 						inputRange: [0, 0.15, 1],
-						outputRange: [0, -12, f.rise],
+						// At rest `rise` is 0 and the little lift goes with it, so the
+						// glyph holds its spot and only the opacity moves.
+						outputRange: [0, decorative ? -12 : 0, f.rise],
 					});
 					const opacity = f.anim.interpolate({
 						inputRange: [0, 0.15, 0.85, 1],
@@ -161,7 +282,9 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 					});
 					const scale = f.anim.interpolate({
 						inputRange: [0, 0.15, 1],
-						outputRange: [0.5, f.scaleMax, f.scaleMax * 0.9],
+						outputRange: decorative
+							? [0.5, f.scaleMax, f.scaleMax * 0.9]
+							: [1, 1, 1],
 					});
 					// Equipped tickle-particle path: render the image
 					// instead of the typographic glyph. Fall back to
@@ -218,6 +341,8 @@ function PaperTicket({
 	subValue,
 	onPress,
 	ribbon,
+	streak,
+	onShareStreak,
 }: {
 	label: string;
 	value: string;
@@ -226,65 +351,150 @@ function PaperTicket({
 	chipGlyph?: GlyphName;
 	subValue?: string;
 	onPress?: () => void;
+	streak?: number;
+	onShareStreak?: () => void;
 	// Small sun pill hanging off the ticket's bottom edge — a transient
 	// state tag on this stat (e.g. the lucky-pig window on the tickle
 	// bank). Anchored to the card so it never floats over the scene.
 	ribbon?: string;
 }) {
 	const Wrap: React.ElementType = onPress ? Pressable : View;
+	// The ticket numeral steps down as the total grows so six and seven digits
+	// still fit on one line without shrink-to-fit. The role is `display`
+	// (Caprasimo); only the step is computed, and the line box follows it.
+	const valueSize = barnTickleTicketFontSize(value);
+	// The whole ticket is the target when it carries an `onPress`, so it
+	// announces the stat it is reporting rather than letting VoiceOver read the
+	// numeral, the unit and the streak badge as three loose strings.
+	const spokenValue = [
+		label.toLowerCase(),
+		value,
+		subValue,
+		streak && streak > 0 ? `${streak} day streak` : "",
+	]
+		.filter(Boolean)
+		.join(" ");
 	return (
-		<Wrap onPress={onPress} style={styles.ticketWrap}>
+		<Wrap
+			onPress={onPress}
+			accessibilityRole={onPress ? "button" : undefined}
+			accessibilityLabel={onPress ? spokenValue : undefined}
+			accessibilityHint={
+				onPress ? "Shows when your next tickle arrives" : undefined
+			}
+			style={styles.ticketWrap}
+		>
 			<Tape
 				color={tapeColor}
 				rotate={-6 + rotate}
-				width={56}
-				height={16}
+				width={TAPE_W}
+				height={TAPE_H}
 				style={styles.tape}
 			/>
-      <Sticker
-        color="paper"
-        rotate={rotate}
-        radius={RADII.md}
-        style={styles.ticket}
-      >
+			<Sticker
+				color="paper"
+				rotate={rotate}
+				radius={RADII.md}
+				style={styles.ticket}
+			>
+				{/* Vertically centred, and the card is stretched to its partner's
+				    height by `statsRow` — so a one-line ticket and a two-line one
+				    read as a matched pair instead of a tall card beside a short
+				    one. (2026-09-12) */}
 				<View style={styles.ticketInner}>
 					<View style={styles.coin}>
-						<Glyph name={chipGlyph} size={20} />
+						<Glyph name={chipGlyph} size={COIN_GLYPH} />
 					</View>
 					<View style={{ flex: 1, minWidth: 0 }}>
-            <View
-              style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}
-            >
-							<Text style={styles.ticketValue}>{value}</Text>
-              {subValue && <Text style={styles.ticketSub}>{subValue}</Text>}
+						{/* No flames flank the numeral. On a two-up ticket the value row
+						    has ≈90pt; flame + numeral + flame + "/ 25" needed ≈130, and
+						    the numeral was the only thing allowed to shrink, so a streak
+						    turned "24" into "2..". The fire lives on the corner stamp,
+						    which is the streak's own control and is out of this column
+						    entirely; the numeral is the tickle bank and never gives up a
+						    digit. (2026-09-12) */}
+						<View style={styles.ticketValueRow}>
+							<T
+								role="display"
+								style={[
+									styles.ticketValue,
+									{ fontSize: valueSize, lineHeight: valueSize },
+								]}
+								numberOfLines={1}
+							>
+								{value}
+							</T>
+							{subValue && (
+								<T role="handLg" tone="secondary">
+									{subValue}
+								</T>
+							)}
 						</View>
-						<Text style={styles.ticketLabel}>{label}</Text>
+						<T role="kickerPill" style={styles.ticketLabel}>
+							{label}
+						</T>
 					</View>
 				</View>
+				{/* THE STREAK IS A CORNER STAMP. It used to hang under the label,
+				    which grew the right ticket a row taller than the left one and
+				    left the pair lopsided. Stamped on the corner it overlaps the
+				    card's own edge instead, so the fire stays loud and the card's
+				    height stops depending on whether a streak is running.
+				    `Sticker` sets no `overflow`, so nothing clips it. (2026-09-12) */}
+				{streak && streak > 0 ? (
+					<Pressable
+						onPress={(event) => {
+							event.stopPropagation();
+							onShareStreak?.();
+						}}
+						disabled={!onShareStreak}
+						hitSlop={6}
+						accessibilityRole="button"
+						accessibilityLabel={`Share your ${streak}-day tickle streak`}
+						accessibilityHint="Opens the share sheet with your streak"
+						style={({ pressed }) => [
+							styles.streakStamp,
+							pressed && styles.streakStampPressed,
+						]}
+					>
+						<View style={styles.streakStampRow}>
+							<Glyph name="flame" size={STREAK_GLYPH} />
+							<Label>
+								{streak} DAY{streak === 1 ? "" : "S"}
+							</Label>
+						</View>
+					</Pressable>
+				) : null}
 			</Sticker>
+			{/* The lucky / wallow ribbon is the read-only capsule, so the pill, its
+			    ink outline, its small shadow and its label role all come from the
+			    one Tag drawing instead of a fifth hand-rolled pill. */}
 			{ribbon && (
-        <View
-          style={[
-            styles.ticketRibbon,
-            { transform: [{ rotate: `${rotate * 0.6}deg` }] },
-          ]}
-        >
-					<Glyph name="sparkle" size={11} />
-					<Text style={styles.ticketRibbonText}>{ribbon}</Text>
-				</View>
+				<Tag
+					label={ribbon}
+					tone="sun"
+					glyph="sparkle"
+					style={[
+						styles.ticketRibbon,
+						{ transform: [{ rotate: `${rotate * 0.6}deg` }] },
+					]}
+				/>
 			)}
 		</Wrap>
 	);
 }
 
-export default function Barn() {
+export default function Barn({ interiorPigOnly = false, bridgeFallback = false }: { interiorPigOnly?: boolean; bridgeFallback?: boolean } = {}) {
+	// Every duration on this screen is run past the policy, so a player with
+	// Reduce Motion on gets the same information without the travel. [A-07]
+	const motion = useMotionPolicy();
+	const habitatEnabled = useFeatureFlag("habitat");
 	const rewardedAdsEnabled = useFeatureFlag("rewarded_ads");
 	const rewardedAdBackend = React.useMemo(createSupabaseRewardedAdBackend, []);
 	const rewardedAdProvider = React.useMemo(createAdMobRewardedProvider, []);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
-	// Last counter value we celebrated a six-seven for (in-session guard; the
-	// cross-launch guard is AsyncStorage seen_67_at). Number, not boolean,
-	// since the egg now fires at EVERY x67 milestone (67, 167, 267, …).
+	// Last tickle total celebrated in this session. The egg fires only when the
+	// player lands exactly on 67 + (1,000 × n); jumping across one misses it.
 	const sixSevenPromptedRef = useRef<number | null>(null);
 	// Tracks the previous-seen alignment_score for the in-app toast on
 	// every shift. The server-side `shift_alignment` push covers the
@@ -298,6 +508,7 @@ export default function Barn() {
 
 	const [wallowCount, setWallowCount] = useState(0);
   const pigRoster = usePigRoster();
+  const popupActive = usePopupActive();
 
 	// Active daily-ritual effects — drive the overlay + the tap loop.
 	// Shared via ActiveEffectsProvider (one instance for the whole tab
@@ -347,6 +558,13 @@ export default function Barn() {
 	} = useHomeStats({
 		onAlignmentLoaded: setAlignment,
 	});
+	// React state updates on the tap, but a ref is the synchronous admission
+	// gate for a high-latency burst. Without it, several presses can all read the
+	// same pre-render balance and start mutations that the server must reject.
+	const ticklesAvailableRef = useRef(stats.itemCount);
+	useEffect(() => {
+		ticklesAvailableRef.current = stats.itemCount;
+	}, [stats.itemCount]);
 
 	// useAudioPlayer is a hook, so each variant gets its own top-level
 	// call. Bundled into an array below for random-pick playback.
@@ -360,9 +578,49 @@ export default function Barn() {
 		onPress?: () => void;
 	} | null>(null);
 	const toastOpacity = useRef(new Animated.Value(0)).current;
-	const toastY = useRef(new Animated.Value(-20)).current;
+	const toastY = useRef(new Animated.Value(TOAST_OFFSET)).current;
 	// Heart-particle ref — imperative spawn on successful tickle.
 	const heartFloatsRef = useRef<HeartFloatsHandle>(null);
+	// The Exterior's doorway. `useBarnThreshold` owns the sequencing (sprite
+	// doors → threshold panels → push, and the reopen on the way back); Barn owns
+	// the two things it can't: where the route goes and what the tap feels like.
+	const { id: habitatAccountId } = useHabitatAccount();
+	// Beckon source: the acquisition journal's unacknowledged New items — the
+	// same hook the interior reads, so both surfaces agree on what "new" means.
+	// It fetches once per focus of this tab (its own useFocusEffect), which is the
+	// cost of the barn knowing there is something waiting inside.
+	// `interiorPigOnly` is the bridge's pig-only fallback render: no barn on
+	// screen, so it must not pay for the journal (the interior already has one).
+	const journal = useHabitatJournal(
+		habitatEnabled && !interiorPigOnly ? habitatAccountId : null,
+	);
+	const threshold = useBarnThreshold({
+		push: useCallback(
+			() => router.push({ pathname: "/barn-interior", params: { entry: "structure" } }),
+			[],
+		),
+		beckon: journal.newItemIds.size > 0,
+	});
+	const enterBarn = useCallback(() => {
+		// Haptics only for a tap the threshold actually took — a swallowed second
+		// tap mid-swing must feel like nothing, not like a second entry.
+		if (threshold.enter()) Haptics.selectionAsync().catch(() => {});
+	}, [threshold]);
+	// The dig. The retired Updates tray carried the Truffle Patch nudge; this
+	// control is the whole of what replaced it — and it does what the tray's chip
+	// did, not what its "try a dig ›" line did: `useDigEntry` opens the patch IN
+	// PLACE for a crewed player and only falls back to the Season tab door for
+	// someone who still needs a herd. One decision, one place.
+	const dig = useDigEntry();
+	// Coming back out of the room: the panels are still shut over the Exterior, so
+	// focus is what opens them again.
+	const reopenThreshold = threshold.onFocusRegained;
+	useFocusEffect(
+		useCallback(() => {
+			reopenThreshold();
+		}, [reopenThreshold]),
+	);
+
 	// Buried truffle: shared status + the bury/check sheets. The single
 	// TruffleButton (upper-left) is the control for both states.
 	const truffle = useBuriedTruffle();
@@ -374,37 +632,45 @@ export default function Barn() {
 		(title: string, body: string, onPress?: () => void) => {
 			setToast({ title, body, onPress });
 			toastOpacity.setValue(0);
-			toastY.setValue(-20);
+			toastY.setValue(TOAST_OFFSET);
 			Animated.sequence([
 				Animated.parallel([
 					Animated.timing(toastOpacity, {
 						toValue: 1,
-						duration: 220,
+						duration: motion.duration(MOTION_DURATION.state),
 						useNativeDriver: true,
 					}),
 					Animated.timing(toastY, {
 						toValue: 0,
-						duration: 220,
+						duration: motion.duration(MOTION_DURATION.state),
 						useNativeDriver: true,
 					}),
 				]),
-				Animated.delay(2400),
+				Animated.delay(MOTION.toast),
 				Animated.parallel([
 					Animated.timing(toastOpacity, {
 						toValue: 0,
-						duration: 300,
+						duration: motion.duration(MOTION_DURATION.modal),
 						useNativeDriver: true,
 					}),
 					Animated.timing(toastY, {
-						toValue: -20,
-						duration: 300,
+						toValue: TOAST_OFFSET,
+						duration: motion.duration(MOTION_DURATION.modal),
 						useNativeDriver: true,
 					}),
 				]),
 			]).start(() => setToast(null));
 		},
-    [toastOpacity, toastY],
+		[motion, toastOpacity, toastY],
 	);
+
+	// A refused dig is never a dead tap. `useDigEntry` hands back the honest
+	// reason (already dug this feeding, the patch is shut, the patch is being
+	// stubborn); the Barn already owns a toast, so that is where it lands.
+	const digNote = dig.note;
+	useEffect(() => {
+		if (digNote) showToast("Truffle Patch", digNote);
+	}, [digNote, showToast]);
 
 	// Pass events — "X just trotted past you" toasts when another
 	// player overtakes us on the leaderboard. Hook owns the dedup set
@@ -420,42 +686,32 @@ export default function Barn() {
 	// a time — in concert with the root launch modals, never overlapping. Lower
 	// priority shows first; truffle sheet is user-tapped so it jumps the line.
 	const truffleSlot = usePopupSlot(
-		"truffleSheet",
+		interiorPigOnly ? "habitatTruffleSheet" : "truffleSheet",
 		truffleSheetOpen,
     POPUP_PRIORITIES.truffleSheet,
 	);
 	const luckyPigSlot = usePopupSlot(
-		"luckyPig",
+		interiorPigOnly ? "habitatLuckyPig" : "luckyPig",
 		luckyPig.luckyModalOpen,
     POPUP_PRIORITIES.luckyPig,
 	);
 
 	useEffect(() => {
-		const c = stats.counter;
-		// Six-seven fires at every count that ENDS in 67 (67, 167, 267, 1167…).
-		// "Ends in" is the rule: 6700/6701 contain 67 but the digits after it
-		// kill the joke. Once per milestone — seen_67_at (AsyncStorage) remembers
-		// the last value celebrated so sitting at 167 across launches doesn't
-		// re-prompt. profiles.seen_67_at (server) is the durable, cross-device
-		// authority: once ANY six-seven has been seen on this account, the egg is
-		// suppressed everywhere, so a reinstall / new device never re-fires it.
-		if (c < 67 || c % 100 !== 67) return;
-		if (sixSevenPromptedRef.current === c) return;
-		// Server already recorded a sighting for this account — never re-fire.
-		if (stats.seen67At != null) return;
-		sixSevenPromptedRef.current = c;
+		const tickles = stats.ticklesEarned;
+		if (!isSixSevenTickleMilestone(tickles)) return;
+		if (sixSevenPromptedRef.current === tickles) return;
+		sixSevenPromptedRef.current = tickles;
 		(async () => {
-			// AsyncStorage fast-path: skips a replay in the same session /
-			// device without waiting on the server stamp to land.
-			const seen = await AsyncStorage.getItem("seen_67_at");
-			if (seen != null && Number(seen) === c) return;
-			await AsyncStorage.setItem("seen_67_at", String(c));
-			applyOptimistic({ seen67At: new Date().toISOString() });
-			void rpc("mark_67_seen");
+			// Remember the exact milestone on this installation so reopening while
+			// still sitting on it does not replay. Future +1,000 milestones remain armed.
+			const storageKey = "seen_67_tickle_milestone";
+			const seen = await AsyncStorage.getItem(storageKey);
+			if (seen != null && Number(seen) === tickles) return;
+			await AsyncStorage.setItem(storageKey, String(tickles));
 			setSixSevenTick((t) => t + 1);
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 		})();
-	}, [stats.counter, stats.seen67At, applyOptimistic]);
+	}, [stats.ticklesEarned]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -520,7 +776,7 @@ export default function Barn() {
 	// inline RPC + fallback path moved into hooks/useHomeStats.ts.
 
 	const handleIncrement = async () => {
-		if (stats.itemCount <= 0) {
+		if (ticklesAvailableRef.current <= 0) {
 			const next = stats.nextRegenSeconds;
 			// "Nuh-uh" SFX + error haptic so the empty-balance tap feels
 			// rejected, not silent. Matches the denied feedback in shop
@@ -550,6 +806,33 @@ export default function Barn() {
 			showToast("Phantom itch", "Your tap slipped right off.");
 			return;
 		}
+
+		// Reserve and display the base tickle before the network request. The
+		// helper rolls this patch back on transport failure and folds the
+		// authoritative balance/lucky bonus into the response path.
+		const tickleRequest = runOptimisticHomeTickle({
+			readAvailable: () => ticklesAvailableRef.current,
+			writeAvailable: (next) => {
+				ticklesAvailableRef.current = next;
+			},
+			applyOptimistic,
+			mutate: async () => {
+				// getSession reads the already-validated local auth state. getUser makes
+				// a network request; the tickle RPC remains the authorization boundary.
+				const {
+					data: { session },
+				} = await supabase.auth.getSession();
+				const user = session?.user;
+				if (!user) throw new Error("User not logged in");
+
+				return rpc(
+					rewardedAdsEnabled
+						? "update_home_tickle"
+						: "update_profile_and_item_count",
+					{ uid: user.id },
+				);
+			},
+		});
 
 		try {
 			const oink = oinkPlayers[Math.floor(Math.random() * oinkPlayers.length)];
@@ -615,42 +898,19 @@ export default function Barn() {
 		}
 
 		try {
-			// getSession reads the already-validated local auth state. getUser makes
-			// a network request, which turned every repeat tap into an extra auth RTT;
-			// the tickle RPC remains the server-side authorization boundary.
-			const {
-				data: { session },
-			} = await supabase.auth.getSession();
-			const user = session?.user;
-			if (!user) throw new Error("User not logged in");
-
-			const res = await rpc<{
-				balance: number;
-				lucky_won: number | null;
-				global_counter: number;
-			}>(rewardedAdsEnabled ? "update_home_tickle" : "update_profile_and_item_count", {
-				uid: user.id,
-			});
-			// rpc() returns null when the server errored (already logged to
-			// Sentry). Surface it instead of silently no-op'ing — a broken
-			// core loop must never feel like "nothing happens when I tickle."
-			if (res == null) {
+			const tickleOutcome = await tickleRequest;
+			if (tickleOutcome.status === "empty") return;
+			if (tickleOutcome.status === "failed") {
+				if (tickleOutcome.error) {
+					log.error("Error incrementing count:", tickleOutcome.error);
+				}
+				// A response can be lost after the server commits. Roll back the
+				// uncertain local reservation, then reconcile when the signal permits.
+				scheduleStatsRefresh();
 				showToast("That tickle didn't take", "Try again in a moment.");
 				return;
 			}
-
-			// The mutation already returns the authoritative spendable balance and
-			// tells us whether it granted the +5 daily-lucky payout. Apply those
-			// known fields in this render instead of waiting through a second RTT.
-			// Math.min keeps out-of-order responses from a rapid tap burst from
-			// visually restoring spent tickles; the trailing refresh reconciles
-			// regen, happiness, cosmetics, and any concurrent server grants.
-			const earnedNow = res.lucky_won == null ? 1 : 6;
-			applyOptimistic((current) => ({
-				itemCount: Math.min(current.itemCount, res.balance),
-				counter: current.counter + earnedNow,
-				ticklesEarned: current.ticklesEarned + earnedNow,
-			}));
+			const res = tickleOutcome.result;
 
 			// Field Guide: a successful tickle is the tap that mints a snout —
 			// meet the Snouts page (fail-soft, idempotent after the first).
@@ -738,161 +998,29 @@ export default function Barn() {
 		);
 	};
 
-	return (
-    <PageBackground bgId={stats.activeBackground?.id ?? null}>
-			<BarnOverlay
-				alignment={alignment}
-				cursed={effects.cursed}
-			/>
+	const shareStreak = useCallback(() => {
+		if (stats.currentStreak < 1) return;
+		void Share.share({
+			message: `I’m on a ${stats.currentStreak}-day tickle streak in Tickle the Pig 🔥`,
+		}).catch((error) => log.error("Error sharing Streak:", error));
+	}, [stats.currentStreak]);
 
-			{/* Tiny red barn silhouette tucked into the bottom-left of
-			    the painted scene. Decorative — only visible when there's
-			    no cosmetic background equipped (since PageBackground
-			    paints over the area when it is). Behind everything else. */}
-      {!stats.activeBackground && (
-				<View pointerEvents="none" style={styles.barnSilhouette}>
-					<Svg viewBox="0 0 64 56" width={64} height={56}>
-						<Polygon
-							points="32,4 4,22 4,52 60,52 60,22"
-							fill={COLORS.barn}
-							stroke={WHIMSY.ink}
-							strokeWidth={2}
-						/>
-						<Rect x={22} y={32} width={20} height={20} fill={WHIMSY.ink} />
-            <Line
-              x1={22}
-              y1={22}
-              x2={22}
-              y2={52}
-              stroke={WHIMSY.ink}
-              strokeWidth={1.5}
-            />
-            <Line
-              x1={42}
-              y1={22}
-              x2={42}
-              y2={52}
-              stroke={WHIMSY.ink}
-              strokeWidth={1.5}
-            />
-					</Svg>
-				</View>
-			)}
-
-			{/* If the boot fetch exhausts its backoff, keep a visible recovery
-			    affordance in the old corner slot. */}
-			{statsError && !statsLoaded ? (
-				// Boot fetch failed through its whole backoff — give the player a
-				// visible way out of the "can't tickle" soft-lock instead of a dead
-				// screen.
-				<Pressable
-					onPress={() => {
-						Haptics.selectionAsync().catch(() => {});
-						fetchStats();
-					}}
-					hitSlop={8}
-					style={styles.barnRecovery}
-				>
-					<Icon name="refresh" size={20} color={WHIMSY.ink} />
-          <Text style={styles.barnRecoveryText}>
-            lost the barn?{"\n"}tap to reload
-          </Text>
-				</Pressable>
-			) : null}
-
-			<SafeAreaView style={styles.contentContainer}>
-				<View style={styles.statsRow}>
-					<PaperTicket
-						label="TICKLES EARNED"
-						value={stats.ticklesEarned.toLocaleString()}
-						tapeColor="sun"
-						rotate={-3}
-						chipGlyph="heart"
-					/>
-					<PaperTicket
-						label="READY TO TICKLE"
-						value={`${stats.itemCount}`}
-						// Over-cap banks (trough/event grants) show e.g. 28 — pairing
-						// it with "/ 25" reads as an impossible fraction. Say "banked"
-						// instead so the surplus reads as a bonus, not a bug.
-            subValue={stats.itemCount > stats.cap ? "banked" : `/ ${stats.cap}`}
-						tapeColor="rose"
-						rotate={2.5}
-						chipGlyph="sparkle"
-						onPress={handleAvailableTap}
-						ribbon={
-							luckyPig.luckyTicklesLeft > 0
-								? `Lucky pig · ${luckyPig.luckyTicklesLeft} left`
-								: wallowCount > 0
-									? `Wallow Rank ${wallowCount} · +1 / ${formatClockMS(stats.regenSeconds ?? 3600)}`
-									: undefined
-						}
-					/>
-				</View>
-
-				{rewardedAdsEnabled && statsLoaded && stats.itemCount === 0 ? (
-					<View style={styles.adRefillOffer}>
-						<AdRefillOffer
-							homeBalance={stats.itemCount}
-							onBalanceChanged={fetchStats}
-							backend={rewardedAdBackend}
-							provider={rewardedAdProvider}
-						/>
-					</View>
-				) : null}
-
-				{/* Live effects and the recurring Patch action share one collapsed
-				    tray. They remain available without taking over Rosie's stage. */}
-				<BarnUpdatesTray />
-        {/* A permanent, owner-only record of stamps friends deliberately
-				    leave after visiting. It renders nothing until the first stamp,
-				    keeping a new Barn open and uncluttered. */}
-        <BarnGuestbook />
-        {/* Barn corner control: the shovel stays in flow so it never overlays Rosie. */}
-        {truffle.status != null && (
-          <View style={styles.cornerControls}>
-						<TruffleButton
-							buried={truffleBuried}
-							remaining={truffle.status?.remaining}
-              onPress={() =>
-                truffleBuried ? setTruffleSheetOpen(true) : setBuryOpen(true)
-              }
-						/>
-					</View>
-				)}
-
-				{/* Weekly-bounty home entry point — a quiet chip that appears only
-				    when the player has a claimable bounty (count > 0), routing to the
-				    Season tab where the BountyBoard section lives. Self-gates to
-				    nothing when there's nothing ready; rides the same in-flow column
-				    as the Sounder chip so it never floats over Rosie. The board was
-				    restored as a Season-tab section (not its own tab); this is the
-				    surface that keeps it from being forgotten. */}
-				<BarnBountyChip />
-
-				{/* Alignment placard removed — the hanging Pilgrim/
-				    Generous/Greedy sign that used to live up here
-				    was redundant with the Account alignment story
-				    block and crowded the painted scene. */}
-
-				{/* Lucky-pig window indicator moved onto the READY TO TICKLE
-				    ticket as a hanging ribbon — anchored to the stat it
-				    modifies instead of floating alone over the scene. */}
-
-				<View style={styles.mainSection}>
-					<View style={styles.swipeContainer}>
-						<SwipeElement
+	const renderPigContent = (forInterior: boolean) => (
+		<>
+			<SwipeElement
+              active={!popupActive}
               pigId={pigRoster.roster.activePigId}
 							onLuckySwipe={handleIncrement}
 							canTickle={!statsLoaded || stats.itemCount > 0}
 							playSixSeven={sixSevenTick}
 							restingAnim={moodAnimation(stats.happiness)}
 							equipped={stats.activeHat}
+							equippedBow={stats.activeBow}
 							equippedGlasses={stats.activeGlasses}
 							equippedMask={stats.activeMask}
 							equippedNeck={stats.activeNeck}
 							equippedAura={stats.activeAura}
-							equippedBackground={stats.activeBackground}
+								equippedBackground={forInterior ? null : stats.activeBackground}
 							equippedHeld={stats.activeHeld}
 							prestigeLevel={wallowCount}
 						/>
@@ -906,21 +1034,12 @@ export default function Barn() {
                   ? (HAT_IMAGES[stats.activeTickleParticle.id] ?? null)
 									: null
 							}
-						/>
-						{/* No ground shadow under the pig — the painted "little
-						    circle" read as standing on a disc on busy backgrounds.
-						    (Baked sprite shadows were removed too.) The truffle
-						    control lives up in the top-left now (TruffleButton). */}
-					</View>
-				</View>
-
-				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
-				    on the home screen now that the season pass surfaces
-				    progress in its own tab. Keeping the WoodenSign
-				    component around so it can be re-enabled later or
-				    re-purposed for a different stat. */}
-
-				{toast && (
+			/>
+		</>
+	);
+	const pigContent = renderPigContent(interiorPigOnly);
+	const interiorPigContent = renderPigContent(true);
+	const toastContent = (toast && (
 					<Animated.View
 						pointerEvents={toast.onPress ? "box-none" : "none"}
 						style={[
@@ -931,29 +1050,38 @@ export default function Barn() {
 							},
 						]}
 					>
-            <Pressable onPress={toast.onPress} disabled={!toast.onPress}>
-              <Sticker
-                color="rose"
-                rotate={-1.2}
-                radius={14}
-                style={styles.toast}
+						<Pressable
+							onPress={toast.onPress}
+							disabled={!toast.onPress}
+							accessibilityRole={toast.onPress ? "button" : "text"}
+							accessibilityLabel={`${toast.title}. ${toast.body}`}
+							accessibilityHint={
+								toast.onPress ? "Opens the details behind this message" : undefined
+							}
+							accessibilityLiveRegion="polite"
 						>
+							<Sticker
+								color="rose"
+								rotate={TOAST_TILT}
+								radius={RADII.lg}
+								style={styles.toast}
+							>
 								<View style={styles.toastInner}>
 									<View style={styles.toastIcon}>
-										<Glyph name="heart" size={18} />
+										<Glyph name="heart" size={TOAST_GLYPH} />
 									</View>
 									<View style={{ flex: 1, minWidth: 0 }}>
-										<Text style={styles.toastTitle}>{toast.title}</Text>
-										<Text style={styles.toastBody}>{toast.body}</Text>
+										<T role="cardTitleSm">{toast.title}</T>
+										<Hand tone="secondary" style={styles.toastBody}>
+											{toast.body}
+										</Hand>
 									</View>
 								</View>
 							</Sticker>
 						</Pressable>
 					</Animated.View>
-				)}
-			</SafeAreaView>
-
-			<LuckyPigModal
+				));
+	const luckyContent = (			<LuckyPigModal
 				visible={luckyPigSlot.visible}
 				windowSize={luckyPig.windowSize}
 				doublePercent={luckyPig.doublePercent}
@@ -989,13 +1117,213 @@ export default function Barn() {
 					luckyPigSlot.release();
 					setTimeout(() => luckyPig.onBurstDismiss(), POPUP_TEARDOWN_MS);
 				}}
+				/>);
+	const pigPresentation = (
+		<View style={styles.pigStage}>
+			{interiorPigContent}
+			{toastContent}
+			{luckyContent}
+		</View>
+	);
+	const pigPresentedInHabitat = useHomeHabitatPigPublisher(
+		pigPresentation,
+		!interiorPigOnly && !bridgeFallback,
+	);
+	if (interiorPigOnly) {
+		return pigPresentation;
+	}
+
+	return (
+		// The Exterior's own doorway, at the brisker `threshold` tempo: the same
+		// barn doors the room wears, closing OVER the home tab so the cut to the
+		// interior route happens behind them and is never seen. `mountedOpen`
+		// because you already stand outside — a cold start must not swing.
+		<HabitatDoorTransition
+			tempo="threshold"
+			mountedOpen
+			direction={threshold.direction}
+			onClosed={threshold.onClosed}
+			onOpened={threshold.onOpened}
+		>
+    <PageBackground bgId={stats.activeBackground?.id ?? null}>
+			<BarnOverlay
+				alignment={alignment}
+				cursed={effects.cursed}
 			/>
+
+			{/* The ghost barn silhouette that used to sit here is gone: the barn is
+			    the player's home, not scenery, so it is a real structure standing on
+			    Rosie's ground plane inside `swipeContainer` — on every background,
+			    not only the unequipped one. */}
+
+			{/* If the boot fetch exhausts its backoff, keep a visible recovery
+			    affordance in the old corner slot. */}
+			{statsError && !statsLoaded ? (
+				// Boot fetch failed through its whole backoff — give the player a
+				// visible way out of the "can't tickle" soft-lock instead of a dead
+				// screen.
+				<Sticker
+					color="paper"
+					rotate={TILT.card}
+					radius={RADII.md}
+					shadow="sm"
+					onPress={() => {
+						Haptics.selectionAsync().catch(() => {});
+						fetchStats();
+					}}
+					accessibilityRole="button"
+					accessibilityLabel="Reload the Barn"
+					accessibilityHint="Fetches your tickle bank again after a failed load"
+					style={styles.barnRecovery}
+				>
+					<Icon name="refresh" size={RECOVERY_ICON} color={WHIMSY.ink} />
+					<Hand align="center">lost the barn?{"\n"}tap to reload</Hand>
+				</Sticker>
+			) : null}
+
+			<SafeAreaView style={styles.contentContainer}>
+				<View style={styles.statsRow}>
+					<PaperTicket
+						label="TICKLES EARNED"
+						value={formatBarnTickleTotal(stats.ticklesEarned)}
+						tapeColor="sun"
+						rotate={-3}
+						chipGlyph="heart"
+					/>
+					<PaperTicket
+						label="READY TO TICKLE"
+						value={`${stats.itemCount}`}
+						// Over-cap banks (trough/event grants) show e.g. 28 — pairing
+						// it with "/ 25" reads as an impossible fraction. Say "banked"
+						// instead so the surplus reads as a bonus, not a bug.
+            subValue={stats.itemCount > stats.cap ? "banked" : `/ ${stats.cap}`}
+						tapeColor="rose"
+						rotate={2.5}
+						chipGlyph="sparkle"
+						onPress={handleAvailableTap}
+						streak={stats.currentStreak}
+						onShareStreak={shareStreak}
+						ribbon={
+							luckyPig.luckyTicklesLeft > 0
+								? `Lucky pig · ${luckyPig.luckyTicklesLeft} left`
+								: wallowCount > 0
+									? `Wallow Rank ${wallowCount} · +1 / ${formatClockMS(stats.regenSeconds ?? 3600)}`
+									: undefined
+						}
+					/>
+				</View>
+
+				{rewardedAdsEnabled && statsLoaded && stats.itemCount === 0 ? (
+					<View style={styles.adRefillOffer}>
+						<AdRefillOffer
+							homeBalance={stats.itemCount}
+							onBalanceChanged={fetchStats}
+							backend={rewardedAdBackend}
+							provider={rewardedAdProvider}
+						/>
+					</View>
+				) : null}
+
+				{/* The shovel is an action, not a notice, so it stands in flow beside the
+				    notice board rather than inside it (the committed corner-control row,
+				    kept in flow so it never overlays Rosie). The gold "Enter Barn" button
+				    that used to share this row is retired — the barn structure standing on
+				    Rosie's ground plane is the single exterior entry, so the same
+				    destination no longer wears two different looks. */}
+				{truffle.status != null && (
+					<View style={styles.cornerControls}>
+						<TruffleButton
+							buried={truffleBuried}
+							remaining={truffle.status.remaining}
+							onPress={() => truffleBuried ? setTruffleSheetOpen(true) : setBuryOpen(true)}
+						/>
+					</View>
+				)}
+
+				{/* The "Updates · Truffle Patch" tray and the guestbook placard that
+				    followed it are both retired (founder calls, 2026-09-12). The Patch
+				    the tray used to nudge toward has its own control in the scene
+				    (see `styles.digButton`). */}
+
+				{/* Weekly-bounty home entry point — a quiet chip that appears only
+				    when the player has a claimable bounty (count > 0), routing to the
+				    Season tab where the BountyBoard section lives. Self-gates to
+				    nothing when there's nothing ready; rides the same in-flow column
+				    as the Sounder chip so it never floats over Rosie. The board was
+				    restored as a Season-tab section (not its own tab); this is the
+				    surface that keeps it from being forgotten. */}
+				<BarnBountyChip />
+
+				{/* Alignment placard removed — the hanging Pilgrim/
+				    Generous/Greedy sign that used to live up here
+				    was redundant with the Account alignment story
+				    block and crowded the painted scene. */}
+
+				{/* Lucky-pig window indicator moved onto the READY TO TICKLE
+				    ticket as a hanging ribbon — anchored to the stat it
+				    modifies instead of floating alone over the scene. */}
+
+				<View style={styles.mainSection}>
+					<View style={styles.swipeContainer}>
+						{/* FIRST child on purpose: the barn draws behind Rosie so she
+						    overlaps it. It stands on every background — the barn is the
+						    home, not scenery a cosmetic can paint over. */}
+						<BarnStructure
+							state={threshold.structure}
+							disabled={!habitatEnabled}
+							onPress={enterBarn}
+							style={styles.barnStructure}
+						/>
+{pigPresentedInHabitat ? null : pigContent}
+						{/* The dig, as one small control in the scene's right margin —
+						    opposite the barn, at its roof line, so the two corner
+						    objects answer each other across Rosie instead of stacking
+						    on one side. ABSOLUTE ON THE BUTTON, never on a wrapper: a
+						    full-width absolute layer over the scene swallows every tap
+						    meant for Rosie (the Fabric overlay footgun, build 99). */}
+						{dig.visible ? (
+							<Sticker
+								color="paper"
+								rotate={TILT.card}
+								radius={RADII.pill}
+								shadow="sm"
+								onPress={dig.openDig}
+								accessibilityLabel="Truffle Patch"
+								accessibilityHint={dig.hint}
+								testID="barn-dig-button"
+								style={styles.digButton}
+							>
+								<Glyph name="truffle" size={DIG_GLYPH_SIZE} />
+							</Sticker>
+						) : null}
+						{/* No ground shadow under the pig — the painted "little
+						    circle" read as standing on a disc on busy backgrounds.
+						    (Baked sprite shadows were removed too.) The truffle
+						    control lives up in the top-left now (TruffleButton). */}
+					</View>
+				</View>
+
+				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
+				    on the home screen now that the season pass surfaces
+				    progress in its own tab. Keeping the WoodenSign
+				    component around so it can be re-enabled later or
+				    re-purposed for a different stat. */}
+
+{pigPresentedInHabitat ? null : toastContent}
+			</SafeAreaView>
+
+{pigPresentedInHabitat ? null : luckyContent}
 
 			{/* Tickle trades moved to the Friends-tab Inbox in the
 			    Season-0 social redesign — no Barn pill or modal. */}
 
 			{/* Bury dialogue — direct-tap modal, so
 			    it stays out of the launch popup queue and owns the screen on tap. */}
+			{/* The dig itself. Mounted ONCE, beside the control that opens it —
+			    `useDigEntry` owns the session, so this is the whole of the
+			    in-place Truffle Patch on the Exterior. */}
+			{dig.modal}
+
 			<BuryTruffleSheet
 				open={buryOpen}
 				balance={stats.counter}
@@ -1019,6 +1347,7 @@ export default function Barn() {
 				onChanged={() => truffle.refresh()}
 			/>
 		</PageBackground>
+		</HabitatDoorTransition>
 	);
 }
 
@@ -1032,9 +1361,13 @@ const styles = StyleSheet.create({
 	statsRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
+		// ONE HEIGHT FOR THE PAIR. Both tickets stretch to the taller one and
+		// centre their content inside it, so the row never goes lopsided — the
+		// streak that used to cause that is a corner stamp now. (2026-09-12)
+		alignItems: "stretch",
 		paddingHorizontal: PAGE_PAD,
 		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
-		paddingTop: Platform.OS === "ios" ? 12 : 24,
+		paddingTop: Platform.OS === "ios" ? SPACE.md : SPACE.xl,
 		gap: SPACE.md,
 		// Fixed band gap below the cards so spacing holds whether or not
 		// the conditional effects strip / truffle / lucky bands render.
@@ -1048,16 +1381,19 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.sm,
 		zIndex: 2,
 	},
-  // Mirrored in-flow corner controls just below the stat cards.
-  cornerControls: {
-    paddingHorizontal: PAGE_PAD,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: SPACE.sm,
-    zIndex: 2,
-  },
-  cornerSpacer: { width: 46, height: 46 },
+	cornerControls: {
+		paddingHorizontal: PAGE_PAD,
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: SPACE.sm,
+		zIndex: 2,
+	},
+	// The square the Habitat bridge stages the pig in — a picture frame, so it
+	// carries its own name rather than a spacing step.
+	pigStage: {
+		width: PIG_STAGE,
+		height: PIG_STAGE,
+	},
 	// Placard styles dropped with the JSX above.
 	// tickleHint dropped — the "tap rosie to tickle" prompt was
 	// noise once the pig was the only thing on screen.
@@ -1073,52 +1409,85 @@ const styles = StyleSheet.create({
 		zIndex: 2,
 	},
 	ticket: {
-		paddingHorizontal: 14,
+		// ONE HEIGHT FOR THE PAIR, stated as a floor rather than a flex chain:
+		// `flex: 1` down through wrap → sticker → inner gave Yoga a column with
+		// no intrinsic height and the cards collapsed to their padding (build
+		// QA, 2026-09-12). Both tickets carry the same floor, the streak is an
+		// absolute stamp, so the pair reads matched without stretching.
+		minHeight: TICKET_MIN_HEIGHT,
+		justifyContent: "center",
+		paddingHorizontal: SPACE.card,
 		paddingVertical: SPACE.md,
-		minWidth: 168,
+		minWidth: 0,
 	},
 	ticketInner: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 11,
+		gap: SPACE.md,
 	},
+	ticketValueRow: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: SPACE.xs,
+		minWidth: 0,
+	},
+	// The corner stamp. Absolute and OUTSIDE the card's box on both axes, which
+	// is what keeps it out of the layout: it overlaps the ticket's top-right
+	// edge and contributes nothing to the card's height.
+	streakStamp: {
+		position: "absolute",
+		top: STAMP_TOP,
+		right: STAMP_RIGHT,
+		zIndex: STAMP_Z,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: SPACE.xxs,
+		borderRadius: RADII.pill,
+		borderWidth: BORDER.thin,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		transform: [{ rotate: STAMP_TILT_DEG }],
+		...SHADOW_SM,
+	},
+	// It wears a hard shadow now, so the press is the shadow-collapse press —
+	// with the stamp's own tilt re-composed on top of `PRESSED`'s shove, which
+	// carries a `transform` of its own and would otherwise pop the mark flat.
+	streakStampPressed: {
+		...PRESSED,
+		transform: [
+			{ rotate: STAMP_TILT_DEG },
+			{ translateX: SPACE.xxs },
+			{ translateY: SPACE.xxs },
+		],
+		elevation: 0,
+	},
+	streakStampRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs,
+	},
+	// The ticket's chip — the Avatar frame's smallest step, drawn flat against
+	// the ticket rather than through the primitive so it stays one silent mark
+	// inside the card's own accessibility text.
 	coin: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		borderWidth: 2,
+		width: AVATAR_SIZE[0],
+		height: AVATAR_SIZE[0],
+		borderRadius: RADII.pill,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	coinSymbol: {
-		color: WHIMSY.paper,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 16,
-		lineHeight: 17,
-	},
 	ticketLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		lineHeight: 12,
 		marginTop: SPACE.xs,
-		letterSpacing: 1.4,
 	},
-	// Ticket-numeral role: a bespoke big-value + small-unit pairing tuned for the
-	// stat tickets (30/17). Sits between TYPE.display(32) and pageTitle(26); no
-	// TYPE role matches cleanly, so the sizes stay explicit on purpose here.
+	// The numeral's own step is computed at the use site (see `valueSize`): the
+	// ticket is deliberately compact and the total can reach seven digits, and
+	// the layout contract forbids platform shrink-to-fit. Everything else about
+	// the role — Caprasimo, ink — comes from `TYPE.display`.
 	ticketValue: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 30,
-		color: WHIMSY.ink,
-		lineHeight: 30,
-	},
-	ticketSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 17,
-		color: WHIMSY.mute,
+		// The bank count never truncates; the "/ cap" unit yields first.
+		flexShrink: 0,
 	},
 	mainSection: {
 		flex: 1,
@@ -1134,152 +1503,63 @@ const styles = StyleSheet.create({
 		// values so all 4 corners + the tickle CTAs above breathe.
 		marginBottom: -Math.round(SCREEN_HEIGHT * 0.03),
 	},
-	// Equipped tickle particle — same screen-anchor as floatChar so
-	// the image drifts up from the same point. ~40px reads cleanly
+	// Equipped tickle particle — drifts up from the same anchor the
+	// typographic glyph used. Rides the portrait-mark frame so it reads
 	// against the pig at any device size.
 	floatImage: {
 		position: "absolute",
 		left: "50%",
 		bottom: "55%",
-		width: 40,
-		height: 40,
-		marginLeft: -20,
+		width: PARTICLE_SIZE,
+		height: PARTICLE_SIZE,
+		marginLeft: -PARTICLE_HALF,
 	},
-	floatChar: {
+	// The barn structure's stance on the scene: bottom-left of the pig stage, its
+	// baseline on Rosie's foot line (see BARN_GROUND_OFFSET), drawn before
+	// `pigContent` so she overlaps its right edge — the depth cue that makes it
+	// read as "Rosie in front of her barn" rather than a sticker beside her.
+	barnStructure: {
 		position: "absolute",
-		left: "50%",
-		bottom: "55%",
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		// Ink halo via four 1px offset text-shadows isn't possible in
-		// RN <Text>; the ink color stands out enough on its own against
-		// the painted barn backdrop.
-		marginLeft: -13, // visually center the glyph on left:50%
+		left: PAGE_PAD,
+		bottom: BARN_GROUND_OFFSET,
 	},
-	// Tiny red barn silhouette painted into the bottom-left horizon.
-	// Sits behind the SafeAreaView content so the pig + stickers always
-	// read above it. Opacity-reduced so it never competes for attention.
-	barnSilhouette: {
+	// The dig control, mirrored across the scene from the barn and parked at its
+	// roof line. Only the 44pt button is absolute — nothing full-width sits over
+	// Rosie — and it draws above `pigContent` so the corner it occupies is a dig,
+	// not a tickle.
+	digButton: {
 		position: "absolute",
-		bottom: 160,
-		left: 22,
-		width: 64,
-		height: 56,
-		opacity: 0.45,
-		zIndex: 0,
+		right: PAGE_PAD,
+		bottom: DIG_BUTTON_INSET,
+		width: TAP_MIN,
+		height: TAP_MIN,
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: DIG_BUTTON_Z,
 	},
-	// Boot-fetch recovery chip, bottom-left corner of the Barn page.
+	// Boot-fetch recovery chip, bottom-left corner of the Barn page. Sized by
+	// its own copy now — the old fixed 76×60 box clipped at larger type.
 	barnRecovery: {
 		position: "absolute",
 		bottom: 40,
-		left: 18,
-		width: 76,
-		height: 60,
+		left: PAGE_PAD,
 		zIndex: 6,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
 		alignItems: "center",
 		justifyContent: "center",
-	},
-	barnRecoveryText: {
-		fontFamily: FONTS.hand,
-    fontSize: 11,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
-	dev67: {
-		position: "absolute",
-		bottom: 100,
-		left: 14,
-		width: 48,
-		height: 48,
-		borderRadius: 24,
-		backgroundColor: "rgba(0,0,0,0.7)",
-		borderWidth: 2,
-		borderColor: WHIMSY.sun,
-		alignItems: "center",
-		justifyContent: "center",
-		zIndex: 20,
-	},
-	devOnboarding: {
-		position: "absolute",
-		bottom: 100,
-		left: 70,
-		width: 48,
-		height: 48,
-		borderRadius: 24,
-		backgroundColor: "rgba(0,0,0,0.7)",
-		borderWidth: 2,
-		borderColor: WHIMSY.sun,
-		alignItems: "center",
-		justifyContent: "center",
-		zIndex: 20,
-	},
-	dev67Text: {
-		color: WHIMSY.sun,
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-	},
-devAlign: {
-		position: "absolute",
-		top: Platform.OS === "ios" ? 60 : 24,
-		right: 12,
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-		borderRadius: 14,
-		backgroundColor: "rgba(0,0,0,0.7)",
-		borderWidth: 1.5,
-		borderColor: WHIMSY.sun,
-		zIndex: 50,
-	},
-	devAnchor: {
-		position: "absolute",
-		top: Platform.OS === "ios" ? 94 : 58,
-		right: 12,
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-		borderRadius: 14,
-		backgroundColor: "rgba(0,0,0,0.7)",
-		borderWidth: 1.5,
-		borderColor: "#00E5FF",
-		zIndex: 50,
-	},
-	devLucky: {
-		position: "absolute",
-		top: Platform.OS === "ios" ? 60 : 24,
-		right: 78,
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-		borderRadius: 14,
-		backgroundColor: "rgba(0,0,0,0.7)",
-		borderWidth: 1.5,
-		borderColor: "#FFB000",
-		zIndex: 50,
-	},
-	devLuckyText: {
-		color: "#FFB000",
-		fontFamily: FONTS.whimsy,
-		fontSize: 12,
-		letterSpacing: 0.5,
-	},
-	devAlignText: {
-		color: WHIMSY.sun,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.5,
+		gap: SPACE.xs,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: SPACE.sm,
 	},
 	toastWrap: {
 		position: "absolute",
 		top: Platform.OS === "ios" ? 180 : 160,
-		left: 16,
-		right: 16,
+		left: PAGE_PAD,
+		right: PAGE_PAD,
 		zIndex: 30,
 	},
 	toast: {
-		paddingHorizontal: 14,
-		paddingVertical: 10,
+		paddingHorizontal: SPACE.card,
+		paddingVertical: SPACE.md,
 	},
 	toastInner: {
 		flexDirection: "row",
@@ -1287,55 +1567,25 @@ devAlign: {
 		gap: SPACE.md,
 	},
 	toastIcon: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
+		width: AVATAR_SIZE[0],
+		height: AVATAR_SIZE[0],
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.roseDeep,
-		borderWidth: 1.5,
+		borderWidth: BORDER.thin,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	toastIconText: {
-		color: WHIMSY.paper,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 15,
-	},
-	toastTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		lineHeight: 18,
-	},
 	toastBody: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 1,
+		marginTop: SPACE.xxs,
 	},
-	// Lucky-window ribbon hanging off a PaperTicket's bottom edge —
-	// same sun-pill language the old floating badge used, now anchored
-	// to the stat it modifies.
+	// Lucky-window ribbon hanging off a PaperTicket's bottom edge — the Tag
+	// capsule, anchored to the stat it modifies instead of floating over the
+	// scene. Only the anchoring lives here; the pill is the primitive's.
 	ticketRibbon: {
 		position: "absolute",
 		bottom: -12,
 		alignSelf: "center",
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs,
-		backgroundColor: WHIMSY.sun,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 10,
-		paddingVertical: 3,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
 		zIndex: 3,
-		...SHADOW_SM,
-	},
-	ticketRibbonText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		letterSpacing: 0.3,
 	},
 });

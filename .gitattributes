@@ -1,1 +1,10 @@
 *.riv binary
+
+# Generated from constants/theme.ts by scripts/build-web-tokens.mjs.
+# web/ is canonical; the rest are served copies. Never hand-edit any of them.
+web/tokens.css linguist-generated=true
+web/sticker.css linguist-generated=true
+landing/tokens.css linguist-generated=true
+landing/sticker.css linguist-generated=true
+analytics-dashboard/app/tokens.css linguist-generated=true
+analytics-dashboard/app/sticker.css linguist-generated=true

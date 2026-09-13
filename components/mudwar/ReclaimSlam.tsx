@@ -19,7 +19,8 @@ import React, {
 } from "react";
 import { View, StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
-import { WHIMSY } from "@/constants/theme";
+import { BORDER, RADII, WHIMSY } from "@/constants/theme";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 export type SlamIntensity = "wisp" | "pop" | "burst";
 
@@ -67,11 +68,16 @@ function jitter(base: number, spread: number): number {
 	return base + (Math.random() * 2 - 1) * spread;
 }
 
-export const ReclaimSlam = React.forwardRef<ReclaimSlamHandle, {}>(
+export const ReclaimSlam = React.forwardRef<ReclaimSlamHandle, object>(
 	function ReclaimSlam(_props, ref) {
 		const [motes, setMotes] = useState<Mote[]>([]);
 		const nextId = useRef(0);
 		const box = useRef({ w: 0, h: 0 });
+		// The mote field is pure celebration — the points it visualises are
+		// already stated in the tally and the end card — so Reduce Motion's rest
+		// pose is simply NO particles. The haptic still fires: the payoff beat is
+		// felt, it just doesn't fly across the screen. [C-08]
+		const { allowDecorativeMotion } = useMotionPolicy();
 
 		const slam = useCallback((opts: SlamOpts = {}) => {
 			const { w, h } = box.current;
@@ -99,6 +105,9 @@ export const ReclaimSlam = React.forwardRef<ReclaimSlamHandle, {}>(
 				}
 			}
 
+			// Rest pose: the buzz landed, the motes stay home.
+			if (!allowDecorativeMotion) return;
+
 			for (let i = 0; i < tier.count; i++) {
 				const id = nextId.current++;
 				const anim = new Animated.Value(0);
@@ -124,7 +133,7 @@ export const ReclaimSlam = React.forwardRef<ReclaimSlamHandle, {}>(
 					setMotes((m) => m.filter((x) => x.id !== id));
 				});
 			}
-		}, []);
+		}, [allowDecorativeMotion]);
 
 		useImperativeHandle(ref, () => ({ slam }), [slam]);
 
@@ -192,7 +201,7 @@ const styles = StyleSheet.create({
 		// the standard ink outline, matching the war UI's sticker vocabulary.
 		position: "absolute",
 		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
+		borderWidth: BORDER.thin,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
@@ -200,7 +209,7 @@ const styles = StyleSheet.create({
 	glint: {
 		width: "38%",
 		height: "38%",
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.paper,
 	},
 });

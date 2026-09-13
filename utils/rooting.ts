@@ -12,28 +12,38 @@
 // All values here are safe in JS doubles: 16807 * 2147483646 ≈ 3.6e13 < 2^53.
 
 import {
-	DIG_BUCKET_OPEN_MINS,
-	DIG_BUCKET_STARTS,
-	DIG_DAY_ANCHOR_MIN,
-	DIG_DAY_MIN,
-	DIG_WINDOWS_PER_DAY,
-	PATCH_COLS,
-	PATCH_ROWS,
-	STIR_RUB,
-	STIR_SHOVE,
+  DIG_BUCKET_OPEN_MINS,
+  DIG_BUCKET_STARTS,
+  DIG_DAY_ANCHOR_MIN,
+  DIG_DAY_MIN,
+  DIG_LOCAL_BUCKET_OPEN_MINS,
+  DIG_LOCAL_BUCKET_STARTS,
+  DIG_LOCAL_DAY_ANCHOR_MIN,
+  DIG_LOCAL_WINDOWS_PER_DAY,
+  DIG_LOCAL_WINDOW_ID_OFFSET,
+  DIG_WINDOWS_PER_DAY,
+  PATCH_COLS,
+  PATCH_ROWS,
+  STIR_RUB,
+  STIR_SHOVE,
 } from "@/constants/dig";
 import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
 import { formatHM } from "@/utils/duration";
 import { getDevSeasonOverrides } from "@/utils/devSeasonOverrides";
+import {
+  feedingTimeZone,
+  zonedCivilParts,
+  zonedCivilToEpochMs,
+} from "@/utils/feedingTimeZone";
 
 export type Find =
-	| "truffle_l"
-	| "truffle_d"
-	| "shimmer"
-	| "stone"
-	| "junk_boot"
-	| "junk_wrap"
-	| "unique";
+  | "truffle_l"
+  | "truffle_d"
+  | "shimmer"
+  | "stone"
+  | "junk_boot"
+  | "junk_wrap"
+  | "unique";
 
 // A claimable find (what submit_rooting accepts): everything except stones.
 // A unique claims via the literal token "unique" — the server maps it to the
@@ -41,42 +51,41 @@ export type Find =
 export type ClaimableFind = Exclude<Find, "stone">;
 
 export interface PatchCell {
-	kind: Find;
+  kind: Find;
 }
 
 export interface PatchBoard {
-	/** Mud depth per tile, 2–3, row-major (idx = row * PATCH_COLS + col). */
-	layers: number[];
-	/** Buried content per tile (null = plain mud). */
-	cells: (PatchCell | null)[];
-	/** The find ids present on this board — MUST equal rooting_finds(seed) (+ "unique" when carried). */
-	finds: ClaimableFind[];
-	/** Tile indices of each truffle cluster (for completion detection). */
-	truffleL: number[];
-	truffleD: number[];
-	/** The single unique relic this board carries (server-rolled), or null. */
-	unique: { id: string; idx: number } | null;
+  /** Mud depth per tile, 2–3, row-major (idx = row * PATCH_COLS + col). */
+  layers: number[];
+  /** Buried content per tile (null = plain mud). */
+  cells: (PatchCell | null)[];
+  /** The find ids present on this board — MUST equal rooting_finds(seed) (+ "unique" when carried). */
+  finds: ClaimableFind[];
+  /** Tile indices of each truffle cluster (for completion detection). */
+  truffleL: number[];
+  truffleD: number[];
+  /** The single unique relic this board carries (server-rolled), or null. */
+  unique: { id: string; idx: number } | null;
 }
 
 // ── PRNG (Park–Miller minstd) ────────────────────────────────────────────────
 
 export class Minstd {
-	private state: number;
-	constructor(seed: number) {
-		// PARITY: the server (open_rooting) guarantees seeds in [1, 2147483646]
-		// and rooting_finds() uses them DIRECTLY as the initial state — so must
-		// we. Only out-of-range inputs (practice-mode misuse) get normalized.
-		const t = Math.trunc(seed);
-		this.state =
-			t >= 1 && t <= 2147483646 ? t : (Math.abs(t) % 2147483646) + 1;
-	}
-	next(): number {
-		this.state = (this.state * 16807) % 2147483647;
-		return this.state;
-	}
-	nextInt(n: number): number {
-		return this.next() % n;
-	}
+  private state: number;
+  constructor(seed: number) {
+    // PARITY: the server (open_rooting) guarantees seeds in [1, 2147483646]
+    // and rooting_finds() uses them DIRECTLY as the initial state — so must
+    // we. Only out-of-range inputs (practice-mode misuse) get normalized.
+    const t = Math.trunc(seed);
+    this.state = t >= 1 && t <= 2147483646 ? t : (Math.abs(t) % 2147483646) + 1;
+  }
+  next(): number {
+    this.state = (this.state * 16807) % 2147483647;
+    return this.state;
+  }
+  nextInt(n: number): number {
+    return this.next() % n;
+  }
 }
 
 // ── Board generation ─────────────────────────────────────────────────────────
@@ -84,67 +93,67 @@ export class Minstd {
 // The four L-tromino orientations, as [row, col] offsets. MUST match the
 // migration's comment order (draw 1 picks the index).
 const L_ORIENTS: ReadonlyArray<ReadonlyArray<readonly [number, number]>> = [
-	[
-		[0, 0],
-		[1, 0],
-		[1, 1],
-	],
-	[
-		[0, 0],
-		[0, 1],
-		[1, 0],
-	],
-	[
-		[0, 0],
-		[0, 1],
-		[1, 1],
-	],
-	[
-		[0, 1],
-		[1, 0],
-		[1, 1],
-	],
+  [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+  ],
+  [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+  ],
+  [
+    [0, 0],
+    [0, 1],
+    [1, 1],
+  ],
+  [
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ],
 ];
 
 const MAX_PLACE_ATTEMPTS = 200;
 
 function placeShape(
-	rng: Minstd,
-	occupied: boolean[],
-	offsets: ReadonlyArray<readonly [number, number]>
+  rng: Minstd,
+  occupied: boolean[],
+  offsets: ReadonlyArray<readonly [number, number]>,
 ): number[] {
-	const fits = (r: number, c: number): number[] | null => {
-		const cells: number[] = [];
-		for (const [dr, dc] of offsets) {
-			const rr = r + dr;
-			const cc = c + dc;
-			if (rr < 0 || rr >= PATCH_ROWS || cc < 0 || cc >= PATCH_COLS) return null;
-			const idx = rr * PATCH_COLS + cc;
-			if (occupied[idx]) return null;
-			cells.push(idx);
-		}
-		return cells;
-	};
-	for (let attempt = 0; attempt < MAX_PLACE_ATTEMPTS; attempt++) {
-		const r = rng.nextInt(PATCH_ROWS);
-		const c = rng.nextInt(PATCH_COLS);
-		const cells = fits(r, c);
-		if (cells) {
-			for (const idx of cells) occupied[idx] = true;
-			return cells;
-		}
-	}
-	// Deterministic fallback: first row-major origin where the shape fits.
-	for (let r = 0; r < PATCH_ROWS; r++) {
-		for (let c = 0; c < PATCH_COLS; c++) {
-			const cells = fits(r, c);
-			if (cells) {
-				for (const idx of cells) occupied[idx] = true;
-				return cells;
-			}
-		}
-	}
-	return []; // unreachable on a 30-tile board with ≤10 occupied cells
+  const fits = (r: number, c: number): number[] | null => {
+    const cells: number[] = [];
+    for (const [dr, dc] of offsets) {
+      const rr = r + dr;
+      const cc = c + dc;
+      if (rr < 0 || rr >= PATCH_ROWS || cc < 0 || cc >= PATCH_COLS) return null;
+      const idx = rr * PATCH_COLS + cc;
+      if (occupied[idx]) return null;
+      cells.push(idx);
+    }
+    return cells;
+  };
+  for (let attempt = 0; attempt < MAX_PLACE_ATTEMPTS; attempt++) {
+    const r = rng.nextInt(PATCH_ROWS);
+    const c = rng.nextInt(PATCH_COLS);
+    const cells = fits(r, c);
+    if (cells) {
+      for (const idx of cells) occupied[idx] = true;
+      return cells;
+    }
+  }
+  // Deterministic fallback: first row-major origin where the shape fits.
+  for (let r = 0; r < PATCH_ROWS; r++) {
+    for (let c = 0; c < PATCH_COLS; c++) {
+      const cells = fits(r, c);
+      if (cells) {
+        for (const idx of cells) occupied[idx] = true;
+        return cells;
+      }
+    }
+  }
+  return []; // unreachable on a 30-tile board with ≤10 occupied cells
 }
 
 // Per-tile depth from a single nextInt(3) draw. Tuned 2026-07-11 so boards are
@@ -156,73 +165,74 @@ function placeShape(
 const DEPTH_MAP = [2, 3, 3] as const;
 
 export function generateBoard(
-	seed: number,
-	uniqueId?: string | null
+  seed: number,
+  uniqueId?: string | null,
 ): PatchBoard {
-	const rng = new Minstd(seed);
-	const total = PATCH_ROWS * PATCH_COLS;
+  const rng = new Minstd(seed);
+  const total = PATCH_ROWS * PATCH_COLS;
 
-	// Draws 1–4: the find-set draws (server parity — see header).
-	const orient = rng.nextInt(4);
-	const vert = rng.nextInt(2);
-	const shimmerPresent = rng.nextInt(2) === 1;
-	const junkKind: ClaimableFind = rng.nextInt(2) === 0 ? "junk_boot" : "junk_wrap";
+  // Draws 1–4: the find-set draws (server parity — see header).
+  const orient = rng.nextInt(4);
+  const vert = rng.nextInt(2);
+  const shimmerPresent = rng.nextInt(2) === 1;
+  const junkKind: ClaimableFind =
+    rng.nextInt(2) === 0 ? "junk_boot" : "junk_wrap";
 
-	// Draws 5+: layout only. One nextInt(3) draw per tile → depth via DEPTH_MAP
-	// (draw count preserved, so all later placement draws are unchanged).
-	const layers: number[] = new Array(total);
-	for (let i = 0; i < total; i++) layers[i] = DEPTH_MAP[rng.nextInt(3)];
+  // Draws 5+: layout only. One nextInt(3) draw per tile → depth via DEPTH_MAP
+  // (draw count preserved, so all later placement draws are unchanged).
+  const layers: number[] = new Array(total);
+  for (let i = 0; i < total; i++) layers[i] = DEPTH_MAP[rng.nextInt(3)];
 
-	const occupied: boolean[] = new Array(total).fill(false);
-	const cells: (PatchCell | null)[] = new Array(total).fill(null);
+  const occupied: boolean[] = new Array(total).fill(false);
+  const cells: (PatchCell | null)[] = new Array(total).fill(null);
 
-	const truffleL = placeShape(rng, occupied, L_ORIENTS[orient]);
-	for (const idx of truffleL) cells[idx] = { kind: "truffle_l" };
+  const truffleL = placeShape(rng, occupied, L_ORIENTS[orient]);
+  for (const idx of truffleL) cells[idx] = { kind: "truffle_l" };
 
-	const dominoOffsets: ReadonlyArray<readonly [number, number]> = vert
-		? [
-				[0, 0],
-				[1, 0],
-		  ]
-		: [
-				[0, 0],
-				[0, 1],
-		  ];
-	const truffleD = placeShape(rng, occupied, dominoOffsets);
-	for (const idx of truffleD) cells[idx] = { kind: "truffle_d" };
+  const dominoOffsets: ReadonlyArray<readonly [number, number]> = vert
+    ? [
+        [0, 0],
+        [1, 0],
+      ]
+    : [
+        [0, 0],
+        [0, 1],
+      ];
+  const truffleD = placeShape(rng, occupied, dominoOffsets);
+  for (const idx of truffleD) cells[idx] = { kind: "truffle_d" };
 
-	const single: ReadonlyArray<readonly [number, number]> = [[0, 0]];
-	if (shimmerPresent) {
-		const [idx] = placeShape(rng, occupied, single);
-		cells[idx] = { kind: "shimmer" };
-	}
-	for (let s = 0; s < 3; s++) {
-		const [idx] = placeShape(rng, occupied, single);
-		cells[idx] = { kind: "stone" };
-	}
-	{
-		const [idx] = placeShape(rng, occupied, single);
-		cells[idx] = { kind: junkKind };
-	}
+  const single: ReadonlyArray<readonly [number, number]> = [[0, 0]];
+  if (shimmerPresent) {
+    const [idx] = placeShape(rng, occupied, single);
+    cells[idx] = { kind: "shimmer" };
+  }
+  for (let s = 0; s < 3; s++) {
+    const [idx] = placeShape(rng, occupied, single);
+    cells[idx] = { kind: "stone" };
+  }
+  {
+    const [idx] = placeShape(rng, occupied, single);
+    cells[idx] = { kind: junkKind };
+  }
 
-	// The unique relic — placed LAST, AFTER every existing draw, and ONLY when the
-	// server rolled one (uniqueId non-null). This consumes PRNG draws only in the
-	// unique case, so a non-unique board (uniqueId null/undefined) is byte-for-byte
-	// identical to before uniques existed — determinism for non-unique boards is
-	// unchanged. Single-cell, same placeShape single pattern as junk/shimmer.
-	let unique: { id: string; idx: number } | null = null;
-	if (uniqueId) {
-		const [idx] = placeShape(rng, occupied, single);
-		cells[idx] = { kind: "unique" };
-		unique = { id: uniqueId, idx };
-	}
+  // The unique relic — placed LAST, AFTER every existing draw, and ONLY when the
+  // server rolled one (uniqueId non-null). This consumes PRNG draws only in the
+  // unique case, so a non-unique board (uniqueId null/undefined) is byte-for-byte
+  // identical to before uniques existed — determinism for non-unique boards is
+  // unchanged. Single-cell, same placeShape single pattern as junk/shimmer.
+  let unique: { id: string; idx: number } | null = null;
+  if (uniqueId) {
+    const [idx] = placeShape(rng, occupied, single);
+    cells[idx] = { kind: "unique" };
+    unique = { id: uniqueId, idx };
+  }
 
-	const finds: ClaimableFind[] = ["truffle_l", "truffle_d"];
-	if (shimmerPresent) finds.push("shimmer");
-	finds.push(junkKind);
-	if (unique) finds.push("unique");
+  const finds: ClaimableFind[] = ["truffle_l", "truffle_d"];
+  if (shimmerPresent) finds.push("shimmer");
+  finds.push(junkKind);
+  if (unique) finds.push("unique");
 
-	return { layers, cells, finds, truffleL, truffleD, unique };
+  return { layers, cells, finds, truffleL, truffleD, unique };
 }
 
 // ── Finds submission (server contract) ───────────────────────────────────────
@@ -241,30 +251,35 @@ export function generateBoard(
 // arrays — so the hook normalizes ANY runtime shape (string / null / Set /
 // array) into a real array before the seed-true intersection. Pure + tested.
 export function normalizePouch(
-	finds: ClaimableFind[] | ClaimableFind | Iterable<ClaimableFind> | null | undefined
+  finds:
+    | ClaimableFind[]
+    | ClaimableFind
+    | Iterable<ClaimableFind>
+    | null
+    | undefined,
 ): ClaimableFind[] {
-	if (finds == null) return [];
-	if (Array.isArray(finds)) return finds;
-	if (typeof finds === "string") return [finds];
-	return Array.from(finds);
+  if (finds == null) return [];
+  if (Array.isArray(finds)) return finds;
+  if (typeof finds === "string") return [finds];
+  return Array.from(finds);
 }
 
 export function claimableFinds(
-	board: PatchBoard,
-	collected: Iterable<Find>
+  board: PatchBoard,
+  collected: Iterable<Find>,
 ): ClaimableFind[] {
-	const valid = new Set<ClaimableFind>(board.finds);
-	const out: ClaimableFind[] = [];
-	const seen = new Set<ClaimableFind>();
-	for (const f of collected) {
-		if (f === "stone") continue; // stones are never claimable
-		const cf = f as ClaimableFind;
-		if (valid.has(cf) && !seen.has(cf)) {
-			seen.add(cf);
-			out.push(cf);
-		}
-	}
-	return out;
+  const valid = new Set<ClaimableFind>(board.finds);
+  const out: ClaimableFind[] = [];
+  const seen = new Set<ClaimableFind>();
+  for (const f of collected) {
+    if (f === "stone") continue; // stones are never claimable
+    const cf = f as ClaimableFind;
+    if (valid.has(cf) && !seen.has(cf)) {
+      seen.add(cf);
+      out.push(cf);
+    }
+  }
+  return out;
 }
 
 /**
@@ -274,34 +289,34 @@ export function claimableFinds(
  * render math and hit-test math can never drift apart.
  */
 export function tileIndexAt(
-	x: number,
-	y: number,
-	tileSize: number,
-	inset: number
+  x: number,
+  y: number,
+  tileSize: number,
+  inset: number,
 ): number {
-	if (tileSize <= 0) return -1;
-	// Clamp (rather than reject) so an edge touch on the border still lands on
-	// the nearest tile — preserves the dig's forgiving hit behavior.
-	const c = Math.min(
-		PATCH_COLS - 1,
-		Math.max(0, Math.floor((x - inset) / tileSize))
-	);
-	const r = Math.min(
-		PATCH_ROWS - 1,
-		Math.max(0, Math.floor((y - inset) / tileSize))
-	);
-	return r * PATCH_COLS + c;
+  if (tileSize <= 0) return -1;
+  // Clamp (rather than reject) so an edge touch on the border still lands on
+  // the nearest tile — preserves the dig's forgiving hit behavior.
+  const c = Math.min(
+    PATCH_COLS - 1,
+    Math.max(0, Math.floor((x - inset) / tileSize)),
+  );
+  const r = Math.min(
+    PATCH_ROWS - 1,
+    Math.max(0, Math.floor((y - inset) / tileSize)),
+  );
+  return r * PATCH_COLS + c;
 }
 
 // ── Cluster geometry (pure display math) ─────────────────────────────────────
 
 export interface ClusterBox {
-	/** Center of the cluster in TILE units (col, row), e.g. {cx: 2.5, cy: 1.0}. */
-	cx: number;
-	cy: number;
-	/** Bounding box span in tiles (≥1 each). */
-	cols: number;
-	rows: number;
+  /** Center of the cluster in TILE units (col, row), e.g. {cx: 2.5, cy: 1.0}. */
+  cx: number;
+  cy: number;
+  /** Bounding box span in tiles (≥1 each). */
+  cols: number;
+  rows: number;
 }
 
 /**
@@ -310,136 +325,181 @@ export interface ClusterBox {
  * reads as ONE find, not N icons. Returns null for an empty cluster.
  */
 export function clusterBox(indices: number[]): ClusterBox | null {
-	if (indices.length === 0) return null;
-	let minC = Infinity;
-	let maxC = -Infinity;
-	let minR = Infinity;
-	let maxR = -Infinity;
-	let sumC = 0;
-	let sumR = 0;
-	for (const idx of indices) {
-		const r = Math.floor(idx / PATCH_COLS);
-		const c = idx % PATCH_COLS;
-		if (c < minC) minC = c;
-		if (c > maxC) maxC = c;
-		if (r < minR) minR = r;
-		if (r > maxR) maxR = r;
-		sumC += c;
-		sumR += r;
-	}
-	// Centroid of cell CENTERS (each cell center is col+0.5, row+0.5 in tile units).
-	return {
-		cx: sumC / indices.length + 0.5,
-		cy: sumR / indices.length + 0.5,
-		cols: maxC - minC + 1,
-		rows: maxR - minR + 1,
-	};
+  if (indices.length === 0) return null;
+  let minC = Infinity;
+  let maxC = -Infinity;
+  let minR = Infinity;
+  let maxR = -Infinity;
+  let sumC = 0;
+  let sumR = 0;
+  for (const idx of indices) {
+    const r = Math.floor(idx / PATCH_COLS);
+    const c = idx % PATCH_COLS;
+    if (c < minC) minC = c;
+    if (c > maxC) maxC = c;
+    if (r < minR) minR = r;
+    if (r > maxR) maxR = r;
+    sumC += c;
+    sumR += r;
+  }
+  // Centroid of cell CENTERS (each cell center is col+0.5, row+0.5 in tile units).
+  return {
+    cx: sumC / indices.length + 0.5,
+    cy: sumR / indices.length + 0.5,
+    cols: maxC - minC + 1,
+    rows: maxR - minR + 1,
+  };
 }
 
 // ── Feeding-window math ──────────────────────────────────────────────────────
-// Four non-uniform commuter windows on one SERVER-OWNED Eastern clock. The
-// client mirror is display-only; privileged RPCs derive the same clock from
-// America/New_York and accept no phone offset. US DST transition instants are
-// mirrored here so countdowns agree without relying on the device timezone.
+// Mirror the server-owned uniform, legacy Eastern and player-local schedules.
+// Privileged RPCs derive eligibility from the persisted zone and accept no
+// phone offset. Civil-time conversion keeps countdowns aligned across DST.
 
 interface DigClock {
-	digDay: number;
-	bucket: number;
-	minute: number;
-	baseLocalMinute: number;
-	open: boolean;
+  digDay: number;
+  bucket: number;
+  minute: number;
+  baseLocalMinute: number;
+  open: boolean;
 }
 
-function firstSunday(year: number, month: number): number {
-	const weekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
-	return 1 + ((7 - weekday) % 7);
+function localCommuterClock(
+  nowMs: number,
+  timeZone: string,
+  dayAnchorMinute: number,
+  bucketStarts: readonly number[],
+  bucketOpenMins: readonly number[],
+): DigClock {
+  const civil = zonedCivilParts(nowMs, timeZone);
+  const localEpochMinute = Math.floor(
+    Date.UTC(civil.year, civil.month - 1, civil.day, civil.hour, civil.minute) /
+      60000,
+  );
+  const adjusted = localEpochMinute - dayAnchorMinute;
+  const digDay = Math.floor(adjusted / DIG_DAY_MIN);
+  const minute = adjusted - digDay * DIG_DAY_MIN;
+  let bucket = 0;
+  for (let i = bucketStarts.length - 1; i >= 0; i--) {
+    if (minute >= bucketStarts[i]) {
+      bucket = i;
+      break;
+    }
+  }
+  const baseLocalMinute = digDay * DIG_DAY_MIN + dayAnchorMinute;
+  const closesAtMs = localEpochMinuteToUtcMs(
+    baseLocalMinute + bucketStarts[bucket] + bucketOpenMins[bucket],
+    timeZone,
+  );
+  return {
+    digDay,
+    bucket,
+    minute,
+    baseLocalMinute,
+    open: nowMs < closesAtMs,
+  };
 }
 
-/** Eastern offset at a UTC instant: -300 standard, -240 daylight. */
-function easternOffsetMinutes(utcMs: number): number {
-	const year = new Date(utcMs).getUTCFullYear();
-	const marchSecondSunday = firstSunday(year, 2) + 7;
-	const novemberFirstSunday = firstSunday(year, 10);
-	const starts = Date.UTC(year, 2, marchSecondSunday, 7); // 02:00 EST
-	const ends = Date.UTC(year, 10, novemberFirstSunday, 6); // 02:00 EDT
-	return utcMs >= starts && utcMs < ends ? -240 : -300;
+function commuterSchedule(active: FeedingSchedule): {
+  timeZone: string;
+  dayAnchorMinute: number;
+  bucketStarts: readonly number[];
+  bucketOpenMins: readonly number[];
+  windowsPerDay: number;
+  idOffset: number;
+} | null {
+  if (active.mode === "commuter_eastern") {
+    return {
+      timeZone: "America/New_York",
+      dayAnchorMinute: DIG_DAY_ANCHOR_MIN,
+      bucketStarts: DIG_BUCKET_STARTS,
+      bucketOpenMins: DIG_BUCKET_OPEN_MINS,
+      windowsPerDay: DIG_WINDOWS_PER_DAY,
+      idOffset: 0,
+    };
+  }
+  if (active.mode === "commuter_local") {
+    return {
+      timeZone: feedingTimeZone(),
+      dayAnchorMinute: DIG_LOCAL_DAY_ANCHOR_MIN,
+      bucketStarts: DIG_LOCAL_BUCKET_STARTS,
+      bucketOpenMins: DIG_LOCAL_BUCKET_OPEN_MINS,
+      windowsPerDay: DIG_LOCAL_WINDOWS_PER_DAY,
+      idOffset: DIG_LOCAL_WINDOW_ID_OFFSET,
+    };
+  }
+  return null;
 }
 
-function localMinuteToUtcMs(localEpochMinute: number): number {
-	// Schedule boundaries are 06:00 or later, never inside the repeated/missing
-	// 02:00 DST hour. One standard-time guess therefore resolves unambiguously.
-	const standardGuess = (localEpochMinute + 300) * 60000;
-	return (localEpochMinute - easternOffsetMinutes(standardGuess)) * 60000;
+function localEpochMinuteToUtcMs(
+  localEpochMinute: number,
+  timeZone: string,
+): number {
+  const civilDate = new Date(localEpochMinute * 60000);
+  return zonedCivilToEpochMs(
+    {
+      year: civilDate.getUTCFullYear(),
+      month: civilDate.getUTCMonth() + 1,
+      day: civilDate.getUTCDate(),
+      hour: civilDate.getUTCHours(),
+      minute: civilDate.getUTCMinutes(),
+    },
+    timeZone,
+  );
 }
 
-function commuterClock(nowMs: number): DigClock {
-	const localEpochMinute =
-		Math.floor(nowMs / 60000) + easternOffsetMinutes(nowMs);
-	const adjusted = localEpochMinute - DIG_DAY_ANCHOR_MIN;
-	const digDay = Math.floor(adjusted / DIG_DAY_MIN);
-	const minute = adjusted - digDay * DIG_DAY_MIN;
-	let bucket = 0;
-	for (let i = DIG_BUCKET_STARTS.length - 1; i >= 0; i--) {
-		if (minute >= DIG_BUCKET_STARTS[i]) {
-			bucket = i;
-			break;
-		}
-	}
-	return {
-		digDay,
-		bucket,
-		minute,
-		baseLocalMinute: digDay * DIG_DAY_MIN + DIG_DAY_ANCHOR_MIN,
-		open:
-			minute < DIG_BUCKET_STARTS[bucket] + DIG_BUCKET_OPEN_MINS[bucket],
-	};
-}
-
-function normalizedBucket(win: number): number {
-	return ((win % DIG_WINDOWS_PER_DAY) + DIG_WINDOWS_PER_DAY) %
-		DIG_WINDOWS_PER_DAY;
+function normalizedBucket(win: number, windowsPerDay: number): number {
+  return ((win % windowsPerDay) + windowsPerDay) % windowsPerDay;
 }
 
 export function windowIndex(
-	nowMs: number = Date.now(),
-	sched?: FeedingSchedule
+  nowMs: number = Date.now(),
+  sched?: FeedingSchedule,
 ): number {
-	const active = sched ?? feedingSchedule();
-	if (active.mode === "commuter_eastern") {
-		const c = commuterClock(nowMs);
-		return c.digDay * DIG_WINDOWS_PER_DAY + c.bucket;
-	}
-	return Math.floor((nowMs / 1000 - active.offsetSecs) / active.windowSecs);
+  const active = sched ?? feedingSchedule();
+  const commuter = commuterSchedule(active);
+  if (commuter) {
+    const c = localCommuterClock(
+      nowMs,
+      commuter.timeZone,
+      commuter.dayAnchorMinute,
+      commuter.bucketStarts,
+      commuter.bucketOpenMins,
+    );
+    return commuter.idOffset + c.digDay * commuter.windowsPerDay + c.bucket;
+  }
+  return Math.floor((nowMs / 1000 - active.offsetSecs) / active.windowSecs);
 }
 
-export function windowEndsAtMs(
-	win: number,
-	sched?: FeedingSchedule
-): number {
-	const active = sched ?? feedingSchedule();
-	if (active.mode === "commuter_eastern") {
-		const digDay = Math.floor(win / DIG_WINDOWS_PER_DAY);
-		const bucket = normalizedBucket(win);
-		const endMinute =
-			bucket < DIG_WINDOWS_PER_DAY - 1
-				? DIG_BUCKET_STARTS[bucket + 1]
-				: DIG_DAY_MIN;
-		return localMinuteToUtcMs(
-			digDay * DIG_DAY_MIN + DIG_DAY_ANCHOR_MIN + endMinute
-		);
-	}
-	return ((win + 1) * active.windowSecs + active.offsetSecs) * 1000;
+export function windowEndsAtMs(win: number, sched?: FeedingSchedule): number {
+  const active = sched ?? feedingSchedule();
+  const commuter = commuterSchedule(active);
+  if (commuter) {
+    const localWin = win - commuter.idOffset;
+    const digDay = Math.floor(localWin / commuter.windowsPerDay);
+    const bucket = normalizedBucket(localWin, commuter.windowsPerDay);
+    const endMinute =
+      bucket < commuter.windowsPerDay - 1
+        ? commuter.bucketStarts[bucket + 1]
+        : DIG_DAY_MIN;
+    return localEpochMinuteToUtcMs(
+      digDay * DIG_DAY_MIN + commuter.dayAnchorMinute + endMinute,
+      commuter.timeZone,
+    );
+  }
+  return ((win + 1) * active.windowSecs + active.offsetSecs) * 1000;
 }
 
 /** "2h 10m" until the Hunger's next gorge (end of the current feeding). */
 export function feedingCountdown(nowMs: number = Date.now()): string {
-	const left = Math.max(0, windowEndsAtMs(windowIndex(nowMs)) - nowMs);
-	return formatLeft(left);
+  const left = Math.max(0, windowEndsAtMs(windowIndex(nowMs)) - nowMs);
+  return formatLeft(left);
 }
 
 // The patch/feeding countdowns never show "0m" (a sub-minute tail floors up
 // to "1m"), hence minMinute:1 on the shared formatHM kernel.
-const formatLeft = (leftMs: number): string => formatHM(leftMs, { minMinute: 1 });
+const formatLeft = (leftMs: number): string =>
+  formatHM(leftMs, { minMinute: 1 });
 
 // ── Patch phases ─────────────────────────────────────────────────────────────
 // Within each feeding window the patch alternates: OPEN for the first
@@ -450,84 +510,109 @@ const formatLeft = (leftMs: number): string => formatHM(leftMs, { minMinute: 1 }
 
 /** True while the patch is diggable (the open head of the current window). */
 export function patchPhaseOpen(
-	nowMs: number = Date.now(),
-	sched?: FeedingSchedule
+  nowMs: number = Date.now(),
+  sched?: FeedingSchedule,
 ): boolean {
-	const active = sched ?? feedingSchedule();
-	if (active.mode === "commuter_eastern") return commuterClock(nowMs).open;
-	// epoch − offset is positive for any real date, so % never goes negative.
-	return (nowMs / 1000 - active.offsetSecs) % active.windowSecs < active.openSecs;
+  const active = sched ?? feedingSchedule();
+  const commuter = commuterSchedule(active);
+  if (commuter) {
+    return localCommuterClock(
+      nowMs,
+      commuter.timeZone,
+      commuter.dayAnchorMinute,
+      commuter.bucketStarts,
+      commuter.bucketOpenMins,
+    ).open;
+  }
+  // epoch − offset is positive for any real date, so % never goes negative.
+  return (
+    (nowMs / 1000 - active.offsetSecs) % active.windowSecs < active.openSecs
+  );
 }
 
 /** Ms timestamp when the CURRENT open phase closes (only valid while open). */
 export function phaseClosesAtMs(
-	nowMs: number = Date.now(),
-	sched?: FeedingSchedule
+  nowMs: number = Date.now(),
+  sched?: FeedingSchedule,
 ): number {
-	const active = sched ?? feedingSchedule();
-	if (active.mode === "commuter_eastern") {
-		const c = commuterClock(nowMs);
-		return localMinuteToUtcMs(
-			c.baseLocalMinute +
-				DIG_BUCKET_STARTS[c.bucket] +
-				DIG_BUCKET_OPEN_MINS[c.bucket]
-		);
-	}
-	return (
-		(windowIndex(nowMs, active) * active.windowSecs +
-			active.offsetSecs +
-			active.openSecs) *
-		1000
-	);
+  const active = sched ?? feedingSchedule();
+  const commuter = commuterSchedule(active);
+  if (commuter) {
+    const c = localCommuterClock(
+      nowMs,
+      commuter.timeZone,
+      commuter.dayAnchorMinute,
+      commuter.bucketStarts,
+      commuter.bucketOpenMins,
+    );
+    return localEpochMinuteToUtcMs(
+      c.baseLocalMinute +
+        commuter.bucketStarts[c.bucket] +
+        commuter.bucketOpenMins[c.bucket],
+      commuter.timeZone,
+    );
+  }
+  return (
+    (windowIndex(nowMs, active) * active.windowSecs +
+      active.offsetSecs +
+      active.openSecs) *
+    1000
+  );
 }
 
 /** Ms timestamp of the NEXT open phase (= the next window's start). */
 export function nextOpenAtMs(
-	nowMs: number = Date.now(),
-	sched?: FeedingSchedule
+  nowMs: number = Date.now(),
+  sched?: FeedingSchedule,
 ): number {
-	const active = sched ?? feedingSchedule();
-	return windowEndsAtMs(windowIndex(nowMs, active), active);
+  const active = sched ?? feedingSchedule();
+  return windowEndsAtMs(windowIndex(nowMs, active), active);
 }
 
 /** Current commuter bucket geometry for the Feeding strip. */
 export function patchWindowShape(nowMs: number = Date.now()): {
-	open: boolean;
-	openFrac: number;
-	marker: number;
+  open: boolean;
+  openFrac: number;
+  marker: number;
 } {
-	const active = feedingSchedule();
-	if (active.mode !== "commuter_eastern") {
-		const intoWindow =
-			(nowMs / 1000 - active.offsetSecs) % active.windowSecs;
-		return {
-			open: intoWindow < active.openSecs,
-			openFrac: active.openSecs / active.windowSecs,
-			marker: Math.max(0, Math.min(1, intoWindow / active.windowSecs)),
-		};
-	}
-	const c = commuterClock(nowMs);
-	const start = DIG_BUCKET_STARTS[c.bucket];
-	const end =
-		c.bucket < DIG_WINDOWS_PER_DAY - 1
-			? DIG_BUCKET_STARTS[c.bucket + 1]
-			: DIG_DAY_MIN;
-	const length = end - start;
-	return {
-		open: c.open,
-		openFrac: DIG_BUCKET_OPEN_MINS[c.bucket] / length,
-		marker: Math.max(0, Math.min(1, (c.minute - start) / length)),
-	};
+  const active = feedingSchedule();
+  const commuter = commuterSchedule(active);
+  if (!commuter) {
+    const intoWindow = (nowMs / 1000 - active.offsetSecs) % active.windowSecs;
+    return {
+      open: intoWindow < active.openSecs,
+      openFrac: active.openSecs / active.windowSecs,
+      marker: Math.max(0, Math.min(1, intoWindow / active.windowSecs)),
+    };
+  }
+  const c = localCommuterClock(
+    nowMs,
+    commuter.timeZone,
+    commuter.dayAnchorMinute,
+    commuter.bucketStarts,
+    commuter.bucketOpenMins,
+  );
+  const start = commuter.bucketStarts[c.bucket];
+  const end =
+    c.bucket < commuter.windowsPerDay - 1
+      ? commuter.bucketStarts[c.bucket + 1]
+      : DIG_DAY_MIN;
+  const length = end - start;
+  return {
+    open: c.open,
+    openFrac: commuter.bucketOpenMins[c.bucket] / length,
+    marker: Math.max(0, Math.min(1, (c.minute - start) / length)),
+  };
 }
 
 /** "1h 12m" until the current open phase closes. */
 export function phaseClosesCountdown(nowMs: number = Date.now()): string {
-	return formatLeft(Math.max(0, phaseClosesAtMs(nowMs) - nowMs));
+  return formatLeft(Math.max(0, phaseClosesAtMs(nowMs) - nowMs));
 }
 
 /** "3h 45m" until the patch next opens. */
 export function nextOpenCountdown(nowMs: number = Date.now()): string {
-	return formatLeft(Math.max(0, nextOpenAtMs(nowMs) - nowMs));
+  return formatLeft(Math.max(0, nextOpenAtMs(nowMs) - nowMs));
 }
 
 /**
@@ -539,25 +624,25 @@ export function nextOpenCountdown(nowMs: number = Date.now()): string {
  * surfaces can never disagree on the phase or the number. Pure; nowMs pins it.
  */
 export interface FeedingPhaseView {
-	open: boolean;
-	countdown: string;
+  open: boolean;
+  countdown: string;
 }
 
 export function feedingPhaseView(nowMs: number = Date.now()): FeedingPhaseView {
-	const forced = getDevSeasonOverrides().phase;
-	if (forced) {
-		return { open: forced === "open", countdown: "dev · forced" };
-	}
-	const open = patchPhaseOpen(nowMs);
-	return {
-		open,
-		countdown: open ? phaseClosesCountdown(nowMs) : nextOpenCountdown(nowMs),
-	};
+  const forced = getDevSeasonOverrides().phase;
+  if (forced) {
+    return { open: forced === "open", countdown: "dev · forced" };
+  }
+  const open = patchPhaseOpen(nowMs);
+  return {
+    open,
+    countdown: open ? phaseClosesCountdown(nowMs) : nextOpenCountdown(nowMs),
+  };
 }
 
 /** The patch's primary action label, shared by every season entry point. */
 export function patchCtaLabel(phaseOpen: boolean, countdown: string): string {
-	return phaseOpen ? "Dig now" : `Opening in ${countdown}`;
+  return phaseOpen ? "Dig now" : `Opening in ${countdown}`;
 }
 
 // ── Feeding-CTA state derivation (pure — pins the stale-dug fix) ─────────────
@@ -575,10 +660,10 @@ export function patchCtaLabel(phaseOpen: boolean, countdown: string): string {
 
 /** True while a dig recorded in `dugWindow` still belongs to the current feeding. */
 export function dugInCurrentWindow(
-	dugWindow: number | null,
-	nowMs: number = Date.now()
+  dugWindow: number | null,
+  nowMs: number = Date.now(),
 ): boolean {
-	return dugWindow !== null && dugWindow === windowIndex(nowMs);
+  return dugWindow !== null && dugWindow === windowIndex(nowMs);
 }
 
 /**
@@ -590,18 +675,18 @@ export function dugInCurrentWindow(
  * a closes-in time can never ride under "opens in" copy.
  */
 export function bannerDigStatus(
-	phaseOpen: boolean,
-	dug: boolean,
-	nowMs: number = Date.now()
+  phaseOpen: boolean,
+  dug: boolean,
+  nowMs: number = Date.now(),
 ): string | null {
-	if (phaseOpen && !dug) return null; // the button state — no status line
-	if (phaseOpen) return "dug this feeding — back next feeding ★";
-	// Guarded: read the opens-in number off the shared view (identical to the
-	// CTA's countdown while guarded), so both surfaces show the same number.
-	const opensIn = feedingPhaseView(nowMs).countdown;
-	return dug
-		? `dug this feeding — opens in ${opensIn}`
-		: patchCtaLabel(false, opensIn);
+  if (phaseOpen && !dug) return null; // the button state — no status line
+  if (phaseOpen) return "dug this feeding — back next feeding ★";
+  // Guarded: read the opens-in number off the shared view (identical to the
+  // CTA's countdown while guarded), so both surfaces show the same number.
+  const opensIn = feedingPhaseView(nowMs).countdown;
+  return dug
+    ? `dug this feeding — opens in ${opensIn}`
+    : patchCtaLabel(false, opensIn);
 }
 
 // Deterministic client seed kernel — FNV-1a folded into the Park–Miller range
@@ -610,12 +695,12 @@ export function bannerDigStatus(
 // open_rooting; a locally-predicted board always loses to the server board —
 // see hooks/useRooting, which stores r.seed, never a local guess).
 function fnv1aSeed(s: string): number {
-	let h = 2166136261;
-	for (let i = 0; i < s.length; i++) {
-		h ^= s.charCodeAt(i);
-		h = (h * 16777619) >>> 0;
-	}
-	return (h % 2147483646) + 1;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return (h % 2147483646) + 1;
 }
 
 // Practice-mode seed (no server row): any deterministic int in [1, 2147483646] —
@@ -623,7 +708,7 @@ function fnv1aSeed(s: string): number {
 // per-warId (it is NEVER crew-shared) — the seeded-crew unlock is a real-dig
 // property, so practice boards are unchanged by wedge 5a.
 export function practiceSeed(warId: string, win: number): number {
-	return fnv1aSeed(`${warId}:${win}`);
+  return fnv1aSeed(`${warId}:${win}`);
 }
 
 // SEEDED CREW BOARDS (wedge 5a) — the client mirror of the server derivation
@@ -637,7 +722,7 @@ export function practiceSeed(warId: string, win: number): number {
 // the server answers, open_rooting's seed wins. The string mirrors the server's
 // `win::text || ':' || group::text` ordering.
 export function crewBoardSeed(win: number, groupId: string): number {
-	return fnv1aSeed(`${win}:${groupId}`);
+  return fnv1aSeed(`${win}:${groupId}`);
 }
 
 // ── Dig physics — the splash kernel + cluster queries ───────────────────────
@@ -654,27 +739,27 @@ export function crewBoardSeed(win: number, groupId: string): number {
 // simulateGreedyClear probes for clearability, so the tuning test pins the real
 // kernel, not a copy of it.
 const SPLASH: Record<"rub" | "shove", { target: number; neighbor: number }> = {
-	rub: { target: 1, neighbor: 0.5 },
-	shove: { target: 2, neighbor: 1 },
+  rub: { target: 1, neighbor: 0.5 },
+  shove: { target: 2, neighbor: 1 },
 };
 
 export function applySplash(
-	layers: number[],
-	idx: number,
-	kind: "rub" | "shove"
+  layers: number[],
+  idx: number,
+  kind: "rub" | "shove",
 ): void {
-	if (idx < 0 || idx >= layers.length) return;
-	const { target, neighbor } = SPLASH[kind];
-	const dig = (i: number, amt: number) => {
-		if (i >= 0 && i < layers.length) layers[i] = Math.max(0, layers[i] - amt);
-	};
-	const r = Math.floor(idx / PATCH_COLS);
-	const c = idx % PATCH_COLS;
-	dig(idx, target);
-	if (r > 0) dig(idx - PATCH_COLS, neighbor);
-	if (r < PATCH_ROWS - 1) dig(idx + PATCH_COLS, neighbor);
-	if (c > 0) dig(idx - 1, neighbor);
-	if (c < PATCH_COLS - 1) dig(idx + 1, neighbor);
+  if (idx < 0 || idx >= layers.length) return;
+  const { target, neighbor } = SPLASH[kind];
+  const dig = (i: number, amt: number) => {
+    if (i >= 0 && i < layers.length) layers[i] = Math.max(0, layers[i] - amt);
+  };
+  const r = Math.floor(idx / PATCH_COLS);
+  const c = idx % PATCH_COLS;
+  dig(idx, target);
+  if (r > 0) dig(idx - PATCH_COLS, neighbor);
+  if (r < PATCH_ROWS - 1) dig(idx + PATCH_COLS, neighbor);
+  if (c > 0) dig(idx - 1, neighbor);
+  if (c < PATCH_COLS - 1) dig(idx + 1, neighbor);
 }
 
 // ── Cluster state queries (READ-ONLY over the parity-locked board + depths) ──
@@ -687,13 +772,13 @@ export function applySplash(
 /** True when every cell of a (non-empty) cluster is cleared — the completion
  *  test that fires a truffle collect. An empty cluster is never "revealed". */
 export function clusterRevealed(cluster: number[], layers: number[]): boolean {
-	return cluster.length > 0 && cluster.every((i) => layers[i] <= 0);
+  return cluster.length > 0 && cluster.every((i) => layers[i] <= 0);
 }
 
 /** True when AT LEAST ONE cell of a cluster is cleared — the partial-reveal test
  *  that marks a find as "the one that got away" when it never fully lands. */
 export function clusterTouched(cluster: number[], layers: number[]): boolean {
-	return cluster.some((i) => layers[i] <= 0);
+  return cluster.some((i) => layers[i] <= 0);
 }
 
 /** The collapse representative of a cluster: its lowest tile index (row-major),
@@ -701,13 +786,13 @@ export function clusterTouched(cluster: number[], layers: number[]): boolean {
  *  spoiler-light share grid, so a cluster reads as ONE find. Companion to
  *  clusterBox (which gives the render centroid). */
 export function clusterAnchor(cluster: number[]): number {
-	return cluster.length === 0 ? -1 : Math.min(...cluster);
+  return cluster.length === 0 ? -1 : Math.min(...cluster);
 }
 
 // ── Stir accounting (pure, for tests + the component) ───────────────────────
 
 export function stirCost(action: "rub" | "shove"): number {
-	return action === "rub" ? STIR_RUB : STIR_SHOVE;
+  return action === "rub" ? STIR_RUB : STIR_SHOVE;
 }
 
 // ── Warm/cold proximity + quiet streak (skill layer — pure + tested) ─────────
@@ -721,10 +806,10 @@ export function stirCost(action: "rub" | "shove"): number {
 // The rewarding finds a warm/cold whisper points toward + a streak counts: the
 // two truffle clusters and the shimmer. Junk / stones are not "sweet".
 const SWEET_KINDS: ReadonlySet<Find> = new Set<Find>([
-	"truffle_l",
-	"truffle_d",
-	"shimmer",
-	"unique",
+  "truffle_l",
+  "truffle_d",
+  "shimmer",
+  "unique",
 ]);
 
 /**
@@ -734,31 +819,31 @@ const SWEET_KINDS: ReadonlySet<Find> = new Set<Find>([
  * `layers` depths only — it can never mutate the parity-locked board.
  */
 export function nearestFindDistance(
-	board: PatchBoard,
-	layers: number[],
-	tileIdx: number
+  board: PatchBoard,
+  layers: number[],
+  tileIdx: number,
 ): number | null {
-	const fromR = Math.floor(tileIdx / PATCH_COLS);
-	const fromC = tileIdx % PATCH_COLS;
-	let best: number | null = null;
-	for (let i = 0; i < board.cells.length; i++) {
-		const cell = board.cells[i];
-		if (!cell || !SWEET_KINDS.has(cell.kind)) continue;
-		if (layers[i] <= 0) continue; // already uncovered — not a hint target
-		const r = Math.floor(i / PATCH_COLS);
-		const c = i % PATCH_COLS;
-		const d = Math.max(Math.abs(r - fromR), Math.abs(c - fromC));
-		if (best === null || d < best) best = d;
-	}
-	return best;
+  const fromR = Math.floor(tileIdx / PATCH_COLS);
+  const fromC = tileIdx % PATCH_COLS;
+  let best: number | null = null;
+  for (let i = 0; i < board.cells.length; i++) {
+    const cell = board.cells[i];
+    if (!cell || !SWEET_KINDS.has(cell.kind)) continue;
+    if (layers[i] <= 0) continue; // already uncovered — not a hint target
+    const r = Math.floor(i / PATCH_COLS);
+    const c = i % PATCH_COLS;
+    const d = Math.max(Math.abs(r - fromR), Math.abs(c - fromC));
+    if (best === null || d < best) best = d;
+  }
+  return best;
 }
 
 /** The warmer/colder whisper for a proximity distance (null = nothing left). */
 export function warmthWhisper(dist: number | null): string | null {
-	if (dist === null) return null;
-	if (dist <= 1) return "something sweet, right under your snout…";
-	if (dist === 2) return "warmer…";
-	return "cold mud out here.";
+  if (dist === null) return null;
+  if (dist <= 1) return "something sweet, right under your snout…";
+  if (dist === 2) return "warmer…";
+  return "cold mud out here.";
 }
 
 /**
@@ -767,16 +852,16 @@ export function warmthWhisper(dist: number | null): string | null {
  * This is the "useful reveal" test that feeds the quiet streak. Pure.
  */
 export function revealedSweetCell(
-	board: PatchBoard,
-	before: number[],
-	after: number[]
+  board: PatchBoard,
+  before: number[],
+  after: number[],
 ): boolean {
-	for (let i = 0; i < board.cells.length; i++) {
-		const cell = board.cells[i];
-		if (!cell || !SWEET_KINDS.has(cell.kind)) continue;
-		if (before[i] > 0 && after[i] <= 0) return true;
-	}
-	return false;
+  for (let i = 0; i < board.cells.length; i++) {
+    const cell = board.cells[i];
+    if (!cell || !SWEET_KINDS.has(cell.kind)) continue;
+    if (before[i] > 0 && after[i] <= 0) return true;
+  }
+  return false;
 }
 
 // A run of this many consecutive useful reveals gifts the next action for free.
@@ -791,13 +876,13 @@ export const QUIET_STREAK_LEN = 3;
  *          any non-useful action breaks the streak.
  */
 export function nextStreak(
-	prev: number,
-	useful: boolean
+  prev: number,
+  useful: boolean,
 ): { streak: number; freeNext: boolean } {
-	if (!useful) return { streak: 0, freeNext: false };
-	const streak = prev + 1;
-	if (streak >= QUIET_STREAK_LEN) return { streak: 0, freeNext: true };
-	return { streak, freeNext: false };
+  if (!useful) return { streak: 0, freeNext: false };
+  const streak = prev + 1;
+  if (streak >= QUIET_STREAK_LEN) return { streak: 0, freeNext: true };
+  return { streak, freeNext: false };
 }
 
 // ── The One That Got Away — carry-over helpers (pure, tested) ────────────────
@@ -819,29 +904,29 @@ export function nextStreak(
  * cell cleared) is never a miss either.
  */
 export function partiallyRevealedFinds(
-	board: PatchBoard,
-	layers: number[],
-	collected: Iterable<Find>
+  board: PatchBoard,
+  layers: number[],
+  collected: Iterable<Find>,
 ): ClaimableFind[] {
-	const got = new Set<Find>(collected);
-	const out: ClaimableFind[] = [];
-	const seen = new Set<ClaimableFind>();
-	// Every carry-eligible find as (kind, its tiles): the two truffle clusters and
-	// the unique treated as a single-cell "cluster". Partial = any cell cleared
-	// (clusterTouched), the find never collected. Order-stable, deduped.
-	const carriers: [ClaimableFind, number[]][] = [
-		["truffle_l", board.truffleL],
-		["truffle_d", board.truffleD],
-		["unique", board.unique ? [board.unique.idx] : []],
-	];
-	for (const [kind, cells] of carriers) {
-		if (cells.length === 0 || got.has(kind) || seen.has(kind)) continue;
-		if (clusterTouched(cells, layers)) {
-			seen.add(kind);
-			out.push(kind);
-		}
-	}
-	return out;
+  const got = new Set<Find>(collected);
+  const out: ClaimableFind[] = [];
+  const seen = new Set<ClaimableFind>();
+  // Every carry-eligible find as (kind, its tiles): the two truffle clusters and
+  // the unique treated as a single-cell "cluster". Partial = any cell cleared
+  // (clusterTouched), the find never collected. Order-stable, deduped.
+  const carriers: [ClaimableFind, number[]][] = [
+    ["truffle_l", board.truffleL],
+    ["truffle_d", board.truffleD],
+    ["unique", board.unique ? [board.unique.idx] : []],
+  ];
+  for (const [kind, cells] of carriers) {
+    if (cells.length === 0 || got.has(kind) || seen.has(kind)) continue;
+    if (clusterTouched(cells, layers)) {
+      seen.add(kind);
+      out.push(kind);
+    }
+  }
+  return out;
 }
 
 /**
@@ -851,8 +936,8 @@ export function partiallyRevealedFinds(
  * `gild` 0 (or null/undefined — feature-dark) → the plain threshold. Pure.
  */
 export function gildedSilhouetteDepth(gild: number | null | undefined): number {
-	const g = gild == null || gild < 0 ? 0 : Math.min(3, Math.floor(gild));
-	return 1 + g;
+  const g = gild == null || gild < 0 ? 0 : Math.min(3, Math.floor(gild));
+  return 1 + g;
 }
 
 // ── Board clearability simulation (pure — pins the depth tuning) ─────────────
@@ -864,27 +949,27 @@ export function gildedSilhouetteDepth(gild: number | null | undefined): number {
 // pins the real dig math, and a future depth change can't silently make boards
 // fully clearable again.
 export function simulateGreedyClear(
-	seed: number,
-	stirBudget: number,
-	rubCost: number = STIR_RUB
+  seed: number,
+  stirBudget: number,
+  rubCost: number = STIR_RUB,
 ): number {
-	const layers = generateBoard(seed).layers.map((d) => d); // fresh copy
-	const total = layers.reduce((a, d) => a + d, 0);
-	let spent = 0;
-	while (spent + rubCost <= stirBudget) {
-		// Pick the deepest still-buried tile (ties broken by lowest index).
-		let best = -1;
-		let bestDepth = 0;
-		for (let i = 0; i < layers.length; i++) {
-			if (layers[i] > bestDepth) {
-				bestDepth = layers[i];
-				best = i;
-			}
-		}
-		if (best < 0) break; // board fully cleared before budget ran out
-		applySplash(layers, best, "rub");
-		spent += rubCost;
-	}
-	const remaining = layers.reduce((a, d) => a + d, 0);
-	return (total - remaining) / total;
+  const layers = generateBoard(seed).layers.map((d) => d); // fresh copy
+  const total = layers.reduce((a, d) => a + d, 0);
+  let spent = 0;
+  while (spent + rubCost <= stirBudget) {
+    // Pick the deepest still-buried tile (ties broken by lowest index).
+    let best = -1;
+    let bestDepth = 0;
+    for (let i = 0; i < layers.length; i++) {
+      if (layers[i] > bestDepth) {
+        bestDepth = layers[i];
+        best = i;
+      }
+    }
+    if (best < 0) break; // board fully cleared before budget ran out
+    applySplash(layers, best, "rub");
+    spent += rubCost;
+  }
+  const remaining = layers.reduce((a, d) => a + d, 0);
+  return (total - remaining) / total;
 }

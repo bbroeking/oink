@@ -1,12 +1,49 @@
+// The app's canonical name-rendering block: an earned title above or below a
+// username, with an optional #discriminator and a trailing suffix. Every social
+// surface (friend row, crew row, leaderboard, UserSheet header) renders a player
+// through this, so a bare `fontSize` here landed off-scale type on all of them
+// at once. [B-05] (2026-09-11)
+//
+// Text speaks in TYPE roles only. `profile` folds onto `pageTitle` — spec §5
+// declined a `TYPE.profileName` at 24/27 and named `pageTitle` (26/28) its home.
+//
+// **Portrait + username is a `UserSheet` door, or it must not look like one**
+// [B-16]: this block draws the NAME, never the tap. A surface that composes it
+// beside a `PigAvatar`/`PrestigeAvatar` either wires the row to `UserSheet` or
+// drops the sticker treatment that promises a door.
 import React from "react";
-import { StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import {
+	StyleSheet,
+	View,
+	type StyleProp,
+	type TextStyle,
+	type ViewStyle,
+} from "react-native";
 import type { TitlePlacement } from "@/constants/title_types";
-import { FONTS, TYPE, WHIMSY } from "@/constants/theme";
+import { T, type TextRole } from "./Text";
 
 export interface ProfileIdentityTitle {
 	name: string;
 	placement: TitlePlacement;
 }
+
+type Variant = "row" | "hero" | "profile";
+
+// The three sizes the name speaks in.
+const NAME_ROLE: Record<Variant, TextRole> = {
+	row: "cardTitle",
+	hero: "sectionTitle",
+	profile: "pageTitle",
+};
+
+// The earned title: the hand voice, one step under the name. `row` keeps the
+// lowercase muted kicker the dense lists were tuned for; the two larger
+// variants wear the accent hand line.
+const TITLE_ROLE: Record<Variant, TextRole> = {
+	row: "kicker",
+	hero: "hand",
+	profile: "hand",
+};
 
 export function ProfileIdentity({
 	username,
@@ -23,7 +60,7 @@ export function ProfileIdentity({
 	title?: ProfileIdentityTitle | null;
 	discriminator?: string | null;
 	suffix?: string | null;
-	variant?: "row" | "hero" | "profile";
+	variant?: Variant;
 	align?: "left" | "center";
 	style?: StyleProp<ViewStyle>;
 	nameStyle?: StyleProp<TextStyle>;
@@ -31,48 +68,51 @@ export function ProfileIdentity({
 }) {
 	const pre = title?.placement === "pre" ? title.name : null;
 	const post = title?.placement === "post" ? title.name : null;
-	const alignStyle = align === "center" ? styles.center : null;
+	const centered = align === "center";
+	const titleRole = TITLE_ROLE[variant];
+	const titleTone = variant === "row" ? "secondary" : "accent";
+	const titleLine = (text: string) => (
+		<T
+			role={titleRole}
+			tone={titleTone}
+			align={centered ? "center" : undefined}
+			numberOfLines={1}
+			style={[variant === "row" && styles.rowTitle, titleStyle]}
+		>
+			{text}
+		</T>
+	);
+
 	return (
-		<View style={[styles.root, alignStyle, style]}>
-			{pre && (
-				<Text style={[styles.title, styles[`${variant}Title`], alignStyle, titleStyle]} numberOfLines={1}>
-					{pre}
-				</Text>
-			)}
-			<Text
-				style={[styles.name, styles[`${variant}Name`], alignStyle, nameStyle]}
+		<View style={[styles.root, centered && styles.center, style]}>
+			{pre && titleLine(pre)}
+			<T
+				role={NAME_ROLE[variant]}
+				align={centered ? "center" : undefined}
 				numberOfLines={1}
+				style={nameStyle}
 			>
 				{username ?? "Anonymous"}
-				{discriminator ? <Text style={styles.meta}>#{discriminator}</Text> : null}
-				{suffix ? <Text style={styles.suffix}> {suffix}</Text> : null}
-			</Text>
-			{post && (
-				<Text style={[styles.title, styles[`${variant}Title`], alignStyle, titleStyle]} numberOfLines={1}>
-					{post}
-				</Text>
-			)}
+				{discriminator ? (
+					<T role="kicker" tone="secondary">
+						#{discriminator}
+					</T>
+				) : null}
+				{suffix ? (
+					<T role="kicker" tone="accent">
+						{" "}
+						{suffix}
+					</T>
+				) : null}
+			</T>
+			{post && titleLine(post)}
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
 	root: { minWidth: 0 },
-	center: { alignItems: "center", textAlign: "center" },
-	name: { color: WHIMSY.ink },
-	rowName: { ...TYPE.cardTitle },
-	heroName: { ...TYPE.sectionTitle },
-	profileName: { fontFamily: FONTS.whimsy, fontSize: 24, lineHeight: 27 },
-	title: { fontFamily: FONTS.hand, color: WHIMSY.accent },
-	rowTitle: {
-		...TYPE.kicker,
-		fontSize: 11,
-		lineHeight: 14,
-		color: WHIMSY.mute,
-		textTransform: "lowercase",
-	},
-	heroTitle: { fontSize: 14, lineHeight: 17 },
-	profileTitle: { fontSize: 15, lineHeight: 18 },
-	meta: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
-	suffix: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.accent },
+	center: { alignItems: "center" },
+	// The dense-row title is written the way it is spoken: lowercase.
+	rowTitle: { textTransform: "lowercase" },
 });

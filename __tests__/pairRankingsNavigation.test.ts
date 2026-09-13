@@ -25,8 +25,10 @@ describe("pair rankings navigation", () => {
 	});
 
 	it("aligns the nested toggle to the primary scope track", () => {
+		// Both tracks read the same token (SPACE.card, 14) since the wave-3
+		// section pass; the assertion follows the token, not the pixel.
 		expect(leaderboard).toMatch(
-			/pairToggleWrap:\s*\{[\s\S]*?paddingHorizontal: 14,/,
+			/pairToggleWrap:\s*\{[\s\S]*?paddingHorizontal: SPACE\.card,/,
 		);
 	});
 

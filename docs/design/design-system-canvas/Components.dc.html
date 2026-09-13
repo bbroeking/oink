@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Nunito Sans", "Trebuchet MS", sans-serif; font-weight: 700; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    .whimsy { font-family: "Caprasimo", "Cooper Black", "Georgia", serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0.4px; color: #a03e2f; }
+    .pill { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: 0.3; border-radius: 1px; }
+    .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-weight: 500; font-size: 11px; color: #605449; }
+    .note { font-size: 13px; line-height: 18px; color: #2a1f15; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 18px; border-radius: 22px; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.1px; box-sizing: border-box; }
+    .btn-sm { min-height: 44px; padding: 10px 14px; font-size: 13px; border-radius: 22px; }
+    .btn-lg { min-height: 54px; padding: 14px 22px; font-size: 17px; border-radius: 27px; }
+    .cozy { border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; }
+    .primary { background: linear-gradient(#F0B8C8, #E8A7B9); color: #2a1f15; }
+    .purple { background: linear-gradient(#7052EE, #5C3FE0); color: #fff3e2; }
+    .gold { background: linear-gradient(#F8D068, #F5C44A); color: #5A3F00; }
+    .dark { background: #2a1f15; color: #fff3e2; }
+    .ghost { background: #fffaf0; color: #2a1f15; border: 1.5px solid #8c7e71; }
+    .locked { background: #f6e6d4; color: #605449; border: 2px solid #2a1f15; }
+    .success { background: #e8f5e0; color: #476436; border: 1.5px solid #7A9B63; }
+    .tag { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 10px; border: 1.5px solid #2a1f15; border-radius: 999px; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; }
+    .section { display: flex; flex-direction: column; gap: 14px; }
+    .head { display: flex; align-items: flex-end; justify-content: space-between; }
+    .proposed { display: inline-block; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #3a2c1e; background: #ffd87a; border: 1.5px solid #2a1f15; border-radius: 999px; padding: 3px 8px; }
+    .shipped { display: inline-block; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #476436; background: #e8f5e0; border: 1.5px solid #2a1f15; border-radius: 999px; padding: 3px 8px; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; border: 2px solid #2a1f15; background: #ffd6dc; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .tape { width: 48px; height: 14px; background: #ffd87a; border: 1.5px solid #2a1f15; opacity: 0.85; transform: rotate(-8deg); }
+    svg { display: block; }
+  </style>
+</helmet>
+<div style="width: 1240px; padding: 40px 44px 56px 44px; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px; background: #fbeee2; background-image: radial-gradient(#f6e6d4 1.1px, transparent 1.2px); background-size: 22px 22px;">
+
+  <div style="display: flex; flex-direction: column; gap: 4px;">
+    <div class="pill">★ Tickle the Pig · design system v1</div>
+    <div class="whimsy" style="font-size: 32px; line-height: 34px;">Components</div>
+    <div class="rule"></div>
+    <div class="hand" style="font-size: 17px; line-height: 24px; color: #605449; max-width: 800px;">Fourteen primitives. Every screen in the app is a composition of these and nothing else. Shipped ones are drawn at their exact source values; proposed ones consolidate what the audit found hand-rolled in three or more places.</div>
+  </div>
+
+  <!-- ===================== STICKER + TAPE ===================== -->
+  <div class="sticker section" style="padding: 22px 24px; transform: rotate(-0.4deg);">
+    <div class="head">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 01</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">Sticker · Tape</div></div>
+      <span class="shipped">shipped · press + slots in wave 2</span>
+    </div>
+    <div style="display: flex; gap: 28px; align-items: flex-start;">
+      <div style="display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; flex: 1;">
+        <div style="position: relative; width: 168px; height: 108px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.6deg); padding: 14px; box-sizing: border-box;"><div class="tape" style="position: absolute; top: -9px; left: 56px;"></div><div class="whimsy" style="font-size: 18px; line-height: 22px;">paper</div><div class="hand" style="font-size: 14px; color: #605449;">rotate −0.6 · r14 · 4,4</div></div>
+        <div style="width: 168px; height: 108px; background: #ffd6dc; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(0.8deg); padding: 14px; box-sizing: border-box;"><div class="whimsy" style="font-size: 18px; line-height: 22px;">rose</div><div class="hand" style="font-size: 14px; color: #605449;">ROW_TILTS[1] 0.8</div></div>
+        <div style="width: 168px; height: 108px; background: #c8e3f0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-1.2deg); padding: 14px; box-sizing: border-box;"><div class="whimsy" style="font-size: 18px; line-height: 22px;">sky</div><div class="hand" style="font-size: 14px; color: #605449;">ROW_TILTS[0] −1.2</div></div>
+        <div style="width: 168px; height: 108px; background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(0.5deg); padding: 14px; box-sizing: border-box;"><div class="pill" style="color: #ffd87a;">★ why we dig</div><div class="whimsy" style="font-size: 18px; line-height: 22px; color: #fff3e2;">bark</div><div class="hand" style="font-size: 14px; color: #e8d9c6;">storyteller callouts only</div></div>
+        <div style="width: 168px; height: 108px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; transform: rotate(0deg); padding: 14px; box-sizing: border-box;"><div class="whimsy" style="font-size: 18px; line-height: 22px;">row</div><div class="hand" style="font-size: 14px; color: #605449;">shadow="sm" · r12 · no tilt</div><span class="shipped" style="margin-top: 6px;">shadow="sm"</span></div>
+      </div>
+      <div style="width: 330px; display: flex; flex-direction: column; gap: 6px;">
+        <div class="pill">Spec</div>
+        <div class="note"><strong>Props</strong> color (12 named fills) · rotate (−1.5…1.5) · radius RADII.lg · border BORDER.ink · shadow "sticker" | "sm" | "none".</div>
+        <div class="note"><strong>Rules</strong> Default radius becomes <span class="mono">RADII.lg</span> not a literal 14. Fill is a token name; raw strings are removed from the prop type. Lists cycle <span class="mono">ROW_TILTS</span>; a lone hero sticker tilts ±0.5–1°.</div>
+        <div class="note"><strong>Tape</strong> pins a sticker: sun, −8°, 48×14, thin border, opacity .85. One per sticker, never two.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== BUTTON ===================== -->
+  <div class="sticker section" style="padding: 22px 24px; transform: rotate(0.3deg);">
+    <div class="head">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 02</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">Button · IconButton · TicketButton</div></div>
+      <span class="shipped">shipped · 9 variants × 4 sizes · loading</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <div class="btn cozy primary">Tickle Rosie</div>
+        <div class="btn cozy purple">Join Sounder</div>
+        <div class="btn cozy gold">Join Slop Club</div>
+        <div class="btn dark">Save room</div>
+        <div class="btn ghost">Not now</div>
+        <div class="btn locked">Resting · 2h 14m</div>
+        <div class="btn success">Claimed</div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <div class="btn btn-sm cozy primary">sm · 44</div>
+        <div class="btn cozy primary">md · 44</div>
+        <div class="btn btn-lg cozy primary">lg · 54</div>
+        <div class="btn cozy primary" style="opacity: 0.85;">pressed .85</div>
+        <div class="btn cozy primary" style="gap: 6px;"><img src="snout-coin.png" style="width: 18px; height: 18px;" alt="">Buy · 250</div>
+        <div class="btn cozy primary" style="width: 260px;">full width</div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <div style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #2a1f15; background: #fffaf0; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
+        <div style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #2a1f15; background: #2a1f15; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff3e2" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+        <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"><path d="M4 12l5 5L20 6"></path></svg></div>
+        <span class="mono">IconButton paper · dark · none — 44pt hit, 40 visual, label required</span>
+        <div style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px 8px 10px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v3a2 2 0 000 4v3H4v-3a2 2 0 000-4V8z"></path><path d="M9 8v10" stroke-dasharray="2 2"></path></svg><span class="whimsy" style="font-size: 16px;">12</span><span style="font-size: 12px; font-weight: 800; letter-spacing: 0.3px;">tickles</span></div>
+        <span class="mono">TicketButton — the HUD ticket; tone sun | rose | sage</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 28px;">
+        <div class="note"><strong>Variants</strong> primary (rose gradient) · purple · gold · dark · ghost · locked · success. Gradients keep the 2px ink outline + SHADOW_SM so they read hand-drawn.</div>
+        <div class="note"><strong>Sizes</strong> sm 44/14/10/13/22 · md 44/18/11/15/22 · lg 54/22/14/17/27 (minH / px / py / fs / radius). These move into <span class="mono">BUTTON_SIZE</span> tokens; fs → TYPE.label/body/bodyLg.</div>
+        <div class="note"><strong>States</strong> default · pressed (OPACITY.pressed) · disabled (locked look, never an opacity crush) · loading (label swaps to "★ working ★" in hand, no spinner) · full.</div>
+        <div class="note"><strong>Leaks to close</strong> gradient stops, <span class="mono">#5A3F00</span>, <span class="mono">#7A9B63</span>, icon marginLeft 6 → tokens <span class="mono">GRADIENT.rose/purple/gold</span>, <span class="mono">WHIMSY.goldInk</span>, <span class="mono">WHIMSY.sageInk</span>, SPACE.sm.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HEADERS ===================== -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px;">
+    <div class="sticker section" style="padding: 22px 24px; transform: rotate(-0.5deg);">
+      <div class="head">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 03</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">PageHeader · SectionHeader</div></div>
+        <span class="shipped">shipped</span>
+      </div>
+      <div style="background: #fbeee2; border: 1.5px dashed #8c7e71; border-radius: 12px; padding: 8px 18px 12px 18px; display: flex; flex-direction: column; gap: 4px;">
+        <div class="hand" style="font-size: 14px; line-height: 20px; color: #605449; min-height: 44px; display: flex; align-items: center;">‹ back</div>
+        <div class="pill">★ your herd</div>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between;"><div class="whimsy" style="font-size: 26px; line-height: 28px;">The Bramble Snouts</div><span style="font-size: 12px; font-weight: 800; color: #605449;">4 pigs</span></div>
+        <div class="rule" style="margin-top: 4px; margin-bottom: 8px;"></div>
+        <div class="mono">PageHeader — kicker KICKER_PILL · title TYPE.pageTitle · rule 64 · slots: right, below, onBack</div>
+      </div>
+      <div style="background: #fbeee2; border: 1.5px dashed #8c7e71; border-radius: 12px; padding: 12px 18px; display: flex; flex-direction: column; gap: 4px;">
+        <div class="kicker">★ this week</div>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between;"><div class="whimsy" style="font-size: 22px; line-height: 24px; letter-spacing: 0.2px;">Dig-Off</div><span class="hand" style="font-size: 14px; color: #605449;">how it works ›</span></div>
+        <div class="rule" style="margin-top: 4px;"></div>
+        <div class="mono">SectionHeader — kicker KICKER_TEXT · title TYPE.sectionTitle · right slot owns navigation</div>
+      </div>
+      <div class="note"><strong>Rule</strong> Page = crown at top of every stack screen; Section = in-screen breaks. No ad-hoc ← rows. Right slot is TYPE.label mute or a sm ghost Button, nothing else.</div>
+    </div>
+
+    <div class="sticker section" style="padding: 22px 24px; transform: rotate(0.4deg);">
+      <div class="head">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 04</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">EmptyState · LoadingBeat · Skeleton</div></div>
+        <span class="shipped">shipped · kind="error" + action in wave 2</span>
+      </div>
+      <div style="display: flex; gap: 18px; align-items: flex-start;">
+        <div style="flex: 1; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.6deg); padding: 20px 18px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <img src="glyph-zzz.png" style="width: 40px; height: 40px; opacity: 0.9; margin-bottom: 6px;" alt="">
+          <div class="whimsy" style="font-size: 18px; line-height: 22px; text-align: center;">The shop is napping</div>
+          <div class="hand" style="font-size: 14px; line-height: 20px; color: #605449; text-align: center;">New stickers arrive with the next feeding.</div>
+        </div>
+        <div style="width: 200px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 0;">
+          <img src="glyph-pigface.png" style="width: 56px; height: 56px;" alt="">
+          <div class="kicker">★ saddling up ★</div>
+          <div style="width: 160px; height: 18px; border-radius: 9px; background: #f6e6d4; border: 1.5px solid #e8d9c6;"></div>
+          <div class="mono">Skeleton 18 · r9</div>
+        </div>
+      </div>
+      <div class="note"><strong>Rule</strong> Never a bare "Nothing here." or a naked ActivityIndicator (11 files still do). Glyph fits the surface; title is cardTitle; sub is hand. Loading: WaitingRosie + kicker, progressbar role, busy state.</div>
+    </div>
+  </div>
+
+  <!-- ===================== SHEET / DIALOG ===================== -->
+  <div class="sticker section" style="padding: 22px 24px; transform: rotate(0.2deg);">
+    <div class="head">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 05</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">Sheet · Dialog · Ceremony — the three modal shapes</div></div>
+      <span class="shipped">shipped · Sheet, DialogButtonRow, ConfirmDialog rebuilt (wave 2)</span>
+    </div>
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      <div style="width: 300px; height: 300px; background: rgba(40,30,20,0.55); border-radius: 18px; position: relative; overflow: hidden;">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #fffaf0; border: 2px solid #2a1f15; border-bottom: 0; border-radius: 18px 18px 0 0; padding: 10px 18px 24px 18px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="width: 44px; height: 4px; border-radius: 2px; background: #8c7e71; align-self: center;"></div>
+          <div style="display: flex; align-items: flex-end; justify-content: space-between;"><div class="whimsy" style="font-size: 22px; line-height: 24px;">Hoofprints on you</div><div style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div></div>
+          <div class="hand" style="font-size: 14px; color: #605449;">3 blessings · 1 curse</div>
+          <div class="row"><div class="avatar" style="background: #d6c8f0;"><img src="glyph-star.png" style="width: 24px; height: 24px;" alt=""></div><div style="flex: 1;"><div style="font-size: 15px;">Warm Tea</div><div class="hand" style="font-size: 14px; color: #605449;">from Maple · 2h left</div></div></div>
+        </div>
+      </div>
+      <div style="width: 300px; height: 300px; background: rgba(40,30,20,0.55); border-radius: 18px; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 240px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.6deg); padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+          <div class="whimsy" style="font-size: 18px; line-height: 22px;">Swap this bounty?</div>
+          <div style="font-size: 13px; line-height: 18px; color: #605449;">Replace "Generous Hoof" with a random one.</div>
+          <div style="display: flex; gap: 8px; margin-top: 4px;"><div class="btn btn-sm ghost" style="flex: 1;">Keep</div><div class="btn btn-sm cozy purple" style="flex: 1; gap: 6px;">Swap · 25 <img src="snout-coin.png" style="width: 16px; height: 16px;" alt=""></div></div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+        <div class="pill">Spec</div>
+        <div class="note"><strong>Sheet</strong> = SlideUpSheet chrome + a standard paper panel: grabber 44×4, RADII.xl top corners, PAGE_PAD sides, title sectionTitle + DialogCloseRow, hand sub line, TAB_SAFE bottom. Seven sheets hand-roll this today; the panel becomes a component.</div>
+        <div class="note"><strong>Dialog</strong> = AdaptiveModalScaffold (maxWidth 430, fade, safe areas, scroll path) + ConfirmDialog for every spend / destructive / irreversible action. <span class="mono">Alert.alert</span> is allowed only for OS-level errors (9 files to review).</div>
+        <div class="note"><strong>Ceremony</strong> = full-screen paper with its own art (season end, judgement, tier-up). Enters through PopupQueue at a declared priority; never stacks on another modal. 33 raw Modal mounts are classified into these three shapes and nothing else.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ROW / CHIP / TAG / TOAST ===================== -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px;">
+    <div class="sticker section" style="padding: 22px 24px; transform: rotate(-0.3deg);">
+      <div class="head">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 06</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">ListRow · Avatar</div></div>
+        <span class="shipped">shipped · wave 2</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="row" style="transform: rotate(-0.6deg);"><div class="avatar"><img src="glyph-pigface.png" style="width: 34px; height: 34px;" alt=""></div><div style="flex: 1;"><div style="font-size: 15px;">Maple <span class="hand" style="color: #605449;">· visiting</span></div><div class="hand" style="font-size: 14px; color: #605449;">streak 12 · Bramble Snouts</div></div><span class="tag" style="background: #ffd87a;">3rd</span></div>
+        <div class="row" style="transform: rotate(0.5deg); background: #f6e6d4; opacity: 1;"><div class="avatar" style="background: #c9dec1;"><img src="glyph-zzz.png" style="width: 26px; height: 26px;" alt=""></div><div style="flex: 1; color: #605449;"><div style="font-size: 15px;">Clover</div><div class="hand" style="font-size: 14px;">trotted on</div></div></div>
+        <div class="row" style="border-width: 3px;"><div class="avatar" style="background: #d6c8f0;"><img src="glyph-star.png" style="width: 24px; height: 24px;" alt=""></div><div style="flex: 1;"><div style="font-size: 15px;">You</div><div class="hand" style="font-size: 14px; color: #605449;">pinned row · BORDER.heavy</div></div><span class="whimsy" style="font-size: 16px;">18</span></div>
+      </div>
+      <div class="note"><strong>Slots</strong> leading (Avatar 32/40/56 | Glyph) · title body · sub hand · trailing (tag | numeral | chevron | Button sm). <strong>States</strong> default · pressed · selected (heavy border) · muted (cream2 fill + mute ink, "trotted on") · loading (Skeleton). Tilt cycles ROW_TILTS. Replaces the row hand-rolled in Leaderboard, Friends, Inbox, CrewRow, race-standings.</div>
+    </div>
+
+    <div class="sticker section" style="padding: 22px 24px; transform: rotate(0.5deg);">
+      <div class="head">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 07</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">Chip · Tag · Ribbon · Toast</div></div>
+        <span class="shipped">shipped · wave 2</span>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <span class="tag">paper</span>
+        <span class="tag" style="background: #ffd87a;">sun</span>
+        <span class="tag" style="background: #ffd6dc;">rose</span>
+        <span class="tag" style="background: #c9dec1;">sage</span>
+        <span class="tag" style="background: #d6c8f0;">lilac</span>
+        <span class="tag" style="background: #3a2c1e; color: #fff3e2;">bark</span>
+        <span class="tag" style="border-width: 3px;">selected</span>
+        <span class="tag" style="background: #f6e6d4; color: #605449; box-shadow: none;">disabled</span>
+        <span class="tag" style="gap: 6px;"><img src="snout-coin.png" style="width: 16px; height: 16px;" alt="">250</span>
+      </div>
+      <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+        <div style="position: relative; width: 120px; height: 88px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; overflow: hidden;"><div style="position: absolute; top: 12px; right: -30px; width: 120px; transform: rotate(35deg); background: #F5C44A; border-top: 1.5px solid #2a1f15; border-bottom: 1.5px solid #2a1f15; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; padding: 3px 0;">members</div></div>
+        <span class="mono">Ribbon — corner tag, kickerPillSm, slopGold</span>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.6deg);"><img src="glyph-heart.png" style="width: 22px; height: 22px;" alt=""><div><div style="font-size: 13px;">Bought the Moonlit Cap</div><div class="hand" style="font-size: 14px; color: #605449;">it's in your closet</div></div></div>
+        <span class="mono">Toast — 2.4s, slides from top, one at a time</span>
+      </div>
+      <div class="note"><strong>Chip</strong> is the selectable capsule (filters, stake amounts, pig picker); <strong>Tag</strong> is the read-only capsule (rank, count, cost); <strong>Ribbon</strong> is the corner marker; <strong>Toast</strong> generalises PurchaseToast. All four: TYPE.label, BORDER.thin, RADII.pill, SHADOW_SM; selected = BORDER.heavy, never a color change alone.</div>
+    </div>
+  </div>
+
+  <!-- ===================== SEGMENTED / INPUT / STAT / METER ===================== -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px;">
+    <div class="sticker section" style="padding: 22px 24px; transform: rotate(0.3deg);">
+      <div class="head">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 08</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">SegmentedControl · TextField</div></div>
+        <span class="shipped">shipped · TextField + icon-over-label in wave 2</span>
+      </div>
+      <div style="display: inline-flex; padding: 4px; gap: 4px; background: #f6e6d4; border: 2px solid #2a1f15; border-radius: 999px; align-self: flex-start;">
+        <div style="min-height: 36px; padding: 6px 16px; border-radius: 999px; background: #2a1f15; color: #fff3e2; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; display: flex; align-items: center;">This week</div>
+        <div style="min-height: 36px; padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; display: flex; align-items: center;">Past weeks</div>
+        <div style="min-height: 36px; padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; display: flex; align-items: center;">Season</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; max-width: 360px;">
+        <div class="pill">username</div>
+        <div style="min-height: 48px; padding: 10px 14px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; font-size: 15px; display: flex; align-items: center; justify-content: space-between;"><span>rosie_the_brave</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#476436" stroke-width="2.4" stroke-linecap="round"><path d="M4 12l5 5L20 6"></path></svg></div>
+        <div class="hand" style="font-size: 14px; color: #476436;">that one's free</div>
+        <div style="min-height: 48px; padding: 10px 14px; background: #ffd6dc; border: 2px solid #983a2c; border-radius: 12px; font-size: 15px; display: flex; align-items: center;">rosie the brave</div>
+        <div class="hand" style="font-size: 14px; color: #983a2c;">letters, numbers and _ only</div>
+      </div>
+      <div class="note"><strong>Segmented</strong> radiogroup, 44pt targets, selected = ink pill. <strong>TextField</strong> label kickerPill · body text · states default / focus (BORDER.heavy) / valid (success ink + check) / error (danger fill + border, hand message). Replaces the fields in UsernameSetup, ReferralCodeEntry, scan-code, guestbook.</div>
+    </div>
+
+    <div class="sticker section" style="padding: 22px 24px; transform: rotate(-0.4deg);">
+      <div class="head">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 09</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">Stat · ProgressTrack · Divider</div></div>
+        <span class="shipped">shipped · wave 2</span>
+      </div>
+      <div style="display: flex; gap: 22px; align-items: flex-end;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><div class="whimsy" style="font-size: 26px; line-height: 28px;">1,250</div><div class="pill" style="font-size: 10px;">snouts</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><div class="whimsy" style="font-size: 16px;">18</div><div class="pill" style="font-size: 10px;">finds</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;"><div class="whimsy" style="font-size: 16px; color: #F58F4A;">12</div><div class="pill" style="font-size: 10px;">day streak</div></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between;"><span class="pill">the great hunger</span><span class="hand" style="font-size: 14px; color: #605449;">Peckish</span></div>
+          <div style="height: 16px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden;"><div style="width: 62%; height: 100%; background: #c9dec1; border-right: 2px solid #2a1f15;"></div></div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;"><div class="rule"></div><span class="mono">TITLE_RULE 64×2 · .3</span><div style="flex: 1; height: 1.5px; background: #e8d9c6;"></div><span class="mono">Divider hair · barkMute</span></div>
+      <div class="note"><strong>Stat</strong> = numeral (pageTitle | numeral) over kickerPillSm; sizes lg / md. Progression only — never a feeling. Streak wears flame. <strong>Meter</strong> = 16px capsule, ink outline, pastel fill, hand label; tone sage | sun | rose | lilac. Replaces the bars in GreatHungerMeter, ZoomiesMeter, pass track, habitat.</div>
+    </div>
+  </div>
+
+  <!-- ===================== ICONOGRAPHY / PIG ===================== -->
+  <div class="sticker section" style="padding: 22px 24px; transform: rotate(-0.2deg);">
+    <div class="head">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div class="kicker">★ 10</div><div class="whimsy" style="font-size: 22px; line-height: 24px;">Glyph · Icon · PigStage · HangingSignsTabBar</div></div>
+      <span class="shipped">shipped</span>
+    </div>
+    <div style="display: flex; gap: 28px; align-items: flex-start;">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <img src="glyph-star.png" style="width: 40px; height: 40px;" alt=""><img src="glyph-heart.png" style="width: 40px; height: 40px;" alt=""><img src="glyph-trophy.png" style="width: 40px; height: 40px;" alt=""><img src="glyph-friends.png" style="width: 40px; height: 40px;" alt=""><img src="glyph-zzz.png" style="width: 40px; height: 40px;" alt="">
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"></path></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 018 0v3"></path></svg>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+        <div class="note"><strong>Glyph</strong> (54 hand-drawn PNGs) is pictographic: feelings, objects, rewards. <strong>Icon</strong> (SVG, 2.4 stroke) is functional: check, x, plus, arrows, search, lock, share, tab signs. The dingbat ruling: ★ ✦ · are typography; ✓ ✕ ♥ are Icon/Glyph. No emoji, ever — 3 files still carry one.</div>
+        <div class="note"><strong>Icon drift to close</strong>: Icon.tsx imports MaterialCommunityIcons and Feather beside its own paths, and holds 36 raw hex values. Rule: one stroke style, colors from UI_COLORS, vector-icon families retired.</div>
+        <div class="note"><strong>PigStage</strong> is the one pig renderer (sprite/Rive/raster behind one contract): living surfaces sync anchors to the frame; product shots freeze at rest. <strong>HangingSignsTabBar</strong> is the navigation signature — sway spring, five signs, never a flat system bar.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

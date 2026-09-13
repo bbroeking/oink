@@ -14,8 +14,8 @@
 // the 24h decline cooldown + the combined seat cap).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, TextInput } from "react-native";
-import { CrewSheet } from "./CrewSheet";
+import { StyleSheet } from "react-native";
+import { Sheet } from "./ui/Sheet";
 import {
 	AccentNote,
 	CrewPortrait,
@@ -24,11 +24,14 @@ import {
 	HandLink,
 	RowStatus,
 	SunPill,
-} from "./CrewRow";
+} from "./ui";
+import { Button } from "./ui/Button";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
+import { TextField } from "./ui/TextField";
 import { useInviteActions, type UseCrew } from "@/hooks/useCrew";
 import { fetchInviteCandidates, type InviteCandidate } from "@/utils/crews";
-import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { SOUNDER_RECRUITING_COPY } from "@/utils/sounderMessages";
+import { MOTION, SPACE } from "@/constants/theme";
 
 function inviteError(reason?: string): string {
 	switch (reason) {
@@ -42,6 +45,8 @@ function inviteError(reason?: string): string {
 			return "You can't invite that pig.";
 		case "no_crew":
 			return "You're not in a Sounder.";
+		case "leader_only":
+			return "Only the Sounder leader can send a recruiting Oink.";
 		default:
 			return "Couldn't send that invite.";
 	}
@@ -58,7 +63,7 @@ export function PlayerInvitePicker({
 }) {
 	const [search, setSearch] = useState("");
 	const [rows, setRows] = useState<InviteCandidate[] | null>(null);
-	const { note, busyId, invite, cancel, seatsFull } = useInviteActions(
+	const { note, busyId, inviteWithRecruiting, cancel, seatsFull } = useInviteActions(
 		crewHook,
 		inviteError
 	);
@@ -72,7 +77,7 @@ export function PlayerInvitePicker({
 		const t = setTimeout(async () => {
 			const data = await fetchInviteCandidates(q);
 			if (!cancelled) setRows(data);
-		}, q ? 300 : 0);
+		}, q ? MOTION.debounce : 0);
 		return () => {
 			cancelled = true;
 			clearTimeout(t);
@@ -92,24 +97,35 @@ export function PlayerInvitePicker({
 		[crewHook.crew.invitesOut]
 	);
 	return (
-		<CrewSheet
-			visible={visible}
-			onDismiss={onDismiss}
+		<Sheet
+			open={visible}
+			onClose={onDismiss}
 			title="Recruit any snout"
-			sub="ranked by all-time truffles dug — or search a name"
+			subtitle="ranked by all-time truffles dug — or search a name"
+			closeLabel="Done"
+			bottomInset="safe"
+			keyboardAware
+			footer={
+				<Button variant="handLink" full onPress={onDismiss} accessibilityHint="Closes the recruiting list">
+					Done
+				</Button>
+			}
 		>
-			<TextInput
+			<TextField
+				label="Search for a pig by username"
+				labelHidden
 				value={search}
 				onChangeText={setSearch}
 				placeholder="search a username…"
-				placeholderTextColor={WHIMSY.mute}
 				autoCapitalize="none"
 				autoCorrect={false}
-				style={styles.search}
 			/>
+			<AccentNote style={styles.recruitingCopy}>
+				Recruiting Oink: “{SOUNDER_RECRUITING_COPY}”
+			</AccentNote>
 
 			{rows === null ? (
-				<LoadingBeat />
+				<LoadingBeat label="finding diggers" />
 			) : rows.length === 0 ? (
 				<EmptyState
 					glyph="friends"
@@ -117,77 +133,65 @@ export function PlayerInvitePicker({
 					sub={search.trim() ? "try another spelling." : "check back once the bog fills up."}
 				/>
 			) : (
-				<ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-					{rows.map((p, idx) => {
-						const waitingInvite = waitingInviteByPlayer.get(p.id);
-						const waiting = waitingInvite != null;
-						const dug = `${p.truffles_dug.toLocaleString()} ${
-							p.truffles_dug === 1 ? "truffle" : "truffles"
-						} dug all-time`;
-						const sub = waiting
-							? `${dug} • waiting on your last ask…`
-							: p.in_crew
-								? `${dug} • in ${p.crew_name ?? "another Sounder"} — invite to switch`
-								: seatsFull
-									? `${dug} • the banner's full`
-									: `${dug} • no crew yet — free to ride`;
-						const right = waiting ? (
-							<HandLink
-								onPress={() => cancel(waitingInvite)}
-								textStyle={busyId === waitingInvite ? styles.dim : undefined}
-							>
-								take it back
-							</HandLink>
-						) : seatsFull ? (
-							<RowStatus>sounder full</RowStatus>
-						) : (
-							<SunPill onPress={() => invite(p.id)} disabled={busyId !== null}>
-								{busyId === p.id ? "Inviting…" : "Invite"}
-							</SunPill>
-						);
-						return (
-							<CrewRow
-								key={p.id}
-								divider={idx > 0}
-								left={<CrewPortrait />}
-								title={
-									<>
-										{p.username ?? "—"}
-										{p.discriminator ? <DiscText> #{p.discriminator}</DiscText> : null}
-									</>
-								}
-								sub={sub}
-								right={right}
-							/>
-						);
-					})}
-				</ScrollView>
+				rows.map((p, idx) => {
+					const waitingInvite = waitingInviteByPlayer.get(p.id);
+					const waiting = waitingInvite != null;
+					const name = p.username ?? "this pig";
+					const dug = `${p.truffles_dug.toLocaleString()} ${
+						p.truffles_dug === 1 ? "truffle" : "truffles"
+					} dug all-time`;
+					const sub = waiting
+						? `${dug} • waiting on your last ask…`
+						: p.in_crew
+							? `${dug} • in ${p.crew_name ?? "another Sounder"} — invite to switch`
+							: seatsFull
+								? `${dug} • the banner's full`
+								: `${dug} • no crew yet — free to ride`;
+					const right = waiting ? (
+						<HandLink
+							onPress={() => cancel(waitingInvite)}
+							disabled={busyId === waitingInvite}
+							accessibilityLabel={`Take back the invite to ${name}`}
+							accessibilityHint="Cancels the ask and frees the seat it was holding"
+						>
+							take it back
+						</HandLink>
+					) : seatsFull ? (
+						<RowStatus>sounder full</RowStatus>
+					) : (
+						<SunPill
+							onPress={() => inviteWithRecruiting(p.id)}
+							disabled={busyId !== null}
+							accessibilityLabel={`Invite ${name} and send the recruiting Oink`}
+							accessibilityHint="Holds a seat on your banner until they answer"
+						>
+							{busyId === p.id ? "Inviting…" : "Invite + Oink"}
+						</SunPill>
+					);
+					return (
+						<CrewRow
+							key={p.id}
+							divider={idx > 0}
+							left={<CrewPortrait />}
+							title={
+								<>
+									{p.username ?? "—"}
+									{p.discriminator ? <DiscText> #{p.discriminator}</DiscText> : null}
+								</>
+							}
+							sub={sub}
+							right={right}
+						/>
+					);
+				})
 			)}
 
 			{!!note && <AccentNote style={styles.note}>{note}</AccentNote>}
-
-			<HandLink onPress={onDismiss} style={styles.done}>
-				Done
-			</HandLink>
-		</CrewSheet>
+		</Sheet>
 	);
 }
 
 const styles = StyleSheet.create({
-	search: {
-		...TYPE.body,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.sm,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
-		marginBottom: SPACE.sm,
-	},
-	list: { maxHeight: 360 },
-	dim: { opacity: 0.5 },
 	note: { textAlign: "center", marginTop: SPACE.sm },
-	done: { alignSelf: "center", marginTop: SPACE.md, paddingHorizontal: SPACE.lg },
+	recruitingCopy: { textAlign: "left", marginTop: SPACE.sm, marginBottom: SPACE.sm },
 });

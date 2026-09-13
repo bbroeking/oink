@@ -13,27 +13,36 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-	Modal,
 	View,
-	Text,
 	Pressable,
 	StyleSheet,
 	useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { Sticker } from "./ui/Sticker";
-import { Button } from "./ui";
-import { Icon } from "./ui/Icon";
 import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
+	AdaptiveModalScaffold,
+	Button,
+	DialogCloseRow,
+	Icon,
+	Kicker,
+	PageTitle,
+	Sticker,
+} from "./ui";
+import {
+	BORDER,
+	PRESSED_FLAT,
 	RADII,
 	SPACE,
-	STICKER_SHADOW,
+	TILT,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
+
+// The sound toggle riding the tale's bottom-right corner — a paper chip sized
+// to the 34pt art well the video frame can spare, not a spacing step.
+const MUTE_CHIP = 34;
+const MUTE_ICON = 16;
 
 const TALE_VIDEO = require("../assets/video/great_hunger_tale.mp4");
 
@@ -47,17 +56,17 @@ export function GreatHungerIntroModal({
 	onDone: (action: "rally" | "skip") => void;
 }) {
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={visible}
-			animationType="fade"
-			transparent
 			onRequestClose={() => onDone("skip")}
+			maxWidth={400}
+			bare
 		>
 			{/* Gate on `visible` so the player mounts fresh per open (autoplay
 			    from 0:00 every retelling) and releases on close — useVideoPlayer
 			    ties the native player's lifetime to the mount. */}
 			{visible && <TaleCard onDone={onDone} />}
-		</Modal>
+		</AdaptiveModalScaffold>
 	);
 }
 
@@ -92,83 +101,79 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 	}, [onDone]);
 
 	return (
-		<View style={styles.backdrop}>
-			<Sticker
-				color="paper"
-				rotate={-0.8}
-				radius={RADII.xxl}
-				border={3}
-				style={[styles.card, STICKER_SHADOW]}
+		<Sticker
+			color="paper"
+			rotate={TILT.dialog}
+			radius={RADII.xxl}
+			border={3}
+			style={styles.card}
+		>
+			<DialogCloseRow onPress={() => onDone("skip")} label="Skip the tale" />
+			<Kicker align="center" style={styles.kicker}>
+				season 1 — the tale ★
+			</Kicker>
+			<PageTitle align="center" style={styles.headline}>
+				The Great Hunger
+			</PageTitle>
+
+			{/* The tale itself — 9:16 frame, ink-bordered like the rest of the
+			    card family. Captions ride inside the video; controls stay
+			    native-free so it reads as a story moment, not a media player.
+			    Height caps to the screen so the CTA never gets pushed off. */}
+			<View
+				style={[styles.videoFrame, { maxHeight: Math.round(screenH * 0.58) }]}
 			>
-				<Text style={styles.kicker}>★ season 1 — the tale ★</Text>
-				<Text style={styles.headline}>The Great Hunger</Text>
-
-				{/* The tale itself — 9:16 frame, ink-bordered like the rest of the
-				    card family. Captions ride inside the video; controls stay
-				    native-free so it reads as a story moment, not a media player.
-				    Height caps to the screen so the CTA never gets pushed off. */}
-				<View
-					style={[styles.videoFrame, { maxHeight: Math.round(screenH * 0.58) }]}
+				<VideoView
+					player={player}
+					style={StyleSheet.absoluteFill}
+					contentFit="cover"
+					nativeControls={false}
+				/>
+				<Pressable
+					onPress={toggleMute}
+					hitSlop={8}
+					accessibilityRole="button"
+					accessibilityLabel={muted ? "Unmute the tale" : "Mute the tale"}
+					accessibilityHint="Turns the narration on or off"
+					style={({ pressed }) => [
+						styles.muteChip,
+						pressed && PRESSED_FLAT,
+					]}
 				>
-					<VideoView
-						player={player}
-						style={StyleSheet.absoluteFill}
-						contentFit="cover"
-						nativeControls={false}
+					<Icon
+						name={muted ? "speakerOff" : "speaker"}
+						size={MUTE_ICON}
+						color={UI_COLORS.textPrimary}
 					/>
-					<Pressable
-						onPress={toggleMute}
-						hitSlop={8}
-						accessibilityRole="button"
-						accessibilityLabel={muted ? "Unmute the tale" : "Mute the tale"}
-						style={({ pressed }) => [
-							styles.muteChip,
-							pressed && { opacity: 0.8 },
-						]}
-					>
-						<Icon name={muted ? "speakerOff" : "speaker"} size={16} color={WHIMSY.ink} />
-					</Pressable>
-				</View>
+				</Pressable>
+			</View>
 
-				<Button size="lg" variant="primary" full onPress={rally}>
-					{ended ? "Rally your Sounder" : "To the season"}
-				</Button>
-			</Sticker>
-		</View>
+			<Button size="lg" variant="primary" full onPress={rally}>
+				{ended ? "Rally your Sounder" : "To the season"}
+			</Button>
+		</Sticker>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
-	},
 	card: {
 		width: "100%",
-		maxWidth: 400,
 		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.lg,
+		paddingBottom: SPACE.lg,
 	},
-	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: SPACE.md,
-	},
+	kicker: { marginBottom: SPACE.xs },
+	headline: { marginBottom: SPACE.md },
 	videoFrame: {
 		width: "100%",
 		aspectRatio: 9 / 16,
 		alignSelf: "center",
-		borderWidth: 2.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.lg,
 		overflow: "hidden",
-		backgroundColor: WHIMSY.ink,
+		// The letterbox ground behind the tale — the sanctioned ceremony dark,
+		// not a second hand-mixed near-black. [C-23]
+		backgroundColor: WHIMSY.stage,
 		marginBottom: SPACE.md,
 	},
 	// Sound toggle riding the video's bottom-right corner — paper chip,
@@ -177,12 +182,12 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		bottom: SPACE.sm,
 		right: SPACE.sm,
-		width: 34,
-		height: 34,
-		borderRadius: 17,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		width: MUTE_CHIP,
+		height: MUTE_CHIP,
+		borderRadius: RADII.pill,
+		backgroundColor: UI_COLORS.surface,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
 	},

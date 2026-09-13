@@ -3,11 +3,11 @@
 // (granted_hat_id, or fallback_snouts when the player owned every
 // eligible hat). Beat 1: the closed box wobbles, begging to be tapped.
 // Beat 2: the hat pops in over a rarity-tinted hero with a rarity
-// stripe + "wear it in the Closet" copy.
+// tag + "wear it in the Closet" copy.
 //
 // Queue-slotted (id 'mysteryHat', priority 48 — after achievements/
 // release notes, before the lucky-pig chain) and visible-driven per the
-// PopupQueue contract: the native Modal stays mounted, `visible` comes
+// PopupQueue contract: the scaffold's Modal stays mounted, `visible` comes
 // from the slot, and dismiss is two-phase — release() hides the modal,
 // the backing state clears a POPUP_TEARDOWN_MS beat later via onDone.
 //
@@ -18,31 +18,33 @@ import {
 	Animated,
 	Easing,
 	Image,
-	Modal,
 	Pressable,
 	StyleSheet,
-	Text,
-	View,
 } from "react-native";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import { Glyph } from "./ui/Glyph";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { Sticker } from "./ui/Sticker";
-import { Button } from "./ui/Button";
 import {
+	AdaptiveModalScaffold,
+	Button,
+	Glyph,
+	Kicker,
+	SnoutCoin,
+	Sticker,
+	T,
+	Tag,
 	usePopupSlot,
 	POPUP_TEARDOWN_MS,
-} from "./ui/PopupQueue";
-import { HAT_IMAGES, RARITY_COLORS } from "@/constants/hats";
+} from "./ui";
+import { HAT_IMAGES } from "@/constants/hats";
 import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
+	ART_SIZE,
+	BORDER,
+	RARITY_BADGE,
 	RARITY_BG_SOLID,
 	RADII,
-	STICKER_SHADOW,
+	SPACE,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
 import {
@@ -51,6 +53,12 @@ import {
 } from "@/hooks/useMotionPolicy";
 
 const revealSound = require("../assets/sounds/claim.mp3");
+
+// Drawing geometry for the ceremony. The hero is the stage the reward lands
+// on; the box is the tappable lid before it opens. Sizes, not spacing steps.
+const CARD_MAX_W = 360;
+const HERO = 160;
+const BOX_GLYPH = 120;
 
 // The additive payload claim_tier_reward returns for mystery_box claims
 // (20260631 migration). Exactly one of granted_hat_id / fallback_snouts
@@ -113,6 +121,7 @@ export function MysteryHatReveal({
 			);
 			wobbleLoop.current.start();
 		} else {
+			// Rest pose: the box sits square on the paper, the hat unpopped.
 			wobbleLoop.current?.stop();
 			wobbleLoop.current = null;
 			wobble.setValue(0);
@@ -162,6 +171,7 @@ export function MysteryHatReveal({
 	};
 
 	const rarity = reveal?.granted_hat_rarity ?? "common";
+	const badge = RARITY_BADGE[rarity] ?? RARITY_BADGE.common;
 	const isFallback = !reveal?.granted_hat_id;
 	const hatImage = reveal?.granted_hat_id
 		? HAT_IMAGES[reveal.granted_hat_id]
@@ -177,174 +187,156 @@ export function MysteryHatReveal({
 	});
 
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={slot.visible}
-			transparent
-			animationType="fade"
 			onRequestClose={phase === "open" ? handleDone : handleOpen}
+			bare
+			maxWidth={CARD_MAX_W}
+			contentContainerStyle={styles.content}
 		>
-			<View style={styles.backdrop}>
-				<Sticker color="lilac" rotate={-1.8} radius={RADII.xxl} style={styles.card}>
-					<Text style={styles.kicker}>★ mystery hat box ★</Text>
+			<Sticker color="lilac" rotate={-1.8} radius={RADII.xxl} style={styles.card}>
+				<Kicker>mystery hat box ★</Kicker>
 
-					{phase === "box" ? (
-						<>
-							<Pressable onPress={handleOpen} style={styles.boxTap} hitSlop={12}>
-								<Animated.View style={{ transform: [{ rotate: boxRotate }] }}>
-									<Glyph name="gift" size={120} />
-								</Animated.View>
-							</Pressable>
-							<Text style={styles.title}>Something's rattling…</Text>
-							<Text style={styles.subtitle}>Tap the box to open it.</Text>
-						</>
-					) : (
-						<>
-							<Animated.View
-								style={[
-									styles.hero,
-									{
-										backgroundColor: isFallback
-											? WHIMSY.paper
-											: RARITY_BG_SOLID[rarity] ?? WHIMSY.paper,
-										transform: [{ scale: hatScale }],
-									},
-								]}
-							>
-								{isFallback ? (
-									<SnoutCoin size={96} />
-								) : hatImage ? (
-									<Image
-										source={hatImage}
-										style={styles.heroImage}
-										resizeMode="contain"
-									/>
-								) : (
-									<Text style={styles.heroEmoji}>✦</Text>
-								)}
+				{phase === "box" ? (
+					<>
+						<Pressable
+							onPress={handleOpen}
+							style={styles.boxTap}
+							hitSlop={SPACE.md}
+							accessibilityRole="button"
+							accessibilityLabel="Open the mystery hat box"
+							accessibilityHint="Reveals what the box was holding"
+						>
+							<Animated.View style={{ transform: [{ rotate: boxRotate }] }}>
+								<Glyph name="gift" size={BOX_GLYPH} />
 							</Animated.View>
-
+						</Pressable>
+						<T role="pageTitle" align="center" style={styles.title}>
+							Something's rattling…
+						</T>
+						<T role="handLg" align="center" style={styles.subtitle}>
+							Tap the box to open it.
+						</T>
+					</>
+				) : (
+					<>
+						<Animated.View
+							style={[
+								styles.hero,
+								{
+									backgroundColor: isFallback
+										? WHIMSY.paper
+										: RARITY_BG_SOLID[rarity] ?? WHIMSY.paper,
+									transform: [{ scale: hatScale }],
+								},
+							]}
+						>
 							{isFallback ? (
-								<>
-									<Text style={styles.title}>
-										+{reveal?.fallback_snouts ?? 150} snouts!
-									</Text>
-									<Text style={styles.subtitle}>
-										You already own every hat the box could hold — it
-										spilled snouts instead.
-									</Text>
-								</>
+								<SnoutCoin size={COIN} />
+							) : hatImage ? (
+								<Image
+									source={hatImage}
+									style={styles.heroImage}
+									resizeMode="contain"
+								/>
 							) : (
-								<>
-									<Text style={styles.title}>
-										{reveal?.granted_hat_name ?? "A mystery hat"}
-									</Text>
-									{/* Rarity stripe — the catalog's rarity color. */}
-									<View
-										style={[
-											styles.rarityStripe,
-											{
-												backgroundColor:
-													RARITY_COLORS[rarity] ?? RARITY_COLORS.common,
-											},
-										]}
-									>
-										<Text style={styles.rarityText}>{rarity}</Text>
-									</View>
-									<Text style={styles.subtitle}>
-										It's yours — wear it in the Closet.
-									</Text>
-								</>
+								<Glyph name="sparkle" size={ART_SIZE.portrait} />
 							)}
+						</Animated.View>
 
-							<Button
-								variant="dark"
-								size="md"
-								onPress={handleDone}
-								style={{ marginTop: 12 }}
-							>
-								Oink!
-							</Button>
-						</>
-					)}
-				</Sticker>
-			</View>
-		</Modal>
+						{isFallback ? (
+							<>
+								<T role="pageTitle" align="center" style={styles.title}>
+									+{reveal?.fallback_snouts ?? FALLBACK_SNOUTS} snouts!
+								</T>
+								<T role="handLg" align="center" style={styles.subtitle}>
+									You already own every hat the box could hold — it
+									spilled snouts instead.
+								</T>
+							</>
+						) : (
+							<>
+								<T role="pageTitle" align="center" style={styles.title}>
+									{reveal?.granted_hat_name ?? "A mystery hat"}
+								</T>
+								{/* Rarity tag — the paired fill + ink from RARITY_BADGE,
+								    the one map whose contrast is validated [D-02]. */}
+								<Tag
+									label={rarity.toUpperCase()}
+									ink={badge.ink}
+									accessibilityLabel={`${rarity} rarity`}
+									style={[styles.rarityTag, { backgroundColor: badge.bg }]}
+								/>
+								<T role="handLg" align="center" style={styles.subtitle}>
+									It's yours — wear it in the Closet.
+								</T>
+							</>
+						)}
+
+						<Button
+							variant="dark"
+							size="md"
+							onPress={handleDone}
+							style={styles.done}
+							accessibilityLabel="Oink"
+							accessibilityHint="Closes the reveal"
+						>
+							Oink!
+						</Button>
+					</>
+				)}
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
+// The server's default spill when every eligible hat is already owned.
+const FALLBACK_SNOUTS = 150;
+// The coin that stands in for the hat on a fallback reveal.
+const COIN = 96;
+
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
+	content: {
 		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
 	},
 	card: {
 		width: "100%",
-		maxWidth: 360,
-		paddingHorizontal: 24,
-		paddingVertical: 24,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
 		alignItems: "center",
-		...STICKER_SHADOW,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 8,
 	},
 	boxTap: {
-		width: 160,
-		height: 160,
+		width: HERO,
+		height: HERO,
 		alignItems: "center",
 		justifyContent: "center",
-		marginVertical: 6,
+		marginVertical: SPACE.xs,
 	},
 	hero: {
-		width: 160,
-		height: 160,
+		width: HERO,
+		height: HERO,
 		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
-		marginVertical: 6,
+		marginVertical: SPACE.xs,
 	},
 	heroImage: {
-		width: 120,
-		height: 120,
-	},
-	heroEmoji: {
-		fontSize: 72,
+		width: ART_SIZE.portrait,
+		height: ART_SIZE.portrait,
 	},
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginTop: 6,
+		marginTop: SPACE.xs,
 	},
-	rarityStripe: {
-		marginTop: 8,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 14,
-		paddingVertical: 3,
-	},
-	rarityText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: WHIMSY.paper,
+	rarityTag: {
+		marginTop: SPACE.sm,
 	},
 	subtitle: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		lineHeight: 22,
-		marginTop: 8,
-		marginBottom: 4,
+		marginTop: SPACE.sm,
+		marginBottom: SPACE.xs,
+	},
+	done: {
+		marginTop: SPACE.md,
 	},
 });

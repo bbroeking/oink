@@ -15,7 +15,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { rpc } from "./rpc";
+import { rpcAction } from "./rpc";
 import { nextOpenAtMs } from "./rooting";
 import { foregroundNotificationBehavior } from "./notificationPolicy";
 
@@ -44,10 +44,13 @@ export function ensurePushPermission(): Promise<string | null> {
 async function doEnsure(): Promise<string | null> {
 	if (Platform.OS === "web") return null;
 
-	// Fast path: token already cached locally + on server.
+	// Read the device cache, but do not trust it before checking current OS
+	// permission. A player can revoke notifications in Settings after the token
+	// was cached; treating that cache as an unconditional success creates a false
+	// enabled state in every feature that depends on pushes.
+	let cached: string | null = null;
 	try {
-		const cached = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
-		if (cached) return cached;
+		cached = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
 	} catch {}
 
 	const { status: existing } = await Notifications.getPermissionsAsync();
@@ -63,8 +66,18 @@ async function doEnsure(): Promise<string | null> {
 	if (status !== "granted") {
 		// Persist the denial intent on the server so we can surface
 		// "enable notifications" hints in places that need it.
-		await rpc("set_push_token", { token: null });
+		await rpcAction("set_push_token", { token: null });
+		try {
+			await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY);
+		} catch {}
 		return null;
+	}
+
+	// Fast path after permission validation. Re-register the cached token so a
+	// restored session/account cannot rely on stale local-only state.
+	if (cached) {
+		const registered = await rpcAction("set_push_token", { token: cached });
+		return registered.ok ? cached : null;
 	}
 
 	// Project ID from expo config — needed for cross-project tokens.
@@ -88,7 +101,8 @@ async function doEnsure(): Promise<string | null> {
 
 	if (!tokenString) return null;
 
-	await rpc("set_push_token", { token: tokenString });
+	const registered = await rpcAction("set_push_token", { token: tokenString });
+	if (!registered.ok) return null;
 	try {
 		await AsyncStorage.setItem(PUSH_TOKEN_CACHE_KEY, tokenString);
 	} catch (e) {
@@ -101,18 +115,98 @@ async function doEnsure(): Promise<string | null> {
 
 /** Clears the cached token. Call on sign-out. */
 export async function clearPushToken() {
-	await rpc("set_push_token", { token: null });
+	await rpcAction("set_push_token", { token: null });
 	try {
 		await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY);
 	} catch {}
 }
 
-// ── "Oink me when the patch opens" — one LOCAL notification, no server ────────
+// ── Persistent "Oink me for every Feeding" preference ──────────────────────
+// Server truth lives on the account. The client asks for OS permission and
+// registers a token before enabling, then writes only the durable preference.
+// Remounts/foregrounds read the RPC again; there is no local enabled cache that
+// can drift across devices.
+
+export type FeedingPushPreference = {
+	enabled: boolean;
+};
+
+export type SetFeedingPushPreferenceResult =
+	| "enabled"
+	| "disabled"
+	| "denied"
+	| "unavailable"
+	| "error";
+
+/** Read account-level Feeding push truth. Null means offline/migration dark. */
+export async function getFeedingPushPreference(): Promise<boolean | null> {
+	const result = await rpcAction<FeedingPushPreference>(
+		"feeding_push_preference"
+	);
+	return result.ok ? result.enabled : null;
+}
+
+/**
+ * Enable/disable the account preference. Enabling is deliberately ordered:
+ * permission → server token → preference, so denied permission never leaves a
+ * true server flag behind. Disabling never asks for permission and always
+ * remains available from the same control.
+ */
+export async function setFeedingPushPreference(
+	enabled: boolean
+): Promise<SetFeedingPushPreferenceResult> {
+	if (!enabled) {
+		const result = await rpcAction<FeedingPushPreference>(
+			"set_feeding_push_preference",
+			{ p_enabled: false }
+		);
+		await cancelOpenReminder(); // clean up reminders made by older builds
+		return result.ok ? "disabled" : "error";
+	}
+
+	if (Platform.OS === "web") return "unavailable";
+
+	const token = await ensurePushPermission();
+	if (!token) {
+		try {
+			const { status } = await Notifications.getPermissionsAsync();
+			return status === "denied" ? "denied" : "unavailable";
+		} catch {
+			return "unavailable";
+		}
+	}
+
+	const result = await rpcAction<FeedingPushPreference>(
+		"set_feeding_push_preference",
+		{ p_enabled: true }
+	);
+	if (!result.ok) {
+		return result.reason === "notifications_unavailable" ? "denied" : "error";
+	}
+
+	await cancelOpenReminder(); // server delivery replaces the legacy local job
+	return "enabled";
+}
+
+/** Current device permission, used to avoid showing a false ready state. */
+export async function getDevicePushPermission(): Promise<
+	"granted" | "denied" | "undetermined" | "unavailable"
+> {
+	if (Platform.OS === "web") return "unavailable";
+	try {
+		const { status } = await Notifications.getPermissionsAsync();
+		if (status === "granted" || status === "denied") return status;
+		return "undetermined";
+	} catch {
+		return "unavailable";
+	}
+}
+
+// ── Legacy one-local-notification compatibility ─────────────────────────────
 // A player who reaches the dig while the patch is GUARDED (or right after a dig)
-// can opt into a single local push at the next feeding-window open. This is
-// purely on-device (expo-notifications schedule), so there's no server change
-// and no token needed — but iOS still requires notification PERMISSION to show
-// a local alert, so we route through the same ensurePushPermission() lane.
+// could opt into a single local push in older builds. New UI must use the durable
+// account preference above. These helpers remain temporarily so the new toggle
+// and a completed dig can cancel jobs left behind by an older installed build.
 
 // Stable identifier so a re-schedule REPLACES the pending one (dedupe) rather
 // than stacking three "the patch is open" alerts across three opt-ins.

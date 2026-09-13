@@ -3,16 +3,34 @@
 // Earn them by digging Golden Truffles at the feedings and trading at the
 // Truffle Exchange. Catalog comes from the hats table (keyed by
 // EXCHANGE_ITEM_IDS); owned state from user_hats.
+//
+// Wave-4 conformance pass: the panel is the `Sheet` primitive (kicker / title /
+// subtitle / pinned footer) rather than a hand-rolled paper card inside
+// SlideUpSheet, each tile is a `Sticker`, the rarity word rides `RARITY_BADGE`
+// ink, and the locked tile keeps its shape on a muted fill instead of being
+// dissolved to 0.32 opacity. [C-07, C-09, C-17, C-18]
 import { useEffect, useState } from "react";
-import { View, Text, Image, Pressable, StyleSheet, ScrollView, Dimensions } from "react-native";
+import { View, Image, StyleSheet } from "react-native";
 import { supabase } from "@/utils/supabase";
-import { Icon } from "@/components/ui/Icon";
-import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
+import {
+	Button,
+	Icon,
+	LoadingBeat,
+	Sheet,
+	Sticker,
+	T,
+} from "@/components/ui";
+import { HAT_IMAGES, type Rarity } from "@/constants/hats";
 import { EXCHANGE_ITEM_IDS } from "@/constants/dig";
-import { LoadingBeat } from "@/components/ui/EmptyState";
-import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
-import { SheetGrabber, SlideUpSheet } from "@/components/ui/SlideUpSheet";
-import { WHIMSY, FONTS, SHADOW_SM, RADII, SPACE, TYPE, PAGE_PAD, RARITY_BG_SOLID } from "@/constants/theme";
+import {
+	BORDER,
+	RADII,
+	RARITY_BADGE,
+	RARITY_BG_SOLID,
+	SPACE,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
 
 interface SpoilRow {
 	id: string;
@@ -23,16 +41,20 @@ interface SpoilRow {
 
 const RARITY_ORDER: Rarity[] = ["legendary", "epic", "rare", "uncommon", "common"];
 
+// Drawing geometry for the grid, not spacing: three tiles to a row, and the
+// owned tick's corner well. Named so the numbers stop being loose literals.
+const TILE_WIDTH = "31%";
+const TILE_ART = "78%";
+const CHECK_WELL = 20;
+const CHECK_MARK = 13;
+const LOCK_MARK = 14;
+
 interface Props {
 	open: boolean;
 	onClose: () => void;
 }
 
 export function TruffleCatalogSheet({ open, onClose }: Props) {
-	// Unmanaged native Modal (direct-tap from SounderCard, outside the popup
-	// queue): hold the queue while open so a foreground poll can't present a
-	// queued popup over it — the #50152 wedge (issue #4).
-	useUnmanagedModalHold(open);
 	const [rows, setRows] = useState<SpoilRow[] | null>(null);
 
 	useEffect(() => {
@@ -65,108 +87,112 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 	const total = rows ? rows.length : EXCHANGE_ITEM_IDS.length;
 
 	return (
-		<SlideUpSheet open={open} onClose={onClose}>
-			<View style={styles.sheet}>
-				<SheetGrabber />
-				<Text style={styles.kicker}>EXCLUSIVES</Text>
-				<Text style={styles.title}>What you can earn</Text>
-				<Text style={styles.sub}>
-					Dig at the feedings for Golden Truffles, then trade them for these exclusives at the Exchange.
-					{"  "}
-					<Text style={styles.count}>{ownedCount}/{total} earned</Text>
-				</Text>
-
-				<ScrollView style={styles.scroll} contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-					{rows === null ? (
-						<LoadingBeat label="fetching the trophy case" glyph="sparkle" />
-					) : (
-						rows.map((r) => {
-							const color = RARITY_COLORS[r.rarity] ?? WHIMSY.muteSoft;
-							const fill = RARITY_BG_SOLID[r.rarity] ?? WHIMSY.cream;
-							const img = HAT_IMAGES[r.id];
-							return (
-								<View key={r.id} style={[styles.tile, { borderColor: color }, !r.owned && styles.tileLocked]}>
-									<View style={[styles.thumbWrap, { backgroundColor: fill }]}>
-										{img ? (
-											<Image source={img} style={[styles.thumb, !r.owned && styles.thumbLocked]} resizeMode="contain" />
-										) : null}
-										{r.owned ? (
-											<View style={[styles.check, { backgroundColor: color }]}>
-												<Icon name="check" size={13} color={INK} strokeWidth={2.4} />
-											</View>
-										) : (
-											<View style={styles.lock}>
-												<Icon name="lock" size={14} color={WHIMSY.mute} strokeWidth={1.8} />
-											</View>
-										)}
-									</View>
-									<Text style={styles.name} numberOfLines={1}>{r.name}</Text>
-									<Text style={[styles.rarity, { color }]}>{r.rarity}</Text>
-								</View>
-							);
-						})
-					)}
-				</ScrollView>
-
-				<Pressable
+		<Sheet
+			open={open}
+			onClose={onClose}
+			kicker="exclusives"
+			title="What you can earn"
+			footer={
+				<Button
+					full
+					variant="gold"
 					onPress={onClose}
-					style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
+					accessibilityLabel="Done"
+					accessibilityHint="Closes the trophy case"
+					testID="truffle-catalog-done"
 				>
-					<Text style={styles.doneText}>Done</Text>
-				</Pressable>
+					Done
+				</Button>
+			}
+			testID="truffle-catalog-sheet"
+		>
+			<T role="hand" tone="secondary" style={styles.sub}>
+				Dig at the feedings for Golden Truffles, then trade them for these exclusives at the Exchange.
+				{"  "}
+				<T role="bodySm" style={styles.count}>
+					{ownedCount}/{total} earned
+				</T>
+			</T>
+
+			{/* The Sheet body already scrolls; a nested vertical ScrollView here
+			    would fight it, so the grid is a plain wrapping row. */}
+			<View style={styles.grid}>
+				{rows === null ? (
+					<LoadingBeat label="fetching the trophy case" />
+				) : (
+					rows.map((r) => {
+						const badge = RARITY_BADGE[r.rarity] ?? RARITY_BADGE.common;
+						const fill = RARITY_BG_SOLID[r.rarity] ?? WHIMSY.cream;
+						const img = HAT_IMAGES[r.id];
+						return (
+							<Sticker
+								key={r.id}
+								// An unearned tile keeps its whole shape on the muted
+								// fill — never an opacity crush. [C-07]
+								color={r.owned ? "cream" : UI_COLORS.surfaceStrong}
+								rotate={0}
+								radius={RADII.lg}
+								border={BORDER.ink}
+								shadow="sm"
+								accessibilityRole="text"
+								accessibilityLabel={`${r.name}, ${r.rarity}, ${r.owned ? "earned" : "not earned yet"}`}
+								style={[styles.tile, { borderColor: badge.ink }]}
+							>
+								<View style={[styles.thumbWrap, { backgroundColor: fill }]}>
+									{img ? (
+										<Image source={img} style={styles.thumb} resizeMode="contain" />
+									) : null}
+									{r.owned ? (
+										<View style={[styles.check, { backgroundColor: badge.bg }]}>
+											<Icon name="check" size={CHECK_MARK} color={WHIMSY.ink} strokeWidth={2.4} />
+										</View>
+									) : (
+										<View style={styles.lock}>
+											<Icon name="lock" size={LOCK_MARK} color={UI_COLORS.uiMuted} strokeWidth={1.8} />
+										</View>
+									)}
+								</View>
+								<T role="kickerPillSm" align="center" numberOfLines={1} style={styles.name}>
+									{r.name}
+								</T>
+								<T role="kicker" align="center" style={[styles.rarity, { color: badge.ink }]}>
+									{r.rarity}
+								</T>
+							</Sticker>
+						);
+					})
+				)}
 			</View>
-		</SlideUpSheet>
+		</Sheet>
 	);
 }
 
-const INK = WHIMSY.ink;
-const SCREEN_H = Dimensions.get("window").height;
-const GAP = SPACE.md;
 const styles = StyleSheet.create({
-	sheet: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.xxl,
-		padding: PAGE_PAD,
-		paddingTop: SPACE.md - 2,
-		maxHeight: SCREEN_H * 0.85,
-		...SHADOW_SM,
-	},
-	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	title: { ...TYPE.pageTitle, color: INK },
-	sub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs + 2, marginBottom: SPACE.md },
-	count: { ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: INK },
+	sub: { marginBottom: SPACE.md },
+	count: { color: UI_COLORS.textPrimary },
 
-	scroll: { flexGrow: 0 },
-	grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, justifyContent: "space-between" },
+	grid: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.md, justifyContent: "space-between" },
 
 	tile: {
-		width: "31%",
-		borderWidth: 2,
-		borderRadius: RADII.lg,
-		paddingBottom: SPACE.xs + 2,
-		backgroundColor: WHIMSY.cream,
+		width: TILE_WIDTH,
+		paddingBottom: SPACE.xs,
 		overflow: "hidden",
 	},
-	tileLocked: { borderColor: WHIMSY.muteSoft },
 	thumbWrap: { width: "100%", aspectRatio: 1, alignItems: "center", justifyContent: "center" },
-	thumb: { width: "78%", height: "78%" },
-	thumbLocked: { opacity: 0.32 },
-	check: { position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: INK, alignItems: "center", justifyContent: "center" },
-	lock: { position: "absolute", top: 4, right: 5, opacity: 0.6 },
-	name: { ...TYPE.kickerPill, fontSize: 11, letterSpacing: 0.2, textTransform: "none", color: INK, textAlign: "center", marginTop: SPACE.xs, paddingHorizontal: 3 },
-	rarity: { ...TYPE.kicker, fontSize: 11, textAlign: "center", textTransform: "capitalize" },
-
-	doneBtn: {
-		marginTop: SPACE.lg - 2,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.lg,
-		paddingVertical: SPACE.md,
+	thumb: { width: TILE_ART, height: TILE_ART },
+	check: {
+		position: "absolute",
+		top: SPACE.xs,
+		right: SPACE.xs,
+		width: CHECK_WELL,
+		height: CHECK_WELL,
+		borderRadius: RADII.pill,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
-		...SHADOW_SM,
+		justifyContent: "center",
 	},
-	doneText: { ...TYPE.numeral, color: INK },
+	lock: { position: "absolute", top: SPACE.xs, right: SPACE.xs },
+	name: { textTransform: "none", marginTop: SPACE.xs, paddingHorizontal: SPACE.xxs },
+	rarity: { textTransform: "capitalize" },
 });

@@ -1,0 +1,8 @@
+{
+	"name": "eslint-plugin-ttp",
+	"version": "1.0.0",
+	"description": "Tickle the Pig design-system taste rules (docs/design/design-system-spec.md §3.2).",
+	"main": "index.js",
+	"license": "UNLICENSED",
+	"private": true
+}

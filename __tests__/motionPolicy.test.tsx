@@ -140,7 +140,7 @@ describe("motion-policy migration coverage", () => {
 	});
 
 	test("the audit lab exposes policy overrides and a Tier Up preview", () => {
-		const source = fs.readFileSync(path.join(root, "app/ui-audit.tsx"), "utf8");
+		const source = fs.readFileSync(path.join(root, "components/dev/screens/ui-audit.tsx"), "utf8");
 		expect(source).toContain("MotionPolicyProvider");
 		expect(source).toContain('requestedMotion === "full"');
 		expect(source).toContain('requestedMotion === "reduced"');
@@ -148,7 +148,7 @@ describe("motion-policy migration coverage", () => {
 	});
 
 	test("the audit lab can always exit to the Barn", () => {
-		const source = fs.readFileSync(path.join(root, "app/ui-audit.tsx"), "utf8");
+		const source = fs.readFileSync(path.join(root, "components/dev/screens/ui-audit.tsx"), "utf8");
 		expect(source).toContain("‹ Back to Barn");
 		expect(source).toContain('router.replace("/")');
 	});

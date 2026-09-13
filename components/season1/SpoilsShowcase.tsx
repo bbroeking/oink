@@ -7,18 +7,23 @@
 // is the full pool); display names + tiers mirror the rewards spec's rarity
 // mapping (docs/wiki/outputs/memos/mudwar-rewards-spec-2026-07).
 
-import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
-import { Sticker } from "../ui/Sticker";
+import { View, Image, ScrollView, StyleSheet } from "react-native";
+import { CardTitle, Hand, Sticker, T } from "../ui";
 import { cosmeticImage } from "@/utils/rewardArt";
 import {
-	FONTS,
+	BORDER,
 	RADII,
 	RARITY_BG_SOLID,
-	SHADOW_SM,
 	SPACE,
-	TYPE,
-	WHIMSY,
+	TILT,
 } from "@/constants/theme";
+
+// The shelf's drawing geometry — the width of a spoils card and the two art
+// boxes on it. Art sizes, not spacing steps: `ART_SIZE` has no 56/44 step, so
+// they are named here with the surface that draws them. (2026-09-11)
+const SHELF_CARD_WIDTH = 124;
+const SHELF_ART = 56;
+const TRUFFLE_ART = 44;
 
 // Curated shelf — one per tier band, marquee first. Ids must exist in
 // HAT_IMAGES (all 25 war spoils are bundled since build 101).
@@ -54,30 +59,42 @@ export function SpoilsShowcase() {
 				{FEATURED.map((f, i) => {
 					const art = cosmeticImage(f.id);
 					return art ? (
-						<View
+						<Sticker
 							key={f.id}
-							style={[
-								styles.itemCard,
-								{ backgroundColor: RARITY_BG_SOLID[f.rarity] },
-								{ transform: [{ rotate: `${i % 2 === 0 ? -1 : 0.8}deg` }] },
-							]}
+							color={RARITY_BG_SOLID[f.rarity]}
+							rotate={i % 2 === 0 ? TILT.card : -TILT.card}
+							radius={RADII.lg}
+							shadow="sm"
+							style={styles.itemCard}
 						>
 							<Image
 								source={art}
 								style={styles.itemArt}
 								resizeMode="contain"
 							/>
-							<Text style={styles.itemName} numberOfLines={2}>
+							<T
+								role="bodySm"
+								align="center"
+								numberOfLines={2}
+								style={styles.itemName}
+							>
 								{f.name}
-							</Text>
-							<Text style={styles.itemRarity}>{f.rarity}</Text>
-						</View>
+							</T>
+							<T role="kickerPill" tone="secondary">
+								{f.rarity}
+							</T>
+						</Sticker>
 					) : null;
 				})}
 			</ScrollView>
 
 			{/* Golden Truffles + the Exchange */}
-			<Sticker color="cream" rotate={0.6} radius={RADII.lg} style={styles.truffleCard}>
+			<Sticker
+				color="cream"
+				rotate={-TILT.card}
+				radius={RADII.lg}
+				style={styles.truffleCard}
+			>
 				{truffleArt && (
 					<Image
 						source={truffleArt}
@@ -85,26 +102,40 @@ export function SpoilsShowcase() {
 						resizeMode="contain"
 					/>
 				)}
-				<View style={{ flex: 1, minWidth: 0 }}>
-					<Text style={styles.truffleTitle}>Golden Truffles</Text>
-					<Text style={styles.truffleSub}>
+				<View style={styles.truffleText}>
+					<CardTitle>Golden Truffles</CardTitle>
+					<T role="bodySm" tone="secondary" style={styles.truffleSub}>
 						Dig them at every feeding while he gorges — then spend them at the
 						Truffle Exchange, restocked weekly.
-					</Text>
+					</T>
 				</View>
 			</Sticker>
 
 			{/* Herd milestone titles */}
 			<View style={styles.titlesRow}>
 				{HERD_TITLES.map((t) => (
-					<View key={t.name} style={styles.titleChip}>
-						<Text style={styles.titleName}>{t.name}</Text>
-						<Text style={styles.titleHow}>{t.how}</Text>
-					</View>
+					<Sticker
+						key={t.name}
+						color="paper"
+						rotate={0}
+						radius={RADII.pill}
+						border={BORDER.thin}
+						shadow="sm"
+						style={styles.titleChip}
+						accessibilityRole="text"
+						accessibilityLabel={`${t.name} — ${t.how}`}
+					>
+						<T role="cardTitleSm">{t.name}</T>
+						<T role="kicker" tone="secondary">
+							{t.how}
+						</T>
+					</Sticker>
 				))}
 			</View>
 
-			<Text style={styles.creed}>Earned at the feedings. Never sold.</Text>
+			<Hand tone="accent" align="center" style={styles.creed}>
+				Earned at the feedings. Never sold.
+			</Hand>
 		</View>
 	);
 }
@@ -115,36 +146,17 @@ const styles = StyleSheet.create({
 		paddingVertical: SPACE.xs,
 		// Left gutter clears the card tilt; right gutter leaves a consistent
 		// ~24pt peek so the last card reads as "keep scrolling".
-		paddingLeft: 2,
+		paddingLeft: SPACE.xxs,
 		paddingRight: SPACE.xl,
 	},
 	itemCard: {
-		width: 124,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
+		width: SHELF_CARD_WIDTH,
 		paddingVertical: SPACE.sm,
 		paddingHorizontal: SPACE.sm,
 		alignItems: "center",
-		...SHADOW_SM,
 	},
-	itemArt: { width: 56, height: 56 },
-	itemName: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginTop: SPACE.xs,
-	},
-	// Bumped off the 9px floor to 10 — the rarity caption stays a quiet tracked
-	// kicker but clears the squint-small legibility floor.
-	itemRarity: {
-		...TYPE.kickerPill,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
+	itemArt: { width: SHELF_ART, height: SHELF_ART },
+	itemName: { marginTop: SPACE.xs },
 	truffleCard: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -153,14 +165,9 @@ const styles = StyleSheet.create({
 		paddingVertical: SPACE.md,
 		marginTop: SPACE.lg,
 	},
-	truffleArt: { width: 44, height: 44 },
-	truffleTitle: { ...TYPE.cardTitle, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
-	truffleSub: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.body,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
+	truffleArt: { width: TRUFFLE_ART, height: TRUFFLE_ART },
+	truffleText: { flex: 1, minWidth: 0 },
+	truffleSub: { marginTop: SPACE.xxs },
 	titlesRow: {
 		flexDirection: "row",
 		flexWrap: "wrap",
@@ -169,21 +176,9 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	titleChip: {
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		backgroundColor: WHIMSY.paper,
 		paddingHorizontal: SPACE.md,
-		paddingVertical: 5,
+		paddingVertical: SPACE.xs,
 		alignItems: "center",
 	},
-	titleName: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
-	titleHow: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute, fontSize: 11 },
-	creed: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.lg,
-	},
+	creed: { marginTop: SPACE.lg },
 });

@@ -8,40 +8,64 @@
 <link rel="icon" href="/rosie.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/tokens.css" />
+<link rel="stylesheet" href="/sticker.css" />
 <style>
-  :root { --ink:#2a1f15; --paper:#fffaf0; --rose:#c0566a; --mute:#9a8c7a; --line:#ece0cc; }
+  /* No :root here — the web is a consumer of theme.ts (design-system-spec §3 rule 7).
+     Everything below composes tokens.css + sticker.css; no literal paint. */
   * { box-sizing:border-box; }
   body {
-    margin:0; color:var(--ink);
+    margin:0;
+    color:var(--text-primary);
     background:
-      radial-gradient(circle at 12% 6%, rgba(255,214,220,.35), transparent 32%),
-      radial-gradient(circle at 90% 96%, rgba(214,200,240,.30), transparent 34%),
+      radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--fill-rose) 35%, transparent), transparent 32%),
+      radial-gradient(circle at 90% 96%, color-mix(in srgb, var(--fill-lilac) 30%, transparent), transparent 34%),
       var(--paper);
-    font-family:"Archivo",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    line-height:1.65;
+    font:var(--type-body-lg);
   }
-  .wrap { max-width:720px; margin:0 auto; padding:8px 22px 80px; }
-  header.site { display:flex; align-items:center; gap:10px; padding:20px 0 16px; border-bottom:2px solid var(--line); margin-bottom:26px; }
-  header.site img { width:34px; height:34px; border-radius:50%; }
-  header.site a.brand { font-weight:800; font-size:19px; color:var(--ink); text-decoration:none; letter-spacing:-.01em; }
-  h1 { font-size:30px; font-weight:800; line-height:1.2; margin:6px 0 14px; letter-spacing:-.015em; }
-  h2 { font-size:20px; font-weight:700; margin:34px 0 8px; }
-  h3 { font-size:16px; font-weight:700; margin:22px 0 4px; }
-  p { font-size:15.5px; margin:10px 0; }
-  ul { padding-left:22px; margin:8px 0; }
-  li { font-size:15.5px; margin:7px 0; }
-  a { color:var(--rose); }
-  strong { font-weight:700; }
-  footer.site { margin-top:52px; padding-top:18px; border-top:2px solid var(--line); font-size:14px; color:var(--mute); display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
-  footer.site a { color:var(--mute); text-decoration:none; }
-  footer.site a:hover { color:var(--ink); }
+  .wrap { max-width:720px; margin:0 auto; padding:var(--space-sm) var(--space-xl) var(--tab-safe); }
+  header.site {
+    display:flex; align-items:center; gap:var(--space-md);
+    padding:var(--space-xl) 0 var(--space-lg);
+    border-bottom:var(--border-hair) solid var(--separator);
+    margin-bottom:var(--space-xl);
+  }
+  header.site img { width:var(--art-glyph); height:var(--art-glyph); border-radius:var(--radius-pill); }
+  header.site a.brand {
+    font:var(--type-card-title); letter-spacing:var(--tracking-card-title);
+    color:var(--text-primary); text-decoration:none;
+    display:inline-flex; align-items:center; min-height:var(--tap-min);
+  }
+  h1 { font:var(--type-display); margin:var(--space-sm) 0 var(--space-md); }
+  h1 + .rule { margin-bottom:var(--space-xl); }
+  h2 { font:var(--type-section-title); letter-spacing:var(--tracking-section-title); margin:var(--space-xxl) 0 var(--space-sm); }
+  h3 { font:var(--type-card-title); letter-spacing:var(--tracking-card-title); margin:var(--space-lg) 0 var(--space-xs); }
+  /* Long-form legal prose: the TYPE roles are tuned for mobile UI lines, so the
+     body-lg role keeps its family/size/weight and takes a document leading. */
+  p, li { font:var(--type-body-lg); line-height:1.6; }
+  p { margin:var(--space-md) 0; }
+  ul { padding-left:var(--space-xl); margin:var(--space-sm) 0; }
+  li { margin:var(--space-sm) 0; }
+  a { color:var(--accent); }
+  strong { font-weight:900; }
+  footer.site {
+    margin-top:var(--space-xxl); padding-top:var(--space-lg);
+    border-top:var(--border-hair) solid var(--separator);
+    font:var(--type-body-sm); color:var(--ink-mute);
+    display:flex; gap:var(--space-lg); flex-wrap:wrap; align-items:center;
+  }
+  footer.site a {
+    color:var(--ink-mute); text-decoration:none;
+    display:inline-flex; align-items:center; min-height:var(--tap-min); padding-inline:var(--space-xs);
+  }
+  footer.site a:hover { color:var(--text-primary); }
 </style>
 </head>
 <body>
 <div class="wrap">
 <header class="site"><img src="/rosie.png" alt="Rosie the pig" /><a class="brand" href="/">Tickle the Pig</a></header>
 <h1>Tickle the Pig — Terms of Service</h1>
+<div class="rule" aria-hidden="true"></div>
 
 <p><strong>Effective date:</strong> July 18, 2026</p>
 

@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: transparent furnishing sprite for a cozy mobile Barn-decorating game
+Primary request: Isolated transparent PNG: turned pale-pine spool base, workwear-blue thread wrap, rust leather round seat, brass nail heads; hourglass stool; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.
+Subject: Spool-Leg Stool. A giant thread spool becomes a clever stool for small inventors.
+Style/medium: polished warm hand-painted storybook gouache/cel illustration, cohesive with Tickle the Pig habitat furniture, warm brown contours, readable chunky geometry, subtle tactile texture, consistent upper-left light
+Composition/framing: one complete isolated object centered with generous transparent margin; correct floor_decor perspective; readable at phone scale
+Scene/backdrop: genuinely transparent background, alpha around the complete silhouette
+Constraints: exactly one object design; preserve all named colors/materials/details; complete silhouette fully inside canvas; no crop; no cast shadow; no room, floor, wall, text, label, border, grid, watermark, or extra props

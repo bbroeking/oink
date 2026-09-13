@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Nunito Sans", "Trebuchet MS", sans-serif; font-weight: 700; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    .whimsy { font-family: "Caprasimo", "Cooper Black", "Georgia", serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0.4px; color: #a03e2f; }
+    .pill { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: 0.3; border-radius: 1px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 18px; border-radius: 22px; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.1px; box-sizing: border-box; gap: 6px; }
+    .cozy { border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; border: 2px solid #2a1f15; background: #ffd6dc; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    .tag { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 10px; border: 1.5px solid #2a1f15; border-radius: 999px; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; }
+    .sign { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 10px 6px 10px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 2px 0 #2a1f15; min-width: 56px; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #fbeee2; background-image: radial-gradient(#f6e6d4 1.1px, transparent 1.2px); background-size: 22px 22px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+
+  <div style="flex: 1; overflow: hidden; padding-top: 54px; display: flex; flex-direction: column; gap: 12px;">
+    <!-- PageHeader -->
+    <div style="padding: 8px 18px 12px 18px; display: flex; flex-direction: column; gap: 4px;">
+      <div class="hand" style="font-size: 14px; line-height: 20px; color: #605449; min-height: 44px; display: flex; align-items: center;">‹ back</div>
+      <div class="pill">★ this week</div>
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;"><div class="whimsy" style="font-size: 26px; line-height: 28px;">Dig-Off</div><span style="font-size: 12px; font-weight: 800; color: #605449;">ends Mon</span></div>
+      <div class="rule" style="margin-top: 4px;"></div>
+    </div>
+
+    <!-- SegmentedControl -->
+    <div style="padding: 0 18px;">
+      <div style="display: inline-flex; padding: 4px; gap: 4px; background: #f6e6d4; border: 2px solid #2a1f15; border-radius: 999px;">
+        <div style="min-height: 36px; padding: 6px 14px; border-radius: 999px; background: #2a1f15; color: #fff3e2; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; display: flex; align-items: center;">This week</div>
+        <div style="min-height: 36px; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; display: flex; align-items: center;">Past weeks</div>
+        <div style="min-height: 36px; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: 0.3px; display: flex; align-items: center;">Season</div>
+      </div>
+    </div>
+
+    <!-- Bark storyteller sticker + spoils -->
+    <div style="padding: 0 18px;">
+      <div style="background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.6deg); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <div class="pill" style="color: #ffd87a;">★ monday's spoils</div>
+        <div class="whimsy" style="font-size: 18px; line-height: 22px; color: #fff3e2;">Most finds wins the jackpot</div>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <span class="tag" style="background: #ffd87a; box-shadow: none;">1st · 500</span>
+          <span class="tag" style="background: #fff3e2; box-shadow: none;">2nd · 300</span>
+          <span class="tag" style="background: #fff3e2; box-shadow: none;">3rd · 200</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SectionHeader -->
+    <div style="padding: 8px 18px 0 18px; display: flex; flex-direction: column; gap: 4px;">
+      <div class="kicker">★ standings</div>
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;"><div class="whimsy" style="font-size: 22px; line-height: 24px; letter-spacing: 0.2px;">Every Sounder</div><span class="hand" style="font-size: 14px; color: #605449;">per snout ›</span></div>
+      <div class="rule" style="margin-top: 4px;"></div>
+    </div>
+
+    <!-- ListRows -->
+    <div style="padding: 0 18px; display: flex; flex-direction: column; gap: 12px;">
+      <div class="row" style="transform: rotate(-1.2deg);"><span class="whimsy" style="font-size: 16px; width: 22px;">1</span><div class="avatar" style="background: #ffd87a;"><img src="glyph-trophy.png" style="width: 26px; height: 26px;" alt=""></div><div style="flex: 1;"><div style="font-size: 15px;">The Truffle Barons</div><div class="hand" style="font-size: 14px; color: #605449;">4 digging</div></div><span class="whimsy" style="font-size: 16px;">31</span></div>
+      <div class="row" style="transform: rotate(0.8deg); border-width: 3px;"><span class="whimsy" style="font-size: 16px; width: 22px;">2</span><div class="avatar" style="background: #d6c8f0;"><img src="glyph-friends.png" style="width: 28px; height: 28px;" alt=""></div><div style="flex: 1;"><div style="font-size: 15px;">The Bramble Snouts <span class="hand" style="color: #605449;">· you</span></div><div class="hand" style="font-size: 14px; color: #605449;">3 digging · 2 finds behind</div></div><span class="whimsy" style="font-size: 16px;">29</span></div>
+      <div class="row" style="transform: rotate(-0.6deg);"><span class="whimsy" style="font-size: 16px; width: 22px;">3</span><div class="avatar" style="background: #c9dec1;"><img src="glyph-star.png" style="width: 24px; height: 24px;" alt=""></div><div style="flex: 1;"><div style="font-size: 15px;">Mudlarks</div><div class="hand" style="font-size: 14px; color: #605449;">2 digging</div></div><span class="whimsy" style="font-size: 16px;">18</span></div>
+    </div>
+
+    <!-- CTA -->
+    <div style="padding: 4px 18px 0 18px;">
+      <div class="btn cozy" style="width: 100%; background: linear-gradient(#F0B8C8, #E8A7B9); color: #2a1f15;">Dig now · <span class="hand" style="font-size: 15px;">+20 pass xp</span></div>
+    </div>
+  </div>
+
+  <!-- HangingSignsTabBar (stand-in) -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 6px 12px 20px 12px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: flex-start; background: #fbeee2; border-top: 2px solid #2a1f15;">
+    <div class="sign"><img src="glyph-pigface.png" style="width: 22px; height: 22px;" alt=""><span class="hand" style="font-size: 13px;">Barn</span></div>
+    <div class="sign"><img src="glyph-friends.png" style="width: 22px; height: 22px;" alt=""><span class="hand" style="font-size: 13px;">Friends</span></div>
+    <div class="sign" style="background: #ffd87a; transform: rotate(-2deg);"><img src="glyph-trophy.png" style="width: 22px; height: 22px;" alt=""><span class="hand" style="font-size: 13px;">Season</span></div>
+    <div class="sign"><img src="glyph-star.png" style="width: 22px; height: 22px;" alt=""><span class="hand" style="font-size: 13px;">Shop</span></div>
+    <div class="sign"><img src="glyph-heart.png" style="width: 22px; height: 22px;" alt=""><span class="hand" style="font-size: 13px;">Me</span></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

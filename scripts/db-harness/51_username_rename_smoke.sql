@@ -45,6 +45,7 @@ DO $smoke_rename$
 DECLARE
 	me    uuid := '00000000-0000-0000-0000-000000012001';
 	other uuid := '00000000-0000-0000-0000-000000012002';
+	profileless uuid := '00000000-0000-0000-0000-000000012003';
 	res   jsonb;
 	nm    text;
 	disc  text;
@@ -52,7 +53,7 @@ DECLARE
 	used  int;
 BEGIN
 	-- me: 20,000 snouts, disc '0001', no renames yet. other holds 'taken'.
-	INSERT INTO auth.users (id) VALUES (me), (other);
+	INSERT INTO auth.users (id) VALUES (me), (other), (profileless);
 	INSERT INTO public.profiles (id, username, discriminator, counter, renames_used)
 		VALUES (me, 'oldname', '0001', 20000, 0),
 		       (other, 'taken', '0002', 0, 0);
@@ -62,6 +63,12 @@ BEGIN
 	res := public.rename_username('whatever');
 	IF (res->>'ok')::boolean OR res->>'reason' <> 'not_authed' THEN
 		RAISE EXCEPTION 'rename: no auth must be not_authed, got %', res; END IF;
+
+	-- Authenticated user without a profile -> no_profile.
+	PERFORM set_config('smoke.uid', profileless::text, true);
+	res := public.rename_username('whatever');
+	IF (res->>'ok')::boolean OR res->>'reason' <> 'no_profile' THEN
+		RAISE EXCEPTION 'rename: missing profile must be no_profile, got %', res; END IF;
 
 	PERFORM set_config('smoke.uid', me::text, true);
 

@@ -10,8 +10,8 @@ export function RiveRuntimeProbe({ autoStart: _autoStart = false }: { autoStart?
 		<View style={styles.group}>
 			<Text style={styles.title}>Rive native-runtime probe</Text>
 			<Text style={styles.body}>
-				The native Rive probe runs only in an iOS development build. Web
-				uses the raster pig until its dedicated Rive adapter is ready.
+				The native Rive probe runs only in an iOS development build. Open
+				the Rosie motion gallery to inspect the web renderer and asset status.
 			</Text>
 		</View>
 	);

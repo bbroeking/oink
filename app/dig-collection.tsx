@@ -17,7 +17,6 @@
 import { useEffect, useState } from "react";
 import {
 	View,
-	Text,
 	Image,
 	StyleSheet,
 	SafeAreaView,
@@ -28,6 +27,9 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { SectionHeader } from "../components/ui/SectionHeader";
 import { Glyph } from "../components/ui/Glyph";
 import { LoadingBeat } from "../components/ui/EmptyState";
+import { Sticker } from "../components/ui/Sticker";
+import { ListRow } from "../components/ui/ListRow";
+import { T } from "../components/ui/Text";
 import { UNIQUE_POOL, UNIQUE_IMAGES } from "@/constants/uniques";
 import { fetchMyUniques, type MyUnique } from "@/utils/uniques";
 import { FIELD_GUIDE_ENTRIES, type FieldGuideEntry } from "@/constants/fieldGuide";
@@ -41,15 +43,22 @@ import {
 	fieldGuideNumbers,
 } from "@/utils/fieldGuideConfig";
 import {
-	FONTS,
+	ART_SIZE,
+	BORDER,
 	RADII,
-	SHADOW_SM,
+	ROW_TILTS,
 	SPACE,
-	TYPE,
 	WHIMSY,
 	PAGE_PAD,
 	TAB_SAFE,
 } from "@/constants/theme";
+
+// The two silhouette veils. Neither is an OPACITY step: the ladder's faintest
+// rung is 0.3, which reads as "dimmed control", and these are ink GHOSTS — dark
+// enough to show a shape, faint enough to stay a mystery. Named here, once, so
+// the shelf and the guide can't drift apart. (See System asks.)
+const RELIC_GHOST = 0.18;
+const GUIDE_GHOST = 0.12;
 
 export default function DigCollectionScreen() {
 	// undefined = loading; null = feature-dark; else the caller's catches by id.
@@ -107,14 +116,24 @@ export default function DigCollectionScreen() {
 								right={`${discoveredCount}/${UNIQUE_POOL.length}`}
 							/>
 							<View style={styles.grid}>
-								{UNIQUE_POOL.map((u) => (
-									<RelicCell key={u.id} def={u} mine={found[u.id] ?? null} />
+								{UNIQUE_POOL.map((u, i) => (
+									<RelicCell
+										key={u.id}
+										index={i}
+										def={u}
+										mine={found[u.id] ?? null}
+									/>
 								))}
 							</View>
-							<Text style={styles.caption}>
+							<T
+								role="kicker"
+								tone="secondary"
+								align="center"
+								style={styles.caption}
+							>
 								found {discoveredCount} of {UNIQUE_POOL.length} — the shelf
 								remembers
-							</Text>
+							</T>
 
 							{/* ── Shelf 2: the Field Guide (evergreen) ────────────────── */}
 							<SectionHeader
@@ -124,13 +143,23 @@ export default function DigCollectionScreen() {
 								style={styles.guideHeader}
 							/>
 							<View style={styles.guideList}>
-								{FIELD_GUIDE_ENTRIES.map((e) => (
-									<FieldGuideRow key={e.id} entry={e} met={guide.has(e.id)} />
+								{FIELD_GUIDE_ENTRIES.map((e, i) => (
+									<FieldGuideRow
+										key={e.id}
+										index={i}
+										entry={e}
+										met={guide.has(e.id)}
+									/>
 								))}
 							</View>
-							<Text style={styles.caption}>
+							<T
+								role="kicker"
+								tone="secondary"
+								align="center"
+								style={styles.caption}
+							>
 								a journal, not a manual — pages light when you meet the thing
-							</Text>
+							</T>
 						</ScrollView>
 					)}
 				</SafeAreaView>
@@ -145,14 +174,25 @@ export default function DigCollectionScreen() {
 function RelicCell({
 	def,
 	mine,
+	index,
 }: {
 	def: { id: string; name: string; story: string };
 	mine: MyUnique | null;
+	index: number;
 }) {
 	const art = UNIQUE_IMAGES[def.id];
 	const discovered = !!mine;
 	return (
-		<View style={styles.cell}>
+		<Sticker
+			color="paper"
+			radius={RADII.md}
+			shadow="sm"
+			rotate={ROW_TILTS[index % ROW_TILTS.length]}
+			accessibilityLabel={
+				discovered ? def.name : "An undiscovered relic"
+			}
+			style={styles.cell}
+		>
 			<View style={styles.artWrap}>
 				{art ? (
 					<Image
@@ -161,87 +201,115 @@ function RelicCell({
 						resizeMode="contain"
 					/>
 				) : null}
+				{/* A "?" over the ink ghost, so an undiscovered relic reads as a
+				    mystery rather than as a bug. */}
 				{!discovered && (
-					<>
-						{/* Fallback dark scrim (in case tintColor no-ops on new arch) + a
-						    "?" so an undiscovered relic reads as a mystery, not a bug. */}
-						<View style={styles.scrim} pointerEvents="none" />
-						<Text style={styles.qmark}>?</Text>
-					</>
+					<T role="pageTitle" tone="secondary" style={styles.qmark}>
+						?
+					</T>
 				)}
 			</View>
 			{discovered ? (
 				<>
-					<Text style={styles.name} numberOfLines={2}>
+					<T role="cardTitleSm" align="center" numberOfLines={2}>
 						{def.name}
-					</Text>
+					</T>
 					{/* ★ per best gild ("The One That Got Away"): a relic you caught after
 					    it got away comes back shinier — the stars mark how gilded. */}
 					{mine.best_gild > 0 && (
-						<Text style={styles.gild}>
+						<T role="kickerPillSm" style={styles.gild}>
 							{"★".repeat(Math.min(3, mine.best_gild))}
-						</Text>
+						</T>
 					)}
-					<Text style={styles.story} numberOfLines={3}>
+					<T
+						role="kicker"
+						tone="secondary"
+						align="center"
+						numberOfLines={3}
+						style={styles.story}
+					>
 						{def.story}
-					</Text>
+					</T>
 					{mine.found_count > 1 && (
-						<Text style={styles.count}>found ×{mine.found_count}</Text>
+						<T role="kicker" tone="accent" style={styles.story}>
+							found ×{mine.found_count}
+						</T>
 					)}
 				</>
 			) : (
-				<Text style={styles.nameHidden}>?</Text>
+				<T role="cardTitleSm" tone="secondary">
+					?
+				</T>
 			)}
-		</View>
+		</Sticker>
 	);
 }
 
 // One Field Guide page — a journal row (art well left, copy right). Met: art +
 // name + whimsy line + config-fed value line. Not-yet-met: an ink silhouette
 // well + a muted "not yet met" whisper (a mystery, never a bug).
-function FieldGuideRow({ entry, met }: { entry: FieldGuideEntry; met: boolean }) {
+function FieldGuideRow({
+	entry,
+	met,
+	index,
+}: {
+	entry: FieldGuideEntry;
+	met: boolean;
+	index: number;
+}) {
 	return (
-		<View style={styles.guideRow}>
-			<View style={styles.guideWell}>
-				{met ? (
-					entry.image ? (
-						<Image
-							source={entry.image}
-							style={styles.guideArt}
-							resizeMode="contain"
-						/>
-					) : entry.glyph ? (
-						<Glyph name={entry.glyph} size={40} />
+		<ListRow
+			index={index}
+			accessibilityLabel={met ? entry.name : "A page you haven't met yet"}
+			leading={
+				<View style={styles.guideWell}>
+					{met ? (
+						entry.image ? (
+							<Image
+								source={entry.image}
+								style={styles.guideArt}
+								resizeMode="contain"
+							/>
+						) : entry.glyph ? (
+							<Glyph name={entry.glyph} size={ART_SIZE.glyph} />
+						) : (
+							// Drawn ink-silhouette placeholder (no sprite yet — see art-todo).
+							<View style={styles.guidePlaceholder} />
+						)
 					) : (
-						// Drawn ink-silhouette placeholder (no sprite yet — see art-todo).
-						<View style={styles.guidePlaceholder} />
-					)
+						<>
+							<View style={styles.guideSilhouette} pointerEvents="none" />
+							<T role="sectionTitle" tone="secondary" style={styles.guideQmark}>
+								?
+							</T>
+						</>
+					)}
+				</View>
+			}
+			title={
+				met ? (
+					<T role="cardTitle">{entry.name}</T>
 				) : (
-					<>
-						<View style={styles.guideSilhouette} pointerEvents="none" />
-						<Text style={styles.guideQmark}>?</Text>
-					</>
-				)}
-			</View>
-			<View style={styles.guideCopy}>
-				{met ? (
-					<>
-						<Text style={styles.guideName}>{entry.name}</Text>
-						<Text style={styles.guideWhimsy}>{entry.whimsy}</Text>
-						<Text style={styles.guideValue}>
-							{entry.value(fieldGuideNumbers())}
-						</Text>
-					</>
+					<T role="cardTitle" tone="secondary">
+						???
+					</T>
+				)
+			}
+			sub={
+				met ? (
+					<View style={styles.guideCopy}>
+						<T role="kicker" tone="secondary">
+							{entry.whimsy}
+						</T>
+						<T role="bodySm">{entry.value(fieldGuideNumbers())}</T>
+					</View>
 				) : (
-					<>
-						<Text style={styles.guideNameHidden}>???</Text>
-						<Text style={styles.guideWhimsyHidden}>
-							a page you haven't met yet
-						</Text>
-					</>
-				)}
-			</View>
-		</View>
+					<T role="kicker" tone="secondary">
+						a page you haven't met yet
+					</T>
+				)
+			}
+		/>
 	);
 }
 
@@ -258,13 +326,8 @@ const styles = StyleSheet.create({
 	// Three across — a hair under a third so the space-between gutter breathes.
 	cell: {
 		width: "31%",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
 		padding: SPACE.sm,
 		alignItems: "center",
-		...SHADOW_SM,
 	},
 	artWrap: {
 		width: "100%",
@@ -274,128 +337,52 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.xs,
 	},
 	art: { width: "82%", height: "82%" },
-	// Near-black silhouette: tint the art to ink at reduced opacity.
-	artHidden: { tintColor: WHIMSY.ink, opacity: 0.18 },
-	scrim: {
-		...StyleSheet.absoluteFillObject,
-		opacity: 0, // the tint carries the silhouette; scrim is a belt-and-braces no-op
-	},
+	// Near-black silhouette: tint the art to ink at the relic ghost veil.
+	artHidden: { tintColor: WHIMSY.ink, opacity: RELIC_GHOST },
 	qmark: {
 		position: "absolute",
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.mute,
-	},
-	name: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
-	nameHidden: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.mute,
-	},
-	story: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 2,
-	},
-	count: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.accent,
-		marginTop: 2,
 	},
 	// The gild stars ("The One That Got Away") — sun-toned, above the story.
 	gild: {
-		fontSize: 12,
 		color: WHIMSY.sun,
-		marginTop: 1,
-		letterSpacing: 1,
+		marginTop: SPACE.xxs,
+	},
+	story: {
+		marginTop: SPACE.xxs,
 	},
 	caption: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
 		marginTop: SPACE.lg,
 	},
 	// ── Field Guide shelf ─────────────────────────────────────────────────────
 	guideHeader: { marginTop: SPACE.xl },
 	guideList: { rowGap: SPACE.md },
-	guideRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		padding: SPACE.sm,
-		...SHADOW_SM,
-	},
 	guideWell: {
-		width: 64,
-		height: 64,
+		width: ART_SIZE.thumb,
+		height: ART_SIZE.thumb,
 		borderRadius: RADII.sm,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream,
 		alignItems: "center",
 		justifyContent: "center",
-		marginRight: SPACE.md,
 	},
-	guideArt: { width: 48, height: 48 },
+	guideArt: { width: ART_SIZE.glyph, height: ART_SIZE.glyph },
 	guidePlaceholder: {
-		width: 40,
-		height: 40,
+		width: ART_SIZE.glyph,
+		height: ART_SIZE.glyph,
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.ink,
-		opacity: 0.18,
+		opacity: RELIC_GHOST,
 	},
 	guideSilhouette: {
-		width: 40,
-		height: 40,
+		width: ART_SIZE.glyph,
+		height: ART_SIZE.glyph,
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.ink,
-		opacity: 0.12,
+		opacity: GUIDE_GHOST,
 	},
 	guideQmark: {
 		position: "absolute",
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.mute,
 	},
-	guideCopy: { flex: 1 },
-	guideName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
-	guideWhimsy: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		lineHeight: 18,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
-	guideValue: {
-		...TYPE.bodySm,
-		color: WHIMSY.ink,
-		marginTop: SPACE.xs,
-	},
-	guideNameHidden: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.mute,
-	},
-	guideWhimsyHidden: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
+	guideCopy: { gap: SPACE.xs },
 });

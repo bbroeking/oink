@@ -5,6 +5,8 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import { SpritePig } from "../components/ui/SpritePig";
+import { PIG_FRAMES } from "../constants/pigFrames.generated";
+import { PIG_IDS } from "../utils/pigs";
 
 // RN's <Image> shows up as multiple host nodes per element, so dedupe by source.
 const frameNodes = (r: TestRenderer.ReactTestRenderer) =>
@@ -56,13 +58,25 @@ describe("SpritePig — flip-book frames", () => {
 		act(() => r.unmount());
 	});
 
-	test("the frame loop advances which frame is visible (no source swap)", async () => {
-		const r = await renderAct(<SpritePig animation="idle" />);
-		const first = visibleSource(r);
-		await act(async () => {
-			jest.advanceTimersByTime(1000 / 2.5 + 10); // one idle fps period
-		});
-		expect(visibleSource(r)).not.toBe(first); // stepped to the next frame
+	test.each(PIG_IDS)("%s idle keeps a consistent rear hoof and reports the displayed anchor frame", async (pigId) => {
+		const onFrame = jest.fn();
+		const r = await renderAct(<SpritePig animation="idle" pigId={pigId} onFrame={onFrame} />);
+		expect(visibleSource(r)).toBe(PIG_FRAMES[pigId].idle_2);
+		expect(onFrame).toHaveBeenLastCalledWith(1);
+		for (const frame of [3, 1, 3, 1]) {
+			await act(async () => { jest.advanceTimersByTime(800); });
+			expect(visibleSources(r).size).toBe(1);
+			expect(visibleSource(r)).toBe(PIG_FRAMES[pigId][`idle_${frame + 1}`]);
+			expect(onFrame).toHaveBeenLastCalledWith(frame);
+		}
+		act(() => r.unmount());
+	});
+
+	test("pre-baked appearances keep their complete authored idle sequence", async () => {
+		const r = await renderAct(<SpritePig animation="idle" customFrames={{ idle: ["happy_1", "happy_2", "happy_3", "happy_4"] }} />);
+		expect(visibleSource(r)).toBe(PIG_FRAMES.rosie.happy_1);
+		await act(async () => { jest.advanceTimersByTime(400); });
+		expect(visibleSource(r)).toBe(PIG_FRAMES.rosie.happy_2);
 		act(() => r.unmount());
 	});
 
@@ -80,6 +94,7 @@ describe("SpritePig — flip-book frames", () => {
 	test("manual frame stepping (align tool) pins the visible frame", async () => {
 		const r = await renderAct(<SpritePig animation="idle" frameIdx={0} />);
 		const pinned = visibleSource(r);
+		expect(pinned).toBe(PIG_FRAMES.rosie.idle_1);
 		await act(async () => {
 			jest.advanceTimersByTime(2000); // no loop runs under frameIdx
 		});

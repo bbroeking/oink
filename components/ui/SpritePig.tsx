@@ -3,23 +3,21 @@ import { Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { PIG_SKIN_WASH } from "@/utils/pigSkin";
 import { PIG_FRAMES } from "@/constants/pigFrames.generated";
 import type { PigId } from "@/utils/pigs";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { usePigActive } from "@/hooks/usePigActive";
 import {
 	PIG_ANIMATION_SPECS,
-	pigAnimationDurationMs,
 	type PigAnimation,
 } from "./pigRendererContract";
 
 export type { PigAnimation } from "./pigRendererContract";
 
-// One full play/cycle of an animation, in ms. Callers (SwipeElement) hold a
-// reaction this long so it plays through completely before reverting to rest,
-// instead of being cut off mid-cycle by a flat timer.
-export function animDurationMs(animation: PigAnimation): number {
-	return pigAnimationDurationMs(animation);
-}
-
 interface Props {
 	animation: PigAnimation;
+	active?: boolean;
+	reduceMotion?: boolean;
+	playOnce?: boolean;
+	playbackKey?: number;
 	// Character identity. Rosie is the default for every existing caller.
 	// Every identity has a complete, baked animation pack.
 	pigId?: PigId;
@@ -50,9 +48,15 @@ export function SpritePig({
 	customFrames,
 	frameIdx,
 	skinTintOverride,
+	active = true,
+	reduceMotion,
+	playOnce = false,
+	playbackKey,
 }: Props) {
+	const policy = useMotionPolicy();
+	const visible = usePigActive(active);
+	const reduced = reduceMotion ?? policy.reduceMotion;
 	const [internalIdx, setInternalIdx] = useState(0);
-	const idx = frameIdx ?? internalIdx;
 	const setIdx = setInternalIdx;
 	const completeRef = useRef(onComplete);
 	completeRef.current = onComplete;
@@ -68,37 +72,51 @@ export function SpritePig({
 	// a stale ref to a removed animation like the old "arms_up"), fall
 	// back to "idle" instead of crashing. This protects against future
 	// drift between SpritePig's ANIMATIONS table and external callers.
-	const { frames: activeFrames, fps: activeFps, loop: activeLoop } = useMemo(() => {
+	const { frames: activeFrames, playback: activePlayback, fps: activeFps, loop: activeLoop } = useMemo(() => {
 		const baseCfg = PIG_ANIMATION_SPECS[animation] ?? PIG_ANIMATION_SPECS.idle;
 		const overrideFrames = customFrames?.[animation];
 		return {
 			frames: overrideFrames ?? baseCfg.frames,
+			// Pre-baked appearances keep their authored sequence. Only the base
+			// idle art needs the stance-continuity correction.
+			playback: overrideFrames
+				? overrideFrames.map((_, index) => index)
+				: baseCfg.playback ?? baseCfg.frames.map((_, index) => index),
 			fps: baseCfg.fps,
 			loop: baseCfg.loop,
 		};
 	}, [animation, customFrames]);
+	// Report the displayed source frame, not the playback tick, so attached
+	// cosmetics use the correct existing per-frame anchor. Explicit frameIdx
+	// and Reduce Motion preserve their original frozen-pose behavior.
+	const idx = frameIdx ?? (reduced ? 0 : activePlayback[Math.min(internalIdx, activePlayback.length - 1)] ?? 0);
 
 	useEffect(() => {
 		// External frameIdx control bypasses the auto-advance interval —
 		// useful for the align screen's manual stepper.
-		if (frameIdx !== undefined) return;
+		if (frameIdx !== undefined || !visible) return;
 		setIdx(0);
-		if (activeFrames.length <= 1) return;
+		if (reduced) {
+			if (playOnce || !activeLoop) completeRef.current?.();
+			return;
+		}
+		if (activePlayback.length <= 1) return;
 		const period = 1000 / activeFps;
+		let frame = 0;
 		const handle = setInterval(() => {
-			setIdx((prev) => {
-				const next = prev + 1;
-				if (next >= activeFrames.length) {
-					if (activeLoop) return 0;
+			frame += 1;
+			if (frame >= activePlayback.length) {
+				if (activeLoop && !playOnce) frame = 0;
+				else {
 					clearInterval(handle);
-					setTimeout(() => completeRef.current?.(), 0);
-					return prev;
+					completeRef.current?.();
+					return;
 				}
-				return next;
-			});
+			}
+			setIdx(frame);
 		}, period);
 		return () => clearInterval(handle);
-	}, [activeFrames, activeFps, activeLoop, frameIdx]);
+	}, [activePlayback, activeFps, activeLoop, frameIdx, visible, reduced, playOnce, playbackKey]);
 
 	// Fire onFrame after commit — never inside the setIdx updater (React forbids
 	// side effects in state updaters as of React 18).

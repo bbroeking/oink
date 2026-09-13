@@ -10,7 +10,7 @@
 // overlay is gone; the per-stage weakening cue is a gentle whole-body slump.
 
 import { useEffect } from "react";
-import { View, Text, Image, ImageBackground, StyleSheet } from "react-native";
+import { View, Image, ImageBackground, StyleSheet } from "react-native";
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
@@ -20,14 +20,17 @@ import Animated, {
 	Easing,
 	cancelAnimation,
 } from "react-native-reanimated";
+import { Hand, Kicker, Label, Numeral } from "@/components/ui";
 import {
-	FONTS,
+	ART_SIZE,
+	BORDER,
 	RADII,
 	SPACE,
 	STICKER_SHADOW,
-	TYPE,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
+
 import {
 	useHungerMeter,
 	HUNGER_STAGE_LINE,
@@ -37,6 +40,12 @@ import {
 	type HungerStage,
 } from "@/hooks/useHungerMeter";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+
+// Drawing geometry for the vignette: the bog scene's fixed stage height and the
+// diameter of the gorged glow behind the boss. Neither is spacing — they are the
+// proportions of one hand-composed picture.
+const SCENE_H = 190;
+const AURA_SIZE = 220;
 
 const HUNGER = require("../assets/images/hunger/great_hungerer_hero.png");
 const BOG = require("../assets/images/backgrounds/bog_dusk_bg.png");
@@ -115,7 +124,7 @@ export function GreatHungerMeter({ refreshKey }: { refreshKey?: number } = {}) {
 
 				{/* Stage whisper — the only words on the scene. */}
 				<View style={styles.whisperCard}>
-					<Text style={styles.whisper}>{HUNGER_STAGE_LINE[meter.stage]}</Text>
+					<Hand align="center">{HUNGER_STAGE_LINE[meter.stage]}</Hand>
 				</View>
 			</ImageBackground>
 
@@ -125,15 +134,17 @@ export function GreatHungerMeter({ refreshKey }: { refreshKey?: number } = {}) {
 			    thresholds stay retunable mid-season. */}
 			{meter.available && (
 				<View style={styles.creditRow}>
-					<Text style={styles.creditLevel}>{HUNGER_LEVEL_NAME[meter.stage]}</Text>
-					<Text style={styles.creditNum}>
+					<Label>{HUNGER_LEVEL_NAME[meter.stage]}</Label>
+					<Numeral style={styles.creditNum}>
 						{formatCredit(hungerCredit(meter.total))}
-						<Text style={styles.creditLabel}> tickles reclaimed</Text>
-					</Text>
+						<Kicker star={false} tone="secondary">
+							{" tickles reclaimed"}
+						</Kicker>
+					</Numeral>
 					{meter.nextThreshold != null && (
-						<Text style={styles.creditNext}>
+						<Kicker star={false} tone="secondary">
 							he weakens at {formatCredit(hungerCredit(meter.nextThreshold))}
-						</Text>
+						</Kicker>
 					)}
 				</View>
 			)}
@@ -143,63 +154,51 @@ export function GreatHungerMeter({ refreshKey }: { refreshKey?: number } = {}) {
 
 const styles = StyleSheet.create({
 	wrap: {
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.xl,
 		overflow: "hidden",
 		...STICKER_SHADOW,
-		backgroundColor: WHIMSY.ink,
+		// The bog behind the art — the sanctioned ceremony dark. [C-23]
+		backgroundColor: WHIMSY.stage,
 	},
 	scene: {
-		height: 190,
+		height: SCENE_H,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	sceneImg: { borderRadius: RADII.xl - 2 },
+	// The inner radius under the wrap's 2px ink border.
+	sceneImg: { borderRadius: RADII.lg },
 	aura: {
 		position: "absolute",
-		width: 220,
-		height: 220,
-		borderRadius: 110,
+		width: AURA_SIZE,
+		height: AURA_SIZE,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.sun,
 	},
 	heroWrap: { alignItems: "center" },
-	hero: { width: 120, height: 120 },
+	hero: { width: ART_SIZE.portrait, height: ART_SIZE.portrait },
 	whisperCard: {
 		position: "absolute",
 		left: SPACE.md,
 		right: SPACE.md,
 		bottom: SPACE.sm,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		backgroundColor: UI_COLORS.surface,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.md,
 		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs + 2,
-	},
-	whisper: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-		textAlign: "center",
+		paddingVertical: SPACE.sm,
 	},
 	creditRow: {
 		flexDirection: "row",
 		alignItems: "baseline",
 		gap: SPACE.sm,
-		backgroundColor: WHIMSY.paper,
-		borderTopWidth: 2,
-		borderTopColor: WHIMSY.ink,
+		backgroundColor: UI_COLORS.surface,
+		borderTopWidth: BORDER.ink,
+		borderTopColor: UI_COLORS.border,
 		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs + 2,
+		paddingVertical: SPACE.sm,
 	},
-	creditLevel: { ...TYPE.label, color: WHIMSY.ink },
-	creditNum: {
-		flex: 1,
-		...TYPE.numeral,
-		color: WHIMSY.ink,
-		textAlign: "right",
-	},
-	creditLabel: { ...TYPE.kicker, color: WHIMSY.mute },
-	creditNext: { ...TYPE.kicker, color: WHIMSY.mute },
+	creditNum: { flex: 1, textAlign: "right" },
 });

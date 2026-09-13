@@ -7,7 +7,7 @@ import {
 	type StyleProp,
 	type ViewStyle,
 } from "react-native";
-import { RADII, UI_COLORS } from "@/constants/theme";
+import { BORDER, DISABLED, OPACITY, RADII, UI_COLORS } from "@/constants/theme";
 import { Icon, type IconName } from "./Icon";
 
 type Variant = "none" | "paper" | "dark";
@@ -15,7 +15,7 @@ type Variant = "none" | "paper" | "dark";
 interface Props
 	extends Pick<
 		PressableProps,
-		"accessibilityHint" | "testID" | "onLongPress"
+		"accessibilityHint" | "accessibilityValue" | "testID" | "onLongPress"
 	> {
 	name: IconName;
 	label: string;
@@ -47,12 +47,14 @@ export function IconButton({
 	selected,
 	style,
 	accessibilityHint,
+	accessibilityValue,
 	testID,
 	onLongPress,
 }: Props) {
-	const iconColor =
-		color ??
-		(variant === "dark" ? UI_COLORS.textOnDark : UI_COLORS.textPrimary);
+	const iconColor = disabled
+		? UI_COLORS.textDisabled
+		: (color ??
+			(variant === "dark" ? UI_COLORS.textOnDark : UI_COLORS.textPrimary));
 
 	return (
 		<Pressable
@@ -62,12 +64,13 @@ export function IconButton({
 			accessibilityRole="button"
 			accessibilityLabel={label}
 			accessibilityHint={accessibilityHint}
+			accessibilityValue={accessibilityValue}
 			accessibilityState={{ disabled, selected }}
 			testID={testID}
 			style={({ pressed }) => [
 				style,
 				styles.hitTarget,
-				(pressed || disabled) && styles.dimmed,
+				pressed && !disabled && styles.pressed,
 			]}
 		>
 			<View
@@ -76,6 +79,9 @@ export function IconButton({
 					{ width: visualSize, height: visualSize },
 					variant === "paper" && styles.paper,
 					variant === "dark" && styles.dark,
+					// A resting icon button keeps its outline: DISABLED chrome, never
+					// an opacity crush (ruling 2026-07-07; audit B-08). (2026-09-11)
+					disabled && variant !== "none" && DISABLED,
 				]}
 			>
 				<Icon
@@ -103,15 +109,15 @@ const styles = StyleSheet.create({
 	},
 	paper: {
 		backgroundColor: UI_COLORS.surface,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: UI_COLORS.border,
 	},
 	dark: {
 		backgroundColor: UI_COLORS.textPrimary,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: UI_COLORS.border,
 	},
-	dimmed: {
-		opacity: 0.64,
+	pressed: {
+		opacity: OPACITY.pressed,
 	},
 });

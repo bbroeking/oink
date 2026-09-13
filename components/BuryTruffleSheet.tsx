@@ -3,21 +3,27 @@
 // reads on ANY equipped background, unlike the old inline band. Opened from the
 // truffle spot by the pig's feet. On a successful bury it fires onBuried (the
 // parent plays the mound's dig animation + refreshes) and closes itself.
+//
+// Wave-4 conformance pass: the panel is the `Sheet` primitive, the stake grid is
+// `Chip` (coin + a real selected state on `BORDER.heavy` rather than a sun fill,
+// and an unaffordable chip keeps its shape instead of dissolving to 0.4), and
+// the bury CTA is a `Button` in the pinned footer carrying its cost in the label
+// and its consequence in the hint. [C-03, C-07, C-09, C-18]
 import { useEffect } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { Glyph, IconText } from "./ui/Glyph";
-import { WHIMSY, SHADOW_SM, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
+import { Button, Chip, Sheet, SnoutCoin, T } from "./ui";
+import { SPACE } from "@/constants/theme";
 import { maxBuryStake, MIN_STAKE } from "@/utils/burySnouts";
 import { usePotStake } from "@/hooks/usePotStake";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
 
 // The two fixed chips; the third chip is "Max" (fills to the 50-snout pot cap,
 // bounded by the host's balance — resolved live in maxBuryStake).
 const FIXED_STAKES = [10, 20];
+
+// Cap-height match for the footer button's label.
+const COIN_SIZE = 14;
 
 interface Props {
 	open: boolean;
@@ -28,10 +34,6 @@ interface Props {
 }
 
 export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced }: Props) {
-	// Unmanaged native Modal (direct-tap, outside the popup queue): hold the queue
-	// while open so a foreground poll (schism/finale/achievements on AppState
-	// "active") can't present a queued popup over it — the #50152 wedge (issue #4).
-	useUnmanagedModalHold(open);
 	// A chip is either a fixed amount or "max" (resolves to a concrete number
 	// against the live balance) — the confirm button always restates the number.
 	// The shared stake machine: floor = server min, ceiling = live balance, Max
@@ -88,116 +90,95 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 	};
 
 	return (
-		<SlideUpSheet open={open} onClose={onClose}>
-			<View style={styles.sheet}>
-				<SheetGrabber />
-				<IconText left={<Glyph name="star" size={12} />} gap={4}>
-					<Text style={styles.kicker}>YOUR TRUFFLE</Text>
-				</IconText>
-				<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
-					<Text style={styles.title}>Bury a truffle</Text>
-				</IconText>
-
-				<Text style={styles.blurb}>
-					Leave a truffle on your barn for visitors. The stake becomes a shared pot
-					— friends who drop by dig shares of it for snouts.
-				</Text>
-
-				<Text style={styles.label}>Stake</Text>
-				<View style={styles.stakes}>
-					{FIXED_STAKES.map((s) => {
-						const on = sel === s;
-						const tooPoor = balance < s; // can't afford this chip
-						return (
-							<Pressable
-								key={s}
-								disabled={tooPoor}
-								onPress={() => select(s)} // select clears any stale "need N snouts" note
-								style={[styles.chip, on && styles.chipOn, tooPoor && styles.chipOff]}
-							>
-								<SnoutCoin size={16} />
-								<Text style={[styles.chipText, on && styles.chipTextOn, tooPoor && styles.chipTextOff]}>{s}</Text>
-							</Pressable>
-						);
-					})}
-					{/* Max — fills to the 50-snout pot cap, bounded by balance; dims
-					    below the server min stake. */}
-					<Pressable
-						disabled={!maxOk}
-						onPress={() => select("max")}
-						style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
-					>
-						<SnoutCoin size={16} />
-						<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
-					</Pressable>
-				</View>
-
-				{note && <Text style={styles.note}>{note}</Text>}
-
-				<Pressable
+		<Sheet
+			open={open}
+			onClose={onClose}
+			kicker="your truffle"
+			title="Bury a truffle"
+			testID="bury-truffle-sheet"
+			footer={
+				<Button
+					full
+					variant="gold"
 					onPress={bury}
-					disabled={busy || !canBury}
-					style={({ pressed }) => [styles.buryBtn, !canBury && styles.buryBtnOff, pressed && { opacity: 0.9 }]}
+					disabled={!canBury}
+					loading={busy}
+					accessibilityLabel={`Bury for visitors · ${stake} snouts`}
+					accessibilityHint="Stakes those snouts as a shared pot visitors can dig shares of"
+					testID="bury-truffle-confirm"
 				>
-					<Text style={styles.buryText}>
-						{busy ? "burying…" : `Bury for visitors · ${stake} snouts`}
-					</Text>
-				</Pressable>
+					<>
+						{`Bury for visitors · ${stake} snouts`}
+						<SnoutCoin size={COIN_SIZE} />
+					</>
+				</Button>
+			}
+		>
+			<T role="body" tone="secondary" style={styles.blurb}>
+				Leave a truffle on your barn for visitors. The stake becomes a shared pot
+				— friends who drop by dig shares of it for snouts.
+			</T>
+
+			<T role="label" tone="secondary" style={styles.label}>
+				Stake
+			</T>
+			<View style={styles.stakes} accessibilityRole="radiogroup">
+				{FIXED_STAKES.map((s) => {
+					const on = sel === s;
+					const tooPoor = balance < s; // can't afford this chip
+					return (
+						<Chip
+							key={s}
+							label={`${s}`}
+							coin
+							tone={on ? "sun" : "paper"}
+							selected={on}
+							disabled={tooPoor}
+							onPress={() => select(s)} // select clears any stale "need N snouts" note
+							accessibilityLabel={`Stake ${s} snouts`}
+							accessibilityHint={
+								tooPoor
+									? "You don't have that many snouts"
+									: "Sets the pot this bury stakes"
+							}
+							testID={`bury-stake-${s}`}
+							style={styles.chip}
+						/>
+					);
+				})}
+				{/* Max — fills to the 50-snout pot cap, bounded by balance; rests
+				    below the server min stake. */}
+				<Chip
+					label="Max"
+					coin
+					tone={sel === "max" ? "sun" : "paper"}
+					selected={sel === "max"}
+					disabled={!maxOk}
+					onPress={() => select("max")}
+					accessibilityLabel={`Stake the most you can · ${maxBuryStake(balance)} snouts`}
+					accessibilityHint={
+						maxOk
+							? "Fills the pot to its cap, bounded by your balance"
+							: "You don't have enough snouts for a valid stake"
+					}
+					testID="bury-stake-max"
+					style={styles.chip}
+				/>
 			</View>
-		</SlideUpSheet>
+
+			{note && (
+				<T role="hand" tone="accent" align="center" style={styles.note}>
+					{note}
+				</T>
+			)}
+		</Sheet>
 	);
 }
 
-const INK = WHIMSY.ink;
-const sticker = SHADOW_SM;
 const styles = StyleSheet.create({
-	sheet: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.xxl,
-		padding: PAGE_PAD,
-		paddingTop: SPACE.md - 2,
-		...sticker,
-	},
-	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	titleRow: { marginBottom: SPACE.sm + 2 },
-	title: { ...TYPE.pageTitle, color: INK },
-
-	blurb: { ...TYPE.body, color: WHIMSY.mute, marginBottom: SPACE.lg - 2 },
-
-	label: { ...TYPE.label, letterSpacing: 0.6, color: WHIMSY.mute, marginBottom: SPACE.sm },
+	blurb: { marginBottom: SPACE.lg },
+	label: { marginBottom: SPACE.sm },
 	stakes: { flexDirection: "row", gap: SPACE.md },
-	chip: {
-		flex: 1,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: SPACE.xs + 1,
-		paddingVertical: SPACE.sm + 2,
-		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: INK,
-		backgroundColor: WHIMSY.cream,
-	},
-	chipOn: { backgroundColor: WHIMSY.sun },
-	chipOff: { opacity: 0.4, borderColor: WHIMSY.muteSoft }, // unaffordable / below min
-	chipText: { ...TYPE.numeral, color: WHIMSY.mute },
-	chipTextOn: { color: INK },
-	chipTextOff: { color: WHIMSY.mute },
-
-	note: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.md },
-
-	buryBtn: {
-		marginTop: SPACE.lg + 2,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.lg,
-		paddingVertical: SPACE.md + 1,
-		alignItems: "center",
-		...sticker,
-	},
-	buryBtnOff: { opacity: 0.45 }, // no valid stake selected (too poor / below min)
-	buryText: { ...TYPE.numeral, color: INK },
+	chip: { flex: 1 },
+	note: { marginTop: SPACE.md },
 });

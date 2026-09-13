@@ -1,10 +1,13 @@
 // Reusable confirm-spend dialog matching the storybook UI.
 //
-// Replaces React Native's bare Alert.alert for in-app actions that
-// cost snouts or are otherwise irreversible. The system Alert is
-// jarring inside the paper-sticker / ink-border world the rest of
-// the app lives in; this component carries the same paper tilt +
-// shadow + button shape as CleanseModal / AlignmentSchismModal.
+// Replaces React Native's bare Alert.alert for in-app actions that cost snouts
+// or are otherwise irreversible. The system Alert is jarring inside the
+// paper-sticker / ink-border world the rest of the app lives in.
+//
+// Rebuilt (design-system spec §2, row 05) as the three pieces it always was:
+//   AdaptiveModalScaffold (safe-area-aware frame, fade, scroll path, the a11y
+//   modal flags) + a paper `Sticker` + `DialogButtonRow`. It no longer hand-rolls
+//   a Modal, a backdrop, a card or a button pair.
 //
 // API mirrors Alert.alert's mental model:
 //   <ConfirmDialog
@@ -18,21 +21,12 @@
 //   />
 
 import React from "react";
-import {
-	Modal,
-	View,
-	Text,
-	Pressable,
-	StyleSheet,
-} from "react-native";
+import { StyleSheet, View } from "react-native";
+import { RADII, SPACE, STICKER_SHADOW, TILT } from "@/constants/theme";
+import { AdaptiveModalScaffold } from "./AdaptiveModalScaffold";
+import { DialogButtonRow, type DialogTone } from "./DialogButtonRow";
 import { Sticker } from "./Sticker";
-import { SnoutCoin } from "./SnoutCoin";
-import {
-	FONTS,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	WHIMSY,
-} from "@/constants/theme";
+import { BodySm, CardTitle } from "./Text";
 
 interface Props {
 	open: boolean;
@@ -50,13 +44,22 @@ interface Props {
 	confirmLabel: string;
 	confirmCoin?: boolean;
 	cancelLabel?: string;
-	// Optional destructive flag — paints confirm in the accent
-	// (rose-deep) instead of the standard lilac, for permanent
-	// deletes etc. Not used by the default snout-spend path.
+	// Legacy flag, kept so the ~8 existing call sites don't move: a true here is
+	// exactly `tone="destructive"`.
 	destructive?: boolean;
+	// The decision's weight. `warm` is the default spend/choice; `destructive`
+	// paints the confirm on the irreversible ramp and says so in its hint.
+	tone?: DialogTone;
 	onConfirm: () => void;
 	onCancel: () => void;
 	busy?: boolean;
+	// Spoken consequence of confirming / cancelling (spec §3.5): a spend or
+	// reclaim dialog names what happens. Forwarded to DialogButtonRow.
+	confirmHint?: string;
+	cancelHint?: string;
+	// "inline" for a dialog that opens from inside another native Modal (a
+	// reclaim confirm over a sheet). Forwarded to AdaptiveModalScaffold.
+	presentation?: "native" | "inline";
 }
 
 export function ConfirmDialog({
@@ -68,135 +71,79 @@ export function ConfirmDialog({
 	confirmCoin,
 	cancelLabel = "Cancel",
 	destructive,
+	tone,
 	onConfirm,
 	onCancel,
 	busy,
+	confirmHint,
+	cancelHint,
+	presentation = "native",
 }: Props) {
 	if (!open) return null;
 	// visible defaults to open (direct-tap callers). Queue consumers pass a
 	// slot-driven visible so release() hides the native modal a beat before
 	// `open` unmounts it.
 	const nativeVisible = visible ?? open;
+	const resolvedTone: DialogTone =
+		tone ?? (destructive ? "destructive" : "warm");
+
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={nativeVisible}
-			transparent
-			animationType="fade"
 			onRequestClose={onCancel}
+			animationType="fade"
+			bare
+			presentation={presentation}
+			testID="confirm-dialog"
+			contentContainerStyle={styles.content}
 		>
-			<Pressable style={styles.backdrop} onPress={onCancel}>
-				<Pressable style={styles.cardWrap} onPress={() => {}}>
-					<Sticker
-						color="paper"
-						rotate={-0.8}
-						radius={18}
-						style={[styles.card, STICKER_SHADOW]}
-					>
-						<Text style={styles.title}>{title}</Text>
-						{!!body && <Text style={styles.body}>{body}</Text>}
-						<View style={styles.btnRow}>
-							<Pressable
-								onPress={onCancel}
-								disabled={busy}
-								style={({ pressed }) => [
-									styles.btn,
-									styles.btnGhost,
-									pressed && { opacity: 0.7 },
-								]}
-							>
-								<Text style={styles.btnGhostText}>{cancelLabel}</Text>
-							</Pressable>
-							<Pressable
-								onPress={onConfirm}
-								disabled={busy}
-								style={({ pressed }) => [
-									styles.btn,
-									destructive ? styles.btnDestructive : styles.btnConfirm,
-									(pressed || busy) && { opacity: 0.7 },
-								]}
-							>
-								<View style={styles.btnInner}>
-									<Text
-										style={
-											destructive
-												? styles.btnDestructiveText
-												: styles.btnConfirmText
-										}
-									>
-										{busy ? "…" : confirmLabel}
-									</Text>
-									{!busy && confirmCoin && <SnoutCoin size={13} />}
-								</View>
-							</Pressable>
-						</View>
-					</Sticker>
-				</Pressable>
-			</Pressable>
-		</Modal>
+			<Sticker
+				color="paper"
+				rotate={TILT.dialog}
+				radius={RADII.xl}
+				style={[styles.card, STICKER_SHADOW]}
+			>
+				<CardTitle accessibilityRole="header" align="center">
+					{title}
+				</CardTitle>
+				{!!body && (
+					<BodySm tone="secondary" align="center" style={styles.body}>
+						{body}
+					</BodySm>
+				)}
+				<View style={styles.buttons}>
+					<DialogButtonRow
+						confirmLabel={confirmLabel}
+						cancelLabel={cancelLabel}
+						onConfirm={onConfirm}
+						onCancel={onCancel}
+						tone={resolvedTone}
+						busy={busy}
+						confirmCoin={confirmCoin}
+						confirmHint={confirmHint}
+						cancelHint={cancelHint}
+					/>
+				</View>
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 28,
+	content: {
+		// The sticker tilts and wears the hard 4,4 shadow; give both room inside
+		// the (bare, overflow-visible) scaffold frame.
+		padding: SPACE.sm,
 	},
-	cardWrap: { width: "100%", maxWidth: 340 },
-	card: { paddingHorizontal: 22, paddingVertical: 20, alignItems: "center" },
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 20,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 8,
+	card: {
+		padding: SPACE.card,
+		alignItems: "center",
 	},
 	body: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		lineHeight: 19,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 18,
-		opacity: 0.85,
+		marginTop: SPACE.sm,
 	},
-	btnRow: {
-		flexDirection: "row",
-		gap: 10,
+	buttons: {
 		alignSelf: "stretch",
-	},
-	btn: {
-		flex: 1,
-		paddingHorizontal: 14,
-		paddingVertical: 11,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	btnGhost: {
-		backgroundColor: "transparent",
-		borderColor: WHIMSY.muteSoft,
-	},
-	btnGhostText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14,
-		color: WHIMSY.mute,
-	},
-	btnConfirm: { backgroundColor: WHIMSY.lilac },
-	btnConfirmText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-	btnDestructive: { backgroundColor: WHIMSY.rose },
-	btnDestructiveText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	btnInner: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
+		marginTop: SPACE.lg,
 	},
 });

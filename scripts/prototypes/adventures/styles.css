@@ -1,0 +1,461 @@
+/* Beyond the Hedge click-through.
+   No :root here — the web is a consumer of theme.ts (design-system-spec §3
+   rule 7). The page <link>s /tokens.css + /sticker.css; everything below
+   composes those tokens and primitives. The one local custom property is an
+   easing curve, which tokens.css does not yet carry (see the system ask). */
+
+#adventure-root { --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
+
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--cream2); }
+body {
+	min-height: 100vh;
+	margin: 0;
+	color: var(--text-primary);
+	font: var(--type-body);
+	background:
+		radial-gradient(circle at 9% 5%, color-mix(in srgb, var(--fill-rose) 72%, transparent), transparent 31rem),
+		radial-gradient(circle at 92% 18%, color-mix(in srgb, var(--fill-sky) 72%, transparent), transparent 34rem),
+		var(--cream2);
+}
+button, input { color: inherit; font: inherit; }
+button { cursor: pointer; }
+/* Disabled keeps its full chrome over a muted fill — never an opacity crush. */
+button:disabled { cursor: default; background: var(--cream2); color: var(--text-disabled); }
+h1, h2, h3, p { text-wrap: pretty; }
+h1, h2, h3 { font-family: var(--font-whimsy); font-weight: 400; }
+
+#adventure-root {
+	width: min(1180px, calc(100% - 32px));
+	margin: 0 auto;
+	padding: var(--space-xl) 0 var(--tab-safe);
+}
+
+.lab-header {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--space-xxl);
+	margin-bottom: var(--space-xl);
+}
+.lab-header > div:first-child { max-width: 760px; }
+.brand-link {
+	display: inline-flex;
+	min-height: var(--tap-min);
+	align-items: center;
+	gap: var(--space-sm);
+	color: var(--accent);
+	font: var(--type-hand-lg);
+	text-decoration: none;
+}
+.brand-link:hover { text-decoration: underline; text-decoration-thickness: var(--border-ink); text-underline-offset: var(--space-xs); }
+.pig-mark {
+	position: relative;
+	width: 27px;
+	height: 23px;
+	border: var(--border-ink) solid var(--ink);
+	border-radius: 48% 48% 44% 44%;
+	background: var(--fill-rose-deep);
+	box-shadow: var(--shadow-sm);
+}
+.pig-mark::before, .pig-mark::after {
+	content: "";
+	position: absolute;
+	top: -7px;
+	width: 9px;
+	height: 10px;
+	border: var(--border-ink) solid var(--ink);
+	border-radius: 70% 20% 45% 35%;
+	background: var(--fill-rose);
+	z-index: -1;
+}
+.pig-mark::before { left: 0; transform: rotate(-23deg); }
+.pig-mark::after { right: 0; transform: rotate(23deg) scaleX(-1); }
+.pig-mark i {
+	position: absolute;
+	left: 50%;
+	top: 10px;
+	width: 11px;
+	height: 7px;
+	border: var(--border-thin) solid var(--ink);
+	border-radius: 50%;
+	background: var(--fill-rose);
+	transform: translateX(-50%);
+}
+.lab-header h1 {
+	margin: var(--space-xxs) 0 var(--space-xs);
+	font: var(--type-display-lg);
+	letter-spacing: -0.02em;
+}
+.lab-header p {
+	max-width: 68ch;
+	margin: 0;
+	color: var(--text-secondary);
+	font: var(--type-body);
+}
+.header-actions { display: grid; justify-items: end; gap: var(--space-sm); }
+/* .lab-badge composes .tag.tag--sun; only the sticker shadow is local. */
+.lab-badge { box-shadow: var(--shadow-sm); border-width: var(--border-ink); }
+/* .text-button composes .btn.btn--link; the reset affordance reads as accent. */
+.text-button {
+	padding: var(--space-sm) var(--space-xs);
+	color: var(--accent);
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-decoration: underline;
+	text-decoration-thickness: var(--border-ink);
+	text-underline-offset: var(--space-xs);
+}
+/* .question-bar composes .sticker.sticker--bark.sticker--straight. */
+.question-bar {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-md);
+	margin-bottom: var(--space-xl);
+}
+.question-bar strong { flex: 0 0 auto; color: var(--fill-sun); font: var(--type-label); }
+.question-bar span { font: var(--type-body-sm); }
+
+.review-layout {
+	display: grid;
+	grid-template-columns: minmax(340px, 420px) minmax(280px, 1fr);
+	gap: var(--space-xxl);
+	align-items: start;
+}
+.phone-stage { min-width: 0; }
+/* The phone is a device frame, not a sticker: a heavy outline, one hard shadow. */
+.phone {
+	position: relative;
+	width: min(390px, 100%);
+	aspect-ratio: 390 / 844;
+	margin: 0 auto;
+	overflow: hidden;
+	border: var(--border-heavy) solid var(--ink);
+	border-radius: var(--radius-xxl);
+	background: var(--paper);
+	box-shadow: var(--shadow-sticker);
+	isolation: isolate;
+}
+.phone-status {
+	position: absolute;
+	z-index: 20;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 39px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-xs) var(--space-lg);
+	background: color-mix(in srgb, var(--paper) 94%, transparent);
+	border-bottom: var(--border-ink) solid var(--ink);
+	font: var(--type-kicker-pill);
+	letter-spacing: normal;
+}
+.phone-status i {
+	width: 72px;
+	height: 18px;
+	border-radius: var(--radius-pill);
+	background: var(--ink);
+}
+.screen {
+	position: absolute;
+	inset: 39px 0 0;
+	overflow: auto;
+	animation: screen-in var(--motion-fade) var(--ease-out) both;
+}
+.scene-screen { overflow: hidden; background: var(--bark); }
+.scene-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scene-shade {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		to bottom,
+		color-mix(in srgb, var(--ink-deep) 4%, transparent) 28%,
+		color-mix(in srgb, var(--ink-deep) 84%, transparent) 100%
+	);
+}
+/* Dark sticker: the .sticker --fill API carrying a near-opaque bark over art. */
+.dark-sticker { --fill: color-mix(in srgb, var(--bark) 96%, transparent); color: var(--text-on-dark); }
+.scene-copy {
+	--tilt: var(--tilt-5);
+	position: absolute;
+	z-index: 4;
+	left: var(--space-lg);
+	right: var(--space-lg);
+	bottom: var(--space-xl);
+	padding: var(--space-lg);
+}
+.scene-copy h2 {
+	margin: var(--space-xxs) 0 var(--space-sm);
+	font: var(--type-section-title);
+	letter-spacing: var(--tracking-section-title);
+}
+.scene-copy > p:not(.hand-label) { margin: 0; font: var(--type-body); }
+.hand-label {
+	margin: 0;
+	color: var(--accent);
+	font: var(--type-hand);
+}
+.dark-sticker .hand-label { color: var(--fill-sun); }
+.place-ticket {
+	display: grid;
+	gap: var(--space-xxs);
+	margin-top: var(--space-md);
+	padding-top: var(--space-md);
+	border-top: var(--border-hair) solid color-mix(in srgb, var(--bark-text) 34%, transparent);
+}
+.place-ticket span { color: var(--fill-sun); font-weight: 900; }
+.place-ticket small { color: color-mix(in srgb, var(--bark-text) 78%, transparent); font: var(--type-kicker-pill); letter-spacing: normal; }
+
+.prepare-screen, .reflect-screen { background: var(--cream); }
+.paper-heading { padding: var(--space-lg) var(--space-lg) var(--space-xs); }
+.paper-heading h2 { margin: var(--space-xxs) 0 var(--space-xs); font: var(--type-section-title); letter-spacing: var(--tracking-section-title); }
+.paper-heading > p:last-child { margin: 0; color: var(--text-secondary); font: var(--type-label); letter-spacing: normal; }
+/* .bag-stage composes .sticker.sticker--sky.sticker--sm.sticker--straight. */
+.bag-stage {
+	position: relative;
+	height: 150px;
+	margin: var(--space-xxs) var(--space-lg) var(--space-sm);
+	padding: 0;
+	overflow: hidden;
+}
+.bag-stage > img:first-child { position: absolute; left: 4px; bottom: -38px; width: 205px; height: 205px; object-fit: contain; }
+.bag-stage .bag-rosie { position: absolute; right: 4px; bottom: -18px; width: 150px; height: 150px; object-fit: contain; }
+.choice-scroll { padding: 0 var(--space-lg) var(--space-xl); }
+.choice-group, .verdict-group { margin: 0 0 var(--space-md); padding: 0; border: 0; }
+.choice-group legend, .verdict-group legend { margin-bottom: var(--space-sm); font: var(--type-label); letter-spacing: var(--tracking-label); }
+.choice-list { display: grid; gap: var(--space-sm); }
+.choice {
+	width: 100%;
+	min-height: 56px;
+	display: grid;
+	grid-template-columns: 18px 1fr;
+	align-items: center;
+	gap: var(--space-md);
+	padding: var(--space-sm) var(--space-md);
+	text-align: left;
+	border: var(--border-ink) solid var(--separator);
+	border-radius: var(--radius-md);
+	background: var(--paper);
+	transition:
+		transform var(--motion-fade) var(--ease-out),
+		background var(--motion-fade) var(--ease-out),
+		border-color var(--motion-fade) var(--ease-out);
+}
+.choice:hover { transform: translateY(-1px); border-color: var(--ink); }
+.choice:active { transform: translate(var(--press-shift), var(--press-shift)); }
+/* Selected = BORDER.heavy + a fill, never colour alone (spec §3 state law). */
+.choice.is-selected { border-color: var(--ink); border-width: var(--border-heavy); background: var(--fill-sun); box-shadow: var(--shadow-sm); }
+.choice-dot { width: 16px; height: 16px; border: var(--border-ink) solid var(--ink); border-radius: 50%; background: var(--paper); }
+.choice.is-selected .choice-dot { box-shadow: inset 0 0 0 3px var(--paper); background: var(--accent); }
+.choice strong, .choice small { display: block; }
+.choice strong { font: var(--type-label); letter-spacing: var(--tracking-label); }
+.choice small { margin-top: var(--space-xxs); color: var(--text-secondary); font: var(--type-kicker-pill); letter-spacing: normal; }
+
+.journey-route {
+	position: absolute;
+	z-index: 3;
+	left: 41px;
+	top: 20%;
+	height: 215px;
+	border-left: var(--border-heavy) dotted var(--fill-sun);
+	transform: rotate(-13deg);
+}
+.journey-route i {
+	position: absolute;
+	left: -7px;
+	width: 11px;
+	height: 11px;
+	border: var(--border-ink) solid var(--bark);
+	border-radius: 50%;
+	background: var(--fill-sun);
+	box-shadow: 0 0 10px var(--fill-sun);
+}
+.journey-route i:nth-child(1) { top: 0; }
+.journey-route i:nth-child(2) { top: 65px; }
+.journey-route i:nth-child(3) { top: 132px; }
+.journey-route i:nth-child(4) { top: 200px; }
+.journey-note { bottom: var(--space-card); }
+.causality-list { display: grid; gap: var(--space-sm); margin: var(--space-md) 0; padding: 0; list-style: none; }
+.causality-list li { display: grid; gap: 1px; padding-top: var(--space-sm); border-top: var(--border-hair) solid color-mix(in srgb, var(--bark-text) 26%, transparent); }
+.causality-list strong { color: var(--fill-sun); font: var(--type-kicker-pill); letter-spacing: normal; }
+.causality-list span { font: var(--type-kicker-pill); letter-spacing: normal; }
+.journey-promise { color: color-mix(in srgb, var(--bark-text) 72%, transparent); font: var(--type-kicker-pill) !important; letter-spacing: normal; }
+
+.return-shade {
+	background: linear-gradient(
+		to bottom,
+		color-mix(in srgb, var(--ink-deep) 4%, transparent) 15%,
+		color-mix(in srgb, var(--ink-deep) 72%, transparent) 100%
+	);
+}
+.return-rosie {
+	position: absolute;
+	z-index: 3;
+	right: 0;
+	top: 205px;
+	width: 158px;
+	filter: drop-shadow(4px 4px 0 color-mix(in srgb, var(--ink) 46%, transparent));
+}
+.return-card { bottom: var(--space-md); --fill: color-mix(in srgb, var(--paper) 97%, transparent); }
+.return-card > p { color: var(--text-secondary); }
+/* .cause-receipt composes .sticker.sticker--sun.sticker--flat.sticker--straight. */
+.cause-receipt {
+	display: grid;
+	gap: var(--space-xxs);
+	margin: var(--space-md) 0;
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-sm);
+}
+.cause-receipt strong { font: var(--type-kicker-pill); letter-spacing: normal; }
+.cause-receipt span { font: var(--type-kicker-pill); letter-spacing: normal; }
+.reward-row { display: grid; grid-template-columns: 0.7fr 1.3fr; gap: var(--space-sm); }
+.reward-row > span { display: grid; align-content: start; gap: var(--space-xxs); padding-top: var(--space-sm); border-top: var(--border-hair) solid color-mix(in srgb, var(--ink) 28%, transparent); }
+.reward-row strong { font: var(--type-kicker-pill); letter-spacing: normal; }
+.reward-row small { color: var(--text-secondary); font: var(--type-kicker-pill); letter-spacing: normal; }
+
+.reflect-screen { padding-bottom: var(--space-xl); }
+.reflect-screen .paper-heading { padding-top: var(--space-lg); }
+/* .next-question composes .sticker.sticker--sun.sticker--flat.sticker--straight. */
+.next-question { padding: var(--space-sm) var(--space-md); border-radius: var(--radius-sm); color: var(--text-primary) !important; font-weight: 900; }
+/* .memory-strip composes .sticker.sticker--sky.sticker--sm.sticker--straight. */
+.memory-strip {
+	display: grid;
+	grid-template-columns: 82px 1fr;
+	align-items: center;
+	gap: var(--space-sm);
+	margin: var(--space-xs) var(--space-lg) var(--space-md);
+	padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-xxs);
+}
+.memory-strip img { width: 82px; height: 82px; object-fit: contain; }
+.memory-strip div { display: grid; gap: var(--space-xxs); }
+.memory-strip small { color: var(--accent); font: var(--type-kicker); letter-spacing: var(--tracking-kicker); }
+.memory-strip strong { font: var(--type-card-title-sm); letter-spacing: var(--tracking-card-title-sm); }
+.memory-strip span { color: var(--text-secondary); font: var(--type-kicker-pill); letter-spacing: normal; }
+/* .validation-sheet composes .sticker.sticker--straight. */
+.validation-sheet { margin: 0 var(--space-lg); padding: var(--space-md); }
+.validation-sheet h3 { margin: 0 0 var(--space-xs); font: var(--type-card-title-sm); letter-spacing: var(--tracking-card-title-sm); }
+.validation-sheet > p { margin: 0 0 var(--space-md); color: var(--text-secondary); font: var(--type-kicker-pill); letter-spacing: normal; }
+.verdict-group > div { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+/* .verdict-choice composes .chip. */
+.verdict-choice { min-width: 46px; padding: var(--space-sm) var(--space-md); font: var(--type-kicker-pill); letter-spacing: normal; }
+.verdict-choice.is-selected { background: var(--fill-lilac); border-width: var(--border-heavy); }
+.validation-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-md); }
+/* .primary-button / .secondary-button compose .btn.btn--sm; only the fill is
+   local, because the palette has no lilac button ramp (see the system ask). */
+.primary-button, .secondary-button { padding: var(--space-sm) var(--space-md); font: var(--type-kicker-pill); letter-spacing: normal; }
+.primary-button { background: var(--fill-lilac); }
+.secondary-button { background: var(--paper); }
+.copy-status { min-height: 15px; margin: var(--space-sm) 0 0 !important; color: var(--accent) !important; text-align: center; font-weight: 900; }
+
+/* .review-controls composes .sticker.sticker--straight; the segmented row of
+   buttons carries its own edges, so the sticker padding is dropped. */
+.review-controls {
+	width: min(390px, 100%);
+	display: grid;
+	grid-template-columns: 1fr 1.4fr 1fr;
+	align-items: stretch;
+	margin: var(--space-lg) auto 0;
+	padding: 0;
+	overflow: hidden;
+}
+.review-controls button {
+	min-height: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+	padding: var(--space-sm);
+	border: 0;
+	background: var(--fill-sun);
+	font: var(--type-kicker-pill);
+	letter-spacing: normal;
+}
+.review-controls button:disabled { background: var(--cream2); color: var(--text-disabled); }
+.review-controls button:first-child { border-right: var(--border-ink) solid var(--ink); }
+.review-controls button:last-child { border-left: var(--border-ink) solid var(--ink); }
+.review-controls > div { display: grid; place-content: center; gap: 1px; text-align: center; }
+.review-controls small { color: var(--text-secondary); font: var(--type-kicker-pill); letter-spacing: normal; }
+.review-controls strong { font: var(--type-kicker-pill); letter-spacing: normal; }
+
+/* .review-notes composes .sticker; it leans the other way from the card default. */
+.review-notes {
+	--tilt: var(--tilt-8);
+	position: sticky;
+	top: var(--space-lg);
+	max-width: 530px;
+	padding: var(--space-xl);
+}
+.review-notes h2 { margin: 0 0 var(--space-sm); font: var(--type-page-title); }
+.review-notes > p { max-width: 58ch; margin: 0; color: var(--text-secondary); font: var(--type-body); }
+.step-list { display: grid; gap: var(--space-xs); margin: var(--space-xl) 0; padding: 0; list-style: none; }
+.step-list li {
+	min-height: var(--tap-min);
+	display: grid;
+	grid-template-columns: 30px 1fr;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-xs) var(--space-sm);
+	border-radius: var(--radius-sm);
+	color: var(--text-secondary);
+}
+.step-list li span {
+	width: 28px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border: var(--border-ink) solid currentColor;
+	border-radius: 50%;
+	font: var(--type-kicker-pill);
+	letter-spacing: normal;
+}
+.step-list li small { font: var(--type-label); letter-spacing: var(--tracking-label); }
+.step-list li.is-current { background: var(--fill-sun); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.step-list li.is-complete { color: var(--text-primary); }
+.step-list li.is-complete span { background: var(--fill-sage); }
+/* .boundary-note composes .sticker.sticker--sky.sticker--flat.sticker--straight. */
+.boundary-note { padding: var(--space-md) var(--space-card); }
+.boundary-note strong { font: var(--type-card-title-sm); letter-spacing: var(--tracking-card-title-sm); }
+.boundary-note p { margin: var(--space-xs) 0 0; color: var(--text-secondary); font: var(--type-label); letter-spacing: normal; }
+.motion-toggle { min-height: var(--tap-min); display: inline-flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-card); font: var(--type-label); letter-spacing: var(--tracking-label); cursor: pointer; }
+.motion-toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+@keyframes screen-in {
+	from { opacity: 0; transform: translateX(14px); }
+	to { opacity: 1; transform: translateX(0); }
+}
+.reduce-motion .screen { animation: none; }
+.reduce-motion .journey-route i { box-shadow: none; }
+
+@media (max-width: 780px) {
+	#adventure-root { width: min(100% - 22px, 560px); padding-top: var(--space-lg); }
+	.lab-header { align-items: flex-start; }
+	.lab-header h1 { font: var(--type-display); }
+	.header-actions { justify-items: end; }
+	.question-bar { display: grid; gap: var(--space-xxs); }
+	.review-layout { grid-template-columns: 1fr; }
+	.review-notes { --tilt: 0deg; position: static; max-width: 390px; margin: 0 auto; }
+}
+
+@media (max-width: 520px) {
+	#adventure-root { width: 100%; padding: 0 0 var(--space-xxl); }
+	.lab-header, .question-bar, .review-notes { margin-left: var(--space-md); margin-right: var(--space-md); }
+	.lab-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-sm); align-items: start; padding-top: var(--space-xs); }
+	.brand-link { min-height: var(--tap-min); font: var(--type-hand); }
+	.lab-header h1 { margin-top: 0; font: var(--type-page-title); }
+	.lab-header p { font: var(--type-body-sm); }
+	.header-actions { display: block; }
+	.lab-badge { display: none; }
+	.text-button { min-height: var(--tap-min); font: var(--type-label); letter-spacing: var(--tracking-label); }
+	.question-bar { margin-bottom: var(--space-card); }
+	.review-layout { gap: var(--space-xl); }
+	.phone { width: 100%; border-left: 0; border-right: 0; border-radius: 0; box-shadow: none; }
+	.review-controls { width: calc(100% - 24px); }
+	.review-notes { padding: var(--space-lg); }
+}
+
+/* The :focus-visible ring, the prefers-reduced-motion block and the .sticker /
+   .btn / .chip / .tag primitives all arrive from /sticker.css — nothing here
+   re-declares them. The .reduce-motion class above is the user-controlled
+   opt-out that sits alongside the media query. */

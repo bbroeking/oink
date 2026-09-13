@@ -30,7 +30,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Ellipse } from "react-native-svg";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { Icon } from "./Icon";
 import { WHIMSY, FONTS } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";

@@ -1,14 +1,39 @@
 // "Check on your truffle" — a bottom sheet showing how much of your buried
 // truffle is left and which visitors have been digging it up, plus two host
 // actions: top up the pot, or dig it back up (reclaim the unspent remainder).
+//
+// Wave-4 conformance pass: the panel is the `Sheet` primitive, the pot meter is
+// `ProgressTrack`, each digger is a `ListRow` with a coin `Tag`, the stake grid
+// is `Chip` (selected = BORDER.heavy; an unaffordable chip keeps its shape), and
+// both host actions are `Button`s in the pinned footer stating their cost and
+// their consequence. Reclaiming — the irreversible, larger action — now goes
+// through `ConfirmDialog` like every other currency-moving control, so the
+// feature no longer teaches two confirmation grammars. [C-01, C-03, C-07, C-09,
+// C-17, C-18, C-22]
+//
+// This is the ONE sheet in the area that is PopupQueue-slotted, so it takes the
+// queue's `visible`/`open` split (PopupQueue.tsx, TIMING CONTRACT: the native
+// Modal's `visible` drops the frame release() fires, the mount gate clears a
+// POPUP_TEARDOWN_MS beat later) through `Sheet`'s `modalVisible`. The reclaim
+// dialog presents INLINE, inside this sheet's own Modal — iOS will not reliably
+// present a nested native one.
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Dimensions, ScrollView } from "react-native";
+import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { Glyph, IconText } from "./ui/Glyph";
-import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
-import { WHIMSY, FONTS, SHADOW_SM, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
+import {
+	Button,
+	Chip,
+	ConfirmDialog,
+	Divider,
+	ListRow,
+	ProgressTrack,
+	Sheet,
+	SnoutCoin,
+	T,
+	Tag,
+} from "./ui";
+import { SPACE } from "@/constants/theme";
 import { maxTopUp, POT_CAP } from "@/utils/burySnouts";
 import { usePotStake } from "@/hooks/usePotStake";
 import type { TruffleStatus } from "@/hooks/useBuriedTruffle";
@@ -16,6 +41,10 @@ import type { TruffleStatus } from "@/hooks/useBuriedTruffle";
 // The two fixed chips; the third chip is "Max" (tops the pot to the 50-snout
 // cap, bounded by the host's balance — resolved live in maxTopUp).
 const FIXED_STAKES = [10, 20];
+
+// Cap-height match for the big pot numeral and for the footer button labels.
+const POT_COIN = 22;
+const BUTTON_COIN = 14;
 
 interface Props {
 	open: boolean;
@@ -87,14 +116,12 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 
 	if (!open || !status?.buried) return null;
 
-	const pct = status.total > 0 ? Math.max(0, Math.min(1, status.remaining / status.total)) : 0;
 	const dugTotal = status.total - status.remaining;
 
 	const topUp = async () => {
 		if (busy) return;
 		setBusy(true);
 		setNote(null);
-		setConfirmReclaim(false); // a top-up disarms a pending reclaim — re-confirm the new total
 		const r = await rpcAction("top_up_truffle", { p_amount: topUpStake });
 		setBusy(false);
 		if (r.ok) {
@@ -120,20 +147,22 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 		}
 	};
 
-	const reclaim = async () => {
+	// Currency-moving and irreversible, so it asks through `ConfirmDialog` — the
+	// one confirmation grammar this feature now speaks. [C-22]
+	const askReclaim = () => {
 		if (busy) return;
-		if (!confirmReclaim) {
-			// Two-tap guard — closing the truffle is deliberate. Arm + warn.
-			setConfirmReclaim(true);
-			setNote(null);
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-			return;
-		}
+		setNote(null);
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+		setConfirmReclaim(true);
+	};
+
+	const reclaim = async () => {
+		setConfirmReclaim(false);
+		if (busy) return;
 		setBusy(true);
 		setNote(null);
 		const r = await rpcAction("reclaim_truffle");
 		setBusy(false);
-		setConfirmReclaim(false);
 		if (r.ok || r.reason === "none") {
 			// none = already closed elsewhere; either way the truffle's gone.
 			if (r.ok) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -145,215 +174,193 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 		}
 	};
 
-	return (
-		<SlideUpSheet open={open} onClose={onClose} modalVisible={visible ?? open}>
-			<View style={styles.sheet}>
-				<SheetGrabber />
-				<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
-					<Text style={styles.title}>Your buried truffle</Text>
-				</IconText>
-
-				{/* remaining pot — one glanceable line + bar */}
-				<View style={styles.potRow}>
-					<SnoutCoin size={22} />
-					<Text style={styles.potNum}>{status.remaining}</Text>
-					<Text style={styles.potCap}>of {status.total} snouts left</Text>
-				</View>
-				<View style={styles.track}>
-					<View style={[styles.fill, { width: `${pct * 100}%` }]} />
-				</View>
-				<Text style={styles.sub}>
-					{dugTotal > 0
-						? `Visitors have dug up ${dugTotal} snout${dugTotal === 1 ? "" : "s"} so far.`
-						: "No one's dug it up yet — waiting for a visitor."}
-				</Text>
-
-				{/* diggers — capped + scrollable so a long list (re-digs pile up
-				    over days) can't push the action buttons off-screen */}
-				{status.diggers.length > 0 && (
-					<ScrollView style={styles.list} contentContainerStyle={styles.listInner} nestedScrollEnabled>
-						{status.diggers.map((d, i) => (
-							<View key={i} style={styles.digRow}>
-								<Text style={styles.digName} numberOfLines={1}>
-									{d.username}
-								</Text>
-								<Text style={styles.digWhen}>{ago(d.dug_at)}</Text>
-								<View style={styles.digAmt}>
-									<SnoutCoin size={14} />
-									<Text style={styles.digAmtText}>+{d.amount}</Text>
-								</View>
-							</View>
-						))}
-					</ScrollView>
-				)}
-
-				{/* Top up — add more snouts to the pot, capped at 50 */}
-				<View style={styles.divider} />
-				{headroom < 1 ? (
-					<Text style={styles.maxNote}>Pot's at the {POT_CAP}-snout max.</Text>
-				) : (
-					<>
-						<Text style={styles.actLabel}>Add to the pot · up to {POT_CAP}</Text>
-						<View style={styles.stakes}>
-							{FIXED_STAKES.map((s) => {
-								const on = sel === s;
-								const tooMuch = s > headroom || s > balance; // past the cap, or can't afford
-								return (
-									<Pressable
-										key={s}
-										disabled={tooMuch}
-										onPress={() => {
-											select(s); // select clears any stale note
-											setConfirmReclaim(false); // disarm a pending reclaim
-										}}
-										style={[styles.chip, on && styles.chipOn, tooMuch && styles.chipOff]}
-									>
-										<SnoutCoin size={14} />
-										<Text style={[styles.chipText, on && styles.chipTextOn, tooMuch && styles.chipTextOff]}>{s}</Text>
-									</Pressable>
-								);
-							})}
-							{/* Max — tops the pot to exactly 50, bounded by balance; dims
-							    when there's nothing to add. */}
-							<Pressable
-								disabled={!maxOk}
-								onPress={() => {
-									select("max");
-									setConfirmReclaim(false);
-								}}
-								style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
-							>
-								<SnoutCoin size={14} />
-								<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
-							</Pressable>
-						</View>
-
-						<Pressable
-							onPress={topUp}
-							disabled={busy || !canTopUp}
-							style={({ pressed }) => [
-								styles.topUpBtn,
-								!canTopUp && styles.topUpBtnOff,
-								pressed && { opacity: 0.9 },
-							]}
-						>
-							<Text style={styles.topUpText}>{busy ? "…" : `Top up · ${topUpStake} snouts`}</Text>
-						</Pressable>
-					</>
-				)}
-
-				{note && <Text style={styles.note}>{note}</Text>}
-
-				{/* Dig it back up — reclaim the unspent remainder + close the
-				    truffle (two-tap; armed state turns red to read as destructive) */}
-				<Pressable
-					onPress={reclaim}
-					disabled={busy}
-					style={({ pressed }) => [
-						styles.reclaimBtn,
-						confirmReclaim && styles.reclaimBtnArmed,
-						pressed && { opacity: 0.85 },
-					]}
+	const footer = (
+		<View style={styles.footer}>
+			{headroom >= 1 && (
+				<Button
+					full
+					variant="gold"
+					onPress={topUp}
+					disabled={!canTopUp}
+					loading={busy}
+					accessibilityLabel={`Top up · ${topUpStake} snouts`}
+					accessibilityHint={`Adds ${topUpStake} snouts to the pot visitors dig from`}
+					testID="truffle-top-up"
 				>
-					<Text style={[styles.reclaimText, confirmReclaim && styles.reclaimTextArmed]}>
-						{confirmReclaim
-							? `Tap again · refund ${status.remaining}, no bury for 12h`
-							: `Dig it back up · refund ${status.remaining}`}
-					</Text>
-				</Pressable>
+					<>
+						{`Top up · ${topUpStake} snouts`}
+						<SnoutCoin size={BUTTON_COIN} />
+					</>
+				</Button>
+			)}
+			{/* Dig it back up — reclaim the unspent remainder + close the truffle.
+			    The commit lives in the ConfirmDialog below. */}
+			<Button
+				full
+				variant="ghost"
+				onPress={askReclaim}
+				disabled={busy}
+				accessibilityLabel={`Dig it back up · refund ${status.remaining} snouts`}
+				accessibilityHint="Asks to confirm, then closes the truffle and refunds the unspent pot"
+				testID="truffle-reclaim"
+			>
+				{`Dig it back up · refund ${status.remaining}`}
+			</Button>
+		</View>
+	);
+
+	return (
+		<Sheet
+			open={open}
+			onClose={onClose}
+			// The queue's visible/open split: the native Modal hides the frame
+			// release() fires, the mount gate clears a teardown beat later.
+			modalVisible={visible ?? open}
+			title="Your buried truffle"
+			footer={footer}
+			testID="buried-truffle-sheet"
+			overlay={
+				// Presents INLINE, inside this sheet's own Modal — iOS will not
+				// reliably present a nested native one.
+				<ConfirmDialog
+					open={confirmReclaim}
+					presentation="inline"
+					tone="destructive"
+					title="Dig it back up?"
+					body={`Closes the truffle and refunds the ${status.remaining} snouts nobody dug. You can't bury another for 12h.`}
+					confirmLabel={`Dig it up · ${status.remaining}`}
+					confirmCoin
+					confirmHint={`Refunds ${status.remaining} snouts and blocks a new bury for 12 hours. This cannot be undone.`}
+					cancelHint="Leaves the truffle buried"
+					onConfirm={reclaim}
+					onCancel={() => setConfirmReclaim(false)}
+					busy={busy}
+				/>
+			}
+		>
+			{/* remaining pot — one glanceable line + bar */}
+			<View style={styles.potRow}>
+				<SnoutCoin size={POT_COIN} />
+				<T role="numeralLg">{status.remaining}</T>
+				<T role="label" tone="secondary">
+					of {status.total} snouts left
+				</T>
 			</View>
-		</SlideUpSheet>
+			<ProgressTrack
+				value={status.remaining}
+				max={status.total}
+				tone="sun"
+				height="sm"
+				accessibilityLabel="Pot remaining"
+				style={styles.track}
+			/>
+			<T role="hand" tone="secondary" style={styles.sub}>
+				{dugTotal > 0
+					? `Visitors have dug up ${dugTotal} snout${dugTotal === 1 ? "" : "s"} so far.`
+					: "No one's dug it up yet — waiting for a visitor."}
+			</T>
+
+			{/* diggers — the receipt for the pot, one row each */}
+			{status.diggers.length > 0 && (
+				<View style={styles.list}>
+					{status.diggers.map((d, i) => (
+						<ListRow
+							key={i}
+							index={i}
+							title={d.username}
+							sub={ago(d.dug_at)}
+							trailing={
+								<Tag
+									label={`+${d.amount}`}
+									coin
+									accessibilityLabel={`dug ${d.amount} snouts`}
+								/>
+							}
+							accessibilityLabel={`${d.username} dug ${d.amount} snouts ${ago(d.dug_at)}`}
+						/>
+					))}
+				</View>
+			)}
+
+			{/* Top up — add more snouts to the pot, capped at 50 */}
+			<Divider space="lg" />
+			{headroom < 1 ? (
+				<T role="body" tone="secondary" align="center" style={styles.maxNote}>
+					Pot&apos;s at the {POT_CAP}-snout max.
+				</T>
+			) : (
+				<>
+					<T role="label" tone="secondary" style={styles.actLabel}>
+						Add to the pot · up to {POT_CAP}
+					</T>
+					<View style={styles.stakes} accessibilityRole="radiogroup">
+						{FIXED_STAKES.map((s) => {
+							const on = sel === s;
+							const tooMuch = s > headroom || s > balance; // past the cap, or can't afford
+							return (
+								<Chip
+									key={s}
+									label={`${s}`}
+									coin
+									tone={on ? "sun" : "paper"}
+									selected={on}
+									disabled={tooMuch}
+									onPress={() => select(s)} // select clears any stale note
+									accessibilityLabel={`Add ${s} snouts`}
+									accessibilityHint={
+										tooMuch
+											? "That would pass the pot cap, or you can't afford it"
+											: "Sets how much the top-up adds"
+									}
+									testID={`truffle-topup-${s}`}
+									style={styles.chip}
+								/>
+							);
+						})}
+						{/* Max — tops the pot to exactly 50, bounded by balance; rests
+						    when there's nothing to add. */}
+						<Chip
+							label="Max"
+							coin
+							tone={sel === "max" ? "sun" : "paper"}
+							selected={sel === "max"}
+							disabled={!maxOk}
+							onPress={() => select("max")}
+							accessibilityLabel={`Add the most you can · ${maxTop} snouts`}
+							accessibilityHint={
+								maxOk
+									? "Fills the pot to its cap, bounded by your balance"
+									: "There's nothing left to add"
+							}
+							testID="truffle-topup-max"
+							style={styles.chip}
+						/>
+					</View>
+				</>
+			)}
+
+			{note && (
+				<T role="hand" tone="accent" align="center" style={styles.note}>
+					{note}
+				</T>
+			)}
+		</Sheet>
 	);
 }
 
-const INK = WHIMSY.ink;
-const sticker = SHADOW_SM;
-const SCREEN_H = Dimensions.get("window").height;
 const styles = StyleSheet.create({
-	sheet: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.xxl,
-		padding: PAGE_PAD,
-		paddingTop: SPACE.md - 2,
-		maxHeight: SCREEN_H * 0.9, // never taller than the screen
-		...sticker,
-	},
-	titleRow: { marginBottom: SPACE.lg - 2 },
-	title: { ...TYPE.pageTitle, color: INK },
+	potRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+	track: { marginTop: SPACE.sm },
+	sub: { marginTop: SPACE.sm },
 
-	potRow: { flexDirection: "row", alignItems: "center", gap: SPACE.xs + 2 },
-	potNum: { ...TYPE.sectionTitle, color: INK, marginLeft: 2 },
-	potCap: { ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: WHIMSY.mute },
-	track: {
-		height: 12,
-		borderRadius: RADII.pill,
-		borderWidth: 1.5,
-		borderColor: INK,
-		backgroundColor: WHIMSY.cream2,
-		marginTop: SPACE.sm,
-		overflow: "hidden",
-	},
-	fill: { height: "100%", backgroundColor: WHIMSY.goblin, borderRadius: RADII.pill },
-	sub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.sm + 2 },
+	list: { marginTop: SPACE.lg, gap: SPACE.sm },
 
-	list: { marginTop: SPACE.lg - 2, maxHeight: 150 }, // scrolls internally; keeps actions pinned
-	listInner: { gap: SPACE.sm },
-	digRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
-	digName: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 14, color: INK },
-	digWhen: { ...TYPE.bodySm, fontSize: 12, color: WHIMSY.mute },
-	digAmt: { flexDirection: "row", alignItems: "center", gap: 3 },
-	digAmtText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
-
-	divider: { height: 1.5, backgroundColor: INK, opacity: 0.12, marginTop: SPACE.lg + 2, marginBottom: SPACE.lg - 2 },
-	actLabel: { ...TYPE.label, letterSpacing: 0.6, color: WHIMSY.mute, marginBottom: SPACE.sm },
+	actLabel: { marginBottom: SPACE.sm },
 	stakes: { flexDirection: "row", gap: SPACE.md },
-	chip: {
-		flex: 1,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: SPACE.xs,
-		paddingVertical: SPACE.sm + 1,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: INK,
-		backgroundColor: WHIMSY.cream,
-	},
-	chipOn: { backgroundColor: WHIMSY.sun },
-	chipOff: { opacity: 0.4, borderColor: WHIMSY.muteSoft }, // would exceed the 50 cap
-	chipText: { ...TYPE.numeral, color: WHIMSY.mute },
-	chipTextOn: { color: INK },
-	chipTextOff: { color: WHIMSY.mute },
+	chip: { flex: 1 },
 
-	maxNote: { ...TYPE.body, color: WHIMSY.mute, textAlign: "center", paddingVertical: SPACE.xs },
-	note: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.md },
+	maxNote: { paddingVertical: SPACE.xs },
+	note: { marginTop: SPACE.md },
 
-	topUpBtn: {
-		marginTop: SPACE.lg - 2,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.lg,
-		paddingVertical: SPACE.md,
-		alignItems: "center",
-		...sticker,
-	},
-	topUpBtnOff: { opacity: 0.45 },
-	topUpText: { ...TYPE.numeral, color: INK },
-
-	reclaimBtn: {
-		marginTop: SPACE.sm + 2,
-		backgroundColor: "transparent",
-		borderWidth: 2,
-		borderColor: WHIMSY.muteSoft,
-		borderRadius: RADII.lg,
-		paddingVertical: SPACE.sm + 3,
-		alignItems: "center",
-	},
-	reclaimText: { ...TYPE.body, fontFamily: FONTS.whimsy, color: WHIMSY.mute },
-	// Armed (second-tap) state reads as destructive.
-	reclaimBtnArmed: { backgroundColor: WHIMSY.rose, borderColor: INK, ...sticker },
-	reclaimTextArmed: { color: WHIMSY.accent },
+	footer: { gap: SPACE.sm },
 });

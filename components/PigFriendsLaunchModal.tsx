@@ -1,19 +1,47 @@
 import { useEffect, useMemo, useRef } from "react";
-import {
-	Animated,
-	Pressable,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { PigPortrait } from "./ui/PigPortrait";
 import { Glyph } from "./ui/Glyph";
-import { RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	BORDER,
+	PIG_ACCENT,
+	RADII,
+	SPACE,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
 import { PIGS } from "@/utils/pigs";
-import { AdaptiveModalScaffold, Button, TicketButton } from "./ui";
+import {
+	AdaptiveModalScaffold,
+	Button,
+	HandLg,
+	PageTitle,
+	T,
+	Tape,
+	TicketButton,
+} from "./ui";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 const FRIENDS = PIGS.filter((pig) => pig.id !== "rosie");
+
+// ── Drawing constants ───────────────────────────────────────────────────────
+// The reveal's own geometry — a row of tilted pig cards, each with a strip of
+// tape and a nameplate. Art, not spacing. (2026-09-11)
+/** One pig card and the portrait standing on it. */
+const CARD_MIN_W = 92;
+const CARD_MIN_H = 126;
+const CARD_PIG = 96;
+/** The scrapbook lean the cards alternate between. */
+const CARD_TILT = 3;
+/** The strip of tape pinning each card, and how far it overhangs the top. */
+const TAPE_W = 34;
+const TAPE_H = 12;
+const TAPE_LIFT = -5;
+/** The nameplate across a card's foot. */
+const NAMEPLATE_MIN_W = 74;
+const NAMEPLATE_DROP = 5;
+/** The kicker's mark. */
+const KICKER_MARK = 20;
 
 interface Props {
 	visible: boolean;
@@ -78,22 +106,28 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 			testID="pig-friends-launch-modal"
 		>
 					<View style={styles.kickerRow}>
-						<Glyph name="friends" size={20} />
-						<Text style={styles.kicker}>NEW IN THE SLOP CLUB</Text>
+						<Glyph name="friends" size={KICKER_MARK} />
+						<T role="kickerPill" tone="accent">
+							New in the Slop Club
+						</T>
 					</View>
-					<Text style={styles.title}>Rosie’s friends have arrived!</Text>
-					<Text style={styles.intro}>Meet the pigs waiting in Rosie’s new Pen.</Text>
+					<PageTitle align="center" style={styles.title}>
+						Rosie’s friends have arrived!
+					</PageTitle>
+					<HandLg tone="secondary" align="center">
+						Meet the pigs waiting in Rosie’s new Pen.
+					</HandLg>
 
 					<View style={styles.cardRow}>
 						{cards.map((pig, index) => {
-							const rotate = index % 2 === 0 ? "-3deg" : "3deg";
+							const rotate = index % 2 === 0 ? -CARD_TILT : CARD_TILT;
 							return (
 								<Animated.View
 									key={pig.id}
 									style={[
 										styles.card,
 										{
-											backgroundColor: pig.accent + "33",
+											backgroundColor: PIG_ACCENT[pig.id].tint,
 											opacity: pig.value,
 											transform: [
 												{
@@ -108,18 +142,21 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 														outputRange: [0.72, 1],
 													}),
 												},
-												{ rotate },
+												{ rotate: `${rotate}deg` },
 											],
 										},
 									]}
 								>
-									<View style={styles.tape} />
-									<PigPortrait
-										pigId={pig.id}
-										size={96}
+									<Tape
+										color={WHIMSY.slopBand}
+										rotate={0}
+										width={TAPE_W}
+										height={TAPE_H}
+										style={styles.tape}
 									/>
+									<PigPortrait pigId={pig.id} size={CARD_PIG} />
 									<View style={[styles.nameplate, { backgroundColor: pig.accent }]}>
-										<Text style={styles.name}>{pig.name}</Text>
+										<HandLg>{pig.name}</HandLg>
 									</View>
 								</Animated.View>
 							);
@@ -127,24 +164,26 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 					</View>
 
 					<Animated.View
-						style={{
-							width: "100%",
-							opacity: copy,
-							transform: [
-								{
-									translateY: copy.interpolate({
-										inputRange: [0, 1],
-										outputRange: [10, 0],
-									}),
-								},
-							],
-						}}
+						style={[
+							styles.pitchWrap,
+							{
+								opacity: copy,
+								transform: [
+									{
+										translateY: copy.interpolate({
+											inputRange: [0, 1],
+											outputRange: [10, 0],
+										}),
+									},
+								],
+							},
+						]}
 					>
-						<Text style={styles.pitch}>
+						<T role="handDisplay" align="center" style={styles.pitch}>
 							{isMember
 								? "Your membership includes one long-term companion. Choose carefully—your pick is locked for now."
 								: "Join the Slop Club to choose Rosie one long-term friend."}
-						</Text>
+						</T>
 						{isMember ? (
 							<TicketButton
 								label="Choose Rosie’s friend"
@@ -163,18 +202,21 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 								full
 								style={styles.cta}
 								accessibilityLabel="Join the Slop Club"
+								accessibilityHint="Opens the Slop Club membership offer"
 							>
 								Join the Slop Club
 							</Button>
 						)}
-						<Pressable
+						<Button
+							variant="link"
+							size="sm"
 							onPress={onDismiss}
-							style={styles.later}
-							accessibilityRole="button"
 							accessibilityLabel="Maybe later"
+							accessibilityHint="Closes this without joining"
+							style={styles.later}
 						>
-							<Text style={styles.laterText}>Maybe later</Text>
-						</Pressable>
+							Maybe later
+						</Button>
 					</Animated.View>
 		</AdaptiveModalScaffold>
 	);
@@ -189,70 +231,48 @@ const styles = StyleSheet.create({
 		paddingTop: SPACE.sm,
 		paddingBottom: SPACE.lg,
 	},
-	kickerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-	kicker: { ...TYPE.kickerPill, color: WHIMSY.accent },
+	kickerRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
 	title: {
-		...TYPE.pageTitle,
-		lineHeight: undefined,
-		color: WHIMSY.ink,
-		textAlign: "center",
 		marginTop: SPACE.xs,
-	},
-	intro: {
-		...TYPE.handLg,
-		color: WHIMSY.mute,
-		textAlign: "center",
 	},
 	cardRow: {
 		width: "100%",
 		flexDirection: "row",
 		flexWrap: "wrap",
 		justifyContent: "center",
-		gap: 8,
+		gap: SPACE.sm,
 		marginVertical: SPACE.md,
 	},
 	card: {
 		width: "30%",
-		minWidth: 92,
-		minHeight: 126,
+		minWidth: CARD_MIN_W,
+		minHeight: CARD_MIN_H,
 		alignItems: "center",
 		justifyContent: "flex-end",
-		paddingBottom: 12,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		paddingBottom: SPACE.md,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.sm,
 		backgroundColor: WHIMSY.cream,
-		...SHADOW_SM,
 	},
 	tape: {
 		position: "absolute",
-		top: -5,
-		width: 34,
-		height: 12,
-		borderWidth: 1,
-		borderColor: WHIMSY.goblin,
-		backgroundColor: WHIMSY.slopBand,
+		top: TAPE_LIFT,
 		zIndex: 2,
 	},
 	nameplate: {
 		position: "absolute",
-		bottom: 5,
-		minWidth: 74,
+		bottom: NAMEPLATE_DROP,
+		minWidth: NAMEPLATE_MIN_W,
 		alignItems: "center",
-		paddingHorizontal: 6,
+		paddingHorizontal: SPACE.sm,
 		paddingVertical: 1,
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-		borderRadius: 3,
+		borderWidth: BORDER.hair,
+		borderColor: UI_COLORS.border,
+		borderRadius: RADII.sm,
 	},
-	name: {
-		...TYPE.handLg,
-		color: WHIMSY.ink,
-	},
+	pitchWrap: { width: "100%" },
 	pitch: {
-		...TYPE.handDisplay,
-		color: WHIMSY.ink,
-		textAlign: "center",
 		paddingHorizontal: SPACE.sm,
 	},
 	cta: {
@@ -260,15 +280,6 @@ const styles = StyleSheet.create({
 	},
 	later: {
 		alignSelf: "center",
-		minHeight: 44,
-		justifyContent: "center",
 		marginTop: SPACE.xs,
-		paddingHorizontal: SPACE.md,
-	},
-	laterText: {
-		...TYPE.bodySm,
-		lineHeight: undefined,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
 	},
 });

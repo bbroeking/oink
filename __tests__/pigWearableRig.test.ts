@@ -1,4 +1,5 @@
 import { resolveSlot } from "../components/ui/PigStage";
+import { PIG_ANIMATION_SPECS } from "../components/ui/pigRendererContract";
 import { HAT_REL, PIG_CANVAS, resolveAnchor } from "../constants/hats";
 
 describe("Rosie wearable pose rig", () => {
@@ -58,5 +59,35 @@ describe("Rosie wearable pose rig", () => {
 
 		expect(overlay.left + rotatedPivotX).toBeCloseTo(anchor.x, 5);
 		expect(top + rotatedPivotY).toBeCloseTo(anchor.y, 5);
+	});
+
+	it.each([
+		["cowboy", "pink_bow"],
+		["party", "ribbon_bow"],
+		["tophat", "hair_bow"],
+	] as const)("keeps representative %s + %s artwork from colliding across animations", (hatId, bowId) => {
+		for (const animation of ["idle", "happy", "jump", "wave"] as const) {
+			for (let frame = 0; frame < PIG_ANIMATION_SPECS[animation].frames.length; frame += 1) {
+				const hat = resolveSlot(
+					{ id: hatId, category: "hat", emoji: null },
+					animation,
+					frame,
+				)?.overlay;
+				const bow = resolveSlot(
+					{ id: bowId, category: "bow", emoji: null },
+					animation,
+					frame,
+				)?.overlay;
+				if (!hat || !bow) {
+					throw new Error("representative wearable overlay is unavailable");
+				}
+
+				const hatBottomEdge = PIG_CANVAS - hat.bottom;
+				const bowTopEdge = PIG_CANVAS - bow.bottom - bow.height;
+				expect(hat.anchor).toBe("head");
+				expect(bow.anchor).toBe("neck");
+				expect(hatBottomEdge).toBeLessThan(bowTopEdge);
+			}
+		}
 	});
 });

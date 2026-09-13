@@ -12,6 +12,7 @@ import Svg, {
 } from "react-native-svg";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Feather from "@expo/vector-icons/Feather";
+import { GameIcon } from "./GameIcon";
 
 export type IconName =
 	| "home"
@@ -50,6 +51,12 @@ export type IconName =
 	| "edit"
 	| "copy"
 	| "chevronDown"
+	| "chevronLeft"
+	| "chevronRight"
+	| "more"
+	| "undo"
+	| "save"
+	| "furnishings"
 	// ── Vector-icons-backed entries (delegated to MCI / Feather). ──
 	// Added during the no-emoji sweep so call sites stay
 	// <Icon name="crown" /> and we keep one consumer surface.
@@ -353,6 +360,41 @@ function Render({
 					/>
 				</G>
 			);
+		case "clock":
+			return (
+				<G>
+					<Circle cx="12" cy="12" r="8.5" fill="none" stroke={c} strokeWidth={sw} />
+					<Path
+						d="M12 7.5 V12 L15 14"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</G>
+			);
+		case "hat":
+			// A top hat: brim + crown, the closet's own sign.
+			return (
+				<G>
+					<Path
+						d="M4 17.5 H20"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+					/>
+					<Path
+						d="M7 17.5 V8.5 a5 3 0 0 1 10 0 V17.5"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path d="M7 13 H17" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" />
+				</G>
+			);
 		case "x":
 			return (
 				<G strokeLinecap="round">
@@ -506,36 +548,117 @@ function Render({
 				</G>
 			);
 
+		case "chevronRight":
+			return (
+				<Path
+					d="M9 5 L16 12 L9 19"
+					fill="none"
+					stroke={c}
+					strokeWidth={sw}
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				/>
+			);
+		case "chevronLeft":
+			return (
+				<Path
+					d="M15 5 L8 12 L15 19"
+					fill="none"
+					stroke={c}
+					strokeWidth={sw}
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				/>
+			);
+		case "more":
+			return (
+				<G>
+					<Circle cx="5" cy="12" r="1.7" fill={c} />
+					<Circle cx="12" cy="12" r="1.7" fill={c} />
+					<Circle cx="19" cy="12" r="1.7" fill={c} />
+				</G>
+			);
+		case "undo":
+			return (
+				<G
+					fill="none"
+					stroke={c}
+					strokeWidth={sw}
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				>
+					<Path d="M8.5 6.5 L4 11 L8.5 15.5" />
+					<Path d="M4 11 H14 a5 5 0 0 1 0 10 H9.5" />
+				</G>
+			);
+		case "save":
+			return (
+				<G>
+					<Path
+						d="M4.5 5.5 a1 1 0 0 1 1 -1 H15.5 L19.5 8.5 V18.5 a1 1 0 0 1 -1 1 H5.5 a1 1 0 0 1 -1 -1 Z"
+						fill={filled ? "#EFEAE3" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M8.5 4.5 V9 H14.5 V4.5"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M7.5 19.5 V14 H16.5 V19.5"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+				</G>
+			);
+		case "furnishings":
+			// Briefcase — the furnishing collection case.
+			return (
+				<G>
+					<Path
+						d="M9 7 V5.5 a1.5 1.5 0 0 1 1.5 -1.5 H13.5 a1.5 1.5 0 0 1 1.5 1.5 V7"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+					<Rect
+						x="3"
+						y="7"
+						width="18"
+						height="12.5"
+						rx="2"
+						fill={filled ? "#EFEAE3" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path d="M3 12.5 H21" stroke={c} strokeWidth={sw} />
+					<Rect
+						x="10.4"
+						y="11"
+						width="3.2"
+						height="3"
+						rx="0.8"
+						fill={filled ? "#fff" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+				</G>
+			);
+
 		// ── Bottom-tab icons (paper-storybook redesign) ────────────────
 		// All filled with sun-yellow when active to read as the "tape" on
 		// a sticker. SVG paths transcribed from tab-icons.jsx in the
 		// design bundle.
-		case "tabBarn":
-			// Pentagon house with a door.
-			return (
-				<G>
-					<Path
-						d="M3 12 L12 4 L21 12 L21 20 L3 20 Z"
-						fill={filled ? "#ffd87a" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-						strokeLinejoin="round"
-					/>
-					<Path
-						d="M10 20 V14 H14 V20"
-						fill={filled ? c : "none"}
-						stroke={c}
-						strokeWidth={sw}
-						strokeLinejoin="round"
-					/>
-					<Path
-						d="M3 12 L6 12 M21 12 L18 12"
-						stroke={c}
-						strokeWidth={sw}
-						strokeLinecap="round"
-					/>
-				</G>
-			);
 		case "tabFriends":
 			// Two friendly snout-circles, interlocking.
 			return (
@@ -684,6 +807,9 @@ export function Icon({
 	strokeWidth = 1.8,
 	style,
 }: Props) {
+	if (name === "tabBarn") {
+		return <GameIcon name="visit" size={size} style={style} />;
+	}
 	// Vector-icons delegates — render via MCI / Feather. The wrapping
 	// View carries the style prop so callers can position the icon the
 	// same way they do for the hand-rolled Svg path entries.

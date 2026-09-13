@@ -1582,10 +1582,17 @@ Use a small pure reducer and local persistence before any backend work.
 
 ## Goal 8 — produce one shareable experiment and evidence loop
 
+> Historical integration scope. As of 2026-08-12, Farm Life and Beyond the
+> Hedge are separate validation lanes. The combined Homegrown Adventures page
+> remains available as integration evidence; the canonical Adventure-only
+> click-through is `docs/adventures.html` and contains no farming gate.
+
 ### Deliverable
 
 - Host the experiment on Tickle the Pig's GitHub Pages site at a stable route,
   recommended: `https://bbroeking.github.io/oink/homegrown-adventures.html`.
+- Host the separated Adventure validation surface at
+  `https://ticklethepig.com/adventures?fresh=1`.
 - Keep `docs/idle-lab.html` intact as historical Beyond-the-Hedge evidence.
 - Include a small developer-only trace that records tickle, planting, harvest,
   packing, return, and next-planting actions without personal information.

@@ -3,12 +3,17 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
+    "types": [
+      "jest",
+      "node"
+    ],
     "paths": {
       "@/*": [
         "./*"
       ]
     }
   },
+  "exclude": ["node_modules", "artifacts"],
   "include": [
     "**/*.ts",
     "**/*.tsx",

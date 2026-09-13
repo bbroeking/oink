@@ -9,7 +9,6 @@ import {
 	seatsLine,
 	createError,
 	acceptInviteResult,
-	joinError,
 	askError,
 	ASK_LIMIT_HINT,
 	MAX_OPEN_ASKS,
@@ -57,9 +56,9 @@ describe("seatsLine", () => {
 	});
 
 	it("spells small vacancies out", () => {
-		// CREW_CAP is 4: a solo founder (1) has three open seats, a pair two.
-		expect(seatsLine(1)).toBe("room for three more snouts");
-		expect(seatsLine(2)).toBe("room for two more snouts");
+		// CREW_CAP is 8: a solo founder has seven open seats; a pair has six.
+		expect(seatsLine(1)).toBe("room for seven more snouts");
+		expect(seatsLine(2)).toBe("room for six more snouts");
 	});
 
 	it("undefined when the crew is full (no seat to advertise)", () => {
@@ -97,19 +96,6 @@ describe("acceptInviteResult", () => {
 	it("any other failure surfaces a generic retry note", () => {
 		const r = acceptInviteResult("boom");
 		expect(r).toEqual({ kind: "note", note: "Couldn't join — try again." });
-	});
-});
-
-// ── joinError (open-Sounder join) ────────────────────────────────────────────
-
-describe("joinError", () => {
-	it("distinguishes filled, mid-war, and already-crewed", () => {
-		expect(joinError("crew_full")).toMatch(/filled up/i);
-		expect(joinError("crew_in_war")).toMatch(/mid-war/i);
-		expect(joinError("already_in_crew")).toMatch(/already in a Sounder/i);
-	});
-	it("falls back for an unknown reason", () => {
-		expect(joinError(undefined)).toBe("Couldn't join — try another Sounder.");
 	});
 });
 

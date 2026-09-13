@@ -18,24 +18,20 @@
 // strip.
 
 import { useEffect, useState } from "react";
-import {
-	View,
-	Text,
-	Image,
-	Pressable,
-	StyleSheet,
-	ScrollView,
-} from "react-native";
+import { View, Pressable, StyleSheet, ScrollView } from "react-native";
 import { supabase } from "@/utils/supabase";
 import {
 	fetchFriendsCrews,
 	kickCrewMember,
 	type InviteIn,
 } from "@/utils/crews";
-import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
 import { Sticker } from "./ui/Sticker";
+import { Button } from "./ui/Button";
+import { Chip } from "./ui/Chip";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { LoadingBeat } from "./ui/EmptyState";
+import { Hand, SectionTitle, T } from "./ui/Text";
 import {
 	Accent,
 	AccentNote,
@@ -48,10 +44,11 @@ import {
 	RowStatus,
 	SunPill,
 	theCrew,
-} from "./CrewRow";
+} from "./ui";
 import { JoinableSounders } from "./JoinableSounders";
 import { FriendInvitePicker } from "./FriendInvitePicker";
 import { PlayerInvitePicker } from "./PlayerInvitePicker";
+import { SounderOinkSheet } from "./SounderOinkSheet";
 import { TransferLeadershipSheet } from "./TransferLeadershipSheet";
 import { UserSheet } from "./UserSheet";
 import { TruffleCatalogSheet } from "./TruffleCatalogSheet";
@@ -70,15 +67,32 @@ import {
 	seatsLine,
 } from "./sounder/inviteState";
 import {
+	ART_SIZE,
+	BORDER,
 	FONTS,
+	OPACITY,
+	PRESSED_FLAT,
 	PAGE_PAD,
 	RADII,
 	SHADOW_SM,
 	SPACE,
 	TAB_SAFE,
-	TYPE,
+	TAP_MIN,
 	WHIMSY,
+	UI_COLORS,
 } from "@/constants/theme";
+
+// Slot pips — 26px circles, the mockup's drawing of a seat. Art geometry, not
+// spacing, so it is named here rather than borrowed from SPACE. The open pip
+// restores the 44pt frame with hitSlop rather than by inflating the dot (the
+// IconButton visual/frame split). [B-12]
+const PIP_SIZE = 26;
+const PIP_HIT = (TAP_MIN - PIP_SIZE) / 2;
+const PIP_PLUS = ART_SIZE.mark;
+// The mark riding a full-width CTA / the milestone line — one step under the
+// label, so the word leads and the drawing follows.
+const CTA_ICON = SPACE.lg;
+const MILESTONE_ICON = SPACE.lg;
 
 // `crewHook` is lifted into the Friends hub (app/(tabs)/friends.tsx) and
 // passed down so the crew-state-driven page title ("Find your Sounder" vs
@@ -100,6 +114,7 @@ export function SounderCard({
 	const [pickerOpen, setPickerOpen] = useState(false);
 	// Leader-only recruiting picker (all-time truffle diggers + search; can poach).
 	const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
+	const [oinkOpen, setOinkOpen] = useState(false);
 	const [crownOpen, setCrownOpen] = useState(false);
 	// Golden Truffle economy doors — the rewards catalog + the Truffle Exchange.
 	const [spoilsOpen, setSpoilsOpen] = useState(false);
@@ -113,9 +128,10 @@ export function SounderCard({
 	// Tapping a member row opens UserSheet — the one door for bless (and,
 	// for friends, ask/curse/visit). Crewmates get the bless-only panel.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-	// Kick: first tap arms ("kick? sure ›"), second tap acts. Leadership
-	// handoff moved to the pass-the-crown sheet.
-	const [kickArmedId, setKickArmedId] = useState<string | null>(null);
+	// The three irreversible acts on this card confirm before they fire — one
+	// grammar (`ConfirmDialog`), not a two-tap arm and a bare link. [B-03]
+	const [kickTarget, setKickTarget] = useState<{ id: string; name: string } | null>(null);
+	const [confirmLeave, setConfirmLeave] = useState(false);
 	const [me, setMe] = useState<string | null>(null);
 	// Frame A seat lines + proactive "full now": member counts for the
 	// inviting crews come from friends_crews (an inviter must be a friend),
@@ -194,17 +210,19 @@ export function SounderCard({
 	}
 
 	async function onKick(userId: string) {
-		if (kickArmedId !== userId) {
-			setKickArmedId(userId);
-			return;
-		}
-		setKickArmedId(null);
+		setKickTarget(null);
 		setNote(null);
 		const r = await kickCrewMember(userId);
 		if (!r.ok) {
 			setNote("Couldn't remove them — try again.");
 		}
 		await crewHook.refresh();
+	}
+
+	async function onLeave() {
+		setConfirmLeave(false);
+		setNote(null);
+		await leave();
 	}
 
 	async function onCreate() {
@@ -218,7 +236,7 @@ export function SounderCard({
 	}
 
 	if (loading && !crew.crew && crew.invitesIn.length === 0) {
-		return <LoadingBeat />;
+		return <LoadingBeat label="rounding up your sounder" />;
 	}
 
 	// The founding form (Frame B). Leads with the "nobody's asked you in
@@ -226,19 +244,21 @@ export function SounderCard({
 	const foundForm = (leading: boolean) => (
 		<View style={!leading && styles.sectGap}>
 			{leading && <CrewSectionKicker plain>nobody's asked you in yet</CrewSectionKicker>}
-			<Pressable
+			<Button
+				variant="gold"
+				size="lg"
+				full
 				onPress={onCreate}
-				disabled={busy}
-				style={[styles.foundBtn, busy && styles.foundBtnDim]}
+				loading={busy}
+				icon={<FlagIcon size={ART_SIZE.glyphSm} />}
+				accessibilityHint="Raises a new banner and names your Sounder for you"
+				style={styles.foundBtn}
 			>
-				<FlagIcon size={20} />
-				<Text style={styles.foundBtnText}>
-					{busy ? "Creating…" : "Found the Sounder"}
-				</Text>
-			</Pressable>
-			<Text style={styles.foundCopy}>
+				Found the Sounder
+			</Button>
+			<Hand tone="secondary" align="center" style={styles.foundCopy}>
 				raise the first banner — we'll name your{"\n"}Sounder for you, and the herd fills in behind.
-			</Text>
+			</Hand>
 		</View>
 	);
 
@@ -278,8 +298,18 @@ export function SounderCard({
 												<RowStatus>full now</RowStatus>
 											) : (
 												<>
-													<SunPill onPress={() => onAccept(inv)}>Join</SunPill>
-													<HandLink onPress={() => decline(inv.id)}>
+													<SunPill
+														onPress={() => onAccept(inv)}
+														accessibilityLabel={`Join ${inv.crew_name}`}
+														accessibilityHint="Takes the open seat — you can only ride with one Sounder"
+													>
+														Join
+													</SunPill>
+													<HandLink
+														onPress={() => decline(inv.id)}
+														accessibilityLabel={`Decline the invite to ${inv.crew_name}`}
+														accessibilityHint="Turns the ask down; they can ask again later"
+													>
 														not today
 													</HandLink>
 												</>
@@ -313,8 +343,13 @@ export function SounderCard({
 						foundOpen ? (
 							foundForm(false)
 						) : (
-							<HandLink onPress={() => setFoundOpen(true)} style={styles.foundLink}>
-								or found your own ›
+							<HandLink
+								onPress={() => setFoundOpen(true)}
+								glyph="arrowRight"
+								style={styles.foundLink}
+								accessibilityHint="Opens the form that raises your own banner"
+							>
+								or found your own
 							</HandLink>
 						)
 					) : (
@@ -322,7 +357,11 @@ export function SounderCard({
 					)}
 				</Sticker>
 
-				{note && <Text style={styles.note}>{note}</Text>}
+				{note && (
+					<T role="bodySm" tone="accent" align="center" style={styles.note}>
+						{note}
+					</T>
+				)}
 			</ScrollView>
 		);
 	}
@@ -333,12 +372,12 @@ export function SounderCard({
 			    open slot is a "+" into the friends picker), roster, CTA. */}
 			<Sticker color="paper" rotate={0} radius={RADII.xl} style={styles.crewMini}>
 				<View style={styles.crewTop}>
-					<Text style={styles.crewName} numberOfLines={1}>
+					<SectionTitle numberOfLines={1} style={styles.crewName} accessibilityRole="header">
 						{crew.crew!.name}
-					</Text>
-					<Text style={styles.crewCount}>
+					</SectionTitle>
+					<T role="body" tone="secondary" style={styles.crewCount}>
 						{memberCount}/{CREW_CAP}
-					</Text>
+					</T>
 				</View>
 				<View style={styles.pips}>
 					{Array.from({ length: CREW_CAP }).map((_, i) =>
@@ -353,10 +392,13 @@ export function SounderCard({
 								key={i}
 								testID={`sounder-slot-plus-${i}`}
 								onPress={() => setPickerOpen(true)}
-								style={styles.pipOpen}
-								hitSlop={6}
+								style={({ pressed }) => [styles.pipOpen, pressed && PRESSED_FLAT]}
+								hitSlop={PIP_HIT}
+								accessibilityRole="button"
+								accessibilityLabel="Open slot"
+								accessibilityHint="Opens the friends list to fill this seat"
 							>
-								<Icon name="plus" size={12} color={WHIMSY.muteSoft} strokeWidth={3} />
+								<Icon name="plus" size={PIP_PLUS} color={UI_COLORS.uiMuted} strokeWidth={3} />
 							</Pressable>
 						)
 					)}
@@ -368,16 +410,19 @@ export function SounderCard({
 					<HandLink
 						accent
 						underline={false}
+						glyph="arrowRight"
 						onPress={() => setCrownOpen(true)}
 						style={styles.crownLink}
+						accessibilityLabel="You wear the crown — pass it before you leave"
+						accessibilityHint="Opens the pass-the-crown sheet"
 					>
-						you wear the crown · pass it before you leave ›
+						you wear the crown · pass it before you leave
 					</HandLink>
 				) : openSlots > 0 ? (
-					<Text style={styles.slotHint}>
-						{openSlots} open {openSlots === 1 ? "slot" : "slots"} · tap ＋ or the
-						button below to fill them
-					</Text>
+					<T role="kicker" tone="secondary" style={styles.slotHint}>
+						{openSlots} open {openSlots === 1 ? "slot" : "slots"} · tap an open slot
+						or the button below to fill them
+					</T>
 				) : null}
 
 				{/* Roster — a pig per row; tap a row → UserSheet. The leader's
@@ -391,7 +436,8 @@ export function SounderCard({
 							left={
 								<CrewPortrait
 									size={40}
-									hatId={rosterProfiles.get(m.user_id)?.hatId ?? null}
+										hatId={rosterProfiles.get(m.user_id)?.hatId ?? null}
+										bowId={rosterProfiles.get(m.user_id)?.bowId ?? null}
 									prestigeLevel={
 										__DEV__ && m.user_id === me
 											? 5
@@ -413,14 +459,18 @@ export function SounderCard({
 									<RowStatus accent>leader</RowStatus>
 								) : isLeader && m.user_id !== me ? (
 									<HandLink
-										accent={kickArmedId === m.user_id}
-										onPress={() => onKick(m.user_id)}
+										onPress={() =>
+											setKickTarget({ id: m.user_id, name: m.username ?? "Pig" })
+										}
+										accessibilityLabel={`Remove ${m.username ?? "this pig"} from the Sounder`}
+										accessibilityHint="Asks you to confirm first"
 									>
-										{kickArmedId === m.user_id ? "kick? sure ›" : "kick"}
+										kick
 									</HandLink>
 								) : undefined
 							}
 							onPress={() => setSelectedUserId(m.user_id)}
+							accessibilityHint="Opens their profile"
 						/>
 					))}
 					{crew.invitesOut.map((i) => (
@@ -431,7 +481,15 @@ export function SounderCard({
 							left={<CrewPortrait size={40} ghost />}
 							title={i.invitee_name ?? "Someone"}
 							sub="waiting on your last ask…"
-							right={<HandLink onPress={() => onCancel(i.id)}>take it back</HandLink>}
+							right={
+								<HandLink
+									onPress={() => onCancel(i.id)}
+									accessibilityLabel={`Take back the invite to ${i.invitee_name ?? "them"}`}
+									accessibilityHint="Cancels the ask and frees the seat it was holding"
+								>
+									take it back
+								</HandLink>
+							}
 						/>
 					))}
 					{/* Incoming knocks — a crewless pig asking to dig with you. Any
@@ -451,8 +509,20 @@ export function SounderCard({
 							sub="knocking at your banner"
 							right={
 								<>
-									<SunPill onPress={() => onAcceptRequest(req.id)}>let them in</SunPill>
-									<HandLink onPress={() => declineRequest(req.id)}>not now</HandLink>
+									<SunPill
+										onPress={() => onAcceptRequest(req.id)}
+										accessibilityLabel={`Let ${req.username ?? "them"} into the Sounder`}
+										accessibilityHint="Gives them one of your open seats"
+									>
+										let them in
+									</SunPill>
+									<HandLink
+										onPress={() => declineRequest(req.id)}
+										accessibilityLabel={`Turn down ${req.username ?? "their"} knock`}
+										accessibilityHint="They can knock again later"
+									>
+										not now
+									</HandLink>
 								</>
 							}
 						/>
@@ -460,19 +530,42 @@ export function SounderCard({
 				</View>
 
 				{openSlots > 0 && (
-					<Pressable onPress={() => setPickerOpen(true)} style={styles.inviteCta}>
-						<Icon name="plus" size={18} color={WHIMSY.ink} strokeWidth={2.6} />
-						<Text style={styles.inviteCtaText}>Call a snout to your banner</Text>
-					</Pressable>
+					<Button
+						variant="gold"
+						full
+						onPress={() => setPickerOpen(true)}
+						icon={<Icon name="plus" size={CTA_ICON} color={WHIMSY.goldInk} strokeWidth={2.6} />}
+						accessibilityHint="Opens your friends list so you can fill an open seat"
+						style={styles.cta}
+					>
+						Call a snout to your banner
+					</Button>
 				)}
 				{/* Leaders reach beyond friends: all-time truffle diggers + username search
 				    (can poach a rider from another Sounder — they choose to switch). */}
 				{openSlots > 0 && isLeader && (
-					<Pressable onPress={() => setPlayerPickerOpen(true)} style={styles.inviteCta}>
-						<Icon name="search" size={18} color={WHIMSY.ink} strokeWidth={2.6} />
-						<Text style={styles.inviteCtaText}>Recruit any snout</Text>
-					</Pressable>
+					<Button
+						variant="gold"
+						full
+						onPress={() => setPlayerPickerOpen(true)}
+						icon={<Icon name="search" size={CTA_ICON} color={WHIMSY.goldInk} strokeWidth={2.6} />}
+						accessibilityHint="Opens the recruiting list — any digger, not just friends"
+						style={styles.cta}
+					>
+						Recruit any snout
+					</Button>
 				)}
+				<Button
+					variant="ghost"
+					size="sm"
+					full
+					onPress={() => setOinkOpen(true)}
+					icon={<Icon name="bell" size={CTA_ICON} color={WHIMSY.ink} strokeWidth={2.4} />}
+					accessibilityHint="Opens the preset notes you can send the herd — one of each per Feeding"
+					style={styles.cta}
+				>
+					Oink the Sounder
+				</Button>
 			</Sticker>
 
 			{/* Incoming invites — NON-actionable while you ride with a crew.
@@ -494,12 +587,20 @@ export function SounderCard({
 								</>
 							}
 							sub={`you're riding with ${theCrew(crew.crew!.name)}`}
-							right={<HandLink onPress={() => decline(inv.id)}>let it go</HandLink>}
+							right={
+							<HandLink
+								onPress={() => decline(inv.id)}
+								accessibilityLabel={`Let the invite to ${inv.crew_name} go`}
+								accessibilityHint="Clears the ask; you stay with your Sounder"
+							>
+								let it go
+							</HandLink>
+						}
 						/>
 					))}
-					<Text style={styles.oneSounderCopy}>
+					<Hand tone="accent" align="center" style={styles.oneSounderCopy}>
 						one Sounder at a time —{"\n"}leave yours to answer an invite.
-					</Text>
+					</Hand>
 				</Sticker>
 			)}
 
@@ -510,40 +611,39 @@ export function SounderCard({
 				    the next re-themed title (quiet accomplishment, never a chore). */}
 				<MilestoneSummary lifetimeFinds={crew.lifetime_finds} />
 				<View style={styles.troveRow}>
-					<Pressable
+					<Chip
+						label="Rewards"
+						icon="trophy"
+						tone="paper"
 						onPress={() => setSpoilsOpen(true)}
-						hitSlop={8}
-						style={({ pressed }) => [styles.troveBtn, pressed && styles.trovePressed]}
-					>
-						<Icon name="trophy" size={15} color={WHIMSY.accent} />
-						<Text style={styles.troveText}>Rewards</Text>
-					</Pressable>
-					<Pressable
+						accessibilityHint="Opens the Golden Truffle rewards catalog"
+					/>
+					<Chip
+						label={truffles.available ? `Exchange · ${truffles.balance}` : "Exchange"}
+						icon={HAT_IMAGES.golden_truffle ? undefined : "gift"}
+						art={HAT_IMAGES.golden_truffle ?? undefined}
+						tone="paper"
 						onPress={() => setExchangeOpen(true)}
-						hitSlop={8}
-						style={({ pressed }) => [styles.troveBtn, pressed && styles.trovePressed]}
-					>
-						{HAT_IMAGES.golden_truffle ? (
-							<Image
-								source={HAT_IMAGES.golden_truffle}
-								style={styles.troveIcon}
-								resizeMode="contain"
-							/>
-						) : (
-							<Icon name="gift" size={15} color={WHIMSY.accent} />
-						)}
-						<Text style={styles.troveText}>
-							{truffles.available
-								? `Exchange · ${truffles.balance}`
-								: "Exchange"}
-						</Text>
-					</Pressable>
+						accessibilityLabel={
+							truffles.available
+								? `Truffle Exchange · ${truffles.balance} golden truffles`
+								: "Truffle Exchange"
+						}
+						accessibilityHint="Opens the Truffle Exchange"
+					/>
 				</View>
 			</Sticker>
 
-			{/* Leaving is easy but quiet — a hand-written line, not a button. */}
-			<HandLink onPress={() => leave()} style={styles.leaveWrap}>
-				leave your Sounder › no hard feelings
+			{/* Leaving is easy but quiet — a hand-written line, not a button. It
+			    still confirms: the seat is gone the moment you tap, and a full
+			    banner won't take you back. Warm, never shaming. [B-03] */}
+			<HandLink
+				onPress={() => setConfirmLeave(true)}
+				style={styles.leaveWrap}
+				accessibilityLabel="Leave your Sounder"
+				accessibilityHint="Asks you to confirm first"
+			>
+				leave your Sounder · no hard feelings
 			</HandLink>
 
 			<FriendInvitePicker
@@ -556,6 +656,11 @@ export function SounderCard({
 				visible={playerPickerOpen}
 				onDismiss={() => setPlayerPickerOpen(false)}
 				crewHook={crewHook}
+			/>
+
+			<SounderOinkSheet
+				visible={oinkOpen}
+				onDismiss={() => setOinkOpen(false)}
 			/>
 
 			<TransferLeadershipSheet
@@ -577,7 +682,37 @@ export function SounderCard({
 				onFriendshipChanged={crewHook.refresh}
 			/>
 
-			{note && <Text style={styles.note}>{note}</Text>}
+			<ConfirmDialog
+				open={confirmLeave}
+				tone="warm"
+				title="Leave your Sounder?"
+				body={`You give up your seat in ${theCrew(crew.crew!.name)}. If the banner fills up, there's no way back in.`}
+				confirmLabel="Leave"
+				confirmHint="Gives up your seat and forfeits this week's spoils claim"
+				cancelLabel="Stay"
+				cancelHint="Keeps your seat"
+				onConfirm={onLeave}
+				onCancel={() => setConfirmLeave(false)}
+			/>
+
+			<ConfirmDialog
+				open={kickTarget !== null}
+				tone="destructive"
+				title={kickTarget ? `Remove ${kickTarget.name}?` : "Remove them?"}
+				body={`${kickTarget?.name ?? "They"} loses their seat in ${theCrew(crew.crew!.name)} right away. You can invite them back if a slot opens.`}
+				confirmLabel="Remove"
+				confirmHint={`Takes ${kickTarget?.name ?? "their"} seat back at once`}
+				cancelLabel="Keep them"
+				cancelHint="Leaves the roster as it is"
+				onConfirm={() => kickTarget && onKick(kickTarget.id)}
+				onCancel={() => setKickTarget(null)}
+			/>
+
+			{note && (
+				<T role="bodySm" tone="accent" align="center" style={styles.note}>
+					{note}
+				</T>
+			)}
 		</ScrollView>
 	);
 }
@@ -597,10 +732,10 @@ function MilestoneSummary({ lifetimeFinds }: { lifetimeFinds: number }) {
 	}
 	return (
 		<View style={styles.milestoneRow}>
-			<Icon name="trophy" size={15} color={WHIMSY.accent} />
-			<Text style={styles.milestoneText} numberOfLines={1}>
+			<Icon name="trophy" size={MILESTONE_ICON} color={WHIMSY.accent} />
+			<Hand tone="secondary" numberOfLines={1} style={styles.milestoneText}>
 				{line}
-			</Text>
+			</Hand>
 		</View>
 	);
 }
@@ -614,132 +749,74 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginBottom: SPACE.sm,
 	},
-	milestoneText: { ...TYPE.hand, color: WHIMSY.mute, flexShrink: 1 },
+	milestoneText: { flexShrink: 1 },
 	content: { padding: PAGE_PAD, paddingBottom: TAB_SAFE, gap: SPACE.md },
 	// The one paper sticker the crewless states live in (Frames A & B).
 	muster: { padding: SPACE.lg, paddingBottom: SPACE.lg },
 	sectGap: { marginTop: SPACE.lg },
-	staleNote: { marginLeft: CREW_ROW_INDENT, marginTop: 2 },
+	staleNote: { marginLeft: CREW_ROW_INDENT, marginTop: SPACE.xxs },
 	foundLink: { alignSelf: "center", marginTop: SPACE.lg },
-	foundBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: SPACE.sm + 2,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.xxl,
-		paddingVertical: SPACE.md,
-		marginTop: SPACE.md,
-		...SHADOW_SM,
-	},
-	foundBtnDim: { opacity: 0.6 },
-	foundBtnText: { ...TYPE.cardTitle, fontFamily: FONTS.display, color: WHIMSY.ink },
-	foundCopy: {
-		...TYPE.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: SPACE.md,
-	},
+	foundBtn: { marginTop: SPACE.md },
+	foundCopy: { marginTop: SPACE.md },
 	// Crew mini card (Frame D).
-	crewMini: { paddingHorizontal: SPACE.lg, paddingVertical: SPACE.md + 2 },
+	crewMini: { paddingHorizontal: SPACE.lg, paddingVertical: SPACE.card },
 	crewTop: {
 		flexDirection: "row",
 		alignItems: "baseline",
 		justifyContent: "space-between",
 		gap: SPACE.sm,
 	},
-	crewName: { ...TYPE.sectionTitle, color: WHIMSY.ink, flexShrink: 1 },
-	crewCount: { ...TYPE.body, fontFamily: FONTS.display, color: WHIMSY.mute },
-	pips: { flexDirection: "row", alignItems: "center", gap: SPACE.sm + 1, marginTop: SPACE.sm },
-	// Slot dots — 26px circles. Filled: sun with the SHADOW_SM tier (the design's
-	// 1.5px micro-shadow rounds up to the small tier; the two-tier rule holds).
+	crewName: { flexShrink: 1 },
+	crewCount: { fontFamily: FONTS.display },
+	pips: { flexDirection: "row", alignItems: "center", gap: SPACE.sm, marginTop: SPACE.sm },
+	// Slot dots. Filled: sun with the SHADOW_SM tier (the design's 1.5px
+	// micro-shadow rounds up to the small tier; the two-tier rule holds).
 	pip: {
-		width: 26,
-		height: 26,
-		borderRadius: 13,
-		borderWidth: 2.5,
+		width: PIP_SIZE,
+		height: PIP_SIZE,
+		borderRadius: PIP_SIZE / 2,
+		borderWidth: BORDER.heavy,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
 		...SHADOW_SM,
 	},
 	// Open: dashed muteSoft ring around the "+" into the friends picker.
 	pipOpen: {
-		width: 26,
-		height: 26,
-		borderRadius: 13,
-		borderWidth: 2.5,
+		width: PIP_SIZE,
+		height: PIP_SIZE,
+		borderRadius: PIP_SIZE / 2,
+		borderWidth: BORDER.heavy,
 		borderStyle: "dashed",
-		borderColor: WHIMSY.muteSoft,
+		borderColor: UI_COLORS.uiMuted,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	// Reserved: an ask is out. A dashed SUN ring — half-lit toward filled, so a
-	// pending seat reads as "spoken for", not "open".
+	// pending seat reads as "spoken for", not "open". Decorative dimming, not a
+	// disabled control, so the opacity ladder is the right tool here.
 	pipPending: {
-		width: 26,
-		height: 26,
-		borderRadius: 13,
-		borderWidth: 2.5,
+		width: PIP_SIZE,
+		height: PIP_SIZE,
+		borderRadius: PIP_SIZE / 2,
+		borderWidth: BORDER.heavy,
 		borderStyle: "dashed",
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
-		opacity: 0.5,
+		opacity: OPACITY.dim,
 	},
-	slotHint: { ...TYPE.kicker, color: WHIMSY.mute, marginTop: SPACE.sm },
-	crownLink: { marginTop: SPACE.xs + 1 },
+	slotHint: { marginTop: SPACE.sm },
+	crownLink: { marginTop: SPACE.xs },
 	roster: { marginTop: SPACE.sm },
-	inviteCta: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: SPACE.sm,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.xxl,
-		paddingVertical: SPACE.md - 1,
-		marginTop: SPACE.md,
-		...SHADOW_SM,
-	},
-	inviteCtaText: { ...TYPE.body, fontFamily: FONTS.display, color: WHIMSY.ink },
-	oneSounderCopy: {
-		...TYPE.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.lg,
-	},
-	// Golden Truffle economy doors — centered icon + hand-text pair, matching
-	// HandLink's quiet weight.
+	cta: { marginTop: SPACE.md },
+	oneSounderCopy: { marginTop: SPACE.lg },
+	// Golden Truffle economy doors — the two chips into the rewards catalog and
+	// the Exchange.
 	troveRow: {
 		flexDirection: "row",
 		justifyContent: "center",
 		gap: SPACE.xl,
 		marginTop: SPACE.md,
 	},
-	// Real button chrome — without it these read as plain text; the app's chip
-	// grammar: cream face, ink border, sticker shadow, pressed dim.
-	troveBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs,
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs + 2,
-		...SHADOW_SM,
-	},
-	trovePressed: { opacity: 0.7 },
-	troveText: { ...TYPE.hand, color: WHIMSY.ink },
-	troveIcon: { width: 16, height: 16 },
 	leaveWrap: { alignSelf: "center", marginTop: SPACE.xs, marginBottom: SPACE.sm },
-	note: {
-		...TYPE.bodySm,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.xs,
-	},
+	note: { marginTop: SPACE.xs },
 });

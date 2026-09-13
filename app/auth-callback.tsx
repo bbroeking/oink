@@ -13,12 +13,13 @@
 // If openAuthSessionAsync DID catch the redirect (a session already exists),
 // this route simply redirects home without re-doing the exchange.
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Redirect } from "expo-router";
 import * as Linking from "expo-linking";
 import { supabase } from "@/utils/supabase";
 import { paramsFromUrl } from "@/utils/authCallback";
-import { WHIMSY } from "@/constants/theme";
+import { LoadingBeat } from "@/components/ui";
+import { UI_COLORS } from "@/constants/theme";
 
 export default function AuthCallback() {
 	const url = Linking.useURL();
@@ -58,9 +59,12 @@ export default function AuthCallback() {
 	}, [url]);
 
 	if (done) return <Redirect href="/" />;
+	// The seam between Google's browser and the storybook. Rosie waits here on
+	// the same cream the gate screens on either side use, so the sub-second
+	// handoff stays inside the world instead of flashing a naked spinner. [E29]
 	return (
 		<View style={styles.center}>
-			<ActivityIndicator color={WHIMSY.ink} />
+			<LoadingBeat label="finding your barn" />
 		</View>
 	);
 }
@@ -70,6 +74,6 @@ const styles = StyleSheet.create({
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: WHIMSY.paper,
+		backgroundColor: UI_COLORS.surfaceMuted,
 	},
 });

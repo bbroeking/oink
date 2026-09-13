@@ -17,14 +17,28 @@
 // strip's "next reward" picture can never drift from the pass-track stones.
 
 import { useState } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { Sticker } from "../ui/Sticker";
-import { Icon } from "../ui/Icon";
-import { Glyph } from "../ui/Glyph";
-import { TickleIcon } from "../ui/SnoutCoin";
+import { View, Image, Pressable, StyleSheet } from "react-native";
+import {
+	CardTitle,
+	Glyph,
+	Icon,
+	Kicker,
+	KickerPill,
+	Numeral,
+	Sticker,
+	TickleIcon,
+} from "@/components/ui";
 import { HAT_IMAGES } from "@/constants/hats";
 import { resolveRewardArt } from "@/utils/rewardArt";
-import { FONTS, RADII, SPACE, TYPE, UI_COLORS, WHIMSY } from "@/constants/theme";
+import {
+	BORDER,
+	PRESSED_FLAT,
+	RADII,
+	SPACE,
+	TILT,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
 import { TruffleExchangeSheet } from "../mudwar/TruffleExchangeSheet";
 // The next-reward preview shape lives in utils/seasonPass (the single owner of
@@ -32,6 +46,16 @@ import { TruffleExchangeSheet } from "../mudwar/TruffleExchangeSheet";
 // this component keep working.
 import type { NextReward } from "@/utils/seasonPass";
 export type { NextReward };
+
+// Cell drawing geometry — the tier ring and the reward thumb share one 30pt box
+// so the two heads line up, and each currency art sits beside its numeral at
+// its own size. Proportions of one strip, not steps on the spacing scale.
+const HEAD_BOX = 30;
+const COIN_ART = 22;
+const TICKLE_ART = 24;
+const REWARD_ART = 26;
+const CROWN_ART = 20;
+const STAR_FRAC = 0.7;
 
 // Reward-art preview — resolution lives in the shared utils/rewardArt resolver,
 // so the strip's picture can never drift from the pass-track stones. Wearables
@@ -54,7 +78,15 @@ function RewardArt({ reward, size }: { reward: NextReward; size: number }) {
 				/>
 			);
 		default:
-			return <Icon name="star" size={Math.round(size * 0.7)} filled color={UI_COLORS.warningText} strokeWidth={1.6} />;
+			return (
+				<Icon
+					name="star"
+					size={Math.round(size * STAR_FRAC)}
+					filled
+					color={UI_COLORS.warningText}
+					strokeWidth={1.6}
+				/>
+			);
 	}
 }
 
@@ -91,50 +123,53 @@ export function YourTakeStrip({
 	const truffles = useTruffles();
 	const [exchangeOpen, setExchangeOpen] = useState(false);
 
-	const DASH = <Text style={styles.dash}>—</Text>;
+	const DASH = <CardTitle tone="secondary">—</CardTitle>;
 
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.kicker}>★ your take</Text>
-			<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.row}>
+			<Kicker style={styles.kicker}>your take</Kicker>
+			<Sticker color="paper" rotate={TILT.card} radius={RADII.lg} style={styles.row}>
 				{/* 1 — PASS: tier ring + next-reward art + name / XP-away. */}
 				<Pressable
 					onPress={onOpenPass}
-					style={({ pressed }) => [styles.cell, pressed && { opacity: 0.6 }]}
+					style={({ pressed }) => [styles.cell, pressed && PRESSED_FLAT]}
 					accessibilityRole="button"
 					accessibilityLabel="Your season pass — jump to the next reward"
+					accessibilityHint="Scrolls to the pass track and its next claim"
 				>
 					<View style={styles.passHead}>
 						<View style={styles.tierRing}>
-							<Text style={styles.tierRingNum}>{currentTier}</Text>
+							<Numeral>{currentTier}</Numeral>
 						</View>
 						{nextRewardLoading ? (
 							<View style={styles.rewardThumb}>{DASH}</View>
 						) : nextReward ? (
 							<View style={styles.rewardThumb}>
-								<RewardArt reward={nextReward} size={26} />
+								<RewardArt reward={nextReward} size={REWARD_ART} />
 							</View>
 						) : (
 							<View style={styles.rewardThumb}>
-								<Icon name="crown" size={20} color={UI_COLORS.warningText} filled />
+								<Icon name="crown" size={CROWN_ART} color={UI_COLORS.warningText} filled />
 							</View>
 						)}
 					</View>
-					<Text style={styles.cellCap}>tier {currentTier}/{totalTiers}</Text>
+					<KickerPill star={false}>
+						tier {currentTier}/{totalTiers}
+					</KickerPill>
 					{nextRewardLoading ? (
-						<Text style={styles.cellSub} numberOfLines={2}>
+						<Kicker star={false} numberOfLines={2}>
 							reading your pass
-						</Text>
+						</Kicker>
 					) : nextReward ? (
-						<Text style={styles.cellSub} numberOfLines={2}>
+						<Kicker star={false} numberOfLines={2}>
 							{nextReward.ready
 								? `claim ${nextReward.display_label} ›`
 								: `next: ${nextReward.display_label} · ${nextReward.xpAway} XP away`}
-						</Text>
+						</Kicker>
 					) : (
-						<Text style={styles.cellSub} numberOfLines={2}>
+						<Kicker star={false} numberOfLines={2}>
 							every reward claimed ★
-						</Text>
+						</Kicker>
 					)}
 				</Pressable>
 
@@ -143,9 +178,10 @@ export function YourTakeStrip({
 				{/* 2 — POUCH: Golden Truffle count → the Exchange. */}
 				<Pressable
 					onPress={() => setExchangeOpen(true)}
-					style={({ pressed }) => [styles.cell, pressed && { opacity: 0.6 }]}
+					style={({ pressed }) => [styles.cell, pressed && PRESSED_FLAT]}
 					accessibilityRole="button"
 					accessibilityLabel="Your Golden Truffles — spend at the Exchange"
+					accessibilityHint="Opens the Golden Truffle Exchange"
 				>
 					<View style={styles.pouchHead}>
 						{/* The truffle's own art — never the Slop Club crest; the
@@ -155,14 +191,14 @@ export function YourTakeStrip({
 							style={styles.pouchArt}
 							resizeMode="contain"
 						/>
-						<Text style={styles.pouchNum}>
+						<CardTitle>
 							{truffles.available ? truffles.balance : DASH}
-						</Text>
+						</CardTitle>
 					</View>
-					<Text style={styles.cellCap}>golden truffles</Text>
-					<Text style={styles.cellSub} numberOfLines={2}>
+					<KickerPill star={false}>golden truffles</KickerPill>
+					<Kicker star={false} numberOfLines={2}>
 						spend at the Exchange ›
-					</Text>
+					</Kicker>
 				</Pressable>
 
 				<View style={styles.divider} />
@@ -171,24 +207,29 @@ export function YourTakeStrip({
 				    (spec 17), or the hero sheet when no receipt handler is wired. */}
 				<Pressable
 					onPress={onOpenBreakdown ?? onOpenHero}
-					style={({ pressed }) => [styles.cell, pressed && { opacity: 0.6 }]}
+					style={({ pressed }) => [styles.cell, pressed && PRESSED_FLAT]}
 					accessibilityRole="button"
 					accessibilityLabel={
 						onOpenBreakdown
 							? "How you earned your tickles this season"
 							: "Your tickles reclaimed this season"
 					}
+					accessibilityHint={
+						onOpenBreakdown
+							? "Opens the receipt for this season's tickles"
+							: "Opens the Great Hungerer sheet"
+					}
 				>
 					<View style={styles.tickleHead}>
-						<TickleIcon size={24} />
-						<Text style={styles.pouchNum}>
+						<TickleIcon size={TICKLE_ART} />
+						<CardTitle>
 							{ticklesEarned == null ? DASH : ticklesEarned.toLocaleString("en-US")}
-						</Text>
+						</CardTitle>
 					</View>
-					<Text style={styles.cellCap}>this season</Text>
-					<Text style={styles.cellSub} numberOfLines={2}>
+					<KickerPill star={false}>this season</KickerPill>
+					<Kicker star={false} numberOfLines={2}>
 						tickles reclaimed ›
-					</Text>
+					</Kicker>
 				</Pressable>
 			</Sticker>
 
@@ -204,10 +245,8 @@ export function YourTakeStrip({
 const styles = StyleSheet.create({
 	wrap: { marginTop: SPACE.sm },
 	kicker: {
-		...TYPE.kicker,
-		color: WHIMSY.accent,
 		marginBottom: SPACE.xs,
-		paddingHorizontal: 4,
+		paddingHorizontal: SPACE.xs,
 	},
 	row: {
 		flexDirection: "row",
@@ -218,55 +257,37 @@ const styles = StyleSheet.create({
 	cell: {
 		flex: 1,
 		paddingHorizontal: SPACE.xs,
-		gap: 2,
+		gap: SPACE.xxs,
 	},
 	// A hairline seam between cells — reads as one strip, three panes.
 	divider: {
-		width: 1.5,
+		width: BORDER.thin,
 		alignSelf: "stretch",
-		marginVertical: 2,
+		marginVertical: SPACE.xxs,
 		backgroundColor: WHIMSY.cream2,
 	},
 
 	// Cell 1 head — tier ring beside the next-reward thumb.
-	passHead: { flexDirection: "row", alignItems: "center", gap: SPACE.xs, marginBottom: 1 },
+	passHead: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
 	tierRing: {
-		width: 30,
-		height: 30,
+		width: HEAD_BOX,
+		height: HEAD_BOX,
 		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	tierRingNum: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
 	rewardThumb: {
-		width: 30,
-		height: 30,
+		width: HEAD_BOX,
+		height: HEAD_BOX,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 
-	// Cells 2 + 3 head — icon beside a numeral.
-	pouchHead: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 1 },
-	pouchArt: { width: 22, height: 22 },
-	tickleHead: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 1 },
-	pouchNum: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
-
-	// Shared cap + sub lines.
-	cellCap: {
-		...TYPE.kicker,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.8,
-		textTransform: "uppercase",
-		color: WHIMSY.mute,
-	},
-	cellSub: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-	},
-	dash: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.mute },
+	// Cells 2 + 3 head — art beside a numeral.
+	pouchHead: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	pouchArt: { width: COIN_ART, height: COIN_ART },
+	tickleHead: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
 });

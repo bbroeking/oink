@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: transparent furnishing sprite for a cozy mobile Barn-decorating game
+Primary request: Isolated transparent PNG: mini willow basket, cranberry yarn ball, birch knitting needles, unfinished cream mitten, green ribbon; cozy clustered object; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.
+Subject: Tiny Knitting Basket. Two tiny birch needles rest in a basket of cranberry yarn.
+Style/medium: polished cozy storybook gouache and soft cel illustration, matching existing Tickle the Pig habitat furniture; warm brown contours, rounded chunky geometry, tactile painted materials, consistent upper-left light
+Composition/framing: exactly one complete isolated object centered with generous transparent margins; correct surface_decor Barn perspective; readable at phone scale
+Scene/backdrop: actual transparent alpha background
+Constraints: preserve every named color, material, and detail; full silhouette entirely inside canvas; no crop; no floor, cast shadow, room, wall, background, checkerboard, text, labels, watermark, border, grid, or extra object

@@ -15,28 +15,52 @@
 //   join      — framed benefits + the JoinDoor (delegated to SounderHomeCard's
 //               crewless render), plus a "replay the practice dig ›" link.
 //   first_dig — the patch is open → the dig CTA; else the countdown + an
-//               "oink me when it opens ›" chip (scheduleOpenReminder).
+//               persistent "oink me for every Feeding" account toggle.
 //
 // The `hook` step never renders here — the tale auto-presents at login
 // (app/_layout.tsx); this card takes over once the tale's been seen.
 
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { Sticker } from "../ui/Sticker";
-import { Button } from "../ui/Button";
-import { Glyph } from "../ui/Glyph";
+import {
+	BodySm,
+	Button,
+	CardTitle,
+	Glyph,
+	Hand,
+	IconButton,
+	Kicker,
+	KickerPill,
+	Sticker,
+} from "@/components/ui";
 import { SounderHomeCard } from "./SounderHomeCard";
 import { NotifyChip } from "./GuardedCtaExtras";
 import { SpotlightTarget } from "@/components/ui/Spotlight";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
-import { scheduleOpenReminder } from "@/utils/pushNotifications";
 import { patchCtaLabel } from "@/utils/rooting";
 import { markRejoinDismissed } from "@/utils/sounderPath";
 import { JOIN_SPOTLIGHT_TARGET_ID } from "@/hooks/useJoinSpotlight";
 import type { SounderStep } from "@/hooks/useSounderPath";
 import type { UseCrew } from "@/hooks/useCrew";
-import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	BORDER,
+	PRESSED_FLAT,
+	RADII,
+	SPACE,
+	TAP_MIN,
+	TILT,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
+
+// The ·●·· path dots. Two exact circle diameters — drawing geometry, not
+// spacing — paired with RADII.pill so each stays a true circle at any size.
+const DOT = 6;
+const DOT_ACTIVE = 8;
+// The inline marks: a gem beside a compact line, a ✕ in the dismiss corner.
+const LINE_MARK = 16;
+const REPLAY_MARK = 14;
 
 // The four visible path steps, in order, for the ·●·· progress dots. `hook` is
 // omitted — it lives in the login intro, not this card.
@@ -70,6 +94,7 @@ export function SounderStepCard({
 	cta,
 	refreshKey,
 	onAdvance,
+	hero = false,
 }: {
 	step: SounderStep;
 	/** After SOUNDER_STALL_SESSIONS on this step, compress to the single line. */
@@ -97,40 +122,58 @@ export function SounderStepCard({
 	refreshKey?: number;
 	/** Re-derive the path step (e.g. right after a practice dig closes). */
 	onAdvance?: () => void;
+	/**
+	 * The one-hero rule (C-26). While the funnel is running this card IS the
+	 * tab's "do this now" slot, so its step CTA carries the loud voice — but
+	 * only when `season.tsx`'s single `primaryAction` derivation says so (a
+	 * ready reward outranks the funnel). Off, the same button keeps its shape
+	 * and its words in the quiet `lilac`.
+	 */
+	hero?: boolean;
 }) {
+	const stepVariant = hero ? "gold" : "lilac";
 
 	// done / hook never render here — the tab shows the normal card (done) or the
 	// login intro owns the tale (hook).
 	if (step === "done" || step === "hook") return null;
+	// Submission lands before the onboarding path's next server refresh. Hide
+	// the completed first-dig prompt during that handoff, including compact mode.
+	if (step === "first_dig" && cta.dugThisWindow) return null;
 
 	// The compact escape valve — a single sticker line that keeps prompting
 	// without shouting, once the player's parked on a step for a few sessions.
 	if (stalled) {
 		return (
-			<CompactStep step={step} cta={cta} onAdvance={onAdvance} />
+			<CompactStep step={step} cta={cta} onAdvance={onAdvance} hero={hero} />
 		);
 	}
 
 	if (step === "taste") {
 		return (
 			<Sticker color="paper" rotate={-0.5} radius={RADII.lg} style={styles.card}>
-				<Text style={styles.kicker}>first, the fun part</Text>
-				<Text style={styles.title}>Try a dig — no herd needed</Text>
-				<Text style={styles.body}>
-					Have a practice root at the Hungerer's patch. Your first find mints one
+				<KickerPill star={false} tone="accent" style={styles.kicker}>
+					first, the fun part
+				</KickerPill>
+				<CardTitle style={styles.title}>Try a dig — no herd needed</CardTitle>
+				<BodySm tone="secondary" style={styles.body}>
+					Have a practice root at the Hungerer&apos;s patch. Your first find mints one
 					real Golden Truffle to keep.
-				</Text>
+				</BodySm>
 				<Button
 					size="md"
-					variant="primary"
+					variant={stepVariant}
 					full
 					onPress={() => {
 						cta.openPractice();
 					}}
+					accessibilityLabel="Try a practice dig"
+					accessibilityHint="Opens the practice Truffle Patch — no Sounder needed"
 				>
 					Try a dig
 				</Button>
-				<Text style={styles.sub}>dig for truffles</Text>
+				<Kicker star={false} align="center" style={styles.sub}>
+					dig for truffles
+				</Kicker>
 				<StepDots step="taste" />
 			</Sticker>
 		);
@@ -147,42 +190,53 @@ export function SounderStepCard({
 		};
 		return (
 			<View>
-				<Sticker color="cream" rotate={-0.4} radius={RADII.lg} style={styles.frameCard}>
+				<Sticker color="cream" rotate={TILT.card} radius={RADII.lg} style={styles.frameCard}>
 					{/* Leaver-only quiet dismiss — retires the card to DONE. The
 					    first-time join card stays non-dismissible (no ✕). */}
 					{leaver && (
-						<Pressable
+						<IconButton
+							name="x"
+							label="Dismiss"
+							accessibilityHint="Hides the join-a-Sounder card"
 							onPress={onDismiss}
-							hitSlop={12}
-							style={({ pressed }) => [styles.dismiss, pressed && { opacity: 0.5 }]}
-							accessibilityLabel="Dismiss"
-						>
-							<Glyph name="close" size={14} />
-						</Pressable>
+							variant="none"
+							iconSize={REPLAY_MARK}
+							visualSize={SPACE.xxl}
+							style={styles.dismiss}
+						/>
 					)}
 					{leaver ? (
 						<>
-							<Text style={styles.kicker}>herdless again</Text>
-							<Text style={styles.body}>
+							<KickerPill star={false} tone="accent" style={styles.kicker}>
+								herdless again
+							</KickerPill>
+							<BodySm tone="secondary" style={styles.body}>
 								Join another Sounder to share milestones and earn co-op dig bonuses.
-							</Text>
+							</BodySm>
 						</>
 					) : (
 						<>
-							<Text style={styles.kicker}>that was the taste — now dig for keeps</Text>
-							<Text style={styles.body}>
+							<KickerPill star={false} tone="accent" style={styles.kicker}>
+								that was the taste — now dig for keeps
+							</KickerPill>
+							<BodySm tone="secondary" style={styles.body}>
 								Dig after a crewmate for up to 5 more rubs. Sounders also share the spoils.
-							</Text>
+							</BodySm>
 						</>
 					)}
 					<StepDots step="join" />
 					<Pressable
 						onPress={() => cta.openPractice()}
 						hitSlop={6}
-						style={({ pressed }) => [styles.replayRow, pressed && { opacity: 0.6 }]}
+						accessibilityRole="button"
+						accessibilityLabel="Replay the practice dig"
+						accessibilityHint="Opens the practice Truffle Patch again"
+						style={({ pressed }) => [styles.replayRow, pressed && PRESSED_FLAT]}
 					>
-						<Glyph name="gem" size={14} />
-						<Text style={styles.replayLink}>replay the practice dig ›</Text>
+						<Glyph name="gem" size={REPLAY_MARK} />
+						<Kicker star={false} style={styles.replayLink}>
+							replay the practice dig ›
+						</Kicker>
 					</Pressable>
 				</Sticker>
 				{/* The join door itself — invites → open Sounders → found-in-one-tap.
@@ -199,6 +253,7 @@ export function SounderStepCard({
 						uid={uid}
 						cta={cta}
 						refreshKey={refreshKey}
+						hero={hero}
 					/>
 				</SpotlightTarget>
 			</View>
@@ -206,28 +261,54 @@ export function SounderStepCard({
 	}
 
 	// first_dig — crewed, no real dig yet. Window open → the real dig CTA; else the
-	// locked pill + a one-tap "oink me when it opens" opt-in.
+	// locked pill + the persistent every-Feeding notification toggle.
 	return (
 		<Sticker color="paper" rotate={-0.5} radius={RADII.lg} style={styles.card}>
-			<Text style={styles.kicker}>you're in a Sounder — one thing left</Text>
-			<Text style={styles.title}>Dig your first feeding</Text>
+			<KickerPill star={false} tone="accent" style={styles.kicker}>
+				you&apos;re in a Sounder — one thing left
+			</KickerPill>
+			<CardTitle style={styles.title}>Dig your first feeding</CardTitle>
 			{cta.phaseOpen ? (
 				<>
-					<Button size="md" variant="primary" full onPress={cta.start}>
+					<Button
+						size="md"
+						variant={stepVariant}
+						full
+						onPress={cta.start}
+						accessibilityLabel="Dig the Truffle Patch"
+						accessibilityHint="Opens the patch for this feeding"
+					>
 						{patchCtaLabel(true, cta.countdown)}
 					</Button>
-					<Text style={styles.sub}>root the patch</Text>
-					<Text style={styles.cooldown}>the patch closes in {cta.countdown}</Text>
+					<Kicker star={false} align="center" style={styles.sub}>
+						root the patch
+					</Kicker>
+					<Hand tone="secondary" align="center" style={styles.cooldown}>
+						the patch closes in {cta.countdown}
+					</Hand>
 				</>
 			) : (
 				<>
-					<Button size="md" variant="locked" full disabled>
+					{/* The resting dig CTA: a button asleep, with the countdown on
+					    its own face — never a dissolved control. [C-07] */}
+					<Button
+						size="md"
+						variant="locked"
+						full
+						disabled
+						accessibilityLabel={`The patch is guarded — ${patchCtaLabel(false, cta.countdown)}`}
+						accessibilityHint="The Hungerer is digesting; the patch reopens when the countdown ends"
+					>
 						{patchCtaLabel(false, cta.countdown)}
 					</Button>
 					<NotifyChip />
 				</>
 			)}
-			{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
+			{!!cta.note && (
+				<Hand tone="accent" style={styles.note}>
+					{cta.note}
+				</Hand>
+			)}
 			<StepDots step="first_dig" />
 		</Sticker>
 	);
@@ -239,10 +320,13 @@ function CompactStep({
 	step,
 	cta,
 	onAdvance,
+	hero,
 }: {
 	step: SounderStep;
 	cta: FeedingCta;
 	onAdvance?: () => void;
+	/** Even the compact line only wears the sun when it IS the primary action. */
+	hero: boolean;
 }) {
 	const line =
 		step === "taste"
@@ -251,7 +335,27 @@ function CompactStep({
 			? "still herdless — join a Sounder ›"
 			: cta.phaseOpen
 				? `${patchCtaLabel(true, cta.countdown)} ›`
-				: `${patchCtaLabel(false, cta.countdown)} · oink me ›`;
+				: patchCtaLabel(false, cta.countdown);
+
+	// The guarded compact card still exposes the real synchronized toggle. It
+	// is not nested inside another Pressable, so ON can always be tapped back OFF
+	// and permission guidance remains reachable.
+	if (step === "first_dig" && !cta.phaseOpen) {
+		return (
+			<Sticker
+				color="paper"
+				rotate={TILT.card}
+				radius={RADII.md}
+				style={[styles.compact, styles.compactGuarded]}
+			>
+				<View style={styles.compactLineRow}>
+					<Glyph name="gem" size={LINE_MARK} />
+					<BodySm style={styles.compactLine}>{line}</BodySm>
+				</View>
+				<NotifyChip />
+			</Sticker>
+		);
+	}
 
 	const onPress = () => {
 		Haptics.selectionAsync().catch(() => {});
@@ -261,76 +365,41 @@ function CompactStep({
 			router.push("/(tabs)/friends?seg=sounder");
 		} else if (cta.phaseOpen) {
 			cta.start();
-		} else {
-			// Guarded — the compact first_dig line can't dig; nudge into the notify.
-			scheduleOpenReminder().catch(() => {});
 		}
 		onAdvance?.();
 	};
 
 	return (
-		<>
-			<Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.9 }]}>
-				<Sticker
-					color={step === "first_dig" && cta.phaseOpen ? "sun" : "paper"}
-					rotate={-0.4}
-					radius={RADII.md}
-					style={[
-						styles.compact,
-						step === "first_dig" && !cta.phaseOpen && styles.compactGuarded,
-					]}
-				>
-					<Glyph name="gem" size={16} />
-					<Text style={styles.compactLine}>{line}</Text>
-				</Sticker>
-			</Pressable>
-		</>
+		<Sticker
+			color={hero && step === "first_dig" && cta.phaseOpen ? "sun" : "paper"}
+			rotate={TILT.card}
+			radius={RADII.md}
+			onPress={onPress}
+			accessibilityLabel={line}
+			accessibilityHint={
+				step === "taste"
+					? "Opens the practice Truffle Patch"
+					: step === "join"
+						? "Opens the Sounder list"
+						: "Opens the patch for this feeding"
+			}
+			style={styles.compact}
+		>
+			<Glyph name="gem" size={LINE_MARK} />
+			<BodySm style={styles.compactLine}>{line}</BodySm>
+		</Sticker>
 	);
 }
 
 const styles = StyleSheet.create({
 	card: { paddingHorizontal: SPACE.lg, paddingVertical: SPACE.md },
 	frameCard: { paddingHorizontal: SPACE.lg, paddingVertical: SPACE.md, marginBottom: SPACE.sm },
-	kicker: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textTransform: "uppercase",
-		letterSpacing: 0.8,
-		marginBottom: SPACE.xs,
-	},
-	title: {
-		...TYPE.cardTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		marginBottom: SPACE.xs,
-	},
-	body: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.body,
-		color: WHIMSY.mute,
-		marginBottom: SPACE.md,
-	},
-	sub: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.xs,
-	},
-	cooldown: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: SPACE.xs,
-	},
-	note: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		marginTop: SPACE.xs,
-	},
+	kicker: { marginBottom: SPACE.xs },
+	title: { marginBottom: SPACE.xs },
+	body: { marginBottom: SPACE.md },
+	sub: { marginTop: SPACE.xs },
+	cooldown: { marginTop: SPACE.xs },
+	note: { marginTop: SPACE.xs },
 	// The ·●·· path hint.
 	dotsRow: {
 		flexDirection: "row",
@@ -338,30 +407,27 @@ const styles = StyleSheet.create({
 		gap: SPACE.xs,
 		marginTop: SPACE.md,
 	},
-	// The path dots are 6/8px circles; their radii (3/4) are bespoke half-of-size
-	// values — the smallest RADII token (sm: 8) would over-round a 6px dot into a
-	// square-ish blob. Kept as exact half-widths so each dot stays a true circle.
 	dot: {
-		width: 6,
-		height: 6,
-		borderRadius: 3,
-		backgroundColor: WHIMSY.muteSoft,
+		width: DOT,
+		height: DOT,
+		borderRadius: RADII.pill,
+		backgroundColor: UI_COLORS.uiMuted,
 	},
 	dotActive: {
-		width: 8,
-		height: 8,
-		borderRadius: 4,
+		width: DOT_ACTIVE,
+		height: DOT_ACTIVE,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.roseDeep,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 	},
 	dotDone: { backgroundColor: WHIMSY.sage },
-	// Leaver-only quiet dismiss — a small ✕ in the frame card's top-right corner.
-	// Generous hitSlop (set on the Pressable) makes the tiny target forgiving.
+	// Leaver-only quiet dismiss — a small ✕ in the frame card's top-right corner
+	// on a guaranteed 44pt frame (IconButton's visual/frame split).
 	dismiss: {
 		position: "absolute",
-		top: SPACE.sm,
-		right: SPACE.sm,
+		top: SPACE.xs,
+		right: SPACE.xs,
 		zIndex: 1,
 	},
 	// Join framing card's replay link.
@@ -370,13 +436,9 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.xs,
 		marginTop: SPACE.sm,
+		minHeight: TAP_MIN,
 	},
-	replayLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
+	replayLink: { textDecorationLine: "underline" },
 	// The single-line stalled sticker.
 	compact: {
 		flexDirection: "row",
@@ -385,11 +447,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.sm,
 	},
-	compactLine: {
-		flex: 1,
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-	},
-	compactGuarded: { opacity: 0.72 },
+	compactLineRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+	compactLine: { flex: 1 },
+	compactGuarded: { flexDirection: "column", alignItems: "stretch" },
 });

@@ -13,19 +13,31 @@
 // starts at the roster.
 
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View, StyleSheet } from "react-native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
-import { Sticker } from "../ui/Sticker";
-import { Glyph } from "../ui/Glyph";
-import { Button } from "../ui/Button";
-import { LoadingBeat } from "../ui/EmptyState";
-import { CrewPortrait } from "../CrewRow";
+import {
+	Avatar,
+	BodySm,
+	Button,
+	CardTitle,
+	Glyph,
+	Hand,
+	Kicker,
+	KickerPill,
+	ListRow,
+	LoadingBeat,
+	ProfileIdentity,
+	ProgressTrack,
+	SectionTitle,
+	Sticker,
+	Tag,
+} from "@/components/ui";
+import { CrewPortrait } from "../ui";
 import { JoinableSounders } from "../JoinableSounders";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { NotifyChip, BurrowBookLink } from "./GuardedCtaExtras";
 import { useRosterProfiles } from "@/hooks/useRosterHats";
-import { ProfileIdentity } from "../ui/ProfileIdentity";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import {
 	fetchFeedingState,
@@ -36,9 +48,22 @@ import { patchCtaLabel } from "@/utils/rooting";
 import { fetchRaceCrewDetail, type RaceCrewDetail } from "@/utils/race";
 import { CREW_CAP_WORD } from "@/constants/crews";
 import { RACE_TRUFFLE_TABLE } from "@/constants/dig";
-import { FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	AVATAR_SIZE,
+	RADII,
+	SPACE,
+	TILT,
+	WHIMSY,
+} from "@/constants/theme";
 
+// The roster's pig portrait and the column it sits in — drawing geometry for a
+// wrap grid of snouts, not steps on the spacing scale.
 const AVATAR = 44;
+const MEMBER_COL = 72;
+// Inline marks: the "you dug" sparkle on a portrait, the bullet beside a benefit.
+const SPARKLE_MARK = 16;
+const SPARKLE_OFFSET = -SPACE.xxs;
+const BENEFIT_MARK = 16;
 
 export function SounderHomeCard({
 	crewHook,
@@ -46,6 +71,7 @@ export function SounderHomeCard({
 	cta,
 	refreshKey,
 	showFeedingAction = true,
+	hero = false,
 }: {
 	crewHook: UseCrew;
 	/** The caller's own user id — lights their pig in the roster when they've dug. */
@@ -60,18 +86,26 @@ export function SounderHomeCard({
 	refreshKey?: number;
 	/** Hide the inline action when its prominent form is rendered above this card. */
 	showFeedingAction?: boolean;
+	/**
+	 * The one-hero rule (C-26): this card holds the tab's `primaryAction`, so its
+	 * CTA may wear the loud voice — the sun fill and the gold Button. The owner
+	 * (`season.tsx`) derives it once; a card never decides it from its own state.
+	 * Off, the same control keeps its shape and words in the quiet `lilac`.
+	 */
+	hero?: boolean;
 }) {
 	const { crew } = crewHook;
 
 	if (crew.crew) {
 		return (
-			<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.card}>
+			<Sticker color="paper" rotate={TILT.card} radius={RADII.lg} style={styles.card}>
 				<CrewedHome
 					crewHook={crewHook}
 					uid={uid}
 					cta={cta}
 					refreshKey={refreshKey}
 					showFeedingAction={showFeedingAction}
+					hero={hero}
 				/>
 			</Sticker>
 		);
@@ -92,7 +126,7 @@ export function SounderHomeCard({
 
 	return (
 		<Sticker color="paper" rotate={-0.5} radius={RADII.lg} style={styles.card}>
-			<JoinDoor crewHook={crewHook} />
+			<JoinDoor crewHook={crewHook} hero={hero} />
 		</Sticker>
 	);
 }
@@ -101,71 +135,91 @@ export function SounderHomeCard({
 export function FeedingAction({
 	cta,
 	prominent = false,
+	hero = false,
 }: {
 	cta: FeedingCta;
 	prominent?: boolean;
+	/**
+	 * Digging is the tab's `primaryAction` right now — wear the sun card and the
+	 * gold Button. Off, the dig is still offered, just in the quiet voice, so
+	 * whatever IS the primary action is the only thing shouting. [C-26]
+	 */
+	hero?: boolean;
 }) {
+	// A completed Feeding leaves the action surface entirely. The roster and
+	// collection remain available; the window-stamped flag expires next Feeding.
+	if (cta.dugThisWindow) return null;
+	// A guarded patch keeps its quiet countdown until it becomes available.
+	const digVariant = hero ? "gold" : "lilac";
 	const content = (
 		<View style={styles.playRow}>
 			{prominent && (
 				<>
-					<Text style={styles.feedingKicker}>★ THIS FEEDING</Text>
-					<Text accessibilityRole="header" style={styles.feedingTitle}>
-						{cta.dugThisWindow
-							? "20 Pass XP banked"
-							: cta.phaseOpen
-								? "Dig for Golden Truffles"
-								: "The Hungerer is guarding"}
-					</Text>
-					<Text style={styles.feedingReward}>
+					<KickerPill star={false} tone="accent" style={styles.feedingKicker}>
+						this feeding
+					</KickerPill>
+					<SectionTitle accessibilityRole="header" style={styles.feedingTitle}>
+						{cta.phaseOpen
+							? "Dig for Golden Truffles"
+							: "The Hungerer is guarding"}
+					</SectionTitle>
+					<BodySm style={styles.feedingReward}>
 						Golden Truffles + relics · +20 Pass XP
-					</Text>
-					<Text style={styles.feedingPromise}>
+					</BodySm>
+					<BodySm tone="secondary" style={styles.feedingPromise}>
 						{"Bring home a find to join the next 15-Truffle stage reward and your Sounder's Monday payout."}
-					</Text>
+					</BodySm>
 				</>
 			)}
-			{cta.dugThisWindow ? (
-				<Button size={prominent ? "lg" : "md"} variant="locked" full disabled>
-					dug this feeding ★
-				</Button>
-			) : cta.noCrew ? null : cta.phaseOpen ? (
+			{cta.noCrew ? null : cta.phaseOpen ? (
 				<>
 					<Button
 						size={prominent ? "lg" : "md"}
-						variant="primary"
+						variant={digVariant}
 						full
 						onPress={cta.start}
+						accessibilityLabel="Dig the Truffle Patch"
+						accessibilityHint={`The patch closes in ${cta.countdown}`}
 					>
 						{patchCtaLabel(true, cta.countdown)}
 					</Button>
-					<Text style={styles.digSub}>root the patch</Text>
-					<Text style={styles.cooldownLine}>
-						the patch closes in {cta.countdown}
-					</Text>
+					<Kicker star={false} align="center" style={styles.digSub}>
+						root the patch
+					</Kicker>
+					<Hand tone="secondary">the patch closes in {cta.countdown}</Hand>
 				</>
 			) : (
 				<>
+					{/* The resting dig CTA: a button asleep with its countdown on its
+					    own face — the outline stays, nothing dissolves. [C-07] */}
 					<Button
 						size={prominent ? "lg" : "md"}
 						variant="locked"
 						full
 						disabled
+						accessibilityLabel={`The patch is guarded — ${patchCtaLabel(false, cta.countdown)}`}
+						accessibilityHint="The Hungerer is digesting; the patch reopens when the countdown ends"
 					>
 						{patchCtaLabel(false, cta.countdown)}
 					</Button>
 					<NotifyChip />
 				</>
 			)}
-			{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
+			{!!cta.note && (
+				<Hand tone="accent" style={styles.note}>
+					{cta.note}
+				</Hand>
+			)}
 			{__DEV__ && cta.startPractice && (
-				<Pressable
+				<Button
+					size="sm"
+					variant="handLink"
 					onPress={cta.startPractice}
-					hitSlop={6}
-					style={({ pressed }) => pressed && { opacity: 0.65 }}
+					accessibilityLabel="Dev: start a practice dig"
+					style={styles.devLink}
 				>
-					<Text style={styles.burrowLink}>dev · practice dig ›</Text>
-				</Pressable>
+					dev · practice dig ›
+				</Button>
 			)}
 		</View>
 	);
@@ -174,8 +228,11 @@ export function FeedingAction({
 
 	return (
 		<Sticker
-			color={cta.phaseOpen && !cta.dugThisWindow ? "sun" : "cream"}
-			rotate={-0.4}
+			// The full sun highlight is the loudest sentence the tab can say, so it
+			// is spent only on the derived primary action — an open patch that is
+			// NOT the hero keeps the card and loses the shout. [C-26]
+			color={hero && cta.phaseOpen && !cta.dugThisWindow ? "sun" : "cream"}
+			rotate={TILT.card}
 			radius={RADII.xl}
 			style={styles.feedingCard}
 		>
@@ -191,12 +248,14 @@ function CrewedHome({
 	cta,
 	refreshKey,
 	showFeedingAction,
+	hero,
 }: {
 	crewHook: UseCrew;
 	uid: string | null;
 	cta: FeedingCta;
 	refreshKey?: number;
 	showFeedingAction: boolean;
+	hero: boolean;
 }) {
 	const { crew } = crewHook;
 	const members = crew.members;
@@ -241,7 +300,7 @@ function CrewedHome({
 
 	return (
 		<>
-			{showFeedingAction && <FeedingAction cta={cta} />}
+			{showFeedingAction && <FeedingAction cta={cta} hero={hero} />}
 
 			{/* Roster — every snout, lit when it's dug this feeding. */}
 			<View style={styles.roster}>
@@ -254,13 +313,16 @@ function CrewedHome({
 								<CrewPortrait
 									size={AVATAR}
 									hatId={profiles.get(mem.user_id)?.hatId ?? null}
+									bowId={profiles.get(mem.user_id)?.bowId ?? null}
 									prestigeLevel={
 										__DEV__ && mem.user_id === uid
 											? 5
 											: profiles.get(mem.user_id)?.wallowCount ?? 0
 									}
 								/>
-								{isLit && <Glyph name="sparkle" size={16} style={styles.sparkle} />}
+								{isLit && (
+									<Glyph name="sparkle" size={SPARKLE_MARK} style={styles.sparkle} />
+								)}
 							</View>
 							<ProfileIdentity
 								username={mem.username ?? "a pig"}
@@ -269,10 +331,10 @@ function CrewedHome({
 								nameStyle={styles.memberName}
 							/>
 							{detail != null && (
-								<Text style={styles.memberFinds} numberOfLines={1}>
+								<Kicker star={false} tone="secondary" numberOfLines={1} style={styles.memberFinds}>
 									{finds.get(mem.user_id) ?? 0}
 									{(finds.get(mem.user_id) ?? 0) === 1 ? " find" : " finds"}
-								</Text>
+								</Kicker>
 							)}
 						</View>
 					);
@@ -281,21 +343,23 @@ function CrewedHome({
 
 			{/* cta.modal renders once at the owner (season.tsx), not here. */}
 
-			{/* One quiet milestone line + thin bar. */}
+			{/* One quiet milestone line + thin bar — the shared meter, which
+			    announces itself as a progressbar. [D-13] */}
 			<View style={styles.milestone}>
-				{!m.allDone ? (
-					<>
-						<View style={styles.track}>
-							<View style={[styles.fill, { width: `${Math.round(m.pct * 100)}%` }]} />
-						</View>
-						<Text style={styles.milestoneLine}>
-							{m.lifetimeFinds} / {m.nextThreshold} finds to {m.nextTitle}
-						</Text>
-					</>
+				{!m.allDone && m.nextThreshold != null ? (
+					<ProgressTrack
+						value={m.lifetimeFinds}
+						max={m.nextThreshold}
+						tone="sun"
+						height="sm"
+						label={`finds to ${m.nextTitle}`}
+						accessibilityLabel={`Herd milestone: ${m.lifetimeFinds} of ${m.nextThreshold} finds to ${m.nextTitle}`}
+					/>
 				) : (
-					<Text style={styles.milestoneLine}>
-						every herd milestone earned — {m.earnedTitle}
-					</Text>
+					<Tag
+						label={`every herd milestone earned — ${m.earnedTitle}`}
+						tone="sage"
+					/>
 				)}
 			</View>
 			{/* Collection stays reachable with herd context, below the primary action. */}
@@ -321,16 +385,20 @@ function SounderBenefits() {
 		<View style={styles.benefits}>
 			{lines.map((line) => (
 				<View key={line} style={styles.benefitRow}>
-					<Glyph name="gem" size={16} />
-					<Text style={styles.benefitText}>{line}</Text>
+					<Glyph name="gem" size={BENEFIT_MARK} />
+					<BodySm style={styles.benefitText}>{line}</BodySm>
 				</View>
 			))}
 		</View>
 	);
 }
 
-function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
+function JoinDoor({ crewHook, hero }: { crewHook: UseCrew; hero: boolean }) {
 	const invites = crewHook.crew.invitesIn;
+	// Joining is the tab's primary action while you are herdless — the accept and
+	// found buttons carry the gold then, and the quiet lilac when something else
+	// (a ready reward) is the one thing to do. [C-26]
+	const joinVariant = hero ? "gold" : "lilac";
 	const joinable = useJoinableCrews();
 	const [founding, setFounding] = useState(false);
 
@@ -340,12 +408,12 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 
 	return (
 		<View>
-			<Text style={styles.doorTitle}>Join a Sounder</Text>
-			<Text style={styles.doorSub}>
+			<CardTitle style={styles.doorTitle}>Join a Sounder</CardTitle>
+			<BodySm tone="secondary" style={styles.doorSub}>
 				{nothingToJoin
 					? "No open Sounders right now — raise the first banner and the herd fills in behind you."
 					: `${CREW_CAP_WORD} snouts, one banner. Ask into an open Sounder — when the herd opens the door, you dig the feedings together.`}
-			</Text>
+			</BodySm>
 
 			{/* Sell the Sounder with its real benefits, not flavor — the three
 			    concrete lines a crewless player never sees today. The depth-gain %
@@ -354,28 +422,52 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 			{/* The word itself, taught as a gift (Animal Crossing's Blathers
 			    pattern): "sounder" is the REAL collective noun for wild pigs —
 			    one quiet flavor line turns the obscurity into charm. */}
-			<Text style={styles.doorGloss}>
-				a "sounder" is the true old word for a herd of wild pigs — now
-				it's what you call your herd.
-			</Text>
+			<Hand tone="secondary" style={styles.doorGloss}>
+				a &quot;sounder&quot; is the true old word for a herd of wild pigs — now
+				it&apos;s what you call your herd.
+			</Hand>
 
 			{invites.map((inv) => (
-				<View key={inv.id} style={styles.inviteRow}>
-					<Glyph name="friends" size={18} />
-					<Text style={styles.inviteText} numberOfLines={2}>
-						{inv.inviter_name ?? "A friend"} wants you in {inv.crew_name}
-					</Text>
-					<Pressable
-						onPress={() => crewHook.accept(inv.id)}
-						style={({ pressed }) => [styles.joinBtn, pressed && { opacity: 0.7 }]}
-						hitSlop={6}
-					>
-						<Text style={styles.joinBtnText}>Join</Text>
-					</Pressable>
-					<Pressable onPress={() => crewHook.decline(inv.id)} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.65 }}>
-						<Text style={styles.declineText}>decline</Text>
-					</Pressable>
-				</View>
+				<ListRow
+					key={inv.id}
+					tilt={false}
+					fill="cream2"
+					style={styles.inviteRow}
+					leading={
+						<Avatar
+							size={AVATAR_SIZE[0]}
+							fill="paper"
+							glyph="friends"
+							label="Sounder invite"
+						/>
+					}
+					title={
+						<BodySm numberOfLines={2}>
+							{inv.inviter_name ?? "A friend"} wants you in {inv.crew_name}
+						</BodySm>
+					}
+					trailing={
+						<View style={styles.inviteActions}>
+							<Button
+								size="sm"
+								variant={joinVariant}
+								onPress={() => crewHook.accept(inv.id)}
+								accessibilityLabel={`Join ${inv.crew_name}`}
+								accessibilityHint="Puts you in this Sounder for the season"
+							>
+								Join
+							</Button>
+							<Button
+								size="sm"
+								variant="handLink"
+								onPress={() => crewHook.decline(inv.id)}
+								accessibilityLabel={`Decline the invite to ${inv.crew_name}`}
+							>
+								decline
+							</Button>
+						</View>
+					}
+				/>
 			))}
 
 			<JoinableSounders
@@ -385,17 +477,33 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 			/>
 
 			{showFoundForm ? (
-				<FoundForm crewHook={crewHook} topGap={!nothingToJoin} />
+				<FoundForm crewHook={crewHook} topGap={!nothingToJoin} variant={joinVariant} />
 			) : (
-				<Pressable onPress={() => setFounding(true)} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.65 }}>
-					<Text style={styles.foundLink}>or found your own ›</Text>
-				</Pressable>
+				<Button
+					size="sm"
+					variant="handLink"
+					onPress={() => setFounding(true)}
+					accessibilityLabel="Found your own Sounder"
+					accessibilityHint="Raises a new banner with you as its first member"
+					style={styles.foundLink}
+				>
+					or found your own ›
+				</Button>
 			)}
 		</View>
 	);
 }
 
-function FoundForm({ crewHook, topGap }: { crewHook: UseCrew; topGap: boolean }) {
+function FoundForm({
+	crewHook,
+	topGap,
+	variant,
+}: {
+	crewHook: UseCrew;
+	topGap: boolean;
+	/** Gold while founding is the tab's one hero action, lilac otherwise. */
+	variant: "gold" | "lilac";
+}) {
 	// No name to type — the server names your Sounder for you at birth; the
 	// leader renames it later. Founding is a single tap.
 	const [busy, setBusy] = useState(false);
@@ -419,14 +527,26 @@ function FoundForm({ crewHook, topGap }: { crewHook: UseCrew; topGap: boolean })
 	};
 
 	return (
-		<View style={topGap ? { marginTop: SPACE.md } : undefined}>
-			<Text style={styles.foundBlurb}>
-				We'll name your Sounder for you — a good name's already waiting.
-			</Text>
-			<Button size="md" variant="primary" full onPress={found} disabled={busy}>
+		<View style={topGap ? styles.foundGap : undefined}>
+			<BodySm tone="secondary" style={styles.foundBlurb}>
+				We&apos;ll name your Sounder for you — a good name&apos;s already waiting.
+			</BodySm>
+			<Button
+				size="md"
+				variant={variant}
+				full
+				onPress={found}
+				disabled={busy}
+				accessibilityLabel="Found your own Sounder"
+				accessibilityHint="Raises a new banner with you as its first member"
+			>
 				{busy ? "Founding…" : "Found it"}
 			</Button>
-			{!!note && <Text style={styles.note}>{note}</Text>}
+			{!!note && (
+				<Hand tone="accent" style={styles.note}>
+					{note}
+				</Hand>
+			)}
 		</View>
 	);
 }
@@ -442,11 +562,11 @@ const styles = StyleSheet.create({
 		gap: SPACE.md,
 		marginBottom: SPACE.sm,
 	},
-	memberCol: { alignItems: "center", maxWidth: 72 },
+	memberCol: { alignItems: "center", maxWidth: MEMBER_COL },
 	avatarWrap: {
 		alignItems: "center",
 		justifyContent: "center",
-		padding: 5,
+		padding: SPACE.xs,
 	},
 	litRing: {
 		position: "absolute",
@@ -457,20 +577,9 @@ const styles = StyleSheet.create({
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.sun,
 	},
-	sparkle: { position: "absolute", top: -2, right: -2 },
-	memberName: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-		marginTop: 2,
-		maxWidth: 72,
-	},
-	memberFinds: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		maxWidth: 72,
-	},
+	sparkle: { position: "absolute", top: SPARKLE_OFFSET, right: SPARKLE_OFFSET },
+	memberName: { maxWidth: MEMBER_COL },
+	memberFinds: { maxWidth: MEMBER_COL },
 
 	// Feeding action.
 	playRow: { marginBottom: SPACE.sm },
@@ -478,85 +587,23 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.lg,
 		paddingVertical: SPACE.lg,
 	},
-	feedingKicker: {
-		...TYPE.kicker,
-		color: WHIMSY.accent,
-		textTransform: "uppercase",
-		letterSpacing: 0.8,
-		marginBottom: SPACE.xs,
-	},
-	feedingTitle: {
-		...TYPE.sectionTitle,
-		color: WHIMSY.ink,
-		marginBottom: SPACE.xs,
-	},
-	feedingReward: {
-		...TYPE.body,
-		color: WHIMSY.ink,
-	},
-	feedingPromise: {
-		...TYPE.bodySm,
-		color: WHIMSY.mute,
-		marginTop: 2,
-		marginBottom: SPACE.md,
-	},
-	cooldownLine: { ...TYPE.hand, fontFamily: FONTS.hand, color: WHIMSY.mute },
+	feedingKicker: { marginBottom: SPACE.xs },
+	feedingTitle: { marginBottom: SPACE.xs },
+	feedingReward: { marginBottom: SPACE.xxs },
+	feedingPromise: { marginBottom: SPACE.md },
 	// The "root the patch" whisper subtitle under the "Dig for truffles" verb.
-	digSub: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.xs,
-	},
-	note: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		marginTop: SPACE.xs,
-	},
+	digSub: { marginTop: SPACE.xs },
+	note: { marginTop: SPACE.xs },
 	// Link into the Burrow Book — matches the hand-font accent link grammar.
-	burrowLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-		marginTop: SPACE.xs,
-	},
+	devLink: { alignSelf: "flex-start" },
 
 	// Milestone.
 	milestone: { marginBottom: SPACE.xs },
-	track: {
-		height: 8,
-		borderRadius: RADII.pill,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream2,
-		overflow: "hidden",
-		marginBottom: SPACE.xs,
-	},
-	fill: { height: "100%", backgroundColor: WHIMSY.sun },
-	milestoneLine: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute },
 
 	// Join door.
-	doorTitle: {
-		...TYPE.cardTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		marginBottom: SPACE.xs,
-	},
-	doorGloss: {
-		...TYPE.hand,
-		color: WHIMSY.mute,
-		marginTop: SPACE.sm,
-		marginBottom: SPACE.xs,
-	},
-	doorSub: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.body,
-		color: WHIMSY.mute,
-		marginBottom: SPACE.sm,
-	},
+	doorTitle: { marginBottom: SPACE.xs },
+	doorGloss: { marginTop: SPACE.sm, marginBottom: SPACE.xs },
+	doorSub: { marginBottom: SPACE.sm },
 	// The three concrete benefit lines under the join-door pitch.
 	benefits: { gap: SPACE.xs, marginBottom: SPACE.md },
 	benefitRow: {
@@ -564,56 +611,11 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.sm,
 	},
-	benefitText: {
-		flex: 1,
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-	},
-	inviteRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
-		marginBottom: SPACE.md,
-	},
-	inviteText: { flex: 1, ...TYPE.bodySm, fontFamily: FONTS.body, color: WHIMSY.ink },
-	joinBtn: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: 5,
-		minHeight: 32,
-		justifyContent: "center",
-		...SHADOW_SM,
-	},
-	joinBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
-	declineText: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
+	benefitText: { flex: 1 },
+	inviteRow: { marginBottom: SPACE.md },
+	inviteActions: { alignItems: "center", gap: SPACE.xxs },
 	// One-line reassurance above the "Found it" button (we name it for you).
-	foundBlurb: {
-		...TYPE.body,
-		fontFamily: FONTS.body,
-		color: WHIMSY.mute,
-		marginBottom: SPACE.sm,
-	},
-	foundLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.md,
-		textDecorationLine: "underline",
-	},
+	foundBlurb: { marginBottom: SPACE.sm },
+	foundGap: { marginTop: SPACE.md },
+	foundLink: { alignSelf: "center", marginTop: SPACE.md },
 });

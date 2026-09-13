@@ -1,60 +1,210 @@
 // Shared guarded-phase CTA affordances — the pieces a player sees when the patch
 // is closed and there's nothing to dig yet. Extracted from SounderStepCard so the
 // onboarding first_dig branch AND the retained-player CrewedHome guarded state
-// offer the SAME "oink me when it opens" opt-in (no forked copy), plus the Burrow
+// offer the SAME "oink me for every Feeding" toggle (no forked copy), plus the Burrow
 // Book as a real secondary affordance instead of an afterthought link.
 //
-//   NotifyChip     — one local push at the next window open (scheduleOpenReminder).
-//                    A calm sticker chip, not a toggle; tapping schedules +
-//                    confirms in place. Confirmed / denied copy lives here once.
+//   NotifyChip     — the persistent account-level Feeding push toggle. Server
+//                    truth is refreshed on mount and foreground so every device
+//                    shows the same preference; denied devices get Settings help.
 //   BurrowBookLink — the dig's relic shelf, styled as a bordered secondary button
 //                    (paper pill + ink outline), not a bare underlined link.
 
-import { useCallback, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { AppState, Linking, View, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { Glyph, IconText } from "../ui/Glyph";
-import { scheduleOpenReminder } from "@/utils/pushNotifications";
-import { FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { Chip, Glyph, Kicker } from "@/components/ui";
+import {
+	ensurePushPermission,
+	getDevicePushPermission,
+	getFeedingPushPreference,
+	setFeedingPushPreference,
+} from "@/utils/pushNotifications";
+import { PRESSED_FLAT, RADII, SPACE, TAP_MIN, UI_COLORS } from "@/constants/theme";
 
-// "Oink me when it opens" — one local push at the next window open. A calm sticker
-// chip, not a toggle; tapping it schedules and confirms in place.
+// The little state mark beside the toggle line — an inline glyph, not an icon
+// action, so it takes the `mark`-sized art box rather than a tap target.
+const TOGGLE_MARK = 14;
+
+type DevicePermission = Awaited<ReturnType<typeof getDevicePushPermission>>;
+
+// "Oink me for every Feeding" — one shared toggle rendered everywhere the
+// guarded patch offers reminders. The account preference is never inferred
+// from component state or a local scheduled job.
 export function NotifyChip() {
-	const [state, setState] = useState<"idle" | "set" | "denied">("idle");
-	const onPress = useCallback(async () => {
-		Haptics.selectionAsync().catch(() => {});
-		const r = await scheduleOpenReminder();
-		setState(r === "scheduled" ? "set" : r === "denied" ? "denied" : "idle");
+	const [enabled, setEnabled] = useState<boolean | null>(null);
+	const [permission, setPermission] = useState<DevicePermission>("undetermined");
+	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState(false);
+
+	const refresh = useCallback(async () => {
+		try {
+			const [serverEnabled, devicePermission] = await Promise.all([
+				getFeedingPushPreference(),
+				getDevicePushPermission(),
+			]);
+			setPermission(devicePermission);
+			if (serverEnabled == null) {
+				setError(true);
+				return;
+			}
+			// A preference enabled on another device still needs this already-
+			// permissioned install's token registered. This does not prompt: the
+			// permission read above proved it is granted.
+			const tokenReady =
+				serverEnabled && devicePermission === "granted"
+					? Boolean(await ensurePushPermission())
+					: true;
+			setEnabled(serverEnabled);
+			setError(!tokenReady);
+		} catch {
+			setError(true);
+		}
 	}, []);
 
-	if (state === "set") {
-		return (
-			<IconText
-				right={<Glyph name="check" size={13} />}
-				gap={4}
-				style={styles.notifySetRow}
-			>
-				<Text style={styles.notifySet}>we'll oink you when the patch opens</Text>
-			</IconText>
-		);
-	}
-	if (state === "denied") {
-		return (
-			<Text style={styles.notifyDenied}>
-				turn on notifications in Settings to be oinked
-			</Text>
-		);
-	}
+	useEffect(() => {
+		// This synchronizes external account/OS state; it is not render-derived.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		void refresh();
+		const subscription = AppState.addEventListener("change", (next) => {
+			if (next === "active") void refresh();
+		});
+		return () => subscription.remove();
+	}, [refresh]);
+
+	const onPress = useCallback(async () => {
+		if (busy || enabled == null) return;
+		Haptics.selectionAsync().catch(() => {});
+		setBusy(true);
+		setError(false);
+		try {
+			const result = await setFeedingPushPreference(!enabled);
+			if (result === "enabled") {
+				setEnabled(true);
+				setPermission("granted");
+			} else if (result === "disabled") {
+				setEnabled(false);
+			} else if (result === "denied") {
+				setPermission("denied");
+			} else {
+				setError(true);
+			}
+		} catch {
+			setError(true);
+		} finally {
+			setBusy(false);
+		}
+	}, [busy, enabled]);
+
+	const enableOnThisDevice = useCallback(async () => {
+		if (busy || enabled !== true) return;
+		setBusy(true);
+		setError(false);
+		try {
+			const result = await setFeedingPushPreference(true);
+			if (result === "enabled") {
+				setPermission("granted");
+			} else if (result === "denied") {
+				setPermission("denied");
+			} else {
+				setError(true);
+			}
+		} catch {
+			setError(true);
+		} finally {
+			setBusy(false);
+		}
+	}, [busy, enabled]);
+
+	const permissionBlocked = permission === "denied";
+	const permissionNeedsPrompt =
+		enabled === true && permission === "undetermined";
+	const permissionUnavailable = permission === "unavailable";
+	const label =
+		enabled == null
+			? "checking Feeding oinks…"
+			: enabled
+				? "oinks on for every Feeding"
+				: "oink me for every Feeding";
+
 	return (
-		<Pressable
-			onPress={onPress}
-			hitSlop={6}
-			style={({ pressed }) => [styles.notifyRow, pressed && { opacity: 0.7 }]}
-		>
-			<Glyph name="gem" size={14} />
-			<Text style={styles.notifyLink}>oink me when it opens ›</Text>
-		</Pressable>
+		<View style={styles.notifyWrap}>
+			<Pressable
+				testID="feeding-push-toggle"
+				onPress={onPress}
+				hitSlop={6}
+				disabled={busy || enabled == null}
+				accessibilityRole="switch"
+				accessibilityLabel="Oink me for every Feeding"
+				accessibilityState={{
+					checked: enabled === true,
+					disabled: busy || enabled == null,
+					busy,
+				}}
+				accessibilityHint="Sends a push when the Truffle Patch opens"
+				style={({ pressed }) => [
+					styles.notifyRow,
+					enabled && styles.notifyRowEnabled,
+					pressed && PRESSED_FLAT,
+				]}
+			>
+				<Glyph name={enabled ? "check" : "gem"} size={TOGGLE_MARK} />
+				<Kicker star={false} style={enabled ? styles.notifySet : undefined}>
+					{busy ? "saving Feeding oinks…" : label}
+				</Kicker>
+				{enabled != null && (
+					<Kicker star={false} tone="secondary">
+						{enabled ? "ON" : "OFF"}
+					</Kicker>
+				)}
+			</Pressable>
+			{permissionBlocked && (
+				<Pressable
+					testID="feeding-push-settings"
+					onPress={() => Linking.openSettings()}
+					hitSlop={6}
+					style={styles.notifyRecoveryTarget}
+					accessibilityRole="button"
+					accessibilityLabel="Allow notifications for this device in Settings"
+					accessibilityHint="Opens this app's iOS Settings page"
+				>
+					<Kicker star={false} tone="secondary" align="center" style={styles.notifyDenied}>
+						allow notifications for this device in Settings ›
+					</Kicker>
+				</Pressable>
+			)}
+			{permissionNeedsPrompt && (
+				<Pressable
+					onPress={enableOnThisDevice}
+					hitSlop={6}
+					style={styles.notifyRecoveryTarget}
+					accessibilityRole="button"
+					accessibilityLabel="Allow Feeding oinks on this device"
+					accessibilityHint="Asks this device for notification permission"
+				>
+					<Kicker star={false} tone="secondary" align="center" style={styles.notifyDenied}>
+						allow Feeding oinks on this device ›
+					</Kicker>
+				</Pressable>
+			)}
+			{permissionUnavailable && (
+				<Kicker star={false} tone="secondary" align="center" style={styles.notifyDenied}>
+					Feeding oinks need notifications on a supported device
+				</Kicker>
+			)}
+			{error && (
+				<Kicker
+					star={false}
+					tone="secondary"
+					align="center"
+					style={styles.notifyDenied}
+					accessibilityLiveRegion="polite"
+				>
+					couldn't update Feeding oinks — try again
+				</Kicker>
+			)}
+		</View>
 	);
 }
 
@@ -62,19 +212,14 @@ export function NotifyChip() {
 // (paper pill + ink outline + hard shadow), not a bare underlined afterthought.
 export function BurrowBookLink() {
 	return (
-		<Pressable
+		<Chip
+			label="the Burrow Book"
+			glyph="gem"
 			onPress={() => router.push("/dig-collection")}
-			hitSlop={6}
-			accessibilityRole="button"
 			accessibilityLabel="Open the Burrow Book"
-			style={({ pressed }) => [
-				styles.burrowBtn,
-				pressed && { transform: [{ translateX: 2 }, { translateY: 2 }], shadowOpacity: 0, elevation: 0 },
-			]}
-		>
-			<Glyph name="gem" size={14} />
-			<Text style={styles.burrowBtnText}>the Burrow Book</Text>
-		</Pressable>
+			accessibilityHint="Shows the relics you have dug up"
+			style={styles.burrowBtn}
+		/>
 	);
 }
 
@@ -86,47 +231,23 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		gap: SPACE.xs,
 		marginTop: SPACE.sm,
-	},
-	notifyLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
-	notifySetRow: {
-		justifyContent: "center",
-		marginTop: SPACE.sm,
-	},
-	notifySet: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.sage,
-	},
-	notifyDenied: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: SPACE.sm,
-	},
-	// The Burrow Book secondary button.
-	burrowBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		alignSelf: "center",
-		gap: SPACE.xs,
-		marginTop: SPACE.sm,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs + 2,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: SPACE.xs,
+		minHeight: TAP_MIN,
 		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM,
 	},
-	burrowBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
+	notifyWrap: { alignItems: "center" },
+	notifyRowEnabled: { backgroundColor: UI_COLORS.surface },
+	// The "it's on" state. Was `WHIMSY.sage` — a pastel FILL used as text, which
+	// reads ~1.3:1 on paper; the semantic success ink says the same thing and is
+	// legible. [spec §1.1: pastel fills are never assigned to `color:`]
+	notifySet: { color: UI_COLORS.successText },
+	notifyRecoveryTarget: {
+		minHeight: TAP_MIN,
+		justifyContent: "center",
 	},
+	notifyDenied: { marginTop: SPACE.sm },
+	// The Burrow Book secondary capsule — the shared Chip drawing, nudged off
+	// the control above it and centred under the card.
+	burrowBtn: { alignSelf: "center", marginTop: SPACE.sm },
 });

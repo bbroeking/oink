@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "name": "Mote Machine Rosie/Barn V3",
+  "canvas": {
+    "width": 390,
+    "height": 844,
+    "coordinateOrigin": "top-left",
+    "unit": "logical-point"
+  },
+  "approvedMaster": "../2026-08-30-rosie-style-lock/mote-machine-impeccable-v3-ready.png",
+  "sourceHandoff": "../2026-08-30-rosie-style-lock/rive-parts-v3/README.md",
+  "runtime": {
+    "file": "../../../rive/mote-machine.riv",
+    "sizeBytes": 2726539,
+    "sha256": "ae891be3c9b79235c5ae19e8718ade07d5f5b0799bd14a1288f5bc4b5ebac52a"
+  },
+  "layers": [
+    {
+      "name": "V3 Open Barn Background",
+      "file": "background-open-barn-v3.png",
+      "sourceWidth": 852,
+      "sourceHeight": 1846,
+      "bounds": [
+        0,
+        0,
+        390,
+        844
+      ],
+      "alphaRequired": false,
+      "drawOrder": 0,
+      "animationRole": "Static full-bleed Barn plate."
+    },
+    {
+      "name": "V3 Rosie Cabinet Shell",
+      "file": "cabinet-shell-empty-v3.png",
+      "sourceWidth": 853,
+      "sourceHeight": 1844,
+      "bounds": [
+        37,
+        172,
+        316,
+        682
+      ],
+      "alphaRequired": true,
+      "drawOrder": 10,
+      "animationRole": "Friendly Rosie cabinet shell with empty feed, reel, and tray openings."
+    },
+    {
+      "name": "V3 Project Symbol Reel Strip",
+      "file": "reel-strip-project-symbols-v3.png",
+      "sourceWidth": 724,
+      "sourceHeight": 2172,
+      "instances": [
+        {
+          "name": "left",
+          "mask": [
+            72,
+            505,
+            69,
+            185
+          ],
+          "stopFrame": 180
+        },
+        {
+          "name": "center",
+          "mask": [
+            151,
+            505,
+            68,
+            185
+          ],
+          "stopFrame": 204
+        },
+        {
+          "name": "right",
+          "mask": [
+            232,
+            505,
+            69,
+            185
+          ],
+          "stopFrame": 223
+        }
+      ],
+      "alphaRequired": true,
+      "drawOrder": 20,
+      "animationRole": "Shared periodic strips form continuous vertical stacks behind three independent clip layouts. They accelerate after the lever downstroke, cruise without a reset, and brake left-center-right with a short overshoot."
+    },
+    {
+      "name": "V3 Mote Preview Runtime",
+      "file": "mote-preview-v3.png",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "mask": [
+        163,
+        388,
+        64,
+        92
+      ],
+      "alphaRequired": true,
+      "drawOrder": 30,
+      "animationRole": "READY float, then deposit through the feed-well mask."
+    },
+    {
+      "name": "V3 Lever Pivot",
+      "file": "lever-pivot-v3.png",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "pivot": [
+        350,
+        615
+      ],
+      "alphaRequired": true,
+      "drawOrder": 40,
+      "animationRole": "Static mechanical pivot."
+    },
+    {
+      "name": "V3 Lever Shaft",
+      "file": "lever-shaft-v3.png",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "pivot": [
+        350,
+        615
+      ],
+      "alphaRequired": true,
+      "drawOrder": 41,
+      "animationRole": "Rotates with the lever assembly."
+    },
+    {
+      "name": "V3 Lever Knob",
+      "file": "lever-knob-v3.png",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "pivot": [
+        350,
+        615
+      ],
+      "alphaRequired": true,
+      "drawOrder": 42,
+      "animationRole": "Rotates and settles with the lever assembly."
+    },
+    {
+      "name": "V3 Lever Pull Sign",
+      "file": "lever-pull-sign-v3.png",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "pivot": [
+        350,
+        615
+      ],
+      "alphaRequired": true,
+      "drawOrder": 43,
+      "animationRole": "Attached fixed instruction; travels with the lever."
+    },
+    {
+      "name": "V3 Clockwork Acorn Reward",
+      "file": "clockwork-acorn-reward-v3.png",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "mask": [
+        143,
+        700,
+        104,
+        48
+      ],
+      "alphaRequired": true,
+      "drawOrder": 50,
+      "animationRole": "Hidden in READY; rises into the tray only after the right reel settles."
+    }
+  ],
+  "interaction": {
+    "riveHitArea": [
+      304,
+      395,
+      86,
+      300
+    ],
+    "nativeAccessibleHitAreaPercent": {
+      "right": 0,
+      "top": 46.8,
+      "width": 22.1,
+      "height": 35.5
+    }
+  }
+}

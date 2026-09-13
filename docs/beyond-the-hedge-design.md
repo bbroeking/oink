@@ -4,7 +4,9 @@
 
 **Ratified:** 2026-08-04
 
-**Primary prototype:** docs/idle-lab.html
+**Primary prototype:** docs/adventures.html
+
+**Historical interface experiment:** docs/idle-lab.html
 
 **Playtest protocol:** docs/beyond-the-hedge-playtest-guide.md
 
@@ -16,7 +18,7 @@ Run locally with one command:
 python3 -m http.server 4174 --directory docs
 ```
 
-Then open `http://127.0.0.1:4174/idle-lab.html?variant=A`.
+Then open `http://127.0.0.1:4174/adventures.html?fresh=1`.
 
 ## Goal
 
@@ -110,17 +112,30 @@ Why does a blue button appear beside the Barn path after every rain when nobody 
 - **Wonder:** Hedge Bell.
 - **Permanent consequence:** Hedge-Tunnel Crossing opens toward Moonlit Creek and the bell hangs at Home.
 
+## Prototype boundary
+
+Beyond the Hedge is validated as an independent Adventure loop. Crops, plots,
+harvest timing, compost, and Farm stock do not unlock or provision an
+Adventure. Farming may become its own game and reward lane, but the Adventure
+starts with a nearby possibility and stands on destination, Tool, Pack,
+Intention, trip shape, return story, and lasting Home trace.
+
+The dedicated click-through uses a fixed illustrative **+20 tickles**
+homecoming reward so every completed Adventure returns to the game's central
+tickle loop without making preparation choices into payout optimization. The
+amount is prototype tuning, not a ratified production economy value.
+
+The older combined Homegrown Adventures lab remains historical evidence for
+the integration hypothesis; it is not the canonical Adventure validation
+surface.
+
 ## Prototype question
 
 > Does making one understandable preparation change create enough anticipation and causality that the player wants to send Rosie back to the same familiar place?
 
-The hosted lab provides three structurally different ways to answer it:
-
-- **A - Pack the Bag:** preparation-first; the Bag is the primary decision surface.
-- **B - Walk the Verge:** place-first; opportunities are anchored to the living destination.
-- **C - Welcome Home:** return-first; Rosie's story and the next hypothesis drive replay.
-
-All variants share one in-memory state. Switching ?variant=A|B|C changes presentation, not simulation.
+The hosted click-through uses one deliberate hierarchy: invitation, preparation,
+journey, welcome home, and replay reflection. Reviewers can change one choice
+and repeat the route to test whether the result feels caused rather than rolled.
 
 ## Validation criteria
 
@@ -164,6 +179,35 @@ These remain hypotheses until the prototype is observed:
 - Which return layout best balances Rosie's story, the Find, and the immediate resend decision.
 
 ## Prototype verification log
+
+### 2026-08-12 - Adventure-only separation
+
+- Added a dedicated Adventure artifact and deployed the canonical external
+  route at `https://ticklethepig.com/adventures?fresh=1`. It contains
+  invitation, preparation, journey, welcome home, and replay reflection, with
+  no farming prerequisite or inventory. The `docs/adventures.html` GitHub
+  Pages artifact remains a fallback.
+- Kept the return's named Find and lasting Home trace primary. The fixed
+  illustrative `+20 tickles` receipt stays preparation-independent.
+- Added local-only persistence, shareable URL state, reduced motion, Start
+  fresh, and an anonymous copyable validation result; no analytics or account
+  data is sent.
+- Verified all five screens at a true 390px browser viewport and the replay
+  screen at 1280px: no document or screen overflow, no broken images, and no
+  undersized button or link targets.
+- `npm run prototype:adventure:test`: 5/5 tests passed.
+- `npm run prototype:homegrown:test`: 89/89 historical integration tests
+  passed, confirming the separated prototype did not regress that evidence.
+- `npm run quality:check`: passed.
+- Vercel production deployment `dpl_4i8tW2fwXeiWNTSSuaMjN6iuykt1`: live with
+  a no-index header. Public Dry Bag acceptance completed all five steps,
+  returned **Creek Glass**, showed the fixed **+20 tickles** receipt, and
+  reported no runtime errors, broken images, or horizontal overflow. Existing
+  privacy, referral, redemption, and Apple association routes remained 200.
+
+The 2026-08-04 entries below describe the historical three-variant
+`idle-lab.html` experiment. They remain useful evidence but do not describe
+the separated `adventures.html` click-through introduced on 2026-08-12.
 
 ### 2026-08-04 - Mechanical and interface pass
 

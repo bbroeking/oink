@@ -1,4 +1,9 @@
 ---
+
+> **Housing implementation amendment (2026-09-06).** [ADR 0008](../adr/0008-personal-barn-housing.md)
+> adopts spec 24: partial starter, dedicated catalog and inventory, an
+> always-available Barn collection, and revisioned whole-room saves. Historical
+> proposals below remain for context; they are not the shipped API contract.
 title: Barn, Exterior, Interior & Habitat
 aliases: [barn, exterior, interior, habitat, home-screen]
 tags: [system, core-loop, home, orchestrator, draft]

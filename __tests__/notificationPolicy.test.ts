@@ -9,6 +9,8 @@ describe("foreground notification policy", () => {
 		expect(foregroundNotificationMode({ kind: "legacy_push" })).toBe("quiet");
 		expect(foregroundNotificationBehavior({ kind: "hunger_stage_reward" })).toEqual({
 			shouldShowAlert: false,
+			shouldShowBanner: false,
+			shouldShowList: false,
 			shouldPlaySound: false,
 			shouldSetBadge: false,
 		});
@@ -19,6 +21,8 @@ describe("foreground notification policy", () => {
 			foregroundNotificationBehavior({ foreground: "alert" })
 		).toEqual({
 			shouldShowAlert: true,
+			shouldShowBanner: true,
+			shouldShowList: true,
 			shouldPlaySound: true,
 			shouldSetBadge: true,
 		});

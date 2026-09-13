@@ -1,15 +1,19 @@
 import React from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { HAT_IMAGES, RARITY_COLORS } from "@/constants/hats";
+import { View, Image, StyleSheet } from "react-native";
+import { HAT_IMAGES } from "@/constants/hats";
 import {
+	ART_SIZE,
+	BORDER,
 	RADII,
+	RARITY_STRIPE,
 	SPACE,
-	SHADOW_SM,
-	TYPE,
 	UI_COLORS,
-	WHIMSY,
 } from "@/constants/theme";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Sticker } from "@/components/ui/Sticker";
+import { ListRow } from "@/components/ui/ListRow";
+import { Stat } from "@/components/ui/Stat";
+import { Kicker, T } from "@/components/ui/Text";
 import {
 	GEAR,
 	GEAR_LIST,
@@ -26,8 +30,13 @@ const SLOTS: { slot: GearSlot; label: string }[] = [
 	{ slot: "charm", label: "Charm" },
 ];
 
+// Drawing geometry, not spacing: the thumbnail a gear row carries. One step
+// under `ART_SIZE.glyph` so the row's art reads as a companion to the name
+// rather than a portrait. (There is no ART_SIZE step here — see System asks.)
+const ROW_ART = 34;
+
 // Four gear slots with the equipped piece's placeholder art (its artHatId PNG),
-// the owned-gear chips to equip, and the Bonk/Cushion/Sparkle readout.
+// the owned-gear rows to equip, and the Bonk/Cushion/Sparkle readout.
 export function GearRack({
 	state,
 	onEquip,
@@ -44,7 +53,14 @@ export function GearRack({
 					const id = state.loadout[slot];
 					const gear = id ? GEAR[id] : null;
 					return (
-						<View key={slot} style={styles.slot}>
+						<Sticker
+							key={slot}
+							color="cream"
+							rotate={0}
+							radius={RADII.md}
+							shadow="none"
+							style={styles.slot}
+						>
 							{gear ? (
 								<Image
 									source={HAT_IMAGES[gear.artHatId]}
@@ -52,71 +68,104 @@ export function GearRack({
 									style={styles.slotArt}
 								/>
 							) : (
-								<Text style={styles.slotEmpty}>—</Text>
+								<T role="cardTitle" tone="disabled" style={styles.slotEmpty}>
+									—
+								</T>
 							)}
-							<Text style={styles.slotLabel}>{label}</Text>
-						</View>
+							<T role="kickerPillSm" tone="secondary">
+								{label}
+							</T>
+						</Sticker>
 					);
 				})}
 			</View>
 
 			<View style={styles.statsRow}>
-				<Stat label="Bonk" value={totals.bonk} />
-				<Stat label="Cushion" value={totals.cushion} />
-				<Stat label="Sparkle" value={totals.sparkle} />
+				<Sticker
+					color="paper"
+					rotate={0}
+					radius={RADII.md}
+					shadow="sm"
+					style={styles.stat}
+				>
+					<Stat value={totals.bonk} label="Bonk" />
+				</Sticker>
+				<Sticker
+					color="paper"
+					rotate={0}
+					radius={RADII.md}
+					shadow="sm"
+					style={styles.stat}
+				>
+					<Stat value={totals.cushion} label="Cushion" />
+				</Sticker>
+				<Sticker
+					color="paper"
+					rotate={0}
+					radius={RADII.md}
+					shadow="sm"
+					style={styles.stat}
+				>
+					<Stat value={totals.sparkle} label="Sparkle" />
+				</Sticker>
 			</View>
 
-			<Text style={styles.ownedKicker}>★ owned gear</Text>
-			<View style={styles.chipWrap}>
-				{GEAR_LIST.filter((g) => state.gearOwned.includes(g.id)).map((g) => {
+			<Kicker style={styles.ownedKicker}>owned gear</Kicker>
+			<View style={styles.rowWrap}>
+				{GEAR_LIST.filter((g) => state.gearOwned.includes(g.id)).map((g, i) => {
 					const equipped = state.loadout[g.slot] === g.id;
 					return (
-						<Pressable
+						<ListRow
 							key={g.id}
+							index={i}
+							selected={equipped}
+							fill={equipped ? "sun" : undefined}
 							onPress={() => onEquip(g.id)}
-							accessibilityRole="button"
-							accessibilityLabel={`Equip ${g.name}`}
-							style={({ pressed }) => [
-								styles.chip,
-								equipped && styles.chipOn,
-								pressed && styles.pressed,
-							]}
-						>
-							<Image
-								source={HAT_IMAGES[g.artHatId]}
-								resizeMode="contain"
-								style={styles.chipArt}
-							/>
-							<View style={styles.chipCopy}>
-								<Text style={styles.chipName}>
-									{g.name}
-								</Text>
-								<StatPips
-									pips={{ bonk: g.bonk, cushion: g.cushion, sparkle: g.sparkle }}
+							accessibilityLabel={`${g.name}, ${g.slot} gear`}
+							accessibilityHint={
+								equipped
+									? "Already worn on the road."
+									: `Wears it in the ${g.slot} slot for the next ramble.`
+							}
+							leading={
+								<Image
+									source={HAT_IMAGES[g.artHatId]}
+									resizeMode="contain"
+									style={styles.rowArt}
 								/>
-								<Text style={styles.chipAbility}>
-									{g.ability ? g.ability.flavorLine : "A steady piece of workwear."}
-								</Text>
-							</View>
-							<View
-								style={[
-									styles.rarityDot,
-									{ backgroundColor: RARITY_COLORS[g.rarity] ?? WHIMSY.muteSoft },
-								]}
-							/>
-						</Pressable>
+							}
+							title={<T role="cardTitleSm">{g.name}</T>}
+							sub={
+								<View style={styles.rowCopy}>
+									<StatPips
+										pips={{
+											bonk: g.bonk,
+											cushion: g.cushion,
+											sparkle: g.sparkle,
+										}}
+									/>
+									<T role="bodySm" tone="secondary">
+										{g.ability
+											? g.ability.flavorLine
+											: "A steady piece of workwear."}
+									</T>
+								</View>
+							}
+							trailing={
+								<View
+									style={[
+										styles.rarityDot,
+										{
+											backgroundColor:
+												RARITY_STRIPE[g.rarity] ?? UI_COLORS.uiMuted,
+										},
+									]}
+								/>
+							}
+						/>
 					);
 				})}
 			</View>
-		</View>
-	);
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-	return (
-		<View style={styles.stat}>
-			<Text style={styles.statValue}>{value}</Text>
-			<Text style={styles.statLabel}>{label}</Text>
 		</View>
 	);
 }
@@ -128,64 +177,28 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.xs,
 		paddingVertical: SPACE.sm,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
 	},
-	slotArt: { width: 40, height: 40 },
-	slotEmpty: {
-		...TYPE.cardTitle,
-		color: UI_COLORS.textDisabled,
-		height: 40,
-		lineHeight: 40,
-	},
-	slotLabel: { ...TYPE.kickerPillSm, color: UI_COLORS.textSecondary },
+	slotArt: { width: ART_SIZE.glyph, height: ART_SIZE.glyph },
+	// Holds the empty slot open to exactly the height its art would fill.
+	slotEmpty: { height: ART_SIZE.glyph, lineHeight: ART_SIZE.glyph },
 	statsRow: {
 		flexDirection: "row",
 		gap: SPACE.sm,
 		marginTop: SPACE.md,
 	},
-	stat: {
-		flex: 1,
-		alignItems: "center",
-		paddingVertical: SPACE.sm,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM,
-	},
-	statValue: { ...TYPE.sectionTitle, color: UI_COLORS.textPrimary },
-	statLabel: { ...TYPE.kickerPillSm, color: UI_COLORS.textSecondary },
+	stat: { flex: 1, alignItems: "center", paddingVertical: SPACE.sm },
 	ownedKicker: {
-		...TYPE.kicker,
-		color: UI_COLORS.action,
 		marginTop: SPACE.md,
 		marginBottom: SPACE.xs,
 	},
-	chipWrap: { gap: SPACE.sm },
-	chip: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		padding: SPACE.sm,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
-	},
-	chipOn: { backgroundColor: WHIMSY.sun, ...SHADOW_SM },
-	chipArt: { width: 34, height: 34 },
-	chipCopy: { flex: 1, gap: SPACE.xs },
-	chipName: { ...TYPE.cardTitleSm, color: UI_COLORS.textPrimary },
-	chipAbility: { ...TYPE.bodySm, color: UI_COLORS.textSecondary },
+	rowWrap: { gap: SPACE.sm },
+	rowArt: { width: ROW_ART, height: ROW_ART },
+	rowCopy: { gap: SPACE.xs },
 	rarityDot: {
-		width: 12,
-		height: 12,
+		width: ART_SIZE.mark,
+		height: ART_SIZE.mark,
 		borderRadius: RADII.pill,
-		borderWidth: 1.5,
+		borderWidth: BORDER.thin,
 		borderColor: UI_COLORS.border,
 	},
-	pressed: { opacity: 0.8, transform: [{ scale: 0.99 }] },
 });

@@ -11,6 +11,7 @@
 // collapse the kinds they don't draw into their single star fallback.
 
 import type { ImageSourcePropType } from "react-native";
+import { MOTE_IMAGE } from "@/constants/motes";
 import { HAT_IMAGES } from "@/constants/hats";
 
 // The reward_value jsonb shape varies per reward_type (Supabase jsonb). Legacy
@@ -99,6 +100,7 @@ export function resolveRewardArt(reward: RewardArtInput): RewardArt {
 	const type = reward.reward_type;
 	const itemId = rewardItemId(reward.reward_value);
 
+	if (type === "motes") return { kind: "image", source: MOTE_IMAGE };
 	if (type === "tickles") return { kind: "tickles" };
 	if (type === "snouts") return { kind: "snouts" };
 	if (type === "golden_truffle" && HAT_IMAGES.golden_truffle) {

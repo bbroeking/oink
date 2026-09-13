@@ -9,29 +9,34 @@
 // card on a dim backdrop, Caprasimo headline, PatrickHand body, the
 // three AlignmentEmblem arts (horns / scales / halo).
 //
+// Wave-4 conformance pass: every string speaks through a text role (C-19), the
+// scaffold gains its `DialogCloseRow` exit (C-14), the ▲/▼ move marks are a
+// rotated `Icon` rather than semantic dingbats set as text (C-30), and the
+// spectrum's radii / borders / spacing come off the token scales (C-17, C-18).
+//
 // BETA DRAFT — opened from the "how it works" tap on the Account
 // screen's alignment story block. Wire-up is intentionally light so
 // it's easy to move once the copy + layout are signed off.
 import React, { useEffect, useRef } from "react";
-import {
-	View,
-	Text,
-	StyleSheet,
-	Animated,
-	Easing,
-} from "react-native";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Sticker } from "./ui/Sticker";
-import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
-	FONTS,
-	KICKER_TEXT,
-	STICKER_SHADOW,
-	WHIMSY,
+	AdaptiveModalScaffold,
+	AlignmentEmblem,
+	Button,
+	Icon,
+	Sticker,
+	T,
+	useUnmanagedModalHold,
+} from "./ui";
+import {
+	BORDER,
 	RADII,
+	SPACE,
+	STICKER_SHADOW,
+	UI_COLORS,
+	WHIMSY,
 } from "@/constants/theme";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { AdaptiveModalScaffold, Button } from "./ui";
 import {
 	MOTION_DURATION,
 	useMotionPolicy,
@@ -42,6 +47,21 @@ interface Props {
 	/** Season 1 drops the Judgement Day framing — no reckoning is coming. */
 	s1?: boolean;
 }
+
+// Drawing geometry: the card's ceiling width, its lean, and the emblem + move
+// marks it lays out. Not spacing steps.
+const SCAFFOLD_WIDTH = 404;
+const CARD_WIDTH = 380;
+const TILT_CARD = -1.2;
+const EMBLEM_ART = 48;
+const MOVE_MARK = 14;
+// The tick rail sits under the middle two-thirds of the spectrum, where the
+// ±25 breakpoints actually fall.
+const TICK_RAIL = "66%";
+// `arrowRight` rotated is the app's up / down mark — the 2026-07-13 dingbat
+// ruling routes semantic arrows to `Icon`, never to a Text glyph. [C-30]
+const ARROW_UP = [{ rotate: "-90deg" }] as const;
+const ARROW_DOWN = [{ rotate: "90deg" }] as const;
 
 // The three zones, left → right along the spectrum. range copy mirrors
 // the ±25 breakpoints in utils/alignment.ts.
@@ -80,7 +100,7 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 			}),
 			Animated.timing(opacity, {
 				toValue: 1,
-				duration: 250,
+				duration: MOTION_DURATION.state,
 				easing: Easing.out(Easing.quad),
 				useNativeDriver: true,
 			}),
@@ -92,86 +112,110 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 			visible
 			onRequestClose={onDismiss}
 			bare
-			maxWidth={404}
+			maxWidth={SCAFFOLD_WIDTH}
+			// The exit C-14 found missing in every modal in this area.
+			showCloseButton
+			closeLabel="Close"
 			contentContainerStyle={styles.modalContent}
 			testID="alignment-explainer-modal"
 		>
-				<Animated.View
-					style={[styles.cardWrap, { opacity, transform: [{ scale }] }]}
+			<Animated.View
+				style={[styles.cardWrap, { opacity, transform: [{ scale }] }]}
+			>
+				<Sticker
+					color="paper"
+					rotate={TILT_CARD}
+					radius={RADII.xxl}
+					border={BORDER.heavy}
+					style={[styles.card, STICKER_SHADOW]}
 				>
-					<Sticker
-						color="paper"
-						rotate={-1.2}
-						radius={RADII.xxl}
-						border={3}
-						style={[styles.card, STICKER_SHADOW]}
+					<T role="kicker" tone="accent" align="center" style={styles.kicker}>
+						★ how alignment works ★
+					</T>
+					<T
+						role="pageTitle"
+						align="center"
+						accessibilityRole="header"
+						style={styles.headline}
 					>
-						<Text style={styles.kicker}>★ how alignment works ★</Text>
-						<Text style={styles.headline}>Every pig has a nature</Text>
-						<Text style={styles.sub}>
-							The way you trade shapes who you are.
-						</Text>
+						Every pig has a nature
+					</T>
+					<T role="handLg" tone="secondary" align="center" style={styles.sub}>
+						The way you trade shapes who you are.
+					</T>
 
-						{/* The centerpiece: the labelled spectrum. */}
-						<View style={styles.zonesRow}>
-							{ZONES.map((z) => (
-								<View key={z.name} style={styles.zoneCol}>
-									<AlignmentEmblem kind={z.emblem} size={48} />
-									<Text style={styles.zoneName}>{z.name}</Text>
-									<Text style={styles.zoneRange}>{z.range}</Text>
-								</View>
-							))}
-						</View>
-						<View style={styles.spectrum}>
-							{ZONES.map((z, i) => (
-								<View
-									key={z.name}
-									style={[
-										styles.segment,
-										{ backgroundColor: z.tint },
-										i === 0 && styles.segmentLeft,
-										i === ZONES.length - 1 && styles.segmentRight,
-									]}
-								/>
-							))}
-						</View>
-						<View style={styles.tickRow}>
-							<Text style={styles.tick}>−25</Text>
-							<Text style={styles.tick}>+25</Text>
-						</View>
-
-						{/* What moves you along it. */}
-						<View style={styles.movesBlock}>
-							<View style={styles.moveRow}>
-								<Text style={[styles.moveArrow, { color: WHIMSY.angel }]}>▲</Text>
-								<Text style={styles.moveText}>
-									Give freely & bless your friends
-								</Text>
+					{/* The centerpiece: the labelled spectrum. */}
+					<View style={styles.zonesRow}>
+						{ZONES.map((z) => (
+							<View key={z.name} style={styles.zoneCol}>
+								<AlignmentEmblem kind={z.emblem} size={EMBLEM_ART} />
+								<T role="cardTitleSm">{z.name}</T>
+								<T role="kickerPillSm" tone="secondary" align="center">
+									{z.range}
+								</T>
 							</View>
-							<View style={styles.moveRow}>
-								<Text style={[styles.moveArrow, { color: WHIMSY.goblin }]}>▼</Text>
-								<Text style={styles.moveText}>
-									Ask for tickles & pocket the gains
-								</Text>
+						))}
+					</View>
+					<View
+						style={styles.spectrum}
+						accessibilityRole="image"
+						accessibilityLabel="The alignment spectrum, Greedy on the left through Pilgrim to Generous on the right"
+					>
+						{ZONES.map((z, i) => (
+							<View
+								key={z.name}
+								style={[
+									styles.segment,
+									{ backgroundColor: z.tint },
+									i === 0 && styles.segmentLeft,
+									i === ZONES.length - 1 && styles.segmentRight,
+								]}
+							/>
+						))}
+					</View>
+					<View style={styles.tickRow}>
+						<T role="label" tone="secondary">−25</T>
+						<T role="label" tone="secondary">+25</T>
+					</View>
+
+					{/* What moves you along it. */}
+					<View style={styles.movesBlock}>
+						<View style={styles.moveRow}>
+							<View style={{ transform: ARROW_UP }}>
+								<Icon name="arrowRight" size={MOVE_MARK} color={WHIMSY.angel} />
 							</View>
+							<T role="handLg" style={styles.moveText}>
+								Give freely &amp; bless your friends
+							</T>
 						</View>
+						<View style={styles.moveRow}>
+							<View style={{ transform: ARROW_DOWN }}>
+								<Icon name="arrowRight" size={MOVE_MARK} color={WHIMSY.goblin} />
+							</View>
+							<T role="handLg" style={styles.moveText}>
+								Ask for tickles &amp; pocket the gains
+							</T>
+						</View>
+					</View>
 
-						<Text style={styles.stakes}>
-							{s1
-								? "The farther you lean, the stronger your blessings and curses grow. Your nature is yours to feed."
-								: "When Judgement Day comes, the most Generous and the most Greedy earn titles no one can claim again."}
-						</Text>
+					<T role="hand" tone="secondary" align="center" style={styles.stakes}>
+						{s1
+							? "The farther you lean, the stronger your blessings and curses grow. Your nature is yours to feed."
+							: "When Judgement Day comes, the most Generous and the most Greedy earn titles no one can claim again."}
+					</T>
 
-						<Button
-							testID="alignment-explainer-dismiss"
-							onPress={onDismiss}
-							variant="gold"
-							full
-						>
-							Got it
-						</Button>
-					</Sticker>
-				</Animated.View>
+					<Button
+						testID="alignment-explainer-dismiss"
+						onPress={onDismiss}
+						variant="gold"
+						full
+						accessibilityLabel="Got it"
+						accessibilityHint="Closes the alignment explainer"
+					>
+						Got it
+					</Button>
+				</Sticker>
+			</Animated.View>
 		</AdaptiveModalScaffold>
 	);
 }
@@ -181,92 +225,56 @@ const styles = StyleSheet.create({
 		flexGrow: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		padding: 6,
+		padding: SPACE.xs,
 	},
-	cardWrap: { width: "100%", maxWidth: 380 },
-	card: { paddingHorizontal: 24, paddingVertical: 28, alignItems: "center" },
-	kicker: { ...KICKER_TEXT, marginBottom: 12, textAlign: "center" },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 25,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 4,
+	cardWrap: { width: "100%", maxWidth: CARD_WIDTH },
+	card: {
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
+		alignItems: "center",
 	},
-	sub: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginBottom: 20,
-	},
+	kicker: { marginBottom: SPACE.md },
+	headline: { marginBottom: SPACE.xs },
+	sub: { marginBottom: SPACE.xl },
 	zonesRow: {
 		flexDirection: "row",
 		width: "100%",
-		marginBottom: 10,
+		marginBottom: SPACE.sm,
 	},
-	zoneCol: { flex: 1, alignItems: "center", gap: 3 },
-	zoneName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	zoneRange: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 0.7,
-		textTransform: "uppercase",
-		textAlign: "center",
-	},
+	zoneCol: { flex: 1, alignItems: "center", gap: SPACE.xxs },
 	spectrum: {
 		flexDirection: "row",
 		width: "100%",
-		height: 16,
-		borderRadius: 999,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		height: SPACE.lg,
+		borderRadius: RADII.pill,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		overflow: "hidden",
 	},
 	segment: { flex: 1 },
 	segmentLeft: {
-		borderRightWidth: 1.5,
-		borderRightColor: WHIMSY.ink,
+		borderRightWidth: BORDER.thin,
+		borderRightColor: UI_COLORS.border,
 	},
 	segmentRight: {
-		borderLeftWidth: 1.5,
-		borderLeftColor: WHIMSY.ink,
+		borderLeftWidth: BORDER.thin,
+		borderLeftColor: UI_COLORS.border,
 	},
 	tickRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
-		width: "66%",
-		marginTop: 6,
-		marginBottom: 20,
-	},
-	tick: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
+		width: TICK_RAIL,
+		marginTop: SPACE.xs,
+		marginBottom: SPACE.xl,
 	},
 	movesBlock: {
 		width: "100%",
-		gap: 8,
-		marginBottom: 18,
+		gap: SPACE.sm,
+		marginBottom: SPACE.lg,
 	},
-	moveRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-	moveArrow: { fontSize: 14 },
+	moveRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
 	moveText: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.ink,
 		flex: 1,
 	},
-	stakes: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginBottom: 22,
-	},
+	stakes: { marginBottom: SPACE.xl },
 });

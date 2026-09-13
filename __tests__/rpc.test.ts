@@ -61,6 +61,23 @@ describe("rpc", () => {
 		expect(mockError).not.toHaveBeenCalled();
 	});
 
+	test("gateway and statement timeouts warn (not errors) and return null", async () => {
+		for (const error of [
+			{ message: "Gateway Timeout" },
+			{ message: "Bad Gateway" },
+			{ message: "Service Unavailable" },
+			{ message: "canceling statement due to statement timeout", code: "57014" },
+		]) {
+			mockError.mockReset();
+			mockWarn.mockReset();
+			mockRpc.mockResolvedValue({ data: null, error });
+			const r = await rpc("bounty_ready_count");
+			expect(r).toBeNull();
+			expect(mockError).not.toHaveBeenCalled();
+			expect(mockWarn).toHaveBeenCalledWith("[rpc:bounty_ready_count]", error.message, "(transient network)");
+		}
+	});
+
 	test("fetch TypeError warns (not errors)", async () => {
 		mockRpc.mockResolvedValue({
 			data: null,

@@ -1,0 +1,170 @@
+[
+  {
+    "offset": 2714568,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 0
+  },
+  {
+    "offset": 2714582,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 111
+  },
+  {
+    "offset": 2714596,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 114
+  },
+  {
+    "offset": 2714610,
+    "before": "cdcc0c3f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 122
+  },
+  {
+    "offset": 2714625,
+    "before": "9a99593f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 128
+  },
+  {
+    "offset": 2714640,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 132
+  },
+  {
+    "offset": 2714652,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 406,
+    "frame": 150
+  },
+  {
+    "offset": 2715036,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 440,
+    "frame": 150
+  },
+  {
+    "offset": 2715456,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 279,
+    "frame": 150
+  },
+  {
+    "offset": 2715756,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 268,
+    "frame": 150
+  },
+  {
+    "offset": 2715819,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 297,
+    "frame": 150
+  },
+  {
+    "offset": 2716701,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 539,
+    "frame": 150
+  },
+  {
+    "offset": 2716743,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 326,
+    "frame": 150
+  },
+  {
+    "offset": 2718164,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 463,
+    "frame": 150
+  },
+  {
+    "offset": 2720004,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 290,
+    "frame": 150
+  },
+  {
+    "offset": 2720067,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 343,
+    "frame": 150
+  },
+  {
+    "offset": 2720696,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 304,
+    "frame": 150
+  },
+  {
+    "offset": 2723265,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 234,
+    "frame": 150
+  },
+  {
+    "offset": 2723328,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 245,
+    "frame": 150
+  },
+  {
+    "offset": 2724128,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 511,
+    "frame": 150
+  },
+  {
+    "offset": 2724307,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 7,
+    "frame": 150
+  },
+  {
+    "offset": 2724694,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 312,
+    "frame": 150
+  },
+  {
+    "offset": 2724715,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 491,
+    "frame": 150
+  },
+  {
+    "offset": 2720222,
+    "before": "0000803f",
+    "after": "00000000",
+    "componentId": 15,
+    "frame": 150
+  }
+]

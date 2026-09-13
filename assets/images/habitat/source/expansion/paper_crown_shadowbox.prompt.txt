@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: transparent furnishing sprite for a cozy mobile Barn-decorating game
+Primary request: Isolated transparent PNG: gold folded-paper crown, indigo shadowbox, berry velvet backing, tiny star pins; square dimensional frame; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.
+Subject: Paper Crown Shadowbox. A crinkled gold paper crown looks surprisingly grand inside its deep blue box.
+Style/medium: polished cozy storybook gouache and soft cel illustration, matching existing Tickle the Pig habitat furniture; warm brown contours, rounded chunky geometry, tactile painted materials, consistent upper-left light
+Composition/framing: exactly one complete isolated object centered with generous transparent margins; correct wall_decor Barn perspective; readable at phone scale
+Scene/backdrop: actual transparent alpha background
+Constraints: preserve every named color, material, and detail; full silhouette entirely inside canvas; no crop; no floor, cast shadow, room, wall, background, checkerboard, text, labels, watermark, border, grid, or extra object

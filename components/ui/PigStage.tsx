@@ -41,9 +41,10 @@ import type {
 } from "../../constants/hat_overlay_types";
 import { ITEM_PREBAKED, isPrebaked } from "../../constants/prebaked";
 import { PigRenderer, type PigRendererKind } from "./PigRenderer";
-import type { PigAnimation } from "./pigRendererContract";
+import { resolvePigAnimation, type PigAnimation, type PigMood, type PigReaction } from "./pigRendererContract";
+import { usePigActive } from "@/hooks/usePigActive";
+import { RIVE_PIG_SOURCE } from "./rivePigAsset";
 import {
-	isRivePigPrototypeAnimation,
 	resolveRivePigEquipment,
 } from "./rivePigContract";
 import type { PigId } from "@/utils/pigs";
@@ -107,6 +108,9 @@ export interface PigStageProps {
 	// Pig animation state. Defaults to "idle" — preview mode wants this;
 	// SwipeElement passes whatever it's currently animating to.
 	pigAnimation?: PigAnimation;
+	pigMood?: PigMood;
+	pigReaction?: PigReaction | null;
+	active?: boolean;
 	// Current sprite frame index. SwipeElement tracks this for per-
 	// frame anchor delta math; preview can leave it at 0.
 	pigFrameIdx?: number;
@@ -121,9 +125,10 @@ export interface PigStageProps {
 	// sync pigFrameIdx via onPigFrame so the item tracks the breathing pig.
 	pigFrozen?: boolean;
 
-	// Equipment slots. `equipped` is the Head slot (hat / bow); glasses, mask,
-	// and neck are now their own anchor-based slots and render together.
-	equipped?: EquippedItem | null;       // head (hat / bow)
+	// Equipment slots. Hats and bows persist independently and render together;
+	// glasses, mask, and neck keep their own anchor-based slots too.
+	equipped?: EquippedItem | null;        // hat
+	equippedBow?: EquippedItem | null;     // bow
 	equippedGlasses?: EquippedItem | null; // eyes
 	equippedMask?: EquippedItem | null;    // face
 	equippedNeck?: EquippedItem | null;    // neck (scarf / necklace)
@@ -152,12 +157,15 @@ export interface PigStageProps {
 	// Ordinary callers omit this and keep the global skin-store behavior.
 	skinTintOverride?: string | null;
 
-	// Renderer decision-spike controls. Ordinary callers omit these and stay on
-	// the raster renderer. A Rive source must be supplied explicitly.
+	// Rive remains asset/rollout gated. Frozen or unsupported appearances use
+	// the complete raster stage, including its existing attachment tables.
 	renderer?: PigRendererKind;
 	riveSource?: number;
+	// Development gallery only; never persists or enables the production rollout.
+	riveRolloutEnabled?: boolean;
 	onRiveReady?: () => void;
 	onRiveError?: (error: Error) => void;
+	onRendererChange?: (renderer: PigRendererKind) => void;
 }
 
 // Compute the per-frame, per-anchor overlay for one equipped item.
@@ -366,12 +374,16 @@ function ItemOverlay({
 // behind the pig).
 export function PigStage({
 	pigId = "rosie",
-	pigAnimation = "idle",
+	pigAnimation: baseAnimation = "idle",
+	pigMood,
+	pigReaction,
+	active = true,
 	pigFrameIdx = 0,
 	onPigFrame,
 	onPigComplete,
 	pigFrozen = false,
 	equipped,
+	equippedBow,
 	equippedGlasses,
 	equippedMask,
 	equippedNeck,
@@ -382,17 +394,26 @@ export function PigStage({
 	tints = {},
 	prestigeLevel = 0,
 	skinTintOverride,
-	renderer = "raster",
-	riveSource,
+	renderer = "rive",
+	riveSource = RIVE_PIG_SOURCE,
+	riveRolloutEnabled,
 	onRiveReady,
 	onRiveError,
+	onRendererChange,
 }: PigStageProps) {
 	const [riveFailed, setRiveFailed] = React.useState(false);
+	const [riveReady, setRiveReady] = React.useState(false);
+	const [finishedReaction, setFinishedReaction] = React.useState<number | null>(null);
+	const visible = usePigActive(active);
+	const reaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;
+	const pigAnimation = reaction?.kind ?? resolvePigAnimation(baseAnimation, pigMood);
 	const motionPolicy = useMotionPolicy();
-	const rolloutEnabled = useRivePigRolloutEnabled();
+	const savedRolloutEnabled = useRivePigRolloutEnabled();
+	const rolloutEnabled = __DEV__ ? riveRolloutEnabled ?? savedRolloutEnabled : savedRolloutEnabled;
 	React.useEffect(() => {
 		setRiveFailed(false);
-	}, [renderer, riveSource]);
+		setRiveReady(false);
+	}, [renderer, riveSource, pigId]);
 	// Regeneration power caps at rank two, but the earned aura keeps evolving
 	// through five visual stages so later ranks still look more legendary.
 	const prestigeVisualStage = Math.min(5, Math.max(0, Math.floor(prestigeLevel)));
@@ -400,6 +421,7 @@ export function PigStage({
 	// and backgrounds are intentionally not dyeable.
 	const tintFor = (id: string | undefined) => (id ? tints[id] : undefined);
 	const main = resolveSlot(equipped, pigAnimation, pigFrameIdx, relOverrides);
+	const bowSlot = resolveSlot(equippedBow, pigAnimation, pigFrameIdx, relOverrides);
 	const glassesSlot = resolveSlot(equippedGlasses, pigAnimation, pigFrameIdx, relOverrides);
 	const maskSlot = resolveSlot(equippedMask, pigAnimation, pigFrameIdx, relOverrides);
 	const neckSlot = resolveSlot(equippedNeck, pigAnimation, pigFrameIdx, relOverrides);
@@ -407,6 +429,7 @@ export function PigStage({
 	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, relOverrides);
 	const equipment = {
 		headId: equipped?.id,
+		bowId: equippedBow?.id,
 		faceId: equippedGlasses?.id,
 		heldId: equippedHeld?.id,
 		maskId: equippedMask?.id,
@@ -418,12 +441,19 @@ export function PigStage({
 		riveSource !== undefined &&
 		rolloutEnabled &&
 		!motionPolicy.reduceMotion &&
-		isRivePigPrototypeAnimation(pigAnimation) &&
 		resolvedRiveEquipment.supported &&
 		main?.prebaked == null &&
 		!pigFrozen &&
 		skinTintOverride == null &&
+		Object.keys(tints).length === 0 &&
+		Object.keys(relOverrides).length === 0 &&
 		!riveFailed;
+	const riveOwnsEquipment = riveActive && riveReady;
+	const rendererCallback = React.useRef(onRendererChange);
+	rendererCallback.current = onRendererChange;
+	React.useEffect(() => {
+		rendererCallback.current?.(riveOwnsEquipment ? "rive" : "raster");
+	}, [riveOwnsEquipment]);
 
 	const mainOverlay = main?.overlay ?? null;
 	const mainCategory = main?.category ?? null;
@@ -433,7 +463,10 @@ export function PigStage({
 	const showMainOverlay =
 		mainOverlay &&
 		!hideAccessory &&
-		!(riveActive && resolvedRiveEquipment.equipment.hat === 1);
+		!(riveOwnsEquipment && resolvedRiveEquipment.equipment.hat === 1);
+	const bowOverlay = bowSlot?.overlay ?? null;
+	const bowIsBehind = bowOverlay?.behind ?? false;
+	const showBowOverlay = bowOverlay && !hideAccessory;
 
 	// Simple aura animations. Radial rays/rings/sunbursts (AURA_SPIN) rotate slowly
 	// around Rosie; everything else — soft glows, elemental, particle clouds —
@@ -443,7 +476,7 @@ export function PigStage({
 	const auraSpinRaw = React.useRef(new Animated.Value(0)).current;
 	const auraPulseRaw = React.useRef(new Animated.Value(0)).current;
 	React.useEffect(() => {
-		if (!hasAura || !motionPolicy.allowDecorativeMotion) {
+		if (!hasAura || !visible || !motionPolicy.allowDecorativeMotion) {
 			auraSpinRaw.setValue(0);
 			auraPulseRaw.setValue(0);
 			return;
@@ -482,6 +515,7 @@ export function PigStage({
 		auraSpinRaw,
 		auraPulseRaw,
 		hasAura,
+		visible,
 		motionPolicy.allowDecorativeMotion,
 	]);
 	const auraSpin = auraSpinRaw.interpolate({
@@ -561,22 +595,37 @@ export function PigStage({
 					tint={tintFor(main?.itemId)}
 				/>
 			)}
+			{showBowOverlay && bowIsBehind && (
+				<ItemOverlay
+					overlay={bowOverlay}
+					imageSrc={bowSlot?.imageSrc ?? null}
+					category={bowSlot?.category ?? null}
+					zIndex={4}
+					tint={tintFor(bowSlot?.itemId)}
+				/>
+			)}
 			<View style={[styles.pigWrap, { zIndex: 5 }]}>
 				<PigRenderer
 					pigId={pigId}
-					animation={pigAnimation}
+					animation={baseAnimation}
+					mood={pigMood}
+					reaction={pigReaction}
+					active={visible}
 					size={PIG_CANVAS}
 					onFrame={onPigFrame}
-					onComplete={onPigComplete}
+					onComplete={() => {
+						if (reaction) setFinishedReaction(reaction.id);
+						onPigComplete?.();
+					}}
 					customFrames={main?.prebaked ?? undefined}
 					frameIdx={pigFrozen ? pigFrameIdx : undefined}
 					skinTintOverride={skinTintOverride}
 					renderer={riveActive ? "rive" : "raster"}
 					riveSource={riveSource}
-					equipment={equipment}
+					equipment={hideAccessory ? {} : equipment}
 					rolloutEnabled={rolloutEnabled}
 					reduceMotion={motionPolicy.reduceMotion}
-					onRendererReady={onRiveReady}
+					onRendererReady={() => { setRiveReady(true); onRiveReady?.(); }}
 					onRendererError={(error) => {
 						setRiveFailed(true);
 						onRiveError?.(error);
@@ -590,6 +639,15 @@ export function PigStage({
 					category={mainCategory}
 					zIndex={10}
 					tint={tintFor(main?.itemId)}
+				/>
+			)}
+			{showBowOverlay && !bowIsBehind && (
+				<ItemOverlay
+					overlay={bowOverlay}
+					imageSrc={bowSlot?.imageSrc ?? null}
+					category={bowSlot?.category ?? null}
+					zIndex={9}
+					tint={tintFor(bowSlot?.itemId)}
 				/>
 			)}
 			{neckSlot?.overlay && !hideAccessory && (
@@ -612,7 +670,7 @@ export function PigStage({
 			)}
 			{glassesSlot?.overlay &&
 				!hideAccessory &&
-				!(riveActive && resolvedRiveEquipment.equipment.face === 1) && (
+				!(riveOwnsEquipment && resolvedRiveEquipment.equipment.face === 1) && (
 				<ItemOverlay
 					overlay={glassesSlot.overlay}
 					imageSrc={glassesSlot.imageSrc}
@@ -623,7 +681,7 @@ export function PigStage({
 			)}
 			{heldSlot?.overlay &&
 				!hideAccessory &&
-				!(riveActive && resolvedRiveEquipment.equipment.held === 1) && (
+				!(riveOwnsEquipment && resolvedRiveEquipment.equipment.held === 1) && (
 				<ItemOverlay
 					overlay={heldSlot.overlay}
 					imageSrc={heldSlot.imageSrc}

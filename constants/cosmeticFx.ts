@@ -15,6 +15,8 @@
 // That keeps placement art-relative and size-independent (shop card, buy
 // sheet, on-pig all reuse the same recipe).
 
+import { COSMETIC_ACCENT, WHIMSY } from "./theme";
+
 export interface SparkleSpec {
 	x: number; // 0..1 across the art box
 	y: number; // 0..1 down the art box
@@ -42,7 +44,7 @@ export const COSMETIC_FX: Record<string, CosmeticFx> = {
 	// pinned to the centre snout-emblem, the two side rubies, and the peak.
 	slop_club_signet_crown: {
 		float: { amp: 5, period: 2600 },
-		glow: { color: "#F5C44A", period: 2800 },
+		glow: { color: WHIMSY.slopGold, period: 2800 },
 		shimmer: { period: 3400, strength: 0.42 },
 		sparkles: [
 			{ x: 0.5, y: 0.11, size: 17, delay: 0 }, // top peak ball
@@ -62,19 +64,10 @@ export const COSMETIC_FX: Record<string, CosmeticFx> = {
 // constants/membersFx.generated.ts (id → {category, theme}).
 import { MEMBERS_FX_DATA } from "./membersFx.generated";
 
-// Glow / accent hue per theme. Warm, cozy, on-brand.
-const THEME_ACCENT: Record<string, string> = {
-	"Royal Sty": "#F5C44A", // gold
-	"Cosmic Hog": "#9C7BF0", // nebula purple
-	"Garden Gala": "#F2A0C0", // blossom pink
-	"Mudlark Deluxe": "#D8A24A", // burnished gold-on-mud
-	"Confection Counter": "#FFB3C7", // candy pink
-	"Storybook Knight": "#C3CDDC", // soft silver
-	"Aurora Frost": "#8FD8E8", // ice blue
-	"Tropic Luau": "#FFB24A", // tropical sun
-	"Midnight Masquerade": "#B98BD8", // jewel violet
-	"Slop Club Signature": "#F5C44A", // club gold (matches the crown)
-};
+// Glow / accent hue per theme. Warm, cozy, on-brand. The ten hues live in
+// theme.ts as COSMETIC_ACCENT so a members theme's color is a token like every
+// other color in the app, not a private map. [F-7] (2026-09-11)
+const THEME_ACCENT = COSMETIC_ACCENT;
 
 // Where the twinkles sit, per category (fractions of the art box). Tuned so
 // sparkles land on the bright/jewelled parts of each accessory shape.
@@ -119,7 +112,7 @@ function archetypeFx(category: string, theme: string): CosmeticFx | undefined {
 	// Backgrounds are full-bleed scenes — the shop card renders them static
 	// (HatThumb never routes fullBleed art through the animator), so no recipe.
 	if (category === "background") return undefined;
-	const accent = THEME_ACCENT[theme] ?? "#F5C44A";
+	const accent = THEME_ACCENT[theme] ?? WHIMSY.slopGold;
 	const fx: CosmeticFx = {
 		glow: { color: accent, period: 2800 },
 		shimmer: { period: 3400, strength: 0.4 },

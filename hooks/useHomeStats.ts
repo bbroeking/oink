@@ -41,10 +41,13 @@ export interface Stats {
 	// Date.now() when this stats object was fetched — lets consumers turn
 	// nextRegenSeconds into a LIVE countdown instead of a frozen snapshot.
 	fetchedAtMs: number;
-	// Five independently-equipped slots: hat, aura, background, held,
-	// tickle particle. See migrations 20260514000000 + 20260519000000.
+	// Independently-equipped cosmetic slots surfaced by home_stats().
 	happiness: number;
+	currentStreak: number;
+	longestStreak: number;
+	streakEndsAt: string | null;
 	activeHat: EquipSlot | null;
+	activeBow: EquipSlot | null;
 	activeGlasses: EquipSlot | null;
 	activeMask: EquipSlot | null;
 	activeNeck: EquipSlot | null;
@@ -54,11 +57,6 @@ export interface Stats {
 	activeTickleParticle: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
-	// Server-side "already saw the 6 7 egg" stamp — null until first sight.
-	// null (or missing, pre-migration) means the celebration is still armed;
-	// any timestamp suppresses it across devices. Barn AND's this with its
-	// AsyncStorage fast-path.
-	seen67At: string | null;
 }
 
 const INITIAL_STATS: Stats = {
@@ -70,7 +68,11 @@ const INITIAL_STATS: Stats = {
 	regenSeconds: null,
 	fetchedAtMs: 0,
 	happiness: 50,
+	currentStreak: 0,
+	longestStreak: 0,
+	streakEndsAt: null,
 	activeHat: null,
+	activeBow: null,
 	activeGlasses: null,
 	activeMask: null,
 	activeNeck: null,
@@ -80,7 +82,6 @@ const INITIAL_STATS: Stats = {
 	activeTickleParticle: null,
 	currentTier: 1,
 	totalTiers: 30,
-	seen67At: null,
 };
 
 export interface UseHomeStatsOptions {
@@ -174,6 +175,8 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				active_hat_id: string | null;
 				happiness?: number;
 				active_hat: SlotBlob;
+				active_bow_id?: string | null;
+				active_bow?: SlotBlob;
 				active_glasses_id?: string | null;
 				active_glasses?: SlotBlob;
 				active_mask_id?: string | null;
@@ -192,7 +195,9 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				cap: number;
 				next_regen_seconds: number | null;
 				regen_seconds?: number;
-				seen_67_at?: string | null;
+				current_streak?: number;
+				longest_streak?: number;
+				streak_ends_at?: string | null;
 				current_tier: number;
 				total_tiers: number;
 			}>("home_stats");
@@ -206,7 +211,11 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					regenSeconds: r.regen_seconds ?? null,
 					fetchedAtMs: Date.now(),
 					happiness: r.happiness ?? 50,
+					currentStreak: r.current_streak ?? 0,
+					longestStreak: r.longest_streak ?? 0,
+					streakEndsAt: r.streak_ends_at ?? null,
 					activeHat: toSlot(r.active_hat_id, r.active_hat),
+					activeBow: toSlot(r.active_bow_id ?? null, r.active_bow ?? null),
 					activeGlasses: toSlot(r.active_glasses_id ?? null, r.active_glasses ?? null),
 					activeMask: toSlot(r.active_mask_id ?? null, r.active_mask ?? null),
 					activeNeck: toSlot(r.active_neck_id ?? null, r.active_neck ?? null),
@@ -219,7 +228,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
-					seen67At: r.seen_67_at ?? null,
 				});
 				setStatsLoaded(true);
 				setStatsError(false);
@@ -236,7 +244,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, happiness, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score, seen_67_at"
+						"counter, tickles_earned, happiness, active_hat_id, active_bow_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -259,6 +267,10 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 
 			const slotIds: (string | null)[] = [
 				prof?.active_hat_id ?? null,
+				prof?.active_bow_id ?? null,
+				prof?.active_glasses_id ?? null,
+				prof?.active_mask_id ?? null,
+				prof?.active_neck_id ?? null,
 				prof?.active_aura_id ?? null,
 				prof?.active_background_id ?? null,
 				prof?.active_held_id ?? null,
@@ -296,7 +308,11 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				regenSeconds: null,
 				fetchedAtMs: Date.now(),
 				happiness: prof?.happiness ?? 50,
+				currentStreak: 0,
+				longestStreak: 0,
+				streakEndsAt: null,
 				activeHat: slotFromId(prof?.active_hat_id ?? null),
+				activeBow: slotFromId(prof?.active_bow_id ?? null),
 				activeGlasses: slotFromId(prof?.active_glasses_id ?? null),
 				activeMask: slotFromId(prof?.active_mask_id ?? null),
 				activeNeck: slotFromId(prof?.active_neck_id ?? null),
@@ -306,7 +322,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				activeTickleParticle: slotFromId(prof?.active_tickle_particle_id ?? null),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
-				seen67At: prof?.seen_67_at ?? null,
 			});
 			setStatsLoaded(true);
 			setStatsError(false);

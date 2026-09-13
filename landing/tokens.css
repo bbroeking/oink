@@ -1,0 +1,251 @@
+/* GENERATED from constants/theme.ts by scripts/build-web-tokens.mjs — do not edit */
+
+@import url("https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@600;700&family=Nunito:wght@600;700;800;900&family=Patrick+Hand&display=swap");
+
+:root {
+	/* Ink & paper */
+	--ink:                        #2a1f15;
+	--paper:                      #fffaf0;
+	--cream:                      #fbeee2;
+	--cream2:                     #f6e6d4;
+	--ink-mute:                   #605449;
+	--ink-mute-soft:              #8c7e71;
+	--ink-mute-dim:               #6a5c50;
+	--ink-deep:                   #1a1411;
+	--bark:                       #3a2c1e;
+	--bark-text:                  #fff3e2;
+	--bark-mute:                  #e8d9c6;
+	--stage:                      #1f1710;
+
+	/* Fills — surface only; a pastel is never assigned to `color:` */
+	--fill-rose:                  #ffd6dc;
+	--fill-rose-deep:             #f8a8b3;
+	--fill-sky:                   #c8e3f0;
+	--fill-sage:                  #c9dec1;
+	--fill-sun:                   #ffd87a;
+	--fill-lilac:                 #d6c8f0;
+	--fill-lilac-deep:            #a89bff;
+	--fill-peach:                 #ffc8a8;
+	--fill-slop-gold:             #F5C44A;
+	--fill-slop-band:             #FFE7AD;
+
+	/* Alignment · membership · effects */
+	--angel:                      #a89bff;
+	--goblin:                     #d4a437;
+	--bless:                      #C99B23;
+	--curse-green:                #526f40;
+	--bless-surface:              #FFF3D0;
+	--curse-surface:              #D5E4C9;
+	--slop-gold:                  #F5C44A;
+	--slop-band:                  #FFE7AD;
+	--flame:                      #F58F4A;
+	--prestige:                   #D9A45D;
+
+	/* Semantic roles (UI_COLORS) — meaning survives palette tuning */
+	--canvas:                     #fffaf0;
+	--surface:                    #fffaf0;
+	--surface-muted:              #fbeee2;
+	--surface-strong:             #f6e6d4;
+	--text-primary:               #2a1f15;
+	--text-secondary:             #605449;
+	--text-disabled:              #6a5c50;
+	--ui-muted:                   #8c7e71;
+	--text-placeholder:           #6a5c50;
+	--border:                     #2a1f15;
+	--separator:                  #8c7e71;
+	--accent:                     #a03e2f;
+	--action-surface:             #ffd87a;
+	--focus:                      #3d687f;
+	--success-text:               #476436;
+	--success-surface:            #e8f5e0;
+	--success-border:             #7A9B63;
+	--warning-text:               #7b5a00;
+	--warning-surface:            #fff3d0;
+	--info-text:                  #3d687f;
+	--info-surface:               #c8e3f0;
+	--danger-text:                #983a2c;
+	--danger-surface:             #ffd6dc;
+	--text-on-dark:               #fff3e2;
+	--scrim:                      rgba(42, 31, 21, 0.55);
+
+	/* Ink washes (TINT) — every wash derived from --ink, never a hand-typed rgba */
+	--tint-scrim:                 rgba(42, 31, 21, 0.55);
+	--tint-ink-wash:              rgba(42, 31, 21, 0.08);
+	--tint-well:                  rgba(42, 31, 21, 0.12);
+	--tint-paper-wash:            rgba(255, 250, 240, 0.7);
+	--tint-sun-glow:              rgba(255, 216, 122, 0.5);
+	--tint-paper-veil:            rgba(255, 250, 240, 0.14);
+	--tint-sun-veil:              rgba(255, 216, 122, 0.2);
+
+	/* Rarity — fill (panel) · stripe (marker) · badge pair (verified ≥4.5:1) */
+	--rarity-common-fill:         #FAF7F3;
+	--rarity-common-stripe:       #cdbfae;
+	--rarity-common-badge-bg:     #FAF7F3;
+	--rarity-common-badge-ink:    #494f56;
+	--rarity-uncommon-fill:       #E8F5E0;
+	--rarity-uncommon-stripe:     #7ba868;
+	--rarity-uncommon-badge-bg:   #E8F5E0;
+	--rarity-uncommon-badge-ink:  #2e6640;
+	--rarity-rare-fill:           #E0EBFF;
+	--rarity-rare-stripe:         #5a8bc5;
+	--rarity-rare-badge-bg:       #E0EBFF;
+	--rarity-rare-badge-ink:      #2c4f7a;
+	--rarity-epic-fill:           #EFE9FF;
+	--rarity-epic-stripe:         #a89bff;
+	--rarity-epic-badge-bg:       #EFE9FF;
+	--rarity-epic-badge-ink:      #4a3a8f;
+	--rarity-legendary-fill:      #FFF3D0;
+	--rarity-legendary-stripe:    #d4a437;
+	--rarity-legendary-badge-bg:  #FFF3D0;
+	--rarity-legendary-badge-ink: #6b4a00;
+
+	/* Podium metals — deliberately not --fill-slop-gold: a medal is not a membership */
+	--podium-gold:                #F5C44A;
+	--podium-silver:              #BFC4CC;
+	--podium-bronze:              #C68A5C;
+
+	/* Button ramps (GRADIENT) — stops only; the page composes the gradient */
+	--gradient-rose-from:         #F0B8C8;
+	--gradient-rose-to:           #E8A7B9;
+	--gradient-purple-from:       #7052EE;
+	--gradient-purple-to:         #5C3FE0;
+	--gradient-gold-from:         #F8D068;
+	--gradient-gold-to:           #F5C44A;
+	--gold-ink:                   #5A3F00;
+
+	/* Fonts — four faces, each with a job */
+	--font-display:               "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+	--font-body:                  "Nunito", "Segoe UI", system-ui, sans-serif;
+	--font-whimsy:                "Caprasimo", Georgia, "Times New Roman", serif;
+	--font-hand:                  "Patrick Hand", "Bradley Hand", "Segoe Script", cursive;
+
+	/* Type roles — a rule reads `font: var(--type-body)`, never a bare size */
+	--type-hero:                  700 44px/48px var(--font-display);
+	--type-display-lg:            400 36px/38px var(--font-whimsy);
+	--type-display:               400 32px/34px var(--font-whimsy);
+	--type-page-title:            400 26px/28px var(--font-whimsy);
+	--type-section-title:         400 22px/24px var(--font-whimsy);
+	--type-card-title:            400 18px/22px var(--font-whimsy);
+	--type-card-title-sm:         400 15px/22px var(--font-whimsy);
+	--type-numeral-lg:            400 26px/28px var(--font-whimsy);
+	--type-numeral:               400 16px/20px var(--font-whimsy);
+	--type-body-lg:               700 17px/24px var(--font-body);
+	--type-body:                  700 15px/21px var(--font-body);
+	--type-body-sm:               700 13px/18px var(--font-body);
+	--type-label:                 800 12px/16px var(--font-body);
+	--type-kicker:                400 13px/18px var(--font-hand);
+	--type-hand:                  400 14px/20px var(--font-hand);
+	--type-hand-lg:               400 17px/24px var(--font-hand);
+	--type-hand-display:          400 21px/28px var(--font-hand);
+	--type-kicker-pill:           800 11px/14px var(--font-body);
+	--type-kicker-pill-sm:        800 10px/13px var(--font-body);
+
+	/* Tracking — only the roles that carry a letterSpacing */
+	--tracking-section-title:     0.2px;
+	--tracking-card-title:        0.2px;
+	--tracking-card-title-sm:     0.2px;
+	--tracking-label:             0.3px;
+	--tracking-kicker:            0.4px;
+	--tracking-kicker-pill:       1.6px;
+	--tracking-kicker-pill-sm:    1.6px;
+
+	/* Radius */
+	--radius-hair:                2px;
+	--radius-sm:                  8px;
+	--radius-md:                  12px;
+	--radius-lg:                  14px;
+	--radius-xl:                  18px;
+	--radius-xxl:                 22px;
+	--radius-pill:                999px;
+
+	/* Space — no arithmetic on a step */
+	--space-xxs:                  2px;
+	--space-xs:                   4px;
+	--space-sm:                   8px;
+	--space-md:                   12px;
+	--space-card:                 14px;
+	--space-lg:                   16px;
+	--space-xl:                   24px;
+	--space-xxl:                  32px;
+	--page-pad:                   18px;
+	--tab-safe:                   74px;
+	--status-safe:                56px;
+	--tap-min:                    44px;
+	--rule-width:                 64px;
+
+	/* Border — hair separates · thin outlines · ink IS the look · heavy selects */
+	--border-hair:                1px;
+	--border-thin:                1.5px;
+	--border-ink:                 2px;
+	--border-heavy:               3px;
+
+	/* Shadow — two tiers, zero blur, and nothing else */
+	--shadow-sticker:             4px 4px 0 var(--ink);
+	--shadow-sm:                  2px 2px 0 var(--ink);
+	--press-shift:                2px;
+
+	/* Opacity — text colour never comes from opacity; a disabled control never wears one */
+	--opacity-pressed:            0.85;
+	--opacity-muted:              0.7;
+	--opacity-dim:                0.55;
+	--opacity-ghost:              0.45;
+	--opacity-rule:               0.3;
+
+	/* Tilt — one vocabulary: rows take their turn, cards lean, tape leans hard */
+	--tilt-1:                     -1.2deg;
+	--tilt-2:                     0.8deg;
+	--tilt-3:                     -0.6deg;
+	--tilt-4:                     0.5deg;
+	--tilt-5:                     -0.4deg;
+	--tilt-6:                     1deg;
+	--tilt-7:                     -0.7deg;
+	--tilt-8:                     0.6deg;
+	--tilt-card:                  -0.6deg;
+	--tilt-dialog:                -0.8deg;
+	--tilt-tape:                  -8deg;
+
+	/* Motion — durations only; a linear fade is never the default */
+	--motion-tap:                 120ms;
+	--motion-fade:                180ms;
+	--motion-sheet-in:            300ms;
+	--motion-sheet-out:           180ms;
+	--motion-modal-handoff:       320ms;
+	--motion-toast:               2400ms;
+	--motion-beat:                800ms;
+	--motion-debounce:            250ms;
+	--ease-out:                   cubic-bezier(0.22, 1, 0.36, 1);
+
+	/* Art sizes — the fixed boxes hand-drawn art is laid out in (not spacing) */
+	--art-mark:                   12px;
+	--art-glyph-sm:               24px;
+	--art-glyph:                  40px;
+	--art-badge:                  56px;
+	--art-thumb:                  72px;
+	--art-portrait:               120px;
+	--art-stage:                  300px;
+
+	/* Button geometry (BUTTON_SIZE) — so .btn never retypes a number */
+	--btn-xs-min-h:               32px;
+	--btn-xs-px:                  12px;
+	--btn-xs-py:                  4px;
+	--btn-xs-radius:              999px;
+	--btn-xs-font:                800 12px var(--font-body);
+	--btn-sm-min-h:               44px;
+	--btn-sm-px:                  14px;
+	--btn-sm-py:                  10px;
+	--btn-sm-radius:              22px;
+	--btn-sm-font:                800 13px var(--font-body);
+	--btn-md-min-h:               44px;
+	--btn-md-px:                  18px;
+	--btn-md-py:                  11px;
+	--btn-md-radius:              22px;
+	--btn-md-font:                800 15px var(--font-body);
+	--btn-lg-min-h:               54px;
+	--btn-lg-px:                  22px;
+	--btn-lg-py:                  14px;
+	--btn-lg-radius:              999px;
+	--btn-lg-font:                800 17px var(--font-body);
+
+	/* Button label tracking */
+	--btn-tracking:               0.1px;
+}

@@ -6,20 +6,25 @@
 //   Sounder  — your crew, when the season feature is live
 // Defaults to Friends so the tab label predicts the first thing players see.
 // See docs/season-1-social-redesign.md.
+//
+// Wave-3 conformance pass (2026-09-11): the four hand-rolled nav sticker cards
+// are `SegmentedControl layout="icon-over-label"` [B-06] and the hand-rolled
+// kicker/title/rule crown is `PageHeader variant="tab"` [B-26]. The nav stays
+// ABOVE the crown, which is why the header's own top padding moves onto the nav
+// wrapper rather than the header.
 import { useState, useCallback, useEffect, useMemo } from "react";
-import {
-	View,
-	StyleSheet,
-	Platform,
-	SafeAreaView,
-	Pressable,
-	Text,
-} from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View, StyleSheet, Platform, SafeAreaView } from "react-native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { Icon, IconName } from "../../components/ui/Icon";
+import type { IconName } from "@/components/ui";
+import {
+	PageHeader,
+	SegmentedControl,
+	T,
+	type SegmentOption,
+} from "@/components/ui";
 import Friends from "../../components/Friends";
 import { Inbox } from "../../components/Inbox";
 import { Leaderboard, type BoardScope } from "../../components/Leaderboard";
@@ -27,24 +32,50 @@ import { SounderCard } from "../../components/SounderCard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { useCrew } from "@/hooks/useCrew";
 import {
-	FONTS,
-	KICKER_PILL,
+	BORDER,
 	PAGE_PAD,
 	RADII,
-	SHADOW_SM,
 	SPACE,
-	TITLE_RULE,
-	TYPE,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
 
 type Segment = "friends" | "inbox" | "board" | "sounder";
 
-const BASE_SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
-	{ key: "friends", label: "Friends", icon: "friends" },
-	{ key: "inbox", label: "Inbox", icon: "bell" },
-	{ key: "board", label: "Rankings", icon: "ranks" },
+interface SegmentDef {
+	key: Segment;
+	label: string;
+	icon: IconName;
+	hint: string;
+}
+
+const BASE_SEGMENTS: SegmentDef[] = [
+	{
+		key: "friends",
+		label: "Friends",
+		icon: "friends",
+		hint: "Shows your pig pals and the add-a-friend search",
+	},
+	{
+		key: "inbox",
+		label: "Inbox",
+		icon: "bell",
+		hint: "Shows requests, trades and what happened lately",
+	},
+	{
+		key: "board",
+		label: "Rankings",
+		icon: "ranks",
+		hint: "Shows the all-time tickle leaderboard",
+	},
 ];
+
+const SOUNDER_SEGMENT: SegmentDef = {
+	key: "sounder",
+	label: "Sounder",
+	icon: "crown",
+	hint: "Shows your herd and the crews you could join",
+};
 
 // Per-segment page header — kicker over the whimsy title, both swapping with the
 // active nav card. Sounder's title flips to "Find your Sounder" while crewless
@@ -57,6 +88,23 @@ const SEGMENT_HEADERS: Record<Segment, { kicker: string; title: string }> = {
 };
 
 const SEGMENT_KEYS: Segment[] = ["board", "inbox", "friends", "sounder"];
+
+// The unread count marker on the Inbox segment. Its diameter is drawing
+// geometry (a dot that has to stay round around one or two glyphs), not a
+// spacing step — named here the way `Chip`'s ribbon geometry is named in the
+// primitive. Matches the tab bar's badge.
+const BADGE_SIZE = 18;
+const BADGE_MAX = 9;
+
+function CountBadge({ count }: { count: number }) {
+	return (
+		<View style={styles.badge}>
+			<T role="kickerPillSm" tone="onDark">
+				{count > BADGE_MAX ? `${BADGE_MAX}+` : count}
+			</T>
+		</View>
+	);
+}
 
 export default function FriendsHubScreen() {
 	// Sounder (co-op crews) — gate on the SAME condition as the Season tab
@@ -72,13 +120,7 @@ export default function FriendsHubScreen() {
 	// the flag is on, so non-flag users never pay for the fetch/realtime.
 	const crewHook = useCrew(coopDig);
 	const segments = useMemo(
-		() =>
-			coopDig
-				? [
-						...BASE_SEGMENTS,
-						{ key: "sounder" as Segment, label: "Sounder", icon: "crown" as IconName },
-					]
-				: BASE_SEGMENTS,
+		() => (coopDig ? [...BASE_SEGMENTS, SOUNDER_SEGMENT] : BASE_SEGMENTS),
 		[coopDig]
 	);
 	// Deep-link target — any segment can be routed to (e.g. the launch nudge
@@ -136,49 +178,43 @@ export default function FriendsHubScreen() {
 			? "Find your Sounder"
 			: header.title;
 
+	// Top-level nav — one radio per social surface, icon over label. The Inbox
+	// carries its unread count in the segment's own badge slot, and says the
+	// number out loud rather than leaving it to the dot.
+	const options: SegmentOption<Segment>[] = segments.map((s) => {
+		const badge = s.key === "inbox" && inboxCount > 0;
+		return {
+			value: s.key,
+			label: s.label,
+			icon: s.icon,
+			badge: badge ? <CountBadge count={inboxCount} /> : undefined,
+			accessibilityLabel: badge
+				? `${s.label}, ${inboxCount} needing you`
+				: s.label,
+			accessibilityHint: s.hint,
+		};
+	});
+
 	return (
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
-				<View style={styles.header}>
-					{/* Top-level nav — a row of sticker cards, one per segment, icon
-					    over label. The active card lights sun; pressing any card
-					    presses it into the page (translate + shadow gone). */}
-					<View style={styles.nav}>
-						{segments.map((s) => {
-							const active = s.key === segment;
-							const badge = s.key === "inbox" && inboxCount > 0;
-							return (
-								<Pressable
-									key={s.key}
-									onPress={() => setSegment(s.key)}
-									accessibilityRole="button"
-									accessibilityLabel={s.label}
-									accessibilityState={{ selected: active }}
-									style={({ pressed }) => [
-										styles.navCard,
-										active && styles.navCardActive,
-										pressed && styles.navCardPressed,
-									]}
-								>
-									<Icon name={s.icon} size={22} color={WHIMSY.ink} strokeWidth={2} />
-									<Text style={styles.navLabel}>{s.label}</Text>
-									{badge && (
-										<View style={styles.navBadge}>
-											<Text style={styles.badgeText}>
-												{inboxCount > 9 ? "9+" : inboxCount}
-											</Text>
-										</View>
-									)}
-								</Pressable>
-							);
-						})}
-					</View>
-
-					{/* Per-segment crown — kicker + title + rule track the nav. */}
-					<Text style={styles.kicker}>★ {header.kicker}</Text>
-					<Text style={styles.title}>{title}</Text>
-					<View style={styles.titleRule} />
+				<View style={styles.nav}>
+					<SegmentedControl
+						label="Friends hub sections"
+						layout="icon-over-label"
+						options={options}
+						value={segment}
+						onChange={setSegment}
+					/>
 				</View>
+
+				{/* Per-segment crown — kicker + title + rule track the nav. */}
+				<PageHeader
+					variant="tab"
+					kicker={header.kicker}
+					title={title}
+					style={styles.crown}
+				/>
 
 				<View style={styles.body}>
 					{segment === "friends" &&
@@ -215,59 +251,26 @@ export default function FriendsHubScreen() {
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
 	safeArea: { flex: 1 },
-	header: {
+	// The nav sits above the crown, so it carries the tab screen's top inset and
+	// PageHeader's own `tab` top padding is zeroed below.
+	// TODO(ui-audit): SafeAreaView inset + SPACE.sm (deferred — device QA)
+	nav: {
 		paddingHorizontal: PAGE_PAD,
-		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
-		paddingTop: Platform.OS === "ios" ? 8 : 20,
+		paddingTop: Platform.OS === "ios" ? SPACE.sm : SPACE.xl,
+		marginBottom: SPACE.lg,
 	},
-	kicker: { ...KICKER_PILL, marginBottom: 2 },
-	title: { ...TYPE.display, color: WHIMSY.ink },
-	titleRule: { ...TITLE_RULE, width: 64, marginTop: 4 },
-	// Top-level nav — flex-1 sticker cards, icon over a Fredoka label. The card
-	// order stays Friends · Inbox · Rankings · Sounder.
-	nav: { flexDirection: "row", gap: SPACE.sm, marginBottom: SPACE.lg },
-	navCard: {
-		flex: 1,
+	crown: { paddingTop: 0 },
+	// Inbox count — pinned to the Inbox segment's top-right corner.
+	badge: {
+		minWidth: BADGE_SIZE,
+		height: BADGE_SIZE,
+		borderRadius: RADII.pill,
+		backgroundColor: UI_COLORS.action,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
-		gap: SPACE.xs + 1,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		paddingTop: SPACE.md,
 		paddingHorizontal: SPACE.xs,
-		paddingBottom: SPACE.sm,
-		...SHADOW_SM,
-	},
-	navCardActive: { backgroundColor: WHIMSY.sun },
-	// Pressed = pushed into the page: nudge down-right by the shadow offset and
-	// drop the shadow, so the card looks stamped down.
-	navCardPressed: {
-		transform: [{ translateX: 2 }, { translateY: 2 }],
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	navLabel: { ...TYPE.bodySm, fontFamily: FONTS.display, color: WHIMSY.ink },
-	// Inbox count — pinned to the Inbox card's top-right corner.
-	navBadge: {
-		position: "absolute",
-		top: -6,
-		right: -6,
-		minWidth: 18,
-		height: 18,
-		borderRadius: 9,
-		backgroundColor: WHIMSY.accent,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-		paddingHorizontal: 4,
-	},
-	badgeText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 11,
-		color: WHIMSY.paper,
 	},
 	body: { flex: 1, marginTop: SPACE.md },
 });

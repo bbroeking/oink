@@ -12,6 +12,8 @@ type NotificationData = Record<string, unknown> | null | undefined;
 
 export interface ForegroundNotificationBehavior {
 	shouldShowAlert: boolean;
+	shouldShowBanner: boolean;
+	shouldShowList: boolean;
 	shouldPlaySound: boolean;
 	shouldSetBadge: boolean;
 }
@@ -28,6 +30,8 @@ export function foregroundNotificationBehavior(
 	const alert = foregroundNotificationMode(data) === "alert";
 	return {
 		shouldShowAlert: alert,
+		shouldShowBanner: alert,
+		shouldShowList: alert,
 		shouldPlaySound: alert,
 		shouldSetBadge: alert,
 	};

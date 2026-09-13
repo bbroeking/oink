@@ -1,0 +1,255 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&family=Fredoka:wght@600;700&display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Nunito Sans", "Trebuchet MS", sans-serif; font-weight: 700; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    .whimsy { font-family: "Caprasimo", "Cooper Black", "Georgia", serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .sticker-sm { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0.4px; color: #a03e2f; }
+    .pill { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: 0.3; border-radius: 1px; }
+    .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-weight: 500; font-size: 11px; color: #605449; }
+    .swatch { display: flex; flex-direction: column; gap: 6px; width: 104px; }
+    .chip { height: 56px; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    .proposed { display: inline-block; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #3a2c1e; background: #ffd87a; border: 1.5px solid #2a1f15; border-radius: 999px; padding: 3px 8px; }
+    .shipped { display: inline-block; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: #476436; background: #e8f5e0; border: 1.5px solid #2a1f15; border-radius: 999px; padding: 3px 8px; }
+    table { border-collapse: collapse; width: 100%; }
+    th { text-align: left; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; padding: 6px 8px; border-bottom: 2px solid #2a1f15; }
+    td { padding: 7px 8px; border-bottom: 1.5px solid #e8d9c6; font-size: 13px; line-height: 18px; vertical-align: top; }
+  </style>
+</helmet>
+<div style="width: 1240px; padding: 40px 44px 56px 44px; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px; background: #fbeee2; background-image: radial-gradient(#f6e6d4 1.1px, transparent 1.2px); background-size: 22px 22px;">
+
+  <div style="display: flex; flex-direction: column; gap: 4px;">
+    <div class="pill">★ Tickle the Pig · design system v1 · 2026-09-11</div>
+    <div class="whimsy" style="font-size: 32px; line-height: 34px; color: #2a1f15;">Foundations</div>
+    <div class="rule"></div>
+    <div class="hand" style="font-size: 17px; line-height: 24px; color: #605449; max-width: 760px;">Every value on this sheet is either lifted verbatim from constants/theme.ts (marked shipped) or proposed from what the audit found the app reinventing inline (marked proposed). Nothing here is a fresh hex. The whimsy is the design.</div>
+  </div>
+
+  <!-- ===================== PALETTE ===================== -->
+  <div class="sticker" style="padding: 22px 24px 24px 24px; transform: rotate(-0.4deg); display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="kicker">★ color</div>
+        <div class="whimsy" style="font-size: 22px; line-height: 24px; letter-spacing: 0.2px;">WHIMSY — the one palette</div>
+      </div>
+      <span class="shipped">shipped · wave 1 landed</span>
+    </div>
+
+    <div class="pill">Paper &amp; ink</div>
+    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+      <div class="swatch"><div class="chip" style="background: #fffaf0;"></div><div style="font-size: 13px;">paper</div><div class="mono">#fffaf0</div></div>
+      <div class="swatch"><div class="chip" style="background: #fbeee2;"></div><div style="font-size: 13px;">cream</div><div class="mono">#fbeee2</div></div>
+      <div class="swatch"><div class="chip" style="background: #f6e6d4;"></div><div style="font-size: 13px;">cream2</div><div class="mono">#f6e6d4</div></div>
+      <div class="swatch"><div class="chip" style="background: #2a1f15;"></div><div style="font-size: 13px;">ink</div><div class="mono">#2a1f15</div></div>
+      <div class="swatch"><div class="chip" style="background: #605449;"></div><div style="font-size: 13px;">mute</div><div class="mono">#605449</div></div>
+      <div class="swatch"><div class="chip" style="background: #8c7e71;"></div><div style="font-size: 13px;">muteSoft</div><div class="mono">#8c7e71</div></div>
+      <div class="swatch"><div class="chip" style="background: #6a5c50;"></div><div style="font-size: 13px;">muteDim</div><div class="mono">#6a5c50 · textDisabled</div></div>
+      <div class="swatch"><div class="chip" style="background: #a03e2f;"></div><div style="font-size: 13px;">accent</div><div class="mono">#a03e2f</div></div>
+    </div>
+
+    <div class="pill">Storybook pastels — sticker fills</div>
+    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+      <div class="swatch"><div class="chip" style="background: #ffd6dc;"></div><div style="font-size: 13px;">rose</div><div class="mono">#ffd6dc</div></div>
+      <div class="swatch"><div class="chip" style="background: #f8a8b3;"></div><div style="font-size: 13px;">roseDeep</div><div class="mono">#f8a8b3</div></div>
+      <div class="swatch"><div class="chip" style="background: #c8e3f0;"></div><div style="font-size: 13px;">sky</div><div class="mono">#c8e3f0</div></div>
+      <div class="swatch"><div class="chip" style="background: #c9dec1;"></div><div style="font-size: 13px;">sage</div><div class="mono">#c9dec1</div></div>
+      <div class="swatch"><div class="chip" style="background: #ffd87a;"></div><div style="font-size: 13px;">sun</div><div class="mono">#ffd87a</div></div>
+      <div class="swatch"><div class="chip" style="background: #d6c8f0;"></div><div style="font-size: 13px;">lilac</div><div class="mono">#d6c8f0</div></div>
+      <div class="swatch"><div class="chip" style="background: #a89bff;"></div><div style="font-size: 13px;">lilacDeep</div><div class="mono">#a89bff</div></div>
+      <div class="swatch"><div class="chip" style="background: #ffc8a8;"></div><div style="font-size: 13px;">peach</div><div class="mono">#ffc8a8</div></div>
+    </div>
+
+    <div class="pill">Bark — the one dark surface · alignment · membership · effects</div>
+    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+      <div class="swatch"><div class="chip" style="background: #3a2c1e;"></div><div style="font-size: 13px;">bark</div><div class="mono">#3a2c1e</div></div>
+      <div class="swatch"><div class="chip" style="background: #fff3e2;"></div><div style="font-size: 13px;">barkText</div><div class="mono">#fff3e2</div></div>
+      <div class="swatch"><div class="chip" style="background: #e8d9c6;"></div><div style="font-size: 13px;">barkMute</div><div class="mono">#e8d9c6</div></div>
+      <div class="swatch"><div class="chip" style="background: #a89bff;"></div><div style="font-size: 13px;">angel</div><div class="mono">#a89bff</div></div>
+      <div class="swatch"><div class="chip" style="background: #d4a437;"></div><div style="font-size: 13px;">goblin</div><div class="mono">#d4a437</div></div>
+      <div class="swatch"><div class="chip" style="background: #F5C44A;"></div><div style="font-size: 13px;">slopGold</div><div class="mono">#F5C44A</div></div>
+      <div class="swatch"><div class="chip" style="background: #FFE7AD;"></div><div style="font-size: 13px;">slopBand</div><div class="mono">#FFE7AD</div></div>
+      <div class="swatch"><div class="chip" style="background: #C99B23;"></div><div style="font-size: 13px;">bless</div><div class="mono">#C99B23</div></div>
+      <div class="swatch"><div class="chip" style="background: #526f40;"></div><div style="font-size: 13px;">curseGreen</div><div class="mono">#526f40</div></div>
+      <div class="swatch"><div class="chip" style="background: #F58F4A;"></div><div style="font-size: 13px;">flame</div><div class="mono">#F58F4A</div></div>
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <div class="pill">UI_COLORS — semantic roles (consume these, not WHIMSY, in shared UI)</div>
+        <table>
+          <tr><th>Role</th><th>Resolves to</th><th>Use</th></tr>
+          <tr><td>canvas · surface</td><td class="mono">paper #fffaf0</td><td>Page ground, default sticker fill</td></tr>
+          <tr><td>surfaceMuted · surfaceStrong</td><td class="mono">cream · cream2</td><td>Tab ground, locked fill, wells</td></tr>
+          <tr><td>textPrimary · textSecondary · textDisabled</td><td class="mono">ink · mute · muteSoft</td><td>Body · sub · disabled/separator ink</td></tr>
+          <tr><td>border · separator</td><td class="mono">ink · #8c7e71</td><td>2px sticker border · 1.5px ghost border</td></tr>
+          <tr><td>action · actionSurface</td><td class="mono">accent · sun</td><td>Kicker rust · CTA wash</td></tr>
+          <tr><td>success · warning · info · danger</td><td class="mono">#476436/#e8f5e0 · #7b5a00/#fff3d0 · #3d687f/sky · #983a2c/rose</td><td>Text / surface pairs, all AA on paper</td></tr>
+          <tr><td>textOnDark · scrim</td><td class="mono">barkText · rgba(40,30,20,.55)</td><td>On bark and dark buttons · modal backdrop</td></tr>
+        </table>
+      </div>
+      <div style="width: 340px; display: flex; flex-direction: column; gap: 8px;">
+        <div class="pill">Rules</div>
+        <div style="font-size: 13px; line-height: 18px; display: flex; flex-direction: column; gap: 6px;">
+          <div><strong>One palette.</strong> A new color is a token, never a fresh hex. 54 distinct raw hex values still leak in 22 files; each is a token to add or a token to use.</div>
+          <div><strong>Rust is a kicker, never a fill.</strong> The accent appears above titles and on links; the moment it is a button it stops being the accent.</div>
+          <div><strong>Bark is the only dark.</strong> No <span class="mono">#1A1A1A</span> wrappers, no black flashes. Dark buttons use ink.</div>
+          <div><strong>Alignment tints stay on alignment surfaces.</strong> angel / goblin / bless / curseGreen never decorate unrelated cards.</div>
+          <div><strong>Retire COLORS.</strong> The legacy ramp (ink2–4, paper2–3, pink, purple) folds into WHIMSY / UI_COLORS; 14 call sites remain.</div>
+          <div><strong>Contrast fixes at the root.</strong> muteSoft fails AA on all 14 surfaces yet is named textDisabled — a text-safe <span class="mono">muteDim</span> takes the role and muteSoft becomes <span class="mono">uiMuted</span> (never text). <span class="mono">textPlaceholder</span> and <span class="mono">focus</span> roles are added. <span class="mono">RARITY_BADGE {bg, ink}</span> replaces the third rarity map in hats.ts (fails AA at every rarity today).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TYPE ===================== -->
+  <div class="sticker" style="padding: 22px 24px 24px 24px; transform: rotate(0.3deg); background: #fffaf0; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div class="kicker">★ typography</div>
+        <div class="whimsy" style="font-size: 22px; line-height: 24px; letter-spacing: 0.2px;">TYPE — sixteen roles, four fonts, zero bare sizes</div>
+      </div>
+      <span class="shipped">shipped</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="pill">Caprasimo — whimsy titles &amp; numerals</div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="whimsy" style="font-size: 32px; line-height: 34px;">display</span><span class="mono">32 / 34</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="whimsy" style="font-size: 26px; line-height: 28px;">pageTitle</span><span class="mono">26 / 28</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="whimsy" style="font-size: 22px; line-height: 24px; letter-spacing: 0.2px;">sectionTitle</span><span class="mono">22 / 24 · ls .2</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="whimsy" style="font-size: 18px; line-height: 22px; letter-spacing: 0.2px;">cardTitle</span><span class="mono">18 / 22 · ls .2</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="whimsy" style="font-size: 15px; line-height: 22px; letter-spacing: 0.2px;">cardTitleSm</span><span class="mono">15 / 22 · ls .2</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="whimsy" style="font-size: 16px;">numeral 1,250</span><span class="mono">16 — progression numbers only</span></div>
+        <div class="pill" style="margin-top: 6px;">Patrick Hand — the hand-drawn voice</div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="hand" style="font-size: 21px; line-height: 28px;">handDisplay</span><span class="mono">21 / 28</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="hand" style="font-size: 17px; line-height: 24px;">handLg — sub lines, empty-state warmth</span><span class="mono">17 / 24</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="hand" style="font-size: 14px; line-height: 20px;">hand — ‹ back, captions</span><span class="mono">14 / 20</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="kicker">★ kicker — above a section title</span><span class="mono">13 · ls .4 · accent</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="pill">Nunito — reading &amp; labels</div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span style="font-size: 17px; line-height: 24px;">bodyLg — the storyteller paragraph</span><span class="mono">700 · 17 / 24</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span style="font-size: 15px; line-height: 21px;">body — default reading text</span><span class="mono">700 · 15 / 21</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span style="font-size: 13px; line-height: 18px;">bodySm — secondary reading text, receipts</span><span class="mono">700 · 13 / 18</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span style="font-size: 12px; font-weight: 800; letter-spacing: 0.3px;">label — chips, right-slot meta</span><span class="mono">800 · 12 · ls .3</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="pill">★ kickerPill — page kicker</span><span class="mono">800 · 11 · ls 1.6 · caps</span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span class="pill" style="font-size: 10px;">kickerPillSm — corner tags</span><span class="mono">800 · 10 · ls 1.6 · caps</span></div>
+        <div class="pill" style="margin-top: 6px;">Fredoka — display (reserved)</div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span style="font-family: 'Fredoka', 'Nunito', sans-serif; font-weight: 700; font-size: 22px;">FONTS.display · displaySemi</span><span class="mono">700 / 600 — loaded, no TYPE role</span></div>
+        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 18px;">
+          <div><strong>Compose, don't size.</strong> <span class="mono">{ ...TYPE.body, color: UI_COLORS.textSecondary }</span>. Color is never baked into a role.</div>
+          <div><strong>Folding rules for the 521 bare sizes.</strong> 11 → kickerPill · 12 → label · 13 → bodySm/kicker · 14 → hand or bodySm (never a new role) · 16 → numeral or body · 20/24 → cardTitle/sectionTitle.</div>
+          <div><strong>Fredoka gets a job or goes.</strong> Either a <span class="mono">TYPE.hero</span> role for the Barn counter and ceremonies, or drop the font load.</div>
+          <div><strong>Dynamic Type.</strong> Every role scales with the OS setting up to 200%; paper grows, never clips.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SPACE / RADII / BORDER / SHADOW ===================== -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px;">
+    <div class="sticker" style="padding: 22px 24px; transform: rotate(-0.5deg); background: #fffaf0; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="kicker">★ spacing</div>
+          <div class="whimsy" style="font-size: 22px; line-height: 24px;">SPACE</div>
+        </div>
+        <span class="shipped">shipped · xxs/card/xxl in wave 1</span>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 14px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 2px; height: 2px; background: #a03e2f;"></div><div class="mono">xxs 2</div><span class="proposed">new</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 4px; height: 4px; background: #2a1f15;"></div><div class="mono">xs 4</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 8px; height: 8px; background: #2a1f15;"></div><div class="mono">sm 8</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 12px; height: 12px; background: #2a1f15;"></div><div class="mono">md 12</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 14px; height: 14px; background: #a03e2f;"></div><div class="mono">card 14</div><span class="proposed">new</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 16px; height: 16px; background: #2a1f15;"></div><div class="mono">lg 16</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 24px; height: 24px; background: #2a1f15;"></div><div class="mono">xl 24</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 32px; height: 32px; background: #a03e2f;"></div><div class="mono">xxl 32</div><span class="proposed">new</span></div>
+      </div>
+      <div style="font-size: 13px; line-height: 18px; display: flex; flex-direction: column; gap: 6px;">
+        <div><strong>PAGE_PAD 18</strong> on every header and scroll edge. <strong>TAB_SAFE 74</strong> is the one scroll paddingBottom above the tab bar.</div>
+        <div><strong>Meaning per step.</strong> xxs hairline nudges · xs gutter · sm intra-card · md card-to-card · card = a Sticker's inner pad · lg inter-section · xl loose · xxl ceremony breathing room. <strong>TAP_MIN 44</strong> is the minimum interactive frame.</div>
+        <div><strong>Folding.</strong> 980 bare values → 1,2,3 → xxs/xs · 5,6,7 → sm · 9,10,11 → sm/md · 13,15 → card/lg · 18 → PAGE_PAD · 20,22 → xl · 28 → xxl. Odd numbers vanish. <strong>No arithmetic on SPACE</strong> — 53 sites do <span class="mono">SPACE.xs + 1</span> today.</div>
+      </div>
+    </div>
+
+    <div class="sticker" style="padding: 22px 24px; transform: rotate(0.4deg); background: #fffaf0; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="kicker">★ shape</div>
+          <div class="whimsy" style="font-size: 22px; line-height: 24px;">RADII</div>
+        </div>
+        <span class="shipped">shipped</span>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 2px solid #2a1f15; border-radius: 8px; background: #fbeee2;"></div><div class="mono">sm 8</div><div style="font-size: 11px; color: #605449;">tags · wells</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 2px solid #2a1f15; border-radius: 12px; background: #fbeee2;"></div><div class="mono">md 12</div><div style="font-size: 11px; color: #605449;">rows · chips</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 2px solid #2a1f15; border-radius: 14px; background: #fbeee2;"></div><div class="mono">lg 14</div><div style="font-size: 11px; color: #605449;">Sticker default</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 2px solid #2a1f15; border-radius: 18px; background: #fbeee2;"></div><div class="mono">xl 18</div><div style="font-size: 11px; color: #605449;">sheets · dialogs</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 2px solid #2a1f15; border-radius: 22px; background: #fbeee2;"></div><div class="mono">xxl 22</div><div style="font-size: 11px; color: #605449;">buttons sm/md</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 2px solid #2a1f15; border-radius: 999px; background: #fbeee2;"></div><div class="mono">pill 999</div><div style="font-size: 11px; color: #605449;">capsules · avatars</div></div>
+      </div>
+      <div style="font-size: 13px; line-height: 18px;"><strong>Folding.</strong> 169 bare radii, 32 distinct: 10 → md · 16 → xl · 20 → xxl · 27 (lg button) → pill · 1–4 (rules, bars) → a <span class="mono">RADII.hair 2</span> <span class="proposed">new</span>. Radius always ≥ half the height on anything that is a pill.</div>
+    </div>
+
+    <div class="sticker" style="padding: 22px 24px; transform: rotate(0.5deg); background: #fffaf0; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="kicker">★ depth</div>
+          <div class="whimsy" style="font-size: 22px; line-height: 24px;">Shadows &amp; borders</div>
+        </div>
+        <span class="shipped">shipped · BORDER in wave 1</span>
+      </div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 92px; height: 64px; background: #ffd6dc; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-1deg);"></div><div class="mono">STICKER_SHADOW 4,4 · r0</div><div style="font-size: 11px; color: #605449;">cards · panels · modals</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 92px; height: 44px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 22px; box-shadow: 2px 2px 0 #2a1f15;"></div><div class="mono">SHADOW_SM 2,2 · r0</div><div style="font-size: 11px; color: #605449;">buttons · chips · rows</div></div>
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div class="pill">BORDER <span class="proposed">new</span></div>
+          <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 60px; height: 0; border-top: 1px solid #8c7e71;"></div><span class="mono">hair 1 · separator</span></div>
+          <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 60px; height: 0; border-top: 1.5px solid #2a1f15;"></div><span class="mono">thin 1.5 · ghost, tape, tags</span></div>
+          <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 60px; height: 0; border-top: 2px solid #2a1f15;"></div><span class="mono">ink 2 · the sticker outline</span></div>
+          <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 60px; height: 0; border-top: 3px solid #2a1f15;"></div><span class="mono">heavy 3 · hero / selected</span></div>
+        </div>
+      </div>
+      <div style="font-size: 13px; line-height: 18px;"><strong>Two tiers, zero blur.</strong> The one soft shadow left (TierUpBanner, radius 16) migrates to STICKER_SHADOW. Border widths currently: 2 ×255 · 1.5 ×129 · 2.5 ×10 · 3 ×6 · 1 ×12 — 2.5 folds into 2 or 3.</div>
+    </div>
+
+    <div class="sticker" style="padding: 22px 24px; transform: rotate(-0.3deg); background: #fffaf0; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="kicker">★ opacity · tint · motion</div>
+          <div class="whimsy" style="font-size: 22px; line-height: 24px;">OPACITY · TINT · MOTION</div>
+        </div>
+        <span class="shipped">shipped · wave 1</span>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: flex-end;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 48px; height: 36px; background: #2a1f15; border-radius: 8px; opacity: 0.85;"></div><div class="mono">pressed .85</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 48px; height: 36px; background: #2a1f15; border-radius: 8px; opacity: 0.7;"></div><div class="mono">muted .7</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 48px; height: 36px; background: #2a1f15; border-radius: 8px; opacity: 0.55;"></div><div class="mono">dim .55</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 48px; height: 36px; background: #2a1f15; border-radius: 8px; opacity: 0.45;"></div><div class="mono">ghost .45</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 48px; height: 36px; background: #2a1f15; border-radius: 8px; opacity: 0.3;"></div><div class="mono">rule .3</div></div>
+      </div>
+      <div style="font-size: 13px; line-height: 18px; display: flex; flex-direction: column; gap: 6px;">
+        <div><strong>OPACITY</strong> replaces the 0.45–0.9 ladder (70× 0.7, 28× 0.85, 22× 0.6 …) and the five different "pressed" values inside the primitives. Text colour never comes from opacity. Disabled controls never use it.</div>
+        <div><strong>PRESSED / DISABLED</strong> style tokens: pressed = translate by the shadow offset and collapse the shadow (the Barn tray's press); disabled = cream2 fill · ink outline · muteDim text · no opacity. Nine pressed idioms and five dissolves exist today.</div>
+        <div><strong>TINT</strong> names the 41 <span class="mono">rgba(</span> literals, all derived from ink via <span class="mono">inkAlpha(a)</span>: <span class="mono">scrim .55</span> (corrects UI_COLORS.scrim, which uses rgba(40,30,20) where ink is #2a1f15) · <span class="mono">inkWash .08</span> · <span class="mono">well .12</span> · <span class="mono">paperWash</span> · <span class="mono">sunGlow</span>.</div>
+        <div><strong>MOTION</strong>: <span class="mono">tap 120</span> · <span class="mono">fade 180</span> · <span class="mono">sheetIn 300 / sheetOut 180</span> · <span class="mono">modalHandoff 320</span> · <span class="mono">toast 2400</span>. <strong>MOTION_SPRING</strong>: <span class="mono">tap {14, 220}</span> · <span class="mono">settle {12, 180}</span> · <span class="mono">sway {6, 60}</span> · <span class="mono">overshoot {8, 140}</span> — one parameterization for the 20 springs / 14 configs shipping today. Reduce Motion: every decorative loop has a rest pose; a file that imports Animated imports useMotionPolicy.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

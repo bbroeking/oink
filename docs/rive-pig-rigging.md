@@ -1,8 +1,11 @@
 # Rive homepage pig authoring guide
 
-This is the editor-side contract for the homepage Rive decision spike. The
-current implementation plan is
-`docs/design/rive-homepage-implementation-plan-2026-07.md`.
+This records the July homepage Rive decision spike. The current implementation
+plan is [the September loading/state audit](audits/2026-09-05-rive-loading-and-rosie-states.md).
+The current recovery status and nine-state runtime contract are in
+[the implementation evidence](audits/2026-09-05-rosie-rive-implementation.md).
+The prototype observations below are historical; they do not verify a local
+production asset or a current account export restriction.
 
 ## Non-negotiable result
 
@@ -211,10 +214,9 @@ Then run:
 npm run verify:rive-pig
 ```
 
-This is a static preflight only. It rejects a missing or malformed binary,
-missing authored contract names, skin-map drift, wrong texture dimensions, and
-alpha-geometry differences. Passing it does not satisfy the simulator/device
-motion and attachment gate.
+This now checks the binary names, texture geometry, and actual WASM state-machine
+progression, including repeated triggers and return to the latest mood. It does
+not satisfy the native/web visual or simulator/device attachment gate.
 
 Do not replace the current homepage renderer after export. The app first loads
 the file through the development audit route, maps the state-machine contract,

@@ -1,3 +1,7 @@
+jest.mock("@/components/GreatHungerMeter", () => ({
+	GreatHungerMeter: () => null,
+}));
+
 import { hungerHeroStageIndex } from "@/components/season1/HungerHero";
 
 describe("hungerHeroStageIndex", () => {

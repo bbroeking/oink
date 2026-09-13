@@ -1,22 +1,36 @@
+// The Me tab — identity, prestige, membership, referrals, settings.
+//
+// Wave-3 conformance pass (2026-09-11, section E). The screen is unchanged; it
+// is spoken in the design system instead of hand-drawn:
+//   · the crown is `PageHeader variant="tab"`, and the tab sign, page title and
+//     kicker finally name one thing — "Me", "★ your scrapbook" [E20]
+//   · every literal folded onto TYPE / SPACE / RADII / BORDER / ART_SIZE — the
+//     already-tokenized `wallowWallStyles` block was the in-file template [E3]
+//   · the purchase surface's fine print and legal links are `BodySm tone="secondary"`
+//     + `Button variant="link"` at the 44pt floor; no opacity-derived text [E4]
+//   · sign-out asks first, like the delete row one line below it [E6]
+//   · one loading beat for six reads, and a failed profile is an error + retry [E7]
+//   · every pressable is a Button / Chip / NavRow / Sticker onPress, so the label
+//     and the 44pt frame come from the primitive, not from memory [E9]
+//   · the redeem field is a `TextField` (it owns `placeholderTextColor`) [E10]
+//   · the identity handle is "your friend code", the invite string is "your
+//     referral code" — two nouns for two objects [E11]
+//   · the three hand-rolled modal shells are `AdaptiveModalScaffold` (rename,
+//     whisper) and `Sheet` (the long story) [E12]
+//   · settings rows and the two nav rows are one `NavRow` geometry, grouped [E18, E25]
 import { useCallback, useState } from "react";
 import {
 	ScrollView,
 	StyleSheet,
 	View,
 	SafeAreaView,
-	Pressable,
-	Text,
-	TextInput,
-	Alert,
+	Image,
 	Linking,
 	Share,
-	Modal,
-	KeyboardAvoidingView,
-	Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
@@ -25,19 +39,56 @@ import { lifetimeTickles } from "@/utils/tickles";
 import { submitFeedback, type FeedbackKind } from "@/utils/feedback";
 import { stampFeedbackEverSent } from "@/utils/feedbackNudge";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
-import { ConfirmDialog } from "./ui/ConfirmDialog";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { LoadingBeat } from "./ui/EmptyState";
-import { Icon, type IconName } from "./ui/Icon";
-import { Glyph } from "./ui/Glyph";
-import { Image } from "react-native";
-import { PrestigeAvatar } from "./ui/PrestigeAvatar";
-import { ProfileIdentity } from "./ui/ProfileIdentity";
-import { PigPortrait } from "./ui/PigPortrait";
+import { BlockedUsersSheet } from "./BlockedUsersSheet";
+import {
+	AdaptiveModalScaffold,
+	Body,
+	BodySm,
+	Button,
+	CardTitle,
+	Chip,
+	ConfirmDialog,
+	DialogButtonRow,
+	EmptyState,
+	Glyph,
+	Hand,
+	Icon,
+	Kicker,
+	KickerPill,
+	Label,
+	LoadingBeat,
+	NavRow,
+	PageHeader,
+	PigPortrait,
+	PrestigeAvatar,
+	ProfileIdentity,
+	ProgressTrack,
+	Ribbon,
+	SectionHeader,
+	Sheet,
+	Stat,
+	showToast,
+	Sticker,
+	T,
+	Tag,
+	Tape,
+	TextField,
+	useUnmanagedModalHold,
+} from "@/components/ui";
 import type { TitlePlacement } from "@/constants/title_types";
-import { Sticker, Tape } from "./ui/Sticker";
 import Constants from "expo-constants";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, TYPE, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE, MODAL_BACKDROP_BG } from "@/constants/theme";
+import {
+	ART_SIZE,
+	BORDER,
+	PAGE_PAD,
+	RADII,
+	SPACE,
+	TAB_SAFE,
+	TAP_MIN,
+	TILT,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -48,8 +99,7 @@ import {
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
-import { PURCHASES_LIVE } from "@/constants/featureFlags";
-import { showPurchaseToast } from "./PurchaseToast";
+import { MOTE_MACHINE_VISIBLE, PURCHASES_LIVE } from "@/constants/featureFlags";
 import {
 	myReferralSummary,
 	shareMessageForCode,
@@ -63,6 +113,8 @@ import {
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 import { isUsernameAllowed } from "@/constants/bannedWords";
+import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
+import { showHabitatIntro } from "@/utils/habitatIntro";
 import {
 	refreshWallowTuning,
 	wallowRankLabel,
@@ -83,10 +135,38 @@ type LifetimeAgg = {
 	trades_fulfilled: number;
 };
 
+// Drawing constants, not spacing steps — the geometry of things that are drawn
+// rather than laid out. Named here the way `Chip`'s RIBBON_WIDTH and
+// `PageHeader`'s PLAQUE_WIDTH are, so no raw number sits in a StyleSheet.
+// (2026-09-11)
+const RANK_DECAL = 54; // the square W-rank stamp
+const STEP_DROP = 28; // the connector between the two rank steps
+const SLOP_PAIR_W = 126; // the overlapping Rosie + companion portrait frame
+const SLOP_PAIR_H = 100;
+const PORTRAIT_SIZE = 82; // the companion portraits inside that frame
+// The inline mark beside a button label (copy / check).
+const LABEL_MARK = ART_SIZE.mark;
+// How far a referred friend has to get before the referral counts.
+const REFERRAL_TICKLE_GOAL = 100;
+// A referral code is read one character at a time, so it is set wide. Tracking
+// is a property of THIS string, not a step on a scale — named here rather than
+// inlined, the way `Chip`'s RIBBON_ANGLE is. (2026-09-11)
+const CODE_TRACKING = 1.2;
+
+// The profile read is the screen's spine: five other fetches decorate it, so it
+// alone decides whether the Me tab is waiting, broken, or ready. [E7]
+type ProfileState = "loading" | "ready" | "error";
+
 export function Account({ session }: { session: Session }) {
+	const habitatFlag = useFeatureFlagState("habitat");
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
+	// One gate for six independent reads — the tab shows one loading beat, not N
+	// pop-ins, and a hard failure gets a retry instead of a permanently missing
+	// card. [E7]
+	const [profileState, setProfileState] = useState<ProfileState>("loading");
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
 	// Paid username rename — the "Change your name" settings row opens this dialog.
 	// First rename is free; then 1,000, then 10,000 snouts (server-priced
 	// off renames_used; the client mirrors it for the cost line).
@@ -109,9 +189,13 @@ export function Account({ session }: { session: Session }) {
 	// listener routes back to SupaAuth.
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [deleting, setDeleting] = useState(false);
+	// Ending a session is an exit with no undo, so it asks first — the row one
+	// line below it already did, and the screen shouldn't teach a promise it
+	// breaks. [E6]
+	const [signOutOpen, setSignOutOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
 	// Legacy `my_sounder` RPC, now used only for recruiter/referral standing.
-	// "Sounder" is reserved in player-facing copy for the four-pig crew.
+	// "Sounder" is reserved in player-facing copy for the eight-pig crew.
 	const [recruiterStats, setRecruiterStats] = useState<{
 		engaged_count: number;
 		signup_count: number;
@@ -186,8 +270,8 @@ export function Account({ session }: { session: Session }) {
 			setHasRedeemed(true);
 			setSnouts((s) => s + 50); // server pays +50 on redeem
 			AsyncStorage.removeItem(PENDING_REFERRAL_CODE_KEY).catch(() => {});
-			showPurchaseToast({
-				type: "success",
+			showToast({
+				tone: "success",
 				title: "Code applied!",
 				text: `${r.inviter_username ?? "Your friend"} brought you in — +50 snouts.`,
 			});
@@ -247,6 +331,9 @@ export function Account({ session }: { session: Session }) {
 	// top-level lifetime figures always; the sheet opens the full ledger and
 	// lazily pulls the aggregate counts (me_lifetime_stats) only on first open.
 	const [longStoryOpen, setLongStoryOpen] = useState(false);
+	// __DEV__ only: the storefront-missing shortcut that flips is_vip locally.
+	// Never reachable in a production build (see handleUnlockPro).
+	const [devUnlockOpen, setDevUnlockOpen] = useState(false);
 	// The Me tab's sheets/dialogs are all unmanaged native Modals (direct-tap,
 	// outside the popup queue): the release notes, delete-account confirm, paid
 	// rename, feedback whisper, and the long-story ledger. Hold the queue while any
@@ -254,7 +341,14 @@ export function Account({ session }: { session: Session }) {
 	// #50152 wedge (issue #4). ReleaseNotesModal is also queue-slotted in the Barn;
 	// this holds only for its Me-tab (plain-state) open.
 	useUnmanagedModalHold(
-		releaseNotesOpen || deleteOpen || renameOpen || feedbackOpen || longStoryOpen
+		releaseNotesOpen ||
+			blockedUsersOpen ||
+			deleteOpen ||
+			signOutOpen ||
+			renameOpen ||
+			feedbackOpen ||
+			longStoryOpen ||
+			devUnlockOpen
 	);
 	const [lifetimeAgg, setLifetimeAgg] = useState<LifetimeAgg | null>(null);
 	const [lifetimeAggBusy, setLifetimeAggBusy] = useState(false);
@@ -277,8 +371,9 @@ export function Account({ session }: { session: Session }) {
 		name: string;
 		placement: TitlePlacement;
 	} | null>(null);
-	useFocusEffect(
-		useCallback(() => {
+	// The screen's spine read, memoized so both the focus effect and the error
+	// state's retry run exactly the same thing. [E7]
+	const loadProfile = useCallback(() => {
 			// active_title joins through the FK on profiles.active_title_id.
 			// If the titles migration isn't deployed yet the join 400s; fall
 			// back to the no-title select so Account still loads.
@@ -323,24 +418,34 @@ export function Account({ session }: { session: Session }) {
 							.single();
 						row = fallback.data;
 					}
-					setUsername(row?.username ?? null);
-					setDiscriminator(row?.discriminator ?? null);
-					setTicklesEarned(row?.tickles_earned ?? 0);
-					setTicklesLifetimeBase(row?.tickles_lifetime_base ?? 0);
-					setSnouts(row?.counter ?? 0);
-					setActiveHat(row?.active_hat_id ?? null);
-					setIsVip(row?.is_vip ?? false);
-					setVipUntil(row?.vip_until ?? null);
-					setActiveDays(row?.distinct_active_days ?? 0);
-					setWarWins(row?.war_wins ?? 0);
-					setTicklesWasted(row?.tickles_wasted_total ?? 0);
-					setReferralsCompleted(row?.referrals_completed ?? 0);
-					setHasRedeemed(!!row?.referred_by);
-					const t = Array.isArray(row?.active_title)
-						? row?.active_title[0]
-						: row?.active_title;
+					// A null row is UNKNOWN, not empty: both selects failed, so the
+					// screen says so and offers the read again. [E7]
+					if (!row) {
+						setProfileState("error");
+						return;
+					}
+					setUsername(row.username ?? null);
+					setDiscriminator(row.discriminator ?? null);
+					setTicklesEarned(row.tickles_earned ?? 0);
+					setTicklesLifetimeBase(row.tickles_lifetime_base ?? 0);
+					setSnouts(row.counter ?? 0);
+					setActiveHat(row.active_hat_id ?? null);
+					setIsVip(row.is_vip ?? false);
+					setVipUntil(row.vip_until ?? null);
+					setActiveDays(row.distinct_active_days ?? 0);
+					setWarWins(row.war_wins ?? 0);
+					setTicklesWasted(row.tickles_wasted_total ?? 0);
+					setReferralsCompleted(row.referrals_completed ?? 0);
+					setHasRedeemed(!!row.referred_by);
+					const t = Array.isArray(row.active_title)
+						? row.active_title[0]
+						: row.active_title;
 					setActiveTitle(t ?? null);
-				});
+					setProfileState("ready");
+				},
+				// A rejected read is the same unknown as a null row. [E7]
+				() => setProfileState("error"),
+			);
 			// renames_used shipped with the rename migration (it IS in the live
 			// schema — see utils/database.types.ts). Still fetched separately so a
 			// per-column failure can't 400 the main profile select and zero out the
@@ -371,8 +476,13 @@ export function Account({ session }: { session: Session }) {
 					setWallowRegenSeconds(state.wallow_regen_seconds);
 				}
 			});
-		}, [session.user.id])
-	);
+	}, [session.user.id]);
+	useFocusEffect(loadProfile);
+
+	const retryProfile = () => {
+		setProfileState("loading");
+		loadProfile();
+	};
 
 	const handle = username
 		? discriminator
@@ -380,7 +490,7 @@ export function Account({ session }: { session: Session }) {
 			: username
 		: null;
 
-	// Whether to show the "Got a code from a friend?" apply box. Mirrors the
+	// Whether to show the "Got a friend's referral code?" apply box. Mirrors the
 	// FULL server eligibility gate in redeem_referral_code, not just the
 	// already-redeemed check — otherwise an old/active account (e.g. the
 	// founder) whose referred_by is null still sees a box that can only ever
@@ -468,8 +578,8 @@ export function Account({ session }: { session: Session }) {
 			setSnouts(r.remaining);
 			setRenamesUsed((n) => n + 1);
 			setRenameOpen(false);
-			showPurchaseToast({
-				type: "success",
+			showToast({
+				tone: "success",
 				title: "New name!",
 				text: `You're ${next} now.`,
 			});
@@ -541,10 +651,9 @@ export function Account({ session }: { session: Session }) {
 		);
 	};
 
-	// Copies the player's handle (username#discriminator) to the
-	// clipboard. The referral-link flow was cut — a handle a friend
-	// types into Friends → Add is robust where a GitHub-Pages deep
-	// link was not.
+	// Copies the player's FRIEND CODE (username#discriminator) to the clipboard
+	// — the string a friend types into Friends → Add. Distinct from the referral
+	// code below, and now named apart everywhere on this screen. [E11]
 	const handleCopyCode = async () => {
 		if (!handle) return;
 		await Clipboard.setStringAsync(handle);
@@ -580,8 +689,8 @@ export function Account({ session }: { session: Session }) {
 		setBusy(false);
 		if (result.ok) {
 			setIsVip(true);
-			showPurchaseToast({
-				type: "success",
+			showToast({
+				tone: "success",
 				title: "Welcome to the Slop Club!",
 				text: "You're in — manage anytime in Settings.",
 			});
@@ -593,38 +702,30 @@ export function Account({ session }: { session: Session }) {
 			// user or an App Review pass (it reads as a broken/incomplete store).
 			// In production, no_offering degrades to a plain "not available" note.
 			if (__DEV__) {
-				Alert.alert(
-					"Slop Club",
-					"Storefront not configured yet (need ASC products + RC offering/paywall). Unlock for free in dev?",
-					[
-						{ text: "Cancel", style: "cancel" },
-						{
-							text: "Unlock (dev)",
-							onPress: async () => {
-								await rpc("dev_set_vip", { target: true });
-								setIsVip(true);
-							},
-						},
-					]
-				);
+				setDevUnlockOpen(true);
 			} else {
-				Alert.alert(
-					"Slop Club",
-					"The Slop Club isn't available right now — please try again soon."
-				);
+				showToast({
+					tone: "fail",
+					title: "Slop Club",
+					text: "The Slop Club isn't available right now — please try again soon.",
+				});
 			}
 			return;
 		}
-		Alert.alert("Couldn't join the Slop Club", "Please try again.");
+		showToast({
+			tone: "fail",
+			title: "Couldn't join the Slop Club",
+			text: "Please try again.",
+		});
 	};
 
 	const handleManage = async () => {
 		await presentCustomerCenter();
 	};
 
-	// Copy the player's referral code to the clipboard. Distinct from
-	// handleCopyCode (which copies their username#discriminator handle
-	// for in-app friend-add) — different purpose, different target.
+	// Copy the player's REFERRAL CODE to the clipboard. Distinct from
+	// handleCopyCode (which copies their friend code for in-app friend-add)
+	// — different purpose, different target, different noun. [E11]
 	const handleCopyReferralCode = async () => {
 		if (!referral?.code) return;
 		await Clipboard.setStringAsync(referral.code);
@@ -659,501 +760,632 @@ export function Account({ session }: { session: Session }) {
 			if (pro) {
 				await rpc("dev_set_vip", { target: true });
 				setIsVip(true);
-				Alert.alert("Restored", "Your Slop Club membership is active.");
+				showToast({
+					tone: "success",
+					title: "Restored",
+					text: "Your Slop Club membership is active.",
+				});
 			} else {
-				Alert.alert("Nothing to restore", "No active Slop Club subscription on this Apple ID.");
+				showToast({
+					tone: "fail",
+					title: "Nothing to restore",
+					text: "No active Slop Club subscription on this Apple ID.",
+				});
 			}
 		} else {
-			Alert.alert("Restore failed", "Please try again.");
+			showToast({
+				tone: "fail",
+				title: "Restore failed",
+				text: "Please try again.",
+			});
 		}
+	};
+
+	// Drop the push token while still authenticated so this device stops
+	// receiving pushes for the signed-out account.
+	const handleSignOut = async () => {
+		setSignOutOpen(false);
+		await clearPushToken();
+		await supabase.auth.signOut();
 	};
 
 	return (
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safe}>
 				<ScrollView contentContainerStyle={styles.content}>
-					<View style={styles.header}>
-						<Text style={styles.kicker}>★ your scrapbook</Text>
-						<Text style={styles.title}>Account</Text>
-						<View style={styles.titleRule} />
-					</View>
+					<PageHeader
+						variant="tab"
+						kicker="your scrapbook"
+						title="Me"
+						style={styles.crown}
+					/>
 
-					{/* Your code card — scrapbook page */}
-					{username && (
-						<View style={styles.codeWrap}>
-							<Tape
-								color="sun"
-								rotate={-10}
-								width={66}
-								height={18}
-								style={styles.codeTape}
-							/>
-							<Sticker color="rose" rotate={-1} radius={18} style={styles.codeCard}>
-								<View style={styles.codeRow}>
-									<PrestigeAvatar
-										size={visibleWallowCount > 0 ? 76 : 56}
-										hatId={activeHat}
-										prestigeLevel={visibleWallowCount}
-									/>
-									<View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
-										<Text style={styles.codeLabel}>your code</Text>
-										<ProfileIdentity
-											username={username}
-											title={activeTitle}
-											variant="profile"
-										/>
-										{!!handle && discriminator && (
-											<Text style={styles.codeHandle}>{handle}</Text>
-										)}
-										<View
-											style={[
-												styles.memberChip,
-												isVip ? styles.memberChipVip : styles.memberChipFree,
-											]}
+					{profileState === "loading" ? (
+						<LoadingBeat label="turning to your page" />
+					) : profileState === "error" ? (
+						<EmptyState
+							kind="error"
+							title="Couldn't open your scrapbook"
+							sub="The bog ate that one. Give it another nudge."
+							action={
+								<Button
+									variant="ghost"
+									size="sm"
+									onPress={retryProfile}
+									accessibilityLabel="Try loading your page again"
+									accessibilityHint="Re-reads your profile from the farm"
+								>
+									Try again
+								</Button>
+							}
+						/>
+					) : (
+						<>
+							{/* Your friend code card — scrapbook page */}
+							<View style={styles.codeWrap}>
+								<Tape
+									color="sun"
+									rotate={-10}
+									width={66}
+									height={18}
+									style={styles.codeTape}
+								/>
+								<Sticker
+									color="rose"
+									rotate={TILT.card}
+									radius={RADII.xl}
+									pad
+									footer={
+										<Button
+											variant="ghost"
+											size="sm"
+											full
+											icon={
+												<Icon
+													name={copied ? "check" : "copy"}
+													size={LABEL_MARK}
+													color={UI_COLORS.textPrimary}
+													strokeWidth={2.2}
+												/>
+											}
+											onPress={handleCopyCode}
+											accessibilityLabel={
+												copied
+													? "Friend code copied"
+													: "Copy my friend code"
+											}
+											accessibilityHint="Copies your friend code so a friend can add you"
 										>
-											<Text style={styles.memberChipText}>
-												{isVip ? "SLOP CLUB" : "FREE RANGE"}
-											</Text>
+											{copied ? "Copied!" : "Copy my friend code"}
+										</Button>
+									}
+								>
+									<View style={styles.codeRow}>
+										<PrestigeAvatar
+											size={visibleWallowCount > 0 ? 76 : 56}
+											hatId={activeHat}
+											prestigeLevel={visibleWallowCount}
+										/>
+										<View style={styles.codeCol}>
+											<Hand tone="secondary">your friend code</Hand>
+											<ProfileIdentity
+												username={username}
+												title={activeTitle}
+												variant="profile"
+											/>
+											{!!handle && discriminator && (
+												<T
+													role="kicker"
+													tone="secondary"
+													style={styles.codeHandle}
+												>
+													{handle}
+												</T>
+											)}
+											<Tag
+												label={isVip ? "SLOP CLUB" : "FREE RANGE"}
+												tone={isVip ? "sun" : "paper"}
+												style={styles.memberTag}
+											/>
 										</View>
 									</View>
-								</View>
 
-								{/* Identity-card band — 3-col cluster inside the card.
-								    Divided by 1px ink-mute verticals + a dashed top
-								    border. Lifetime figures live HERE (the standalone
-								    "long story" card was folded in 2026-07-17); tapping
-								    the band opens the full long-story ledger sheet. */}
-								<Pressable onPress={openLongStory}>
-									<View style={styles.lifetimeStatsRow}>
-										<LifetimeStat
-											label="LIFETIME TICKLES"
+									{/* Identity-card band — 3-col cluster inside the card.
+									    Divided by 1px ink-mute verticals + a dashed top
+									    border. Lifetime figures live HERE (the standalone
+									    "long story" card was folded in 2026-07-17); tapping
+									    the band opens the full long-story ledger sheet. */}
+									<Sticker
+										color="rose"
+										rotate={0}
+										border={0}
+										shadow="none"
+										radius={RADII.md}
+										onPress={openLongStory}
+										accessibilityLabel="Your lifetime story"
+										accessibilityHint="Opens the full lifetime ledger"
+										style={styles.lifetimeStatsRow}
+									>
+										<Stat
+											label="lifetime tickles"
 											value={lifetimeTickles(
 												ticklesLifetimeBase,
 												ticklesEarned
 											).toLocaleString()}
+											style={styles.lifetimeStatCol}
 										/>
 										<View style={styles.lifetimeStatDivider} />
-										<LifetimeStat
-											label="ACTIVE DAYS"
+										<Stat
+											label="active days"
 											value={activeDays.toLocaleString()}
+											style={styles.lifetimeStatCol}
 										/>
 										<View style={styles.lifetimeStatDivider} />
-										<LifetimeStat label="JOINED" value={joinedLabel} />
-									</View>
-								</Pressable>
-								<Pressable onPress={handleCopyCode} style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.7 }]}>
-									<Icon
-										name={copied ? "check" : "copy"}
-										size={16}
-										color={WHIMSY.ink}
-										strokeWidth={2.2}
-									/>
-									<Text style={styles.shareBtnText}>
-										{copied ? "Copied!" : "Copy my code"}
-									</Text>
-								</Pressable>
-							</Sticker>
-						</View>
-					)}
-
-					<WallowWall
-						count={visibleWallowCount}
-						regenSeconds={visibleRegenSeconds}
-						previewing={__DEV__ && devWallowPreview}
-						onTogglePreview={__DEV__ ? () => setDevWallowPreview((shown) => !shown) : undefined}
-					/>
-
-
-					{/* Achievements entry — single-line tappable row that
-					    routes to the full grid. Sits above Sounder so it's
-					    discoverable as the primary "see your progress" surface. */}
-					<Pressable
-						onPress={() => router.push("/achievements")}
-						style={({ pressed }) => [achievementStyles.row, pressed && { opacity: 0.7 }]}
-					>
-						<View style={achievementStyles.iconBubble}>
-							<Icon name="trophy" size={22} color={WHIMSY.ink} filled />
-						</View>
-						<View style={{ flex: 1 }}>
-							<Text style={achievementStyles.label}>Achievements</Text>
-							<Text style={achievementStyles.sub}>
-								Track your devotion, generous + greedy ladders.
-							</Text>
-						</View>
-						{unclaimedAchv > 0 && (
-							<View style={achievementStyles.badge}>
-								<Text style={achievementStyles.badgeText}>
-									{unclaimedAchv > 99 ? "99+" : unclaimedAchv}
-								</Text>
-							</View>
-						)}
-						<Text style={achievementStyles.chev}>›</Text>
-					</Pressable>
-
-					{/* Slop Club membership card — perks, Join CTA (→ RevenueCat
-					    hosted paywall for plan/price), fine-print. */}
-					{IAP_ENABLED && (
-						<Sticker
-							color={isVip ? "lilac" : "sun"}
-							rotate={-0.5}
-							radius={16}
-							style={[styles.slopWrap, { overflow: "hidden" }]}
-						>
-							<View style={styles.slopHeader}>
-								<View>
-									<Text style={styles.slopTitle}>Slop Club</Text>
-									<Text style={styles.slopMembershipLabel}>membership</Text>
-								</View>
-								<View style={[styles.slopStatus, isVip && styles.slopStatusActive]}>
-									<Text style={styles.slopStatusText}>
-										{isVip ? "ACTIVE" : "ONE FRIEND"}
-									</Text>
-								</View>
-							</View>
-
-							<View style={styles.slopHero}>
-								<View style={styles.slopPigPair} accessibilityElementsHidden>
-									<View style={styles.slopPigRosie}>
-										<PigPortrait pigId="rosie" size={82} />
-									</View>
-									<View style={styles.slopPigFriend}>
-										<PigPortrait pigId="bandit" size={82} />
-									</View>
-								</View>
-								<View style={styles.slopHeroCopy}>
-									<Text style={styles.slopPromise}>
-										{isVip ? "Rosie has company." : "Give Rosie a friend."}
-									</Text>
-									<Text style={styles.slopTagline}>
-										{hasReferralOnlySlopClub
-											? `Your companion access is active through ${referralGrantDateLabel}.`
-											: "Choose one long-term companion in the Pen, then decide who greets you at home."}
-									</Text>
-								</View>
-							</View>
-
-							<View style={styles.slopSeasonRow}>
-								<Image
-									source={require("@/assets/images/perks/members_drops.png")}
-									style={styles.slopSeasonArt}
-									resizeMode="contain"
-								/>
-								<View style={styles.slopSeasonCopy}>
-									<Text style={styles.slopSeasonKicker}>Also included</Text>
-									<Text style={styles.slopSeasonTitle}>Premium season collectibles</Text>
-									<Text style={styles.slopSeasonDetail}>
-										Earn cosmetic rewards as you play—never a gameplay advantage.
-									</Text>
-								</View>
-							</View>
-
-							{isVip ? (
-								<>
-									<Pressable
-										onPress={() => router.push("/(tabs)/shop?view=pen" as Href)}
-										style={[styles.slopBtn, { backgroundColor: WHIMSY.paper }]}
-									>
-										<Text style={styles.slopBtnText}>Visit the Pen</Text>
-									</Pressable>
-									{!hasReferralOnlySlopClub ? (
-										<Pressable onPress={handleManage} style={styles.slopManageLink}>
-											<Text style={styles.slopManageLinkText}>Manage subscription</Text>
-										</Pressable>
-									) : (
-										<Text style={styles.slopGrantFinePrint}>
-											No subscription needed. You won’t be charged.
-										</Text>
-									)}
-								</>
-							) : (
-								<Pressable
-									onPress={PURCHASES_LIVE ? handleUnlockPro : undefined}
-									disabled={busy || !PURCHASES_LIVE}
-									style={({ pressed }) => [
-										styles.slopBtn,
-										{ backgroundColor: WHIMSY.lilac },
-										(pressed || busy) && { opacity: 0.7 },
-										!PURCHASES_LIVE && { opacity: 0.75 },
-									]}
-								>
-									<Text style={styles.slopBtnText}>
-										{!PURCHASES_LIVE
-											? "Coming soon…"
-											: busy
-											? "…"
-											: "Join the Slop Club"}
-									</Text>
-								</Pressable>
-							)}
-
-							{!isVip && PURCHASES_LIVE && (
-								<Text style={styles.slopFinePrint}>
-									Auto-renews. Cancel anytime in Settings.
-								</Text>
-							)}
-							{/* Terms + Privacy on the purchase surface — Apple review
-							    expects both linked where a subscription is sold. */}
-							{!isVip && (
-								<View style={styles.slopLegal}>
-									<Pressable
-										onPress={() =>
-											Linking.openURL("https://ticklethepig.com/terms")
-										}
-									>
-										<Text style={styles.slopLegalLink}>Terms</Text>
-									</Pressable>
-									<Text style={styles.slopLegalDot}>·</Text>
-									<Pressable
-										onPress={() =>
-											Linking.openURL("https://ticklethepig.com/privacy")
-										}
-									>
-										<Text style={styles.slopLegalLink}>Privacy</Text>
-									</Pressable>
-								</View>
-							)}
-						</Sticker>
-					)}
-
-					{/* Refer friends — code-based invite card. Drops between
-					    Slop Club and Settings per docs/referrals.md. Shows
-					    the player's persistent code + Copy + Share + a
-					    milestone progress bar toward the Messenger Hat. */}
-					{referral?.code && (
-						<Sticker
-							color="rose"
-							rotate={-0.8}
-							radius={16}
-							style={referralStyles.card}
-						>
-							<Text style={referralStyles.kicker}>★ referrals ★</Text>
-							<Text style={referralStyles.title}>Invite new pigs</Text>
-							<Text style={referralStyles.intro}>
-								Share your code with a new player. When they join and play, you both earn rewards.
-							</Text>
-							<Text style={referralStyles.label}>Your invite code</Text>
-							<View style={referralStyles.codePill}>
-								<Text style={referralStyles.codeValue}>{referral.code}</Text>
-								<Pressable
-									onPress={handleCopyReferralCode}
-									style={({ pressed }) => [referralStyles.copyBtn, pressed && { opacity: 0.7 }]}
-								>
-									<Icon
-										name={referralCodeCopied ? "check" : "copy"}
-										size={14}
-										color={WHIMSY.ink}
-										strokeWidth={2.2}
-									/>
-									<Text style={referralStyles.copyBtnText}>
-										{referralCodeCopied ? "Copied" : "Copy"}
-									</Text>
-								</Pressable>
-							</View>
-							<Pressable
-								onPress={handleShareReferral}
-								style={({ pressed }) => [referralStyles.shareBtn, pressed && { opacity: 0.7 }]}
-							>
-								<Text style={referralStyles.shareBtnText}>Share your code</Text>
-							</Pressable>
-							<ReferralMilestoneRow
-								completed={referral.referrals_completed}
-								goal={referral.next_milestone_at ?? 3}
-								capped={referral.next_milestone_at == null}
-							/>
-
-							{/* Recruiter standing. The backing RPC/route keep their
-							    legacy names, but player-facing language stays firmly
-							    in the referral model; Sounder means the four-pig crew. */}
-							{recruiterStats && (
-								<View style={referralStyles.downlineStrip}>
-									<View style={referralStyles.downlineTextCol}>
-										<Text style={referralStyles.downlineCount}>
-											{recruiterStats.engaged_count} completed{" "}
-											{recruiterStats.engaged_count === 1 ? "referral" : "referrals"}
-										</Text>
-										{recruiterStats.next_title && (
-											<Text style={referralStyles.downlineNext}>
-												{recruiterStats.next_threshold! - recruiterStats.engaged_count} more to
-												unlock{" "}
-												<Text style={referralStyles.downlineNextTitle}>
-													{recruiterStats.next_title}
-												</Text>
-											</Text>
-										)}
-									</View>
-									<Pressable
-										onPress={() => router.push("/sounder")}
-										hitSlop={6}
-										style={({ pressed }) => pressed && { opacity: 0.7 }}
-									>
-										<Text style={referralStyles.downlineLink}>referral board →</Text>
-									</Pressable>
-								</View>
-							)}
-							{/* Recent referrals + how close each is to counting
-							    (100 tickles). Replaces the bare
-							    "{N} on the way" aggregate. */}
-							{(referral.recent_friends ?? []).length > 0 && (
-								<View style={referralStyles.friendList}>
-									<Text style={referralStyles.subsectionLabel}>Recent referrals</Text>
-									{(referral.recent_friends ?? []).slice(0, 3).map((f, i) => (
-										<ReferralFriendRow key={(f.username ?? "pig") + i} friend={f} />
-									))}
-								</View>
-							)}
-
-							{/* Full referral progress + reward ladder. */}
-							{(referral.referrals_completed > 0 ||
-								referral.referrals_pending > 0) && (
-								<Pressable
-									onPress={() => router.push("/sounder-progress" as Href)}
-									style={({ pressed }) => [referralStyles.seeMore, pressed && { opacity: 0.7 }]}
-									hitSlop={6}
-								>
-									<Text style={referralStyles.seeMoreText}>
-										Referral details + rewards ›
-									</Text>
-								</Pressable>
-							)}
-
-							<Text style={referralStyles.fine}>Each completed referral earns you 100 tickles.</Text>
-							<Text style={referralStyles.finePrint}>
-								A referral counts as soon as the new player reaches 100 tickles.
-							</Text>
-
-							{/* Have a code? — redeem a friend's code right here.
-							    Shown only to accounts the server would actually
-							    let redeem: never-redeemed AND < 24h old AND
-							    < 5 tickles (canRedeemCode mirrors the server
-							    gate). An old/active account never sees a box it
-							    can't use; a genuinely-eligible new player still
-							    gets specific refusal copy on any edge case. */}
-							{canRedeemCode && (
-								<View style={referralStyles.haveWrap}>
-									<View style={referralStyles.divider} />
-									<Text style={referralStyles.haveLabel}>
-										Got a code from a friend?
-									</Text>
-									<View style={referralStyles.entryRow}>
-										<TextInput
-											style={referralStyles.entryInput}
-											value={codeInput}
-											onChangeText={(t) => {
-												setCodeInput(t.toUpperCase());
-												if (codeError) setCodeError(null);
-											}}
-											placeholder="PIGGY-1234"
-											placeholderTextColor={WHIMSY.muteSoft}
-											autoCapitalize="characters"
-											autoCorrect={false}
-											maxLength={10}
-											editable={!codeBusy}
+										<Stat
+											label="joined"
+											value={joinedLabel}
+											style={styles.lifetimeStatCol}
 										/>
-										<Pressable
-											onPress={handleApplyCode}
-											disabled={codeBusy || !codeInput.trim()}
-											style={[
-												referralStyles.applyBtn,
-												(codeBusy || !codeInput.trim()) &&
-													referralStyles.applyBtnDisabled,
-											]}
-										>
-											<Text style={referralStyles.applyBtnText}>
-												{codeBusy ? "…" : "Apply"}
-											</Text>
-										</Pressable>
+									</Sticker>
+								</Sticker>
+							</View>
+
+							<WallowWall
+								count={visibleWallowCount}
+								regenSeconds={visibleRegenSeconds}
+								previewing={__DEV__ && devWallowPreview}
+								onTogglePreview={__DEV__ ? () => setDevWallowPreview((shown) => !shown) : undefined}
+							/>
+
+							{/* The player's own Truffle Patch ledger + the achievements
+							    grid. Both sit with the progress surfaces (above the
+							    membership card), not down in Settings. One row
+							    geometry for both. [E18] */}
+							<NavRow
+								glyph="sparkles"
+								label="Your digging story"
+								sub={
+									MOTE_MACHINE_VISIBLE
+										? "See your digs, finds, motes, and Sounder bonuses."
+										: "See your digs, finds, and Sounder bonuses."
+								}
+								onPress={() =>
+									router.push(
+										`/digging-stats?userId=${encodeURIComponent(session.user.id)}&name=${encodeURIComponent(username ?? "You")}` as Href,
+									)
+								}
+								accessibilityHint="Opens your digging story"
+							/>
+
+							<NavRow
+								icon="trophy"
+								label="Achievements"
+								sub="Track your devotion, generous + greedy ladders."
+								badge={
+									unclaimedAchv > 0 ? (
+										<Tag
+											label={unclaimedAchv > 99 ? "99+" : String(unclaimedAchv)}
+											tone="sun"
+											accessibilityLabel={`${unclaimedAchv} ready to claim`}
+										/>
+									) : undefined
+								}
+								onPress={() => router.push("/achievements")}
+								accessibilityHint="Opens the achievements grid"
+							/>
+
+							{/* Slop Club membership card — perks, Join CTA (→ RevenueCat
+							    hosted paywall for plan/price), fine-print. */}
+							{IAP_ENABLED && (
+								<Sticker
+									color="slopBand"
+									rotate={TILT.card}
+									radius={RADII.xl}
+									pad
+									style={styles.slopWrap}
+								>
+									<Ribbon
+										label={isVip ? "ACTIVE" : "ONE FRIEND"}
+										tone={isVip ? "slopGold" : "sun"}
+									/>
+									<View style={styles.slopHeader}>
+										<CardTitle>Slop Club</CardTitle>
+										<KickerPill star={false} tone="secondary">
+											membership
+										</KickerPill>
 									</View>
-									{codeError && (
-										<Text style={referralStyles.entryError}>{codeError}</Text>
+
+									<View style={styles.slopHero}>
+										<View style={styles.slopPigPair} accessibilityElementsHidden>
+											<View style={styles.slopPigRosie}>
+												<PigPortrait pigId="rosie" size={PORTRAIT_SIZE} />
+											</View>
+											<View style={styles.slopPigFriend}>
+												<PigPortrait pigId="bandit" size={PORTRAIT_SIZE} />
+											</View>
+										</View>
+										<View style={styles.slopHeroCopy}>
+											<CardTitle>
+												{isVip ? "Rosie has company." : "Give Rosie a friend."}
+											</CardTitle>
+											<Hand style={styles.slopTagline}>
+												{hasReferralOnlySlopClub
+													? `Your companion access is active through ${referralGrantDateLabel}.`
+													: "Choose one long-term companion in the Pen, then decide who greets you at home."}
+											</Hand>
+										</View>
+									</View>
+
+									<View style={styles.slopSeasonRow}>
+										<Image
+											source={require("@/assets/images/perks/members_drops.png")}
+											style={styles.slopSeasonArt}
+											resizeMode="contain"
+											accessible={false}
+										/>
+										<View style={styles.slopSeasonCopy}>
+											<KickerPill star={false} tone="secondary">
+												Also included
+											</KickerPill>
+											<T role="cardTitleSm">Premium season collectibles</T>
+											<Hand>
+												Earn cosmetic rewards as you play—never a gameplay advantage.
+											</Hand>
+										</View>
+									</View>
+
+									{isVip ? (
+										<>
+											<Button
+												variant="ghost"
+												full
+												style={styles.slopBtn}
+												onPress={() => router.push("/(tabs)/shop?view=pen" as Href)}
+												accessibilityLabel="Visit the Pen"
+												accessibilityHint="Opens the Pen, where you choose your companion"
+											>
+												Visit the Pen
+											</Button>
+											{!hasReferralOnlySlopClub ? (
+												<Button
+													variant="link"
+													size="sm"
+													full
+													onPress={handleManage}
+													accessibilityLabel="Manage subscription"
+													accessibilityHint="Opens the App Store subscription settings"
+												>
+													Manage subscription
+												</Button>
+											) : (
+												<BodySm align="center" style={styles.slopGrantFinePrint}>
+													No subscription needed. You won’t be charged.
+												</BodySm>
+											)}
+										</>
+									) : (
+										<Button
+											variant="gold"
+											full
+											style={styles.slopBtn}
+											onPress={PURCHASES_LIVE ? handleUnlockPro : undefined}
+											disabled={!PURCHASES_LIVE}
+											loading={busy}
+											accessibilityLabel={
+												PURCHASES_LIVE
+													? "Join the Slop Club"
+													: "Join the Slop Club — coming soon"
+											}
+											accessibilityHint={
+												PURCHASES_LIVE
+													? "Opens the subscription plans and prices"
+													: "Memberships aren't on sale yet"
+											}
+										>
+											{PURCHASES_LIVE ? "Join the Slop Club" : "Coming soon…"}
+										</Button>
 									)}
-								</View>
+
+									{!isVip && PURCHASES_LIVE && (
+										<BodySm
+											tone="secondary"
+											align="center"
+											style={styles.slopFinePrint}
+										>
+											Auto-renews. Cancel anytime in Settings.
+										</BodySm>
+									)}
+									{/* Terms + Privacy on the purchase surface — Apple review
+									    expects both linked where a subscription is sold. Ink,
+									    not an opacity crush, and a full 44pt target. [E4] */}
+									{!isVip && (
+										<View style={styles.slopLegal}>
+											<Button
+												variant="link"
+												size="sm"
+												onPress={() =>
+													Linking.openURL("https://ticklethepig.com/terms")
+												}
+												accessibilityLabel="Terms of service"
+												accessibilityHint="Opens ticklethepig.com/terms in your browser"
+											>
+												Terms
+											</Button>
+											<BodySm tone="secondary">·</BodySm>
+											<Button
+												variant="link"
+												size="sm"
+												onPress={() =>
+													Linking.openURL("https://ticklethepig.com/privacy")
+												}
+												accessibilityLabel="Privacy policy"
+												accessibilityHint="Opens ticklethepig.com/privacy in your browser"
+											>
+												Privacy
+											</Button>
+										</View>
+									)}
+								</Sticker>
 							)}
-							{codeInviter && (
-								<View style={referralStyles.successRow}>
-									<Text style={referralStyles.entrySuccess}>
-										You're in — thanks to {codeInviter}! +50
-									</Text>
-									<Image
-										source={require("@/assets/images/emoji/pig.png")}
-										style={referralStyles.successPig}
-										resizeMode="contain"
+
+							{/* Refer friends — code-based invite card. Drops between
+							    Slop Club and Settings per docs/referrals.md. Shows
+							    the player's persistent referral code + Copy + Share +
+							    a milestone progress bar toward the Messenger Hat. */}
+							{referral?.code && (
+								<Sticker
+									color="rose"
+									rotate={TILT.card}
+									radius={RADII.xl}
+									pad
+								>
+									<Kicker>referrals</Kicker>
+									<CardTitle>Invite new pigs</CardTitle>
+									<BodySm tone="secondary" style={styles.referralIntro}>
+										Share your code with a new player. When they join and play, you both earn rewards.
+									</BodySm>
+									<Hand tone="secondary">Your referral code</Hand>
+									<View style={styles.codePill}>
+										<T role="sectionTitle" style={styles.codePillValue}>
+											{referral.code}
+										</T>
+										<Button
+											variant="ghost"
+											size="sm"
+											icon={
+												<Icon
+													name={referralCodeCopied ? "check" : "copy"}
+													size={LABEL_MARK}
+													color={UI_COLORS.textPrimary}
+													strokeWidth={2.2}
+												/>
+											}
+											onPress={handleCopyReferralCode}
+											accessibilityLabel={
+												referralCodeCopied
+													? "Referral code copied"
+													: "Copy your referral code"
+											}
+											accessibilityHint="Copies your referral code to the clipboard"
+										>
+											{referralCodeCopied ? "Copied" : "Copy"}
+										</Button>
+									</View>
+									<Button
+										variant="lilac"
+										full
+										style={styles.referralShare}
+										onPress={handleShareReferral}
+										accessibilityLabel="Share your referral code"
+										accessibilityHint="Opens the share sheet with your invite message"
+									>
+										Share your referral code
+									</Button>
+									<ReferralMilestoneRow
+										completed={referral.referrals_completed}
+										goal={referral.next_milestone_at ?? 3}
+										capped={referral.next_milestone_at == null}
+									/>
+
+									{/* Recruiter standing. The backing RPC/route keep their
+									    legacy names, but player-facing language stays firmly
+									    in the referral model; Sounder means the eight-pig crew. */}
+									{recruiterStats && (
+										<View style={styles.downlineStrip}>
+											<View style={styles.downlineTextCol}>
+												<BodySm>
+													{recruiterStats.engaged_count} completed{" "}
+													{recruiterStats.engaged_count === 1 ? "referral" : "referrals"}
+												</BodySm>
+												{recruiterStats.next_title && (
+													<Hand tone="secondary">
+														{recruiterStats.next_threshold! - recruiterStats.engaged_count} more to
+														unlock{" "}
+														<T role="hand" tone="accent">
+															{recruiterStats.next_title}
+														</T>
+													</Hand>
+												)}
+											</View>
+											<Button
+												variant="handLink"
+												size="sm"
+												onPress={() => router.push("/recruits" as Href)}
+												accessibilityLabel="Referral board"
+												accessibilityHint="Opens Your Recruits"
+											>
+												referral board →
+											</Button>
+										</View>
+									)}
+									{/* Recent referrals + how close each is to counting
+									    (100 tickles). Replaces the bare
+									    "{N} on the way" aggregate. */}
+									{(referral.recent_friends ?? []).length > 0 && (
+										<View style={styles.friendList}>
+											<Label tone="secondary">Recent referrals</Label>
+											{(referral.recent_friends ?? []).slice(0, 3).map((f, i) => (
+												<ReferralFriendRow key={(f.username ?? "pig") + i} friend={f} />
+											))}
+										</View>
+									)}
+
+									{/* Full referral progress + reward ladder. */}
+									{(referral.referrals_completed > 0 ||
+										referral.referrals_pending > 0) && (
+										<Button
+											variant="handLink"
+											size="sm"
+											onPress={() => router.push("/recruits-progress" as Href)}
+											accessibilityLabel="Referral details and rewards"
+											accessibilityHint="Opens Referral Rewards"
+										>
+											Referral details + rewards ›
+										</Button>
+									)}
+
+									<BodySm style={styles.referralFine}>
+										Each completed referral earns you 100 tickles.
+									</BodySm>
+									<Hand tone="secondary">
+										A referral counts as soon as the new player reaches 100 tickles.
+									</Hand>
+
+									{/* Have a code? — redeem a friend's referral code right
+									    here. Shown only to accounts the server would actually
+									    let redeem: never-redeemed AND < 24h old AND
+									    < 5 tickles (canRedeemCode mirrors the server
+									    gate). An old/active account never sees a box it
+									    can't use; a genuinely-eligible new player still
+									    gets specific refusal copy on any edge case. */}
+									{canRedeemCode && (
+										<View style={styles.haveWrap}>
+											<View style={styles.haveDivider} />
+											<Body style={styles.haveLabel}>
+												Got a friend&apos;s referral code?
+											</Body>
+											<TextField
+												label="Friend's referral code"
+												labelHidden
+												variant="code"
+												value={codeInput}
+												onChangeText={(t) => {
+													setCodeInput(t.toUpperCase());
+													if (codeError) setCodeError(null);
+												}}
+												placeholder="PIGGY-1234"
+												autoCapitalize="characters"
+												autoCorrect={false}
+												maxLength={10}
+												editable={!codeBusy}
+												state={codeError ? "error" : "default"}
+												errorText={codeError ?? undefined}
+											/>
+											<Button
+												variant="ghost"
+												full
+												style={styles.applyBtn}
+												onPress={handleApplyCode}
+												disabled={!codeInput.trim()}
+												loading={codeBusy}
+												accessibilityLabel="Apply this referral code"
+												accessibilityHint="Credits your friend and pays you 50 snouts"
+											>
+												Apply
+											</Button>
+										</View>
+									)}
+									{codeInviter && (
+										<View style={styles.successRow}>
+											<BodySm tone="success">
+												You&apos;re in — thanks to {codeInviter}! +50
+											</BodySm>
+											<Image
+												source={require("@/assets/images/emoji/pig.png")}
+												style={styles.successPig}
+												resizeMode="contain"
+												accessible={false}
+											/>
+										</View>
+									)}
+								</Sticker>
+							)}
+
+							{/* Settings — three groups, not eight flat rows: what's
+							    yours, what you've bought, and the two ways out. [E25] */}
+							<View style={styles.settingsWrap}>
+								<SectionHeader kicker="settings" title="Settings" />
+								<View style={styles.settingsGroup}>
+									<NavRow
+										icon="edit"
+										label="Change your name"
+										onPress={openRename}
+										accessibilityHint="Opens the rename dialog and its cost"
+									/>
+									<NavRow
+										icon="lock"
+										label="Blocked users"
+										onPress={() => setBlockedUsersOpen(true)}
+										accessibilityHint="Opens the list of pigs you've blocked"
+									/>
+									<NavRow
+										icon="scroll"
+										label="What's new"
+										onPress={() => setReleaseNotesOpen(true)}
+										accessibilityHint="Opens the release notes"
+									/>
+									{habitatFlag.loaded && habitatFlag.visible ? (
+										<NavRow
+											icon="refresh"
+											label="Barn introduction"
+											onPress={() => showHabitatIntro(session.user.id)}
+											accessibilityHint="Replays the barn introduction"
+										/>
+									) : null}
+									{/* Report a bug / idea — the single quiet door into the
+									    in-app Den whisper, grouped with the rest of "your
+									    pig" rather than orphaned below the card. [E25] */}
+									<NavRow
+										icon="bell"
+										label="Found a bug or have an idea? Report it"
+										onPress={openFeedback}
+										accessibilityHint="Opens the whisper dialog"
 									/>
 								</View>
-							)}
-						</Sticker>
-					)}
 
-					{/* Settings — paper sticker grouping the housekeeping
-					    actions (release notes, restore IAP, sign out) into
-					    dashed-divided rows. Replaces three scattered link
-					    Pressables that broke the screen's visual rhythm.
-					    From the redesign's Settings card. */}
-					<View style={settingsStyles.wrap}>
-						<Text style={settingsStyles.kicker}>★ settings</Text>
-						<Sticker
-							color="paper"
-							rotate={-0.3}
-							radius={14}
-							style={settingsStyles.card}
-						>
-							<SettingRow
-								icon="edit"
-								label="Change your name"
-								onPress={openRename}
-							/>
-							<SettingRow
-								icon="scroll"
-								label="What's new"
-								onPress={() => setReleaseNotesOpen(true)}
-							/>
-							{IAP_ENABLED && (
-								<SettingRow
-									icon="refresh"
-									label="Restore purchases"
-									onPress={handleRestore}
-								/>
-							)}
-							<SettingRow
-								icon="exit"
-								label="Sign out"
-								onPress={async () => {
-									// Drop the push token while still authenticated so this
-									// device stops receiving pushes for the signed-out account.
-									await clearPushToken();
-									await supabase.auth.signOut();
-								}}
-							/>
-							<SettingRow
-								icon="x"
-								label="Delete account"
-								onPress={() => setDeleteOpen(true)}
-								destructive
-								last
-							/>
-						</Sticker>
-						{/* Report a bug / idea — the single quiet door into the
-						    in-app Den whisper. It sits below the Settings card,
-						    above the version footer, as a settings-row-like
-						    affordance rather than a banner. */}
-						<Pressable
-							onPress={openFeedback}
-							style={({ pressed }) => [
-								reportStyles.row,
-								pressed && { opacity: 0.65 },
-							]}
-						>
-							<View style={reportStyles.iconWrap}>
-								<Icon name="bell" size={18} color={WHIMSY.mute} />
+								{IAP_ENABLED && (
+									<View style={styles.settingsGroup}>
+										<NavRow
+											icon="refresh"
+											label="Restore purchases"
+											onPress={handleRestore}
+											accessibilityHint="Re-checks this Apple ID for a Slop Club subscription"
+										/>
+									</View>
+								)}
+
+								<View style={styles.settingsGroup}>
+									<NavRow
+										icon="exit"
+										label="Sign out"
+										onPress={() => setSignOutOpen(true)}
+										accessibilityHint="Asks before signing this device out"
+									/>
+									<NavRow
+										icon="x"
+										label="Delete account"
+										tone="danger"
+										onPress={() => setDeleteOpen(true)}
+										accessibilityHint="Asks before permanently erasing your account"
+									/>
+								</View>
+
+								<Hand tone="secondary" align="center" style={styles.footer}>
+									★ tickle the pig · v{Constants.expoConfig?.version ?? "1.0.0"} ★
+								</Hand>
 							</View>
-							<Text style={reportStyles.label}>
-								Found a bug or have an idea? Report it
-							</Text>
-							<Text style={reportStyles.chev}>›</Text>
-						</Pressable>
-						<Text style={settingsStyles.footer}>
-							★ tickle the pig · v{Constants.expoConfig?.version ?? "1.0.0"} ★
-						</Text>
-					</View>
+						</>
+					)}
 				</ScrollView>
 			</SafeAreaView>
 
@@ -1161,13 +1393,32 @@ export function Account({ session }: { session: Session }) {
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
 			/>
+			<BlockedUsersSheet
+				visible={blockedUsersOpen}
+				blockerId={session.user.id}
+				onClose={() => setBlockedUsersOpen(false)}
+			/>
+			{/* Leaving should ask as warmly as arriving did. [E6] */}
+			<ConfirmDialog
+				open={signOutOpen}
+				title="Sign out of the barn?"
+				body="Rosie will be here when you get back."
+				confirmLabel="Sign out"
+				cancelLabel="Stay"
+				confirmHint="Signs this device out and stops its notifications"
+				cancelHint="Keeps you signed in"
+				onCancel={() => setSignOutOpen(false)}
+				onConfirm={handleSignOut}
+			/>
 			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete your account?"
 				body="This wipes your username, friends, trades, blessings/curses, owned items, season progress, and achievements. Permanent — no undo. The account is also signed out."
 				confirmLabel="Delete"
 				cancelLabel="Keep account"
-				destructive
+				tone="destructive"
+				confirmHint="Erases your account and everything in it. This cannot be undone."
+				cancelHint="Keeps your account exactly as it is"
 				busy={deleting}
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
@@ -1186,401 +1437,270 @@ export function Account({ session }: { session: Session }) {
 					setDeleteOpen(false);
 				}}
 			/>
+			{/* __DEV__ only: no RevenueCat offering configured, so offer the
+			    local unlock. Gated at the call site — a production build never
+			    sets devUnlockOpen. */}
+			<ConfirmDialog
+				open={devUnlockOpen}
+				title="Slop Club"
+				body="Storefront not configured yet (need ASC products + RC offering/paywall). Unlock for free in dev?"
+				confirmLabel="Unlock (dev)"
+				confirmHint="Flips is_vip locally for this development build"
+				onCancel={() => setDevUnlockOpen(false)}
+				onConfirm={async () => {
+					setDevUnlockOpen(false);
+					await rpc("dev_set_vip", { target: true });
+					setIsVip(true);
+				}}
+			/>
 
-			{/* Paid rename dialog — same paper-sticker treatment as
-			    ConfirmDialog, with a UsernameSetup-styled input and the
-			    cost line up top. Direct-tap (not PopupQueue-slotted), so
-			    visible tracks open. */}
-			<Modal
+			{/* Paid rename dialog — the shared dialog shell (safe-area sizing, a
+			    scroll path at 200% type, the a11y modal flags) rather than a
+			    fourth hand-rolled backdrop. [E12] */}
+			<AdaptiveModalScaffold
 				visible={renameOpen}
-				transparent
-				animationType="fade"
-				onRequestClose={() => !renameBusy && setRenameOpen(false)}
+				onRequestClose={() => {
+					if (!renameBusy) setRenameOpen(false);
+				}}
+				bare
+				keyboardAware
+				dismissOnBackdrop
+				contentContainerStyle={styles.dialogContent}
 			>
-				<KeyboardAvoidingView
-					style={renameStyles.flex}
-					behavior={Platform.OS === "ios" ? "padding" : undefined}
+				<Sticker
+					color="paper"
+					rotate={TILT.dialog}
+					radius={RADII.xl}
+					pad
+					style={styles.dialogCard}
 				>
-					<Pressable
-						style={renameStyles.backdrop}
-						onPress={() => !renameBusy && setRenameOpen(false)}
-					>
-						<Pressable style={renameStyles.cardWrap} onPress={() => {}}>
-							<Sticker
-								color="paper"
-								rotate={-0.8}
-								radius={18}
-								style={[renameStyles.card, STICKER_SHADOW]}
-							>
-								<Text style={renameStyles.title}>Change your name</Text>
-								<Text style={renameStyles.cost}>{renameCostCopy}</Text>
-								<TextInput
-									style={[
-										renameStyles.input,
-										!!renameError && renameStyles.inputError,
-									]}
-									placeholder="3–24 characters"
-									placeholderTextColor={WHIMSY.mute}
-									value={renameInput}
-									onChangeText={(t) => {
-										setRenameInput(t);
-										if (renameError) setRenameError(null);
-									}}
-									autoCapitalize="none"
-									autoCorrect={false}
-									maxLength={24}
-									editable={!renameBusy}
-								/>
-								{renameError && (
-									<Text style={renameStyles.error}>{renameError}</Text>
-								)}
-								<View style={renameStyles.btnRow}>
-									<Pressable
-										onPress={() => setRenameOpen(false)}
-										disabled={renameBusy}
-										style={({ pressed }) => [
-											renameStyles.btn,
-											renameStyles.btnGhost,
-											pressed && { opacity: 0.7 },
-										]}
-									>
-										<Text style={renameStyles.btnGhostText}>Cancel</Text>
-									</Pressable>
-									<Pressable
-										onPress={handleRename}
-										disabled={renameBusy}
-										style={({ pressed }) => [
-											renameStyles.btn,
-											renameStyles.btnConfirm,
-											(pressed || renameBusy) && { opacity: 0.7 },
-										]}
-									>
-										<Text style={renameStyles.btnConfirmText}>
-											{renameBusy ? "…" : "Save"}
-										</Text>
-									</Pressable>
-								</View>
-							</Sticker>
-						</Pressable>
-					</Pressable>
-				</KeyboardAvoidingView>
-			</Modal>
+					<CardTitle align="center" accessibilityRole="header">
+						Change your name
+					</CardTitle>
+					<Hand tone="secondary" align="center" style={styles.dialogSub}>
+						{renameCostCopy}
+					</Hand>
+					<TextField
+						label="New name"
+						labelHidden
+						value={renameInput}
+						onChangeText={(t) => {
+							setRenameInput(t);
+							if (renameError) setRenameError(null);
+						}}
+						placeholder="3–24 characters"
+						autoCapitalize="none"
+						autoCorrect={false}
+						maxLength={24}
+						editable={!renameBusy}
+						state={renameError ? "error" : "default"}
+						errorText={renameError ?? undefined}
+					/>
+					<View style={styles.dialogButtons}>
+						<DialogButtonRow
+							confirmLabel="Save"
+							cancelLabel="Cancel"
+							busy={renameBusy}
+							onConfirm={handleRename}
+							onCancel={() => setRenameOpen(false)}
+							confirmHint={
+								renameCost === 0
+									? "Renames you for free"
+									: `Spends ${renameCost.toLocaleString()} snouts and renames you`
+							}
+						/>
+					</View>
+				</Sticker>
+			</AdaptiveModalScaffold>
 
-			{/* "Send an idea to the den" — the whisper dialog. Same paper-sticker
-			    treatment as the rename dialog: a 3-way kind picker (chips), a
-			    multiline note, and a "whisper it" button. On success the body
+			{/* "Send an idea to the den" — the whisper dialog. A 3-way kind picker
+			    (Chips), a note, and a "whisper it" commit. On success the body
 			    swaps to a one-beat confirmation that auto-dismisses. */}
-			<Modal
+			<AdaptiveModalScaffold
 				visible={feedbackOpen}
-				transparent
-				animationType="fade"
-				onRequestClose={() => !feedbackBusy && setFeedbackOpen(false)}
+				onRequestClose={() => {
+					if (!feedbackBusy) setFeedbackOpen(false);
+				}}
+				bare
+				keyboardAware
+				dismissOnBackdrop
+				contentContainerStyle={styles.dialogContent}
 			>
-				<KeyboardAvoidingView
-					style={feedbackStyles.flex}
-					behavior={Platform.OS === "ios" ? "padding" : undefined}
+				<Sticker
+					color="paper"
+					rotate={TILT.dialog}
+					radius={RADII.xl}
+					pad
+					style={styles.dialogCard}
 				>
-					<Pressable
-						style={feedbackStyles.backdrop}
-						onPress={() => !feedbackBusy && setFeedbackOpen(false)}
-					>
-						<Pressable style={feedbackStyles.cardWrap} onPress={() => {}}>
-							<Sticker
-								color="paper"
-								rotate={-0.8}
-								radius={18}
-								style={[feedbackStyles.card, STICKER_SHADOW]}
-							>
-								{feedbackSent ? (
-									// One-beat confirmation — auto-dismisses (~1.5s) or a tap.
-									<Pressable onPress={() => setFeedbackOpen(false)}>
-										<Text style={feedbackStyles.sentText}>
-											the bog heard you. thank you for the whisper.
-										</Text>
-									</Pressable>
-								) : (
-									<>
-										<Text style={feedbackStyles.title}>
-											send an idea to the den
-										</Text>
-										<View style={feedbackStyles.chipRow}>
-											{(
-												[
-													["idea", "an idea"],
-													["bug", "something's broken"],
-													["love", "a love note"],
-												] as [FeedbackKind, string][]
-											).map(([k, label]) => {
-												const on = feedbackKind === k;
-												return (
-													<Pressable
-														key={k}
-														onPress={() => setFeedbackKind(k)}
-														disabled={feedbackBusy}
-														style={[
-															feedbackStyles.chip,
-															on && feedbackStyles.chipOn,
-														]}
-													>
-														<Text
-															style={[
-																feedbackStyles.chipText,
-																on && feedbackStyles.chipTextOn,
-															]}
-														>
-															{label}
-														</Text>
-													</Pressable>
-												);
-											})}
-										</View>
-										<TextInput
-											style={[
-												feedbackStyles.input,
-												!!feedbackError && feedbackStyles.inputError,
-											]}
-											placeholder="what should the bog know?"
-											placeholderTextColor={WHIMSY.mute}
-											value={feedbackInput}
-											onChangeText={(t) => {
-												setFeedbackInput(t);
-												if (feedbackError) setFeedbackError(null);
-											}}
-											multiline
-											maxLength={1000}
-											editable={!feedbackBusy}
-										/>
-										{feedbackError && (
-											<Text style={feedbackStyles.error}>
-												{feedbackError}
-											</Text>
-										)}
-										<View style={feedbackStyles.btnRow}>
-											<Pressable
-												onPress={() => setFeedbackOpen(false)}
-												disabled={feedbackBusy}
-												style={({ pressed }) => [
-													feedbackStyles.btn,
-													feedbackStyles.btnGhost,
-													pressed && { opacity: 0.7 },
-												]}
-											>
-												<Text style={feedbackStyles.btnGhostText}>
-													Cancel
-												</Text>
-											</Pressable>
-											<Pressable
-												onPress={handleFeedback}
-												disabled={feedbackBusy}
-												style={({ pressed }) => [
-													feedbackStyles.btn,
-													feedbackStyles.btnConfirm,
-													(pressed || feedbackBusy) && { opacity: 0.7 },
-												]}
-											>
-												<Text style={feedbackStyles.btnConfirmText}>
-													{feedbackBusy ? "…" : "whisper it"}
-												</Text>
-											</Pressable>
-										</View>
-									</>
-								)}
-							</Sticker>
-						</Pressable>
-					</Pressable>
-				</KeyboardAvoidingView>
-			</Modal>
+					{feedbackSent ? (
+						// One-beat confirmation — auto-dismisses (~1.5s) or a backdrop tap.
+						<CardTitle align="center" style={styles.sentText}>
+							the bog heard you. thank you for the whisper.
+						</CardTitle>
+					) : (
+						<>
+							<CardTitle align="center" accessibilityRole="header">
+								send an idea to the den
+							</CardTitle>
+							<View style={styles.chipRow}>
+								{(
+									[
+										["idea", "an idea"],
+										["bug", "something's broken"],
+										["love", "a love note"],
+									] as [FeedbackKind, string][]
+								).map(([k, label]) => (
+									<Chip
+										key={k}
+										label={label}
+										tone="lilac"
+										selected={feedbackKind === k}
+										disabled={feedbackBusy}
+										onPress={() => setFeedbackKind(k)}
+										accessibilityHint="Picks what kind of whisper this is"
+									/>
+								))}
+							</View>
+							<TextField
+								label="Your whisper"
+								labelHidden
+								value={feedbackInput}
+								onChangeText={(t) => {
+									setFeedbackInput(t);
+									if (feedbackError) setFeedbackError(null);
+								}}
+								placeholder="what should the bog know?"
+								multiline
+								rows={4}
+								maxLength={1000}
+								editable={!feedbackBusy}
+								state={feedbackError ? "error" : "default"}
+								errorText={feedbackError ?? undefined}
+							/>
+							<View style={styles.dialogButtons}>
+								<DialogButtonRow
+									confirmLabel="whisper it"
+									cancelLabel="Cancel"
+									busy={feedbackBusy}
+									onConfirm={handleFeedback}
+									onCancel={() => setFeedbackOpen(false)}
+									confirmHint="Sends this note to the den"
+								/>
+							</View>
+						</>
+					)}
+				</Sticker>
+			</AdaptiveModalScaffold>
 
-			{/* The long story — full lifetime ledger. Same paper-sticker modal
-			    treatment as the rename dialog; a scrollable "label · value"
-			    ledger. The scalar rows read straight from the identity fetch;
-			    the aggregate counts hydrate lazily from me_lifetime_stats on
-			    first open (LoadingBeat until they land). */}
-			<Modal
-				visible={longStoryOpen}
-				transparent
-				animationType="fade"
-				onRequestClose={() => setLongStoryOpen(false)}
+			{/* The long story — full lifetime ledger. The shared bottom-sheet
+			    panel, which gives the list its own scroll path and retires the
+			    hardcoded 380pt cap. [E12] */}
+			<Sheet
+				open={longStoryOpen}
+				onClose={() => setLongStoryOpen(false)}
+				kicker="the long story"
+				title="all you've done"
 			>
-				<Pressable
-					style={longStoryStyles.backdrop}
-					onPress={() => setLongStoryOpen(false)}
-				>
-					<Pressable style={longStoryStyles.sheetWrap} onPress={() => {}}>
-						<Sticker
-							color="paper"
-							rotate={-0.6}
-							radius={RADII.xxl}
-							style={[longStoryStyles.sheet, STICKER_SHADOW]}
-						>
-							<Text style={longStoryStyles.sheetKicker}>★ the long story</Text>
-							<Text style={longStoryStyles.sheetTitle}>all you've done</Text>
-							<ScrollView
-								style={longStoryStyles.ledgerScroll}
-								contentContainerStyle={longStoryStyles.ledger}
-								showsVerticalScrollIndicator={false}
-							>
-								<LedgerRow
-									label="lifetime tickles"
-									value={lifetimeTickles(
-										ticklesLifetimeBase,
-										ticklesEarned
-									).toLocaleString()}
-								/>
-								<LedgerRow
-									label="tickles wasted"
-									value={ticklesWasted.toLocaleString()}
-								/>
-								<LedgerRow label="active days" value={activeDays.toLocaleString()} />
-								<LedgerRow label="war wins" value={warWins.toLocaleString()} />
-								<LedgerRow
-									label="referrals completed"
-									value={referralsCompleted.toLocaleString()}
-								/>
-								<LedgerRow label="snouts" value={snouts.toLocaleString()} />
-								<LedgerRow label="joined" value={joinedLabel} />
-								<LedgerRow
-									label="membership"
-									value={isVip ? "slop club" : "free range"}
-								/>
+				<LedgerRow
+					label="lifetime tickles"
+					value={lifetimeTickles(
+						ticklesLifetimeBase,
+						ticklesEarned
+					).toLocaleString()}
+				/>
+				<LedgerRow label="tickles wasted" value={ticklesWasted.toLocaleString()} />
+				<LedgerRow label="active days" value={activeDays.toLocaleString()} />
+				<LedgerRow label="war wins" value={warWins.toLocaleString()} />
+				<LedgerRow
+					label="referrals completed"
+					value={referralsCompleted.toLocaleString()}
+				/>
+				<LedgerRow label="snouts" value={snouts.toLocaleString()} />
+				<LedgerRow label="joined" value={joinedLabel} />
+				<LedgerRow
+					label="membership"
+					value={isVip ? "slop club" : "free range"}
+				/>
 
-								<View style={longStoryStyles.ledgerDivider} />
+				<View style={styles.ledgerDivider} />
 
-								{lifetimeAgg ? (
-									<>
-										<LedgerRow
-											label="barn visits made"
-											value={lifetimeAgg.barn_visits_made.toLocaleString()}
-										/>
-										<LedgerRow
-											label="barn visits hosted"
-											value={lifetimeAgg.barn_visits_hosted.toLocaleString()}
-										/>
-										<LedgerRow
-											label="truffles buried"
-											value={lifetimeAgg.truffles_buried.toLocaleString()}
-										/>
-										<LedgerRow
-											label="friend-mound digs"
-											value={lifetimeAgg.friend_mound_digs.toLocaleString()}
-										/>
-										<LedgerRow
-											label="blessings sent"
-											value={lifetimeAgg.blessings_sent.toLocaleString()}
-										/>
-										<LedgerRow
-											label="curses sent"
-											value={lifetimeAgg.curses_sent.toLocaleString()}
-										/>
-										<LedgerRow
-											label="trades fulfilled"
-											value={lifetimeAgg.trades_fulfilled.toLocaleString()}
-											last
-										/>
-									</>
-								) : (
-									<LoadingBeat label="tallying it up" />
-								)}
-							</ScrollView>
-							<Pressable
-								onPress={() => setLongStoryOpen(false)}
-								style={({ pressed }) => [
-									longStoryStyles.closeBtn,
-									pressed && { opacity: 0.7 },
-								]}
-							>
-								<Text style={longStoryStyles.closeBtnText}>Close</Text>
-							</Pressable>
-						</Sticker>
-					</Pressable>
-				</Pressable>
-			</Modal>
+				{lifetimeAgg ? (
+					<>
+						<LedgerRow
+							label="barn visits made"
+							value={lifetimeAgg.barn_visits_made.toLocaleString()}
+						/>
+						<LedgerRow
+							label="barn visits hosted"
+							value={lifetimeAgg.barn_visits_hosted.toLocaleString()}
+						/>
+						<LedgerRow
+							label="truffles buried"
+							value={lifetimeAgg.truffles_buried.toLocaleString()}
+						/>
+						<LedgerRow
+							label="friend-mound digs"
+							value={lifetimeAgg.friend_mound_digs.toLocaleString()}
+						/>
+						<LedgerRow
+							label="blessings sent"
+							value={lifetimeAgg.blessings_sent.toLocaleString()}
+						/>
+						<LedgerRow
+							label="curses sent"
+							value={lifetimeAgg.curses_sent.toLocaleString()}
+						/>
+						<LedgerRow
+							label="trades fulfilled"
+							value={lifetimeAgg.trades_fulfilled.toLocaleString()}
+							last
+						/>
+					</>
+				) : (
+					<LoadingBeat label="tallying it up" />
+				)}
+			</Sheet>
 		</View>
 	);
 }
 
-// A single row inside the Settings card. Icon + label + optional chev,
-// dashed bottom border unless it's the last row. Icon takes an Icon
-// name from the shared ui/Icon set (e.g. "scroll", "refresh", "exit")
-// — kept off Unicode emoji per the design-language no-emoji rule.
-function SettingRow({
-	icon,
-	label,
-	onPress,
-	destructive,
-	last,
-}: {
-	icon: IconName;
-	label: string;
-	onPress: () => void;
-	destructive?: boolean;
-	last?: boolean;
-}) {
-	const iconColor = destructive ? WHIMSY.accent : WHIMSY.ink;
-	return (
-		<Pressable
-			onPress={onPress}
-			style={({ pressed }) => [
-				settingsStyles.row,
-				!last && settingsStyles.rowDivider,
-				pressed && { opacity: 0.65 },
-			]}
-		>
-			<View style={settingsStyles.rowIconWrap}>
-				<Icon name={icon} size={20} color={iconColor} />
-			</View>
-			<Text
-				style={[
-					settingsStyles.rowLabel,
-					destructive && { color: WHIMSY.accent },
-				]}
-			>
-				{label}
-			</Text>
-			<Text style={settingsStyles.rowChev}>›</Text>
-		</Pressable>
-	);
-}
-
-// Milestone progress row for the "Refer friends" card. Renders the
-// "Completed referrals: N / 3" line + a fill bar + a "Rewards earned" badge
-// once capped. Pure presentational — caller computes completed / goal
-// from my_referral_summary.
 // One recent referred friend on the Account card: name + progress toward
-// counting (tickles/100, active-days/3), or a "counted" tick once complete.
+// counting (tickles/100), or a "counted" tag once complete.
 function ReferralFriendRow({ friend }: { friend: ReferralFriend }) {
 	const done = !!friend.completed;
-	const tRatio = Math.max(0, Math.min(1, friend.tickles / 100));
+	const name = friend.username ?? "a new pig";
 	return (
-		<View style={referralStyles.friendRow}>
-			<View style={referralStyles.friendTop}>
-				<Text style={referralStyles.friendName} numberOfLines={1}>
-					{friend.username ?? "a new pig"}
-				</Text>
+		<View style={styles.friendRow}>
+			<View style={styles.friendTop}>
+				<BodySm numberOfLines={1} style={styles.friendName}>
+					{name}
+				</BodySm>
 				{done ? (
-					<View style={referralStyles.friendDone}>
-						<Icon name="check" size={11} color={WHIMSY.ink} strokeWidth={2.4} />
-						<Text style={referralStyles.friendDoneText}>counted</Text>
-					</View>
+					<Tag label="counted" icon="check" tone="sage" />
 				) : (
-					<Text style={referralStyles.friendProg}>
-						{friend.tickles}/100 tickles
-					</Text>
+					<Hand tone="secondary">
+						{friend.tickles}/{REFERRAL_TICKLE_GOAL} tickles
+					</Hand>
 				)}
 			</View>
 			{!done && (
-				<View style={referralStyles.friendBars}>
-					<View style={referralStyles.friendBarTrack}>
-						<View
-							style={[referralStyles.friendBarFill, { width: `${tRatio * 100}%` }]}
-						/>
-					</View>
-				</View>
+				<ProgressTrack
+					value={friend.tickles}
+					max={REFERRAL_TICKLE_GOAL}
+					tone="lilac"
+					height="sm"
+					accessibilityLabel={`${name}'s progress toward counting`}
+				/>
 			)}
 		</View>
 	);
 }
 
+// Milestone progress row for the "Refer friends" card. Renders the
+// "Completed referrals: N / 3" line + the meter + a "Rewards earned" tag
+// once capped. Pure presentational — caller computes completed / goal
+// from my_referral_summary.
 function ReferralMilestoneRow({
 	completed,
 	goal,
@@ -1590,41 +1710,36 @@ function ReferralMilestoneRow({
 	goal: number;
 	capped: boolean;
 }) {
-	const ratio = Math.max(0, Math.min(1, capped ? 1 : completed / goal));
 	// The bar tracks whichever ladder rung is next (3/5/10/25/100/500/1000).
 	const reward = rewardNameForMilestone(goal);
+	const max = capped ? Math.max(completed, 1) : goal;
+	const value = capped ? max : completed;
 	return (
-		<View style={referralStyles.milestoneWrap}>
-			<View style={referralStyles.milestoneHeader}>
-				<Text style={referralStyles.milestoneLabel}>
+		<View style={styles.milestoneWrap}>
+			<View style={styles.milestoneHeader}>
+				<Label>
 					Completed referrals: {completed} / {capped ? completed : goal}
-				</Text>
-				{capped && (
-					<View style={referralStyles.milestoneBadgeRow}>
-						<Icon name="check" size={11} color={WHIMSY.accent} strokeWidth={2.4} />
-						<Text style={referralStyles.milestoneBadge}>Rewards earned</Text>
-					</View>
-				)}
+				</Label>
+				{capped && <Tag label="Rewards earned" icon="check" tone="sage" />}
 			</View>
-			<View style={referralStyles.barTrack}>
-				<View
-					style={[
-						referralStyles.barFill,
-						{ width: `${ratio * 100}%` },
-					]}
-				/>
-			</View>
+			<ProgressTrack
+				value={value}
+				max={max}
+				tone="sun"
+				height="sm"
+				accessibilityLabel="Completed referrals"
+			/>
 			{!capped && (
-				<Text style={referralStyles.milestoneFoot}>
+				<Hand tone="secondary" style={styles.milestoneFoot}>
 					{goal - completed} more for {reward}
-				</Text>
+				</Hand>
 			)}
 		</View>
 	);
 }
 
 // One "label · value" line in the long-story ledger sheet. Dashed bottom
-// divider unless it's the last row (mirrors the SettingRow treatment).
+// divider unless it's the last row.
 function LedgerRow({
 	label,
 	value,
@@ -1635,9 +1750,9 @@ function LedgerRow({
 	last?: boolean;
 }) {
 	return (
-		<View style={[longStoryStyles.ledgerRow, !last && longStoryStyles.ledgerRowDivider]}>
-			<Text style={longStoryStyles.ledgerLabel}>{label}</Text>
-			<Text style={longStoryStyles.ledgerValue}>{value}</Text>
+		<View style={[styles.ledgerRow, !last && styles.ledgerRowDivider]}>
+			<Body style={styles.ledgerLabel}>{label}</Body>
+			<T role="numeral">{value}</T>
 		</View>
 	);
 }
@@ -1668,107 +1783,91 @@ function WallowWall({
 	const nextVisitHours = wallowVisitCooldownHours(nextRank);
 	return (
 		<View style={wallowWallStyles.wrap}>
-			<View style={wallowWallStyles.headingRow}>
-				<View style={{ flex: 1 }}>
-					<Text style={wallowWallStyles.kicker}>★ your prestige</Text>
-					<Text style={wallowWallStyles.title}>Wallow rank</Text>
-				</View>
-				{onTogglePreview && (
-					<Pressable
-						onPress={onTogglePreview}
-						style={({ pressed }) => [
-							wallowWallStyles.previewBtn,
-							previewing && wallowWallStyles.previewBtnOn,
-							pressed && { opacity: 0.7 },
-						]}
-						accessibilityRole="button"
-						accessibilityState={{ selected: previewing }}
-						accessibilityLabel="Preview Wallow rank 5"
-					>
-						<Icon name="flame" size={14} color={WHIMSY.ink} filled />
-						<Text style={wallowWallStyles.previewText}>{previewing ? "W5 preview" : "Preview W5"}</Text>
-					</Pressable>
-				)}
-			</View>
-			<Sticker color="paper" rotate={0.4} radius={16} style={wallowWallStyles.card}>
+			<SectionHeader
+				kicker="your prestige"
+				title="Wallow rank"
+				right={
+					onTogglePreview ? (
+						<Chip
+							label={previewing ? "W5 preview" : "Preview W5"}
+							icon="flame"
+							tone={previewing ? "sun" : "paper"}
+							selected={previewing}
+							onPress={onTogglePreview}
+							accessibilityLabel="Preview Wallow rank 5"
+							accessibilityHint="Shows what rank 5 would look like"
+						/>
+					) : undefined
+				}
+			/>
+			<Sticker color="paper" rotate={0.4} radius={RADII.xl} pad style={wallowWallStyles.card}>
 				<View style={wallowWallStyles.currentRow}>
 					<View style={wallowWallStyles.currentDecal}>
-						<Text style={wallowWallStyles.currentRank}>W{rank}</Text>
+						<T role="cardTitle">W{rank}</T>
 					</View>
 					<View style={wallowWallStyles.currentCopy}>
-						<Text style={wallowWallStyles.stepLabel}>CURRENT</Text>
-						<Text style={wallowWallStyles.rankLabel}>{wallowRankLabel(rank)}</Text>
-						<Text style={wallowWallStyles.currentBenefits}>
+						<T role="kickerPill" tone="accent">CURRENT</T>
+						<T role="cardTitleSm">{wallowRankLabel(rank)}</T>
+						<BodySm tone="secondary">
 							1 tickle / {formatRegenInterval(regenSeconds)} · visits every {currentVisitHours}h
-						</Text>
+						</BodySm>
 					</View>
 				</View>
 
 				<View style={wallowWallStyles.stepConnector}>
 					<View style={wallowWallStyles.stepConnectorLine} />
-					<Icon name="chevronDown" size={16} color={WHIMSY.mute} strokeWidth={2.4} />
+					<Icon name="chevronDown" size={LABEL_MARK} color={UI_COLORS.uiMuted} strokeWidth={2.4} />
 				</View>
 
 				<View style={wallowWallStyles.nextStep}>
 					<View style={wallowWallStyles.nextHeading}>
 						<View>
-							<Text style={wallowWallStyles.stepLabel}>NEXT WALLOW</Text>
-							<Text style={wallowWallStyles.nextTitle}>Reach W{nextRank}</Text>
+							<T role="kickerPill" tone="accent">NEXT WALLOW</T>
+							<T role="cardTitleSm">Reach W{nextRank}</T>
 						</View>
 						<View style={wallowWallStyles.nextDecal}>
-							<Text style={wallowWallStyles.nextRank}>W{nextRank}</Text>
+							<T role="cardTitleSm">W{nextRank}</T>
 						</View>
 					</View>
 					<View style={wallowWallStyles.deltaRow}>
-						<Text style={wallowWallStyles.deltaLabel}>Tickle refill</Text>
-						<Text style={wallowWallStyles.deltaValue}>
+						<BodySm tone="secondary">Tickle refill</BodySm>
+						<BodySm>
 							{currentBaseInterval} → {nextBaseInterval}
-						</Text>
+						</BodySm>
 					</View>
 					<View style={wallowWallStyles.deltaRow}>
-						<Text style={wallowWallStyles.deltaLabel}>Friend visits</Text>
-						<Text style={wallowWallStyles.deltaValue}>
+						<BodySm tone="secondary">Friend visits</BodySm>
+						<BodySm>
 							{currentVisitHours}h → {nextVisitHours}h
-						</Text>
+						</BodySm>
 					</View>
-					<Text style={wallowWallStyles.unlockLine}>
+					<Hand tone="accent" style={wallowWallStyles.unlockLine}>
 						+ exclusive W{nextRank} wearable
-					</Text>
+					</Hand>
 				</View>
-				<Pressable
+				<Button
+					variant="ghost"
+					full
+					style={wallowWallStyles.gearLink}
+					icon={<Glyph name="crown" size={LABEL_MARK} />}
 					onPress={() =>
 						router.push({
 							pathname: "/(tabs)/shop",
 							params: { view: "wardrobe", filter: "prestige" },
 						})
 					}
-					style={({ pressed }) => [
-						wallowWallStyles.gearLink,
-						pressed && { opacity: 0.65 },
-					]}
+					accessibilityLabel={`Prestige gear, ${rank} earned`}
+					accessibilityHint="Opens the wardrobe filtered to prestige gear"
 				>
-					<Glyph name="crown" size={18} />
-					<Text style={wallowWallStyles.gearLinkText}>
-						prestige gear · {rank} earned ›
-					</Text>
-				</Pressable>
+					prestige gear · {rank} earned ›
+				</Button>
 			</Sticker>
 		</View>
 	);
 }
 
-// Single LifetimeStat column for the identity card's 3-col band.
-function LifetimeStat({ label, value }: { label: string; value: string }) {
-	return (
-		<View style={styles.lifetimeStatCol}>
-			<Text style={styles.lifetimeStatValue}>{value}</Text>
-			<Text style={styles.lifetimeStatLabel}>{label}</Text>
-		</View>
-	);
-}
-
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: WHIMSY.cream },
+	container: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
 	safe: { flex: 1 },
 	content: {
 		paddingHorizontal: PAGE_PAD,
@@ -1776,180 +1875,49 @@ const styles = StyleSheet.create({
 		paddingBottom: TAB_SAFE,
 		gap: SPACE.lg,
 	},
-	header: {},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
-	},
-	title: {
-		fontSize: 32,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		marginBottom: 4,
-	},
-	titleRule: {
-		...TITLE_RULE,
-		width: 64,
-	},
+	// The crown carries its own PAGE_PAD; the scroll already pads its sides.
+	crown: { paddingHorizontal: 0, paddingTop: 0 },
 	codeWrap: {
 		position: "relative",
-		paddingTop: 12,
+		paddingTop: SPACE.md,
 	},
 	codeTape: {
 		position: "absolute",
 		top: 0,
-		left: 32,
+		left: SPACE.xxl,
 		zIndex: 2,
-	},
-	codeCard: {
-		padding: 16,
 	},
 	codeRow: {
 		flexDirection: "row",
 		alignItems: "center",
 	},
-	codeAvatar: {
-		borderRadius: 32,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		padding: 2,
-	},
-	codeLabel: {
-		fontSize: 12,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-	},
-	codeNameRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 8,
-		marginTop: 2,
-	},
-	codeValue: {
-		flexShrink: 1,
-		fontSize: 24,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		lineHeight: 26,
-	},
-	codeHandle: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		letterSpacing: 0.4,
-		marginTop: 2,
-	},
-	// Membership chip under the handle — gold sticker for Slop Club members,
-	// quiet paper chip for free-range pigs. Status, not a sales pitch.
-	memberChip: {
-		alignSelf: "flex-start",
-		marginTop: SPACE.xs,
-		paddingHorizontal: SPACE.sm,
-		paddingVertical: 1,
-		borderRadius: RADII.pill,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	memberChipVip: { backgroundColor: WHIMSY.slopGold },
-	memberChipFree: { backgroundColor: WHIMSY.paper },
-	memberChipText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		letterSpacing: 0.6,
-	},
-	// 3-col lifetime-stats band inside the identity card. Dashed top
-	// border separates it from the avatar/handle. Inner 1px ink-mute
-	// verticals divide the three columns.
+	codeCol: { flex: 1, minWidth: 0, marginLeft: SPACE.md },
+	codeHandle: { marginTop: SPACE.xxs },
+	// Membership capsule under the handle — gold for Slop Club members, quiet
+	// paper for free-range pigs. Status, not a sales pitch.
+	memberTag: { alignSelf: "flex-start", marginTop: SPACE.xs },
+	// 3-col lifetime-stats band inside the identity card. Dashed top border
+	// separates it from the avatar/handle; inner hairline verticals divide the
+	// three columns. Tapping it opens the long-story ledger.
 	lifetimeStatsRow: {
 		flexDirection: "row",
 		alignItems: "stretch",
-		marginTop: 14,
-		paddingTop: 12,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
+		marginTop: SPACE.card,
+		paddingTop: SPACE.md,
+		borderTopWidth: BORDER.thin,
+		borderTopColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
-	lifetimeStatCol: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-	},
+	lifetimeStatCol: { flex: 1, justifyContent: "center" },
 	lifetimeStatDivider: {
 		width: 1,
-		backgroundColor: WHIMSY.muteSoft,
-		marginVertical: 4,
-	},
-	lifetimeStatValue: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-		color: WHIMSY.ink,
-		lineHeight: 22,
-	},
-	lifetimeStatLabel: {
-		fontFamily: FONTS.bodyExtra,
-			fontSize: 11,
-		color: WHIMSY.mute,
-		marginTop: 4,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
-		textAlign: "center",
-	},
-	shareBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 8,
-		marginTop: 14,
-		paddingVertical: 9,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-	},
-	shareBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.ink,
+		backgroundColor: UI_COLORS.uiMuted,
+		marginVertical: SPACE.xs,
 	},
 	// ── Slop Club membership card ──────────────────────────────────
-	slopWrap: { padding: 18 },
-	slopHeader: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: SPACE.md,
-	},
-	slopMembershipLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.8,
-		textTransform: "uppercase",
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
-	slopStatus: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-	},
-	slopStatusActive: { backgroundColor: WHIMSY.sun },
-	slopStatusText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.7,
-		color: WHIMSY.ink,
-	},
-	slopTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		lineHeight: 26,
-	},
+	// The Ribbon crosses the corner, so the card clips.
+	slopWrap: { overflow: "hidden" },
+	slopHeader: { gap: SPACE.xxs },
 	slopHero: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -1957,15 +1925,15 @@ const styles = StyleSheet.create({
 		marginTop: SPACE.md,
 	},
 	slopPigPair: {
-		width: 126,
-		height: 100,
+		width: SLOP_PAIR_W,
+		height: SLOP_PAIR_H,
 		position: "relative",
 		flexShrink: 0,
 	},
 	slopPigRosie: {
 		position: "absolute",
 		left: 0,
-		top: 8,
+		top: SPACE.sm,
 		transform: [{ rotate: "-3deg" }],
 	},
 	slopPigFriend: {
@@ -1975,925 +1943,198 @@ const styles = StyleSheet.create({
 		transform: [{ rotate: "3deg" }],
 	},
 	slopHeroCopy: { flex: 1, minWidth: 0 },
-	slopPromise: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 19,
-		lineHeight: 21,
-		color: WHIMSY.ink,
-	},
-	slopTagline: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.ink,
-		marginTop: 4,
-		lineHeight: 17,
-	},
+	slopTagline: { marginTop: SPACE.xs },
 	slopSeasonRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm,
 		marginTop: SPACE.md,
 		paddingTop: SPACE.md,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.ink,
+		borderTopWidth: BORDER.thin,
+		borderTopColor: UI_COLORS.border,
 	},
-	slopSeasonArt: { width: 46, height: 46 },
+	slopSeasonArt: { width: ART_SIZE.glyph, height: ART_SIZE.glyph },
 	slopSeasonCopy: { flex: 1, minWidth: 0 },
-	slopSeasonKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.6,
-		textTransform: "uppercase",
-		color: WHIMSY.mute,
-	},
-	slopSeasonTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.ink,
-		marginTop: 1,
-	},
-	slopSeasonDetail: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		lineHeight: 14,
-		marginTop: 2,
-	},
-	slopBtn: {
-		paddingVertical: 12,
-		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		marginTop: 14,
-	},
-	slopBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	slopManageLink: {
-		alignItems: "center",
-		paddingVertical: 9,
-		marginTop: 2,
-	},
-	slopManageLinkText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
+	slopBtn: { marginTop: SPACE.card },
+	slopGrantFinePrint: { marginTop: SPACE.card },
 	slopLegal: {
 		flexDirection: "row",
 		justifyContent: "center",
 		alignItems: "center",
-		gap: 8,
-		marginTop: 10,
+		gap: SPACE.sm,
+		marginTop: SPACE.sm,
 	},
-	slopLegalLink: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		opacity: 0.6,
-		textDecorationLine: "underline",
-	},
-	slopLegalDot: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		opacity: 0.4,
-	},
-	slopFinePrint: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		opacity: 0.55,
-		textAlign: "center",
-		marginTop: 10,
-	},
-	slopGrantFinePrint: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginTop: 14,
-	},
-	restoreLink: {
-		alignItems: "center",
-		marginTop: 8,
-		marginBottom: 8,
-		paddingVertical: 8,
-	},
-	restoreLinkText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
-	signOut: {
-		alignItems: "center",
-		marginTop: 22,
-		paddingVertical: 12,
-	},
-	signOutText: {
-		fontSize: 14,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-	},
-	devLink: {
-		alignItems: "center",
-		marginTop: 18,
-		paddingVertical: 10,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderStyle: "dashed",
-	},
-	devLinkText: {
-		fontSize: 13,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		letterSpacing: 0.4,
-	},
-});
-
-const achievementStyles = StyleSheet.create({
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-		paddingHorizontal: 14,
-		paddingVertical: 14,
-		backgroundColor: WHIMSY.paper,
-		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		...STICKER_SHADOW,
-	},
-	iconBubble: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	iconText: { fontSize: 22 },
-	label: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
-	sub: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
-	chev: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 28,
-		color: WHIMSY.mute,
-	},
-	// "N ready to claim" badge — gold pill matching the icon bubble. Caps at
-	// "99+" so the pill never widens past a couple of glyphs.
-	badge: {
-		minWidth: 22,
-		height: 22,
-		borderRadius: 11,
-		paddingHorizontal: 6,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	badgeText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.ink,
-	},
-});
-
-// Settings card — paper sticker grouping the housekeeping actions
-// into dashed-divided rows, with a hand-script footer underneath.
-const settingsStyles = StyleSheet.create({
-	wrap: {},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 8,
-	},
-	card: { padding: 0 },
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingHorizontal: 14,
-		paddingVertical: 14,
-		gap: 12,
-	},
-	rowDivider: {
-		borderBottomWidth: 1.5,
-		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
-	},
-	// Fixed-width well so each settings row's label baseline aligns
-	// even when the icon glyph differs in optical width.
-	rowIconWrap: {
-		width: 26,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	rowLabel: {
-		flex: 1,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14,
-		color: WHIMSY.ink,
-	},
-	rowChev: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.mute,
-	},
-	footer: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 22,
-	},
-});
-
-// The quiet "report a bug / idea" row beneath the Settings card. Mirrors the
-// SettingRow geometry (icon well + flex label + chevron) but in the softer
-// hand font + muted ink so it reads as a subtle link-out to the web report
-// page, not a second card of settings.
-const reportStyles = StyleSheet.create({
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.md,
-		marginTop: SPACE.md,
-	},
-	iconWrap: {
-		width: 26,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	label: {
-		flex: 1,
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-	},
-	chev: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.mute,
-	},
-});
-
-// "Refer friends" card — code + Copy + Share + milestone progress.
-// Sits between the Slop Club card and Settings on the Account screen.
-const referralStyles = StyleSheet.create({
-	card: { padding: 16 },
-	haveWrap: { marginTop: 10 },
-	divider: {
-		borderBottomWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderStyle: "dashed",
-		opacity: 0.25,
-		marginBottom: 10,
-	},
-	entryRow: { flexDirection: "row", gap: 8, alignItems: "center" },
-	entryInput: {
-		flex: 1,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14,
-		letterSpacing: 1.2,
-		color: WHIMSY.ink,
-	},
-	applyBtn: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: 16,
-		paddingVertical: 9,
-	},
-	applyBtnDisabled: { opacity: 0.45 },
-	applyBtnText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
-	entryError: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.accent,
-		marginTop: 6,
-	},
-	pendingRow: {
-		flexDirection: "row",
-		alignItems: "flex-start",
-		gap: 6,
-		marginTop: 6,
-	},
-	pendingPig: {
-		width: 16,
-		height: 16,
-		marginTop: 1,
-	},
-	pendingNote: {
-		flex: 1,
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.ink,
-	},
-	successRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		marginTop: 10,
-	},
-	successPig: {
-		width: 16,
-		height: 16,
-	},
-	entrySuccess: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: COLORS.successText,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
-	},
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 20,
-		lineHeight: 24,
-		color: WHIMSY.ink,
-	},
-	intro: {
-		fontFamily: FONTS.body,
-		fontSize: 13,
-		lineHeight: 18,
-		color: WHIMSY.mute,
-		marginTop: 4,
-		marginBottom: 14,
-	},
-	label: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginBottom: 6,
-	},
-	// "Got a code from a friend?" — raised from hand 12 mute to
-	// bodyExtra 13 ink so the redeem entry reads as a real prompt,
-	// not fine print (June 2026 UI audit).
-	haveLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		marginBottom: 6,
-	},
+	slopFinePrint: { marginTop: SPACE.sm },
+	// ── Refer friends card ─────────────────────────────────────────
+	referralIntro: { marginTop: SPACE.xs, marginBottom: SPACE.card },
 	codePill: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		gap: SPACE.sm,
+		marginTop: SPACE.xs,
+		backgroundColor: UI_COLORS.surface,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.md,
-		paddingLeft: 12,
-		paddingRight: 6,
-		paddingVertical: 6,
-		gap: 8,
-		marginBottom: 12,
+		paddingLeft: SPACE.md,
+		paddingRight: SPACE.xs,
+		paddingVertical: SPACE.xs,
 	},
-	codeValue: {
-		flex: 1,
-		fontFamily: FONTS.whimsy,
-		fontSize: 20,
-		letterSpacing: 1.2,
-		color: WHIMSY.ink,
-	},
-	copyBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs + 2,
-		paddingVertical: SPACE.sm,
-		paddingHorizontal: SPACE.md,
-		borderRadius: RADII.md,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-	},
-	copyBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.ink,
-	},
-	shareBtn: {
-		paddingVertical: 12,
-		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		backgroundColor: WHIMSY.lilac,
-		marginBottom: 14,
-	},
-	shareBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	milestoneWrap: {
-		marginBottom: 12,
-	},
+	codePillValue: { flex: 1, letterSpacing: CODE_TRACKING },
+	referralShare: { marginTop: SPACE.md, marginBottom: SPACE.card },
+	referralFine: { marginTop: SPACE.xs },
+	milestoneWrap: { marginBottom: SPACE.md },
 	milestoneHeader: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		marginBottom: 6,
+		gap: SPACE.sm,
+		marginBottom: SPACE.sm,
 	},
-	milestoneLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
-	},
-	milestoneBadgeRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 3,
-	},
-	milestoneBadge: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.accent,
-	},
-	barTrack: {
-		height: 8,
-		borderRadius: 4,
-		backgroundColor: WHIMSY.muteSoft,
-		overflow: "hidden",
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-	},
-	barFill: {
-		height: "100%",
-		backgroundColor: WHIMSY.sun,
-	},
-	milestoneFoot: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		marginTop: 4,
-	},
-	fine: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		marginTop: 4,
-	},
-	finePrint: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
-	// Recent referred-friends list (per-friend progress).
-	friendList: { marginTop: 12, gap: 9 },
-	subsectionLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		letterSpacing: 0.3,
-	},
-	friendRow: { gap: 5 },
+	milestoneFoot: { marginTop: SPACE.xs },
+	friendList: { marginTop: SPACE.md, gap: SPACE.sm },
+	friendRow: { gap: SPACE.xs },
 	friendTop: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
+		gap: SPACE.sm,
 	},
-	friendName: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		flex: 1,
-		minWidth: 0,
-	},
-	friendProg: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginLeft: 8,
-	},
-	friendDone: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 8 },
-	friendDoneText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		letterSpacing: 0.3,
-	},
-	friendBars: { flexDirection: "row", gap: 6 },
-	friendBarTrack: {
-		flex: 1,
-		height: 6,
-		borderRadius: 3,
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-		overflow: "hidden",
-	},
-	friendBarFill: { height: "100%", backgroundColor: WHIMSY.angel },
-	seeMore: { marginTop: 12, paddingVertical: 4 },
-	seeMoreText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.3,
-	},
-	// Recruiter-standing strip. A quiet
-	// dashed-top-divided row — count + next-title on the left, leaderboard
-	// link on the right. Reuses the card's own type tokens (bodyExtra count,
-	// hand next-line, accent link) so it reads as part of the card, not a
-	// card-in-card.
+	friendName: { flex: 1, minWidth: 0 },
+	// Recruiter-standing strip — a quiet dashed-top-divided row: count +
+	// next-title on the left, board link on the right.
 	downlineStrip: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		gap: 12,
-		marginBottom: 12,
-		paddingTop: 10,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
+		gap: SPACE.md,
+		marginBottom: SPACE.md,
+		paddingTop: SPACE.sm,
+		borderTopWidth: BORDER.thin,
+		borderTopColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	downlineTextCol: { flex: 1, minWidth: 0 },
-	downlineCount: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
+	haveWrap: { marginTop: SPACE.sm, gap: SPACE.sm },
+	haveDivider: {
+		borderBottomWidth: BORDER.thin,
+		borderColor: UI_COLORS.uiMuted,
+		borderStyle: "dashed",
 	},
-	downlineNext: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 3,
-	},
-	downlineNextTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 12,
-		color: WHIMSY.accent,
-	},
-	downlineLink: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
-});
-
-// Paid-rename dialog — paper-sticker modal styled to match ConfirmDialog,
-// with a UsernameSetup-styled input. Cost line sits under the title.
-const renameStyles = StyleSheet.create({
-	flex: { flex: 1 },
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 28,
-	},
-	cardWrap: { width: "100%", maxWidth: 340 },
-	card: { paddingHorizontal: 22, paddingVertical: 20 },
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 20,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
-	cost: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 4,
-		marginBottom: 14,
-	},
-	input: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-	},
-	inputError: { borderColor: WHIMSY.accent },
-	error: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		marginTop: 8,
-	},
-	btnRow: {
+	haveLabel: { marginTop: SPACE.xs },
+	applyBtn: { marginTop: SPACE.xs },
+	successRow: {
 		flexDirection: "row",
-		gap: 10,
-		alignSelf: "stretch",
-		marginTop: 18,
-	},
-	btn: {
-		flex: 1,
-		paddingHorizontal: 14,
-		paddingVertical: 11,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
 		alignItems: "center",
-		justifyContent: "center",
+		gap: SPACE.xs,
+		marginTop: SPACE.sm,
 	},
-	btnGhost: { backgroundColor: "transparent", borderColor: WHIMSY.muteSoft },
-	btnGhostText: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.mute },
-	btnConfirm: { backgroundColor: WHIMSY.lilac },
-	btnConfirmText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-});
-
-// The Den whisper dialog — same paper-sticker modal treatment as the rename
-// dialog, plus a chip-row kind picker and a taller multiline note.
-const feedbackStyles = StyleSheet.create({
-	flex: { flex: 1 },
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 28,
-	},
-	cardWrap: { width: "100%", maxWidth: 340 },
-	card: { paddingHorizontal: 22, paddingVertical: 20 },
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 20,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 14,
-	},
+	successPig: { width: ART_SIZE.mark, height: ART_SIZE.mark },
+	// ── Settings ───────────────────────────────────────────────────
+	settingsWrap: { gap: SPACE.md },
+	settingsGroup: { gap: SPACE.sm },
+	footer: { marginTop: SPACE.md },
+	// ── Dialog shells ──────────────────────────────────────────────
+	// The sticker tilts and wears the hard shadow; give both room inside the
+	// bare scaffold frame.
+	dialogContent: { padding: SPACE.sm },
+	dialogCard: { gap: SPACE.sm },
+	dialogSub: { marginBottom: SPACE.xs },
+	dialogButtons: { alignSelf: "stretch", marginTop: SPACE.sm },
 	chipRow: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: 8,
+		gap: SPACE.sm,
 		justifyContent: "center",
-		marginBottom: 14,
 	},
-	chip: {
-		paddingHorizontal: 12,
-		paddingVertical: 7,
-		borderRadius: RADII.md,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.muteSoft,
-		backgroundColor: "transparent",
-	},
-	chipOn: { borderColor: WHIMSY.ink, backgroundColor: WHIMSY.lilac },
-	chipText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
-	chipTextOn: { color: WHIMSY.ink },
-	input: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		minHeight: 88,
-		textAlignVertical: "top",
-	},
-	inputError: { borderColor: WHIMSY.accent },
-	error: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		marginTop: 8,
-	},
-	sentText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		lineHeight: 26,
-		paddingVertical: 12,
-	},
-	btnRow: {
+	sentText: { paddingVertical: SPACE.md },
+	// ── Long-story ledger ──────────────────────────────────────────
+	ledgerRow: {
 		flexDirection: "row",
-		gap: 10,
-		alignSelf: "stretch",
-		marginTop: 18,
-	},
-	btn: {
-		flex: 1,
-		paddingHorizontal: 14,
-		paddingVertical: 11,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "space-between",
+		gap: SPACE.md,
+		paddingVertical: SPACE.md,
 	},
-	btnGhost: { backgroundColor: "transparent", borderColor: WHIMSY.muteSoft },
-	btnGhostText: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.mute },
-	btnConfirm: { backgroundColor: WHIMSY.lilac },
-	btnConfirmText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	ledgerRowDivider: {
+		borderBottomWidth: BORDER.thin,
+		borderBottomColor: UI_COLORS.uiMuted,
+		borderStyle: "dashed",
+	},
+	ledgerLabel: { flex: 1, minWidth: 0 },
+	ledgerDivider: {
+		height: BORDER.thin,
+		backgroundColor: UI_COLORS.uiMuted,
+		marginVertical: SPACE.sm,
+	},
 });
 
 const wallowWallStyles = StyleSheet.create({
 	wrap: { gap: SPACE.sm },
-	headingRow: { flexDirection: "row", alignItems: "flex-end", gap: SPACE.sm },
-	kicker: { ...KICKER_TEXT, marginBottom: 1 },
-	title: { ...TYPE.sectionTitle, color: WHIMSY.ink },
-	previewBtn: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: 6, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper },
-	previewBtnOn: { backgroundColor: WHIMSY.sun },
-	previewText: { ...TYPE.label, color: WHIMSY.ink },
-	card: { padding: SPACE.md, overflow: "hidden" },
+	card: { overflow: "hidden" },
 	currentRow: {
-		minHeight: 64,
+		minHeight: RANK_DECAL,
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.md,
 	},
 	currentDecal: {
-		width: 54,
-		height: 54,
+		width: RANK_DECAL,
+		height: RANK_DECAL,
 		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 		justifyContent: "center",
 		transform: [{ rotate: "-2deg" }],
-		...SHADOW_SM,
 	},
-	currentRank: { ...TYPE.cardTitle, color: WHIMSY.ink },
 	currentCopy: { flex: 1, minWidth: 0 },
-	stepLabel: { ...TYPE.kickerPill, color: WHIMSY.accent },
-	rankLabel: { ...TYPE.cardTitle, fontSize: 16, lineHeight: 19, color: WHIMSY.ink },
-	currentBenefits: { ...TYPE.bodySm, color: WHIMSY.mute, marginTop: 2 },
 	stepConnector: {
-		width: 54,
-		height: 28,
+		width: RANK_DECAL,
+		height: STEP_DROP,
 		alignItems: "center",
 		justifyContent: "flex-end",
 	},
 	stepConnectorLine: {
 		position: "absolute",
 		top: 0,
-		bottom: 10,
-		width: 2,
-		backgroundColor: WHIMSY.muteSoft,
+		bottom: SPACE.sm,
+		width: BORDER.ink,
+		backgroundColor: UI_COLORS.uiMuted,
 	},
 	nextStep: {
 		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
+		backgroundColor: UI_COLORS.surfaceMuted,
 		padding: SPACE.md,
 		gap: SPACE.xs,
 	},
 	nextHeading: {
-		minHeight: 44,
+		minHeight: TAP_MIN,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
 		gap: SPACE.sm,
 		marginBottom: SPACE.xs,
 	},
-	nextTitle: { ...TYPE.cardTitle, fontSize: 16, lineHeight: 19, color: WHIMSY.ink },
 	nextDecal: {
-		minWidth: 44,
-		height: 44,
+		minWidth: TAP_MIN,
+		height: TAP_MIN,
 		paddingHorizontal: SPACE.xs,
 		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
+		backgroundColor: UI_COLORS.surface,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	nextRank: { ...TYPE.label, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	deltaRow: {
-		minHeight: 24,
+		minHeight: SPACE.xl,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
 		gap: SPACE.sm,
 	},
-	deltaLabel: { ...TYPE.bodySm, color: WHIMSY.mute },
-	deltaValue: { ...TYPE.bodySm, color: WHIMSY.ink },
-	unlockLine: { ...TYPE.hand, color: WHIMSY.accent, marginTop: SPACE.xs },
-	gearLink: {
-		minHeight: 44,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: SPACE.xs,
-		marginTop: SPACE.md,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream2,
-	},
-	gearLinkText: { ...TYPE.bodySm, color: WHIMSY.ink },
-});
-
-// "The long story" — lifetime dashboard card + its detail-sheet ledger.
-// Card sits under the identity card; the sheet reuses the paper-sticker
-// modal treatment (backdrop + centered sticker) shared with the rename dialog.
-const longStoryStyles = StyleSheet.create({
-	wrap: {},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 8,
-	},
-	card: { padding: 16 },
-	statsRow: {
-		flexDirection: "row",
-		alignItems: "stretch",
-	},
-	seeAll: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.3,
-		textAlign: "center",
-		marginTop: 14,
-		paddingTop: 12,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
-	},
-	// Detail sheet — paper-sticker modal, centered like the rename dialog.
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
-	},
-	sheetWrap: { width: "100%", maxWidth: 360 },
-	sheet: { paddingHorizontal: 22, paddingVertical: 20 },
-	sheetKicker: { ...KICKER_TEXT, marginBottom: 4 },
-	sheetTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		marginBottom: 12,
-	},
-	// Cap the ledger height so a long list scrolls inside the sheet rather
-	// than pushing the Close button off a short screen.
-	ledgerScroll: { maxHeight: 380 },
-	ledger: {},
-	ledgerRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: 12,
-		paddingVertical: 11,
-	},
-	ledgerRowDivider: {
-		borderBottomWidth: 1.5,
-		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
-	},
-	ledgerLabel: {
-		flex: 1,
-		minWidth: 0,
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14,
-		color: WHIMSY.ink,
-	},
-	ledgerValue: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
-		color: WHIMSY.ink,
-	},
-	// Dashed rule between the scalar figures and the aggregate social counts.
-	ledgerDivider: {
-		height: 1.5,
-		backgroundColor: WHIMSY.muteSoft,
-		marginVertical: 8,
-	},
-	closeBtn: {
-		marginTop: 16,
-		paddingVertical: 11,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-	},
-	closeBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	unlockLine: { marginTop: SPACE.xs },
+	gearLink: { marginTop: SPACE.md },
 });

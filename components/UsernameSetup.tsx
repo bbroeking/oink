@@ -4,22 +4,25 @@
 //
 // Layout: cream backdrop, Rosie hero up top, paper-sticker card
 // with the input + Save button below. Keyboard avoidance preserved.
+//
+// Rebuilt on the design system 2026-09-11 (wave 3 · area E): the hand-rolled
+// well is `TextField` (so the rules line is a `helper`, a taken name is an
+// `errorText` and a good name earns the check), and the Save CTA is `Button` —
+// which means a disabled Save is now "a button, asleep" instead of the 0.5
+// opacity ghost the 2026-07-07 ruling retired. [E16]
 import React, { useState } from "react";
 import {
 	StyleSheet,
 	View,
-	TextInput,
-	Pressable,
 	Image,
-	Text,
 	SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
 } from "react-native";
 import { supabase } from "../utils/supabase";
-import { Sticker } from "./ui/Sticker";
+import { Button, Kicker, PageTitle, Sticker, TextField } from "./ui";
 import { isUsernameAllowed } from "@/constants/bannedWords";
-import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, RADII } from "@/constants/theme";
+import { PAGE_PAD, RADII, SPACE, STICKER_SHADOW, UI_COLORS } from "@/constants/theme";
 
 // Friendly copy for moderation rejections — shared between the
 // client-side pre-check and the server trigger's username_not_allowed
@@ -28,6 +31,9 @@ const MODERATION_COPY: Record<"banned" | "reserved", string> = {
 	banned: "That name won't fly in the barn — pick a different one.",
 	reserved: "That name's taken by the barn itself — pick a different one.",
 };
+
+const NAME_MIN = 3;
+const NAME_MAX = 24;
 
 interface Props {
 	userId: string;
@@ -40,7 +46,7 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 	const [error, setError] = useState("");
 
 	const trimmed = username.trim();
-	const valid = trimmed.length >= 3 && trimmed.length <= 24;
+	const valid = trimmed.length >= NAME_MIN && trimmed.length <= NAME_MAX;
 
 	const handleSave = async () => {
 		if (!valid || saving) return;
@@ -85,8 +91,10 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 							style={styles.rosie}
 							resizeMode="contain"
 						/>
-						<Text style={styles.kicker}>★ pick your handle ★</Text>
-						<Text style={styles.title}>What should Rosie call you?</Text>
+						<Kicker star={false}>★ pick your handle ★</Kicker>
+						<PageTitle align="center" style={styles.title}>
+							What should Rosie call you?
+						</PageTitle>
 					</View>
 
 					<View style={styles.cardWrap}>
@@ -94,42 +102,46 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 							color="paper"
 							rotate={-0.6}
 							radius={RADII.xxl}
+							pad
 							style={[styles.card, STICKER_SHADOW]}
 						>
-							<TextInput
-								style={[styles.input, !!error && styles.inputError]}
-								placeholder="3–24 characters"
-								placeholderTextColor={WHIMSY.mute}
+							<TextField
+								// The hero title already asks the question out loud, so
+								// the kicker label stays for VoiceOver only.
+								label="Your handle"
+								labelHidden
 								value={username}
 								onChangeText={(t) => {
 									setUsername(t);
 									if (error) setError("");
 								}}
+								placeholder={`${NAME_MIN}–${NAME_MAX} characters`}
+								helper="Shows up next to your name on the leaderboard."
+								state={error ? "error" : valid ? "valid" : "default"}
+								errorText={error || undefined}
 								autoCapitalize="none"
 								autoCorrect={false}
-								maxLength={24}
+								maxLength={NAME_MAX}
 								editable={!saving}
 							/>
-							{error ? (
-								<Text style={styles.errorText}>{error}</Text>
-							) : (
-								<Text style={styles.helper}>
-									Shows up next to your name on the leaderboard.
-								</Text>
-							)}
-							<Pressable
+							<Button
+								full
+								variant="lilac"
 								onPress={handleSave}
-								disabled={!valid || saving}
-								style={({ pressed }) => [
-									styles.btn,
-									(!valid || saving) && styles.btnDisabled,
-									pressed && { opacity: 0.85 },
-								]}
+								disabled={!valid}
+								loading={saving}
+								loadingLabel="Saving…"
+								accessibilityLabel={
+									valid ? `Save the name ${trimmed}` : "Save your name"
+								}
+								accessibilityHint={
+									valid
+										? "Names your pig and opens the next step"
+										: `Enter ${NAME_MIN} to ${NAME_MAX} characters first`
+								}
 							>
-								<Text style={styles.btnText}>
-									{saving ? "Saving…" : "Save"}
-								</Text>
-							</Pressable>
+								Save
+							</Button>
 						</Sticker>
 					</View>
 				</SafeAreaView>
@@ -139,69 +151,24 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
+	bg: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
 	flex: { flex: 1 },
-	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: PAGE_PAD },
 	hero: {
 		alignItems: "center",
-		paddingTop: 24,
+		paddingTop: SPACE.xl,
 		flex: 1,
 		justifyContent: "center",
 	},
 	rosie: {
 		width: "60%",
 		aspectRatio: 370 / 383, // matches idle_1.png native ratio (near-square)
-		marginBottom: 14,
+		marginBottom: SPACE.card,
 	},
-	kicker: { ...KICKER_TEXT, marginBottom: 6 },
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		paddingHorizontal: 16,
+		paddingHorizontal: SPACE.lg,
+		marginTop: SPACE.sm,
 	},
-	cardWrap: { paddingBottom: 24 },
-	card: { padding: 18 },
-	input: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		marginBottom: 8,
-	},
-	inputError: { borderColor: WHIMSY.accent },
-	helper: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginBottom: 10,
-	},
-	errorText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		marginBottom: 10,
-	},
-	btn: {
-		backgroundColor: WHIMSY.lilac,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 13,
-		alignItems: "center",
-		marginTop: 4,
-	},
-	btnDisabled: { opacity: 0.5 },
-	btnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
-		color: WHIMSY.ink,
-		letterSpacing: 0.3,
-	},
+	cardWrap: { paddingBottom: SPACE.xl },
+	card: { gap: SPACE.md },
 });

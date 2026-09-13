@@ -11,12 +11,13 @@ describe("development-only previews", () => {
 	test.each([
 		["UI audit", "app/ui-audit.tsx", "/"],
 		["barn visit", "app/barn-visit-preview.tsx", "/"],
+		["barn housing", "app/barn-housing-preview.tsx", "/"],
 		["idle battler", "app/idle-battler-prototype.tsx", "/"],
 		["member perks", "app/member-perks-prototype.tsx", "/(tabs)/shop"],
 	])("%s route redirects production deep links", (_name, route, fallback) => {
 		const routeSource = source(route);
 		expect(routeSource).toContain(
-			`if (!__DEV__) return <Redirect href="${fallback}" />;`,
+			`: () => <Redirect href="${fallback}" />;`,
 		);
 	});
 
@@ -28,13 +29,13 @@ describe("development-only previews", () => {
 			"onTogglePreview={__DEV__ ? () => setDevWallowPreview",
 		);
 		expect(leaderboard).toMatch(
-			/\{__DEV__ && \(\s*<Pressable[\s\S]*?Preview Wallow ranks/,
+			/\{__DEV__ && \(\s*<Chip[\s\S]*?Preview Wallow ranks/,
 		);
 	});
 
 	test("the standalone barn route owns the all-tickled-out fixture", () => {
-		const audit = source("app/ui-audit.tsx");
-		const preview = source("app/barn-visit-preview.tsx");
+		const audit = source("components/dev/screens/ui-audit.tsx");
+		const preview = source("components/dev/screens/barn-visit-preview.tsx");
 		const visit = source("components/BarnVisitModal.tsx");
 
 		expect(audit).not.toContain("BarnVisitModal");

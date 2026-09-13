@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ticklethepig",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.broeking.ttp",
@@ -61,17 +60,7 @@
       "expo-audio",
       "expo-video",
       "expo-asset",
-      "expo-font",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35
-          }
-        }
-      ],
-      "./plugins/withAndroidXCoreApi35"
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,58 +1,86 @@
 // User-detail bottom sheet — opens when you tap another user anywhere
-// (currently leaderboard rows). One-shot fetch via public_user_stats
-// RPC. Action button is state-aware:
+// (leaderboard rows, friend rows, crew rows). One-shot fetch via
+// public_user_stats RPC. Action button is state-aware:
 //   self       → no action
 //   none       → Add friend
 //   pending_outgoing → Cancel request
 //   pending_incoming → Accept friend request
 //   friends    → an Ask row — pick 1-5, then request_tickles. This
 //                is the single door for asking a friend for tickles.
+//
+// Wave-3 conformance pass (area B). This is the most-opened sheet in the app,
+// and it carried the area's worst error path plus its own sheet chrome:
+//   · **B-02** — a failed profile fetch set `stats = null` and `loading =
+//     false`, and the render branch tested `!stats`, so the player watched
+//     "peeking in" forever while the written error copy sat in an unreachable
+//     branch. The branch is now three-way: `LoadingBeat` while loading,
+//     `EmptyState kind="error"` + a retry when the fetch came back empty, and
+//     content otherwise. A null fetch is not an empty state.
+//   · **B-06 / B-25** — the hand-rolled `Modal` + scrim + slide + grabber (320ms
+//     in, no exit tween, no Reduce-Motion path) is the `Sheet` primitive. The
+//     nested Block / Report confirms and the Barn visit ride in `Sheet`'s
+//     `overlay` slot, inside this sheet's own Modal, because iOS will not
+//     reliably present a nested native one.
+//   · **B-08** — the blocked Visit control keeps its whole shape (the `DISABLED`
+//     chrome a `Sticker disabled` composes) instead of an `opacity: 0.7` crush.
+//   · **B-11** — Block and Report name their consequence in `confirmHint` and
+//     confirm on the destructive ramp.
+//   · **B-13** — the two `›` text chevrons render as art (`Glyph`/`Icon`).
+//   · **B-06 / B-12** — the eight hand-rolled shapes are `SegmentedControl`
+//     (Ask/Bless/Curse), `Chip` (the 1–5 ask amounts, selected = BORDER.heavy),
+//     `Button` (every action, 44pt floor), `Stat` + `Tag` (the season row),
+//     `ListRow` (the digging-story door) and `Tag` (the keepsake).
 import React, { useEffect, useRef, useState } from "react";
-import {
-	Modal,
-	View,
-	Text,
-	StyleSheet,
-	Pressable,
-	Animated,
-	Easing,
-	Dimensions,
-} from "react-native";
+import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { router, type Href } from "expo-router";
 import { supabase } from "../utils/supabase";
 import { rpc, rpcAction } from "@/utils/rpc";
 import { pairBondWith, bondBreakdown, type PairBondWith } from "@/utils/pairBonds";
-import { PrestigeAvatar } from "./ui/PrestigeAvatar";
-import { ProfileIdentity } from "./ui/ProfileIdentity";
-import { Icon } from "./ui/Icon";
-import { Glyph, IconText } from "./ui/Glyph";
-import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
-import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
+import { GameIcon } from "./ui/GameIcon";
 import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { useCrew } from "@/hooks/useCrew";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
-import { AlignmentBar } from "./ui/AlignmentBar";
-import { LoadingBeat } from "./ui/EmptyState";
+import { MOTE_MACHINE_VISIBLE } from "@/constants/featureFlags";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
 import type { TradeRow } from "@/constants/trade_types";
 import type { TitlePlacement } from "@/constants/title_types";
 import { formatHM } from "@/utils/duration";
+import { blockUser, reportUser } from "@/utils/moderation";
 import {
-	FONTS,
-	KICKER_PILL,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
+	ART_SIZE,
+	BORDER,
+	MOTION,
 	RADII,
 	SPACE,
-	STICKER_SHADOW,
-	SHADOW_SM,
-	TYPE,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
+import {
+	AlignmentBar,
+	Button,
+	Chip,
+	ConfirmDialog,
+	EmptyState,
+	Glyph,
+	Icon,
+	Kicker,
+	ListRow,
+	LoadingBeat,
+	PrestigeAvatar,
+	ProfileIdentity,
+	SegmentedControl,
+	Sheet,
+	Stat,
+	Sticker,
+	T,
+	Tag,
+	useUnmanagedModalHold,
+	type ChipTone,
+} from "./ui";
 import {
 	acceptFriendRequest,
 	cancelFriendRequest,
@@ -95,6 +123,25 @@ type AskState =
 	| { kind: "ready" }
 	| { kind: "pending" }
 	| { kind: "cooldown"; hours: number };
+
+type ActionTab = "ask" | "bless" | "curse";
+
+const ACTION_TABS = [
+	{ value: "ask" as const, label: "Ask" },
+	{ value: "bless" as const, label: "Bless" },
+	{ value: "curse" as const, label: "Curse" },
+];
+
+// The five ask amounts. Hick's law says five is one too many (the audit's P7
+// note) — but changing the economy is a product call, not a conformance one.
+const ASK_AMOUNTS = [1, 2, 3, 4, 5];
+
+// Avatar diameters for the sheet header: a Wallow-ranked pig gets the bigger
+// frame so its aura reads. Drawing geometry.
+const HEADER_AVATAR = 56;
+const HEADER_AVATAR_PRESTIGE = 76;
+// The Barn icon on the one hero control — sized as art, not as a row icon.
+const HEADER_ICON = 24;
 
 // Mirror the server's pair-cooldown rule (trade_cooldown.sql): a
 // request is blocked while a trade is pending, and for 24h after the
@@ -140,7 +187,12 @@ function formatRemaining(iso: string): string {
 	return formatHM(ms);
 }
 
-export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Props) {
+export function UserSheet(props: Props) {
+	return <UserSheetSession key={props.targetUserId ?? "closed"} {...props} />;
+}
+
+function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Props) {
+	const targetGeneration = useRef(0);
 	// Crewmates can be blessed without being friends (send_blessing allows
 	// friends OR crewmates) — derive crewmate-ness from the caller's own
 	// roster so the sheet can offer the bless panel to non-friend sounder
@@ -149,19 +201,23 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const isCrewmate =
 		!!targetUserId &&
 		myCrewState.members.some((m) => m.user_id === targetUserId);
-	// This sheet is a native Modal outside the popup queue, and it nests its own
-	// Block/Report ConfirmDialogs + BarnVisitModal (kept nested on purpose — iOS
-	// presentation ordering). Hold the queue while it's up so a foreground poll
+	// This sheet nests its own Block/Report ConfirmDialogs + BarnVisitModal in
+	// `Sheet`'s overlay slot (kept nested on purpose — iOS presentation
+	// ordering). Hold the queue for the whole session so a foreground poll
 	// (schism/finale/achievements on AppState "active") can't present a queued
-	// popup over it — the #50152 wedge (issue #4). The outer hold covers the
-	// nested modals too; closing (targetUserId → null) lifts it, so a queued
-	// achievement re-admits after the handoff gap.
+	// popup over it — the #50152 wedge (issue #4). The hold is reference
+	// counted, so this composes with the one `Sheet` takes for itself; closing
+	// (targetUserId → null) lifts both and a queued achievement re-admits after
+	// the handoff gap.
 	useUnmanagedModalHold(!!targetUserId);
 	// Alignment isn't a thing in Season 1 — its bar retires with S0.
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
+	// Bumped by the error state's "Try again" so the profile fetch re-runs
+	// without re-keying the whole session. [B-02]
+	const [reloadToken, setReloadToken] = useState(0);
 	// Barn visiting (social feature) — opens the visit screen for this user.
 	const [showVisit, setShowVisit] = useState(false);
 	// Whether a visit would actually succeed right now (barn_visit_status). Used
@@ -182,13 +238,9 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [blockOpen, setBlockOpen] = useState(false);
 	const [reportOpen, setReportOpen] = useState(false);
 	const [blockBusy, setBlockBusy] = useState(false);
-	// When friends, the sheet shows a daily-ritual panel. This toggles
-	// which ritual (bless / curse) the panel is currently showing.
-	const [ritualMode, setRitualMode] = useState<RitualMode>("bless");
 	// 3-tab control for the action area on a friend's sheet (Ask /
-	// Bless / Curse). Only one panel is visible at a time; matches
-	// the design's segmented control.
-	const [actionTab, setActionTab] = useState<"ask" | "bless" | "curse">("ask");
+	// Bless / Curse). Only one panel is visible at a time.
+	const [actionTab, setActionTab] = useState<ActionTab>("ask");
 	// Amount for the friends-only Ask row (1-5).
 	const [askAmount, setAskAmount] = useState(1);
 	// The Ask row is state-aware: a pending trade or a 24h pair
@@ -226,7 +278,16 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			setBreakdownPending(null);
 			setTargetWallowCount(0);
 			setBreakdownFor(payload); // presents the receipt after the handoff gap
-		}, 320);
+		}, MOTION.modalHandoff);
+	};
+	const openDiggingStory = () => {
+		if (!stats) return;
+		const href = `/digging-stats?userId=${encodeURIComponent(stats.user_id)}&name=${encodeURIComponent(stats.username ?? "This pig")}` as Href;
+		onDismiss();
+		// Let the native sheet finish dismissing before the stack route presents;
+		// presenting both in one frame is the iOS modal wedge this sheet avoids for
+		// the tickle receipt too.
+		setTimeout(() => router.push(href), MOTION.modalHandoff);
 	};
 	useEffect(
 		() => () => {
@@ -235,28 +296,10 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		[]
 	);
 
-	// Sheet animation — driven independently of the backdrop so the
-	// dim doesn't slide up with the card (the old animationType="slide"
-	// dragged the whole grey screen up, which looked broken). Backdrop
-	// gets a fade 0→1; the sheet gets a translateY from screen-height
-	// → 0. Both driven by the same 0..1 progress value so they finish
-	// in lockstep. screenH is captured once on mount — Dimensions reads
-	// don't fire on rotation but the sheet is portrait-only so that's
-	// fine.
-	const screenH = useRef(Dimensions.get("window").height).current;
-	const sheetAnim = useRef(new Animated.Value(0)).current;
 	useEffect(() => {
-		if (!targetUserId) return;
-		sheetAnim.setValue(0);
-		Animated.timing(sheetAnim, {
-			toValue: 1,
-			duration: 320,
-			easing: Easing.out(Easing.cubic),
-			useNativeDriver: true,
-		}).start();
-	}, [targetUserId, sheetAnim]);
-
-	useEffect(() => {
+		const generation = ++targetGeneration.current;
+		const isCurrent = () =>
+			targetGeneration.current === generation;
 		if (!targetUserId) {
 			setStats(null);
 			setFeedback(null);
@@ -265,6 +308,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			return;
 		}
 		setLoading(true);
+		setStats(null);
 		setFeedback(null);
 		setAskState({ kind: "ready" });
 		setTargetTickles(null);
@@ -273,6 +317,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		// Keepsake — the caller's bond with this friend. Fail-soft: a null
 		// result (unpushed migration / refusal) leaves the line hidden.
 		pairBondWith(targetUserId).then((d) => {
+			if (!isCurrent()) return;
 			// The envelope discriminates on `ok`, so the check narrows it directly.
 			setBond(d?.ok ? d : null);
 		});
@@ -283,22 +328,28 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			next_at?: string | null;
 			balance?: number;
 		}>("barn_visit_status", { p_target: targetUserId }).then((d) => {
-			if (d.ok) setVisitGate(d);
+			if (isCurrent() && d.ok) setVisitGate(d);
 		});
 		rpc<UserStats[]>("public_user_stats", {
 			target_user_id: targetUserId,
 		}).then((data) => {
+			if (!isCurrent()) return;
 			if (!data) {
 				setFeedback("Couldn't load profile.");
 				setStats(null);
 			} else {
-				setStats(data[0] ?? null);
+				const row = data[0] ?? null;
+				setStats(row);
+				// A friend's sheet opens ON the blessing — it's the thing players
+				// come here to do, and landing on it makes the sheet path one tap
+				// shorter too. Everyone else still opens on Ask.
+				setActionTab(row?.friendship_status === "friends" ? "bless" : "ask");
 			}
 			setLoading(false);
 		});
 		// Trade state with this user — drives the Ask row.
 		rpc<TradeRow[]>("my_tickle_trades").then((data) => {
-			setAskState(deriveAskState(targetUserId, data));
+			if (isCurrent()) setAskState(deriveAskState(targetUserId, data));
 		});
 		// This-season tickle count for the TICKLES stat column (tickles_earned,
 		// the live-season tally the Board is racing on). A friend's sheet shows
@@ -322,15 +373,20 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 						.maybeSingle();
 					row = fallback.data;
 				}
+				if (!isCurrent()) return;
 				setTargetTickles(row ? (row.tickles_earned ?? 0) : null);
 				setTargetWallowCount(row?.wallow_count ?? 0);
 			});
-	}, [targetUserId]);
+		return () => {
+			if (targetGeneration.current === generation) targetGeneration.current++;
+		};
+	}, [targetUserId, reloadToken]);
 
 	// Curse countdown — when the curse tab is open, surface how long any
 	// existing curse on the target still has. Privacy-safe RPC: returns only
 	// the soonest expiry, never who cast it.
 	useEffect(() => {
+		let cancelled = false;
 		if (actionTab !== "curse" || !targetUserId) {
 			setCurseStatus(null);
 			return;
@@ -338,14 +394,26 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		rpc<{ cursed: boolean; expires_at: string | null }>(
 			"target_curse_status",
 			{ target_id: targetUserId }
-		).then((d) => setCurseStatus(d ?? null));
+		).then((d) => {
+			if (!cancelled)
+				setCurseStatus(d ?? null);
+		});
+		return () => {
+			cancelled = true;
+		};
 	}, [actionTab, targetUserId]);
 
 	const refreshStats = async () => {
-		if (!targetUserId) return;
+		const expectedTarget = targetUserId;
+		const expectedGeneration = targetGeneration.current;
+		if (!expectedTarget) return;
 		const rows = (await rpc<UserStats[]>("public_user_stats", {
-			target_user_id: targetUserId,
+			target_user_id: expectedTarget,
 		})) ?? [];
+		if (
+			targetGeneration.current !== expectedGeneration
+		)
+			return;
 		setStats(rows[0] ?? null);
 	};
 
@@ -414,25 +482,30 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const doBlock = async () => {
 		if (!stats || blockBusy) return;
 		setBlockBusy(true);
-		await rpc("block_user", { target_user_id: stats.user_id });
+		const result = await blockUser(stats.user_id);
 		setBlockBusy(false);
 		setBlockOpen(false);
+		if (!result.ok) {
+			setFeedback("Couldn't block this user. Try again.");
+			return;
+		}
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 		setFeedback(`${stats.username ?? "User"} blocked. They can no longer interact with you.`);
 		onFriendshipChanged?.();
 		// Close the sheet after a brief beat so the toast reads.
-		setTimeout(onDismiss, 800);
+		setTimeout(onDismiss, MOTION.beat);
 	};
 
 	const doReport = async () => {
 		if (!stats || blockBusy) return;
 		setBlockBusy(true);
-		await rpc("report_user", {
-			target_user_id: stats.user_id,
-			reason: "user_report",
-		});
+		const result = await reportUser(stats.user_id);
 		setBlockBusy(false);
 		setReportOpen(false);
+		if (!result.ok) {
+			setFeedback("Couldn't send this report. Try again.");
+			return;
+		}
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 		setFeedback("Reported. Our team will review.");
 	};
@@ -468,329 +541,356 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 
 	if (!targetUserId) return null;
 
-	// Backdrop fades; sheet translates up from below the screen.
-	// Driving both off `sheetAnim` (0..1) keeps them in lockstep
-	// without sliding the dim as one body.
-	const backdropOpacity = sheetAnim;
-	const sheetTranslateY = sheetAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [screenH, 0],
-	});
+	// Three-way, in this order — the fix for B-02. `loading` is the beat;
+	// `!stats` after the beat is a FAILURE, not an empty shelf; content is
+	// everything else.
+	const body = loading ? (
+		<LoadingBeat label="peeking in" />
+	) : !stats ? (
+		<EmptyState
+			kind="error"
+			title="Couldn't load this pig"
+			sub={feedback ?? "We couldn't reach their profile just now."}
+			action={
+				<Button
+					size="sm"
+					variant="ghost"
+					onPress={() => setReloadToken((n) => n + 1)}
+					accessibilityLabel="Try again"
+					accessibilityHint="Reloads this pig's profile"
+					testID="user-sheet-retry"
+				>
+					Try again
+				</Button>
+			}
+		/>
+	) : (
+		<>
+			<View style={styles.header}>
+				<PrestigeAvatar
+					size={targetWallowCount > 0 ? HEADER_AVATAR_PRESTIGE : HEADER_AVATAR}
+					hatId={stats.active_hat_id}
+					prestigeLevel={targetWallowCount}
+				/>
+				<View style={styles.headerCopy}>
+					<ProfileIdentity
+						username={stats.username}
+						title={
+							stats.active_title_name && stats.active_title_placement
+								? { name: stats.active_title_name, placement: stats.active_title_placement }
+								: null
+						}
+						discriminator={stats.discriminator}
+						variant="profile"
+					/>
+				</View>
+			</View>
+
+			{!s1 && (
+				<View style={styles.alignBarWrap}>
+					<AlignmentBar
+						score={stats.alignment_score}
+						label={stats.alignment_label}
+					/>
+				</View>
+			)}
+
+			{/* This season's numbers — a friend's sheet reads the
+			    live race, not the all-time ledger. */}
+			<Kicker style={styles.seasonKicker}>this season</Kicker>
+			<Sticker
+				color="cream"
+				shadow="none"
+				rotate={0}
+				radius={RADII.lg}
+				border={BORDER.thin}
+				style={styles.statsRow}
+			>
+				<StatCol
+					label="GIVEN"
+					value={stats.given_total}
+					tier={stats.generous_tier_name}
+					tone="lilac"
+				/>
+				<View style={styles.statsDivider} />
+				<StatCol
+					label="RECEIVED"
+					value={stats.received_total}
+					tier={stats.greedy_tier_name}
+					tone="sun"
+				/>
+				<View style={styles.statsDivider} />
+				<StatCol label="TICKLES" value={targetTickles} tone="roseDeep" />
+			</Sticker>
+
+			{/* Keepsake — the quiet lifetime bond between the two of
+			    you (trades · blessings · visits). Only shows once a
+			    bond has actually formed; hidden entirely when the
+			    RPC is missing (unpushed migration) or bond is 0. */}
+			{bond && bond.bond > 0 && (
+				<Tag
+					glyph="handshake"
+					label={`you two: ${bondBreakdown(bond)}`}
+					accessibilityLabel={`Your bond with this pig: ${bondBreakdown(bond)}`}
+					style={styles.keepsake}
+				/>
+			)}
+
+			{/* The tickle receipt (spec 17) — a quiet door into how this
+			    pig earned its season tickles. Self and others render
+			    identically; the total is already public on the board. */}
+			<Button
+				variant="handLink"
+				onPress={openBreakdown}
+				accessibilityLabel="How this pig earned its tickles"
+				accessibilityHint="Opens the tickle receipt"
+				style={styles.breakdownLink}
+			>
+				<>
+					{"how'd they earn it? "}
+					<Glyph name="arrowRight" size={ART_SIZE.mark} />
+				</>
+			</Button>
+
+			<ListRow
+				fill="lilac"
+				tilt={false}
+				leading={<Glyph name="sparkles" size={ART_SIZE.glyphSm} />}
+				title="Digging story"
+				sub={
+					MOTE_MACHINE_VISIBLE
+						? "digs · finds · motes · Sounder bonuses"
+						: "digs · finds · Sounder bonuses"
+				}
+				trailing={
+					<Icon
+						name="chevronRight"
+						size={ART_SIZE.glyphSm}
+						color={UI_COLORS.textSecondary}
+					/>
+				}
+				onPress={openDiggingStory}
+				accessibilityLabel={`See ${stats.username ?? "this pig"}'s digging story`}
+				accessibilityHint="Opens their digs, finds and Sounder bonuses"
+				style={styles.digStoryLink}
+			/>
+
+			{/* Visit their Barn — see their pig + tickle it for them (social).
+			    FRIENDS-ONLY (player decision): visiting mints snouts +
+			    leaderboard to both pigs, so it's hidden for non-friends (the
+			    server are_friends check is the authoritative backstop).
+			    Pre-disabled when a visit can't succeed (locked to another
+			    barn / pig resting) so we never open the modal just to show a
+			    dead-end pop-up. The blocked state keeps the control's whole
+			    shape — muted fill, ink outline, no opacity crush. [B-08] */}
+			{stats.friendship_status !== "friends" ? null : (
+				<Sticker
+					color="sky"
+					rotate={0}
+					radius={RADII.lg}
+					// A resting control is not lifted off the paper.
+					shadow={visitBlock ? "none" : true}
+					onPress={visitBlock ? undefined : () => setShowVisit(true)}
+					disabled={!!visitBlock}
+					accessibilityLabel={
+						visitBlock ? `Visit Barn — ${visitBlock.label}` : "Visit Barn"
+					}
+					accessibilityHint={
+						visitBlock
+							? "You can't visit this barn right now"
+							: "Opens their barn so you can tickle their pig"
+					}
+					style={styles.visitBtn}
+				>
+					<View style={styles.visitBtnRow}>
+						<GameIcon
+							name="visit"
+							size={visitBlock ? ART_SIZE.glyphSm : HEADER_ICON}
+							muted={!!visitBlock}
+						/>
+						<T
+							role="cardTitle"
+							tone={visitBlock ? "disabled" : "primary"}
+							align="center"
+						>
+							{visitBlock ? visitBlock.label : "Visit Barn"}
+						</T>
+					</View>
+				</Sticker>
+			)}
+
+			{stats.friendship_status === "friends" ? (
+				<>
+					{/* Ask / Bless / Curse — the system's SegmentedControl, so the
+					    third hand-rolled segmented control in this area is gone. */}
+					<SegmentedControl<ActionTab>
+						options={ACTION_TABS}
+						value={actionTab}
+						onChange={setActionTab}
+						label="What to do with this friend"
+						style={styles.actionTabs}
+					/>
+
+					{actionTab === "ask" && (
+						<AskRow
+							amount={askAmount}
+							onPick={setAskAmount}
+							onAsk={sendTickle}
+							busy={busy}
+							state={askState}
+							name={stats.username ?? "this friend"}
+						/>
+					)}
+					{actionTab === "curse" &&
+						curseStatus?.cursed &&
+						curseStatus.expires_at && (
+							<T
+								role="hand"
+								tone="secondary"
+								align="center"
+								style={styles.curseCountdown}
+							>
+								Already cursed — wears off in{" "}
+								{formatRemaining(curseStatus.expires_at)}
+							</T>
+						)}
+					{(actionTab === "bless" || actionTab === "curse") && (
+						<RitualPicker
+							mode={actionTab as RitualMode}
+							targetUserId={stats.user_id}
+							targetName={stats.username ?? "friend"}
+						/>
+					)}
+				</>
+			) : isCrewmate && stats.friendship_status !== "self" ? (
+				<>
+					{/* Non-friend sounder mate — bless-only panel. The
+					    herd you fight beside deserves warmth before the
+					    friend request lands; Ask/Curse/Visit stay
+					    friends-only. */}
+					<Kicker align="center" style={styles.crewmateKicker}>
+						rides in your Sounder ★
+					</Kicker>
+					<RitualPicker
+						mode="bless"
+						targetUserId={stats.user_id}
+						targetName={stats.username ?? "crewmate"}
+					/>
+					<ActionButton
+						status={stats.friendship_status}
+						busy={busy}
+						name={stats.username ?? "this pig"}
+						onAdd={addFriend}
+						onCancel={cancelOutgoing}
+						onAccept={acceptIncoming}
+					/>
+				</>
+			) : (
+				<ActionButton
+					status={stats.friendship_status}
+					busy={busy}
+					name={stats.username ?? "this pig"}
+					onAdd={addFriend}
+					onCancel={cancelOutgoing}
+					onAccept={acceptIncoming}
+				/>
+			)}
+
+			{!!feedback && (
+				<T role="hand" tone="accent" align="center" style={styles.feedback}>
+					{feedback}
+				</T>
+			)}
+
+			{/* Block + Report — small footer links. Required by
+			    Apple Guideline 1.2 for any app with user-to-user
+			    social features. Low-prominence by design so the
+			    sheet doesn't feel hostile. `·` stays typography. */}
+			<View style={styles.moderationRow}>
+				<Button
+					variant="link"
+					size="xs"
+					onPress={() => setReportOpen(true)}
+					accessibilityLabel={`Report ${stats.username ?? "this user"}`}
+					accessibilityHint="Asks to confirm, then sends a report to our review team"
+				>
+					Report
+				</Button>
+				<T role="hand" tone="secondary">
+					·
+				</T>
+				<Button
+					variant="link"
+					size="xs"
+					onPress={() => setBlockOpen(true)}
+					accessibilityLabel={`Block ${stats.username ?? "this user"}`}
+					accessibilityHint="Asks to confirm, then stops all interaction either way"
+				>
+					Block
+				</Button>
+			</View>
+		</>
+	);
 
 	return (
 		<>
-			<Modal
-				visible={!breakdownFor && !breakdownPending}
-				transparent
-				animationType="none"
-				onRequestClose={onDismiss}
+			<Sheet
+				open
+				onClose={onDismiss}
+				// The breakdown handshake: the native Modal drops the frame the
+				// receipt is queued, while this session stays MOUNTED so its state
+				// survives the handoff gap.
+				modalVisible={!breakdownFor && !breakdownPending}
+				kicker="profile"
+				closeLabel="Close"
+				testID="user-sheet"
+				overlay={
+					<>
+						<ConfirmDialog
+							open={blockOpen}
+							presentation="inline"
+							tone="destructive"
+							title="Block this user?"
+							body={`Blocking ${stats?.username ?? "this user"} removes them from your friends, cancels any pending trades, and prevents future interaction either way. You can unblock from Me → Settings → Blocked users.`}
+							confirmLabel="Block"
+							confirmHint={`Removes ${stats?.username ?? "this user"} from your friends and cancels pending trades. Only you can undo it, from Me → Settings → Blocked users.`}
+							cancelLabel="Cancel"
+							cancelHint="Leaves things as they are"
+							busy={blockBusy}
+							onCancel={() => setBlockOpen(false)}
+							onConfirm={doBlock}
+						/>
+						<ConfirmDialog
+							open={reportOpen}
+							presentation="inline"
+							tone="destructive"
+							title="Report this user?"
+							body={`Send a report about ${stats?.username ?? "this user"} for our review team. They won't be notified. Use Block to also stop interaction.`}
+							confirmLabel="Report"
+							confirmHint="Sends this report to our review team. It can't be taken back."
+							cancelLabel="Cancel"
+							cancelHint="Sends nothing"
+							busy={blockBusy}
+							onCancel={() => setReportOpen(false)}
+							onConfirm={doReport}
+						/>
+						{/* Barn visit overlay — rendered INSIDE this sheet's Modal
+						    (a nested Modal won't reliably present over it on iOS),
+						    full-screen on top of the sheet. */}
+						{showVisit && stats && (
+							<BarnVisitModal
+								key={targetUserId}
+								targetUserId={targetUserId}
+								targetName={formatHandle(stats)}
+								onClose={() => setShowVisit(false)}
+								onLeaveForCollection={onDismiss}
+							/>
+						)}
+					</>
+				}
 			>
-				{/* Backdrop — static-position Pressable that fades in.
-				    Tap outside the sheet to dismiss. */}
-				<Animated.View
-					style={[styles.backdrop, { opacity: backdropOpacity }]}
-					pointerEvents="auto"
-				>
-					<Pressable
-						style={StyleSheet.absoluteFill}
-						onPress={onDismiss}
-					/>
-				</Animated.View>
-				{/* Sheet — slides up over the static backdrop. */}
-				<Animated.View
-					pointerEvents="box-none"
-					style={[
-						styles.sheetWrap,
-						{ transform: [{ translateY: sheetTranslateY }] },
-					]}
-				>
-					<Pressable onPress={() => {}}>
-						<Sticker
-							color="paper"
-							rotate={-0.6}
-							radius={RADII.xxl}
-							style={[styles.sheet, STICKER_SHADOW]}
-						>
-							{loading || !stats ? (
-								<View style={styles.loadingWrap}>
-									<LoadingBeat label="peeking in" />
-								</View>
-							) : (
-								<>
-									{/* Drag indicator — the iOS-style grabber pill at
-									    the top of bottom sheets, taken straight from
-									    the design's Sheet primitive. Purely a visual
-									    affordance; the sheet isn't actually draggable
-									    here. */}
-									<View style={styles.dragIndicator} />
-									{/* Kicker label above the handle so the sheet's purpose
-									    ("profile") reads at a glance, matching the kicker
-									    treatment on the other screens. */}
-									<Text style={styles.sheetKicker}>★ profile</Text>
-									<View style={styles.header}>
-										<PrestigeAvatar
-											size={targetWallowCount > 0 ? 76 : 56}
-											hatId={stats.active_hat_id}
-											prestigeLevel={targetWallowCount}
-										/>
-										<View style={{ flex: 1, minWidth: 0 }}>
-											<ProfileIdentity
-												username={stats.username}
-												title={
-													stats.active_title_name && stats.active_title_placement
-														? { name: stats.active_title_name, placement: stats.active_title_placement }
-														: null
-												}
-												discriminator={stats.discriminator}
-												variant="profile"
-											/>
-										</View>
-									</View>
-
-									{!s1 && (
-										<View style={styles.alignBarWrap}>
-											<AlignmentBar
-												score={stats.alignment_score}
-												label={stats.alignment_label}
-											/>
-										</View>
-									)}
-
-									{/* This season's numbers — a friend's sheet reads the
-									    live race, not the all-time ledger. */}
-									<Text style={styles.seasonKicker}>★ this season</Text>
-									<View style={styles.statsRow}>
-										<StatCol
-											label="GIVEN"
-											value={stats.given_total}
-											tier={stats.generous_tier_name}
-											color={WHIMSY.lilac}
-										/>
-										<View style={styles.statsDivider} />
-										<StatCol
-											label="RECEIVED"
-											value={stats.received_total}
-											tier={stats.greedy_tier_name}
-											color={WHIMSY.sun}
-										/>
-										<View style={styles.statsDivider} />
-										<StatCol
-											label="TICKLES"
-											value={targetTickles}
-											color={WHIMSY.roseDeep}
-										/>
-									</View>
-
-									{/* Keepsake — the quiet lifetime bond between the two of
-									    you (trades · blessings · visits). Only shows once a
-									    bond has actually formed; hidden entirely when the
-									    RPC is missing (unpushed migration) or bond is 0. */}
-									{bond && bond.bond > 0 && (
-										<Text style={styles.keepsake}>
-											you two: {bondBreakdown(bond)}
-										</Text>
-									)}
-
-									{/* The tickle receipt (spec 17) — a quiet door into how this
-									    pig earned its season tickles. Self and others render
-									    identically; the total is already public on the board. */}
-									<Pressable
-										onPress={openBreakdown}
-										hitSlop={8}
-										style={({ pressed }) => [
-											styles.breakdownLink,
-											pressed && { opacity: 0.7 },
-										]}
-										accessibilityRole="button"
-										accessibilityLabel="How this pig earned its tickles"
-									>
-										<Text style={styles.breakdownLinkText}>
-											how'd they earn it? ›
-										</Text>
-									</Pressable>
-
-									{/* Visit their Barn — see their pig + tickle it for them (social).
-									    FRIENDS-ONLY (player decision): visiting mints snouts +
-									    leaderboard to both pigs, so it's hidden for non-friends (the
-									    server are_friends check is the authoritative backstop).
-									    Pre-disabled when a visit can't succeed (locked to another
-									    barn / out of tickles / pig resting) so we never open the
-									    modal just to show a dead-end pop-up. */}
-									{stats.friendship_status !== "friends" ? null : visitBlock ? (
-										<View style={[styles.visitBtn, styles.visitBtnDisabled]}>
-											<View style={styles.visitBtnRow}>
-												<Icon name="tabBarn" size={18} color={WHIMSY.mute} />
-												<Text style={[styles.visitBtnText, styles.visitBtnTextDisabled]}>
-													{visitBlock.label}
-												</Text>
-											</View>
-										</View>
-									) : (
-										<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.85 }]}>
-											<View style={styles.visitBtnRow}>
-												<Icon name="tabBarn" size={24} color={WHIMSY.ink} />
-												<Text style={styles.visitBtnText}>Visit Barn</Text>
-											</View>
-										</Pressable>
-									)}
-
-									{stats.friendship_status === "friends" ? (
-										<>
-											{/* 3-tab segmented control: Ask / Bless / Curse.
-											    Only one action panel is visible at a time —
-											    matches the design's tabbed sheet. */}
-											<View style={styles.actionTabs}>
-												{(["ask", "bless", "curse"] as const).map((tab) => {
-													const active = tab === actionTab;
-													return (
-														<Pressable
-															key={tab}
-															onPress={() => {
-																setActionTab(tab);
-																if (tab !== "ask") {
-																	setRitualMode(tab as RitualMode);
-																}
-															}}
-															style={[
-																styles.actionTab,
-																active && styles.actionTabActive,
-															]}
-														>
-															<Text
-																style={[
-																	styles.actionTabText,
-																	active && styles.actionTabTextActive,
-																]}
-															>
-																{tab === "ask"
-																	? "Ask"
-																	: tab === "bless"
-																		? "Bless"
-																		: "Curse"}
-															</Text>
-														</Pressable>
-													);
-												})}
-											</View>
-
-											{actionTab === "ask" && (
-												<AskRow
-													amount={askAmount}
-													onPick={setAskAmount}
-													onAsk={sendTickle}
-													busy={busy}
-													state={askState}
-												/>
-											)}
-											{actionTab === "curse" &&
-												curseStatus?.cursed &&
-												curseStatus.expires_at && (
-													<Text style={styles.curseCountdown}>
-														Already cursed — wears off in{" "}
-														{formatRemaining(curseStatus.expires_at)}
-													</Text>
-												)}
-											{(actionTab === "bless" || actionTab === "curse") && (
-												<RitualPicker
-													mode={actionTab as RitualMode}
-													targetUserId={stats.user_id}
-													targetName={stats.username ?? "friend"}
-												/>
-											)}
-										</>
-									) : isCrewmate && stats.friendship_status !== "self" ? (
-										<>
-											{/* Non-friend sounder mate — bless-only panel. The
-											    herd you fight beside deserves warmth before the
-											    friend request lands; Ask/Curse/Visit stay
-											    friends-only. */}
-											<Text style={styles.crewmateKicker}>
-												★ rides in your Sounder ★
-											</Text>
-											<RitualPicker
-												mode="bless"
-												targetUserId={stats.user_id}
-												targetName={stats.username ?? "crewmate"}
-											/>
-											<ActionButton
-												status={stats.friendship_status}
-												busy={busy}
-												onAdd={addFriend}
-												onCancel={cancelOutgoing}
-												onAccept={acceptIncoming}
-											/>
-										</>
-									) : (
-										<ActionButton
-											status={stats.friendship_status}
-											busy={busy}
-											onAdd={addFriend}
-											onCancel={cancelOutgoing}
-											onAccept={acceptIncoming}
-										/>
-									)}
-
-									{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
-
-									{/* Block + Report — small footer links. Required by
-									    Apple Guideline 1.2 for any app with user-to-user
-									    social features. Low-prominence by design so the
-									    sheet doesn't feel hostile. */}
-									<View style={styles.moderationRow}>
-										<Pressable
-											onPress={() => setReportOpen(true)}
-											hitSlop={8}
-											style={({ pressed }) => pressed && { opacity: 0.7 }}
-										>
-											<Text style={styles.moderationLink}>Report</Text>
-										</Pressable>
-										<Text style={styles.moderationDot}>·</Text>
-										<Pressable
-											onPress={() => setBlockOpen(true)}
-											hitSlop={8}
-											style={({ pressed }) => pressed && { opacity: 0.7 }}
-										>
-											<Text style={styles.moderationLink}>Block</Text>
-										</Pressable>
-									</View>
-								</>
-							)}
-						</Sticker>
-					</Pressable>
-				</Animated.View>
-				<ConfirmDialog
-					open={blockOpen}
-					title="Block this user?"
-					body={`Blocking ${stats?.username ?? "this user"} removes them from your friends, cancels any pending trades, and prevents future interaction either way. You can unblock from their profile later.`}
-					confirmLabel="Block"
-					cancelLabel="Cancel"
-					destructive
-					busy={blockBusy}
-					onCancel={() => setBlockOpen(false)}
-					onConfirm={doBlock}
-				/>
-				<ConfirmDialog
-					open={reportOpen}
-					title="Report this user?"
-					body={`Send a report about ${stats?.username ?? "this user"} for our review team. They won't be notified. Use Block to also stop interaction.`}
-					confirmLabel="Report"
-					cancelLabel="Cancel"
-					destructive
-					busy={blockBusy}
-					onCancel={() => setReportOpen(false)}
-					onConfirm={doReport}
-				/>
-				{/* Barn visit overlay — rendered INSIDE this Modal (a nested
-				    Modal won't reliably present over it on iOS), full-screen
-				    on top of the sheet. */}
-				{showVisit && stats && (
-					<BarnVisitModal
-						targetUserId={targetUserId}
-						targetName={formatHandle(stats)}
-						onClose={() => setShowVisit(false)}
-					/>
-				)}
-			</Modal>
+				{body}
+			</Sheet>
 
 			{/* The tickle breakdown receipt — a peer native Modal, presented only
 			    after this sheet has hidden (breakdownFor set) so the two never
@@ -809,7 +909,7 @@ function StatCol({
 	label,
 	value,
 	tier,
-	color,
+	tone,
 }: {
 	label: string;
 	// Null = data unavailable; renders as "—" so the column still
@@ -817,25 +917,16 @@ function StatCol({
 	// public_user_stats RPC carries the field natively.
 	value: number | null;
 	tier?: string | null;
-	color: string;
+	tone: ChipTone;
 }) {
 	return (
 		<View style={styles.statCol}>
-			<Text style={styles.statLabel}>{label}</Text>
-			{value == null ? (
-				<Text style={[styles.statValue, { color: WHIMSY.ink }]}>—</Text>
-			) : (
-				<IconText right={<Glyph name="heart" size={16} />} gap={4}>
-					<Text style={[styles.statValue, { color: WHIMSY.ink }]}>
-						{value.toLocaleString()}
-					</Text>
-				</IconText>
-			)}
-			{tier ? (
-				<View style={[styles.tierChip, { backgroundColor: color }]}>
-					<Text style={styles.tierChipText}>{tier}</Text>
-				</View>
-			) : null}
+			<Stat
+				label={label}
+				value={value == null ? "—" : value.toLocaleString()}
+				glyph={value == null ? undefined : "heart"}
+			/>
+			{tier ? <Tag label={tier} tone={tone} /> : null}
 		</View>
 	);
 }
@@ -844,44 +935,53 @@ function StatCol({
 function ActionButton({
 	status,
 	busy,
+	name,
 	onAdd,
 	onCancel,
 	onAccept,
 }: {
 	status: FriendshipStatus;
 	busy: boolean;
+	name: string;
 	onAdd: () => void;
 	onCancel: () => void;
 	onAccept: () => void;
 }) {
 	if (status === "self" || status === "friends") return null;
 
-	const config: { label: string; onPress: () => void; primary?: boolean } =
+	const config: { label: string; onPress: () => void; hint: string; primary?: boolean } =
 		status === "pending_outgoing"
-			? { label: "Cancel request", onPress: onCancel }
+			? {
+					label: "Cancel request",
+					onPress: onCancel,
+					hint: `Withdraws your friend request to ${name}`,
+				}
 			: status === "pending_incoming"
-				? { label: "Accept friend request", onPress: onAccept, primary: true }
-				: { label: "Add friend", onPress: onAdd, primary: true };
+				? {
+						label: "Accept friend request",
+						onPress: onAccept,
+						hint: `Makes you and ${name} friends`,
+						primary: true,
+					}
+				: {
+						label: "Add friend",
+						onPress: onAdd,
+						hint: `Sends ${name} a friend request`,
+						primary: true,
+					};
 
 	return (
-		<Pressable
+		<Button
+			full
+			variant={config.primary ? "lilac" : "ghost"}
 			onPress={config.onPress}
-			disabled={busy}
-			style={({ pressed }) => [
-				styles.actionBtn,
-				config.primary ? styles.actionPrimary : styles.actionSecondary,
-				(pressed || busy) && { opacity: 0.7 },
-			]}
+			loading={busy}
+			accessibilityLabel={config.label}
+			accessibilityHint={config.hint}
+			testID="user-sheet-friend-action"
 		>
-			<Text
-				style={[
-					styles.actionText,
-					config.primary ? styles.actionTextPrimary : styles.actionTextSecondary,
-				]}
-			>
-				{busy ? "…" : config.label}
-			</Text>
-		</Pressable>
+			{config.label}
+		</Button>
 	);
 }
 
@@ -894,33 +994,29 @@ function AskRow({
 	onAsk,
 	busy,
 	state,
+	name,
 }: {
 	amount: number;
 	onPick: (n: number) => void;
 	onAsk: () => void;
 	busy: boolean;
 	state: AskState;
+	name: string;
 }) {
 	if (state.kind === "pending") {
 		return (
-			<View style={styles.askBlocked}>
-				<Text style={styles.askBlockedTitle}>Trade in progress</Text>
-				<Text style={styles.askBlockedSub}>
-					You've already got a trade going with them — answer or
-					withdraw it first.
-				</Text>
-			</View>
+			<AskBlocked
+				title="Trade in progress"
+				sub="You've already got a trade going with them — answer or withdraw it first."
+			/>
 		);
 	}
 	if (state.kind === "cooldown") {
 		return (
-			<View style={styles.askBlocked}>
-				<Text style={styles.askBlockedTitle}>Cooling off</Text>
-				<Text style={styles.askBlockedSub}>
-					You traded recently — you can ask again in about{" "}
-					{state.hours}h.
-				</Text>
-			</View>
+			<AskBlocked
+				title="Cooling off"
+				sub={`You traded recently — you can ask again in about ${state.hours}h.`}
+			/>
 		);
 	}
 	// Economic hint copy — explains the trade math to the asker BEFORE
@@ -929,336 +1025,123 @@ function AskRow({
 	return (
 		<View style={styles.askWrap}>
 			<View style={styles.askPills}>
-				{[1, 2, 3, 4, 5].map((n) => (
-					<Pressable
+				{ASK_AMOUNTS.map((n) => (
+					<Chip
 						key={n}
+						label={String(n)}
+						selected={amount === n}
 						onPress={() => onPick(n)}
-						style={[styles.askPill, amount === n && styles.askPillActive]}
-					>
-						<Text
-							style={[
-								styles.askPillText,
-								amount === n && styles.askPillTextActive,
-							]}
-						>
-							{n}
-						</Text>
-					</Pressable>
+						tone={amount === n ? "lilac" : "paper"}
+						accessibilityLabel={`Ask for ${n}`}
+						accessibilityHint={`They spend ${n} from their bank; you pocket ${n * 2}`}
+						style={styles.askPill}
+					/>
 				))}
 			</View>
-			<Text style={styles.askHint}>
+			<T role="hand" tone="secondary" align="center" style={styles.askHint}>
 				★ they spend {amount} from their bank. you pocket {amount * 2}. you
 				become {greedyShade}. ★
-			</Text>
-			<Pressable
+			</T>
+			<Button
+				full
+				variant="lilac"
 				onPress={onAsk}
-				disabled={busy}
-				style={({ pressed }) => [
-					styles.actionBtn,
-					styles.actionPrimary,
-					(pressed || busy) && { opacity: 0.7 },
-				]}
+				loading={busy}
+				accessibilityLabel={`Ask ${name} for ${amount}`}
+				accessibilityHint={`Spends nothing now; they give ${amount} from their bank and you become ${greedyShade}`}
+				testID="user-sheet-ask"
 			>
-				{busy ? (
-					<Text style={[styles.actionText, styles.actionTextPrimary]}>…</Text>
-				) : (
-					<IconText right={<Glyph name="heart" size={15} />} gap={5}>
-						<Text style={[styles.actionText, styles.actionTextPrimary]}>
-							Ask for {amount}
-						</Text>
-					</IconText>
-				)}
-			</Pressable>
+				<>
+					{`Ask for ${amount} `}
+					<Glyph name="heart" size={ART_SIZE.mark} />
+				</>
+			</Button>
 		</View>
 	);
 }
 
+// "Why you can't ask yet" — a cream panel that keeps its shape rather than
+// disappearing the control.
+function AskBlocked({ title, sub }: { title: string; sub: string }) {
+	return (
+		<Sticker
+			color="cream"
+			shadow="none"
+			rotate={0}
+			radius={RADII.md}
+			border={BORDER.thin}
+			pad
+			style={styles.askBlocked}
+		>
+			<T role="cardTitleSm" align="center">
+				{title}
+			</T>
+			<T role="hand" tone="secondary" align="center">
+				{sub}
+			</T>
+		</Sticker>
+	);
+}
+
 const styles = StyleSheet.create({
-	// Backdrop is now its own Animated.View occupying the full
-	// screen — the dim fades in independently of the sheet's slide.
-	// flex:1 keeps it covering the screen; no justifyContent here
-	// (the sheet sibling positions itself with absolute).
-	backdrop: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: MODAL_BACKDROP_BG,
-	},
-	// Sheet wrapper now absolutely-positioned at the bottom of the
-	// Modal root so the slide-up animation translates it from
-	// off-screen → resting at the bottom.
-	sheetWrap: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		bottom: 0,
-		padding: 16,
-		paddingBottom: 32,
-	},
-	sheet: { padding: 18 },
-	loadingWrap: { paddingVertical: 40, alignItems: "center" },
-	// iOS-style grabber pill at the top of the sheet — purely a visual
-	// affordance per the design's Sheet primitive.
-	dragIndicator: {
-		alignSelf: "center",
-		width: 44,
-		height: 4,
-		borderRadius: 2,
-		backgroundColor: WHIMSY.muteSoft,
-		marginBottom: 12,
-	},
-	sheetKicker: { ...KICKER_PILL, marginBottom: 8 },
 	header: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 12,
-		marginBottom: 16,
+		gap: SPACE.md,
+		marginBottom: SPACE.lg,
 	},
-	avatarBubble: {
-		borderRadius: 32,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		padding: 2,
-	},
-	name: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
-	titleSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
-	alignBarWrap: { marginBottom: 14 },
-	// Keepsake line — a quiet, warm hand-script note of the two pigs' lifetime
-	// bond, sitting just under the stats cluster.
-	keepsake: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginBottom: 14,
-	},
-	// The quiet "how'd they earn it?" receipt door — a hand-link under the
-	// keepsake, matching the "try again ›" hand-link grammar used elsewhere.
-	breakdownLink: { alignSelf: "center", marginBottom: 14, paddingHorizontal: 4 },
-	breakdownLinkText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
-	// "★ this season" kicker over the friend's stat cluster — names the
-	// window so GIVEN/RECEIVED/TICKLES read as the live-season race.
-	seasonKicker: { ...KICKER_TEXT, fontSize: 11, marginBottom: 6 },
+	headerCopy: { flex: 1, minWidth: 0 },
+	alignBarWrap: { marginBottom: SPACE.card },
+	seasonKicker: { marginBottom: SPACE.xs },
 	statsRow: {
 		flexDirection: "row",
 		alignItems: "stretch",
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		paddingVertical: 14,
-		marginBottom: 16,
+		paddingVertical: SPACE.card,
+		marginBottom: SPACE.lg,
 	},
-	statsDivider: { width: 1.5, backgroundColor: WHIMSY.ink, marginVertical: 6 },
-	statCol: { flex: 1, alignItems: "center", gap: 4 },
-	statLabel: { ...KICKER_TEXT, fontSize: 11 },
-	crewmateKicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 6 },
-	statValue: { fontFamily: FONTS.whimsy, fontSize: 22 },
-	tierChip: {
-		paddingHorizontal: 10,
-		paddingVertical: 3,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		marginTop: 4,
-	},
-	tierChipText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 11,
-		color: WHIMSY.ink,
-	},
-	tierNone: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		marginTop: 4,
-	},
-	actionBtn: {
-		paddingVertical: 12,
-		borderRadius: 14,
-		alignItems: "center",
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-	},
-	actionPrimary: { backgroundColor: WHIMSY.lilac },
-	actionSecondary: { backgroundColor: WHIMSY.paper },
-	actionText: { fontFamily: FONTS.whimsy, fontSize: 16 },
-	actionTextPrimary: { color: WHIMSY.ink },
-	actionTextSecondary: { color: WHIMSY.mute },
-	askWrap: { gap: 8 },
-	askPills: { flexDirection: "row", gap: 6 },
-	// Chunky 48×48 squares per the design's RitualPicker —
-	// commanding tap targets that look like ink-bordered tiles.
-	// Active = lilac-deep with paper text + hard ink shadow.
-	askPill: {
-		flex: 1,
-		minHeight: 48,
-		paddingVertical: 0,
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	askPillActive: {
-		backgroundColor: WHIMSY.lilacDeep,
-		...SHADOW_SM,
-	},
-	askPillText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
-	askPillTextActive: { color: WHIMSY.paper },
-	// Hand-script tradeoff preview between the pills and the submit
-	// button — sets expectations before commit. From the design.
-	askHint: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 4,
-		marginBottom: 2,
-		textAlign: "center",
-		lineHeight: 17,
-	},
-	askBlocked: {
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 12,
-		paddingHorizontal: 14,
-		alignItems: "center",
-	},
-	askBlockedTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	askBlockedSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 2,
-	},
-	feedback: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: 10,
-	},
-	curseCountdown: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginBottom: 8,
-	},
-	moderationRow: {
-		flexDirection: "row",
-		justifyContent: "center",
-		alignItems: "center",
-		gap: 8,
-		marginTop: 14,
-		paddingTop: 10,
-		borderTopWidth: 1,
-		borderTopColor: WHIMSY.muteSoft,
-	},
-	moderationLink: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
-	moderationDot: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-	},
-	ritualToggle: {
-		flexDirection: "row",
-		gap: 6,
-		marginTop: 12,
-	},
-	// 3-tab control (Ask / Bless / Curse) — pill-seg with the
-	// ink-on-paper active state per the design's .pill-seg primitive
-	// (rounded container, ink-bordered, active button has ink bg +
-	// paper text).
-	actionTabs: {
-		flexDirection: "row",
-		marginTop: 12,
-		marginBottom: 12,
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 999,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		padding: 4,
-		...SHADOW_SM,
-	},
-	actionTab: {
-		flex: 1,
-		paddingVertical: 8,
-		borderRadius: 999,
-		alignItems: "center",
-	},
-	actionTabActive: {
+	statsDivider: {
+		width: BORDER.thin,
 		backgroundColor: WHIMSY.ink,
+		marginVertical: SPACE.sm,
 	},
-	actionTabText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.mute,
-	},
-	actionTabTextActive: {
-		color: WHIMSY.paper,
-	},
-	ritualToggleBtn: {
-		flex: 1,
-		paddingVertical: 7,
-		borderRadius: 10,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-	},
-	ritualToggleActive: { backgroundColor: WHIMSY.cream },
-	ritualToggleText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.mute },
-	ritualToggleTextActive: { color: WHIMSY.ink },
+	statCol: { flex: 1, alignItems: "center", gap: SPACE.xs },
+	// Keepsake line — the quiet, warm note of the two pigs' lifetime bond,
+	// sitting just under the stats cluster.
+	keepsake: { alignSelf: "center", marginBottom: SPACE.card },
+	// The quiet "how'd they earn it?" receipt door.
+	breakdownLink: { alignSelf: "center", marginBottom: SPACE.xs },
+	digStoryLink: { marginBottom: SPACE.md },
 	visitBtn: {
-		...STICKER_SHADOW,
 		alignSelf: "stretch",
-		backgroundColor: WHIMSY.sky,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
 		paddingVertical: SPACE.lg,
 		alignItems: "center",
-		marginBottom: 12,
+		marginBottom: SPACE.md,
 	},
 	visitBtnRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 9,
+		gap: SPACE.sm,
 	},
-	visitBtnText: { ...TYPE.cardTitle, color: WHIMSY.ink },
-	// Disabled Visit button — muted fill + ink, reads as "can't right now".
-	visitBtnDisabled: {
-		backgroundColor: WHIMSY.cream2,
-		borderColor: WHIMSY.muteSoft,
-		opacity: 0.7,
+	actionTabs: { marginTop: SPACE.md, marginBottom: SPACE.md },
+	crewmateKicker: { marginBottom: SPACE.sm },
+	askWrap: { gap: SPACE.sm },
+	askPills: { flexDirection: "row", gap: SPACE.sm },
+	askPill: { flex: 1, justifyContent: "center" },
+	// Hand-script tradeoff preview between the pills and the submit
+	// button — sets expectations before commit.
+	askHint: { marginTop: SPACE.xs, marginBottom: SPACE.xxs },
+	askBlocked: { alignItems: "center" },
+	feedback: { marginTop: SPACE.sm },
+	curseCountdown: { marginBottom: SPACE.sm },
+	moderationRow: {
+		flexDirection: "row",
+		justifyContent: "center",
+		alignItems: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.card,
+		paddingTop: SPACE.sm,
+		borderTopWidth: BORDER.hair,
+		borderTopColor: UI_COLORS.uiMuted,
 	},
-	visitBtnTextDisabled: { color: WHIMSY.mute },
 });

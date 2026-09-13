@@ -2,7 +2,7 @@
 // it. Backed by the truffle_status() RPC. Shared by the bury control, the
 // buried-mound visual, and the "check on your truffle" sheet.
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { rpcAction } from "@/utils/rpc";
 
 export interface TruffleDigger {

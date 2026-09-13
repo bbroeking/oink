@@ -5,6 +5,11 @@ jest.mock("@/features/rewarded-ads/analytics", () => ({
 	trackRewardedAdInteraction: jest.fn().mockResolvedValue(true),
 }));
 
+// The offer's dialogs mount AdaptiveModalScaffold, which reads the safe area.
+jest.mock("react-native-safe-area-context", () => ({
+	useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
 import { AdRefillOffer } from "@/features/rewarded-ads/AdRefillOffer";
 import type {
 	RewardedAdBackend,
@@ -47,8 +52,10 @@ describe("AdRefillOffer", () => {
 			renderer.root.findByProps({ accessibilityLabel: "Set up ad refill" }).props.onPress()
 		);
 		await act(async () => {
+			// The age gate is now AdaptiveModalScaffold + DialogButtonRow; the
+			// confirm carries the primitive's testID rather than a hand-rolled label.
 			await renderer.root
-				.findByProps({ accessibilityLabel: "I am 13 or older" })
+				.findByProps({ testID: "dialog-confirm" })
 				.props.onPress();
 		});
 

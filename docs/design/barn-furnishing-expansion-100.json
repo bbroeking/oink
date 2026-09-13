@@ -1,0 +1,1788 @@
+{
+  "meta": {
+    "status": "implemented_pending_release",
+    "version": 2,
+    "designCount": 100,
+    "collectionCount": 10,
+    "categoryTargets": {
+      "floor_decor": 40,
+      "wall_decor": 20,
+      "surface_decor": 20,
+      "ceiling_decor": 10,
+      "floor_centerpiece": 10
+    },
+    "pricingDefaults": {
+      "common": 50,
+      "uncommon": 100,
+      "rare": 175,
+      "currency": "Snouts"
+    },
+    "rules": [
+      "No room themes or new placement categories.",
+      "No random rewards, Motes, wagering, or real-money acquisition.",
+      "Collection milestones implemented: own any four or all eight paid designs; rollout remains gated."
+    ],
+    "art": {
+      "status": "complete",
+      "tool": "ChatGPT built-in image generation",
+      "runtimeDirectory": "assets/images/habitat/expansion",
+      "thumbnailDirectory": "assets/images/habitat/thumbnails/expansion",
+      "sourceDirectory": "assets/images/habitat/source/expansion",
+      "designCount": 100
+    }
+  },
+  "collections": [
+    {
+      "name": "Orchard Morning",
+      "paidItemIds": [
+        "apple_crate_stool",
+        "pearwood_rocker",
+        "cider_jug_lamp",
+        "orchard_boot_rack",
+        "blossom_branch_print",
+        "apple_picking_apron",
+        "bluebird_sugar_bowl",
+        "tiny_cider_press"
+      ],
+      "milestones": {
+        "own4": "blossom_bough_mobile",
+        "own8": "orchard_round_rug"
+      }
+    },
+    {
+      "name": "Hearthside Supper",
+      "paidItemIds": [
+        "ladderback_supper_chair",
+        "beanpot_footstool",
+        "copper_kettle_lamp",
+        "rolling_pie_cart",
+        "family_recipe_board",
+        "gingham_oven_mitts",
+        "butter_bell",
+        "pie_bird_crock"
+      ],
+      "milestones": {
+        "own4": "copper_pan_chime",
+        "own8": "braided_hearth_mat"
+      }
+    },
+    {
+      "name": "Meadow Picnic",
+      "paidItemIds": [
+        "wicker_picnic_chair",
+        "daisy_cushion_pouf",
+        "lemonade_stand",
+        "folded_quilt_bench",
+        "pressed_daisy_chart",
+        "kite_tail_banner",
+        "strawberry_jam_jar",
+        "ladybug_tea_tin"
+      ],
+      "milestones": {
+        "own4": "ribbon_kite_mobile",
+        "own8": "picnic_check_rug"
+      }
+    },
+    {
+      "name": "Rainy Barn Day",
+      "paidItemIds": [
+        "yellow_welly_stand",
+        "puddle_blue_settee",
+        "umbrella_floor_lamp",
+        "raincoat_pegs",
+        "cloudspotters_chart",
+        "rainy_window_sampler",
+        "frog_weather_vane",
+        "snail_mail_box"
+      ],
+      "milestones": {
+        "own4": "raindrop_bell_mobile",
+        "own8": "puddle_ring_rug"
+      }
+    },
+    {
+      "name": "Harvest Hoedown",
+      "paidItemIds": [
+        "pumpkin_cushion_chair",
+        "cornshuck_ottoman",
+        "pitchfork_coat_tree",
+        "barrel_side_table",
+        "harvest_moon_print",
+        "calico_dance_banner",
+        "acorn_candleholder",
+        "mini_fiddle_case"
+      ],
+      "milestones": {
+        "own4": "corn_tassel_chandelier",
+        "own8": "hoedown_star_rug"
+      }
+    },
+    {
+      "name": "Tinker’s Workshop",
+      "paidItemIds": [
+        "spool_leg_stool",
+        "patched_tool_chest",
+        "oilcan_task_lamp",
+        "folding_sawhorse_table",
+        "blueprint_pinboard",
+        "wooden_gear_clock",
+        "button_sorter_tray",
+        "windup_pig_toy"
+      ],
+      "milestones": {
+        "own4": "pulley_cage_light",
+        "own8": "measuring_tape_rug"
+      }
+    },
+    {
+      "name": "Storybook Nook",
+      "paidItemIds": [
+        "toadstool_reading_seat",
+        "stacked_book_step",
+        "pencil_post_lamp",
+        "little_library_cart",
+        "once_upon_a_barn_map",
+        "paper_crown_shadowbox",
+        "inkpot_and_quill",
+        "three_bears_bookends"
+      ],
+      "milestones": {
+        "own4": "paper_star_canopy",
+        "own8": "alphabet_story_rug"
+      }
+    },
+    {
+      "name": "Winter Woolens",
+      "paidItemIds": [
+        "sheepskin_slipper_chair",
+        "mitten_storage_bench",
+        "candycane_floor_lamp",
+        "sled_blanket_rack",
+        "snowy_barn_papercut",
+        "wool_swatch_sampler",
+        "cocoa_marshmallow_mug",
+        "tiny_knitting_basket"
+      ],
+      "milestones": {
+        "own4": "snowflake_wool_mobile",
+        "own8": "cozy_cableknit_rug"
+      }
+    },
+    {
+      "name": "Pondside Summer",
+      "paidItemIds": [
+        "lily_pad_floor_cushion",
+        "reed_woven_chair",
+        "firefly_bottle_lamp",
+        "fishing_creel_table",
+        "dragonfly_field_print",
+        "striped_swim_towel",
+        "duckling_watering_can",
+        "pebble_fountain_bowl"
+      ],
+      "milestones": {
+        "own4": "cattail_lantern_string",
+        "own8": "pond_ripple_rug"
+      }
+    },
+    {
+      "name": "Moonlit Slumber",
+      "paidItemIds": [
+        "crescent_nap_chair",
+        "cloud_pillow_hamper",
+        "starlight_floor_lantern",
+        "bedtime_trunk",
+        "constellation_stitchery",
+        "goodnight_pig_portrait",
+        "moon_milk_carafe",
+        "sleepy_clock"
+      ],
+      "milestones": {
+        "own4": "glowstar_dreamcatcher",
+        "own8": "midnight_patch_rug"
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "apple_crate_stool",
+      "name": "Apple Crate Stool",
+      "collection": "Orchard Morning",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "An apple-stamped crate with a plump sage cushion offers the perfect cider-break perch.",
+      "artBrief": "Isolated transparent PNG: slatted honey-pine apple crate, faded red orchard stamp, sage gingham cushion, rope side handles; squat square stool; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "pearwood_rocker",
+      "name": "Pearwood Rocker",
+      "collection": "Orchard Morning",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "Curved pearwood rockers and a leaf-stitched seat make slow mornings even sweeter.",
+      "artBrief": "Isolated transparent PNG: bent pearwood runners, cream upholstered seat, green leaf embroidery, carved pear finials; tall curved rocker profile; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "cider_jug_lamp",
+      "name": "Cider Jug Lamp",
+      "collection": "Orchard Morning",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A little amber jug keeps the evening light warm.",
+      "artBrief": "Isolated transparent PNG: squat amber-glass cider jug, coiled twine handle, cream linen cone shade, brass stem, tiny apple finial; round-bottom lamp; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "orchard_boot_rack",
+      "name": "Orchard Boot Rack",
+      "collection": "Orchard Morning",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "Muddy boots line up beneath four apple-shaped pegs.",
+      "artBrief": "Isolated transparent PNG: freestanding pearwood rack, four red apple peg knobs, slatted boot tray, green drip pan; narrow A-frame silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "blossom_branch_print",
+      "name": "Blossom Branch Print",
+      "collection": "Orchard Morning",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "A flowering branch and two bluebirds preserve the first bright day of spring.",
+      "artBrief": "Isolated transparent PNG: deckled cream paper, watercolor blossom branch, two bluebirds, thin weathered pearwood frame; wide horizontal print; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "apple_picking_apron",
+      "name": "Apple-Picking Apron",
+      "collection": "Orchard Morning",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "Rosy pockets and a stitched apple make this apron look freshly home from picking.",
+      "artBrief": "Isolated transparent PNG: red-and-cream ticking apron, deep gathered pockets, green waist ties, apple patch; soft hanging garment silhouette; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "bluebird_sugar_bowl",
+      "name": "Bluebird Sugar Bowl",
+      "collection": "Orchard Morning",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A round bluebird lid guards the sugar cubes from curious snouts.",
+      "artBrief": "Isolated transparent PNG: powder-blue glazed ceramic bowl, sculpted bluebird lid knob, white dot border, tiny gold beak; round lidded shelf object; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "tiny_cider_press",
+      "name": "Tiny Cider Press",
+      "collection": "Orchard Morning",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "One tiny crank turns a basket of apples into make-believe cider.",
+      "artBrief": "Isolated transparent PNG: miniature oak screw press, brass crank, red apple basket, striped catch cup; tall tabletop press silhouette; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "blossom_bough_mobile",
+      "name": "Blossom Bough Mobile",
+      "collection": "Orchard Morning",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Paper blossoms and carved leaves drift softly above the room.",
+      "artBrief": "Isolated transparent PNG: five blush paper blossoms, carved sage leaves, bent willow hoop, cream threads; airy branching mobile; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "apple_crate_stool",
+            "pearwood_rocker",
+            "cider_jug_lamp",
+            "orchard_boot_rack",
+            "blossom_branch_print",
+            "apple_picking_apron",
+            "bluebird_sugar_bowl",
+            "tiny_cider_press"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Orchard Morning designs."
+      }
+    },
+    {
+      "id": "orchard_round_rug",
+      "name": "Orchard Round Rug",
+      "collection": "Orchard Morning",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Rings of apples, leaves, and cream braid the orchard into one welcoming circle.",
+      "artBrief": "Isolated transparent PNG: round hooked-wool rug, red apple ring, sage leaf border, cream center, scalloped edge; flat circular silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "apple_crate_stool",
+            "pearwood_rocker",
+            "cider_jug_lamp",
+            "orchard_boot_rack",
+            "blossom_branch_print",
+            "apple_picking_apron",
+            "bluebird_sugar_bowl",
+            "tiny_cider_press"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Orchard Morning designs."
+      }
+    },
+    {
+      "id": "ladderback_supper_chair",
+      "name": "Ladderback Supper Chair",
+      "collection": "Hearthside Supper",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A red-spindled chair waits patiently for whoever reaches supper first.",
+      "artBrief": "Isolated transparent PNG: maple ladderback chair, tomato-red spindles, woven rush seat, black hoof caps; upright slatted silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "beanpot_footstool",
+      "name": "Beanpot Footstool",
+      "collection": "Hearthside Supper",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "The beanpot’s checked cushion turns kitchen clutter into a cozy footrest.",
+      "artBrief": "Isolated transparent PNG: round brown stoneware-pot base, cream-red checked cushion lid, black side handles; plump low cylinder; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "copper_kettle_lamp",
+      "name": "Copper Kettle Lamp",
+      "collection": "Hearthside Supper",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A hammered copper kettle pours golden light instead of tea.",
+      "artBrief": "Isolated transparent PNG: hammered copper kettle body, curved black handle, cream shade, glowing spout accent; stout arched lamp; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "rolling_pie_cart",
+      "name": "Rolling Pie Cart",
+      "collection": "Hearthside Supper",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "A flour-dusted cart carries a cooling berry pie on bright red wheels.",
+      "artBrief": "Isolated transparent PNG: cream painted two-tier pie cart, red wooden wheels, berry pie, folded towel, curved push handle; long rolling silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "family_recipe_board",
+      "name": "Family Recipe Board",
+      "collection": "Hearthside Supper",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Rosie’s favorite pie recipe curls across a chalk-dark kitchen board.",
+      "artBrief": "Isolated transparent PNG: charcoal slate board, hand-lettered cream recipe, tiny cherry drawings, copper corner clips; vertical framed board; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "gingham_oven_mitts",
+      "name": "Gingham Oven Mitts",
+      "collection": "Hearthside Supper",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "Two gingham mitts hang together as if supper has just left the oven.",
+      "artBrief": "Isolated transparent PNG: quilted red gingham mitt pair, cream binding, looped copper hook, stitched heart patches; paired dangling silhouette; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "butter_bell",
+      "name": "Butter Bell",
+      "collection": "Hearthside Supper",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A sunny yellow butter bell wears a tiny red checked cap.",
+      "artBrief": "Isolated transparent PNG: yellow glazed ceramic bell crock, red checked rim, knobbed lid, butter-pat emblem; domed shelf silhouette; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "pie_bird_crock",
+      "name": "Pie Bird Crock",
+      "collection": "Hearthside Supper",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "A black ceramic pie bird peeks from a crock of wooden baking spoons.",
+      "artBrief": "Isolated transparent PNG: cream utensil crock, glossy black pie bird, three beech spoons, red stripe; clustered upright shelf object; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "copper_pan_chime",
+      "name": "Copper Pan Chime",
+      "collection": "Hearthside Supper",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Little copper pans chime whenever a happy draft crosses the rafters.",
+      "artBrief": "Isolated transparent PNG: three graduated copper pans, black iron ring, red beads, slim chains; cascading circular chime; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "ladderback_supper_chair",
+            "beanpot_footstool",
+            "copper_kettle_lamp",
+            "rolling_pie_cart",
+            "family_recipe_board",
+            "gingham_oven_mitts",
+            "butter_bell",
+            "pie_bird_crock"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Hearthside Supper designs."
+      }
+    },
+    {
+      "id": "braided_hearth_mat",
+      "name": "Braided Hearth Mat",
+      "collection": "Hearthside Supper",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Thick tomato and cream braids make the hearth feel warm before the fire is lit.",
+      "artBrief": "Isolated transparent PNG: oval braided wool mat, tomato-red and cream coils, soot-black outer band, chunky stitched texture; low oval; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "ladderback_supper_chair",
+            "beanpot_footstool",
+            "copper_kettle_lamp",
+            "rolling_pie_cart",
+            "family_recipe_board",
+            "gingham_oven_mitts",
+            "butter_bell",
+            "pie_bird_crock"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Hearthside Supper designs."
+      }
+    },
+    {
+      "id": "wicker_picnic_chair",
+      "name": "Wicker Picnic Chair",
+      "collection": "Meadow Picnic",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A wicker chair with a strawberry cushion feels like lunch beneath an open sky.",
+      "artBrief": "Isolated transparent PNG: honey wicker armchair, strawberry-red tufted cushion, daisy button, green wrapped feet; rounded basket silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "daisy_cushion_pouf",
+      "name": "Daisy Cushion Pouf",
+      "collection": "Meadow Picnic",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A giant daisy pouf makes sitting on the floor feel like finding a flower.",
+      "artBrief": "Isolated transparent PNG: white petal cushions around yellow corduroy center, green canvas underside; low flower silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "lemonade_stand",
+      "name": "Lemonade Stand",
+      "collection": "Meadow Picnic",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A striped awning and glass lemonade jar bring the county fair indoors.",
+      "artBrief": "Isolated transparent PNG: pale wood kiosk, blue-white scalloped awning, glass lemon jar, coral wheels, chalk price sign; compact stand silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "folded_quilt_bench",
+      "name": "Folded Quilt Bench",
+      "collection": "Meadow Picnic",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "A folded patchwork quilt softens a simple green picnic bench.",
+      "artBrief": "Isolated transparent PNG: grass-green bench, thick folded coral-blue quilt, wicker hamper tucked below; long low silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "pressed_daisy_chart",
+      "name": "Pressed Daisy Chart",
+      "collection": "Meadow Picnic",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Pressed daisies are labeled in careful pencil like treasures from the meadow.",
+      "artBrief": "Isolated transparent PNG: cream botanical sheet, three real-paper daisies, penciled labels, narrow sky-blue frame; tall chart; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "kite_tail_banner",
+      "name": "Kite-Tail Banner",
+      "collection": "Meadow Picnic",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "A kite tail of knotted ribbons skips across the wall without any wind.",
+      "artBrief": "Isolated transparent PNG: diamond coral kite panel, blue and yellow ribbon bows, thin cotton tail, two wooden pins; diagonal trailing silhouette; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "strawberry_jam_jar",
+      "name": "Strawberry Jam Jar",
+      "collection": "Meadow Picnic",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "Ruby jam catches the light beneath a strawberry-shaped cloth lid.",
+      "artBrief": "Isolated transparent PNG: faceted glass jam jar, ruby contents, strawberry-print fabric cap, twine bow, paper label; squat jar; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "ladybug_tea_tin",
+      "name": "Ladybug Tea Tin",
+      "collection": "Meadow Picnic",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "A red ladybug tin hides tea bags beneath two glossy black wings.",
+      "artBrief": "Isolated transparent PNG: oval red enamel tea tin, black wing spots, hinged shell lid, tiny brass antenna clasp; beetle-shaped box; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "ribbon_kite_mobile",
+      "name": "Ribbon Kite Mobile",
+      "collection": "Meadow Picnic",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "A tiny kite and eight ribbon bows circle lazily overhead.",
+      "artBrief": "Isolated transparent PNG: blue paper kite, bent bamboo spars, coral/yellow ribbon tails, white thread ring; wide playful mobile; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "wicker_picnic_chair",
+            "daisy_cushion_pouf",
+            "lemonade_stand",
+            "folded_quilt_bench",
+            "pressed_daisy_chart",
+            "kite_tail_banner",
+            "strawberry_jam_jar",
+            "ladybug_tea_tin"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Meadow Picnic designs."
+      }
+    },
+    {
+      "id": "picnic_check_rug",
+      "name": "Picnic Check Rug",
+      "collection": "Meadow Picnic",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Red checks, blue corners, and a daisy border spread a picnic across the floor.",
+      "artBrief": "Isolated transparent PNG: rectangular flatwoven cotton rug, red gingham field, sky-blue corner patches, white daisy border, tasseled ends; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "wicker_picnic_chair",
+            "daisy_cushion_pouf",
+            "lemonade_stand",
+            "folded_quilt_bench",
+            "pressed_daisy_chart",
+            "kite_tail_banner",
+            "strawberry_jam_jar",
+            "ladybug_tea_tin"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Meadow Picnic designs."
+      }
+    },
+    {
+      "id": "yellow_welly_stand",
+      "name": "Yellow Welly Stand",
+      "collection": "Rainy Barn Day",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "Four yellow wellies drip neatly into a cloud-blue tray.",
+      "artBrief": "Isolated transparent PNG: freestanding blue iron boot tree, four yellow rubber wellies, cloud-shaped drip tray, silver raindrop finial; tall branching stand; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "puddle_blue_settee",
+      "name": "Puddle-Blue Settee",
+      "collection": "Rainy Barn Day",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A deep blue settee curves like a friendly puddle without getting anyone wet.",
+      "artBrief": "Isolated transparent PNG: puddle-blue velvet settee, rounded wave back, moss piping, two yellow raindrop pillows; low curved sofa; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "umbrella_floor_lamp",
+      "name": "Umbrella Floor Lamp",
+      "collection": "Rainy Barn Day",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A yellow umbrella shade makes every rainy corner feel sunny.",
+      "artBrief": "Isolated transparent PNG: closed navy umbrella stem, yellow open-canopy shade, pewter ferrule base, dangling clear raindrops; triangular floor lamp; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "raincoat_pegs",
+      "name": "Raincoat Pegs",
+      "collection": "Rainy Barn Day",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "Raincoats and hats wait on a sturdy tree that stands clear of the wall.",
+      "artBrief": "Isolated transparent PNG: freestanding moss-painted peg tree, branching pewter hooks, yellow child raincoat, striped rain hat, weighted round base; tall floor silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "cloudspotters_chart",
+      "name": "Cloudspotter’s Chart",
+      "collection": "Rainy Barn Day",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Cloud shapes and tiny silver arrows turn weather watching into an art.",
+      "artBrief": "Isolated transparent PNG: blue-gray field chart, layered white cloud cutouts, silver wind arrows, yellow sun tab, slim pewter frame; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "rainy_window_sampler",
+      "name": "Rainy Window Sampler",
+      "collection": "Rainy Barn Day",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "Stitched raindrops bead across a window that is always cozy on this side.",
+      "artBrief": "Isolated transparent PNG: embroidered linen sampler, blue sash-window motif, silver rain stitches, warm yellow panes, moss frame; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "frog_weather_vane",
+      "name": "Frog Weather Vane",
+      "collection": "Rainy Barn Day",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A green frog points toward fair weather from his tiny rooftop arrow.",
+      "artBrief": "Isolated transparent PNG: verdigris brass frog vane, pewter arrow, blue compass letters, weighted ceramic roof tile; horizontal shelf silhouette; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "snail_mail_box",
+      "name": "Snail-Mail Box",
+      "collection": "Rainy Barn Day",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "A smiling snail carries rolled notes inside its blue shell mailbox.",
+      "artBrief": "Isolated transparent PNG: moss-green carved snail, blue hinged shell box, cream envelopes, tiny red flag; long low shelf figure; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "raindrop_bell_mobile",
+      "name": "Raindrop Bell Mobile",
+      "collection": "Rainy Barn Day",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Glass raindrops ring three pewter bells with a soft shower-song.",
+      "artBrief": "Isolated transparent PNG: clear blue glass drops, three brushed pewter bells, yellow cord, cloud-shaped wooden hanger; tapered hanging cluster; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "yellow_welly_stand",
+            "puddle_blue_settee",
+            "umbrella_floor_lamp",
+            "raincoat_pegs",
+            "cloudspotters_chart",
+            "rainy_window_sampler",
+            "frog_weather_vane",
+            "snail_mail_box"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Rainy Barn Day designs."
+      }
+    },
+    {
+      "id": "puddle_ring_rug",
+      "name": "Puddle-Ring Rug",
+      "collection": "Rainy Barn Day",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Concentric blue rings and one embroidered frog make a puddle safe for hooves.",
+      "artBrief": "Isolated transparent PNG: round tufted rug, three rain-blue ripple rings, moss frog applique, yellow stitched edge; flat circle; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "yellow_welly_stand",
+            "puddle_blue_settee",
+            "umbrella_floor_lamp",
+            "raincoat_pegs",
+            "cloudspotters_chart",
+            "rainy_window_sampler",
+            "frog_weather_vane",
+            "snail_mail_box"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Rainy Barn Day designs."
+      }
+    },
+    {
+      "id": "pumpkin_cushion_chair",
+      "name": "Pumpkin Cushion Chair",
+      "collection": "Harvest Hoedown",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A ribbed pumpkin chair gives every sitter the best seat at the harvest dance.",
+      "artBrief": "Isolated transparent PNG: pumpkin-orange corduroy chair, segmented round back, green stem headrest, walnut peg legs; plump pumpkin silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "cornshuck_ottoman",
+      "name": "Cornshuck Ottoman",
+      "collection": "Harvest Hoedown",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "Bound corn husks wrap a golden cushion made for tapping hooves.",
+      "artBrief": "Isolated transparent PNG: bundled natural corn husk base, corn-gold round cushion, plum twine bow, walnut feet; low sheaf cylinder; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "pitchfork_coat_tree",
+      "name": "Pitchfork Coat Tree",
+      "collection": "Harvest Hoedown",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A polished pitchfork grows hooks for hats instead of hay.",
+      "artBrief": "Isolated transparent PNG: freestanding walnut pitchfork, brass side hooks, plum neckerchief, acorn-shaped base; tall three-tine silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "barrel_side_table",
+      "name": "Barrel Side Table",
+      "collection": "Harvest Hoedown",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "A half barrel holds cider cups beside the dance floor.",
+      "artBrief": "Isolated transparent PNG: walnut half-barrel table, black iron hoops, pumpkin mug, scattered acorns; stout round table; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "harvest_moon_print",
+      "name": "Harvest Moon Print",
+      "collection": "Harvest Hoedown",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "A huge cream moon rises behind a tiny red barn and rows of corn.",
+      "artBrief": "Isolated transparent PNG: gouache harvest landscape, cream moon, rust barn, gold corn rows, dark walnut frame; wide print; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "calico_dance_banner",
+      "name": "Calico Dance Banner",
+      "collection": "Harvest Hoedown",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "Calico squares and dancing hoofprints march across a festive banner.",
+      "artBrief": "Isolated transparent PNG: plum/orange calico pennants, gold hoofprint stamps, braided jute cord, acorn end weights; long zigzag banner; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "acorn_candleholder",
+      "name": "Acorn Candleholder",
+      "collection": "Harvest Hoedown",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A brass acorn cup cradles one beeswax flame.",
+      "artBrief": "Isolated transparent PNG: cast brass acorn candle cup, walnut leaf saucer, short honey beeswax candle, plum wax drip; compact upright holder; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "mini_fiddle_case",
+      "name": "Mini Fiddle Case",
+      "collection": "Harvest Hoedown",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "A walnut fiddle sleeps in a plum-lined case barely bigger than an apple.",
+      "artBrief": "Isolated transparent PNG: mini walnut fiddle, open black case, plum velvet lining, tiny bow, brass clasps; open diagonal case; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "corn_tassel_chandelier",
+      "name": "Corn-Tassel Chandelier",
+      "collection": "Harvest Hoedown",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Corn tassels and wooden beads tumble from a wagon-wheel ring.",
+      "artBrief": "Isolated transparent PNG: small walnut wheel, gold corn-silk tassels, pumpkin wooden beads, black chain; broad tiered chandelier; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "pumpkin_cushion_chair",
+            "cornshuck_ottoman",
+            "pitchfork_coat_tree",
+            "barrel_side_table",
+            "harvest_moon_print",
+            "calico_dance_banner",
+            "acorn_candleholder",
+            "mini_fiddle_case"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Harvest Hoedown designs."
+      }
+    },
+    {
+      "id": "hoedown_star_rug",
+      "name": "Hoedown Star Rug",
+      "collection": "Harvest Hoedown",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "An eight-point harvest star spins through pumpkin, plum, and corn-gold wool.",
+      "artBrief": "Isolated transparent PNG: octagonal hooked-wool rug, central eight-point star, pumpkin/plum/gold wedges, dark walnut border; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "pumpkin_cushion_chair",
+            "cornshuck_ottoman",
+            "pitchfork_coat_tree",
+            "barrel_side_table",
+            "harvest_moon_print",
+            "calico_dance_banner",
+            "acorn_candleholder",
+            "mini_fiddle_case"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Harvest Hoedown designs."
+      }
+    },
+    {
+      "id": "spool_leg_stool",
+      "name": "Spool-Leg Stool",
+      "collection": "Tinker’s Workshop",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A giant thread spool becomes a clever stool for small inventors.",
+      "artBrief": "Isolated transparent PNG: turned pale-pine spool base, workwear-blue thread wrap, rust leather round seat, brass nail heads; hourglass stool; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "patched_tool_chest",
+      "name": "Patched Tool Chest",
+      "collection": "Tinker’s Workshop",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "Every dent in this blue tool chest looks earned and carefully mended.",
+      "artBrief": "Isolated transparent PNG: workwear-blue wooden chest, rust corner patches, brass latch, pale-pine drawer, chalk tool marks; rectangular trunk; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "oilcan_task_lamp",
+      "name": "Oilcan Task Lamp",
+      "collection": "Tinker’s Workshop",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A brass oilcan bends its long spout over a focused pool of light.",
+      "artBrief": "Isolated transparent PNG: brushed brass oilcan body, curved spout arm, blue enamel shade, rust-red pump handle; asymmetric task lamp; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "folding_sawhorse_table",
+      "name": "Folding Sawhorse Table",
+      "collection": "Tinker’s Workshop",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "Two folding sawhorses hold a pine top scattered with one perfect pencil.",
+      "artBrief": "Isolated transparent PNG: pale-pine plank top, blue folding trestles, brass hinges, red carpenter pencil, rolled plan; wide angular table; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "blueprint_pinboard",
+      "name": "Blueprint Pinboard",
+      "collection": "Tinker’s Workshop",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Pinned plans reveal a marvelous machine powered mostly by optimism.",
+      "artBrief": "Isolated transparent PNG: blueprint paper sheets, cork board, brass pins, white gear drawings, rust string links; busy rectangular board; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "wooden_gear_clock",
+      "name": "Wooden Gear Clock",
+      "collection": "Tinker’s Workshop",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "Exposed wooden gears tick around a tiny brass bell.",
+      "artBrief": "Isolated transparent PNG: interlocking pale-wood gears, blue clock face, brass hands/bell, rust pendulum; circular mechanical wall piece; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "button_sorter_tray",
+      "name": "Button Sorter Tray",
+      "collection": "Tinker’s Workshop",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "Rows of bright buttons sort themselves into a satisfying rainbow.",
+      "artBrief": "Isolated transparent PNG: shallow pale-pine tray, blue dividers, red/brass/cream buttons, tiny label tabs; flat compartmented shelf tray; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "windup_pig_toy",
+      "name": "Wind-Up Pig Toy",
+      "collection": "Tinker’s Workshop",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "A tin pig marches forward whenever its brass key gets a turn.",
+      "artBrief": "Isolated transparent PNG: workwear-blue tin pig, rust-red ears, brass wind-up key, black wheels, painted smile; compact toy profile; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "pulley_cage_light",
+      "name": "Pulley-Cage Light",
+      "collection": "Tinker’s Workshop",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "A caged workshop bulb rises and falls on a real little pulley.",
+      "artBrief": "Isolated transparent PNG: warm bulb, brass wire cage, blue pulley wheel, rust braided cable, pale-wood ceiling block; vertical industrial pendant; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "spool_leg_stool",
+            "patched_tool_chest",
+            "oilcan_task_lamp",
+            "folding_sawhorse_table",
+            "blueprint_pinboard",
+            "wooden_gear_clock",
+            "button_sorter_tray",
+            "windup_pig_toy"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Tinker’s Workshop designs."
+      }
+    },
+    {
+      "id": "measuring_tape_rug",
+      "name": "Measuring-Tape Rug",
+      "collection": "Tinker’s Workshop",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "A curling yellow tape measure marks out a playful path across blue canvas.",
+      "artBrief": "Isolated transparent PNG: long rectangular blue flatweave rug, looping yellow measure graphic, rust numbered marks, cream fringe; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "spool_leg_stool",
+            "patched_tool_chest",
+            "oilcan_task_lamp",
+            "folding_sawhorse_table",
+            "blueprint_pinboard",
+            "wooden_gear_clock",
+            "button_sorter_tray",
+            "windup_pig_toy"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Tinker’s Workshop designs."
+      }
+    },
+    {
+      "id": "toadstool_reading_seat",
+      "name": "Toadstool Reading Seat",
+      "collection": "Storybook Nook",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A red-capped toadstool makes chapter time feel like a woodland secret.",
+      "artBrief": "Isolated transparent PNG: berry-red spotted velvet cap seat, cream ribbed underside, forest-green moss base; mushroom silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "stacked_book_step",
+      "name": "Stacked-Book Step",
+      "collection": "Storybook Nook",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "Three oversized books stack into a sturdy step for reaching the next tale.",
+      "artBrief": "Isolated transparent PNG: three carved wood books in teal/berry/parchment, gilt page edges, green ribbon marker; staggered stack; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "pencil_post_lamp",
+      "name": "Pencil-Post Lamp",
+      "collection": "Storybook Nook",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A sharpened yellow pencil holds a pleated paper shade above late-night readers.",
+      "artBrief": "Isolated transparent PNG: giant yellow pencil post, pink eraser base, brass ferrule, cream pleated shade; slim whimsical lamp; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "little_library_cart",
+      "name": "Little Library Cart",
+      "collection": "Storybook Nook",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "A wheeled teal library cart keeps favorite tales within easy trotting distance.",
+      "artBrief": "Isolated transparent PNG: teal wood cart, two slanted shelves, colorful books, brass label pulls, berry wheels; compact rolling case; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "once_upon_a_barn_map",
+      "name": "Once-Upon-a-Barn Map",
+      "collection": "Storybook Nook",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "A curling map leads from the Barn to castles, woods, and one suspiciously round dragon.",
+      "artBrief": "Isolated transparent PNG: parchment map, inked barn/castle/forest, teal river, berry compass pig, carved green frame; wide map; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "paper_crown_shadowbox",
+      "name": "Paper Crown Shadowbox",
+      "collection": "Storybook Nook",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "A crinkled gold paper crown looks surprisingly grand inside its deep blue box.",
+      "artBrief": "Isolated transparent PNG: gold folded-paper crown, indigo shadowbox, berry velvet backing, tiny star pins; square dimensional frame; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "inkpot_and_quill",
+      "name": "Inkpot and Quill",
+      "collection": "Storybook Nook",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A teal inkpot and striped feather wait beside one unfinished sentence.",
+      "artBrief": "Isolated transparent PNG: faceted teal glass inkpot, cream-black quill, parchment scrap, brass nib, berry wax seal; diagonal writing cluster; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "three_bears_bookends",
+      "name": "Three Bears Bookends",
+      "collection": "Storybook Nook",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "Three carved bears hold up a row of bedtime books.",
+      "artBrief": "Isolated transparent PNG: small/medium/large walnut bears, teal painted scarves, four parchment books, brass base rail; stepped bookend pair; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "paper_star_canopy",
+      "name": "Paper-Star Canopy",
+      "collection": "Storybook Nook",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Folded paper stars float beneath an indigo cloth canopy.",
+      "artBrief": "Isolated transparent PNG: indigo half-canopy, seven cream/gold origami stars, berry tassels, slim brass hoop; wide celestial hanging shape; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "toadstool_reading_seat",
+            "stacked_book_step",
+            "pencil_post_lamp",
+            "little_library_cart",
+            "once_upon_a_barn_map",
+            "paper_crown_shadowbox",
+            "inkpot_and_quill",
+            "three_bears_bookends"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Storybook Nook designs."
+      }
+    },
+    {
+      "id": "alphabet_story_rug",
+      "name": "Alphabet Story Rug",
+      "collection": "Storybook Nook",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Bright stitched letters wander around a book-shaped center panel.",
+      "artBrief": "Isolated transparent PNG: rectangular hooked rug, teal alphabet border, parchment open-book center, berry corners, green blanket stitch; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "toadstool_reading_seat",
+            "stacked_book_step",
+            "pencil_post_lamp",
+            "little_library_cart",
+            "once_upon_a_barn_map",
+            "paper_crown_shadowbox",
+            "inkpot_and_quill",
+            "three_bears_bookends"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Storybook Nook designs."
+      }
+    },
+    {
+      "id": "sheepskin_slipper_chair",
+      "name": "Sheepskin Slipper Chair",
+      "collection": "Winter Woolens",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A cream slipper chair wraps its sitter like the warmest mitten.",
+      "artBrief": "Isolated transparent PNG: cream curly sheepskin chair, cranberry piping, evergreen mitten pocket, pale birch feet; rounded slipper silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "mitten_storage_bench",
+      "name": "Mitten Storage Bench",
+      "collection": "Winter Woolens",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A long red bench hides scarves beneath a lid tufted like a mitten cuff.",
+      "artBrief": "Isolated transparent PNG: cranberry wool storage bench, cable-knit cream lid, evergreen strap hinges, birch runners; long soft chest; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "candycane_floor_lamp",
+      "name": "Candy-Cane Floor Lamp",
+      "collection": "Winter Woolens",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "Red and cream stripes climb to a lamp glowing like holiday candy.",
+      "artBrief": "Isolated transparent PNG: twisted red-white post, evergreen metal base, cream bell shade, tiny gold star pull; tall candy-cane profile; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "sled_blanket_rack",
+      "name": "Sled Blanket Rack",
+      "collection": "Winter Woolens",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "An old green sled leans upright with three folded blankets on its rails.",
+      "artBrief": "Isolated transparent PNG: evergreen wood sled rack, birch slats, cranberry/cream folded wool blankets, brass runner tips; leaning ladder silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "snowy_barn_papercut",
+      "name": "Snowy Barn Papercut",
+      "collection": "Winter Woolens",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Cut-paper snow settles around a tiny cranberry barn without ever melting.",
+      "artBrief": "Isolated transparent PNG: layered white paper snow scene, cranberry barn, evergreen pines, icy-blue backing, pale birch frame; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "wool_swatch_sampler",
+      "name": "Wool-Swatch Sampler",
+      "collection": "Winter Woolens",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "Twelve little wool squares turn mending scraps into a proud wall sampler.",
+      "artBrief": "Isolated transparent PNG: grid of cream/crimson/green/blue wool swatches, contrasting stitches, birch dowel, cranberry cord; soft square hanging; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "cocoa_marshmallow_mug",
+      "name": "Cocoa Marshmallow Mug",
+      "collection": "Winter Woolens",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "Marshmallows crowd a blue mug painted with one sleepy snowpig.",
+      "artBrief": "Isolated transparent PNG: icy-blue glazed mug, cream cocoa foam, three marshmallows, cranberry snowpig motif, gold spoon; chunky cup silhouette; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "tiny_knitting_basket",
+      "name": "Tiny Knitting Basket",
+      "collection": "Winter Woolens",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "Two tiny birch needles rest in a basket of cranberry yarn.",
+      "artBrief": "Isolated transparent PNG: mini willow basket, cranberry yarn ball, birch knitting needles, unfinished cream mitten, green ribbon; cozy clustered object; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "snowflake_wool_mobile",
+      "name": "Snowflake Wool Mobile",
+      "collection": "Winter Woolens",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Cream wool snowflakes turn slowly beneath an evergreen hoop.",
+      "artBrief": "Isolated transparent PNG: six needle-felt snowflakes, evergreen wrapped hoop, icy-blue beads, cranberry center tassel; layered radial mobile; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "sheepskin_slipper_chair",
+            "mitten_storage_bench",
+            "candycane_floor_lamp",
+            "sled_blanket_rack",
+            "snowy_barn_papercut",
+            "wool_swatch_sampler",
+            "cocoa_marshmallow_mug",
+            "tiny_knitting_basket"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Winter Woolens designs."
+      }
+    },
+    {
+      "id": "cozy_cableknit_rug",
+      "name": "Cozy Cable-Knit Rug",
+      "collection": "Winter Woolens",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Oversized cream cable stitches make the floor look wrapped in a sweater.",
+      "artBrief": "Isolated transparent PNG: oval chunky-knit rug, cream cable center, cranberry ribbed edge, evergreen corner ties; thick soft oval; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "sheepskin_slipper_chair",
+            "mitten_storage_bench",
+            "candycane_floor_lamp",
+            "sled_blanket_rack",
+            "snowy_barn_papercut",
+            "wool_swatch_sampler",
+            "cocoa_marshmallow_mug",
+            "tiny_knitting_basket"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Winter Woolens designs."
+      }
+    },
+    {
+      "id": "lily_pad_floor_cushion",
+      "name": "Lily-Pad Floor Cushion",
+      "collection": "Pondside Summer",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A broad green lily pad and pink bud make a delightfully splash-free seat.",
+      "artBrief": "Isolated transparent PNG: round lily-green velvet cushion, notched pad edge, pink felt bud, blue piping; low lily-pad silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "reed_woven_chair",
+      "name": "Reed-Woven Chair",
+      "collection": "Pondside Summer",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "Bent pond reeds weave into a breezy chair with a striped coral cushion.",
+      "artBrief": "Isolated transparent PNG: woven cattail-reed chair, curved back, coral-blue striped cushion, dark green lashings; airy fan-backed chair; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "firefly_bottle_lamp",
+      "name": "Firefly Bottle Lamp",
+      "collection": "Pondside Summer",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "Golden fireflies blink inside a blue bottle beneath a leaf-green shade.",
+      "artBrief": "Isolated transparent PNG: blue-green glass bottle, six gold firefly dots, cork neck, lily-green leaf shade, brass stem; glowing bottle lamp; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "fishing_creel_table",
+      "name": "Fishing Creel Table",
+      "collection": "Pondside Summer",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "A lidded fishing creel makes a sturdy table for lemonade and pebble collections.",
+      "artBrief": "Isolated transparent PNG: woven willow creel base, flat blue wood lid, coral strap, tiny brass fish clasp, pebble dish; squat basket table; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "dragonfly_field_print",
+      "name": "Dragonfly Field Print",
+      "collection": "Pondside Summer",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Jewel-bright dragonflies hover over careful pond notes and reed sketches.",
+      "artBrief": "Isolated transparent PNG: cream field-study paper, blue/green dragonfly paintings, penciled notes, coral pins, reed-brown frame; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "striped_swim_towel",
+      "name": "Striped Swim Towel",
+      "collection": "Pondside Summer",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "A coral-and-blue swim towel hangs in sun-faded stripes and jaunty fringe.",
+      "artBrief": "Isolated transparent PNG: thick cotton towel, coral/pond-blue stripes, cream fringe, embroidered yellow duck, two reed pegs; vertical textile; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "duckling_watering_can",
+      "name": "Duckling Watering Can",
+      "collection": "Pondside Summer",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A yellow duckling watering can tips its beak toward a pot of pond grass.",
+      "artBrief": "Isolated transparent PNG: yellow enamel duck can, beak spout, blue handle, tiny reed-green grass pot, coral flower; playful pouring silhouette; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "pebble_fountain_bowl",
+      "name": "Pebble Fountain Bowl",
+      "collection": "Pondside Summer",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "Smooth blue pebbles circle a tiny fountain no taller than a teacup.",
+      "artBrief": "Isolated transparent PNG: shallow glazed blue bowl, stacked gray pebbles, clear resin water arc, brass pump nub, green moss; low round fountain; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "cattail_lantern_string",
+      "name": "Cattail Lantern String",
+      "collection": "Pondside Summer",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "Cattail shades hide a string of firefly-gold bulbs above the room.",
+      "artBrief": "Isolated transparent PNG: five brown felt cattails, warm gold bulbs, reed-green twisted cord, blue glass beads; long gently arched light string; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "lily_pad_floor_cushion",
+            "reed_woven_chair",
+            "firefly_bottle_lamp",
+            "fishing_creel_table",
+            "dragonfly_field_print",
+            "striped_swim_towel",
+            "duckling_watering_can",
+            "pebble_fountain_bowl"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Pondside Summer designs."
+      }
+    },
+    {
+      "id": "pond_ripple_rug",
+      "name": "Pond-Ripple Rug",
+      "collection": "Pondside Summer",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Blue ripples circle three lily leaves and one coral dragonfly.",
+      "artBrief": "Isolated transparent PNG: round tufted rug, pond-blue concentric ripples, green lily appliques, coral dragonfly, cream stitched rim; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "lily_pad_floor_cushion",
+            "reed_woven_chair",
+            "firefly_bottle_lamp",
+            "fishing_creel_table",
+            "dragonfly_field_print",
+            "striped_swim_towel",
+            "duckling_watering_can",
+            "pebble_fountain_bowl"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Pondside Summer designs."
+      }
+    },
+    {
+      "id": "crescent_nap_chair",
+      "name": "Crescent Nap Chair",
+      "collection": "Moonlit Slumber",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A crescent-shaped chair cradles naps beneath a single golden star pillow.",
+      "artBrief": "Isolated transparent PNG: indigo crescent chair, lavender velvet seat, moon-cream piping, gold star pillow, short dark feet; curved moon silhouette; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "cloud_pillow_hamper",
+      "name": "Cloud-Pillow Hamper",
+      "collection": "Moonlit Slumber",
+      "category": "floor_decor",
+      "rarity": "common",
+      "description": "A lavender hamper overflows with pillows shaped like drowsy little clouds.",
+      "artBrief": "Isolated transparent PNG: lavender woven hamper, three cream cloud pillows, indigo rope handles, gold stitched sleepy eyes; soft clustered basket; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "starlight_floor_lantern",
+      "name": "Starlight Floor Lantern",
+      "collection": "Moonlit Slumber",
+      "category": "floor_decor",
+      "rarity": "uncommon",
+      "description": "A pierced indigo lantern scatters tiny stars across the floor.",
+      "artBrief": "Isolated transparent PNG: tall indigo metal lantern, star cutouts, warm cream glass, muted-gold handle/base; tapered hexagonal floor light; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "bedtime_trunk",
+      "name": "Bedtime Trunk",
+      "collection": "Moonlit Slumber",
+      "category": "floor_decor",
+      "rarity": "rare",
+      "description": "A midnight-blue trunk keeps quilts, books, and tomorrow’s dreams safely tucked away.",
+      "artBrief": "Isolated transparent PNG: indigo cedar trunk, lavender quilt draped corner, gold moon latch, cream painted stars; broad domed chest; warm hand-painted storybook finish, readable at phone scale, correct floor_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "constellation_stitchery",
+      "name": "Constellation Stitchery",
+      "collection": "Moonlit Slumber",
+      "category": "wall_decor",
+      "rarity": "common",
+      "description": "Golden thread joins the stars into a pig-shaped constellation.",
+      "artBrief": "Isolated transparent PNG: indigo linen embroidery, gold star knots, lavender connecting stitches, cream oval hoop; round stitched wall art; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "goodnight_pig_portrait",
+      "name": "Goodnight Pig Portrait",
+      "collection": "Moonlit Slumber",
+      "category": "wall_decor",
+      "rarity": "uncommon",
+      "description": "A tiny pig in a nightcap waves goodnight from a moon-cream frame.",
+      "artBrief": "Isolated transparent PNG: gouache pig portrait, lavender striped nightcap, indigo sky, gold star, scalloped cream frame; small vertical portrait; warm hand-painted storybook finish, readable at phone scale, correct wall_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 100
+      }
+    },
+    {
+      "id": "moon_milk_carafe",
+      "name": "Moon-Milk Carafe",
+      "collection": "Moonlit Slumber",
+      "category": "surface_decor",
+      "rarity": "common",
+      "description": "A frosted carafe and moon cup wait quietly for midnight thirst.",
+      "artBrief": "Isolated transparent PNG: frosted cream glass carafe, crescent stopper, lavender cup, gold rim, indigo tray; elegant bottle-and-cup cluster; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 50
+      }
+    },
+    {
+      "id": "sleepy_clock",
+      "name": "Sleepy Clock",
+      "collection": "Moonlit Slumber",
+      "category": "surface_decor",
+      "rarity": "rare",
+      "description": "The round blue clock looks half asleep, but its golden hands stay punctual.",
+      "artBrief": "Isolated transparent PNG: indigo round clock, drooping eyelid face, muted-gold hands/feet, lavender bells, cream numerals; squat alarm-clock silhouette; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "snouts",
+        "snoutCost": 175
+      }
+    },
+    {
+      "id": "glowstar_dreamcatcher",
+      "name": "Glowstar Dreamcatcher",
+      "collection": "Moonlit Slumber",
+      "category": "ceiling_decor",
+      "rarity": "uncommon",
+      "description": "A woven crescent catches seven glowing stars and three lavender feathers.",
+      "artBrief": "Isolated transparent PNG: willow crescent hoop, cream web, seven gold stars, lavender feathers, indigo beads; long tapered dreamcatcher; warm hand-painted storybook finish, readable at phone scale, correct ceiling_decor Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "crescent_nap_chair",
+            "cloud_pillow_hamper",
+            "starlight_floor_lantern",
+            "bedtime_trunk",
+            "constellation_stitchery",
+            "goodnight_pig_portrait",
+            "moon_milk_carafe",
+            "sleepy_clock"
+          ],
+          "threshold": 4
+        },
+        "note": "Proposed: own any 4 of the 8 paid Moonlit Slumber designs."
+      }
+    },
+    {
+      "id": "midnight_patch_rug",
+      "name": "Midnight Patch Rug",
+      "collection": "Moonlit Slumber",
+      "category": "floor_centerpiece",
+      "rarity": "rare",
+      "description": "Indigo patches, cream moons, and lavender stars quilt bedtime across the floor.",
+      "artBrief": "Isolated transparent PNG: rectangular quilted-cotton rug, indigo patch grid, cream crescent appliques, lavender stars, muted-gold running stitch; warm hand-painted storybook finish, readable at phone scale, correct floor_centerpiece Barn perspective, no room background or cast shadow.",
+      "acquisition": {
+        "type": "collection_milestone",
+        "condition": {
+          "kind": "own_paid_items",
+          "paidItemIds": [
+            "crescent_nap_chair",
+            "cloud_pillow_hamper",
+            "starlight_floor_lantern",
+            "bedtime_trunk",
+            "constellation_stitchery",
+            "goodnight_pig_portrait",
+            "moon_milk_carafe",
+            "sleepy_clock"
+          ],
+          "threshold": 8
+        },
+        "note": "Proposed: own all 8 paid Moonlit Slumber designs."
+      }
+    }
+  ]
+}

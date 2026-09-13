@@ -15,7 +15,7 @@
 // because the rhythm is what sells the loop.
 
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import {
 	phaseClosesCountdown,
 	nextOpenCountdown,
@@ -23,7 +23,23 @@ import {
 	patchWindowShape,
 } from "@/utils/rooting";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
-import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { Kicker, T } from "../ui";
+import {
+	BORDER,
+	OPACITY,
+	RADII,
+	SPACE,
+	TYPE,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
+
+// The strip's own drawing geometry — the height of the phase bar and the
+// diameter of the "now" pin's head. Neither is a spacing decision (they are the
+// drawing of a gauge and the dot riding it), so they are named here rather than
+// borrowed from SPACE. (2026-09-11)
+const BAR_HEIGHT = 22;
+const PIN_DOT = 10;
 
 export function WindowStrip({
 	cta,
@@ -62,8 +78,12 @@ export function WindowStrip({
 	return (
 		<View style={styles.wrap}>
 			<View style={styles.kickerRow}>
-				<Text style={styles.kicker}>the feeding rhythm</Text>
-				<Text style={styles.eightHour}>4 times daily</Text>
+				<Kicker star={false} style={styles.kicker}>
+					the feeding rhythm
+				</Kicker>
+				<T role="kicker" tone="secondary">
+					4 times daily
+				</T>
 			</View>
 
 			<View style={styles.timelineRow}>
@@ -77,7 +97,9 @@ export function WindowStrip({
 							!open && styles.segIdle,
 						]}
 					>
-						<Text style={styles.segLabel}>open</Text>
+						<T role="kickerPill" style={styles.segLabel}>
+							open
+						</T>
 					</View>
 					<View
 						style={[
@@ -86,9 +108,13 @@ export function WindowStrip({
 							open && styles.segIdle,
 						]}
 					>
-						<Text style={[styles.segLabel, styles.segLabelGuarded]}>
+						<T
+							role="kickerPill"
+							tone="secondary"
+							style={styles.segLabel}
+						>
 							guarded
-						</Text>
+						</T>
 					</View>
 
 					{/* The "now" marker — a small ink pin at the true window position. */}
@@ -102,7 +128,9 @@ export function WindowStrip({
 				</View>
 			</View>
 
-			<Text style={styles.phaseLine}>{line}</Text>
+			<T role="kicker" tone="secondary" align="center" style={styles.phaseLine}>
+				{line}
+			</T>
 		</View>
 	);
 }
@@ -114,25 +142,16 @@ const styles = StyleSheet.create({
 		alignItems: "baseline",
 		justifyContent: "space-between",
 	},
-	kicker: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textTransform: "uppercase",
-		letterSpacing: 0.8,
-	},
-	eightHour: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-	},
-	timelineRow: { paddingTop: 6 },
+	// The hand kicker, set in caps — the rhythm reads as a label on the gauge.
+	// Tracking comes from TYPE.kicker; the old 0.8 was a hand-tuned literal.
+	kicker: { textTransform: "uppercase" },
+	timelineRow: { paddingTop: SPACE.sm },
 	bar: {
 		flexDirection: "row",
-		height: 22,
+		height: BAR_HEIGHT,
 		borderRadius: RADII.sm,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		overflow: "hidden",
 		backgroundColor: WHIMSY.cream2,
 	},
@@ -140,53 +159,42 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 		justifyContent: "center",
-		borderRightWidth: 1.5,
-		borderRightColor: WHIMSY.ink,
+		borderRightWidth: BORDER.thin,
+		borderRightColor: UI_COLORS.border,
 	},
 	segGuarded: {
 		backgroundColor: WHIMSY.cream2,
 		alignItems: "center",
 		justifyContent: "center",
 		borderStyle: "dashed",
-		borderLeftWidth: 1.5,
-		borderLeftColor: WHIMSY.muteSoft,
+		borderLeftWidth: BORDER.thin,
+		borderLeftColor: UI_COLORS.uiMuted,
 	},
-	// Dim the half we're NOT in, so "you are here" reads at a glance.
-	segIdle: { opacity: 0.5 },
-	// Bumped off the 9px legibility floor to the tracked-pill kicker role (10) —
-	// still fits the 22px bar; 9px uppercase read as squint-small.
-	segLabel: {
-		...TYPE.kickerPill,
-		fontSize: 11,
-		letterSpacing: 0.8,
-		color: WHIMSY.ink,
-	},
-	segLabelGuarded: { color: WHIMSY.mute },
+	// Dim the half we're NOT in, so "you are here" reads at a glance. This is
+	// emphasis, not a disabled control — `OPACITY.dim` names the step. [C-07]
+	segIdle: { opacity: OPACITY.dim },
+	// The tracked-pill kicker role, straight — it clears the squint-small floor
+	// and still fits inside the bar.
+	segLabel: TYPE.kickerPill,
 	// The "now" pin — an ink dot on a short stem, positioned by left %.
 	nowPin: {
 		position: "absolute",
-		top: -4,
+		top: -SPACE.xs,
 		width: 0,
 		alignItems: "center",
 	},
 	nowDot: {
-		width: 10,
-		height: 10,
+		width: PIN_DOT,
+		height: PIN_DOT,
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.roseDeep,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 	},
 	nowStem: {
-		width: 2,
-		height: 22,
-		backgroundColor: WHIMSY.ink,
+		width: BORDER.ink,
+		height: BAR_HEIGHT,
+		backgroundColor: UI_COLORS.border,
 	},
-	phaseLine: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 2,
-	},
+	phaseLine: { marginTop: SPACE.xxs },
 });

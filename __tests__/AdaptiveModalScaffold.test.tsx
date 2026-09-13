@@ -1,6 +1,6 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AdaptiveModalScaffold } from "../components/ui/AdaptiveModalScaffold";
@@ -58,9 +58,9 @@ describe("AdaptiveModalScaffold", () => {
 			));
 		});
 
-		const close = renderer.root
-			.findAllByType(Pressable)
-			.find((node) => node.props.accessibilityLabel === "Close preview");
+		const close = renderer.root.findAll(
+			(node) => node.props.accessibilityLabel === "Close preview",
+		)[0];
 		expect(close).toBeDefined();
 		expect(close?.props.accessibilityRole).toBe("button");
 		const closeStyle = StyleSheet.flatten(close?.props.style({ pressed: false }));
@@ -85,6 +85,32 @@ describe("AdaptiveModalScaffold", () => {
 			ancestor = ancestor.parent;
 		}
 		expect(closeRowMinHeight).toBeGreaterThanOrEqual(44);
+		act(() => renderer.unmount());
+	});
+
+	test("renders an inline full-area barrier without creating a native modal", () => {
+		const onClose = jest.fn();
+		const renderer = TestRenderer.create(inSafeArea(
+			<AdaptiveModalScaffold
+				visible
+				presentation="inline"
+				onRequestClose={onClose}
+				testID="inline-frame"
+			>
+				<Text>Inline details</Text>
+			</AdaptiveModalScaffold>,
+		));
+		expect(renderer.root.findAllByType(Modal)).toHaveLength(0);
+		const barrier = renderer.root.findAll(
+			(node) => node.props.accessible === false && node.props.onPress === onClose,
+		)[0];
+		expect(barrier).toBeDefined();
+		act(() => barrier!.props.onPress());
+		expect(onClose).toHaveBeenCalledTimes(1);
+		const frame = renderer.root
+			.findAll((node) => node.props.testID === "inline-frame")
+			.at(-1)!;
+		expect(frame.props.accessibilityViewIsModal).toBe(true);
 		act(() => renderer.unmount());
 	});
 });

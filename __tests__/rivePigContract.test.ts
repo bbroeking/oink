@@ -1,11 +1,9 @@
 import {
 	RIVE_PIG_ANIMATION_COMMANDS,
 	RIVE_PIG_INPUTS,
-	RIVE_PIG_PROTOTYPE_ANIMATIONS,
 	RIVE_PIG_SKIN_ASSET,
 	RIVE_PIG_SKIN_INDEX,
 	hasCompleteRiveSkinMap,
-	isRivePigPrototypeAnimation,
 	resolveRivePigEquipment,
 } from "@/components/ui/rivePigContract";
 import {
@@ -29,23 +27,9 @@ describe("Rive pig contract", () => {
 		expect(Object.keys(RIVE_PIG_ANIMATION_COMMANDS)).toEqual(
 			Object.keys(PIG_ANIMATION_SPECS),
 		);
-		expect(RIVE_PIG_ANIMATION_COMMANDS.bounce).toEqual(
-			RIVE_PIG_ANIMATION_COMMANDS.jump,
-		);
-		expect(RIVE_PIG_PROTOTYPE_ANIMATIONS).toEqual(["idle", "jump", "wave"]);
-	});
-
-	it.each([
-		["idle", true],
-		["jump", true],
-		["wave", true],
-		["walk", false],
-		["happy", false],
-		["sad", false],
-		["tired", false],
-		["surprise", false],
-	] as const)("only activates the authored prototype animation set: %s", (animation, expected) => {
-		expect(isRivePigPrototypeAnimation(animation)).toBe(expected);
+		expect(RIVE_PIG_ANIMATION_COMMANDS.bounce).toEqual({ kind: "activity", value: 2 });
+		expect(RIVE_PIG_ANIMATION_COMMANDS.happy).toEqual({ kind: "rest", value: 3 });
+		expect(RIVE_PIG_ANIMATION_COMMANDS.wave).toEqual({ kind: "activity", value: 3 });
 	});
 
 	it("uses numeric rest states for idle, sad, and tired", () => {
@@ -81,6 +65,7 @@ describe("Rive pig contract", () => {
 
 	it.each([
 		{ headId: "cowboy" },
+		{ bowId: "pink_bow" },
 		{ faceId: "monocle" },
 		{ heldId: "sword_held" },
 		{ maskId: "mud_mask" },

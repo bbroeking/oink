@@ -1,0 +1,509 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-12T23:13:51.748Z",
+  "items": [
+    {
+      "id": "sounder-capacity-eight",
+      "title": "Verify eight-pig Sounders in production",
+      "summary": "The client and production database raised the Sounder membership ceiling from four to eight.",
+      "owner": "Brian",
+      "checks": [
+        "Grow a real Sounder beyond four members and confirm all eight roster seats render correctly.",
+        "Confirm the eighth pig can join and a ninth invite or knock is rejected with friendly full-copy.",
+        "Confirm full eight-pig Sounders disappear from discovery and production logs show no crew_full anomalies before seat eight."
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-12T22:30:00.000Z",
+      "build": 175,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "expo-57-native-upgrade",
+      "title": "Run the Expo 57 post-release smoke",
+      "summary": "Build 175 moves the production app from Expo 52 to Expo 57 and React Native 0.76 to 0.86.",
+      "owner": "Brian",
+      "checks": [
+        "Smoke cold launch, auth, background/resume, offline/reconnect, camera, notifications, audio/video, Rive, Skia, and purchases from the App Store binary.",
+        "Monitor Sentry and Supabase for new crashes, native-module failures, or silent core-action errors.",
+        "Confirm rewarded-ad UI remains dark and record the known missing sticker-extension follow-up separately."
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-12T22:30:00.000Z",
+      "build": 175,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "player-digging-stats",
+      "title": "Verify player digging stories in production",
+      "summary": "A new authenticated player-profile page aggregates lifetime Truffle Patch digs, credited finds, freed motes, and Sounder bonuses.",
+      "owner": "Brian",
+      "checks": [
+        "Open your own digging story and compare all four totals with submitted production rootings.",
+        "Open another pig's digging story and confirm the profile-to-page handoff, zero state, and block privacy.",
+        "Complete a Truffle Patch with shimmer and a Sounder bonus, then confirm the totals rise after returning to the page."
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-13T16:50:29.201Z",
+      "build": 176,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "rive-react-native-nitro-runtime",
+      "title": "Verify the Nitro-based Rive runtime in production",
+      "summary": "Replaced the legacy Rive React Native package with the current Nitro-based runtime and migrated native Rive boundaries, including Mote Machine ViewModel data binding.",
+      "owner": "Brian",
+      "checks": [
+        "Open a bundled Rive pig animation on a physical iPhone and confirm it renders and responds",
+        "Open the Mote Machine and confirm mote, payout, reduceMotion, and spin ViewModel bindings work",
+        "Check production crash reporting for RiveRuntime, RNRive, or NitroModules failures"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-13T20:02:03.209Z",
+      "build": 176,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "mote-machine-economy",
+      "title": "Verify Mote Alchemy in production",
+      "summary": "Adds spendable Mote balances, shimmer credits, an idempotent server-selected alchemy reward RPC, recipe controls, a possible zero-Tickle result, and the Rive-powered player flow.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm submitted shimmer credits exactly one Mote",
+        "Confirm one reaction spends exactly one Mote and grants the displayed Tickles, including a zero-Tickle result",
+        "Confirm Warmth, Whirl, and Resonance values reach the receipt and do not guarantee a reward",
+        "Confirm repeated full-motion and Reduced Motion reactions on a public-store build",
+        "Review Mote Alchemy RPC errors and reward receipts after release"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-13T23:10:09.864Z",
+      "build": 176,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "weekly-dig-tickles-auto-apply",
+      "title": "Verify weekly Dig-Off tickle auto-application",
+      "summary": "Weekly season-digging tickle spoils now increase applied tickle counters directly instead of entering the spendable bank; tegdirb and briguy receive a one-time full ordinary-bank conversion.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm tegdirb and briguy's ordinary banks were emptied and their counters rose by the transferred balances",
+        "Complete a weekly Dig-Off payout and confirm awarded tickles increase counter and tickles_earned without increasing item_count",
+        "Confirm weekly payout receipts and announcements still show the awarded tickle amount"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-17T00:46:43.028Z",
+      "build": 176,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "barn-core-loop-performance",
+      "title": "Verify Barn tickle performance in production",
+      "summary": "Core tickles now use cached session identity, immediate local reservations on poor connections, mutation-response reconciliation, coalesced home-state reads, throttled pass-event polling, and batched particle commits; the exact shipped binary needs real-device responsiveness and state-consistency checks.",
+      "owner": "Brian",
+      "checks": [
+        "Rapidly tickle Rosie on a physical iPhone and confirm animation, audio, haptics, and counters stay responsive",
+        "Repeat a five-tickle burst at roughly 2.5 seconds RTT with Network Link Conditioner and confirm feedback is immediate, only five mutations start, and a dropped response rolls back then reconciles",
+        "Spend a full tickle bank quickly and confirm READY TO TICKLE, TICKLES EARNED, Snouts, happiness mood, and lucky bonuses reconcile correctly after the burst",
+        "Background and foreground the app after rapid tickling and confirm home stats and pass-event notices refresh without stale or duplicate UI",
+        "Compare Sentry/network telemetry for home_stats, unseen_pass_events, and auth user reads against the previous public build"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-25T16:46:36.125Z",
+      "build": 176,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "independent-bow-slot",
+      "title": "Verify independent Hat and Bow equipment",
+      "summary": "Profiles gain active_bow_id and existing equipped bows are migrated out of active_hat_id; verify migration safety and combined rendering after the containing store build is live.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm a pre-release bow wearer kept the same bow after upgrade",
+        "Equip and unequip Hat and Bow independently on two devices",
+        "Verify Hat plus Bow render together in Barn, Closet preview, item preview, and barn visits"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-26T15:25:53.860Z",
+      "build": 177,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "sluggish-snout-regen-accounting",
+      "title": "Verify Sluggish Snout regeneration accounting",
+      "summary": "Regeneration now preserves fractional progress and integrates rate changes across Sluggish Snout start, cleanse, blessing cancellation, and natural expiry without refunding suppressed Tickles.",
+      "owner": "Brian",
+      "checks": [
+        "Start Sluggish Snout on a partially regenerated account and confirm the slowdown applies from the current fractional percentage",
+        "Cleanse or cancel a blessing and confirm no catch-up Tickles appear",
+        "Let Sluggish Snout expire naturally and confirm the countdown resumes from the preserved fraction"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-26T15:33:04.947Z",
+      "build": 177,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "persistent-feeding-open-pushes",
+      "title": "Verify recurring Feeding notifications in production",
+      "summary": "Adds an account-synchronized recurring Feeding preference and a server cron dispatcher with participation gates and per-window deduplication.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm an opted-in physical device receives exactly one push at the next opening while the app is terminated",
+        "Tap the push and confirm it opens the Season Truffle Patch surface",
+        "Disable the preference and confirm later Feedings stay silent",
+        "Confirm crewless and already-dug accounts are suppressed",
+        "Review cron, delivery-ledger, and pg_net results for misses or duplicates"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-26T15:35:05.039Z",
+      "build": 177,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "preset-sounder-messages",
+      "title": "Verify preset Sounder messaging in production",
+      "summary": "Adds server-authoritative preset-only Sounder coordination and leader recruiting messages with per-Feeding deduplication, block filtering, next-active digest delivery, and durable notification-board history.",
+      "owner": "Brian",
+      "checks": [
+        "Send every coordination preset from a real Sounder and confirm the exact copy reaches eligible crewmates",
+        "Confirm each message appears once in the next-active digest, is marked shown only on dismissal, and remains in notification-board history",
+        "Use Invite + Oink as a leader and confirm the recruiting message is tied to the real pending invite",
+        "Confirm nonleaders, blocked users, invalid state, and duplicate per-Feeding sends are rejected",
+        "Confirm this in-app messaging path emits no OS push"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-26T15:47:18.107Z",
+      "build": 177,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "mote-contraptions-and-streaks",
+      "title": "Verify Mote Contraptions and Streaks in production",
+      "summary": "The Mote reward economy now guarantees helper-specific fuel, adds timed Auto-Tickler service, and introduces manual and per-friend streak persistence; all need production accounting and cadence checks.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm every Mote receipt grants positive Clockwork Acorns exactly once",
+        "Confirm 1-day and 1-week Auto-Tickler activation costs and active windows",
+        "Audit automatic tickles stop at personal cap minus five and increase Snouts plus tickles_earned without personal Streak",
+        "Confirm personal Streak credits manual Home tickles only",
+        "Confirm either visit direction credits one shared Visit Streak without same-day double credit",
+        "Check cron service receipts and database load after 24 hours"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-30T01:49:06.919Z",
+      "build": 179,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "perfect-feeding-week-achievement",
+      "title": "Verify perfect Feeding week achievement",
+      "summary": "Weekly Dig-Off settlement now awards Every Last Feeding, 500 snouts, and the Unmissable title to pigs who submit every server-defined Feeding; settled full weeks are backfilled.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm the backfill awards only players with all 21 current-schedule Feedings and grants exactly 500 snouts plus the title once",
+        "After a Monday settlement, confirm a zero-find submission counts and a player missing one Feeding does not qualify",
+        "Open the achievement digest and Achievements page, then equip the Unmissable title",
+        "If the commuter schedule is activated, confirm the opening-at-week-boundary rule produces 28 eligible Feedings without double-counting the prior week's open window"
+      ],
+      "status": "included",
+      "queuedAt": "2026-08-30T01:57:07.357Z",
+      "build": 179,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "mote-machine-animation-completion",
+      "title": "Mote Machine animation and receipt recovery",
+      "summary": "Receipt-triggered Rive playback, visible result/recovery controls, and local acceptance flow through Contraptions.",
+      "owner": "Brian",
+      "checks": [
+        "Verify full and reduced-motion spins on the exact installed binary",
+        "Verify timeout replay and runtime failure preserve one receipt",
+        "Verify Contraption inventory and activation balances"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-05T12:46:25.426Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "production-graph-and-shop-polling",
+      "title": "Smaller production graph and focused Shop refresh",
+      "summary": "Keep development screens and authoring sources out of production bundling; stop Shop background/error polling and reuse cached session identity.",
+      "owner": "Brian",
+      "checks": [
+        "Verify production navigation and runtime assets on device",
+        "Verify Shop foreground and midnight refresh",
+        "Check Shop request volume and error recovery after release"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-05T12:46:25.638Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "rosie-rive-loading-states",
+      "title": "Verify Rosie loading and reaction lifecycle",
+      "summary": "Shared pig presentation adds visibility, Reduce Motion, and explicit reaction identity ahead of the Rive loading and equipped-pig migration. Verify the first store build containing this change.",
+      "owner": "Brian",
+      "checks": [
+        "Check startup and loader failures or retries on physical iOS devices",
+        "Verify repeated tickles, mood restoration, all six coats and cosmetic attachment",
+        "Check Reduce Motion and background or navigation memory stability",
+        "Compare measured frame timing and startup against the recorded baseline"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-05T15:03:24.496Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "prestige-mote-rewards",
+      "title": "Verify prestige Mote rewards and machine journey",
+      "summary": "Adds five earned Motes per continuing pass for permanent Wallow Rank 3+, current-lap catch-up, authoritative claims and immediate wallet refresh.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm ranks 0–2 receive no Mote tiers and can Wallow",
+        "Confirm rank 3+ can claim reached current-lap Mote tiers once",
+        "Confirm claim-all, retries, and concurrent spins preserve wallet accounting",
+        "Confirm Mote claims open the Rive machine and grant the shown Contraption resource"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-05T17:41:50.412Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "mote-wagering-v1",
+      "title": "Earned Mote wagering and receipt recovery",
+      "summary": "Versioned loss-bearing earned-Mote Wager mode beside guaranteed Reveal with authoritative receipts and wallet revisions.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm Wager flag and published paytable version match approved rollout",
+        "Audit duplicate requests, wallet revisions, zero-return losses and grants",
+        "Verify prestige earnings and legacy Reveal recovery",
+        "Check inventory activation and owner-only play history"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-06T20:43:35.295Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "mote-animation-v4",
+      "title": "Mote V4 animation and sensory suite",
+      "summary": "New machine and Rosie choreography with versioned runtime handshake and device-persisted sound/haptic settings.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm promoted runtime/source hashes and installed native binding version",
+        "Exercise every outcome full and reduced motion with exact receipt",
+        "Check sound mute silent switch haptics and interruption recovery",
+        "Review crash and performance signals after public release"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-06T20:43:35.484Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "personal-barn-housing",
+      "title": "Personal Barn housing and deterministic furniture",
+      "summary": "Revisioned Barn rooms, durable Snout purchases and earned furniture, friend inspection, and accessible decorating.",
+      "owner": "Brian",
+      "checks": [
+        "Verify starter and milestone grants once per owner",
+        "Audit purchase receipts and Snout deductions under retries",
+        "Inspect save conflicts and authorization refusals",
+        "Verify native VoiceOver list editing and room art on released devices",
+        "Measure custom saves within seven days and friend Interior opens without Visit economy changes"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-06T20:51:48.867Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "barn-furnishing-expansion-100",
+      "title": "Barn furnishing expansion and login discovery",
+      "summary": "Adds 100 illustrated furnishings, deterministic collection rewards, a dedicated Barn shop section, and a once-per-account login announcement.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm all 118 catalog assets load in shop and saved rooms on the public build",
+        "Verify purchase retries and concurrent own4/own8 collection awards do not duplicate charges or grants",
+        "Verify the login announcement appears only after rollout and acknowledgment survives relaunch and account switching",
+        "Inspect Barn shop search, list editing and Dynamic Type on installed devices"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-07T02:01:57.966Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "barn-starter-onboarding",
+      "title": "Starter Barn onboarding and interior friend visits",
+      "summary": "Provision free starter rooms at eligible login and authorized friend inspection; lead discovery with the gift and open visits in the saved two-pig interior.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm returning and new players receive exactly four starter designs without wallet charges or overwritten decor",
+        "Verify accepted friends open in saved two-pig rooms while blocked and non-friend callers cannot provision or inspect",
+        "Verify physical accessibility and existing Visit allowance and tickle rules on the shipped build"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-09T02:12:32.046Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "barn-housing-next-build-rollout",
+      "title": "Housing enabled for every next-build player",
+      "summary": "Compile-time housing activation replaces legacy remote tester gating for the next client; all Home, Shop, starter and friend-room entry points open together.",
+      "owner": "Brian",
+      "checks": [
+        "Verify fresh and upgraded non-admin accounts see Home Inside and Barn Furnishings with no tester override",
+        "Verify first-login starter gift and saved two-pig friend visits in the public build",
+        "Confirm development fixture menu is absent and monitor housing grants purchases save conflicts and auth failures"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-09T02:25:38.802Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "barn-prestige-gifts-and-owner-routing",
+      "title": "Verify Barn prestige gifts and friend-owner routing",
+      "summary": "Permanent Wallow ranks 1–6 now gift six Barn furnishings with idempotent catch-up; visits are isolated by selected host and reject mismatched room owners.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm ranks 0–7 receive exactly their eligible free gifts and keep them after season rollover",
+        "Check repeated Barn opens and previously purchased gifts do not duplicate grants, charge Snouts, or replace saved rooms",
+        "Visit two differently decorated friends in succession and confirm host names, pigs, furnishings, and tickle targets agree",
+        "Confirm blocked and non-friend visits remain denied; inspect habitat grant errors after deployment"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-10T22:59:56.271Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "barn-completion-journal-presets",
+      "title": "Barn gifts, prestige keepsakes, collection discovery, and room presets",
+      "summary": "Adds durable gift presentation and New markers, prestige-exclusive keepsakes, wishlists, revisioned two-room presets, visitor inspection and account-safe handoffs, and authoritative acquisition analytics.",
+      "owner": "Brian",
+      "checks": [
+        "Verify catch-up and new Wallow gifts are permanent and shown once while Later preserves New",
+        "Use two ordinary accounts to verify correct saved host room and private journal/wishlist isolation",
+        "Exercise gift preview, save, preset conflict/retry, and visitor collection handoff on the installed build",
+        "Check grant analytics deduplication and no wallet or ownership duplication",
+        "Verify VoiceOver, large text, weak connection recovery, and guestbook access"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-10T23:41:45.681Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "empty-starter-barns",
+      "title": "Verify empty starter Barns",
+      "summary": "New Barns start with no placed decor; exact untouched legacy starter rooms are emptied while starter ownership and saved layouts are retained.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm owner entry, authorized friend inspection, and discovery initialize zero decorations with four owned starter designs",
+        "Confirm converted untouched starter rooms retain inventory and advance revision while saved or customized rooms remain unchanged",
+        "Confirm saving the empty default grants no milestone and placing a starter design grants Apple Basket once"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-12T15:42:30.658Z",
+      "build": 180,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "player-local-feedings-8am",
+      "title": "Verify player-local Feedings and completed-dig visibility",
+      "summary": "Server-owned IANA timezone schedule activated September 12 at Brian's request: 8am–noon, 4–8pm and midnight–4am. Compatible client release is still pending; unregistered players use Eastern time and older client clocks can disagree. Verify registration, deferred timezone changes, completed-dig hiding and transition-week awards.",
+      "owner": "Brian",
+      "checks": [
+        "Verify 8am–noon, 4–8pm and midnight–4am windows and matching countdowns in New York, Los Angeles, Tokyo and a fractional-offset timezone",
+        "Confirm completed digs stay hidden until the next local Feeding after foreground and account switches",
+        "Check the midnight–4am window across spring/fall DST, timezone-change deferral, one-dig-per-window enforcement and isolation from completed legacy window IDs",
+        "Verify local feeding push timing, cross-zone Sounder bonuses and 21-Feeding weekly perfect-Feeding awards",
+        "Verify compatible-client adoption resolves older countdown mismatches, unregistered Eastern fallback and initial timezone deferral; confirm three daily Feedings with existing reward amounts",
+        "Check the September 7 transition cycle's legacy snapshots and perfect-Feeding award limitations, then verify the first full local-schedule week"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-12T21:30:40.209Z",
+      "build": 181,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "living-mud-patch",
+      "title": "Verify Living Mud Patch play and receipt recovery",
+      "summary": "Continuous tactile mud surface preserves the seeded dig rules and rewards; durable submission recovery protects confirmed receipts across timeouts, relaunch and account changes.",
+      "owner": "Brian",
+      "checks": [
+        "Verify brushing, tap and shove parity on small and large iPhones with all 30 board locations reachable",
+        "Check commit-then-timeout, retry and relaunch recover the original receipt with no duplicate rewards",
+        "Verify active progress restore, expiry, account switches and completed entry hiding",
+        "Check VoiceOver, large text, Reduce Motion, frame pacing and repeated-session memory",
+        "Confirm packaged scene assets and existing reward visibility match the approved Living Mud Patch direction"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-09-12T23:02:50.570Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    }
+  ]
+}

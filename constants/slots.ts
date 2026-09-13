@@ -5,6 +5,7 @@
 
 export type EquipSlotKey =
 	| "head"
+	| "bow"
 	| "face"
 	| "neck"
 	| "aura"
@@ -18,7 +19,7 @@ export type EquipSlotKey =
 // tickle_particle gets a real chip too (it has a column + closet section).
 export const SLOT_FOR_CATEGORY: Record<string, EquipSlotKey> = {
 	hat: "head",
-	bow: "head",
+	bow: "bow",
 	glasses: "face",
 	mask: "face",
 	scarf: "neck",
@@ -32,6 +33,7 @@ export const SLOT_FOR_CATEGORY: Record<string, EquipSlotKey> = {
 // profiles column that stores each slot's equipped item id.
 export const SLOT_COLUMN: Record<EquipSlotKey, string> = {
 	head: "active_hat_id",
+	bow: "active_bow_id",
 	face: "active_mask_id",
 	neck: "active_neck_id",
 	aura: "active_aura_id",
@@ -43,6 +45,7 @@ export const SLOT_COLUMN: Record<EquipSlotKey, string> = {
 // Player-facing slot labels (Closet slot chips).
 export const SLOT_LABEL: Record<EquipSlotKey, string> = {
 	head: "Hat",
+	bow: "Bow",
 	face: "Face",
 	neck: "Neck",
 	tickle: "Tickles",
@@ -54,6 +57,7 @@ export const SLOT_LABEL: Record<EquipSlotKey, string> = {
 // Order the slot chips appear in the Closet.
 export const SLOT_ORDER: EquipSlotKey[] = [
 	"head",
+	"bow",
 	"face",
 	"neck",
 	"held",

@@ -14,7 +14,7 @@ const screen = fs.readFileSync(
 describe("shop unavailable state", () => {
 	it("does not replace catalog state with empty values when a fetch fails", () => {
 		const failureBranch = hook.match(
-			/if \(fetchError\) \{([\s\S]*?)\n\t\t\}/
+			/if \(fetchError\) \{([\s\S]*?)\n\s*\}/
 		)?.[1];
 
 		expect(failureBranch).toBeDefined();

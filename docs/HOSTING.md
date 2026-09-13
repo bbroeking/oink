@@ -17,6 +17,15 @@ are designed to be served as a static site for free via GitHub Pages.
    ```
    https://bbroeking.github.io/oink/privacy.html
    ```
+7. The GitHub Pages fallback for the standalone Adventure validation
+   click-through will be at:
+   ```
+   https://bbroeking.github.io/oink/adventures.html?fresh=1
+   ```
+
+The canonical Adventure validation route is deployed from the linked
+`landing/` Vercel project at
+`https://ticklethepig.com/adventures?fresh=1`.
 
 ## Wire it into the app
 

@@ -9,7 +9,7 @@
 // trigger; the client just reflects state.
 
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
 import { usePostgresChanges } from "./usePostgresChanges";
@@ -20,6 +20,7 @@ import {
 	fetchJoinable,
 	createCrew as createCrewRpc,
 	inviteToCrew as inviteRpc,
+	inviteToCrewWithRecruiting as inviteWithRecruitingRpc,
 	acceptInvite as acceptRpc,
 	declineInvite as declineRpc,
 	cancelInvite as cancelRpc,
@@ -50,6 +51,9 @@ export interface UseCrew {
 	refresh: () => Promise<void>;
 	create: () => Promise<RpcResult<{ crew_id: string; name: string }>>;
 	invite: (userId: string) => Promise<RpcResult<{}>>;
+	inviteWithRecruiting: (
+		userId: string
+	) => Promise<RpcResult<{ invite_id: string; message_id: string }>>;
 	accept: (inviteId: string) => Promise<RpcResult<{ crew_id: string }>>;
 	decline: (inviteId: string) => Promise<RpcResult<{}>>;
 	cancel: (inviteId: string) => Promise<RpcResult<{}>>;
@@ -143,6 +147,15 @@ export function useCrew(enabled = true): UseCrew {
 	const invite = useCallback(
 		async (userId: string) => {
 			const r = await inviteRpc(userId);
+			await refresh();
+			return r;
+		},
+		[refresh]
+	);
+
+	const inviteWithRecruiting = useCallback(
+		async (userId: string) => {
+			const r = await inviteWithRecruitingRpc(userId);
 			await refresh();
 			return r;
 		},
@@ -253,6 +266,7 @@ export function useCrew(enabled = true): UseCrew {
 		refresh,
 		create,
 		invite,
+		inviteWithRecruiting,
 		accept,
 		decline,
 		cancel,
@@ -312,6 +326,20 @@ export function useInviteActions(
 		}
 	};
 
+	const inviteWithRecruiting = async (userId: string) => {
+		if (busyId) return;
+		setBusyId(userId);
+		setNote(null);
+		const r = await crewHook.inviteWithRecruiting(userId);
+		setBusyId(null);
+		if (r.ok) {
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+			setNote("Invite sent with your Sounder Oink.");
+		} else {
+			setNote(inviteError(r.reason));
+		}
+	};
+
 	const cancel = async (inviteId: string) => {
 		if (busyId) return;
 		setBusyId(inviteId);
@@ -327,5 +355,5 @@ export function useInviteActions(
 	const seatsFull =
 		crewHook.crew.members.length + crewHook.crew.invitesOut.length >= CREW_CAP;
 
-	return { note, busyId, invite, cancel, seatsFull };
+	return { note, busyId, invite, inviteWithRecruiting, cancel, seatsFull };
 }

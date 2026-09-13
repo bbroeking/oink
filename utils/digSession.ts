@@ -30,120 +30,141 @@ import type { CrewDug } from "@/utils/dig";
 // re-exports both types, so existing `from "@/hooks/useRooting"` call sites keep
 // resolving.
 export interface RootingSession {
-	seed: number;
-	windowIndex: number;
-	windowEndsAtMs: number;
-	practice: boolean;
-	// Co-op depth: a crewmate already dug this feeding → the patch lets you dig
-	// deeper (bigger stir budget); an active blessing makes digs luckier.
-	coop: boolean;
-	blessed: boolean;
-	crewDug: CrewDug[];
-	// The unique relic the server rolled onto this board (~2 in 5), or null.
-	// Practice mode + a server that hasn't migrated → null → no unique on the board.
-	uniqueId: string | null;
-	// "The One That Got Away": the caller's carry slot re-buried on this board, or
-	// null (empty slot / server not migrated → feature-dark). kind is the missed
-	// find (truffle_l/truffle_d/unique); a unique carry pins THIS board's relic.
-	carry: RootingCarry | null;
+  /** Account that owns a real server session; null/omitted for practice fixtures. */
+  userId?: string | null;
+  seed: number;
+  windowIndex: number;
+  windowEndsAtMs: number;
+  practice: boolean;
+  // Co-op depth: a crewmate already dug this feeding → the patch lets you dig
+  // deeper (bigger stir budget); an active blessing makes digs luckier.
+  coop: boolean;
+  blessed: boolean;
+  crewDug: CrewDug[];
+  // The unique relic the server rolled onto this board (~2 in 5), or null.
+  // Practice mode + a server that hasn't migrated → null → no unique on the board.
+  uniqueId: string | null;
+  // "The One That Got Away": the caller's carry slot re-buried on this board, or
+  // null (empty slot / server not migrated → feature-dark). kind is the missed
+  // find (truffle_l/truffle_d/unique); a unique carry pins THIS board's relic.
+  carry: RootingCarry | null;
 }
 
 // The carried miss the server re-buries next feeding (gilded).
 export interface RootingCarry {
-	kind: "truffle_l" | "truffle_d" | "unique";
-	uniqueId: string | null;
-	gild: number;
+  kind: "truffle_l" | "truffle_d" | "unique";
+  uniqueId: string | null;
+  gild: number;
 }
 
 export interface DigSessionState {
-	/** The open Truffle Patch session (server, practice, or dev), or null. */
-	session: RootingSession | null;
-	/**
-	 * The WINDOW the caller's last known dig landed in, or null — never a plain
-	 * boolean. isDugThisWindow re-compares it against the live window every
-	 * render, so the flag EXPIRES the instant the 8h window rolls over (the
-	 * founder's "still dug two hours later" bug: a boolean set at dig time had
-	 * nothing to un-set it across the rollover).
-	 */
-	dugWindow: number | null;
-	/** The caller has no Sounder — digging is crew-gated (UI shows a join prompt). */
-	noCrew: boolean;
+  /** The open Truffle Patch session (server, practice, or dev), or null. */
+  session: RootingSession | null;
+  /**
+   * The WINDOW the caller's last known dig landed in, or null — never a plain
+   * boolean. isDugThisWindow re-compares it against the live window every
+   * render, so the flag EXPIRES the instant the 8h window rolls over (the
+   * founder's "still dug two hours later" bug: a boolean set at dig time had
+   * nothing to un-set it across the rollover).
+   */
+  dugWindow: number | null;
+  /** The caller has no Sounder — digging is crew-gated (UI shows a join prompt). */
+  noCrew: boolean;
+  submissionStatus: "idle" | "submitting" | "uncertain";
 }
 
 export const initialDigSessionState: DigSessionState = {
-	session: null,
-	dugWindow: null,
-	noCrew: false,
+  session: null,
+  dugWindow: null,
+  noCrew: false,
+  submissionStatus: "idle",
 };
 
 export type DigSessionEvent =
-	// A session was established (server open, practice fallback, or dev practice).
-	// `clearNoCrew` is set ONLY for a real server success — a practice/dev open
-	// leaves noCrew alone (a crewless player practicing is still crewless).
-	// `alreadyDug` mirrors open_rooting's `already` — the server says this caller
-	// already dug THIS session's window.
-	| { type: "opened"; session: RootingSession; alreadyDug?: boolean; clearNoCrew?: boolean }
-	// open_rooting refused with no_crew — the join-a-Sounder state.
-	| { type: "open_no_crew" }
-	// open_rooting refused with already_rooted — a refusal that is by definition
-	// about the current window (no payload to read a server index from).
-	| { type: "open_already_rooted"; window: number }
-	// A submit landed. PRACTICE digs never lock the real "dug this feeding" flag —
-	// the reducer is the single gate that enforces that incident. A real submit
-	// records the session's SERVER-issued window (so the flag expires at rollover).
-	| { type: "submit_landed"; practice: boolean }
-	// The server's feeding_state truth for ITS window index (the reconcile).
-	| { type: "reconciled"; dug: boolean; window: number }
-	// Cold-start AsyncStorage mirror said the caller dug in `window`.
-	| { type: "mirror_hydrated"; window: number }
-	// The session was dismissed (leave-it-for-now / end card close).
-	| { type: "cleared" };
+  // A session was established (server open, practice fallback, or dev practice).
+  // `clearNoCrew` is set ONLY for a real server success — a practice/dev open
+  // leaves noCrew alone (a crewless player practicing is still crewless).
+  // `alreadyDug` mirrors open_rooting's `already` — the server says this caller
+  // already dug THIS session's window.
+  | {
+      type: "opened";
+      session: RootingSession;
+      alreadyDug?: boolean;
+      clearNoCrew?: boolean;
+    }
+  // open_rooting refused with no_crew — the join-a-Sounder state.
+  | { type: "open_no_crew" }
+  // open_rooting refused with already_rooted — a refusal that is by definition
+  // about the current window (no payload to read a server index from).
+  | { type: "open_already_rooted"; window: number }
+  // A submit landed. PRACTICE digs never lock the real "dug this feeding" flag —
+  // the reducer is the single gate that enforces that incident. A real submit
+  // records the session's SERVER-issued window (so the flag expires at rollover).
+  | { type: "submit_landed"; practice: boolean }
+  // The server's feeding_state truth for ITS window index (the reconcile).
+  | { type: "reconciled"; dug: boolean; window: number }
+  // Cold-start AsyncStorage mirror said the caller dug in `window`.
+  | { type: "mirror_hydrated"; window: number }
+  | { type: "submission_started" }
+  | { type: "submission_uncertain" }
+  | { type: "submission_settled" }
+  // The session was dismissed (leave-it-for-now / end card close).
+  | { type: "cleared" };
 
 export function digSessionReducer(
-	state: DigSessionState,
-	event: DigSessionEvent
+  state: DigSessionState,
+  event: DigSessionEvent,
 ): DigSessionState {
-	switch (event.type) {
-		case "opened":
-			return {
-				...state,
-				session: event.session,
-				// Only a real server success resets the crewless flag; practice/dev
-				// opens leave it untouched (preserves the crewless-practice path).
-				noCrew: event.clearNoCrew ? false : state.noCrew,
-				// The server's window index (not the client clock) keys the
-				// one-dig-per-feeding rule when it says the caller already dug.
-				dugWindow: event.alreadyDug ? event.session.windowIndex : state.dugWindow,
-			};
-		case "open_no_crew":
-			return { ...state, noCrew: true };
-		case "open_already_rooted":
-			return { ...state, dugWindow: event.window };
-		case "submit_landed":
-			// THE PRACTICE LOCKOUT INCIDENT: a practice dig banks nothing and is
-			// freely replayable — it must NOT persist the real dug flag, or a player
-			// who practiced then founded a Sounder in the SAME window is locked out
-			// of their first real dig. The server never records a practice dig; the
-			// local flag was the only thing that ever lied, so the reducer refuses it.
-			if (event.practice || !state.session) return state;
-			return { ...state, dugWindow: state.session.windowIndex };
-		case "reconciled":
-			// The server is authoritative for ITS window. Dug → adopt it. Not-dug →
-			// retire only a LOCAL claim that matches the same window, so a stale flag
-			// can't outlive the truth while a claim for a different window survives.
-			return event.dug
-				? { ...state, dugWindow: event.window }
-				: {
-						...state,
-						dugWindow: state.dugWindow === event.window ? null : state.dugWindow,
-				  };
-		case "mirror_hydrated":
-			return { ...state, dugWindow: event.window };
-		case "cleared":
-			return { ...state, session: null };
-		default:
-			return state;
-	}
+  switch (event.type) {
+    case "opened":
+      return {
+        ...state,
+        session: event.session,
+        // Only a real server success resets the crewless flag; practice/dev
+        // opens leave it untouched (preserves the crewless-practice path).
+        noCrew: event.clearNoCrew ? false : state.noCrew,
+        // The server's window index (not the client clock) keys the
+        // one-dig-per-feeding rule when it says the caller already dug.
+        dugWindow: event.alreadyDug
+          ? event.session.windowIndex
+          : state.dugWindow,
+      };
+    case "open_no_crew":
+      return { ...state, noCrew: true };
+    case "open_already_rooted":
+      return { ...state, dugWindow: event.window };
+    case "submit_landed":
+      // THE PRACTICE LOCKOUT INCIDENT: a practice dig banks nothing and is
+      // freely replayable — it must NOT persist the real dug flag, or a player
+      // who practiced then founded a Sounder in the SAME window is locked out
+      // of their first real dig. The server never records a practice dig; the
+      // local flag was the only thing that ever lied, so the reducer refuses it.
+      if (event.practice || !state.session) return state;
+      return { ...state, dugWindow: state.session.windowIndex };
+    case "reconciled":
+      // The server is authoritative for ITS window. Dug → adopt it. Not-dug →
+      // retire only a LOCAL claim that matches the same window, so a stale flag
+      // can't outlive the truth while a claim for a different window survives.
+      return event.dug
+        ? { ...state, dugWindow: event.window }
+        : {
+            ...state,
+            dugWindow:
+              state.dugWindow === event.window ? null : state.dugWindow,
+          };
+    case "mirror_hydrated":
+      return { ...state, dugWindow: event.window };
+    case "submission_started":
+      return { ...state, submissionStatus: "submitting" };
+    case "submission_uncertain":
+      return { ...state, submissionStatus: "uncertain" };
+    case "submission_settled":
+      return { ...state, submissionStatus: "idle" };
+    case "cleared":
+      return { ...state, session: null };
+    default:
+      return state;
+  }
 }
 
 /**
@@ -153,10 +174,10 @@ export function digSessionReducer(
  * bug). `nowMs` defaults to the live clock; tests pin it.
  */
 export function isDugThisWindow(
-	state: DigSessionState,
-	nowMs: number = Date.now()
+  state: DigSessionState,
+  nowMs: number = Date.now(),
 ): boolean {
-	return dugInCurrentWindow(state.dugWindow, nowMs);
+  return dugInCurrentWindow(state.dugWindow, nowMs);
 }
 
 // ── Cold-start mirror keying (per-user) ──────────────────────────────────────
@@ -167,7 +188,7 @@ export function isDugThisWindow(
 // expire naturally when the window rolls over, and the server (open_rooting /
 // feeding_state) stays authoritative meanwhile.
 export function dugMirrorKey(uid: string, win: number): string {
-	return `rooting_done_${win}:${uid}`;
+  return `rooting_done_${win}:${uid}`;
 }
 
 // ── Reconcile debounce (pure decision) ───────────────────────────────────────
@@ -177,9 +198,9 @@ export function dugMirrorKey(uid: string, win: number): string {
 export const RECONCILE_MIN_MS = 5000;
 
 export function shouldReconcile(
-	lastReconcileMs: number,
-	nowMs: number,
-	minMs: number = RECONCILE_MIN_MS
+  lastReconcileMs: number,
+  nowMs: number,
+  minMs: number = RECONCILE_MIN_MS,
 ): boolean {
-	return nowMs - lastReconcileMs >= minMs;
+  return nowMs - lastReconcileMs >= minMs;
 }

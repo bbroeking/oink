@@ -20,12 +20,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSExtension</key>
 	<dict>
-		<!-- Code-less sticker pack: no CFBundleExecutable, no
-		     NSExtensionPrincipalClass. Declaring either makes Xcode expect
-		     (and link) an executable for a target with no sources — the
-		     "Multiple commands produce …TTPStickers" archive failure. -->
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.message-payload-provider</string>
 	</dict>
+	<key>RCTNewArchEnabled</key>
+	<true/>
 </dict>
 </plist>

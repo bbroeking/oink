@@ -8,8 +8,33 @@ import {
 	rivePigSkinSource,
 } from "@/components/ui/rivePigContract";
 
-const mockSetInputState = jest.fn();
-const mockFireState = jest.fn();
+const mockAwaitViewReady = jest.fn(() => ({
+	then: (onReady: (ready: boolean) => unknown) => {
+		onReady(true);
+		return { catch: jest.fn() };
+	},
+}));
+const mockSetNumberInputValue = jest.fn();
+const mockTriggerInput = jest.fn();
+const mockSetHybridRef = jest.fn();
+const mockPlay = jest.fn().mockResolvedValue(undefined);
+const mockPause = jest.fn().mockResolvedValue(undefined);
+const mockOnEventListener = jest.fn();
+const mockRiveViewRef = {
+	awaitViewReady: mockAwaitViewReady,
+	play: mockPlay,
+	pause: mockPause,
+	onEventListener: mockOnEventListener,
+	removeEventListeners: jest.fn(),
+	setNumberInputValue: mockSetNumberInputValue,
+	triggerInput: mockTriggerInput,
+};
+const mockUseRiveFile = jest.fn(
+	(source: unknown, options?: Record<string, unknown>) => ({
+		riveFile: { source, options },
+		error: null,
+	}),
+);
 const mockLogWarn = jest.fn();
 
 jest.mock("@/utils/log", () => ({
@@ -18,25 +43,23 @@ jest.mock("@/utils/log", () => ({
 	},
 }));
 
-jest.mock("rive-react-native", () => {
+jest.mock("@rive-app/react-native", () => {
 	const React = require("react");
 	const { View } = require("react-native");
-	const MockRive = React.forwardRef(
-		(props: Record<string, unknown>, ref: React.ForwardedRef<unknown>) => {
-			React.useImperativeHandle(ref, () => ({
-				setInputState: mockSetInputState,
-				fireState: mockFireState,
-			}));
-			return React.createElement(View, {
-				...props,
-				testID: "mock-rive-view",
-			});
-		},
-	);
+	const MockRive = (props: Record<string, unknown>) =>
+		React.createElement(View, {
+			...props,
+			testID: "mock-rive-view",
+		});
 	MockRive.displayName = "MockRive";
 	return {
 		__esModule: true,
-		default: MockRive,
+		RiveView: MockRive,
+		useRive: () => ({
+			riveViewRef: mockRiveViewRef,
+			setHybridRef: mockSetHybridRef,
+		}),
+		useRiveFile: mockUseRiveFile,
 		Alignment: { Center: "center" },
 		Fit: { Contain: "contain" },
 	};
@@ -47,8 +70,11 @@ const { RivePig } =
 
 describe("RivePig fallback", () => {
 	beforeEach(() => {
-		mockSetInputState.mockClear();
-		mockFireState.mockClear();
+		mockAwaitViewReady.mockClear();
+		mockSetNumberInputValue.mockClear();
+		mockTriggerInput.mockClear();
+		mockSetHybridRef.mockClear();
+		mockUseRiveFile.mockClear();
 		mockLogWarn.mockClear();
 	});
 
@@ -65,11 +91,8 @@ describe("RivePig fallback", () => {
 			);
 		});
 
-		const riveView = renderer!.root.findByProps({
-			testID: "mock-rive-view",
-		});
-		expect(riveView.props.referencedAssets).toEqual({
-			pig_skin: { source: 456 },
+		expect(mockUseRiveFile).toHaveBeenCalledWith(123, {
+			referencedAssets: { pig_skin: { source: 456 } },
 		});
 		act(() => {
 			renderer!.unmount();
@@ -83,7 +106,7 @@ describe("RivePig fallback", () => {
 					<RivePig
 						source={123}
 						animation="wave"
-						pigId="rosie"
+						pigId="biscuit"
 						equipment={{
 							headId: "party",
 							faceId: "pixel_glasses",
@@ -94,8 +117,8 @@ describe("RivePig fallback", () => {
 		});
 
 		for (const pigId of PIG_IDS) {
-			mockSetInputState.mockClear();
-			mockFireState.mockClear();
+			mockSetNumberInputValue.mockClear();
+			mockTriggerInput.mockClear();
 
 			act(() => {
 				renderer!.update(
@@ -112,41 +135,30 @@ describe("RivePig fallback", () => {
 				);
 			});
 
-			const riveView = renderer!.root.findByProps({
-				testID: "mock-rive-view",
-			});
-			expect(riveView.props.referencedAssets).toEqual({
-				pig_skin: { source: rivePigSkinSource(pigId) },
-			});
-
-			act(() => {
-				riveView.props.onPlay();
+			expect(mockUseRiveFile).toHaveBeenLastCalledWith(123, {
+				referencedAssets: {
+					pig_skin: { source: rivePigSkinSource(pigId) },
+				},
 			});
 
-			expect(mockSetInputState).toHaveBeenCalledWith(
-				"pig",
+			expect(mockSetNumberInputValue).toHaveBeenCalledWith(
 				RIVE_PIG_INPUTS.skin,
 				rivePigSkinIndex(pigId),
 			);
-			expect(mockSetInputState).toHaveBeenCalledWith(
-				"pig",
+			expect(mockSetNumberInputValue).toHaveBeenCalledWith(
 				RIVE_PIG_INPUTS.hat,
 				1,
 			);
-			expect(mockSetInputState).toHaveBeenCalledWith(
-				"pig",
+			expect(mockSetNumberInputValue).toHaveBeenCalledWith(
 				RIVE_PIG_INPUTS.face,
 				1,
 			);
-			expect(mockSetInputState).toHaveBeenCalledWith(
-				"pig",
+			expect(mockSetNumberInputValue).toHaveBeenCalledWith(
 				RIVE_PIG_INPUTS.held,
 				1,
 			);
-			expect(mockFireState).toHaveBeenCalledWith(
-				"pig",
-				RIVE_PIG_INPUTS.wave,
-			);
+			expect(mockSetNumberInputValue).toHaveBeenCalledWith(RIVE_PIG_INPUTS.activity, 3);
+			expect(mockTriggerInput).not.toHaveBeenCalled();
 		}
 
 		act(() => {

@@ -21,6 +21,16 @@ const requiredRiveNames = [
 	"wave",
 	"skin",
 	"rest",
+	"activity",
+	"happy",
+	"sad",
+	"tired",
+	"walk",
+	"bounce",
+	"surprise",
+	"reaction_complete",
+	"happy_reaction",
+	"wave_reaction",
 	"equip_hat",
 	"equip_face",
 	"equip_held",
@@ -142,6 +152,5 @@ for (const name of requiredRiveNames) {
 console.log(
 	`Rive binary: header and ${requiredRiveNames.length} authored contract names verified`,
 );
-console.log(
-	"Static gate passed. Simulator/device motion and attachment validation is still required.",
-);
+console.log(run(process.execPath, ["scripts/rive/test-pig-state-machine.mjs"]));
+console.log("Runtime graph gate passed. Actual native/web pixels and attachment validation are still required.");

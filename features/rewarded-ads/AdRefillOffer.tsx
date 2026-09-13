@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import {
-	ActivityIndicator,
-	Modal,
-	Pressable,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
-import { Sticker } from "@/components/ui/Sticker";
-import {
-	MODAL_BACKDROP_BG,
-	RADII,
-	SHADOW_SM,
-	SPACE,
-	TYPE,
-	WHIMSY,
-} from "@/constants/theme";
+	AdaptiveModalScaffold,
+	Body,
+	BodySm,
+	Button,
+	CardTitle,
+	DialogButtonRow,
+	EmptyState,
+	Hand,
+	Sticker,
+	T,
+} from "@/components/ui";
+import { RADII, SPACE, TILT } from "@/constants/theme";
 import type {
 	RewardedAdBackend,
 	RewardedAdProvider,
@@ -67,147 +64,198 @@ export function AdRefillOffer({
 	if (offer.kind === "age_required") {
 		return (
 			<>
-				<Pressable
-					accessibilityRole="button"
-					accessibilityLabel="Set up ad refill"
-					onPress={() => setAgeOpen(true)}
+				<Sticker
+					color="sun"
+					rotate={0.4}
+					shadow="sm"
+					pad
+					style={styles.offer}
 				>
-					<Sticker color="sun" rotate={0.4} shadow={false} style={styles.offer}>
-						<Text style={styles.kicker}>OPTIONAL AD REFILL</Text>
-						<Text style={styles.title}>Set up age eligibility</Text>
-					</Sticker>
-				</Pressable>
-				<Modal
+					<T role="kickerPillSm" tone="secondary">
+						Optional ad refill
+					</T>
+					<CardTitle>Set up age eligibility</CardTitle>
+					<Hand tone="secondary">
+						One question, asked once. No snouts, no trades.
+					</Hand>
+					<Button
+						variant="gold"
+						size="sm"
+						full
+						onPress={() => setAgeOpen(true)}
+						accessibilityLabel="Set up ad refill"
+						accessibilityHint="Asks one age question. Nothing is spent."
+						style={styles.cta}
+					>
+						Set this up
+					</Button>
+				</Sticker>
+				<AdaptiveModalScaffold
 					visible={ageOpen}
-					transparent
+					onRequestClose={() => {
+						if (!ageSubmitting) setAgeOpen(false);
+					}}
 					animationType="fade"
-					onRequestClose={() => !ageSubmitting && setAgeOpen(false)}
+					bare
+					contentContainerStyle={styles.dialogContent}
 				>
-					<View style={styles.backdrop}>
-						<Sticker color="paper" rotate={-0.5} style={styles.sheet}>
-							<Text style={styles.kicker}>BEFORE SHOWING ADS</Text>
-							<Text style={styles.sheetTitle}>Are you 13 or older?</Text>
-							<Text style={styles.body}>
-								Ad refills are optional. If you are under 13, Tickle the Pig will
-								not show you ads.
-							</Text>
-							<View style={styles.actions}>
-								<Pressable
-									accessibilityRole="button"
-									accessibilityLabel="I am 13 or older"
-									disabled={ageSubmitting}
-									onPress={async () => {
-										setAgeSubmitting(true);
-										const result = await backend.confirmAgeEligibility(true);
-										if (result.ok) {
-											setOffer({
-												kind: "available",
-												rewardAmount: offer.rewardAmount,
-											});
-											setAgeOpen(false);
-										}
-										setAgeSubmitting(false);
-									}}
-									style={styles.primaryButton}
-								>
-									<Text style={styles.primaryText}>Yes, I am 13+</Text>
-								</Pressable>
-								<Pressable
-									accessibilityRole="button"
-									disabled={ageSubmitting}
-									onPress={async () => {
-										setAgeSubmitting(true);
-										await backend.confirmAgeEligibility(false);
-										setAgeSubmitting(false);
-										setAgeOpen(false);
-										setOffer({ kind: "hidden" });
-									}}
-									style={styles.secondaryButton}
-								>
-									<Text style={styles.secondaryText}>No / not now</Text>
-								</Pressable>
-							</View>
-						</Sticker>
-					</View>
-				</Modal>
+					<Sticker
+						color="paper"
+						rotate={TILT.dialog}
+						radius={RADII.xl}
+						style={styles.dialog}
+					>
+						<T role="kickerPillSm" tone="secondary" align="center">
+							Before showing ads
+						</T>
+						<CardTitle accessibilityRole="header" align="center">
+							Are you 13 or older?
+						</CardTitle>
+						<BodySm tone="secondary" align="center">
+							Ad refills are optional. If you are under 13, Tickle the Pig will
+							not show you ads.
+						</BodySm>
+						<DialogButtonRow
+							confirmLabel="Yes, I am 13+"
+							cancelLabel="No / not now"
+							busy={ageSubmitting}
+							confirmHint="Turns on optional ad refills. Nothing is spent."
+							cancelHint="Keeps ads off. Nothing is spent."
+							onConfirm={async () => {
+								setAgeSubmitting(true);
+								const result = await backend.confirmAgeEligibility(true);
+								if (result.ok) {
+									setOffer({
+										kind: "available",
+										rewardAmount: offer.rewardAmount,
+									});
+									setAgeOpen(false);
+								}
+								setAgeSubmitting(false);
+							}}
+							onCancel={async () => {
+								setAgeSubmitting(true);
+								await backend.confirmAgeEligibility(false);
+								setAgeSubmitting(false);
+								setAgeOpen(false);
+								setOffer({ kind: "hidden" });
+							}}
+						/>
+					</Sticker>
+				</AdaptiveModalScaffold>
 			</>
 		);
 	}
 
 	if (offer.kind !== "available") return null;
 
+	const loading = flowState === "loading";
+
 	return (
 		<>
-			<Pressable
-				accessibilityRole="button"
-				accessibilityLabel={`Watch an ad for ${offer.rewardAmount} personal tickles`}
-				onPress={() => {
-					setFlowState("idle");
-					setSheetOpen(true);
-					if (analyticsEnabled) {
-						void trackRewardedAdInteraction("rewarded_ad_offer_opened");
-					}
-				}}
-			>
-				<Sticker color="sun" rotate={0.4} shadow={false} style={styles.offer}>
-					<Text style={styles.kicker}>AD REFILL</Text>
-					<Text style={styles.title}>
-						Watch an ad for {offer.rewardAmount} personal tickles
-					</Text>
-				</Sticker>
-			</Pressable>
+			<Sticker color="sun" rotate={0.4} shadow="sm" pad style={styles.offer}>
+				<T role="kickerPillSm" tone="secondary">
+					Ad refill
+				</T>
+				<CardTitle>
+					Watch an ad for {offer.rewardAmount} personal tickles
+				</CardTitle>
+				<Hand tone="secondary">
+					One short ad. No snouts, and your regen keeps running.
+				</Hand>
+				<Button
+					variant="gold"
+					size="sm"
+					full
+					onPress={() => {
+						setFlowState("idle");
+						setSheetOpen(true);
+						if (analyticsEnabled) {
+							void trackRewardedAdInteraction("rewarded_ad_offer_opened");
+						}
+					}}
+					accessibilityLabel={`Watch an ad for ${offer.rewardAmount} personal tickles`}
+					accessibilityHint="Opens the offer. Nothing starts until you confirm."
+					style={styles.cta}
+				>
+					Watch an ad
+				</Button>
+			</Sticker>
 
-			<Modal
+			<AdaptiveModalScaffold
 				visible={sheetOpen}
-				transparent
+				onRequestClose={() => {
+					if (!loading) setSheetOpen(false);
+				}}
 				animationType="fade"
-				onRequestClose={() => flowState !== "loading" && setSheetOpen(false)}
+				bare
+				contentContainerStyle={styles.dialogContent}
 			>
-				<View style={styles.backdrop}>
-					<Sticker color="paper" rotate={-0.5} style={styles.sheet}>
-						{flowState === "granted" ? (
-							<View accessibilityLabel="Reward verified">
-								<Text style={styles.sheetTitle}>Refill delivered</Text>
-								<Text style={styles.body}>
-									{offer.rewardAmount} personal tickles are ready for Rosie.
-								</Text>
-								<Pressable
-									accessibilityRole="button"
-									onPress={() => setSheetOpen(false)}
-									style={styles.primaryButton}
-								>
-									<Text style={styles.primaryText}>Tickle Rosie</Text>
-								</Pressable>
-							</View>
-						) : (
-							<>
-								<Text style={styles.kicker}>ONE OPTIONAL AD</Text>
-								<Text style={styles.sheetTitle}>
-									Watch an ad for {offer.rewardAmount} personal tickles
-								</Text>
-								<Text style={styles.body}>
-									For Rosie only—these can't answer tickle trades. Your normal
-									regen keeps running either way.
-								</Text>
+				<Sticker
+					color="paper"
+					rotate={TILT.dialog}
+					radius={RADII.xl}
+					style={styles.dialog}
+				>
+					{flowState === "granted" ? (
+						<View accessibilityLabel="Reward verified" style={styles.granted}>
+							<CardTitle align="center">Refill delivered</CardTitle>
+							<Body tone="secondary" align="center">
+								{offer.rewardAmount} personal tickles are ready for Rosie.
+							</Body>
+							<Button
+								variant="gold"
+								full
+								onPress={() => setSheetOpen(false)}
+								accessibilityLabel="Tickle Rosie"
+								accessibilityHint="Closes this and takes you back to the Barn."
+								style={styles.cta}
+							>
+								Tickle Rosie
+							</Button>
+						</View>
+					) : (
+						<>
+							<T role="kickerPillSm" tone="secondary" align="center">
+								One optional ad
+							</T>
+							<CardTitle accessibilityRole="header" align="center">
+								Watch an ad for {offer.rewardAmount} personal tickles
+							</CardTitle>
+							<Body tone="secondary" align="center">
+								For Rosie only—these can&apos;t answer tickle trades. Your normal
+								regen keeps running either way.
+							</Body>
 
-								{flowState === "loading" ? (
-									<View style={styles.loadingRow}>
-										<ActivityIndicator color={WHIMSY.accent} />
-										<Text style={styles.body}>Finding an ad…</Text>
-									</View>
-								) : flowState === "pending" ? (
-									<Text style={styles.notice}>Reward pending verification.</Text>
-								) : flowState === "closed" ? (
-									<Text style={styles.notice}>No ad finished, so nothing was used.</Text>
-								) : flowState === "unavailable" ? (
-									<Text style={styles.notice}>No ad is available right now.</Text>
-								) : null}
+							{loading ? (
+								<Hand tone="secondary" align="center" style={styles.notice}>
+									Finding an ad…
+								</Hand>
+							) : flowState === "pending" ? (
+								<Hand tone="accent" align="center" style={styles.notice}>
+									Reward pending verification.
+								</Hand>
+							) : flowState === "closed" ? (
+								<Hand tone="accent" align="center" style={styles.notice}>
+									No ad finished, so nothing was used.
+								</Hand>
+							) : flowState === "unavailable" ? (
+								<EmptyState
+									kind="error"
+									glyph="zzz"
+									title="No ad right now"
+									sub="Nothing was used. Try again in a little while."
+									style={styles.notice}
+								/>
+							) : null}
 
-								<View style={styles.actions}>
-									<Pressable
-										accessibilityRole="button"
-										accessibilityLabel="Confirm watch ad"
-										disabled={flowState === "loading"}
+							<View style={styles.actions}>
+								<Button
+									variant="gold"
+									full
+									loading={loading}
+									accessibilityLabel="Confirm watch ad"
+									accessibilityHint={`Plays one ad, then adds ${offer.rewardAmount} personal tickles. No snouts are spent.`}
 									onPress={async () => {
 										setFlowState("loading");
 										if (analyticsEnabled) {
@@ -232,101 +280,54 @@ export function AdRefillOffer({
 											if (analyticsEnabled) {
 												void trackRewardedAdInteraction("rewarded_ad_finished", "unavailable");
 											}
-											}
-										}}
-										style={styles.primaryButton}
-									>
-										<Text style={styles.primaryText}>Watch ad</Text>
-									</Pressable>
-									<Pressable
-										accessibilityRole="button"
-										disabled={flowState === "loading"}
-										onPress={() => setSheetOpen(false)}
-										style={styles.secondaryButton}
-									>
-										<Text style={styles.secondaryText}>Not now</Text>
-									</Pressable>
-								</View>
-							</>
-						)}
-					</Sticker>
-				</View>
-			</Modal>
+										}
+									}}
+								>
+									Watch ad
+								</Button>
+								<Button
+									variant="handLink"
+									full
+									disabled={loading}
+									onPress={() => setSheetOpen(false)}
+									accessibilityLabel="Not now"
+									accessibilityHint="Closes the offer. Nothing is used."
+								>
+									Not now
+								</Button>
+							</View>
+						</>
+					)}
+				</Sticker>
+			</AdaptiveModalScaffold>
 		</>
 	);
 }
 
 const styles = StyleSheet.create({
 	offer: {
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
-		...SHADOW_SM,
+		gap: SPACE.xs,
 	},
-	kicker: {
-		...TYPE.kickerPillSm,
-		color: WHIMSY.mute,
-		marginBottom: SPACE.xs,
+	cta: {
+		marginTop: SPACE.sm,
 	},
-	title: {
-		...TYPE.bodySm,
-		color: WHIMSY.ink,
+	dialogContent: {
+		alignItems: "center",
 	},
-	backdrop: {
-		flex: 1,
-		backgroundColor: MODAL_BACKDROP_BG,
-		justifyContent: "center",
-		padding: SPACE.xl,
-	},
-	sheet: {
-		padding: SPACE.lg,
-		maxWidth: 420,
+	dialog: {
 		width: "100%",
-		alignSelf: "center",
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.lg,
+		gap: SPACE.sm,
 	},
-	sheetTitle: {
-		...TYPE.cardTitle,
-		color: WHIMSY.ink,
-		marginBottom: SPACE.sm,
-	},
-	body: {
-		...TYPE.body,
-		color: WHIMSY.mute,
+	granted: {
+		gap: SPACE.sm,
 	},
 	notice: {
-		...TYPE.bodySm,
-		color: WHIMSY.accent,
-		marginTop: SPACE.md,
-	},
-	loadingRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginTop: SPACE.md,
+		marginTop: SPACE.sm,
 	},
 	actions: {
-		gap: SPACE.sm,
-		marginTop: SPACE.lg,
-	},
-	primaryButton: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingVertical: SPACE.md,
-		paddingHorizontal: SPACE.lg,
-		alignItems: "center",
-		...SHADOW_SM,
-	},
-	primaryText: {
-		...TYPE.label,
-		color: WHIMSY.ink,
-	},
-	secondaryButton: {
-		paddingVertical: SPACE.sm,
-		alignItems: "center",
-	},
-	secondaryText: {
-		...TYPE.bodySm,
-		color: WHIMSY.mute,
+		gap: SPACE.xs,
+		marginTop: SPACE.md,
 	},
 });

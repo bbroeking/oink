@@ -6,6 +6,10 @@
 import { tallyFromRpc } from "@/hooks/useSeason";
 
 describe("tallyFromRpc", () => {
+	it("preserves the granted Mote count, exact wallet and legacy reward labels", () => {
+		expect(tallyFromRpc({ ok: true, claimed_count: 5, motes: 5, motes_balance: 9, items: ["5 Motes"] }))
+			.toMatchObject({ claimedCount: 5, motes: 5, motesBalance: 9, items: ["5 Motes"] });
+	});
 	it("folds a full server tally, surfacing the LAST mystery only", () => {
 		const last = { granted_hat_id: "reed_hat", granted_hat_name: "Reed Hat" };
 		const raw = {
@@ -13,6 +17,7 @@ describe("tallyFromRpc", () => {
 			claimed_count: 3,
 			failed: 1,
 			tickles: 250,
+			motes: 0,
 			items: ["Reed Hat", "Mud Boots"],
 			mysteries: [{ granted_hat_id: "old_hat" }, last],
 		};
@@ -20,6 +25,7 @@ describe("tallyFromRpc", () => {
 			claimedCount: 3,
 			failed: 1,
 			tickles: 250,
+			motes: 0,
 			items: ["Reed Hat", "Mud Boots"],
 			lastMystery: last,
 		});
@@ -40,9 +46,11 @@ describe("tallyFromRpc", () => {
 	it("fail-softs an {ok:false} refusal (no tally fields) to a zeroed tally", () => {
 		const raw = { ok: false, reason: "no_active_season" };
 		expect(tallyFromRpc(raw)).toEqual({
+			reason: "no_active_season",
 			claimedCount: 0,
 			failed: 0,
 			tickles: 0,
+			motes: 0,
 			items: [],
 			lastMystery: null,
 		});
@@ -53,6 +61,7 @@ describe("tallyFromRpc", () => {
 			claimedCount: 0,
 			failed: 0,
 			tickles: 0,
+			motes: 0,
 			items: [],
 			lastMystery: null,
 		});
@@ -60,6 +69,7 @@ describe("tallyFromRpc", () => {
 			claimedCount: 0,
 			failed: 0,
 			tickles: 0,
+			motes: 0,
 			items: [],
 			lastMystery: null,
 		});

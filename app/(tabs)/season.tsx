@@ -3,33 +3,58 @@ import {
 	View,
 	StyleSheet,
 	ScrollView,
-	Platform,
 	SafeAreaView,
-	Text,
 	Image,
 	Pressable,
-	Modal,
+	type ViewStyle,
 } from "react-native";
-import Svg, { Path as SvgPath } from "react-native-svg";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "expo-router/react-navigation";
 import { router } from "expo-router";
 import {
 	IAP_ENABLED,
 	presentPaywall,
 	OFFERING_IDS,
 } from "../../utils/iap";
-import { Sticker } from "../../components/ui/Sticker";
-import { EmptyState, LoadingBeat } from "../../components/ui/EmptyState";
-import { usePopupSlot, useUnmanagedModalHold, POPUP_TEARDOWN_MS } from "../../components/ui/PopupQueue";
+// The design system's front door — spec §2: `components/ui/index.tsx` is the
+// only sanctioned import path for a primitive.
+import {
+	AdaptiveModalScaffold,
+	AlignmentBar,
+	Body,
+	BodySm,
+	Button,
+	EmptyState,
+	Glyph,
+	Hand,
+	Icon,
+	Kicker,
+	Label,
+	LoadingBeat,
+	Numeral,
+	PageHeader,
+	PageTitle,
+	POPUP_TEARDOWN_MS,
+	ProgressTrack,
+	SectionHeader,
+	SegmentedControl,
+	SpotlightOverlay,
+	SpotlightProvider,
+	Sticker,
+	T,
+	Tag,
+	TickleIcon,
+	TierUpBanner,
+	usePopupSlot,
+	useUnmanagedModalHold,
+	type GlyphName,
+	type TierUpBannerHandle,
+} from "@/components/ui";
 import { markCeremonyShown } from "../../utils/ceremonyGate";
 import { POPUP_PRIORITIES } from "../../constants/popupPriorities";
-import { Icon } from "../../components/ui/Icon";
 import {
 	MysteryHatReveal,
 	type MysteryBoxRevealPayload,
 } from "../../components/MysteryHatReveal";
-import { Glyph, type GlyphName } from "../../components/ui/Glyph";
-import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
 import {
 	SeasonEndModal,
@@ -46,13 +71,15 @@ import {
 	SounderHomeCard,
 } from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
+import { MoteRewardDialog } from "@/components/season1/MoteRewardDialog";
+import { MoteMachineCard } from "../../components/season1/MoteMachineCard";
+import { HabitatGiftReveal } from "@/components/habitat/HabitatGiftReveal";
+import { HABITAT_CATALOG } from "@/constants/habitat";
+import { useHabitatJournal } from "@/hooks/useHabitatJournal";
 import { useFeedingCta } from "../../components/mudwar/useFeedingCta";
+import { seasonHeroSurface, seasonPrimaryAction } from "@/utils/seasonHero";
 import { YourTakeStrip } from "../../components/season1/YourTakeStrip";
 import { useSounderPath } from "../../hooks/useSounderPath";
-import {
-	SpotlightProvider,
-	SpotlightOverlay,
-} from "../../components/ui/Spotlight";
 import {
 	useJoinSpotlight,
 	JOIN_SPOTLIGHT_TARGET_ID,
@@ -65,21 +92,29 @@ import {
 	type SeasonInfoTopic,
 } from "../../components/season1/SeasonInfoModal";
 import { useCrew } from "../../hooks/useCrew";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFeatureFlag } from "../../hooks/useFeatureFlags";
-import { AlignmentBar } from "../../components/ui/AlignmentBar";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
 import { alignmentEffects } from "@/utils/alignment";
-import {
-	TierUpBanner,
-	type TierUpBannerHandle,
-} from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
 import { resolveRewardArt, rewardItemId, WEARABLE_REWARD_TYPES } from "@/utils/rewardArt";
 import { useSeason } from "../../hooks/useSeason";
 import * as seasonPass from "@/utils/seasonPass";
 import type { TierRow, TierState } from "@/utils/seasonPass";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, UI_COLORS, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE, TYPE } from "@/constants/theme";
+import {
+	BORDER,
+	OPACITY,
+	PAGE_PAD,
+	PRESSED_FLAT,
+	RADII,
+	SHADOW_SM,
+	SPACE,
+	STICKER_SHADOW,
+	TAB_SAFE,
+	TAP_MIN,
+	TILT,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
 import { formatDurationCompact } from "@/utils/duration";
 import {
@@ -88,8 +123,10 @@ import {
 	wallowProgress,
 	wallowWaitReductionLabel,
 } from "@/utils/wallow";
-import { Button, SectionHeader } from "../../components/ui";
-import { PURCHASES_LIVE } from "../../constants/featureFlags";
+import {
+	MOTE_MACHINE_VISIBLE,
+	PURCHASES_LIVE,
+} from "../../constants/featureFlags";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import {
@@ -101,6 +138,134 @@ const claimSound = require("../../assets/sounds/claim.mp3");
 
 // SeasonRow / RewardValue / TierRow / ClaimRow / SeasonState now live in
 // utils/seasonPass (the pure derivation module); NextReward + TierState too.
+
+// ── Drawing geometry ────────────────────────────────────────────────────────
+// Spec §1.3: a size that is the DRAWING of a thing (a stone, a node circle, a
+// power pip) is not a spacing decision, so it is named here rather than typed
+// into a StyleSheet as a bare number. Everything else on this screen comes from
+// SPACE / RADII / BORDER / TYPE.
+const WALLOW_MARK = 48; // the flame well on the Wallow card
+const WALLOW_PIP_W = 9; // one power-rank pip, drawn as a tall capsule
+const WALLOW_PIP_H = 18;
+const STONE = 42; // the reward chip inside a pass-track node
+const STONE_ART = 34; // a golden-truffle image inside that chip
+const STONE_IMAGE = 32; // a wearable / item image inside it
+const STONE_ICON = 26; // a glyph inside it
+const STONE_MARK = 22; // a line icon inside it
+const NODE = 52; // the pass-track node circle
+const NODE_COL = 64; // the node column — the width of the season's spine
+const CORNER_BADGE = 20; // the node's corner state badge …
+const BADGE_MARK = 11; // … and the check / lock inside it
+const CLUB_CREST = 20; // the Slop Club mark beside a tier cap …
+const CREST_MARK = 12; // … and the crest inside it
+const BANNER_CREST = 34; // the Slop Club crest on the locked-premium banner …
+const CREST_ICON = 18; // … and the crest mark inside it
+const HEADER_BTN = 38; // the page crown's reference-sheet doors
+const CHIP_BTN = 34; // the pass header's star / crown chips …
+const CHIP_MARK = 16; // … and the glyph inside one
+const REWARD_WELL = 160; // the claim dialog's art well …
+const REWARD_ART = 140; // … and the art inside it
+const REWARD_MARK = 64; // the tickle / snout mark when there is no item art
+const REWARD_STAR = 56; // the catch-all star for a non-visual reward
+const REWARD_CARD_MAX = 360; // the reveal card's width ceiling …
+const NOTICE_CARD_MAX = 340; // … and the notice card's
+const XP_CARD_MAX = 400; // the XP reference sheet's
+// `wallowProgress` yields a fraction, so the XP meter is expressed out of 100 —
+// which is also what VoiceOver reads back ("43 of 100").
+const XP_METER_MAX = 100;
+
+// A control may look smaller than TAP_MIN, but its touch frame may not: the
+// IconButton visual/frame split, applied to the two round sticker chips above.
+const HEADER_BTN_HIT = (TAP_MIN - HEADER_BTN) / 2;
+const CHIP_BTN_HIT = (TAP_MIN - CHIP_BTN) / 2;
+
+/**
+ * The tab's ONE hero. Audit C-26: eleven decision surfaces stack in this
+ * scroll, and on a "rewards ready" load six of them wore the sun-yellow
+ * full-card highlight at once — so nothing was the one thing. The highlight is
+ * the loudest sentence the app can say; exactly one surface may speak it, and
+ * WHICH one is derived here, once, never decided per card.
+ *
+ * Order of precedence: the dig (the thing to do right now) > a claimable
+ * reward > joining a Sounder > browsing. Everything that loses falls back to
+ * outline-only — it keeps its shape, its tag and its button, it just stops
+ * shouting.
+ *
+ * Wave 4 carries the rule off this file and across the whole scroll: the cards
+ * this tab composes (`HungerHero`, `FeedingAction`, `SounderHomeCard`,
+ * `SounderStepCard`) each take a `hero` prop and NEVER decide it from their own
+ * state. One state → one hero:
+ *
+ *   dig    → the Feeding card (or the funnel's `first_dig` step card)
+ *   claim  → the ClaimAllBar
+ *   join   → the Sounder join door (framed by the step card while onboarding)
+ *   browse → the Hunger banner — with nothing to do, the season's own story is
+ *            the one thing worth looking at
+ */
+// The type + the derivation live in `utils/seasonHero.ts` so the invariant is
+// a unit test, not a reading of four JSX props.
+
+/**
+ * A round paper sticker that opens a reference sheet — the page crown's three
+ * doors and the pass header's star / crown chips. One drawing, one press: the
+ * `Sticker` sink-into-its-own-shadow, never an opacity fade (the two
+ * byte-identical `headerBtnPressed` / `chipPressed` styles this retires were
+ * audit C-01 and C-24 in one). The visual stays small; `hitSlop` restores the
+ * 44pt frame. [C-01, C-04, C-24]
+ */
+function StickerDoor({
+	label,
+	hint,
+	onPress,
+	tone = "paper",
+	style,
+	hitSlop,
+	children,
+}: {
+	label: string;
+	hint?: string;
+	onPress: () => void;
+	tone?: "paper" | "sun";
+	style: ViewStyle;
+	hitSlop: number;
+	children: React.ReactNode;
+}) {
+	return (
+		<Sticker
+			color={tone}
+			rotate={0}
+			radius={RADII.pill}
+			shadow="sm"
+			onPress={onPress}
+			hitSlop={hitSlop}
+			accessibilityLabel={label}
+			accessibilityHint={hint}
+			style={style}
+		>
+			{children}
+		</Sticker>
+	);
+}
+
+function HeaderDoor(props: {
+	label: string;
+	hint?: string;
+	onPress: () => void;
+	children: React.ReactNode;
+}) {
+	return <StickerDoor {...props} style={styles.headerBtn} hitSlop={HEADER_BTN_HIT} />;
+}
+
+function ChipDoor(props: {
+	label: string;
+	hint?: string;
+	onPress: () => void;
+	children: React.ReactNode;
+}) {
+	return (
+		<StickerDoor {...props} tone="sun" style={styles.recapBtn} hitSlop={CHIP_BTN_HIT} />
+	);
+}
 
 function WallowCard({
 	count,
@@ -123,43 +288,63 @@ function WallowCard({
 	busy: boolean;
 	onWallow: () => void;
 }) {
+	const label = busy
+		? "wallowing…"
+		: ready
+			? count > 0
+				? "Raise my Wallow rank"
+				: "Wallow"
+			: "Fill the last XP to Wallow";
 	return (
-		<Sticker color="cream" rotate={-0.5} radius={RADII.xl} style={wallowStyles.card}>
+		<Sticker color="cream" radius={RADII.xl} style={wallowStyles.card}>
 			<View style={wallowStyles.topline}>
 				<View style={wallowStyles.mark}>
-					<Glyph name="flame" size={26} />
+					<Glyph name="flame" size={STONE_ICON} />
 				</View>
 				<View style={wallowStyles.copy}>
-					<Text style={wallowStyles.kicker}>★ THE MUD IS WARM</Text>
-					<Text style={wallowStyles.title}>Wallow Rank {count + 1}</Text>
-					<Text style={wallowStyles.body}>
+					<Kicker>THE MUD IS WARM</Kicker>
+					<T role="sectionTitle">Wallow Rank {count + 1}</T>
+					<Hand tone="secondary" style={wallowStyles.body}>
 						{powerLevel >= WALLOW_MAX_POWER_LEVEL
 							? "Begin another sparse reward path and raise your public rank. Your regeneration is already at full blaze."
 							: `Keep everything, begin a new reward path, and get a tickle ${formatDurationCompact(nextRegenSeconds)} apart (${wallowWaitReductionLabel(nextRegenPercent)}).`}
-					</Text>
+					</Hand>
 				</View>
 			</View>
 			<View style={wallowStyles.rateCompare}>
 				<View style={wallowStyles.rateStat}>
-					<Text style={wallowStyles.rateKicker}>NOW · RANK {count}</Text>
-					<Text style={wallowStyles.rateValue}>1 tickle / {formatDurationCompact(regenSeconds)}</Text>
-					<Text style={wallowStyles.rateSub}>{wallowWaitReductionLabel(regenPercent)}</Text>
+					<T role="kickerPill" tone="secondary">NOW · RANK {count}</T>
+					<Numeral style={wallowStyles.rateValue}>
+						1 tickle / {formatDurationCompact(regenSeconds)}
+					</Numeral>
+					<Label tone="accent">{wallowWaitReductionLabel(regenPercent)}</Label>
 				</View>
-				<Glyph name="arrowRight" size={18} />
+				<Glyph name="arrowRight" size={WALLOW_PIP_H} />
 				<View style={[wallowStyles.rateStat, wallowStyles.rateStatNext]}>
-					<Text style={wallowStyles.rateKicker}>AFTER · RANK {count + 1}</Text>
-					<Text style={wallowStyles.rateValue}>1 tickle / {formatDurationCompact(nextRegenSeconds)}</Text>
-					<Text style={wallowStyles.rateSub}>{wallowWaitReductionLabel(nextRegenPercent)}</Text>
+					<T role="kickerPill" tone="secondary">AFTER · RANK {count + 1}</T>
+					<Numeral style={wallowStyles.rateValue}>
+						1 tickle / {formatDurationCompact(nextRegenSeconds)}
+					</Numeral>
+					<Label tone="accent">{wallowWaitReductionLabel(nextRegenPercent)}</Label>
 				</View>
 			</View>
 			<View style={wallowStyles.powerRow}>
 				{Array.from({ length: WALLOW_MAX_POWER_LEVEL }, (_, i) => (
 					<View key={i} style={[wallowStyles.powerPip, i < powerLevel && wallowStyles.powerPipOn]} />
 				))}
-				<Text style={wallowStyles.standing}>{powerLevel}/{WALLOW_MAX_POWER_LEVEL} power ranks</Text>
+				<Label tone="secondary" style={wallowStyles.standing}>
+					{powerLevel}/{WALLOW_MAX_POWER_LEVEL} power ranks
+				</Label>
 			</View>
-			<Button full disabled={!ready || busy} onPress={onWallow}>
-				{busy ? "wallowing…" : ready ? count > 0 ? "Raise my Wallow rank" : "Wallow" : "Fill the last XP to Wallow"}
+			<Button
+				full
+				disabled={!ready || busy}
+				onPress={onWallow}
+				accessibilityState={{ busy }}
+				accessibilityLabel={label}
+				accessibilityHint={`Spends this pass and starts Wallow Rank ${count + 1}; every reward you have already claimed stays yours`}
+			>
+				{label}
 			</Button>
 		</Sticker>
 	);
@@ -173,46 +358,52 @@ function StoneThumb({ reward, locked }: { reward: TierRow; locked: boolean }) {
 	let inner: React.ReactNode;
 	switch (art.kind) {
 		case "tickles":
-			inner = <TickleIcon size={26} />;
+			inner = <TickleIcon size={STONE_ICON} />;
 			break;
 		case "snouts":
-			inner = <Glyph name="pigface" size={26} />;
+			inner = <Glyph name="pigface" size={STONE_ICON} />;
 			break;
 		case "goldenTruffle":
 			inner = (
-				<Image source={art.source} style={{ width: 34, height: 34 }} resizeMode="contain" />
+				<Image source={art.source} style={styles.stoneArt} resizeMode="contain" />
 			);
 			break;
 		case "image":
 			inner = (
-				<Image source={art.source} style={{ width: 32, height: 32 }} resizeMode="contain" />
+				<Image source={art.source} style={styles.stoneImage} resizeMode="contain" />
 			);
 			break;
 		case "title":
-			inner = <Text style={styles.titleGlyph}>"</Text>;
+			// The title reward's quote mark — sanctioned typography, set in the
+			// display voice rather than drawn as art.
+			inner = <T role="pageTitle">&quot;</T>;
 			break;
 		case "boost":
-			inner = <Icon name="flame" size={22} filled color={WHIMSY.flame} strokeWidth={1.5} />;
+			inner = <Icon name="flame" size={STONE_MARK} filled color={WHIMSY.flame} strokeWidth={1.5} />;
 			break;
 		case "legacyBackground":
-			inner = <Icon name="globe" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
+			inner = <Icon name="globe" size={STONE_MARK} color={WHIMSY.ink} strokeWidth={1.6} />;
 			break;
 		case "legacyAura":
-			inner = <Icon name="premium" size={22} color={UI_COLORS.warningText} strokeWidth={1.6} />;
+			inner = <Icon name="premium" size={STONE_MARK} color={UI_COLORS.warningText} strokeWidth={1.6} />;
 			break;
 		case "legacyCape":
-			inner = <Icon name="star" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
+			inner = <Icon name="star" size={STONE_MARK} color={WHIMSY.ink} strokeWidth={1.6} />;
 			break;
 		case "special":
-			inner = <Icon name="star" size={22} filled color={UI_COLORS.warningText} strokeWidth={1.6} />;
+			inner = <Icon name="star" size={STONE_MARK} filled color={UI_COLORS.warningText} strokeWidth={1.6} />;
 			break;
 		default:
-			inner = <Icon name="star" size={20} color={WHIMSY.muteSoft} />;
+			inner = <Icon name="star" size={STONE_MARK} color={UI_COLORS.uiMuted} />;
 			break;
 	}
 
+	// The locked stone's ART recedes — the CONTROL's locked state is the node's
+	// dashed outline and its lock badge (the C-07 ruling: mute the fill, never
+	// dissolve the outline). This is a picture inside that outline, not a
+	// disabled control, so the token ladder's `dim` step is the right reach.
 	return (
-		<View style={[styles.stone, locked && { opacity: 0.55 }]}>{inner}</View>
+		<View style={[styles.stone, locked && styles.stoneLocked]}>{inner}</View>
 	);
 }
 
@@ -238,20 +429,25 @@ function StatsPills({
 }: {
 	stats: { claimed: number; ready: number; locked: number };
 }) {
+	// Read-only counters, so they are `Tag`s — the capsule that announces as
+	// text instead of pretending to be a button. [C-02]
 	return (
 		<View style={vlStyles.statsRow}>
-			<View style={[vlStyles.statPill, vlStyles.statPillClaimed]}>
-				<Text style={vlStyles.statPillNum}>{stats.claimed}</Text>
-				<Text style={vlStyles.statPillLabel}>CLAIMED</Text>
-			</View>
-			<View style={[vlStyles.statPill, vlStyles.statPillReady]}>
-				<Text style={vlStyles.statPillNum}>{stats.ready}</Text>
-				<Text style={vlStyles.statPillLabel}>READY</Text>
-			</View>
-			<View style={[vlStyles.statPill, vlStyles.statPillLocked]}>
-				<Text style={vlStyles.statPillNum}>{stats.locked}</Text>
-				<Text style={vlStyles.statPillLabel}>LOCKED</Text>
-			</View>
+			<Tag
+				tone="sage"
+				label={`${stats.claimed} CLAIMED`}
+				accessibilityLabel={`${stats.claimed} claimed`}
+			/>
+			<Tag
+				tone="sun"
+				label={`${stats.ready} READY`}
+				accessibilityLabel={`${stats.ready} ready to claim`}
+			/>
+			<Tag
+				tone="paper"
+				label={`${stats.locked} LOCKED`}
+				accessibilityLabel={`${stats.locked} still locked`}
+			/>
 		</View>
 	);
 }
@@ -283,15 +479,12 @@ function VLTierRow({
 	const isReady = state === "ready";
 	const isLocked = state === "locked";
 
-	// Card background — sun when ready (the full-card highlight),
-	// sage when claimed, paper for locked. The locked card also gets
-	// a dashed border via vlStyles.cardLocked.
-	const cardBg = isReady
-		? WHIMSY.sun
-		: isClaimed
-			? WHIMSY.sage // soft sage tint distinct from the row's regular paper
-			: WHIMSY.paper;
-
+	// Card fill — sage when claimed, paper otherwise. The READY row used to wear
+	// the full sun highlight; under the one-hero rule (C-26) the sun belongs to
+	// the tab's single primary action, so a ready row now says "ready" with a
+	// heavy ink outline, its READY tag and its Claim button, and stops
+	// competing with the claim bar above it.
+	const cardColor = isClaimed ? "sage" : "paper";
 	const nodeBg = isReady ? WHIMSY.sun : isClaimed ? WHIMSY.sage : WHIMSY.paper;
 
 	return (
@@ -309,20 +502,28 @@ function VLTierRow({
 					]}
 				>
 					<StoneThumb reward={reward} locked={isLocked} />
-					{/* Corner state badge */}
+					{/* Corner state badge. C-02: every badge glyph is dark ink on a
+					    PALE fill — paper-on-pastel was never a legible pair. */}
 					{isClaimed && (
 						<View style={[vlStyles.cornerBadge, vlStyles.cornerBadgeClaimed]}>
-							<Icon name="check" size={11} color={WHIMSY.paper} strokeWidth={3} />
+							<Icon
+								name="check"
+								size={BADGE_MARK}
+								color={UI_COLORS.successText}
+								strokeWidth={3}
+							/>
 						</View>
 					)}
 					{isReady && (
 						<View style={[vlStyles.cornerBadge, vlStyles.cornerBadgeReady]}>
-							<Text style={vlStyles.cornerBadgeText}>!</Text>
+							<T role="kickerPill" tone="danger" style={vlStyles.cornerBadgeText}>
+								!
+							</T>
 						</View>
 					)}
 					{isLocked && (
 						<View style={[vlStyles.cornerBadge, vlStyles.cornerBadgeLocked]}>
-							<Icon name="lock" size={10} color={WHIMSY.ink} filled />
+							<Icon name="lock" size={BADGE_MARK} color={WHIMSY.ink} filled />
 						</View>
 					)}
 				</View>
@@ -330,68 +531,58 @@ function VLTierRow({
 			</View>
 
 			{/* Column 2 — card. */}
-			<View
-				style={[
-					vlStyles.card,
-					{ backgroundColor: cardBg },
-					isLocked && vlStyles.cardLocked,
-					isReady && vlStyles.cardReady,
-				]}
+			<Sticker
+				color={cardColor}
+				rotate={0}
+				radius={RADII.lg}
+				border={isReady ? BORDER.heavy : BORDER.ink}
+				shadow={isLocked ? "none" : "sticker"}
+				style={[vlStyles.card, isLocked && vlStyles.cardLocked]}
 			>
 				<View style={vlStyles.cardHeader}>
 					<View style={vlStyles.cardHeaderLeft}>
-						<Text style={vlStyles.tierCap}>{tierLabel} {tier}</Text>
+						<T role="kickerPill" tone="secondary" style={vlStyles.tierCap}>
+							{tierLabel} {tier}
+						</T>
 						{premium && (
 							<View
 								style={vlStyles.clubCrest}
 								accessibilityLabel="also has a Slop Club reward"
 							>
-								<Icon name="premium" size={12} color={WHIMSY.ink} filled />
+								<Icon name="premium" size={CREST_MARK} color={WHIMSY.ink} filled />
 							</View>
 						)}
 					</View>
-					<View
-						style={[
-							vlStyles.stateTag,
-							isClaimed && vlStyles.stateTagClaimed,
-							isReady && vlStyles.stateTagReady,
-							isLocked && vlStyles.stateTagLocked,
-						]}
-					>
-						{isClaimed && (
-							<Icon name="check" size={10} color={WHIMSY.ink} strokeWidth={3} />
-						)}
-						{isLocked && (
-							<Icon name="lock" size={9} color={WHIMSY.mute} filled />
-						)}
-						<Text
-							style={[
-								vlStyles.stateTagText,
-								isLocked && { color: WHIMSY.mute },
-							]}
-						>
-							{isClaimed ? "CLAIMED" : isReady ? "READY" : "LOCKED"}
-						</Text>
-					</View>
+					{isClaimed ? (
+						<Tag tone="sage" icon="check" label="CLAIMED" />
+					) : isReady ? (
+						<Tag tone="roseDeep" label="READY" />
+					) : (
+						<Tag tone="muted" icon="lock" label="LOCKED" />
+					)}
 				</View>
-				<Text
-					style={[
-						vlStyles.rewardLabel,
-						isClaimed && vlStyles.rewardLabelClaimed,
-						isLocked && { color: WHIMSY.mute },
-					]}
+				<Numeral
+					tone={isClaimed || isLocked ? "secondary" : "primary"}
+					style={[vlStyles.rewardLabel, isClaimed && vlStyles.rewardLabelClaimed]}
 					numberOfLines={2}
 				>
 					{reward.display_label}
-				</Text>
+				</Numeral>
 				{isReady && (
 					<View style={vlStyles.claimBtnWrap}>
-						<Button size="sm" variant="dark" full onPress={onClaim}>
+						<Button
+							size="sm"
+							variant="dark"
+							full
+							onPress={onClaim}
+							accessibilityLabel={`Claim ${reward.display_label}`}
+							accessibilityHint={`Adds ${reward.display_label} to your account`}
+						>
 							Claim reward ✦
 						</Button>
 					</View>
 				)}
-			</View>
+			</Sticker>
 		</View>
 	);
 }
@@ -458,7 +649,7 @@ function VerticalListPassTrack({
 	return (
 		<View>
 			<StatsPills stats={stats} />
-			<View style={{ marginTop: 8 }}>
+			<View style={vlStyles.list}>
 				{visibleTiers.map((t, i) => {
 					const reward = tiersByNumber[t]?.[track];
 					// The club-crest mark only makes sense on the free track — it marks
@@ -481,25 +672,20 @@ function VerticalListPassTrack({
 				})}
 			</View>
 			{forwardCount > 0 && (
-				<Pressable
+				<Button
+					variant="link"
+					size="sm"
+					style={collapseStyles.row}
 					onPress={() => setExpanded((value) => !value)}
-					hitSlop={6}
-					accessibilityRole="button"
 					accessibilityLabel={
 						expanded ? "Show fewer tiers" : `Show ${forwardCount} more tiers`
 					}
 					accessibilityState={{ expanded }}
-					style={({ pressed }) => [
-						collapseStyles.row,
-						pressed && { opacity: 0.6 },
-					]}
 				>
-					<Text style={collapseStyles.text}>
-						{expanded
-							? "‹ show fewer tiers"
-							: `…and ${forwardCount} more ${forwardCount === 1 ? "tier" : "tiers"} ›`}
-					</Text>
-				</Pressable>
+					{expanded
+						? "‹ show fewer tiers"
+						: `…and ${forwardCount} more ${forwardCount === 1 ? "tier" : "tiers"} ›`}
+				</Button>
 			)}
 		</View>
 	);
@@ -511,62 +697,8 @@ const collapseStyles = StyleSheet.create({
 		alignSelf: "center",
 		marginTop: SPACE.xs,
 		marginBottom: SPACE.xs,
-		paddingVertical: SPACE.sm,
-		paddingHorizontal: SPACE.lg,
-	},
-	text: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-		textAlign: "center",
 	},
 });
-
-// 2-segment Free / Premium toggle above the pass list. Both segments
-// are always tappable — viewing a locked premium track is the point.
-// Active segment: sun fill + ink outline + whimsy font; inactive: paper.
-function PassTrackTabs({
-	track,
-	onChange,
-	premiumUnlocked,
-}: {
-	track: "free" | "premium";
-	onChange: (t: "free" | "premium") => void;
-	premiumUnlocked: boolean;
-}) {
-	const segments: { key: "free" | "premium"; label: string }[] = [
-		{ key: "free", label: "Free" },
-		{ key: "premium", label: "Premium" },
-	];
-	return (
-		<View style={passTabStyles.row}>
-			{segments.map((seg) => {
-				const active = track === seg.key;
-				const showLock = seg.key === "premium" && !premiumUnlocked;
-				return (
-					<Pressable
-						key={seg.key}
-						onPress={() => onChange(seg.key)}
-						style={({ pressed }) => [
-							passTabStyles.seg,
-							active ? passTabStyles.segActive : passTabStyles.segInactive,
-							pressed && !active && { opacity: 0.7 },
-						]}
-						accessibilityRole="button"
-						accessibilityState={{ selected: active }}
-						accessibilityLabel={`${seg.label} pass track`}
-					>
-						{showLock && (
-							<Icon name="lock" size={11} color={WHIMSY.ink} filled />
-						)}
-						<Text style={passTabStyles.segText}>{seg.label}</Text>
-					</Pressable>
-				);
-			})}
-		</View>
-	);
-}
 
 // Locked-premium call-to-action banner. Sits above the list when the player is
 // browsing the premium track without membership. States the truth — the premium
@@ -575,80 +707,95 @@ function PassTrackTabs({
 // the members band elsewhere.
 function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
 	return (
-		<Sticker color="paper" rotate={-0.6} radius={RADII.xl} style={passBannerStyles.wrap}>
+		<Sticker color={WHIMSY.slopBand} radius={RADII.xl} style={passBannerStyles.wrap}>
 			<View style={passBannerStyles.crest}>
-				<Icon name="premium" size={18} color={WHIMSY.ink} filled />
+				<Icon name="premium" size={CREST_ICON} color={WHIMSY.ink} filled />
 			</View>
 			<View style={passBannerStyles.textCol}>
-				<Text style={passBannerStyles.title}>A Slop Club perk</Text>
-				<Text style={passBannerStyles.body}>
+				<Numeral>A Slop Club perk</Numeral>
+				<Hand style={passBannerStyles.body}>
 					The premium track comes with Slop Club — join to claim every reward on it.
-				</Text>
+				</Hand>
 			</View>
-			<Pressable
-				onPress={PURCHASES_LIVE ? onUnlock : undefined}
+			{/* The "coming soon" state is a button asleep, not a dissolved one:
+			    full chrome, muted fill, no opacity crush. [C-07] */}
+			<Button
+				size="xs"
+				variant={PURCHASES_LIVE ? "dark" : "locked"}
 				disabled={!PURCHASES_LIVE}
-				style={({ pressed }) => [
-					passBannerStyles.btn,
-					pressed && PURCHASES_LIVE && { opacity: 0.85 },
-					!PURCHASES_LIVE && { opacity: 0.75 },
-				]}
-				accessibilityRole="button"
+				onPress={onUnlock}
 				accessibilityLabel={
 					PURCHASES_LIVE ? "Join the Slop Club" : "Slop Club coming soon"
 				}
+				accessibilityHint={
+					PURCHASES_LIVE
+						? "Opens the Slop Club subscription — it unlocks every premium tier"
+						: undefined
+				}
 			>
-				<Text style={passBannerStyles.btnText}>
-					{PURCHASES_LIVE ? "Join ›" : "Soon…"}
-				</Text>
-			</Pressable>
+				{PURCHASES_LIVE ? "Join ›" : "Soon…"}
+			</Button>
 		</Sticker>
 	);
 }
 
-// The ready-claim shortcut — a sun-yellow sticker bar above the pass track
-// whenever ANY tier is ready to claim (the founder's note: a ready reward
-// announced only at the page bottom is a ready reward nobody sees). One ready
-// tier names its reward ("25 tickles is ready — claim ›"); two or more sweep
-// in one tap. The row itself is the affordance (no separate CTA), sinking into
-// its hard shadow when pressed.
+// The ready-claim shortcut — a sticker bar above the pass track whenever ANY
+// tier is ready to claim (the founder's note: a ready reward announced only at
+// the page bottom is a ready reward nobody sees). One ready tier names its
+// reward ("25 tickles is ready — claim ›"); two or more sweep in one tap. The
+// row itself is the affordance (no separate CTA), and it sinks into its own
+// hard shadow when pressed — the `Sticker` press, not a fade.
+//
+// `hero` is the one-hero rule (C-26): the bar wears the sun-yellow highlight
+// only when claiming IS the tab's primary action. When the dig is open, the
+// bar keeps its shape and its words on paper and lets the dig be the loud one.
 function ClaimAllBar({
 	count,
 	label,
 	busy,
+	hero,
 	onPress,
 }: {
 	count: number;
 	/** The single ready tier's display label (count === 1 only) — names the reward. */
 	label?: string;
 	busy: boolean;
+	hero: boolean;
 	onPress: () => void;
 }) {
 	const single = count === 1;
 	return (
-		<Pressable
-			onPress={busy ? undefined : onPress}
-			disabled={busy}
+		<Sticker
+			color={hero ? "sun" : "paper"}
+			rotate={0}
+			radius={RADII.lg}
+			border={hero ? BORDER.ink : BORDER.heavy}
+			shadow="sm"
+			onPress={() => {
+				if (!busy) onPress();
+			}}
 			accessibilityRole="button"
 			accessibilityLabel={
 				single
 					? `Claim ${label ?? "your ready reward"}`
 					: `Claim all ${count} ready rewards`
 			}
-			style={({ pressed }) => [
-				claimAllStyles.bar,
-				pressed && !busy && claimAllStyles.barPressed,
-				busy && { opacity: 0.7 },
-			]}
+			accessibilityHint={
+				single
+					? "Adds it to your account"
+					: "Claims every ready tier on this track in one go"
+			}
+			accessibilityState={{ busy }}
+			style={claimAllStyles.bar}
 		>
-			<Glyph name="gift" size={18} />
-			<Text style={claimAllStyles.text}>
+			<Glyph name="gift" size={CREST_ICON} />
+			<Numeral style={claimAllStyles.text}>
 				{single ? `${label ?? "a reward"} is ready` : `${count} rewards ready`}
-			</Text>
-			<Text style={claimAllStyles.cta}>
+			</Numeral>
+			<Hand tone="accent" style={claimAllStyles.cta}>
 				{busy ? "claiming…" : single ? "claim ›" : "claim all ›"}
-			</Text>
-		</Pressable>
+			</Hand>
+		</Sticker>
 	);
 }
 
@@ -657,67 +804,27 @@ const claimAllStyles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		paddingHorizontal: SPACE.md + 2,
-		paddingVertical: SPACE.sm + 2,
+		paddingHorizontal: SPACE.card,
+		paddingVertical: SPACE.sm,
 		marginTop: SPACE.sm,
 		marginBottom: SPACE.xs,
-		...SHADOW_SM,
 	},
-	barPressed: {
-		transform: [{ translateX: 2 }, { translateY: 2 }],
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	text: {
-		flex: 1,
-		...TYPE.numeral,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	cta: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
+	text: { flex: 1 },
+	cta: { textDecorationLine: "underline" },
 });
 
 const vlStyles = StyleSheet.create({
-	// Stats pill row above the list. Display-only counters per the
+	// Stats tag row above the list. Display-only counters per the
 	// resolved decision; no tap-to-filter behavior.
 	statsRow: {
 		flexDirection: "row",
 		gap: SPACE.sm,
-		marginTop: SPACE.xs + 2,
+		marginTop: SPACE.sm,
 		marginBottom: SPACE.xs,
 	},
-	statPill: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs + 2,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.xs + 2,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-	},
-	statPillClaimed: { backgroundColor: WHIMSY.sage },
-	statPillReady: { backgroundColor: WHIMSY.sun },
-	statPillLocked: { backgroundColor: WHIMSY.paper },
-	statPillNum: {
-		...TYPE.numeral,
-		fontSize: 14,
-		color: WHIMSY.ink,
-	},
-	statPillLabel: {
-		...TYPE.kickerPill,
-		letterSpacing: 1,
-		color: WHIMSY.ink,
-	},
+
+	// The tier rows themselves, under the stats tags.
+	list: { marginTop: SPACE.sm },
 
 	// Row layout — node column + card column side-by-side.
 	row: {
@@ -728,178 +835,118 @@ const vlStyles = StyleSheet.create({
 	// Node column — fixed width so the spine reads as a clean line
 	// down the screen. Connector halves fill above + below the node.
 	nodeCol: {
-		width: 64,
+		width: NODE_COL,
 		alignItems: "center",
 	},
 	connectorTop: {
 		width: 0,
 		height: SPACE.md,
-		borderLeftWidth: 1.5,
-		borderLeftColor: WHIMSY.muteSoft,
+		borderLeftWidth: BORDER.thin,
+		borderLeftColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	connectorBottom: {
 		flex: 1,
 		width: 0,
-		borderLeftWidth: 1.5,
-		borderLeftColor: WHIMSY.muteSoft,
+		borderLeftWidth: BORDER.thin,
+		borderLeftColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	node: {
-		width: 52,
-		height: 52,
+		width: NODE,
+		height: NODE,
 		borderRadius: RADII.pill,
-		borderWidth: 2.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.heavy,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
 		...SHADOW_SM,
 	},
+	// Locked keeps its shape and mutes its fill — it never dissolves [C-07].
+	// The shadow is zeroed, not swapped for a softer tier: a resting node is
+	// simply not lifted off the paper (spec §1.3 — two shadow tiers, or none).
 	nodeLocked: {
 		borderStyle: "dashed",
-		borderColor: WHIMSY.muteSoft,
+		borderColor: UI_COLORS.uiMuted,
 		shadowOpacity: 0,
 		elevation: 0,
 	},
 	cornerBadge: {
 		position: "absolute",
-		top: -4,
-		right: -4,
-		width: 20,
-		height: 20,
+		top: -SPACE.xs,
+		right: -SPACE.xs,
+		width: CORNER_BADGE,
+		height: CORNER_BADGE,
 		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	// The claimed check rides a saturated success-green FILL (not the darker
-	// success TEXT token) so the paper check reads with contrast.
-	cornerBadgeClaimed: { backgroundColor: COLORS.success },
-	cornerBadgeReady: { backgroundColor: WHIMSY.roseDeep },
+	// Audit C-02: the paper check on the saturated success fill measured 2.0:1.
+	// Both state badges now run the semantic PALE surface + DARK ink pair, which
+	// is the only pairing that clears AA at 11px.
+	cornerBadgeClaimed: { backgroundColor: UI_COLORS.successSurface },
+	cornerBadgeReady: { backgroundColor: WHIMSY.rose },
 	cornerBadgeLocked: { backgroundColor: WHIMSY.paper },
-	cornerBadgeText: {
-		color: WHIMSY.paper,
-		...TYPE.kickerPill,
-		letterSpacing: 0,
-		lineHeight: 13,
-	},
+	cornerBadgeText: { letterSpacing: 0 },
 
 	// Card column.
 	card: {
 		flex: 1,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		paddingHorizontal: SPACE.md + 2,
+		paddingHorizontal: SPACE.card,
 		paddingVertical: SPACE.md,
-		marginVertical: SPACE.xs + 2,
-		...STICKER_SHADOW,
-	},
-	cardReady: {
-		...STICKER_SHADOW,
+		marginVertical: SPACE.xs,
 	},
 	cardLocked: {
 		borderStyle: "dashed",
-		borderColor: WHIMSY.muteSoft,
-		shadowOpacity: 0,
-		elevation: 0,
+		borderColor: UI_COLORS.uiMuted,
 	},
 	cardHeader: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
+		gap: SPACE.sm,
 		marginBottom: SPACE.xs,
 	},
 	cardHeaderLeft: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: SPACE.xs + 2,
+		gap: SPACE.sm,
 		flexShrink: 1,
 	},
-	tierCap: {
-		...TYPE.kickerPill,
-		letterSpacing: 1.4,
-		color: WHIMSY.mute,
-	},
+	tierCap: { flexShrink: 1 },
 	// Slop Club crest — a small gold-chip mark on free rows that ALSO carry a
 	// premium-track reward. Reads as "there's a Slop Club reward here too", never
 	// as "VIP-only" (the row's free reward is claimable by anyone). Slop Club gold
 	// + ink border, matching the shop's members identity.
 	clubCrest: {
-		width: 20,
-		height: 20,
+		width: CLUB_CREST,
+		height: CLUB_CREST,
 		alignItems: "center",
 		justifyContent: "center",
 		backgroundColor: WHIMSY.slopGold,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.pill,
 	},
-	// Right-side state tag (CLAIMED / READY / LOCKED).
-	stateTag: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs,
-		paddingHorizontal: SPACE.sm + 2,
-		paddingVertical: 3,
-		borderRadius: RADII.pill,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	stateTagClaimed: { backgroundColor: WHIMSY.sage },
-	stateTagReady: { backgroundColor: WHIMSY.roseDeep },
-	stateTagLocked: {
-		backgroundColor: "transparent",
-		borderColor: WHIMSY.muteSoft,
-	},
-	stateTagText: {
-		...TYPE.kickerPill,
-		letterSpacing: 0.8,
-		color: WHIMSY.ink,
-	},
-	rewardLabel: {
-		...TYPE.numeral,
-		color: WHIMSY.ink,
-		marginTop: 2,
-	},
-	rewardLabelClaimed: {
-		textDecorationLine: "line-through",
-		color: WHIMSY.mute,
-	},
+	rewardLabel: { marginTop: SPACE.xxs },
+	rewardLabelClaimed: { textDecorationLine: "line-through" },
 	// Ready-state inline Claim CTA — the shared dark Button primitive (ink pill,
-	// full width) inside the highlight; this wrap just owns the top gap.
+	// full width); this wrap just owns the top gap.
 	claimBtnWrap: {
-		marginTop: SPACE.sm + 2,
+		marginTop: SPACE.sm,
 	},
 });
 
-// Free / Premium track toggle. Mirrors the app's pill/segment look
-// (ink outline, whimsy font) — there's no shared segment primitive.
+// The Free / Premium track toggle is `SegmentedControl` — the shared primitive
+// that already announces `radiogroup` and guarantees 44pt targets. (The comment
+// that used to sit here claimed no such primitive existed; it did, and that
+// claim is how a fourth hand-rolled segment gets written. [C-05])
 const passTabStyles = StyleSheet.create({
 	row: {
-		flexDirection: "row",
-		gap: SPACE.sm,
 		marginTop: SPACE.sm,
 		marginBottom: SPACE.xs,
-	},
-	seg: {
-		flex: 1,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 5,
-		paddingVertical: SPACE.sm,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-	},
-	segActive: { backgroundColor: WHIMSY.sun },
-	segInactive: { backgroundColor: WHIMSY.paper },
-	segText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
 	},
 });
 
@@ -910,49 +957,29 @@ const passBannerStyles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "space-between",
 		gap: SPACE.md,
-		paddingHorizontal: SPACE.md + 2,
+		paddingHorizontal: SPACE.card,
 		paddingVertical: SPACE.md,
 		marginTop: SPACE.sm,
 		marginBottom: SPACE.xs,
-		backgroundColor: WHIMSY.slopBand,
 	},
 	// The Slop Club crest — gold chip + ink border, matching the members ribbon.
 	crest: {
-		width: 34,
-		height: 34,
+		width: BANNER_CREST,
+		height: BANNER_CREST,
 		alignItems: "center",
 		justifyContent: "center",
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.slopGold,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		...SHADOW_SM,
 	},
 	textCol: {
 		flex: 1,
 		minWidth: 0,
 	},
-	title: {
-		...TYPE.numeral,
-		color: WHIMSY.ink,
-	},
 	body: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-		marginTop: 2,
-	},
-	btn: {
-		backgroundColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: SPACE.lg + 2,
-		paddingVertical: SPACE.sm + 1,
-	},
-	btnText: {
-		color: WHIMSY.paper,
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		letterSpacing: 0.4,
+		marginTop: SPACE.xxs,
 	},
 });
 
@@ -963,6 +990,7 @@ export default function SeasonScreen() {
 	// celebration; it calls load() (the hook's refresh) at the original beats.
 	const {
 		state,
+		loadError,
 		busy,
 		uid,
 		alignmentScore,
@@ -978,6 +1006,12 @@ export default function SeasonScreen() {
 		claimAll,
 		wallow,
 	} = useSeason();
+	const habitatJournal = useHabitatJournal(uid);
+	const isFocused = useIsFocused();
+	const [wallowGiftAccount, setWallowGiftAccount] = useState<string | null>(null);
+	useEffect(() => {
+		if (wallowGiftAccount && wallowGiftAccount !== uid) setWallowGiftAccount(null);
+	}, [uid, wallowGiftAccount]);
 	// Season-1 mode — the world_boss server flag (seeded by the held
 	// 20260704200000 migration) with the __DEV__ escape hatch so the local
 	// test account lives in the new season before the flag flips for anyone
@@ -1079,6 +1113,7 @@ export default function SeasonScreen() {
 	// user gets a beat to read what they got and (for wearables) jump
 	// straight to the wardrobe to equip it.
 	const [claimedReward, setClaimedReward] = useState<TierRow | null>(null);
+	const [claimedMotes, setClaimedMotes] = useState<number | null>(null);
 	// A claim couldn't go through (locked / already claimed / offline) — shown as
 	// an in-world paper notice instead of a native Alert punching iOS chrome
 	// through the storybook world.
@@ -1222,6 +1257,8 @@ export default function SeasonScreen() {
 			body: `Your aura burns brighter. Tickle ${wallowWaitReductionLabel(r.regen_percent)} — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
 		});
 		await load();
+		await habitatJournal.refresh();
+		if (uid) setWallowGiftAccount(uid);
 	};
 
 	const handleClaim = async (tier: number, track: "free" | "premium") => {
@@ -1233,7 +1270,9 @@ export default function SeasonScreen() {
 			// arrives as reason "network" (not in the maps) → the same "Couldn't
 			// claim / give it another tap" fallback the raw-null path always showed.
 			const reason = r.reason;
+			if (reason === "pass_changed") await load();
 			const bodyMap: Record<string, string> = {
+				pass_changed: "Your pass moved to a new lap or season. Review its rewards and claim again.",
 				tier_locked: `Reach tier ${tier} first — you're at ${r.current_tier}.`,
 				premium_locked: "Join the Slop Club to claim the premium track.",
 				already_claimed: "You've already claimed this one.",
@@ -1242,6 +1281,7 @@ export default function SeasonScreen() {
 				truffle_cap: "Your Golden Truffle pouch is full. Spend one at the Exchange, then come back.",
 			};
 			const titleMap: Record<string, string> = {
+				pass_changed: "Your pass has moved on",
 				tier_locked: "Not yet",
 				premium_locked: "A Slop Club perk",
 				already_claimed: "Already yours",
@@ -1264,7 +1304,9 @@ export default function SeasonScreen() {
 		// names the granted hat / snout fallback); everything else gets
 		// the generic reward dialog so the user sees what they got + can
 		// jump to the wardrobe to equip wearables.
-		if (r.granted_hat_id || r.fallback_snouts) {
+		if (r.reward_type === "motes" && r.motes_granted !== undefined) {
+			setClaimedMotes(r.motes_granted);
+		} else if (r.granted_hat_id || r.fallback_snouts) {
 			setMysteryReveal(r);
 		} else {
 			const claimedRow = (prestigeMode ? wallowTiersByNumber : tiersByNumber)[tier]?.[track];
@@ -1303,11 +1345,25 @@ export default function SeasonScreen() {
 	const handleClaimAll = async () => {
 		const tally = await claimAll(readyTiers, shownTrack);
 		if (!tally) return;
+		if (tally.reason) {
+			await load();
+			setClaimNotice({
+				title: tally.reason === "pass_changed" ? "Your pass has moved on" : "Couldn't claim",
+				body: "Review your current rewards and try again.",
+			});
+			return;
+		}
 		claimFlourish();
 		await load();
 		// Fold the tally into one line. Tickles read as a single "X tickles" clause;
 		// each named item is listed (capped so the beat stays a glance).
-		const { claimedCount, failed, tickles, items, lastMystery } = tally;
+		const { claimedCount, failed, tickles, motes, items, lastMystery } = tally;
+		// A sweep containing only Motes gets the same direct machine handoff as
+		// an individual Mote claim. Mixed hauls retain the full reward summary.
+		if (motes > 0 && items.length === 1 && tickles === 0 && !lastMystery && failed === 0) {
+			setClaimedMotes(motes);
+			return;
+		}
 		const parts: string[] = [];
 		if (tickles > 0) parts.push(`${tickles.toLocaleString("en-US")} tickles`);
 		const NAMED_CAP = 3;
@@ -1341,7 +1397,25 @@ export default function SeasonScreen() {
 	if (!state) {
 		return (
 			<View style={[styles.container, styles.center]}>
-				<LoadingBeat label="reading the season" />
+				{loadError ? (
+					<EmptyState
+						kind="error"
+						title="Couldn't reach the season"
+						sub="The bog is slow right now — give it another go."
+						action={
+							<Button
+								variant="ghost"
+								onPress={() => void load()}
+								accessibilityLabel="Try loading the season again"
+								accessibilityHint="Re-reads the season from the server"
+							>
+								try again
+							</Button>
+						}
+					/>
+				) : (
+					<LoadingBeat label="reading the season" />
+				)}
 			</View>
 		);
 	}
@@ -1374,113 +1448,121 @@ export default function SeasonScreen() {
 		scrollRef.current?.scrollTo({ y: passSectionY.current, animated: true });
 	};
 
+	// The one-hero derivation (see the block comment above). Every surface this
+	// tab draws asks THIS, not its own state, before it reaches for the sun.
+	const digAvailable =
+		!feedingCta.noCrew && feedingCta.phaseOpen && !feedingCta.dugThisWindow;
+	const primaryAction = seasonPrimaryAction({
+		digAvailable,
+		readyTierCount: readyTiers.length,
+		inCrew: !!crewHook.crew.crew,
+	});
+
+	// …and the ONE surface it hands the sun to. Exactly one of these is true in
+	// every state; the cards take it as a prop and never ask their own state.
+	const heroSurface = seasonHeroSurface(primaryAction);
+	const feedingIsHero = heroSurface === "feeding";
+	const claimIsHero = heroSurface === "claim";
+	const sounderIsHero = heroSurface === "sounder";
+	// The onboarding step card stands in for whichever surface it is currently
+	// drawing: the dig CTA on `first_dig`, the join door on taste / join.
+	const stepCardIsHero =
+		visibleSounderStep === "first_dig" ? feedingIsHero : sounderIsHero;
+
 	return (
 		<SpotlightProvider>
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
-				<View style={styles.header}>
-					{/* Season 1 wears the Hungerer's name; Season 0 keeps its framing.
-					    (The old dev intro-preview chip is gone — the real retrigger
-					    lives on the hero as "Hear the tale again".) */}
-					<View style={styles.headerRow}>
-						<View style={{ flex: 1, minWidth: 0 }}>
-							<Text style={styles.kicker}>
-								{s1 ? "★ season 1 — the great hunger" : `★ ${season.name.toLowerCase()}`}
-							</Text>
-								{/* Let accessibility text wrap instead of shrinking below the
-								    player's chosen reading size. */}
-							<Text
-								style={styles.title}
-									numberOfLines={2}
-							>
-								{s1 ? "The Great Hunger" : "Goblins vs Angels"}
-							</Text>
-							<View style={styles.titleRule} />
-						</View>
-						{/* Reference sheets — the tale cinematic (scene), the season
-						    story (scroll), and the earnables shelf (gift). Their
-						    sections left the scroll for these modals. */}
-						{s1 && (
-							<View style={styles.headerBtns}>
-								<Pressable
+				{/* Season 1 wears the Hungerer's name; Season 0 keeps its framing.
+				    (The old dev intro-preview chip is gone — the real retrigger
+				    lives on the hero as "Hear the tale again".) The crown is
+				    `PageHeader variant="tab"` — the kicker + title rulings live in
+				    that component's header comment. [C-10] */}
+				<PageHeader
+					variant="tab"
+					kicker={s1 ? "season 1 — the great hunger" : season.name.toLowerCase()}
+					title={s1 ? "The Great Hunger" : "Goblins vs Angels"}
+					/* Reference sheets — the tale cinematic (scene), the season
+					   story (scroll), and the earnables shelf (gift). Their
+					   sections left the scroll for these modals. */
+					right={
+						s1 ? (
+							<>
+								<HeaderDoor
+									label="Hear the tale again"
+									hint="Replays the Great Hunger tale"
 									onPress={() => setIntroOpen(true)}
-									hitSlop={8}
-									accessibilityRole="button"
-									accessibilityLabel="Hear the tale again"
-									style={({ pressed }) => [
-										styles.headerBtn,
-										pressed && styles.headerBtnPressed,
-									]}
 								>
-									<Glyph name="scene" size={18} />
-								</Pressable>
-								<Pressable
+									<Glyph name="scene" size={CREST_ICON} />
+								</HeaderDoor>
+								<HeaderDoor
+									label="The season's story"
 									onPress={() => setInfoTopic("story")}
-									hitSlop={8}
-									accessibilityRole="button"
-									accessibilityLabel="The season's story"
-									style={({ pressed }) => [
-										styles.headerBtn,
-										pressed && styles.headerBtnPressed,
-									]}
 								>
-									<Icon name="scroll" size={18} color={WHIMSY.ink} />
-								</Pressable>
-								<Pressable
+									<Icon name="scroll" size={CREST_ICON} color={WHIMSY.ink} />
+								</HeaderDoor>
+								<HeaderDoor
+									label="What you can earn"
 									onPress={() => setInfoTopic("spoils")}
-									hitSlop={8}
-									accessibilityRole="button"
-									accessibilityLabel="What you can earn"
-									style={({ pressed }) => [
-										styles.headerBtn,
-										pressed && styles.headerBtnPressed,
-									]}
 								>
-									<Icon name="gift" size={18} color={WHIMSY.ink} />
-								</Pressable>
-							</View>
-						)}
-					</View>
-					{/* Live entry point is the pass header's recap icon (only shows
-					    when a real grant exists). This __DEV__-only chip cycles the
-					    four founder tiers so the reveal is previewable without a
-					grant; it never renders in production. */}
-					{__DEV__ && (
-						<View style={styles.devChipRow}>
-							<Pressable
-								onPress={() => {
-									const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
-									setDevTierIdx((n) => n + 1);
-									setDevReward(r);
-								}}
-								hitSlop={8}
-								style={({ pressed }) => [styles.devRewardChip, pressed && { opacity: 0.6 }]}
-							>
-								<Text style={styles.devRewardChipText}>
-									dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
-								</Text>
-							</Pressable>
-							<Pressable
-								onPress={() => setDevSeasonSheetOpen(true)}
-								hitSlop={8}
-								style={({ pressed }) => [styles.devRewardChip, pressed && { opacity: 0.6 }]}
-							>
-								<Text style={styles.devRewardChipText}>dev · season states</Text>
-							</Pressable>
-						</View>
-					)}
-						{/* Season 0 only — S1's clock is the Hungerer's drain + the
-						    feeding cadence, not a doomsday date. */}
-						{!s1 && daysUntilJudgement() > 0 && (
-							<View style={styles.judgementBanner}>
-								<Icon name="scales" size={14} color={WHIMSY.ink} />
-								<Text style={styles.judgementText}>
-									Judgement Day in {daysUntilJudgement()}{" "}
-									{daysUntilJudgement() === 1 ? "day" : "days"}
-								</Text>
-							</View>
-						)}
-				</View>
+									<Icon name="gift" size={CREST_ICON} color={WHIMSY.ink} />
+								</HeaderDoor>
+							</>
+						) : undefined
+					}
+					below={
+						__DEV__ || (!s1 && daysUntilJudgement() > 0) ? (
+						<>
+							{/* Live entry point is the pass header's recap icon (only shows
+							    when a real grant exists). This __DEV__-only chip cycles the
+							    four founder tiers so the reveal is previewable without a
+							    grant; it never renders in production. */}
+							{__DEV__ && (
+								<View style={styles.devChipRow}>
+									<Pressable
+										onPress={() => {
+											const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
+											setDevTierIdx((n) => n + 1);
+											setDevReward(r);
+										}}
+										hitSlop={SPACE.sm}
+										accessibilityRole="button"
+										accessibilityLabel="Dev: preview the founder gift"
+										style={({ pressed }) => [styles.devRewardChip, pressed && PRESSED_FLAT]}
+									>
+										<T role="hand" tone="onDark" style={styles.devRewardChipText}>
+											dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
+										</T>
+									</Pressable>
+									<Pressable
+										onPress={() => setDevSeasonSheetOpen(true)}
+										hitSlop={SPACE.sm}
+										accessibilityRole="button"
+										accessibilityLabel="Dev: season states"
+										style={({ pressed }) => [styles.devRewardChip, pressed && PRESSED_FLAT]}
+									>
+										<T role="hand" tone="onDark" style={styles.devRewardChipText}>
+											dev · season states
+										</T>
+									</Pressable>
+								</View>
+							)}
+							{/* Season 0 only — S1's clock is the Hungerer's drain + the
+							    feeding cadence, not a doomsday date. */}
+							{!s1 && daysUntilJudgement() > 0 && (
+								<Tag
+									tone="lilac"
+									icon="scales"
+									label={`Judgement Day in ${daysUntilJudgement()} ${
+										daysUntilJudgement() === 1 ? "day" : "days"
+									}`}
+									style={styles.judgementBanner}
+								/>
+							)}
+						</>
+						) : undefined
+					}
+				/>
 
 				{/* The standalone XP progress card was dropped per the
 				    redesign — tier + total now reads from the
@@ -1505,6 +1587,7 @@ export default function SeasonScreen() {
 								open={heroOpen}
 								onOpenChange={setHeroOpen}
 								stageIndexOverride={devSeason.hungerStage}
+								hero={heroSurface === "hunger"}
 							/>
 
 							{/* The tickle breakdown receipt for yourself (spec 17) — opened
@@ -1522,25 +1605,30 @@ export default function SeasonScreen() {
 								visibleSounderStep === "done" ||
 								visibleSounderStep === "hook") &&
 								crewHook.crew.crew && (
-									<FeedingAction cta={feedingCta} prominent />
+									<FeedingAction cta={feedingCta} prominent hero={feedingIsHero} />
 								)}
+
+							{MOTE_MACHINE_VISIBLE && <MoteMachineCard balance={state.motes} />}
 
 							{/* The schedule explains the action after the action itself. */}
 							<WindowStrip cta={feedingCta} />
 
-							<View style={{ marginTop: 8 }}>
+							<View style={styles.sectionGap}>
 								<SectionHeader
-									style={{ marginBottom: 0 }}
+									style={styles.sectionHeaderTight}
 									kicker="your Sounder"
 									title={crewHook.crew.crew?.name ?? "Join a Sounder"}
 									right={
-										<Pressable
+										<Button
+											variant="link"
+											size="sm"
+											style={styles.headerLink}
 											onPress={() => setGuideOpen(true)}
-											hitSlop={8}
-											style={({ pressed }) => pressed && { opacity: 0.6 }}
+											accessibilityLabel="How the season works"
+											accessibilityHint="Opens the season guide"
 										>
-											<Text style={styles.guideLink}>how it works ›</Text>
-										</Pressable>
+											how it works ›
+										</Button>
 									}
 								/>
 							</View>
@@ -1561,6 +1649,7 @@ export default function SeasonScreen() {
 									cta={feedingCta}
 									refreshKey={digTick}
 									onAdvance={sounderPath.refresh}
+									hero={stepCardIsHero}
 								/>
 							) : (
 								<SounderHomeCard
@@ -1569,6 +1658,7 @@ export default function SeasonScreen() {
 									cta={feedingCta}
 									refreshKey={digTick}
 									showFeedingAction={false}
+									hero={sounderIsHero}
 								/>
 							)}
 							{/* One shared modal for the promoted action and first-dig step. */}
@@ -1637,49 +1727,50 @@ export default function SeasonScreen() {
 								return (
 									<>
 										{/* How XP is earned — reference sheet, one tap away. */}
-										<Pressable
+										<ChipDoor
+											label="How to earn XP"
+											hint="Opens the XP reference sheet"
 											onPress={() => setXpHelpOpen(true)}
-											hitSlop={8}
-											style={({ pressed }) => [styles.recapBtn, pressed && styles.chipPressed]}
-											accessibilityRole="button"
-											accessibilityLabel="How to earn XP"
 										>
-											<Glyph name="star" size={16} />
-										</Pressable>
-										{showVip && (
-											<>
-												{IAP_ENABLED && PURCHASES_LIVE ? (
-													<Pressable
-														onPress={handleUnlockPremium}
-														style={({ pressed }) => [styles.unlockBtn, pressed && styles.chipPressed]}
-														accessibilityRole="button"
-														accessibilityLabel="Join the Slop Club"
-													>
-														<Icon name="premium" size={12} color={WHIMSY.ink} filled />
-														<Text style={styles.unlockBtnText}>Slop Club</Text>
-													</Pressable>
-												) : (
-													<View
-														style={[styles.unlockBtn, styles.comingSoonBtn]}
-														accessibilityLabel="Slop Club coming soon"
-													>
-														<Text style={[styles.unlockBtnText, styles.comingSoonText]}>
-															Coming Soon
-														</Text>
-													</View>
-												)}
-											</>
-										)}
+											<Glyph name="star" size={CHIP_MARK} />
+										</ChipDoor>
+										{showVip &&
+											(IAP_ENABLED && PURCHASES_LIVE ? (
+												<Button
+													size="xs"
+													variant="gold"
+													onPress={handleUnlockPremium}
+													icon={
+														<Icon
+															name="premium"
+															size={CREST_MARK}
+															color={WHIMSY.goldInk}
+															filled
+														/>
+													}
+													accessibilityLabel="Join the Slop Club"
+													accessibilityHint="Opens the Slop Club subscription — it unlocks the premium track"
+												>
+													Slop Club
+												</Button>
+											) : (
+												// A button asleep, not a dissolved one. [C-07]
+												<Button
+													size="xs"
+													variant="locked"
+													disabled
+													accessibilityLabel="Slop Club coming soon"
+												>
+													Coming Soon
+												</Button>
+											))}
 										{showRecap && (
-											<Pressable
+											<ChipDoor
+												label="See your season-end rewards"
 												onPress={() => setRecapOpen(true)}
-												hitSlop={8}
-												style={({ pressed }) => [styles.recapBtn, pressed && styles.chipPressed]}
-												accessibilityRole="button"
-												accessibilityLabel="See your season-end rewards"
 											>
-												<Glyph name="crown" size={16} />
-											</Pressable>
+												<Glyph name="crown" size={CHIP_MARK} />
+											</ChipDoor>
 										)}
 									</>
 								);
@@ -1689,11 +1780,11 @@ export default function SeasonScreen() {
 
 					{/* Promise-before-ask: the XP chain in one line under the pass
 					    header (the full "how to earn XP" modal stays for detail). */}
-					<Text style={passProgressStyles.subtitle}>
+					<Hand tone="secondary" style={passProgressStyles.subtitle}>
 						{prestigeMode
-							? `Rank ${state.wallow_count ?? 0} · ${wallowWaitReductionLabel(state.wallow_regen_percent ?? 0)} · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · five rewards`
+							? `Rank ${state.wallow_count ?? 0} · ${wallowWaitReductionLabel(state.wallow_regen_percent ?? 0)} · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · ${state.wallow_tiers?.length ?? 0} rewards`
 							: "earn XP by burying, digging, tickling, and visiting"}
-					</Text>
+					</Hand>
 
 					{/* XP progress toward the next tier. The pass-track stones
 					    only show discrete claim state, so this restores the
@@ -1709,19 +1800,23 @@ export default function SeasonScreen() {
 							canWallow: state.can_wallow,
 							prestigeMode,
 						});
+						// `ProgressTrack` is the one meter — it carries the
+						// `progressbar` role and its `accessibilityValue`, which the
+						// hand-rolled bar never did. The hand-written label stays
+						// centred beneath it; `wallowProgress` only yields a fraction,
+						// so the meter is expressed out of 100.
 						return (
 							<View style={passProgressStyles.wrap}>
-								<View style={passProgressStyles.track}>
-									<View
-										style={[
-											passProgressStyles.fill,
-											{ width: `${Math.round(progress.fraction * 100)}%` },
-										]}
-									/>
-								</View>
-								<Text style={passProgressStyles.label}>
+								<ProgressTrack
+									value={Math.round(progress.fraction * XP_METER_MAX)}
+									max={XP_METER_MAX}
+									tone="lilac"
+									height="sm"
+									accessibilityLabel="Pass XP"
+								/>
+								<Hand tone="secondary" align="center" style={passProgressStyles.label}>
 									{progress.label}
-								</Text>
+								</Hand>
 							</View>
 						);
 					})()}
@@ -1747,15 +1842,30 @@ export default function SeasonScreen() {
 
 					{/* Vertical-list pass track — straight column of node +
 					    card rows with per-state visual treatment (sage
-					    claimed / sun-yellow ready / dashed locked) and
-					    display-only stats pills above. Replaces the
+					    claimed / heavy-outlined ready / dashed locked) and
+					    display-only stats tags above. Replaces the
 					    snake; matches the design's bottom-of-screen
 					    reference. */}
 					{hasPremiumTrack && !prestigeMode && (
-						<PassTrackTabs
-							track={passTrack}
+						// Both segments stay tappable — browsing a locked premium track
+						// is the point — so the lock is a mark on the segment, not a
+						// `disabled` state. [C-05]
+						<SegmentedControl
+							label="Pass track"
+							value={passTrack}
 							onChange={setPassTrack}
-							premiumUnlocked={premium}
+							style={passTabStyles.row}
+							options={[
+								{ value: "free", label: "Free", accessibilityLabel: "Free pass track" },
+								{
+									value: "premium",
+									label: "Premium",
+									icon: premium ? undefined : "lock",
+									accessibilityLabel: premium
+										? "Premium pass track"
+										: "Premium pass track, locked behind Slop Club",
+								},
+							]}
 						/>
 					)}
 					{hasPremiumTrack && !prestigeMode && passTrack === "premium" && !premium && (
@@ -1774,6 +1884,7 @@ export default function SeasonScreen() {
 									: undefined
 							}
 							busy={busy}
+							hero={claimIsHero}
 							onPress={handleClaimAll}
 						/>
 					)}
@@ -1795,17 +1906,17 @@ export default function SeasonScreen() {
 					    identity UI retires with Judgement Day). */}
 					{!s1 && (
 					<>
-					<View style={{ marginTop: 8 }}>
+					<View style={styles.sectionGap}>
 						<SectionHeader kicker="standing" title="Alignment" />
 					</View>
-					<Sticker color="cream" rotate={-0.6} radius={RADII.xl} style={alignmentStoryStyles.wrap}>
+					<Sticker color="cream" rotate={TILT.card} radius={RADII.xl} style={alignmentStoryStyles.wrap}>
 						<View style={alignmentStoryStyles.labelRow}>
-							<Text style={alignmentStoryStyles.greedy}>Greedy</Text>
-							<Text style={alignmentStoryStyles.score}>
+							<T role="kickerPill" style={alignmentStoryStyles.greedy}>Greedy</T>
+							<Numeral>
 								{alignmentScore >= 0 ? "+" : ""}
 								{alignmentScore}
-							</Text>
-							<Text style={alignmentStoryStyles.generous}>Generous</Text>
+							</Numeral>
+							<T role="kickerPill" style={alignmentStoryStyles.generous}>Generous</T>
 						</View>
 						<AlignmentBar score={alignmentScore} />
 						{(() => {
@@ -1813,36 +1924,31 @@ export default function SeasonScreen() {
 							const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 							return (
 								<View style={alignmentStoryStyles.effectsRow}>
-									<Text style={alignmentStoryStyles.effect}>
-										Regen {sgn(fx.regenPct)}%
-									</Text>
-									<Text style={alignmentStoryStyles.effect}>
-										Blessings {sgn(fx.blessingPct)}%
-									</Text>
-									<Text style={alignmentStoryStyles.effect}>
-										Curses {sgn(fx.cursePct)}%
-									</Text>
+									<Tag tone="paper" label={`Regen ${sgn(fx.regenPct)}%`} />
+									<Tag tone="paper" label={`Blessings ${sgn(fx.blessingPct)}%`} />
+									<Tag tone="paper" label={`Curses ${sgn(fx.cursePct)}%`} />
 								</View>
 							);
 						})()}
-						<Text style={alignmentStoryStyles.effectHint}>
+						<Hand tone="secondary" align="center" style={alignmentStoryStyles.effectHint}>
 							Give freely → your blessings grow stronger. Keep to
 							yourself → your curses bite harder.
-						</Text>
-						<Text style={alignmentStoryStyles.hint}>
+						</Hand>
+						<Hand tone="secondary" align="center" style={alignmentStoryStyles.hint}>
 							★ blessings push you up. asks for tickles pull you
 							down. ★
-						</Text>
-						<Pressable
+						</Hand>
+						<Button
 							testID="alignment-how-it-works"
+							variant="link"
+							size="sm"
+							style={alignmentStoryStyles.howLink}
 							onPress={() => setAlignmentExplainerOpen(true)}
-							hitSlop={8}
-							style={({ pressed }) => pressed && { opacity: 0.6 }}
+							accessibilityLabel="How alignment works"
+							accessibilityHint="Opens the alignment explainer"
 						>
-							<Text style={alignmentStoryStyles.howLink}>
-								how alignment works ›
-							</Text>
-						</Pressable>
+							how alignment works ›
+						</Button>
 					</Sticker>
 					</>
 					)}
@@ -1859,6 +1965,8 @@ export default function SeasonScreen() {
 			    sliding banner overlays the season list. */}
 			<TierUpBanner ref={tierBannerRef} />
 
+			{claimedMotes !== null && <MoteRewardDialog amount={claimedMotes} onClose={() => setClaimedMotes(null)} />}
+
 			<ClaimRewardDialog
 				reward={claimedReward}
 				onClose={() => setClaimedReward(null)}
@@ -1873,7 +1981,7 @@ export default function SeasonScreen() {
 
 			{/* A claim couldn't go through — an in-world paper notice, not a
 			    native Alert. */}
-			<ClaimNoticeDialog
+				<ClaimNoticeDialog
 				notice={claimNotice}
 				onClose={() => setClaimNotice(null)}
 			/>
@@ -1912,11 +2020,23 @@ export default function SeasonScreen() {
 			    yields to the intro storybook when both want the stage. */}
 			{s1 && (
 				<SeasonGuideModal
-					visible={guideOpen && !introOpen}
-					onDismiss={dismissGuide}
-					onLeave={crewHook.crew.crew ? handleLeave : undefined}
-				/>
-			)}
+						visible={guideOpen && !introOpen}
+						onDismiss={dismissGuide}
+						onLeave={crewHook.crew.crew ? handleLeave : undefined}
+					/>
+				)}
+
+				{isFocused && wallowGiftAccount === uid && claimAllSummary === null && habitatJournal.supported ? (
+					<HabitatGiftReveal
+						key={`wallow-gift:${uid}`}
+						accountId={uid}
+						catalog={HABITAT_CATALOG}
+						onPreview={(item) => {
+							router.push({ pathname: "/barn-interior", params: { purchasedItemId: item.id } });
+						}}
+						onDone={() => setWallowGiftAccount(null)}
+					/>
+				) : null}
 
 			{/* The "join a Sounder" coach-mark — dims the tab, cuts a bright hole
 			    around the join step card, and forces the tap. Only lit once (the
@@ -2012,50 +2132,64 @@ function ClaimRewardDialog({
 			/>
 		) : type === "tickles" ? (
 			<View style={rewardStyles.heroFallback}>
-				<TickleIcon size={64} />
+				<TickleIcon size={REWARD_MARK} />
 			</View>
 		) : type === "golden_truffle" && HAT_IMAGES.golden_truffle ? (
 			<Image source={HAT_IMAGES.golden_truffle} style={rewardStyles.heroImage} resizeMode="contain" />
 		) : type === "snouts" ? (
 			<View style={rewardStyles.heroFallback}>
-				<Glyph name="pigface" size={64} />
+				<Glyph name="pigface" size={REWARD_MARK} />
 			</View>
 		) : (
 			<View style={rewardStyles.heroFallback}>
-				<Icon name="star" size={56} filled color={UI_COLORS.warningText} />
+				<Icon name="star" size={REWARD_STAR} filled color={UI_COLORS.warningText} />
 			</View>
 		);
 
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible
-			transparent
-			animationType="fade"
 			onRequestClose={onClose}
+			animationType="fade"
+			bare
+			maxWidth={REWARD_CARD_MAX}
+			testID="claim-reward-dialog"
 		>
-			<View style={rewardStyles.backdrop}>
-				<Sticker color="paper" rotate={-1.2} radius={RADII.xxl} style={rewardStyles.card}>
-					<Text style={rewardStyles.kicker}>★ unlocked</Text>
-					<View style={rewardStyles.hero}>{preview}</View>
-					<Text style={rewardStyles.title}>{display_label}</Text>
-					<View style={rewardStyles.actions}>
-						{isWearable && (
-							<Button size="md" variant="primary" onPress={onShow}>
-								Show in closet
-							</Button>
-						)}
-						<Pressable
-							onPress={onClose}
-							style={({ pressed }) => [rewardStyles.dismissLink, pressed && { opacity: 0.6 }]}
+			<Sticker
+				color="paper"
+				rotate={TILT.dialog}
+				radius={RADII.xxl}
+				style={[rewardStyles.card, STICKER_SHADOW]}
+			>
+				<Kicker align="center" style={rewardStyles.kicker}>unlocked</Kicker>
+				<View style={rewardStyles.hero}>{preview}</View>
+				<PageTitle align="center" accessibilityRole="header" style={rewardStyles.title}>
+					{display_label}
+				</PageTitle>
+				<View style={rewardStyles.actions}>
+					{isWearable && (
+						<Button
+							size="md"
+							variant="primary"
+							onPress={onShow}
+							accessibilityLabel={`Show ${display_label} in your closet`}
+							accessibilityHint="Opens the closet so you can wear it"
 						>
-							<Text style={rewardStyles.dismissText}>
-								{isWearable ? "Not now" : "OK"}
-							</Text>
-						</Pressable>
-					</View>
-				</Sticker>
-			</View>
-		</Modal>
+							Show in closet
+						</Button>
+					)}
+					<Button
+						variant="link"
+						size="sm"
+						onPress={onClose}
+						accessibilityLabel={isWearable ? "Not now" : "OK"}
+						accessibilityHint="Closes this dialog"
+					>
+						{isWearable ? "Not now" : "OK"}
+					</Button>
+				</View>
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
@@ -2071,148 +2205,105 @@ function ClaimNoticeDialog({
 }) {
 	if (!notice) return null;
 	return (
-		<Modal visible transparent animationType="fade" onRequestClose={onClose}>
-			<Pressable style={rewardStyles.backdrop} onPress={onClose}>
-				<Pressable onPress={() => {}} style={{ width: "100%", maxWidth: 340 }}>
-					<Sticker color="paper" rotate={-0.8} radius={RADII.xxl} style={rewardStyles.noticeCard}>
-						<Text style={rewardStyles.noticeTitle}>{notice.title}</Text>
-						<Text style={rewardStyles.noticeBody}>{notice.body}</Text>
-						<Pressable
-							onPress={onClose}
-							style={({ pressed }) => [rewardStyles.dismissLink, pressed && { opacity: 0.6 }]}
-						>
-							<Text style={rewardStyles.dismissText}>OK</Text>
-						</Pressable>
-					</Sticker>
-				</Pressable>
-			</Pressable>
-		</Modal>
+		<AdaptiveModalScaffold
+			visible
+			onRequestClose={onClose}
+			animationType="fade"
+			bare
+			maxWidth={NOTICE_CARD_MAX}
+			testID="claim-notice-dialog"
+		>
+			<Sticker
+				color="paper"
+				rotate={TILT.dialog}
+				radius={RADII.xxl}
+				style={[rewardStyles.noticeCard, STICKER_SHADOW]}
+			>
+				<T role="sectionTitle" align="center" accessibilityRole="header">
+					{notice.title}
+				</T>
+				<Body tone="secondary" align="center" style={rewardStyles.noticeBody}>
+					{notice.body}
+				</Body>
+				<Button
+					variant="link"
+					size="sm"
+					onPress={onClose}
+					accessibilityLabel="OK"
+					accessibilityHint="Closes this notice"
+				>
+					OK
+				</Button>
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const rewardStyles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		backgroundColor: MODAL_BACKDROP_BG,
-		alignItems: "center",
-		justifyContent: "center",
-		padding: 24,
-	},
 	card: {
 		width: "100%",
-		maxWidth: 360,
-		paddingHorizontal: 24,
-		paddingVertical: 24,
+		padding: SPACE.xl,
 		alignItems: "center",
-		...STICKER_SHADOW,
 	},
 	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 8,
+		marginBottom: SPACE.sm,
 	},
 	hero: {
-		width: 160,
-		height: 160,
+		width: REWARD_WELL,
+		height: REWARD_WELL,
 		alignItems: "center",
 		justifyContent: "center",
-		marginVertical: 4,
+		marginVertical: SPACE.xs,
 	},
 	heroImage: {
-		width: 140,
-		height: 140,
+		width: REWARD_ART,
+		height: REWARD_ART,
 	},
 	heroFallback: {
-		width: 140,
-		height: 140,
+		width: REWARD_ART,
+		height: REWARD_ART,
 		alignItems: "center",
 		justifyContent: "center",
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.paper,
 	},
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 16,
+		marginBottom: SPACE.lg,
 	},
 	actions: {
 		alignItems: "center",
-		gap: 8,
+		gap: SPACE.sm,
 		width: "100%",
-	},
-	dismissLink: {
-		paddingVertical: 6,
-		paddingHorizontal: 12,
-	},
-	dismissText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
 	},
 	// The can't-claim notice card.
 	noticeCard: {
 		width: "100%",
-		paddingHorizontal: 24,
-		paddingVertical: 22,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
 		alignItems: "center",
-		...STICKER_SHADOW,
-	},
-	noticeTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 6,
 	},
 	noticeBody: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		lineHeight: 20,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginBottom: 14,
+		marginTop: SPACE.xs,
+		marginBottom: SPACE.card,
 	},
 });
 
 const passProgressStyles = StyleSheet.create({
 	// The XP-chain subtitle under the pass header (promise-before-ask).
 	subtitle: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		marginTop: 2,
+		marginTop: SPACE.xxs,
 		marginBottom: SPACE.xs,
-		paddingHorizontal: 4,
+		paddingHorizontal: SPACE.xs,
 	},
 	// Tight under the section header's rule — the header/bar/label read as one
 	// block, not three floating strips.
-	wrap: { marginTop: 0, marginBottom: 2, paddingHorizontal: 4 },
-	track: {
-		height: 12,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream2,
-		overflow: "hidden",
-	},
-	fill: {
-		height: "100%",
-		backgroundColor: WHIMSY.lilacDeep,
-	},
-	label: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 3,
-	},
+	wrap: { marginBottom: SPACE.xxs, paddingHorizontal: SPACE.xs },
+	label: { marginTop: SPACE.xxs },
 });
 
 const wallowStyles = StyleSheet.create({
 	card: {
-		padding: SPACE.md + 2,
+		padding: SPACE.card,
 		marginTop: SPACE.md,
 		marginBottom: SPACE.sm,
 		gap: SPACE.md,
@@ -2223,20 +2314,18 @@ const wallowStyles = StyleSheet.create({
 		gap: SPACE.md,
 	},
 	mark: {
-		width: 48,
-		height: 48,
+		width: WALLOW_MARK,
+		height: WALLOW_MARK,
 		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 		justifyContent: "center",
 		...SHADOW_SM,
 	},
 	copy: { flex: 1, minWidth: 0 },
-	kicker: { ...TYPE.kicker, color: WHIMSY.accent, letterSpacing: 1 },
-	title: { ...TYPE.sectionTitle, color: WHIMSY.ink, marginTop: 1 },
-	body: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs },
+	body: { marginTop: SPACE.xs },
 	rateCompare: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -2250,9 +2339,7 @@ const wallowStyles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 	},
 	rateStatNext: { backgroundColor: WHIMSY.sun },
-	rateKicker: { ...TYPE.kickerPill, color: WHIMSY.mute },
-	rateValue: { ...TYPE.numeral, color: WHIMSY.ink, marginTop: 2 },
-	rateSub: { ...TYPE.label, color: WHIMSY.accent, marginTop: 1 },
+	rateValue: { marginTop: SPACE.xxs },
 	powerRow: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -2260,139 +2347,50 @@ const wallowStyles = StyleSheet.create({
 		gap: SPACE.xs,
 	},
 	powerPip: {
-		width: 9,
-		height: 18,
+		width: WALLOW_PIP_W,
+		height: WALLOW_PIP_H,
 		borderRadius: RADII.pill,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.paper,
 	},
 	powerPipOn: { backgroundColor: WHIMSY.sun },
 	standing: {
-		...TYPE.label,
-		color: WHIMSY.mute,
 		marginLeft: SPACE.xs,
 	},
 });
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
-	// Guide-dialog link — lives in the "your sounder" header's right slot.
-	guideLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
+	// A `Button variant="link"` in a header's right slot keeps its full 44pt
+	// frame; this only stops its own padding from pushing the title row apart.
+	headerLink: { paddingHorizontal: 0, paddingVertical: 0 },
 	judgementBanner: {
-		marginTop: 10,
+		marginTop: SPACE.sm,
 		alignSelf: "center",
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 5,
-		backgroundColor: WHIMSY.lilac,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 14,
-		paddingVertical: 5,
-	},
-	judgementText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		letterSpacing: 0.3,
 	},
 	safeArea: { flex: 1 },
 	center: { alignItems: "center", justifyContent: "center" },
-	header: {
-		paddingHorizontal: PAGE_PAD,
-		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
-		paddingTop: Platform.OS === "ios" ? 8 : 20,
-		paddingBottom: 8,
-	},
-	headerRow: { flexDirection: "row", alignItems: "flex-start" },
+	// Section seams inside the scroll — the container gap carries the rest.
+	sectionGap: { marginTop: SPACE.sm },
+	sectionHeaderTight: { marginBottom: 0 },
 	// The reference-sheet doors — small paper sticker circles by the title.
-	headerBtns: { flexDirection: "row", gap: SPACE.sm, marginLeft: SPACE.sm },
+	// PageHeader's right slot lays them out and spaces them; this is only the
+	// circle each one draws.
 	headerBtn: {
-		width: 38,
-		height: 38,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
+		width: HEADER_BTN,
+		height: HEADER_BTN,
 		alignItems: "center",
 		justifyContent: "center",
-		...SHADOW_SM,
-	},
-	headerBtnPressed: {
-		transform: [{ translateX: 2 }, { translateY: 2 }],
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	// Shared pressed state for the small sticker-chip buttons in the pass header
-	// (xp star, Slop Club join, recap crown) — sink into the hard shadow.
-	chipPressed: {
-		transform: [{ translateX: 2 }, { translateY: 2 }],
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
-	},
-	title: {
-		fontSize: 30,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		lineHeight: 32,
-	},
-	titleRule: {
-		...TITLE_RULE,
-		width: 64,
-		marginTop: 4,
-	},
-	// Right-slot "Slop Club" join CTA for the season-pass SectionHeader — the
-	// Slop Club gold identity (crest icon + label), matching the members band.
-	unlockBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-		backgroundColor: WHIMSY.slopGold,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-		...SHADOW_SM,
-	},
-	unlockBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-	},
-	// IAP-off variant of the unlock CTA: muted, shadowless, non-interactive.
-	comingSoonBtn: {
-		backgroundColor: WHIMSY.cream2,
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	comingSoonText: {
-		color: WHIMSY.mute,
 	},
 	// Persistent season-end recap entry point — a small crown sticker in the
 	// season-pass header's right slot. Paper-craft: sun fill, ink border,
 	// hard offset shadow.
 	recapBtn: {
-		width: 34,
-		height: 34,
-		borderRadius: RADII.pill,
+		width: CHIP_BTN,
+		height: CHIP_BTN,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		...SHADOW_SM,
 	},
 	// __DEV__-only founder-gift preview chip (never ships).
 	devChipRow: {
@@ -2403,13 +2401,13 @@ const styles = StyleSheet.create({
 	},
 	devRewardChip: {
 		alignSelf: "center",
-		marginTop: 8,
-		backgroundColor: MODAL_BACKDROP_BG,
+		marginTop: SPACE.sm,
+		backgroundColor: UI_COLORS.textPrimary,
 		borderRadius: RADII.sm,
-		paddingHorizontal: 8,
-		paddingVertical: 4,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: SPACE.xs,
 	},
-	devRewardChipText: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.paper },
+	devRewardChipText: { textAlign: "center" },
 	tierList: {
 		paddingHorizontal: PAGE_PAD,
 		paddingTop: SPACE.lg,
@@ -2418,23 +2416,22 @@ const styles = StyleSheet.create({
 		// so a large container gap double-counted into dead space at every seam.
 		gap: SPACE.sm,
 	},
-	// The two live StoneThumb styles — the reward chip (`stone`) and the title
-	// reward's quote glyph.
+	// The StoneThumb well — the reward chip inside a pass-track node.
 	stone: {
-		width: 42,
-		height: 42,
+		width: STONE,
+		height: STONE,
 		borderRadius: RADII.md,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.cream,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	titleGlyph: {
-		...TYPE.sectionTitle,
-		fontSize: 24,
-		color: WHIMSY.ink,
-	},
+	// The ART recedes inside a locked node; the node's dashed outline is what
+	// actually carries the locked state. [C-07]
+	stoneLocked: { opacity: OPACITY.dim },
+	stoneArt: { width: STONE_ART, height: STONE_ART },
+	stoneImage: { width: STONE_IMAGE, height: STONE_IMAGE },
 });
 
 // "How to earn XP" — reference sheet in the season's modal chrome (backdrop +
@@ -2456,80 +2453,75 @@ function XPHowToModal({
 		{ g: "gem", label: "Dig the Truffle Patch", xp: "+20 / feeding" },
 		{ g: "sparkles", label: "Dig a friend's buried pot", xp: "+3 / day" },
 		{ g: "gift", label: "Bury snouts for visitors", xp: "+1 / 10 snouts" },
-		{ g: "sparkles", label: "Send a blessing", xp: "+5 / day" },
-		{ g: "ogre", label: "Send a curse", xp: "+2 / day" },
+		{ g: "bless", label: "Send a blessing", xp: "+5 / day" },
+		{ g: "curse", label: "Send a curse", xp: "+2 / day" },
 	];
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-			<View style={xpHowTo.backdrop}>
-				<Sticker
-					color="paper"
-					rotate={-0.8}
-					radius={RADII.xxl}
-					border={3}
-					style={[xpHowTo.card, STICKER_SHADOW]}
+		<AdaptiveModalScaffold
+			visible={visible}
+			onRequestClose={onDismiss}
+			animationType="fade"
+			bare
+			maxWidth={XP_CARD_MAX}
+			testID="xp-how-to"
+		>
+			<Sticker
+				color="paper"
+				rotate={TILT.dialog}
+				radius={RADII.xxl}
+				border={BORDER.heavy}
+				style={[xpHowTo.card, STICKER_SHADOW]}
+			>
+				<Kicker align="center" style={xpHowTo.kicker}>season pass ★</Kicker>
+				<T role="pageTitle" align="center" accessibilityRole="header" style={xpHowTo.headline}>
+					How to earn XP
+				</T>
+				{ROWS.map((r) => (
+					<View key={r.label} style={xpHowTo.row}>
+						<Glyph name={r.g} size={CREST_ICON} />
+						<BodySm style={xpHowTo.label}>{r.label}</BodySm>
+						<Numeral>{r.xp}</Numeral>
+					</View>
+				))}
+				<Hand tone="secondary" align="center" style={xpHowTo.foot}>
+					{xpPer} XP = 1 tier · your Wallow card shows the exact shorter tickle interval
+				</Hand>
+				<Button
+					size="md"
+					variant="primary"
+					full
+					onPress={onDismiss}
+					accessibilityLabel="Back to the season"
+					accessibilityHint="Closes this reference sheet"
 				>
-					<Text style={xpHowTo.kicker}>★ season pass ★</Text>
-					<Text style={xpHowTo.headline}>How to earn XP</Text>
-					{ROWS.map((r) => (
-						<View key={r.label} style={xpHowTo.row}>
-							<Glyph name={r.g} size={18} />
-							<Text style={xpHowTo.label}>{r.label}</Text>
-							<Text style={xpHowTo.xp}>{r.xp}</Text>
-						</View>
-					))}
-					<Text style={xpHowTo.foot}>
-						{xpPer} XP = 1 tier · your Wallow card shows the exact shorter tickle interval
-					</Text>
-					<Button size="md" variant="primary" full onPress={onDismiss}>
-						Back to the season
-					</Button>
-				</Sticker>
-			</View>
-		</Modal>
+					Back to the season
+				</Button>
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const xpHowTo = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
-	},
 	card: {
 		width: "100%",
-		maxWidth: 400,
 		paddingHorizontal: SPACE.lg,
 		paddingVertical: SPACE.lg,
 	},
-	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: SPACE.md,
-	},
+	kicker: { marginBottom: SPACE.xs },
+	headline: { marginBottom: SPACE.md },
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
-		paddingVertical: 6,
+		gap: SPACE.sm,
+		paddingVertical: SPACE.sm,
 		paddingHorizontal: SPACE.sm,
 		borderRadius: RADII.sm,
 		backgroundColor: WHIMSY.cream,
-		marginBottom: 5,
+		marginBottom: SPACE.xs,
 	},
-	label: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
-	xp: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	label: { flex: 1 },
 	foot: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 4,
+		marginTop: SPACE.xs,
 		marginBottom: SPACE.md,
 	},
 });
@@ -2537,68 +2529,25 @@ const xpHowTo = StyleSheet.create({
 // Alignment placard — moved off the Me tab onto the Season tab, where
 // the season's stakes live (S0: the finale verdict; S1: blessing/curse power).
 const alignmentStoryStyles = StyleSheet.create({
-	wrap: { padding: 16, marginTop: 4 },
+	wrap: { padding: SPACE.lg, marginTop: SPACE.xs },
 	labelRow: {
 		flexDirection: "row",
 		alignItems: "baseline",
 		justifyContent: "space-between",
-		marginBottom: 6,
+		marginBottom: SPACE.sm,
 	},
-	greedy: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: WHIMSY.goblin,
-	},
-	generous: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: WHIMSY.angel,
-	},
-	score: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-	hint: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 8,
-	},
+	// The two alignment tints are identity, not decoration — the one place the
+	// goblin / angel hues belong is on the alignment scale's own ends.
+	greedy: { color: WHIMSY.goblin },
+	generous: { color: WHIMSY.angel },
+	hint: { marginTop: SPACE.sm },
 	effectsRow: {
 		flexDirection: "row",
 		flexWrap: "wrap",
 		justifyContent: "center",
-		gap: 8,
-		marginTop: 8,
+		gap: SPACE.sm,
+		marginTop: SPACE.sm,
 	},
-	effect: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 8,
-		paddingVertical: 3,
-		overflow: "hidden",
-	},
-	effectHint: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 7,
-		lineHeight: 17,
-	},
-	howLink: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		letterSpacing: 0.3,
-		marginTop: 10,
-	},
+	effectHint: { marginTop: SPACE.sm },
+	howLink: { alignSelf: "center", marginTop: SPACE.sm },
 });

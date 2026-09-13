@@ -1,8 +1,10 @@
-// Image glyphs — hand-drawn replacements for decorative/pictographic emoji, in
+// Glyphs — hand-drawn replacements for decorative/pictographic emoji, in
 // the game's cozy sticker style. Use instead of literal emoji characters.
 // Functional symbols (arrows, close, check, bullet) live in ./Icon (SVG).
+// Barn and ritual marks use the shared vector art; other subjects use PNGs.
 import type { ReactNode } from "react";
 import { Image, View, type ImageStyle, type StyleProp, type ViewStyle } from "react-native";
+import { GameIcon } from "./GameIcon";
 
 const GLYPHS = {
 	star: require("../../assets/images/glyphs/star.png"),
@@ -23,6 +25,10 @@ const GLYPHS = {
 	gift: require("../../assets/images/glyphs/gift.png"),
 	party: require("../../assets/images/glyphs/party.png"),
 	gem: require("../../assets/images/glyphs/gem.png"),
+	// The Truffle Patch's own mark. It already stands for "dig finds" on the
+	// tickle receipt; naming it here makes it reachable through the one glyph
+	// registry instead of a fourth direct require. (2026-09-12)
+	truffle: require("../../assets/images/glyphs/receipt/truffle.png"),
 	search: require("../../assets/images/glyphs/search.png"),
 	eyes: require("../../assets/images/glyphs/eyes.png"),
 	tophat: require("../../assets/images/glyphs/tophat.png"),
@@ -40,7 +46,6 @@ const GLYPHS = {
 	soccer: require("../../assets/images/glyphs/soccer.png"),
 	coffee: require("../../assets/images/glyphs/coffee.png"),
 	scene: require("../../assets/images/glyphs/scene.png"),
-	barn: require("../../assets/images/glyphs/barn.png"),
 	snail: require("../../assets/images/glyphs/snail.png"),
 	statusdot: require("../../assets/images/glyphs/statusdot.png"),
 	handshake: require("../../assets/images/glyphs/handshake.png"),
@@ -57,10 +62,11 @@ const GLYPHS = {
 	ghost: require("../../assets/images/glyphs/ghost.png"),
 } as const;
 
-export type GlyphName = keyof typeof GLYPHS;
+type RasterGlyphName = keyof typeof GLYPHS;
+export type GlyphName = RasterGlyphName | "barn" | "bless" | "curse" | "pin";
 
 // The raw image source — for Animated.Image / cases that can't use <Glyph/>.
-export function glyphSource(name: GlyphName) {
+export function glyphSource(name: RasterGlyphName) {
 	return GLYPHS[name];
 }
 
@@ -73,6 +79,9 @@ export function Glyph({
 	size?: number;
 	style?: StyleProp<ImageStyle>;
 }) {
+	if (name === "barn" || name === "bless" || name === "curse" || name === "pin") {
+		return <GameIcon name={name === "barn" ? "visit" : name} size={size} style={style} />;
+	}
 	return <Image source={GLYPHS[name]} style={[{ width: size, height: size }, style]} resizeMode="contain" />;
 }
 

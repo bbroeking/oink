@@ -4,6 +4,7 @@
 
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 // Mock supabase client BEFORE importing the component so its top-level
 // import resolves to the stub. We only care that rpc is called with
@@ -32,10 +33,19 @@ function textOf(tree: TestRenderer.ReactTestInstance): string {
 // Helper: render under act() so the Animated.parallel that fires
 // on mount completes inside the act batch (otherwise we get spurious
 // act-warnings from late spring callbacks).
+// The reveal now mounts through AdaptiveModalScaffold, which reads the
+// safe-area insets — so the harness supplies a provider with fixed metrics.
+const METRICS = {
+	frame: { x: 0, y: 0, width: 320, height: 568 },
+	insets: { top: 20, left: 0, right: 0, bottom: 16 },
+};
+
 async function renderAct(node: React.ReactElement): Promise<TestRenderer.ReactTestRenderer> {
 	let r!: TestRenderer.ReactTestRenderer;
 	await act(async () => {
-		r = TestRenderer.create(node);
+		r = TestRenderer.create(
+			<SafeAreaProvider initialMetrics={METRICS}>{node}</SafeAreaProvider>
+		);
 	});
 	return r;
 }

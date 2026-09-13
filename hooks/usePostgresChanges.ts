@@ -54,7 +54,15 @@ export interface PostgresChangeSpec {
 
 // Minimal surface this module drives on the client. The real supabase
 // client satisfies it; tests inject a fake through subscribePostgresChanges.
-export type PgChangesClient = Pick<SupabaseClient, "channel" | "removeChannel">;
+export type PgChangesClient = Pick<SupabaseClient, "channel" | "removeChannel"> &
+	Partial<Pick<SupabaseClient, "getChannels">>;
+
+// Distinguishes a second live subscriber to the same subject (the Friends hub
+// and a UserSheet both watching one crew): `client.channel(key)` hands back the
+// EXISTING, already-joined instance, and `.on()` after join throws. A suffixed
+// key gives the second subscriber its own channel; teardown removes that one.
+// (2026-09-11 screen review)
+let subscriberSeq = 0;
 
 // ── Pure helpers (unit-tested without a React mount or a live client) ──
 
@@ -99,7 +107,14 @@ export function subscribePostgresChanges(
 	channelKey: string,
 	specs: PostgresChangeSpec[]
 ): () => void {
-	let ch = client.channel(channelKey);
+	const taken =
+		client.getChannels?.().some(
+			(existing) =>
+				existing.topic === channelKey ||
+				existing.topic === `realtime:${channelKey}`
+		) ?? false;
+	const key = taken ? `${channelKey}:${++subscriberSeq}` : channelKey;
+	let ch = client.channel(key);
 	for (const spec of specs) {
 		// The on() postgres_changes overload keys off an event string
 		// literal; our event is a runtime union, so the filter object is

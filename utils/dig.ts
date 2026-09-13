@@ -10,22 +10,31 @@
 
 import { rpc } from "./rpc";
 import { MILESTONE_THRESHOLDS } from "@/constants/dig";
+import { applyFeedingStateTimeZone } from "@/utils/feedingTimeZone";
 
 // A crewmate who has already dug this feeding (feeding_state / open_rooting).
 export interface CrewDug {
-	user_id: string;
-	display_name: string;
+  user_id: string;
+  display_name: string;
 }
 
 export interface FeedingState {
-	window_index: number;
-	window_ends_at: string;
-	dug: boolean;
-	crew_dug: CrewDug[];
+  window_index: number;
+  window_ends_at: string;
+  dug: boolean;
+  crew_dug: CrewDug[];
+  feeding_time_zone?: string;
+  pending_feeding_time_zone?: string | null;
+  pending_effective_at?: string | null;
+  feeding_time_zone_changed_at?: string | null;
 }
 
-export async function fetchFeedingState(): Promise<FeedingState | null> {
-	return await rpc<FeedingState>("feeding_state");
+export async function fetchFeedingState(
+  userId?: string | null,
+): Promise<FeedingState | null> {
+  const state = await rpc<FeedingState>("feeding_state");
+  if (state && userId) await applyFeedingStateTimeZone(userId, state);
+  return state;
 }
 
 // ── Herd milestones (lifetime herd finds → re-themed dig titles) ──────────────
@@ -34,54 +43,54 @@ export async function fetchFeedingState(): Promise<FeedingState | null> {
 // herd-milestones row and the SounderCard summary both read so the copy can
 // never drift between them. Titles mirror the migration's milestone table.
 export const MILESTONE_TITLES: Record<number, string> = {
-	150: "Root Rustler",
-	600: "Truffle Baron",
-	1800: "Hunger's Bane",
+  150: "Root Rustler",
+  600: "Truffle Baron",
+  1800: "Hunger's Bane",
 };
 
 export interface MilestoneProgress {
-	lifetimeFinds: number;
-	/** Highest milestone the herd has crossed (title + threshold), or null. */
-	earnedTitle: string | null;
-	earnedThreshold: number | null;
-	/** The next milestone still to reach; null once all are earned. */
-	nextTitle: string | null;
-	nextThreshold: number | null;
-	/** Within-band progress toward the next milestone, 0..1 (1 when all done). */
-	pct: number;
-	allDone: boolean;
+  lifetimeFinds: number;
+  /** Highest milestone the herd has crossed (title + threshold), or null. */
+  earnedTitle: string | null;
+  earnedThreshold: number | null;
+  /** The next milestone still to reach; null once all are earned. */
+  nextTitle: string | null;
+  nextThreshold: number | null;
+  /** Within-band progress toward the next milestone, 0..1 (1 when all done). */
+  pct: number;
+  allDone: boolean;
 }
 
 // Pure — exported for tests + every milestone surface. Thresholds come from
 // MILESTONE_THRESHOLDS (client mirror of the server table); `lifetimeFinds` is
 // the herd's cumulative credited finds (crew_state.lifetime_finds).
 export function milestoneProgress(lifetimeFinds: number): MilestoneProgress {
-	const finds = Math.max(0, Math.floor(lifetimeFinds || 0));
-	let earnedThreshold: number | null = null;
-	let nextThreshold: number | null = null;
-	for (const t of MILESTONE_THRESHOLDS) {
-		if (finds >= t) earnedThreshold = t;
-		else {
-			nextThreshold = t;
-			break;
-		}
-	}
-	const allDone = nextThreshold == null;
-	const floor = earnedThreshold ?? 0;
-	const span = allDone ? 0 : nextThreshold! - floor;
-	const pct = allDone
-		? 1
-		: span <= 0
-			? 0
-			: Math.max(0, Math.min(1, (finds - floor) / span));
-	return {
-		lifetimeFinds: finds,
-		earnedTitle:
-			earnedThreshold != null ? MILESTONE_TITLES[earnedThreshold] : null,
-		earnedThreshold,
-		nextTitle: nextThreshold != null ? MILESTONE_TITLES[nextThreshold] : null,
-		nextThreshold,
-		pct,
-		allDone,
-	};
+  const finds = Math.max(0, Math.floor(lifetimeFinds || 0));
+  let earnedThreshold: number | null = null;
+  let nextThreshold: number | null = null;
+  for (const t of MILESTONE_THRESHOLDS) {
+    if (finds >= t) earnedThreshold = t;
+    else {
+      nextThreshold = t;
+      break;
+    }
+  }
+  const allDone = nextThreshold == null;
+  const floor = earnedThreshold ?? 0;
+  const span = allDone ? 0 : nextThreshold! - floor;
+  const pct = allDone
+    ? 1
+    : span <= 0
+      ? 0
+      : Math.max(0, Math.min(1, (finds - floor) / span));
+  return {
+    lifetimeFinds: finds,
+    earnedTitle:
+      earnedThreshold != null ? MILESTONE_TITLES[earnedThreshold] : null,
+    earnedThreshold,
+    nextTitle: nextThreshold != null ? MILESTONE_TITLES[nextThreshold] : null,
+    nextThreshold,
+    pct,
+    allDone,
+  };
 }

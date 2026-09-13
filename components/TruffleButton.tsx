@@ -3,11 +3,19 @@
 // dig it back up (when one is buried, shown with a snout-count badge). Replaces
 // the old bottom-corner shovel + the easy-to-miss dirt mound at the pig's feet.
 import { useEffect, useRef } from "react";
-import { View, Text, Pressable, Animated, Easing, StyleSheet } from "react-native";
+import { View, Pressable, Animated, Easing, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Shovel } from "./ui/Shovel";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { WHIMSY, FONTS, SHADOW_SM, RADII } from "@/constants/theme";
+import { Label } from "./ui/Text";
+import {
+	WHIMSY,
+	SHADOW_SM,
+	RADII,
+	BORDER,
+	SPACE,
+	PRESSED,
+} from "@/constants/theme";
 import {
 	startDecorativeLoop,
 	useMotionPolicy,
@@ -19,7 +27,24 @@ interface Props {
 	onPress: () => void;
 	disabled?: boolean;
 	accessibilityLabel?: string;
+	accessibilityHint?: string;
 }
+
+// The two states this one control carries, spoken. A control that leads to a
+// snout stake says so on its own face, and its hint names what opening it
+// does — the C-03 quartet (role · label · hint · state). A caller that
+// overrides the label (the visiting flow digs instead of burying) supplies its
+// own hint, so the default one never contradicts a borrowed label.
+const SPOKEN = {
+	buried: {
+		label: "Manage your buried truffle",
+		hint: "Opens the buried-truffle sheet, where you can add snouts or dig it back up.",
+	},
+	empty: {
+		label: "Bury a truffle",
+		hint: "Opens the bury sheet, where you choose how many snouts to stake.",
+	},
+} as const;
 
 export function TruffleButton({
 	buried,
@@ -27,6 +52,7 @@ export function TruffleButton({
 	onPress,
 	disabled = false,
 	accessibilityLabel,
+	accessibilityHint,
 }: Props) {
 	const pulse = useRef(new Animated.Value(0)).current;
 	const wig = useRef(new Animated.Value(0)).current;
@@ -64,16 +90,27 @@ export function TruffleButton({
 	};
 
 	const rotate = wig.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-13deg", "0deg", "11deg"] });
+	const spoken = buried ? SPOKEN.buried : SPOKEN.empty;
 
 	return (
 		<Pressable
 			onPress={press}
 			disabled={disabled}
-			hitSlop={12}
-			style={styles.btn}
-			accessibilityLabel={
-				accessibilityLabel ??
-				(buried ? "Manage your buried truffle" : "Bury a truffle")
+			hitSlop={SPACE.md}
+			style={({ pressed }) => [styles.btn, pressed && !disabled && PRESSED]}
+			accessibilityRole="button"
+			accessibilityLabel={accessibilityLabel ?? spoken.label}
+			accessibilityHint={
+				accessibilityHint ?? (accessibilityLabel ? undefined : spoken.hint)
+			}
+			accessibilityValue={
+				buried
+					? {
+							text: `${remaining ?? 0} ${
+								(remaining ?? 0) === 1 ? "snout" : "snouts"
+							} left`,
+						}
+					: undefined
 			}
 			accessibilityState={{ disabled }}
 		>
@@ -94,8 +131,8 @@ export function TruffleButton({
 			</Animated.View>
 			{buried && (
 				<View style={styles.badge}>
-					<SnoutCoin size={11} />
-					<Text style={styles.badgeText}>{remaining ?? 0}</Text>
+					<SnoutCoin size={BADGE_COIN} />
+					<Label>{remaining ?? 0}</Label>
 				</View>
 			)}
 		</Pressable>
@@ -103,34 +140,46 @@ export function TruffleButton({
 }
 
 const INK = WHIMSY.ink;
+// Drawing geometry, not spacing: the shovel button's own square, the attract
+// halo that rings it, the coin riding its badge, and how far the badge hangs
+// off the corner. Named here so no style line carries a bare number.
 const SIZE = 46;
+const PULSE_SIZE = 54;
+const BADGE_COIN = 11;
+const BADGE_OVERHANG = -8;
 const styles = StyleSheet.create({
 	btn: {
 		width: SIZE,
 		height: SIZE,
 		borderRadius: RADII.lg,
 		backgroundColor: WHIMSY.cream,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: INK,
 		alignItems: "center",
 		justifyContent: "center",
 		...SHADOW_SM,
 	},
-	pulse: { position: "absolute", width: SIZE + 8, height: SIZE + 8, borderRadius: RADII.lg, borderWidth: 3, borderColor: WHIMSY.sun },
+	pulse: {
+		position: "absolute",
+		width: PULSE_SIZE,
+		height: PULSE_SIZE,
+		borderRadius: RADII.lg,
+		borderWidth: BORDER.heavy,
+		borderColor: WHIMSY.sun,
+	},
 	// Snout-count badge tucked on the bottom-right when a truffle is buried.
 	badge: {
 		position: "absolute",
-		right: -8,
-		bottom: -8,
+		right: BADGE_OVERHANG,
+		bottom: BADGE_OVERHANG,
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 2,
-		paddingHorizontal: 5,
+		gap: SPACE.xxs,
+		paddingHorizontal: SPACE.xs,
 		paddingVertical: 1,
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: INK,
 	},
-	badgeText: { fontFamily: FONTS.whimsy, fontSize: 11, color: INK },
 });

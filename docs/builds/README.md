@@ -29,6 +29,8 @@ pending gates, not-applicable gates with reasons, and accepted exceptions.
   inspection, and every pending/not-applicable/accepted-exception gate.
 - `## Release status` — artifact path, upload/processing state, RC go/no-go
   decision, store release state, production activation actions, and monitoring.
+- `## Release follow-ups` — IDs from `docs/release-followups.json` attached to
+  this build, or `none` with a reason.
 
 `Build record`, `Verification`, and `Release status` are required for new build
 files. The content sections may be omitted when empty.

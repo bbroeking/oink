@@ -1,19 +1,37 @@
 // A single weekly-bounty row for the season-tab bounty board. Shows
 // a sun-tinted icon well + name + progress bar + reward, and a
-// state-aware CTA: Claim (ready), Claimed (done), or … (in progress).
+// state-aware CTA: Claim (ready), a claimed check tag, or the live
+// progress fraction (in progress).
 //
-// Layout matches the redesign: row of [icon well 52×52, body grow,
-// Claim button], with the progress bar above the count·reward line.
+// Layout matches the redesign: row of [icon well, body grow, CTA], with
+// the progress bar above the reward line.
+//
+// Wave-4 conformance pass: the card mounts `Sticker` (it hand-rolled the
+// tilt, the 2px ink border and a third shadow tier that claimed parity with
+// the primitive it wasn't using — C-06, C-17, C-29); the bar is
+// `ProgressTrack`; the reward and the claimed tick are `Tag`s; both spend /
+// claim controls are `Button`s carrying their cost and consequence (C-03);
+// and the in-progress state shows its fraction instead of an ellipsis that
+// also meant "busy" (C-27).
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { Icon, type IconName } from "./ui/Icon";
-import { Glyph, type GlyphName } from "./ui/Glyph";
-import { ConfirmDialog } from "./ui/ConfirmDialog";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import {
+	Button,
+	ConfirmDialog,
+	Glyph,
+	Icon,
+	ProgressTrack,
+	SnoutCoin,
+	Sticker,
+	T,
+	Tag,
+	useUnmanagedModalHold,
+	type GlyphName,
+	type IconName,
+} from "./ui";
+import { BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
 
 export interface WeeklyBounty {
 	code: string;
@@ -34,6 +52,17 @@ export interface WeeklyBounty {
 // Cost in snouts to swap a bounty you don't want. Server enforces
 // this same value in reroll_bounty(); keep them in sync.
 const REROLL_COST = 25;
+
+// Drawing geometry, not spacing: the square well the bounty's mark sits in and
+// the mark inside it. Sized by eye against a two-line card title, so they are
+// named here rather than borrowed from SPACE. (2026-09-11)
+const WELL_SIZE = 52;
+const WELL_MARK = 26;
+// The coin riding a small pill label — cap-height match for the xs button.
+const COIN_SIZE = 11;
+// The CTA column's floor, so the card's right edge stays put as the control
+// swaps between "Claim", the claimed tick and the progress fraction.
+const CTA_MIN_WIDTH = 64;
 
 interface Props {
 	bounty: WeeklyBounty;
@@ -70,12 +99,22 @@ function bountyVisual(code: string): BountyVisual {
 	return { kind: "icon", name: "target" };
 }
 
+function BountyMark({ code }: { code: string }) {
+	const v = bountyVisual(code);
+	if (v.kind === "icon")
+		return (
+			<Icon name={v.name} size={WELL_MARK} color={WHIMSY.ink} filled />
+		);
+	if (v.kind === "glyph") return <Glyph name={v.name} size={WELL_MARK} />;
+	return <T role="sectionTitle">{v.text}</T>;
+}
+
 export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 	const [busy, setBusy] = useState(false);
 	const [feedback, setFeedback] = useState<string | null>(null);
 
 	const ready = bounty.progress >= bounty.goal && !bounty.claimed;
-	const pct = Math.min(100, Math.round((bounty.progress / bounty.goal) * 100));
+	const shown = Math.min(bounty.progress, bounty.goal);
 
 	// Reroll affordances: only shown for in-progress bounties that
 	// haven't been rerolled yet this week. Ready / claimed / already-
@@ -127,66 +166,66 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 	};
 
 	return (
-		<View
-			style={[
-				styles.card,
-				{ transform: [{ rotate: `${tilt}deg` }] },
-				bounty.claimed && styles.cardClaimed,
-			]}
+		<Sticker
+			// A finished bounty rests on the muted fill rather than behind an
+			// opacity crush — a done card is quieter, not dissolved. [C-07]
+			color={bounty.claimed ? "cream2" : "paper"}
+			rotate={tilt}
+			radius={RADII.lg}
+			border={BORDER.ink}
+			pad
+			style={styles.card}
 		>
 			<View style={styles.row}>
 				{/* Sun-tinted icon well — visual anchor at the left edge */}
-				<View style={styles.iconWell}>
-					{(() => {
-						const v = bountyVisual(bounty.code);
-						return v.kind === "icon" ? (
-							<Icon name={v.name} size={26} color={WHIMSY.ink} filled />
-						) : v.kind === "glyph" ? (
-							<Glyph name={v.name} size={26} />
-						) : (
-							<Text style={styles.iconGlyph}>{v.text}</Text>
-						);
-					})()}
-				</View>
+				<Sticker
+					color="sun"
+					rotate={0}
+					radius={RADII.md}
+					shadow="sm"
+					style={styles.iconWell}
+				>
+					<BountyMark code={bounty.code} />
+				</Sticker>
 
 				<View style={styles.body}>
-					<Text style={styles.name} numberOfLines={2}>
+					<T role="cardTitle" numberOfLines={2}>
 						{bounty.name}
-					</Text>
+					</T>
 
 					{/* Server-side description — WHAT to do ("Fulfill 3
 					    trade requests this week."). Was previously
 					    in the data but never rendered, so players
 					    only saw the cryptic title. */}
 					{!!bounty.description && (
-						<Text style={styles.description} numberOfLines={2}>
+						<T
+							role="kicker"
+							tone="secondary"
+							numberOfLines={2}
+							style={styles.description}
+						>
 							{bounty.description}
-						</Text>
+						</T>
 					)}
 
 					{/* Progress bar — ink-bordered pill, sage when claimable */}
-					<View style={styles.track}>
-						<View
-							style={[
-								styles.fill,
-								ready ? styles.fillReady : null,
-								{ width: `${pct}%` },
-							]}
-						/>
-					</View>
+					<ProgressTrack
+						value={bounty.progress}
+						max={bounty.goal}
+						tone={ready ? "sage" : "lilac"}
+						height="sm"
+						accessibilityLabel={`Progress on ${bounty.name}`}
+						style={styles.track}
+					/>
 
-					{/* Meta line — N/G · | · 🪙 +R snouts */}
+					{/* Meta line — the reward this bounty pays. The count lives on
+					    the CTA now, so it is stated once. [C-27] */}
 					<View style={styles.metaRow}>
-						<Text style={styles.count}>
-							{Math.min(bounty.progress, bounty.goal)}/{bounty.goal}
-						</Text>
-						<View style={styles.dot} />
-						<View style={styles.rewardChip}>
-							<SnoutCoin size={13} />
-							<Text style={styles.rewardText}>
-								+{bounty.reward_snouts} snouts
-							</Text>
-						</View>
+						<Tag
+							label={`+${bounty.reward_snouts} snouts`}
+							coin
+							accessibilityLabel={`Pays ${bounty.reward_snouts} snouts`}
+						/>
 					</View>
 
 					{/* Reroll pill — only on in-progress, not-yet-rerolled
@@ -197,119 +236,98 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 					    heavy-handed against the card's small frame. */}
 					{canReroll && (
 						<View style={styles.rerollRow}>
-							<Pressable
+							<Button
+								variant="ghost"
+								size="xs"
 								onPress={() => setConfirmOpen(true)}
-								disabled={busy}
-								style={({ pressed }) => [
-									styles.rerollBtn,
-									(pressed || busy) && { opacity: 0.7 },
-								]}
+								loading={busy}
+								accessibilityLabel={`Swap this bounty · ${REROLL_COST} snouts`}
+								accessibilityHint={`Replaces "${bounty.name}" with a random bounty. One swap per slot per week.`}
+								testID={`bounty-reroll-${bounty.code}`}
 							>
-								<Text style={styles.rerollBtnText}>
-									{busy ? "…" : `Swap · ${REROLL_COST}`}
-								</Text>
-								<SnoutCoin size={11} />
-							</Pressable>
+								<>
+									{`Swap · ${REROLL_COST}`}
+									<SnoutCoin size={COIN_SIZE} />
+								</>
+							</Button>
 						</View>
 					)}
 					{bounty.rerolled && !bounty.claimed && !ready && (
-						<Text style={styles.rerolledTag}>
+						<T role="kicker" tone="secondary" align="right" style={styles.rerolledTag}>
 							★ swapped this week
-						</Text>
+						</T>
 					)}
 				</View>
 
 				{/* State-aware CTA at the right */}
 				{bounty.claimed ? (
-					<View style={[styles.cta, styles.ctaClaimed]}>
-						<Icon name="check" size={18} color={WHIMSY.ink} strokeWidth={2.5} />
-					</View>
+					<Tag
+						icon="check"
+						label=""
+						tone="sage"
+						accessibilityLabel="Claimed"
+						style={styles.cta}
+					/>
 				) : ready ? (
-					<Pressable
+					<Button
+						variant="gold"
+						size="sm"
 						testID={`bounty-claim-${bounty.code}`}
 						onPress={claim}
-						disabled={busy}
-						style={({ pressed }) => [
-							styles.cta,
-							styles.ctaReady,
-							(pressed || busy) && { opacity: 0.7 },
-						]}
+						loading={busy}
+						accessibilityLabel={`Claim ${bounty.reward_snouts} snouts`}
+						accessibilityHint={`Collects the reward for "${bounty.name}"`}
+						style={styles.cta}
 					>
-						<Text style={styles.ctaReadyText}>
-							{busy ? "…" : "Claim"}
-						</Text>
-					</Pressable>
+						Claim
+					</Button>
 				) : (
-					<View style={[styles.cta, styles.ctaProgress]}>
-						<Text style={styles.ctaProgressText}>…</Text>
-					</View>
+					<Tag
+						label={`${shown}/${bounty.goal}`}
+						accessibilityLabel={`${shown} of ${bounty.goal} done`}
+						style={styles.cta}
+					/>
 				)}
 			</View>
 
-			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+			{!!feedback && (
+				<T role="kicker" tone="danger" align="center" style={styles.feedback}>
+					{feedback}
+				</T>
+			)}
 			<ConfirmDialog
 				open={confirmOpen}
 				title="Swap this bounty?"
 				body={`Replace "${bounty.name}" with a random one. Costs ${REROLL_COST} snouts; one swap per slot per week.`}
 				confirmLabel={`Swap · ${REROLL_COST}`}
 				confirmCoin
+				confirmHint={`Spends ${REROLL_COST} snouts and replaces this bounty with a random one`}
+				cancelHint="Keeps this bounty"
 				onConfirm={doReroll}
 				onCancel={() => setConfirmOpen(false)}
 				busy={busy}
 			/>
-		</View>
+		</Sticker>
 	);
 }
 
 const styles = StyleSheet.create({
 	card: {
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		padding: 14,
-		marginVertical: 6,
-		// Hard sticker drop shadow — matches Sticker primitive
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 3, height: 3 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 3,
+		marginVertical: SPACE.xs,
 	},
-	cardClaimed: { opacity: 0.78 },
-	row: { flexDirection: "row", alignItems: "center", gap: 12 },
+	row: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
 	iconWell: {
-		width: 52,
-		height: 52,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
+		width: WELL_SIZE,
+		height: WELL_SIZE,
 		alignItems: "center",
 		justifyContent: "center",
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 1.5, height: 1.5 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
 	},
-	iconGlyph: { fontSize: 22 },
 	body: { flex: 1, minWidth: 0 },
-	name: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		lineHeight: 19,
-		color: WHIMSY.ink,
-	},
 	// Server-side description (what to do) — sits directly under
 	// the title in muted hand-script, so the title still leads but
 	// the player immediately sees the requirement.
 	description: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		lineHeight: 15,
-		color: WHIMSY.mute,
-		marginTop: 2,
+		marginTop: SPACE.xxs,
 	},
 	// Reroll pill — right-aligned, small + muted so it doesn't
 	// compete with the description text above. Carries its own
@@ -317,100 +335,26 @@ const styles = StyleSheet.create({
 	rerollRow: {
 		flexDirection: "row",
 		justifyContent: "flex-end",
-		marginTop: 6,
-	},
-	rerollBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-		paddingHorizontal: 9,
-		paddingVertical: 4,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.muteSoft,
-		backgroundColor: "transparent",
-	},
-	rerollBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
+		marginTop: SPACE.xs,
 	},
 	// After-the-reroll receipt — replaces the pill once used.
 	rerolledTag: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		textAlign: "right",
-		marginTop: 6,
-		opacity: 0.8,
+		marginTop: SPACE.xs,
 	},
 	track: {
-		height: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 999,
-		backgroundColor: WHIMSY.paper,
-		overflow: "hidden",
-		marginTop: 6,
-	},
-	fill: {
-		height: "100%",
-		backgroundColor: WHIMSY.lilacDeep,
-	},
-	fillReady: {
-		backgroundColor: WHIMSY.sage,
+		marginTop: SPACE.xs,
 	},
 	metaRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 6,
-		marginTop: 6,
+		gap: SPACE.xs,
+		marginTop: SPACE.sm,
+		alignSelf: "flex-start",
 	},
-	count: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.mute,
-	},
-	dot: {
-		width: 1,
-		height: 10,
-		backgroundColor: WHIMSY.muteSoft,
-	},
-	rewardChip: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-	},
-	rewardText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.ink },
 	cta: {
-		minWidth: 56,
-		borderRadius: 999,
-		paddingVertical: 8,
-		paddingHorizontal: 12,
-		alignItems: "center",
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		minWidth: CTA_MIN_WIDTH,
 	},
-	ctaReady: { backgroundColor: WHIMSY.sun },
-	ctaReadyText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
-	ctaClaimed: { backgroundColor: WHIMSY.sage, shadowOpacity: 0, elevation: 0 },
-	ctaProgress: {
-		backgroundColor: "transparent",
-		borderColor: WHIMSY.muteSoft,
-		shadowOpacity: 0,
-		elevation: 0,
-	},
-	ctaProgressText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
 	feedback: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: 6,
+		marginTop: SPACE.xs,
 	},
 });

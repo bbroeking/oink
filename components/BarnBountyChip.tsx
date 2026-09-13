@@ -9,17 +9,22 @@
 // _layout's local state with no shared context, and Barn is a sibling tab screen
 // that can't read it — so rather than lift/rewire the badge (risking it) or add a
 // second polling LOOP, this does a single one-shot read on focus (useFocusEffect,
-// like useBuriedTruffle / BarnSounderChip's crew read). Cheap PK-count RPC; the
+// like useBuriedTruffle / useDigEntry's crew read). Cheap PK-count RPC; the
 // tab badge's 30s loop stays the only ambient poller.
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View, StyleSheet } from "react-native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
-import { WHIMSY, FONTS, SPACE, PAGE_PAD, RADII, TYPE } from "@/constants/theme";
-import { Sticker } from "./ui/Sticker";
-import { Glyph } from "./ui/Glyph";
+import { AVATAR_SIZE, SPACE, PAGE_PAD, TILT } from "@/constants/theme";
+import { BodySm, Glyph, Kicker, Sticker } from "./ui";
+
+// The trophy's slot — the portrait-mark frame (`AVATAR_SIZE`'s smallest step),
+// so the two copy lines start on the same vertical rule as every other
+// mark-plus-copy row in the Barn band.
+const MARK_SLOT = AVATAR_SIZE[0];
+const MARK_SIZE = 22;
 
 export function BarnBountyChip() {
 	// -1 = not-yet-loaded (never flash a stale chip); 0 = nothing ready (hidden).
@@ -46,25 +51,30 @@ export function BarnBountyChip() {
 
 	return (
 		<View style={styles.slot}>
-			<Pressable
+			{/* The Sticker owns the press: the shadow-collapse shove, the
+			    accessibility forwarding, and the 2px ink outline — so the chip
+			    can't grow its own pressed opacity. */}
+			<Sticker
+				color="sun"
+				rotate={TILT.dialog}
+				shadow="sm"
 				onPress={() => {
 					Haptics.selectionAsync().catch(() => {});
 					router.push("/(tabs)/season");
 				}}
-				style={({ pressed }) => [pressed && { opacity: 0.92 }]}
 				accessibilityRole="button"
 				accessibilityLabel="Claim your weekly bounty"
+				accessibilityHint="Opens the weekly bounty board on the Season tab"
+				style={styles.chip}
 			>
-				<Sticker color="sun" rotate={-0.8} radius={RADII.lg} style={styles.chip}>
-					<View style={styles.iconWrap}>
-						<Glyph name="trophy" size={22} />
-					</View>
-					<View style={styles.text}>
-						<Text style={styles.kicker}>WEEKLY BOARD</Text>
-						<Text style={styles.line}>{line}</Text>
-					</View>
-				</Sticker>
-			</Pressable>
+				<View style={styles.iconWrap}>
+					<Glyph name="trophy" size={MARK_SIZE} />
+				</View>
+				<View style={styles.text}>
+					<Kicker star={false}>WEEKLY BOARD</Kicker>
+					<BodySm>{line}</BodySm>
+				</View>
+			</Sticker>
 		</View>
 	);
 }
@@ -81,26 +91,15 @@ const styles = StyleSheet.create({
 	chip: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
+		gap: SPACE.md,
 		paddingVertical: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 	},
 	iconWrap: {
-		width: 30,
-		height: 30,
+		width: MARK_SLOT,
+		height: MARK_SLOT,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	text: { flex: 1, minWidth: 0 },
-	kicker: {
-		...TYPE.kicker,
-		color: WHIMSY.accent,
-		marginBottom: 1,
-	},
-	line: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		lineHeight: 17,
-	},
 });

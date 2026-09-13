@@ -14,6 +14,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { UI_COLORS } from "@/constants/theme";
 import {
 	PENDING_REFERRAL_CODE_KEY,
 	REFERRAL_CODE_PATTERN,
@@ -38,7 +39,8 @@ export default function InviteRoute() {
 			});
 	}, [code]);
 
-	// Nothing to render — this is a pass-through. Blank view avoids a
-	// flash of unstyled content before the replace-nav completes.
-	return <View style={{ flex: 1, backgroundColor: "#fffaf0" }} />;
+	// Nothing to render — this is a pass-through. A canvas-colored view avoids
+	// a flash of unstyled content before the replace-nav completes; it was the
+	// literal value of WHIMSY.paper written by hand. [E28]
+	return <View style={{ flex: 1, backgroundColor: UI_COLORS.canvas }} />;
 }

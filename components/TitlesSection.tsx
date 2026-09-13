@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { router } from "expo-router";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { Sticker } from "./ui/Sticker";
-import { FONTS, KICKER_PILL, RADII, SPACE, WHIMSY } from "@/constants/theme";
+import {
+	Button,
+	Chip,
+	EmptyState,
+	SectionHeader,
+} from "./ui";
+import { showAppToast } from "./PurchaseToast";
+import { SPACE } from "@/constants/theme";
 import type { TitleRow } from "@/constants/title_types";
 
 interface RawRow {
@@ -19,6 +26,9 @@ interface Props {
 	// rows this section already loads, instead of re-querying user_titles.
 	onTitlesLoaded?: (titles: TitleRow[]) => void;
 }
+
+const placementLine = (placement: TitleRow["placement"]) =>
+	placement === "pre" ? "before name" : "after name";
 
 export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded }: Props) {
 	const [titles, setTitles] = useState<TitleRow[]>([]);
@@ -64,68 +74,81 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 		const ok = data?.ok === true;
 		if (!ok) {
 			onChange(previous); // revert on failure
-			Alert.alert(
-				"Couldn't equip title",
-				data?.reason === "not_owned"
-					? "You don't own that title yet."
-					: "Try again in a moment."
-			);
+			showAppToast({
+				type: "fail",
+				title: "Couldn't equip title",
+				text:
+					data?.reason === "not_owned"
+						? "You don't own that title yet."
+						: "Try again in a moment.",
+			});
 		}
 	};
 
 	if (titles.length === 0) {
 		return (
 			<View style={styles.wrap}>
-				<Text style={styles.kicker}>★ titles</Text>
-				<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.empty}>
-					<Text style={styles.emptyText}>
-						Earn titles by climbing the snout season pass.
-					</Text>
-				</Sticker>
+				<SectionHeader title="Titles" />
+				<EmptyState
+					glyph="star"
+					title="No titles yet"
+					sub="Climb the snout season pass to earn your first."
+					action={
+						<Button
+							variant="handLink"
+							size="sm"
+							onPress={() => router.push("/(tabs)/season")}
+							accessibilityLabel="Open the snout season pass"
+							accessibilityHint="Leaves the Closet for the Season tab"
+						>
+							See the season pass ›
+						</Button>
+					}
+				/>
 			</View>
 		);
 	}
 
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.kicker}>★ titles · {titles.length}</Text>
-			<View style={styles.chipsWrap}>
+			<SectionHeader title="Titles" right={`${titles.length} owned`} />
+			<View
+				style={styles.chipsWrap}
+				accessibilityRole="radiogroup"
+				accessibilityLabel="Your titles"
+			>
 				{titles.map((t) => {
 					const active = t.id === activeTitleId;
 					return (
-						<Pressable
+						<Chip
 							key={t.id}
+							label={t.name}
+							sub={placementLine(t.placement)}
+							tone={active ? "lilac" : "paper"}
+							selected={active}
+							role="radio"
 							onPress={() => setActive(active ? null : t.id)}
-							disabled={busy}
-							style={({ pressed }) => [
-								styles.chip,
-								active && styles.chipActive,
-								pressed && { opacity: 0.7 },
-							]}
-						>
-							<Text style={[styles.chipText, active && styles.chipTextActive]}>
-								{t.name}
-							</Text>
-							<Text
-								style={[
-									styles.chipPlacement,
-									active && styles.chipPlacementActive,
-								]}
-							>
-								{t.placement === "pre" ? "before name" : "after name"}
-							</Text>
-						</Pressable>
+							accessibilityLabel={`${t.name}, shown ${placementLine(t.placement)}`}
+							accessibilityHint={
+								active
+									? "Takes this title off your name"
+									: "Wears this title beside your name"
+							}
+						/>
 					);
 				})}
 			</View>
 			{activeTitleId && (
-				<Pressable
+				<Button
+					variant="handLink"
+					size="sm"
 					onPress={() => setActive(null)}
-					style={({ pressed }) => [styles.unequipLink, pressed && { opacity: 0.7 }]}
-					hitSlop={14}
+					style={styles.unequip}
+					accessibilityLabel="Unequip title"
+					accessibilityHint="Removes the title shown beside your name"
 				>
-					<Text style={styles.unequipText}>Unequip title</Text>
-				</Pressable>
+					Unequip title
+				</Button>
 			)}
 		</View>
 	);
@@ -133,60 +156,10 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 
 const styles = StyleSheet.create({
 	wrap: { marginTop: SPACE.lg },
-	kicker: { ...KICKER_PILL, marginBottom: SPACE.sm },
-	empty: {
-		paddingHorizontal: 14,
-		paddingVertical: 14,
-	},
-	emptyText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-	},
 	chipsWrap: {
 		flexDirection: "row",
 		flexWrap: "wrap",
 		gap: SPACE.sm,
 	},
-	chip: {
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
-		borderRadius: RADII.lg,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-	},
-	chipActive: {
-		backgroundColor: WHIMSY.lilac,
-	},
-	chipText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.ink,
-		lineHeight: 16,
-	},
-	chipTextActive: {
-		color: WHIMSY.ink,
-	},
-	chipPlacement: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
-	chipPlacementActive: {
-		color: WHIMSY.ink,
-	},
-	unequipLink: {
-		alignSelf: "center",
-		marginTop: SPACE.sm,
-	},
-	unequipText: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
+	unequip: { alignSelf: "center", marginTop: SPACE.sm },
 });

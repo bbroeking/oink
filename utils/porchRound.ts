@@ -1,3 +1,6 @@
+// A Porch Round page is three different pigs' Barn visits — the one number
+// the launch card, the page screen and the ledger all agree on. (2026-09-11)
+export const PORCH_PAGE_SIZE = 3;
 import { rpc, rpcAction } from "./rpc";
 
 export interface PorchStop {
@@ -67,7 +70,7 @@ export function groupPorchPages(stops: PorchStop[]): PorchPage[] {
 		.map(([pageNumber, pageStops]) => ({
 			pageNumber,
 			stops: pageStops.sort((a, b) => a.stopNumber - b.stopNumber),
-			complete: pageStops.length === 3,
+			complete: pageStops.length === PORCH_PAGE_SIZE,
 		}));
 }
 

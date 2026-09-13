@@ -118,7 +118,7 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	swim_goggles: { pivot: { x: 0.4814, y: 0.5046 }, widthFrac: 0.69, anchor: "eyes", behind: false },
 	three_d_glasses: { pivot: { x: 0.475, y: 0.4709 }, widthFrac: 0.73, anchor: "eyes", behind: false },
 	ticket_takers_cap: { pivot: { x: 0.5146, y: 0.7477 }, widthFrac: 0.4, anchor: "head", behind: false },
-	tiny_umbrella: { pivot: { x: 0.5036, y: 0.8768 }, widthFrac: 0.445, anchor: "hand_r", behind: false },
+	tiny_umbrella: { pivot: { x: 0, y: 0.7 }, widthFrac: 0.33, anchor: "hand_r", behind: false },
 	tophat: { pivot: { x: 0.5, y: 0.7593 }, widthFrac: 0.46, anchor: "head", behind: false },
 	toy_sword: { pivot: { x: 0.45, y: 0.9732 }, widthFrac: 0.8, anchor: "hand_r", behind: false },
 	truffle_medal_held: { pivot: { x: 0.5, y: 0.45 }, widthFrac: 0.4, anchor: "neck", behind: false },
@@ -132,7 +132,7 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	wallow_golden_trowel: { pivot: { x: 0.4229, y: 0.6153 }, widthFrac: 0.42, anchor: "hand_r", behind: false },
 	wallow_marsh_crown: { pivot: { x: 0.5114, y: 0.7026 }, widthFrac: 0.56, anchor: "head", behind: false },
 	wallow_rookie_cap: { pivot: { x: 0.5682, y: 0.6706 }, widthFrac: 0.44, anchor: "head", behind: false },
-	watering_can_hat: { pivot: { x: 0.5007, y: 0.6034 }, widthFrac: 0.42, anchor: "hand_r", behind: false },
+	watering_can_hat: { pivot: { x: 0.5, y: 0.86 }, widthFrac: 0.42, anchor: "head", behind: false },
 	winter_scarf: { pivot: { x: 0.5, y: 0 }, widthFrac: 0.4, anchor: "neck", behind: false },
 	wizard: { pivot: { x: 0.5259, y: 0.8803 }, widthFrac: 0.485, anchor: "head", behind: false },
 };

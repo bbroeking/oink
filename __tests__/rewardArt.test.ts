@@ -59,6 +59,10 @@ describe("WEARABLE_REWARD_TYPES", () => {
 });
 
 describe("resolveRewardArt", () => {
+	it("uses the real Mote sprite on both the pass and next-reward preview", () => {
+		expect(resolveRewardArt({ reward_type: "motes", reward_value: { amount: 1 } }))
+			.toEqual({ kind: "image", source: require("@/assets/images/mote-machine/mote.png") });
+	});
 	it("maps currency types to their own kinds", () => {
 		expect(resolveRewardArt({ reward_type: "tickles", reward_value: { amount: 50 } }))
 			.toEqual({ kind: "tickles" });

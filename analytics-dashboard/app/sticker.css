@@ -1,0 +1,427 @@
+/* GENERATED from constants/theme.ts by scripts/build-web-tokens.mjs — do not edit */
+/* The primitive layer (design-system-spec §3 rule 7 / findings-G-web §7.3).
+   One rule per app primitive; every value is a token from tokens.css. */
+
+@import url("tokens.css");
+
+/* --- Sticker — the signature surface: ink outline, hand tilt, hard shadow --- */
+
+.sticker {
+	--fill: var(--paper);
+	--tilt: var(--tilt-card);
+	--shadow: var(--shadow-sticker);
+	position: relative;
+	background: var(--fill);
+	color: var(--text-primary);
+	border: var(--border-ink) solid var(--border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow);
+	padding: var(--space-card);
+	transform: rotate(var(--tilt));
+}
+
+.sticker--sm { --shadow: var(--shadow-sm); }
+.sticker--flat { --shadow: none; }
+.sticker--straight { --tilt: 0deg; }
+.sticker--dialog { --tilt: var(--tilt-dialog); border-radius: var(--radius-xl); }
+.sticker--waiting { border-style: dashed; }
+.sticker--bark { --fill: var(--bark); color: var(--text-on-dark); }
+.sticker--paper { --fill: var(--paper); }
+.sticker--cream { --fill: var(--cream); }
+.sticker--cream2 { --fill: var(--cream2); }
+.sticker--rose { --fill: var(--fill-rose); }
+.sticker--rose-deep { --fill: var(--fill-rose-deep); }
+.sticker--sky { --fill: var(--fill-sky); }
+.sticker--sage { --fill: var(--fill-sage); }
+.sticker--sun { --fill: var(--fill-sun); }
+.sticker--lilac { --fill: var(--fill-lilac); }
+.sticker--lilac-deep { --fill: var(--fill-lilac-deep); }
+.sticker--peach { --fill: var(--fill-peach); }
+.sticker--slop-gold { --fill: var(--fill-slop-gold); }
+.sticker--slop-band { --fill: var(--fill-slop-band); }
+
+/* A list of stickers takes its scrapbook angle from the row tilts, in turn. */
+.sticker-list > .sticker:nth-child(8n + 1) { --tilt: var(--tilt-1); }
+.sticker-list > .sticker:nth-child(8n + 2) { --tilt: var(--tilt-2); }
+.sticker-list > .sticker:nth-child(8n + 3) { --tilt: var(--tilt-3); }
+.sticker-list > .sticker:nth-child(8n + 4) { --tilt: var(--tilt-4); }
+.sticker-list > .sticker:nth-child(8n + 5) { --tilt: var(--tilt-5); }
+.sticker-list > .sticker:nth-child(8n + 6) { --tilt: var(--tilt-6); }
+.sticker-list > .sticker:nth-child(8n + 7) { --tilt: var(--tilt-7); }
+.sticker-list > .sticker:nth-child(8n + 8) { --tilt: var(--tilt-8); }
+
+/* Tape — the narrow strip that pins a sticker to the page. */
+.tape {
+	background: var(--fill-sun);
+	border: var(--border-thin) solid var(--border);
+	border-radius: var(--radius-hair);
+	transform: rotate(var(--tilt-tape));
+}
+
+/* --- Button — a hand-drawn control, never a flat gradient pill --- */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-sm);
+	min-height: var(--tap-min);
+	padding: var(--btn-md-py) var(--btn-md-px);
+	background: var(--paper);
+	color: var(--text-primary);
+	border: var(--border-ink) solid var(--border);
+	border-radius: var(--btn-md-radius);
+	box-shadow: var(--shadow-sm);
+	font: var(--btn-md-font);
+	letter-spacing: var(--btn-tracking);
+	text-align: center;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		transform var(--motion-tap) ease-out,
+		box-shadow var(--motion-tap) ease-out;
+}
+
+.btn:active:not(:disabled):not([aria-disabled="true"]) {
+	transform: translate(var(--press-shift), var(--press-shift));
+	box-shadow: none;
+}
+
+/* The xs step is deliberately shorter than --tap-min. The app restores the
+   frame with hitSlop; the web has none, so .btn--xs sits inside a 44px row. */
+.btn--xs {
+	min-height: var(--btn-xs-min-h);
+	padding: var(--btn-xs-py) var(--btn-xs-px);
+	border-radius: var(--btn-xs-radius);
+	font: var(--btn-xs-font);
+}
+.btn--sm {
+	min-height: var(--btn-sm-min-h);
+	padding: var(--btn-sm-py) var(--btn-sm-px);
+	border-radius: var(--btn-sm-radius);
+	font: var(--btn-sm-font);
+}
+.btn--lg {
+	min-height: var(--btn-lg-min-h);
+	padding: var(--btn-lg-py) var(--btn-lg-px);
+	border-radius: var(--btn-lg-radius);
+	font: var(--btn-lg-font);
+}
+.btn--full { display: flex; width: 100%; }
+
+.btn--primary {
+	background: linear-gradient(180deg, var(--gradient-rose-from), var(--gradient-rose-to));
+	color: var(--text-primary);
+}
+.btn--gold {
+	background: linear-gradient(180deg, var(--gradient-gold-from), var(--gradient-gold-to));
+	color: var(--gold-ink);
+}
+.btn--purple {
+	background: linear-gradient(180deg, var(--gradient-purple-from), var(--gradient-purple-to));
+	color: var(--text-on-dark);
+}
+/* The flat lilac affirmative (app: Button variant="lilac") — a pastel fill and
+   an ink outline, no ramp. The quieter yes next to .btn--primary. */
+.btn--lilac {
+	background: var(--fill-lilac);
+	color: var(--text-primary);
+	box-shadow: var(--shadow-sm);
+}
+.btn--ghost {
+	background: var(--surface);
+	color: var(--text-primary);
+	border-color: var(--separator);
+	box-shadow: none;
+}
+.btn--success {
+	background: var(--success-surface);
+	color: var(--success-text);
+	border-color: var(--success-border);
+}
+.btn--destructive {
+	background: var(--danger-surface);
+	color: var(--danger-text);
+}
+
+/* A button, asleep: full chrome kept over a muted fill. No opacity crush, ever. */
+.btn--locked,
+.btn:disabled,
+.btn[aria-disabled="true"] {
+	background: var(--cream2);
+	color: var(--text-disabled);
+	border: var(--border-ink) solid var(--border);
+	box-shadow: none;
+	opacity: 1;
+	cursor: default;
+	transform: none;
+}
+
+/* A link is text that happens to be tappable — and keeps the full 44pt frame. */
+.btn--link,
+.btn--hand-link {
+	min-height: var(--tap-min);
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+.btn--link { color: var(--text-primary); text-decoration: underline; }
+.btn--hand-link {
+	color: var(--accent);
+	font: var(--type-hand);
+	letter-spacing: normal;
+	text-decoration: none;
+}
+
+/* --- Headers — every page and section wears the same crown --- */
+
+.page-header,
+.section-header {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-xs);
+}
+.page-header { padding-inline: var(--page-pad); margin-block-end: var(--space-lg); }
+.section-header { margin-block: var(--space-lg) var(--space-sm); }
+
+.page-header__title {
+	margin: 0;
+	font: var(--type-page-title);
+	color: var(--text-primary);
+}
+.section-header__title {
+	margin: 0;
+	font: var(--type-section-title);
+	letter-spacing: var(--tracking-section-title);
+	color: var(--text-primary);
+}
+
+.rule {
+	width: var(--rule-width);
+	height: var(--border-ink);
+	background: var(--ink);
+	opacity: var(--opacity-rule);
+	border-radius: var(--radius-hair);
+}
+
+/* --- Kickers — the small line above a title --- */
+
+.kicker {
+	font: var(--type-kicker);
+	letter-spacing: var(--tracking-kicker);
+	color: var(--accent);
+}
+.kicker--on-dark { color: var(--fill-sun); }
+.kicker-pill {
+	font: var(--type-kicker-pill);
+	letter-spacing: var(--tracking-kicker-pill);
+	text-transform: uppercase;
+	color: var(--ink-mute);
+}
+
+/* --- Empty state — cozy, never utilitarian --- */
+
+.empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-xl) var(--space-lg);
+	text-align: center;
+}
+.empty-state__art {
+	width: var(--art-glyph);
+	height: var(--art-glyph);
+}
+.empty-state__line {
+	margin: 0;
+	font: var(--type-hand-lg);
+	color: var(--text-secondary);
+}
+
+/* --- Chip (selectable) · Tag (read-only) --- */
+
+.chip,
+.tag {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+	padding: var(--space-xs) var(--space-md);
+	background: var(--paper);
+	color: var(--text-primary);
+	border: var(--border-thin) solid var(--border);
+	border-radius: var(--radius-pill);
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+}
+.chip { min-height: var(--tap-min); box-shadow: var(--shadow-sm); cursor: pointer; }
+.chip[aria-selected="true"] { border-width: var(--border-heavy); }
+.chip:disabled,
+.chip[aria-disabled="true"] { background: var(--cream2); color: var(--text-disabled); opacity: 1; }
+.tag--sun { background: var(--fill-sun); }
+.tag--rose { background: var(--fill-rose); }
+.tag--sage { background: var(--fill-sage); }
+.tag--lilac { background: var(--fill-lilac); }
+.tag--bark { background: var(--bark); color: var(--text-on-dark); }
+
+/* --- Field --- */
+
+.field { display: flex; flex-direction: column; gap: var(--space-xs); }
+.field__label {
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	color: var(--text-secondary);
+}
+.field__input {
+	min-height: var(--tap-min);
+	padding: var(--space-sm) var(--space-md);
+	background: var(--paper);
+	color: var(--text-primary);
+	border: var(--border-ink) solid var(--border);
+	border-radius: var(--radius-md);
+	font: var(--type-body);
+}
+.field__input::placeholder { color: var(--text-placeholder); }
+/* The field thickens its own border on focus — it never removes the ring.
+   An outline:none here would outrank the global :focus-visible rule for every
+   consumer of this sheet, which is the accessibility bug G-08 names. */
+.field__input:focus { border-width: var(--border-heavy); }
+.field--error .field__input { background: var(--danger-surface); border-color: var(--danger-text); }
+.field--valid .field__input { background: var(--success-surface); border-color: var(--success-border); }
+.field__helper { font: var(--type-hand); color: var(--text-secondary); }
+.field--error .field__helper { color: var(--danger-text); }
+
+/* --- Segmented control --- */
+
+.segmented {
+	display: inline-flex;
+	gap: var(--space-xxs);
+	padding: var(--space-xxs);
+	background: var(--cream);
+	border: var(--border-ink) solid var(--border);
+	border-radius: var(--radius-pill);
+}
+.segmented__option {
+	min-height: var(--tap-min);
+	padding: var(--space-sm) var(--space-lg);
+	background: none;
+	color: var(--text-secondary);
+	border: 0;
+	border-radius: var(--radius-pill);
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	cursor: pointer;
+}
+.segmented__option[aria-checked="true"] {
+	background: var(--paper);
+	color: var(--text-primary);
+	border: var(--border-heavy) solid var(--border);
+	box-shadow: var(--shadow-sm);
+}
+.segmented__option:disabled { color: var(--text-disabled); cursor: default; }
+
+/* --- Radio card — the two-line pick (title + hand sub), one of a set --- */
+/* Markup: a <label class="radio-card"> wrapping a visually-hidden native
+   <input type="radio">, so the keyboard, the group semantics and the browser's
+   own state all come free. Selected thickens the border and takes a fill; the
+   focus ring is the global one, never removed. */
+
+.radio-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xxs);
+	min-height: var(--tap-min);
+	padding: var(--space-md) var(--space-card);
+	background: var(--paper);
+	color: var(--text-primary);
+	border: var(--border-ink) solid var(--border);
+	border-radius: var(--radius-lg);
+	cursor: pointer;
+}
+.radio-card__input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.radio-card__title {
+	font: var(--type-card-title-sm);
+	letter-spacing: var(--tracking-card-title-sm);
+}
+.radio-card__sub { font: var(--type-hand); color: var(--text-secondary); }
+.radio-card:has(.radio-card__input:checked) {
+	border-width: var(--border-heavy);
+	background: var(--fill-sun);
+	box-shadow: var(--shadow-sm);
+}
+.radio-card:has(.radio-card__input:focus-visible) {
+	outline: var(--border-heavy) solid var(--focus);
+	outline-offset: var(--space-xxs);
+}
+.radio-card:has(.radio-card__input:disabled) {
+	background: var(--cream2);
+	color: var(--text-disabled);
+	cursor: default;
+}
+
+/* --- Toast — one at a time, MOTION.toast long --- */
+
+.toast {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-lg);
+	background: var(--bark);
+	color: var(--text-on-dark);
+	border: var(--border-ink) solid var(--border);
+	border-radius: var(--radius-pill);
+	box-shadow: var(--shadow-sticker);
+	font: var(--type-body);
+}
+
+/* --- Global --- */
+
+:focus-visible { outline: var(--border-heavy) solid var(--focus); outline-offset: var(--space-xxs); }
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 1ms !important;
+		scroll-behavior: auto !important;
+	}
+	.sticker,
+	.tape { transform: none; }
+}
+
+/* --- Type roles as classes — one per TYPE role --- */
+
+.text-hero { font: var(--type-hero); }
+.text-display-lg { font: var(--type-display-lg); }
+.text-display { font: var(--type-display); }
+.text-page-title { font: var(--type-page-title); }
+.text-section-title { font: var(--type-section-title); letter-spacing: var(--tracking-section-title); }
+.text-card-title { font: var(--type-card-title); letter-spacing: var(--tracking-card-title); }
+.text-card-title-sm { font: var(--type-card-title-sm); letter-spacing: var(--tracking-card-title-sm); }
+.text-numeral-lg { font: var(--type-numeral-lg); }
+.text-numeral { font: var(--type-numeral); }
+.text-body-lg { font: var(--type-body-lg); }
+.text-body { font: var(--type-body); }
+.text-body-sm { font: var(--type-body-sm); }
+.text-label { font: var(--type-label); letter-spacing: var(--tracking-label); }
+.text-kicker { font: var(--type-kicker); letter-spacing: var(--tracking-kicker); }
+.text-hand { font: var(--type-hand); }
+.text-hand-lg { font: var(--type-hand-lg); }
+.text-hand-display { font: var(--type-hand-display); }
+.text-kicker-pill { font: var(--type-kicker-pill); letter-spacing: var(--tracking-kicker-pill); text-transform: uppercase; }
+.text-kicker-pill-sm { font: var(--type-kicker-pill-sm); letter-spacing: var(--tracking-kicker-pill-sm); text-transform: uppercase; }

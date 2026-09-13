@@ -1,32 +1,45 @@
 // Lucky Pig celebration modal — fires when the client rolls a hit on
-// the 5% lucky trigger. Auto-plays a fanfare + auto-dismisses after a
-// few seconds so the user can keep tickling without an extra tap.
+// the 5% lucky trigger. Auto-plays a fanfare so the user can keep tickling
+// after one tap.
+//
+// The celebration is still a dialog [D-07]: it mounts on
+// AdaptiveModalScaffold with a visible close rail, `onRequestClose` wired to
+// the same "keep for later" exit the secondary button takes, and a time-boxed
+// `equipping` flag so a stalled equip RPC can never trap the player inside the
+// confetti. It stays PopupQueue-slotted: `visible` comes from the slot and
+// `onDismiss` runs the two-phase release.
 //
 // PLACEHOLDER ASSETS (swap when finals are ready):
 //   - lucky_trumpet.mp3 — currently using existing claim.mp3 chime
-//   - lucky_burst.png   — currently using sparkle emoji + idle pig sprite
+//   - lucky_burst.png   — currently drawn as SVG rays + Glyph sparkles
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-	Modal,
 	View,
-	Text,
 	StyleSheet,
 	Animated,
-	Pressable,
 	Easing,
 } from "react-native";
 import Svg, { Polygon, Circle, G } from "react-native-svg";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import { SpritePig } from "./ui/SpritePig";
-import { Sticker } from "./ui/Sticker";
 import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	WHIMSY,
+	AdaptiveModalScaffold,
+	Button,
+	DialogCloseRow,
+	Glyph,
+	Kicker,
+	PigRenderer,
+	RIVE_PIG_SOURCE,
+	Sticker,
+	T,
+} from "./ui";
+import {
+	BORDER,
+	GRADIENT,
 	RADII,
+	SPACE,
+	UI_COLORS,
+	WHIMSY,
 } from "@/constants/theme";
 import {
 	MOTION_DURATION,
@@ -42,6 +55,18 @@ import type { TitleRow } from "@/constants/title_types";
 const BURST_SIZE = 220;
 const BURST_CENTER = BURST_SIZE / 2;
 const RAY_COUNT = 8;
+// The burst's own palette: the gold ramp's two stops for the rays, its light
+// stop for the aura disc. Drawing constants, read from the one gold ramp so a
+// third gold can't appear here. [D-18]
+const RAY_LIGHT = GRADIENT.gold[0];
+const RAY_DEEP = GRADIENT.gold[1];
+const AURA_FILL = WHIMSY.slopBand;
+const RAY_OPACITY = 0.55;
+const SPARKLE_SIZE = 24;
+const SPARKLE_HALF = SPARKLE_SIZE / 2;
+const SPARKLE_DRIFT = 12;
+const PIG_HERO = 140;
+const CARD_MAX_W = 360;
 const SPARKLE_POSITIONS = [
 	// (angleDeg, radius) — placed around the pig, varied
 	{ angle: 20,  r: 78, delay: 0    },
@@ -116,6 +141,7 @@ function LuckyBurst({
 		}
 		if (phase === "sustain") {
 			if (!motionPolicy.allowDecorativeMotion) {
+				// Rest pose: the burst holds open, mid-bloom, and stops moving.
 				burstScale.setValue(1);
 				rayRotation.setValue(0);
 				auraPulse.setValue(0.5);
@@ -263,12 +289,12 @@ function LuckyBurst({
 				]}
 			>
 				<Svg width={size} height={size}>
-					<G opacity={0.55}>
+					<G opacity={RAY_OPACITY}>
 						{rays.map((pts, i) => (
 							<Polygon
 								key={i}
 								points={pts}
-								fill={i % 2 === 0 ? "#FFD96B" : "#FFB85A"}
+								fill={i % 2 === 0 ? RAY_LIGHT : RAY_DEEP}
 							/>
 						))}
 					</G>
@@ -290,7 +316,7 @@ function LuckyBurst({
 						cx={BURST_CENTER}
 						cy={BURST_CENTER}
 						r={BURST_CENTER * 0.65}
-						fill="#FFE08A"
+						fill={AURA_FILL}
 					/>
 				</Svg>
 			</Animated.View>
@@ -302,20 +328,20 @@ function LuckyBurst({
 				const baseY = BURST_CENTER + Math.sin(angleRad) * p.r;
 				const drift = sparkles[i].interpolate({
 					inputRange: [0, 1],
-					outputRange: [0, 12],
+					outputRange: [0, SPARKLE_DRIFT],
 				});
 				const scale = sparkles[i].interpolate({
 					inputRange: [0, 0.4, 1],
 					outputRange: [0, 1.1, 0.6],
 				});
 				return (
-					<Animated.Text
+					<Animated.View
 						key={i}
 						style={[
 							styles.sparkleDot,
 							{
-								left: baseX - 12,
-								top: baseY - 12,
+								left: baseX - SPARKLE_HALF,
+								top: baseY - SPARKLE_HALF,
 								opacity: sparkles[i],
 								transform: [
 									{
@@ -335,8 +361,8 @@ function LuckyBurst({
 							},
 						]}
 					>
-						✦
-					</Animated.Text>
+						<Glyph name="sparkle" size={SPARKLE_SIZE} />
+					</Animated.View>
 				);
 			})}
 		</Animated.View>
@@ -345,6 +371,10 @@ function LuckyBurst({
 
 // Placeholder fanfare — replace with a proper trumpet stinger.
 const fanfareSound = require("../assets/sounds/claim.mp3");
+
+// A stalled equip_title never holds the celebration hostage: past this the
+// controls come back whether or not the RPC answered. [D-07]
+const EQUIP_TIMEOUT_MS = 6000;
 
 interface Props {
 	visible: boolean;
@@ -457,7 +487,14 @@ export function LuckyPigModal({
 		if (equipping) return;
 		if (equipTitle && unlockedTitle) {
 			setEquipping(true);
-			await onEquipTitle(unlockedTitle.id);
+			// Time-boxed: a hung RPC releases the controls rather than
+			// trapping the player in the celebration. [D-07]
+			await Promise.race([
+				onEquipTitle(unlockedTitle.id),
+				new Promise<void>((resolve) =>
+					setTimeout(resolve, EQUIP_TIMEOUT_MS)
+				),
+			]);
 			setEquipping(false);
 		}
 		setPhase("outro");
@@ -478,6 +515,12 @@ export function LuckyPigModal({
 		timers.current.push(setTimeout(onDismiss, motionPolicy.duration(600)));
 	};
 
+	// The escape hatch — the close rail, the hardware back and the "keep for
+	// later" link all leave the same way: no equip, outro, dismiss. [D-07]
+	const handleClose = () => {
+		void handleViewReward(false);
+	};
+
 	const pigTranslateY = pigDrop.interpolate({
 		inputRange: [0, 1],
 		outputRange: [-40, 0],
@@ -488,115 +531,124 @@ export function LuckyPigModal({
 	});
 
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={visible}
-			transparent
-			animationType="fade"
-			onRequestClose={() => {}}
+			onRequestClose={handleClose}
+			bare
+			maxWidth={CARD_MAX_W}
+			contentContainerStyle={styles.content}
 		>
-			<View style={styles.backdrop}>
-				<Animated.View
-					style={[
-						styles.card,
-						{ opacity: cardOpacity, transform: [{ scale: cardScale }] },
-					]}
-				>
-					<Sticker color="sun" rotate={-2.5} radius={RADII.xxl} style={styles.sticker}>
-						<Text style={styles.kicker}>★ lucky pig! ★</Text>
-						<View style={styles.heroWrap}>
-							{/* Animated burst: phased enter → sustain → outro
-							    timeline driven by `phase`. */}
-							<LuckyBurst size={220} phase={phase} />
-							<Animated.View
-								style={[
-									styles.pigOverlay,
-									{
-										transform: [
-											{ translateY: pigTranslateY },
-											{ scale: pigScale },
-										],
-									},
-								]}
-							>
-								<SpritePig animation="happy" size={140} />
-							</Animated.View>
-						</View>
-						<Text style={styles.title}>You got the lucky pig!</Text>
-						<Text style={styles.subtitle}>
-							Your next {windowSize} tickles have a {doublePercent}% chance
-							to be doubled.
-						</Text>
-						{unlockedTitle && (
-							<View style={styles.titleReward}>
-								<Text style={styles.titleRewardLabel}>bonus title</Text>
-								<Text style={styles.titleRewardName}>{unlockedTitle.name}</Text>
-								<Text style={styles.titleRewardPlacement}>
-									{unlockedTitle.placement === "pre"
-										? "before your name"
-										: "after your name"}
-								</Text>
-							</View>
-						)}
-						<Pressable
-							onPress={() => handleViewReward(!!unlockedTitle)}
-							disabled={equipping}
-							style={({ pressed }) => [
-								styles.viewRewardBtn,
-								(pressed || equipping) && { opacity: 0.7 },
+			<Animated.View
+				style={[
+					styles.card,
+					{ opacity: cardOpacity, transform: [{ scale: cardScale }] },
+				]}
+			>
+				<Sticker color="sun" rotate={-2.5} radius={RADII.xxl} style={styles.sticker}>
+					<DialogCloseRow
+						label="Close the lucky pig"
+						onPress={handleClose}
+						style={styles.closeRow}
+					/>
+					<Kicker>lucky pig! ★</Kicker>
+					<View style={styles.heroWrap}>
+						{/* Animated burst: phased enter → sustain → outro
+						    timeline driven by `phase`. */}
+						<LuckyBurst size={BURST_SIZE} phase={phase} />
+						<Animated.View
+							style={[
+								styles.pigOverlay,
+								{
+									transform: [
+										{ translateY: pigTranslateY },
+										{ scale: pigScale },
+									],
+								},
 							]}
 						>
-							<Text style={styles.viewRewardText}>
-								{equipping
-									? "Equipping…"
-									: unlockedTitle
-										? "Equip title"
-										: "Keep tickling"}
-							</Text>
-						</Pressable>
-						{unlockedTitle && (
-							<Pressable
-								onPress={() => handleViewReward(false)}
-								disabled={equipping}
-								style={styles.keepLaterBtn}
-							>
-								<Text style={styles.keepLaterText}>Keep for later</Text>
-							</Pressable>
-						)}
-					</Sticker>
-				</Animated.View>
-			</View>
-		</Modal>
+							<PigRenderer animation="idle" mood="happy" reaction={{ id: 1, kind: "jump" }} size={PIG_HERO} active={visible} renderer="rive" riveSource={RIVE_PIG_SOURCE} rolloutEnabled />
+						</Animated.View>
+					</View>
+					<T role="pageTitle" align="center" style={styles.title}>
+						You got the lucky pig!
+					</T>
+					<T role="handLg" align="center" style={styles.subtitle}>
+						Your next {windowSize} tickles have a {doublePercent}% chance
+						to be doubled.
+					</T>
+					{unlockedTitle && (
+						<View style={styles.titleReward}>
+							<T role="kickerPillSm" tone="secondary">bonus title</T>
+							<T role="sectionTitle" style={styles.titleRewardName}>
+								{unlockedTitle.name}
+							</T>
+							<T role="hand" tone="secondary">
+								{unlockedTitle.placement === "pre"
+									? "before your name"
+									: "after your name"}
+							</T>
+						</View>
+					)}
+					<Button
+						variant="dark"
+						size="md"
+						loading={equipping}
+						onPress={() => handleViewReward(!!unlockedTitle)}
+						style={styles.primary}
+						accessibilityLabel={
+							unlockedTitle
+								? `Equip the title ${unlockedTitle.name}`
+								: "Keep tickling"
+						}
+						accessibilityHint={
+							unlockedTitle
+								? "Wears the new title and closes the celebration"
+								: "Closes the celebration"
+						}
+					>
+						{unlockedTitle ? "Equip title" : "Keep tickling"}
+					</Button>
+					{unlockedTitle && (
+						<Button
+							variant="handLink"
+							size="sm"
+							disabled={equipping}
+							onPress={handleClose}
+							accessibilityLabel="Keep the title for later"
+							accessibilityHint="Closes without wearing it; the title stays in Me"
+						>
+							Keep for later
+						</Button>
+					)}
+				</Sticker>
+			</Animated.View>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
+	content: {
 		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
 	},
 	card: {
 		width: "100%",
-		maxWidth: 360,
 	},
 	sticker: {
-		paddingHorizontal: 24,
-		paddingVertical: 22,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
 		alignItems: "center",
-		...STICKER_SHADOW,
 	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 6,
+	closeRow: {
+		marginTop: -SPACE.lg,
+		marginRight: -SPACE.lg,
+		marginBottom: -SPACE.sm,
 	},
 	heroWrap: {
-		width: 220,
-		height: 220,
+		width: BURST_SIZE,
+		height: BURST_SIZE,
 		alignItems: "center",
 		justifyContent: "center",
-		marginVertical: 4,
+		marginVertical: SPACE.xs,
 	},
 	burstWrap: {
 		alignItems: "center",
@@ -609,79 +661,31 @@ const styles = StyleSheet.create({
 	},
 	sparkleDot: {
 		position: "absolute",
-		width: 24,
-		height: 24,
-		textAlign: "center",
-		fontSize: 22,
-		color: "#FFB000",
-		textShadowColor: "rgba(255, 215, 0, 0.6)",
-		textShadowOffset: { width: 0, height: 0 },
-		textShadowRadius: 6,
+		width: SPARKLE_SIZE,
+		height: SPARKLE_SIZE,
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 28,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginTop: 4,
-		marginBottom: 6,
+		marginTop: SPACE.xs,
+		marginBottom: SPACE.xs,
 	},
 	subtitle: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		lineHeight: 22,
-		marginBottom: 10,
+		marginBottom: SPACE.sm,
 	},
 	titleReward: {
 		width: "100%",
 		alignItems: "center",
-		paddingVertical: 10,
-		marginBottom: 4,
-		borderTopWidth: StyleSheet.hairlineWidth,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderColor: WHIMSY.muteSoft,
-	},
-	titleRewardLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		textTransform: "uppercase",
-		letterSpacing: 1.2,
+		paddingVertical: SPACE.sm,
+		marginBottom: SPACE.xs,
+		borderTopWidth: BORDER.hair,
+		borderBottomWidth: BORDER.hair,
+		borderColor: UI_COLORS.uiMuted,
 	},
 	titleRewardName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		marginTop: 2,
+		marginTop: SPACE.xxs,
 	},
-	titleRewardPlacement: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-	},
-	viewRewardBtn: {
-		marginTop: 6,
-		paddingHorizontal: 24,
-		paddingVertical: 11,
-		borderRadius: 14,
-		backgroundColor: WHIMSY.ink,
-	},
-	viewRewardText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.paper,
-		letterSpacing: 0.4,
-	},
-	keepLaterBtn: {
-		paddingHorizontal: 18,
-		paddingVertical: 9,
-	},
-	keepLaterText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
+	primary: {
+		marginTop: SPACE.xs,
 	},
 });

@@ -33,7 +33,6 @@ describe("native adaptive layout guardrails", () => {
 
 		for (const file of [
 			"components/AchievementDigestModal.tsx",
-			"components/AllegianceModal.tsx",
 			"components/BattlePassSaleModal.tsx",
 		]) {
 			const source = read(file);

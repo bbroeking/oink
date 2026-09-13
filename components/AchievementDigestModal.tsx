@@ -2,30 +2,20 @@
 // Full descriptions and collection history remain on the Achievements page;
 // this digest acknowledges the batch and marks every row viewed together.
 import React, { useEffect, useRef } from "react";
-import {
-	Animated,
-	Image,
-	Modal,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { Animated, Image, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
 import { achievementIcon } from "@/constants/emojiArt";
-import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	RADII,
-	STICKER_SHADOW,
-	WHIMSY,
-} from "@/constants/theme";
+import { BORDER, RADII, SPACE, UI_COLORS } from "@/constants/theme";
 import { MOTION_DURATION, useMotionPolicy } from "@/hooks/useMotionPolicy";
-import { DialogCloseRow } from "./ui/DialogCloseRow";
-import { Sticker } from "./ui/Sticker";
+import {
+	AdaptiveModalScaffold,
+	Button,
+	DialogCloseRow,
+	Kicker,
+	Sticker,
+	T,
+} from "./ui";
 
 export interface UnlockedAchievement {
 	id: string;
@@ -105,172 +95,128 @@ export function AchievementDigestModal({
 	if (achievements.length === 0) return null;
 
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={visible}
-			transparent
-			animationType="fade"
 			onRequestClose={dismiss}
+			bare
+			maxWidth={DIGEST_MAX_W}
+			contentContainerStyle={styles.content}
 		>
-			<View style={styles.backdrop}>
-				<Animated.View
-					style={[styles.card, { opacity, transform: [{ scale }] }]}
+			<Animated.View
+				style={[styles.card, { opacity, transform: [{ scale }] }]}
+			>
+				<Sticker
+					color="sun"
+					rotate={-1}
+					radius={RADII.xxl}
+					style={styles.sticker}
 				>
-					<Sticker
-						color="sun"
-						rotate={-1}
-						radius={RADII.xxl}
-						style={styles.sticker}
-					>
-						<DialogCloseRow
-							label="Close achievement digest"
-							onPress={dismiss}
-							style={styles.closeRow}
-						/>
-						<Text style={styles.kicker}>★ achievements</Text>
-						<Text style={styles.title}>
-							{achievements.length === 1
-								? "A new badge is yours"
-								: `${achievements.length} new badges are yours`}
-						</Text>
-						<Text style={styles.body}>
-							Everything is already saved. Here’s what landed.
-						</Text>
-						<ScrollView
-							style={styles.list}
-							contentContainerStyle={styles.listContent}
-							showsVerticalScrollIndicator={false}
-						>
-							{achievements.map((achievement) => {
-								const reward = achievementRewardSummary(achievement);
-								const level =
-									achievement.is_top_tier && achievement.level > 0
-										? ` · L${achievement.level + 1}`
-										: "";
-								return (
-									<View key={achievement.id} style={styles.row}>
-										<Image
-											source={achievementIcon(achievement.id)}
-											style={styles.icon}
-										/>
-										<View style={styles.rowCopy}>
-											<Text style={styles.name}>
-												{achievement.name}
-												{level}
-											</Text>
-											{reward && (
-												<Text style={styles.reward}>
-													{reward}
-												</Text>
-											)}
-										</View>
+					<DialogCloseRow
+						label="Close achievement digest"
+						onPress={dismiss}
+						style={styles.closeRow}
+					/>
+					<Kicker>achievements</Kicker>
+					<T role="pageTitle" align="center">
+						{achievements.length === 1
+							? "A new badge is yours"
+							: `${achievements.length} new badges are yours`}
+					</T>
+					<T role="hand" tone="secondary" align="center" style={styles.body}>
+						Everything is already saved. Here’s what landed.
+					</T>
+					<View style={styles.list}>
+						{achievements.map((achievement) => {
+							const reward = achievementRewardSummary(achievement);
+							const level =
+								achievement.is_top_tier && achievement.level > 0
+									? ` · L${achievement.level + 1}`
+									: "";
+							return (
+								<View key={achievement.id} style={styles.row}>
+									<Image
+										source={achievementIcon(achievement.id)}
+										style={styles.icon}
+									/>
+									<View style={styles.rowCopy}>
+										<T role="cardTitleSm">
+											{achievement.name}
+											{level}
+										</T>
+										{reward && (
+											<T role="hand" tone="secondary">
+												{reward}
+											</T>
+										)}
 									</View>
-								);
-							})}
-						</ScrollView>
-						<Pressable
-							onPress={dismiss}
-							style={({ pressed }) => [
-								styles.doneButton,
-								pressed && { opacity: 0.75 },
-							]}
-						>
-							<Text style={styles.doneText}>Got it</Text>
-						</Pressable>
-					</Sticker>
-				</Animated.View>
-			</View>
-		</Modal>
+								</View>
+							);
+						})}
+					</View>
+					<Button
+						variant="dark"
+						size="md"
+						onPress={dismiss}
+						style={styles.doneButton}
+						accessibilityLabel="Got it"
+						accessibilityHint="Closes the digest and marks every badge seen"
+					>
+						Got it
+					</Button>
+				</Sticker>
+			</Animated.View>
+		</AdaptiveModalScaffold>
 	);
 }
 
+// The dialog's frame width — a measured card, not a spacing step.
+const DIGEST_MAX_W = 360;
+// The per-row badge art: bigger than a row glyph, smaller than detail art.
+const ROW_ICON = 34;
+
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
+	content: {
 		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 24,
 	},
 	card: {
 		width: "100%",
-		maxWidth: 360,
 	},
 	sticker: {
-		paddingHorizontal: 20,
-		paddingVertical: 20,
-		...STICKER_SHADOW,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
 	},
 	closeRow: {
-		marginTop: -12,
-		marginRight: -12,
-		marginBottom: -4,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
-	},
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 25,
-		lineHeight: 30,
-		color: WHIMSY.ink,
-		textAlign: "center",
+		marginTop: -SPACE.md,
+		marginRight: -SPACE.md,
+		marginBottom: -SPACE.xs,
 	},
 	body: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		lineHeight: 20,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 4,
+		marginTop: SPACE.xs,
 	},
 	list: {
 		width: "100%",
-		maxHeight: 238,
-		marginTop: 14,
-	},
-	listContent: {
-		gap: 2,
+		marginTop: SPACE.card,
+		gap: SPACE.xxs,
 	},
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
-		paddingVertical: 9,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: WHIMSY.muteSoft,
+		gap: SPACE.sm,
+		paddingVertical: SPACE.sm,
+		borderBottomWidth: BORDER.hair,
+		borderBottomColor: UI_COLORS.uiMuted,
 	},
 	icon: {
-		width: 34,
-		height: 34,
+		width: ROW_ICON,
+		height: ROW_ICON,
 		resizeMode: "contain",
 	},
 	rowCopy: {
 		flex: 1,
 		minWidth: 0,
 	},
-	name: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
-	reward: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 1,
-	},
 	doneButton: {
 		alignSelf: "center",
-		marginTop: 16,
-		paddingHorizontal: 24,
-		paddingVertical: 11,
-		borderRadius: 14,
-		backgroundColor: WHIMSY.ink,
-	},
-	doneText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.paper,
+		marginTop: SPACE.lg,
 	},
 });

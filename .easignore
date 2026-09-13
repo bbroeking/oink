@@ -1,0 +1,91 @@
+# Keep the exclusions below synchronized with .gitignore.
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+app-example
+
+# Test artifacts and MJ output staging
+/tests/
+
+# iOS build artifacts (xcarchive, IPA exports)
+.build/
+
+# Metro / dev-build .ipa output
+*.ipa
+build-*.ipa
+
+# Claude Code — agent worktrees are transient; skills + commands are tracked.
+.claude/worktrees/
+.vercel
+.env*
+
+# Cron scheduler runtime lock
+.claude/scheduled_tasks.lock
+.venv-tools/
+
+# Python bytecode
+__pycache__/
+docs/mudwar-rhythm-design.pdf
+
+# Art-pass scratch staging (generated strips/scenes; outputs land in assets/)
+tmp/
+
+# build artifacts + personal agent config
+*.aab
+.claude/settings.local.json
+
+# Local quality-loop reports
+.quality/
+
+# Authoring sources, reports, and recordings are not build inputs.
+/docs/
+/artifacts/
+/assets/concepts/
+/assets/marketing/
+/assets/rive/backups/
+/assets/images/hats/_mudwar_raw/
+*.rev
+
+# Native dependencies and compiler outputs are recreated by the local build.
+/ios/Pods/
+/ios/build/
+/android/.gradle/
+/android/build/
+/android/app/build/
+**/xcuserdata/
+/coverage/

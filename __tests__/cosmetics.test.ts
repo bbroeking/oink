@@ -12,7 +12,11 @@ jest.mock("../utils/rpc", () => ({
 	rpcOutcome: (...a: unknown[]) => mockRpcOutcome(...a),
 }));
 
-import { computeEquip, equipCosmetic } from "../utils/cosmetics";
+import {
+	computeEquip,
+	cosmeticAccessibility,
+	equipCosmetic,
+} from "../utils/cosmetics";
 
 const EMPTY: Record<string, string | null> = {};
 
@@ -22,9 +26,9 @@ describe("computeEquip — column routing", () => {
 		expect(update).toEqual({ active_hat_id: "tophat" });
 	});
 
-	it("routes bows to the head column (active_hat_id) too", () => {
+	it("routes bows to their independent active_bow_id column", () => {
 		const { update } = computeEquip("bow", "red_bow", EMPTY);
-		expect(update).toEqual({ active_hat_id: "red_bow" });
+		expect(update).toEqual({ active_bow_id: "red_bow" });
 	});
 
 	it("routes an aura / background / held to their own columns", () => {
@@ -83,6 +87,17 @@ describe("computeEquip — Face-slot exclusivity", () => {
 });
 
 describe("computeEquip — non-face categories never touch a sibling", () => {
+	it("equipping a bow leaves the current hat in place", () => {
+		const { update, activeIds } = computeEquip("bow", "red_bow", {
+			active_hat_id: "tophat",
+		});
+		expect(update).toEqual({ active_bow_id: "red_bow" });
+		expect(activeIds).toEqual({
+			active_hat_id: "tophat",
+			active_bow_id: "red_bow",
+		});
+	});
+
 	it("equipping a hat writes only its own column", () => {
 		const { update, activeIds } = computeEquip("hat", "tophat", {
 			active_mask_id: "fox",
@@ -166,5 +181,81 @@ describe("equipCosmetic — server-only dispatch (issue #35)", () => {
 		});
 		const patch = await equipCosmetic("unowned_hat", "hat");
 		expect(patch).toEqual({});
+	});
+});
+
+// The shared label/hint pair both cosmetic grids speak [D-03, D-04]. A control
+// that spends states its cost in its label and its consequence in its hint.
+describe("cosmeticAccessibility", () => {
+	const TOPHAT = { name: "Top Hat", rarity: "rare", cost: 1200 };
+
+	it("names the item, its rarity, its state and — while it is for sale — its cost", () => {
+		const a11y = cosmeticAccessibility(TOPHAT, {
+			owned: false,
+			active: false,
+			canAfford: true,
+			action: "preview",
+		});
+		expect(a11y.accessibilityLabel).toBe("Top Hat, rare, not owned, 1,200 snouts");
+		expect(a11y.accessibilityHint).toContain("1,200 snouts");
+		expect(a11y.accessibilityState).toEqual({ selected: false, disabled: false });
+	});
+
+	it("drops the price once the item is owned, and marks a worn item selected", () => {
+		const a11y = cosmeticAccessibility(TOPHAT, {
+			owned: true,
+			active: true,
+			action: "preview",
+		});
+		expect(a11y.accessibilityLabel).toBe("Top Hat, rare, wearing");
+		expect(a11y.accessibilityState.selected).toBe(true);
+	});
+
+	it("says why an item cannot be bought yet", () => {
+		expect(
+			cosmeticAccessibility(TOPHAT, {
+				owned: false,
+				active: false,
+				canAfford: false,
+				action: "preview",
+			}).accessibilityHint,
+		).toContain("don't have");
+		expect(
+			cosmeticAccessibility(TOPHAT, {
+				owned: false,
+				active: false,
+				buyable: false,
+				action: "preview",
+			}).accessibilityHint,
+		).toContain("today's shop");
+		expect(
+			cosmeticAccessibility({ ...TOPHAT, cost: 0 }, {
+				owned: false,
+				active: false,
+				action: "preview",
+			}).accessibilityHint,
+		).toContain("earned, not sold");
+	});
+
+	it("announces the members gate rather than a bare 'not owned'", () => {
+		const a11y = cosmeticAccessibility(TOPHAT, {
+			owned: false,
+			active: false,
+			locked: true,
+			action: "preview",
+		});
+		expect(a11y.accessibilityLabel).toContain("Slop Club members only");
+		expect(a11y.accessibilityHint).toContain("membership is required");
+	});
+
+	it("states the equip consequence for the Closet's in-place tiles", () => {
+		expect(
+			cosmeticAccessibility(TOPHAT, { owned: true, active: false, action: "equip" })
+				.accessibilityHint,
+		).toBe("Equips this item on your pig");
+		expect(
+			cosmeticAccessibility(TOPHAT, { owned: true, active: true, action: "equip" })
+				.accessibilityHint,
+		).toBe("Removes this item from your pig");
 	});
 });

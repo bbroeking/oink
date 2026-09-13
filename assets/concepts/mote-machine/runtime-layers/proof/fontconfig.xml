@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <dir>/Users/bbroeking/projects/oink/node_modules/@expo-google-fonts/caprasimo/400Regular</dir>
+  <dir>/Users/bbroeking/projects/oink/node_modules/@expo-google-fonts/nunito/800ExtraBold</dir>
+  <dir>/Users/bbroeking/projects/oink/node_modules/@expo-google-fonts/patrick-hand/400Regular</dir>
+  <cachedir>/tmp/oink-mote-font-cache</cachedir>
+</fontconfig>

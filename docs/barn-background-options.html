@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Barn background options — Tickle the Pig</title>
+	<link rel="stylesheet" href="../web/tokens.css">
+	<link rel="stylesheet" href="../web/sticker.css">
+	<link rel="stylesheet" href="barn-background-options.css">
+</head>
+<body>
+	<main class="review-shell">
+		<header class="review-header">
+			<h1>Choose the barn background</h1>
+			<p>Three empty scenes for the Barn. Each keeps the full portrait canvas open for the game.</p>
+		</header>
+
+		<form id="background-form">
+			<fieldset class="option-grid">
+				<legend class="sr-only">Barn background options</legend>
+
+				<label class="option sticker sticker--straight" data-option="warm-timber">
+					<input type="radio" name="background" value="warm-timber" data-title="Warm Timber" data-src="assets/barn-background-options/warm-timber.png">
+					<span class="art-frame"><img src="assets/barn-background-options/warm-timber.png" alt="Empty barn interior with warm honey-brown plank walls and floor"></span>
+					<span class="option-copy">
+						<span class="choice-mark" aria-hidden="true"></span>
+						<span><strong>Warm Timber</strong><small>Honey-brown plank walls and floor with a cozy, sun-warmed feel.</small></span>
+					</span>
+				</label>
+
+				<label class="option sticker sticker--straight" data-option="whitewashed">
+					<input type="radio" name="background" value="whitewashed" data-title="Whitewashed" data-src="assets/barn-background-options/whitewashed.png">
+					<span class="art-frame"><img src="assets/barn-background-options/whitewashed.png" alt="Empty barn interior with pale creamwashed plank walls and floor"></span>
+					<span class="option-copy">
+						<span class="choice-mark" aria-hidden="true"></span>
+						<span><strong>Whitewashed</strong><small>Pale creamwashed planks for a light, airy interior.</small></span>
+					</span>
+				</label>
+
+				<label class="option sticker sticker--straight" data-option="weathered-wood">
+					<input type="radio" name="background" value="weathered-wood" data-title="Weathered Wood" data-src="assets/barn-background-options/weathered-wood.png">
+					<span class="art-frame"><img src="assets/barn-background-options/weathered-wood.png" alt="Empty barn interior with muted cool gray-brown timber walls and floor"></span>
+					<span class="option-copy">
+						<span class="choice-mark" aria-hidden="true"></span>
+						<span><strong>Weathered Wood</strong><small>Cool gray-brown timber with a quiet, well-worn character.</small></span>
+					</span>
+				</label>
+			</fieldset>
+
+			<section class="decision sticker sticker--straight sticker--cream" aria-labelledby="decision-title">
+				<div>
+					<h2 id="decision-title">Your preview choice</h2>
+					<p id="selection-status" role="status" aria-live="polite">Select a scene to preview it here. Nothing has been confirmed.</p>
+				</div>
+				<div class="decision-actions">
+					<button id="choose-button" class="btn btn--primary" type="submit" disabled>Choose a background</button>
+					<a id="open-image" class="btn btn--ghost resource-link" aria-disabled="true">Open image</a>
+					<a id="download-image" class="btn btn--ghost resource-link" aria-disabled="true">Download source</a>
+				</div>
+			</section>
+		</form>
+	</main>
+	<script src="barn-background-options.js"></script>
+</body>
+</html>

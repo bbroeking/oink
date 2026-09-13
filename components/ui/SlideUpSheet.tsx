@@ -23,16 +23,26 @@ import {
 	StyleSheet,
 	View,
 } from "react-native";
-import { MODAL_BACKDROP_BG, SPACE, WHIMSY } from "@/constants/theme";
+import {
+	MODAL_BACKDROP_BG,
+	MOTION,
+	RADII,
+	SPACE,
+	TAP_MIN,
+	UI_COLORS,
+} from "@/constants/theme";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 export function SlideUpSheet({
 	open,
 	onClose,
-	duration = 300,
+	duration = MOTION.sheetIn,
 	modalVisible,
 	backdropLabel,
 	children,
 	overlay,
+	presentation = "native",
+	flush = false,
 }: {
 	// Drives the slide-in. The sheet renders nothing while closed, so callers
 	// mount it only for the open beat.
@@ -48,36 +58,44 @@ export function SlideUpSheet({
 	// native Modal that must present over the sheet (iOS won't reliably present
 	// one mounted outside the presenting Modal).
 	overlay?: ReactNode;
+	// "inline" renders the scrim + panel as an absolute overlay in the CURRENT
+	// tree instead of a native Modal — for a sheet that opens from inside
+	// another native Modal (iOS will not reliably present a nested one). The
+	// mirror of AdaptiveModalScaffold's `presentation`. (2026-09-11, wave 3)
+	presentation?: "native" | "inline";
+	// Drops the wrapper's inset so the panel sits FLUSH against the bottom edge —
+	// what a top-corners-only panel (the `Sheet` primitive) needs. The floating
+	// hand-rolled panels keep the default inset.
+	flush?: boolean;
 }) {
 	// Captured once — these sheets are portrait-only, so no rotation reads.
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const anim = useRef(new Animated.Value(0)).current;
+	// Reduce Motion turns the slide into a fade IN PLACE: the panel never
+	// travels, and the one shared 0..1 value drives opacity on both layers over
+	// MOTION.fade instead of MOTION.sheetIn.
+	const { reduceMotion } = useMotionPolicy();
 
 	useEffect(() => {
 		if (!open) return;
 		anim.setValue(0);
 		Animated.timing(anim, {
 			toValue: 1,
-			duration,
-			easing: Easing.out(Easing.cubic),
+			duration: reduceMotion ? MOTION.fade : duration,
+			easing: reduceMotion ? Easing.linear : Easing.out(Easing.cubic),
 			useNativeDriver: true,
 		}).start();
-	}, [open, anim, duration]);
+	}, [open, anim, duration, reduceMotion]);
 
 	if (!open) return null;
 
 	const translateY = anim.interpolate({
 		inputRange: [0, 1],
-		outputRange: [screenH, 0],
+		outputRange: [reduceMotion ? 0 : screenH, 0],
 	});
 
-	return (
-		<Modal
-			visible={modalVisible ?? true}
-			transparent
-			animationType="none"
-			onRequestClose={onClose}
-		>
+	const layers = (
+		<>
 			{/* Scrim — its OWN layer, fading in place. Tapping it dismisses. */}
 			<Animated.View style={[styles.backdrop, { opacity: anim }]}>
 				<Pressable
@@ -91,11 +109,34 @@ export function SlideUpSheet({
 			    the panel fall through to the scrim. */}
 			<Animated.View
 				pointerEvents="box-none"
-				style={[styles.sheetWrap, { transform: [{ translateY }] }]}
+				style={[
+					styles.sheetWrap,
+					flush && styles.sheetWrapFlush,
+					{ opacity: reduceMotion ? anim : 1, transform: [{ translateY }] },
+				]}
 			>
 				{children}
 			</Animated.View>
 			{overlay}
+		</>
+	);
+
+	if (presentation === "inline") {
+		return (
+			<View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+				{layers}
+			</View>
+		);
+	}
+
+	return (
+		<Modal
+			visible={modalVisible ?? true}
+			transparent
+			animationType="none"
+			onRequestClose={onClose}
+		>
+			{layers}
 		</Modal>
 	);
 }
@@ -107,7 +148,7 @@ export function SheetGrabber() {
 
 const styles = StyleSheet.create({
 	backdrop: {
-		...StyleSheet.absoluteFillObject,
+		...StyleSheet.absoluteFill,
 		backgroundColor: MODAL_BACKDROP_BG,
 	},
 	sheetWrap: {
@@ -115,15 +156,22 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		padding: SPACE.md + 2,
-		paddingBottom: SPACE.xl + 4,
+		padding: SPACE.card,
+		paddingBottom: SPACE.xxl,
 	},
+	sheetWrapFlush: {
+		padding: 0,
+		paddingBottom: 0,
+	},
+	// The 44x4 hairline pill, in tokens: TAP_MIN wide so the drag affordance
+	// matches the minimum interactive frame, RADII.hair, uiMuted (a boundary,
+	// never a word).
 	grabber: {
 		alignSelf: "center",
-		width: 44,
-		height: 4,
-		borderRadius: 2,
-		backgroundColor: WHIMSY.muteSoft,
+		width: TAP_MIN,
+		height: SPACE.xs,
+		borderRadius: RADII.hair,
+		backgroundColor: UI_COLORS.uiMuted,
 		marginBottom: SPACE.md,
 	},
 });

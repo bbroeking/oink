@@ -1,6 +1,6 @@
 # Tickle the Pig — Codex project notes
 
-Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS via TestFlight / App Store. Notes here orient Codex sessions in this repo; the domain glossary lives in `CONTEXT.md` next to this file.
+Single-developer React Native 0.86 / Expo 57 game with Supabase backend. Ships to iOS via TestFlight / App Store. Notes here orient Codex sessions in this repo; the domain glossary lives in `CONTEXT.md` next to this file.
 
 ## Build + ship
 
@@ -22,9 +22,17 @@ Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS
   incremented build.
 - **Local builds only.** `eas build --local --platform ios --profile production` — cloud quota fills up.
 - **Metro needs 16 GB heap.** Prefix any `npx expo start` or `eas build` with `NODE_OPTIONS="--max-old-space-size=16384"`.
+- **Simulator auth needs embedded entitlements.** Do not use `CODE_SIGNING_ALLOWED=NO` for simulator builds intended to test Apple sign-in. After installing, run `python3 scripts/verify-ios-simulator-auth.py`; a successful compile alone does not verify this. See `docs/ios-simulator-auth.md`.
 - **CocoaPods occasionally null-byte-flakes.** When pod install fails: `cd ios && pod cache clean --all && rm -rf Pods Podfile.lock && COCOAPODS_DISABLE_STATS=true pod install`.
 - **Upload via Transporter, never `eas submit`.** After `eas build --local`, rename the artifact to `build-N.ipa` and run `open -a Transporter build-N.ipa`. Apple-ID sign-in + Deliver click stay with the user.
 - **Write the build changelog BEFORE building.** Convention: `docs/builds/YYYY-MM-DD-build-N.md`.
+- **Queue every large change for post-release verification.** Database/economy,
+  native/runtime, auth/IAP/notification/deep-link, major player-system, and broad
+  platform changes must be added to `docs/release-followups.json` while they are
+  authored (`npm run release:followups -- enqueue ...`). Attach each entry to
+  the first distributable build that contains it. Do not mark it notified until
+  that version is confirmed live on the public store. See
+  `docs/release-followups.md`.
 
 ## Database
 
@@ -43,6 +51,22 @@ Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS
   acceptance in `docs/RELEASE_CHECKLIST.md`.
 - Quality commands are verification only. They do not authorize a database
   push, distributable build, upload, or production mutation.
+
+## Delegation and model preference
+
+- Prefer sub-agents for concrete, independent work that can run in parallel;
+  keep integration decisions and final verification with the lead agent.
+- **Prefer non-Astra sub-agents.** Default to `gpt-5.6-sol` for substantial
+  implementation, design, and review; use `gpt-5.6-terra` or `gpt-5.6-luna` for
+  appropriately bounded work. Select the model explicitly rather than
+  inheriting an Astra lead's model. Use the supported context-fork mode for
+  model overrides. If those models are unavailable, choose another available
+  non-Astra model. Reserve Astra delegation for a specific user request or a
+  documented need that the non-Astra agents could not resolve.
+- Give each sub-agent clear file ownership and acceptance criteria. Do not
+  have several agents edit the same file concurrently. User-owned build chats
+  remain separate from temporary sub-agents; create a new chat only when the
+  user asks for one.
 
 ## Agent skills
 

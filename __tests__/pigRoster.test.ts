@@ -95,6 +95,19 @@ describe("pig roster RPC wrappers", () => {
     expect(mockRpc).toHaveBeenCalledWith("pig_roster");
   });
 
+  // `null` = we never heard back. It used to become DEFAULT_PIG_ROSTER, which
+  // told a member their companion was un-recruited. The default roster is only
+  // for a server that answered with something unusable. [B-02] (wave 4)
+  test("returns null when the roster read never came back", async () => {
+    mockRpc.mockResolvedValue(null);
+    await expect(fetchPigRoster()).resolves.toBeNull();
+  });
+
+  test("still falls back to the default roster on an unusable payload", async () => {
+    mockRpc.mockResolvedValue("not a roster");
+    await expect(fetchPigRoster()).resolves.toEqual(DEFAULT_PIG_ROSTER);
+  });
+
   test("recruits and activates using the expected parameter", async () => {
     mockRpcAction.mockResolvedValue({ ok: true, pig_id: "copper" });
     await recruitPig("copper");

@@ -35,9 +35,17 @@ describe("systemAnnouncementRoute — announcement kind → deep-link route", ()
 		expect(systemAnnouncementRoute("trough_nudge", {})).toBeNull();
 		expect(systemAnnouncementRoute("trough_nudge", null)).toBeNull();
 		expect(systemAnnouncementRoute("trough_nudge", { drive_id: "" })).toBeNull();
+		expect(systemAnnouncementRoute("trough_nudge", { screen: "shop" })).toBeNull();
 	});
 
-	test("an unknown / admin-note kind has no destination (null)", () => {
+	test("feature announcements use an allow-listed screen destination", () => {
+		expect(systemAnnouncementRoute("feature_update", { screen: "achievements" })).toBe(
+			"/achievements"
+		);
+		expect(systemAnnouncementRoute("feature_update", { screen: "not-a-screen" })).toBeNull();
+	});
+
+	test("an admin note without a screen has no destination (null)", () => {
 		expect(systemAnnouncementRoute("barn_note", { drive_id: "drive-123" })).toBeNull();
 		expect(systemAnnouncementRoute(undefined, undefined)).toBeNull();
 	});
@@ -96,5 +104,16 @@ describe("toWhileAwaySystemEvent — row → While-Away system event", () => {
 		expect(event.route).toBeNull();
 		expect(event.title).toBe("A note from the barn");
 		expect(event.announcementId).toBe(9);
+	});
+
+	test("a feature update can open Achievements", () => {
+		const event = toWhileAwaySystemEvent({
+			id: 10,
+			kind: "feature_update",
+			title: "Never miss a Feeding",
+			body: "Earn Every Last Feeding.",
+			data: { release: "perfect-feeding-week", screen: "achievements" },
+		});
+		expect(event.route).toBe("/achievements");
 	});
 });

@@ -1,33 +1,65 @@
 import React, { useEffect, useRef, useState } from "react";
+import { View, StyleSheet, Image, Animated } from "react-native";
+import { PigStage, type EquippedItem } from "./ui/PigStage";
 import {
-	View,
-	Text,
-	StyleSheet,
-	Image,
-	Animated,
-} from "react-native";
-import { Sticker } from "./ui/Sticker";
-import { PigStage } from "./ui/PigStage";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { AdaptiveModalScaffold, Button } from "./ui";
+	AdaptiveModalScaffold,
+	Button,
+	ConfirmDialog,
+	Hand,
+	PageTitle,
+	SectionTitle,
+	SnoutCoin,
+	Sticker,
+	T,
+	Tag,
+	glyphSource,
+} from "./ui";
 import { rpcAction } from "@/utils/rpc";
 import { showPurchaseToast } from "./PurchaseToast";
-import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
-import { FONTS, RARITY_BG_SOLID, WHIMSY, RADII } from "@/constants/theme";
+import { HAT_IMAGES, HatRow } from "@/constants/hats";
+import {
+	ART_SIZE,
+	BORDER,
+	RADII,
+	RARITY_BADGE,
+	RARITY_BG_SOLID,
+	SPACE,
+	UI_COLORS,
+} from "@/constants/theme";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
+
+// ── Drawing constants ───────────────────────────────────────────────────────
+// The product shot's own geometry. Sizes of art and the clearance the close
+// affordance needs — not spacing steps, so they are named here. (2026-09-11)
+/** A single drifting tickle sprite. */
+const PARTICLE = 56;
+/** How far above the card's floor the burst starts. */
+const PARTICLE_FLOOR = 36;
+/** Half a sprite — the centring offset for an absolutely-placed particle. */
+const PARTICLE_HALF = PARTICLE / 2;
+/**
+ * Top padding that clears the scaffold's 44pt close affordance, so the preview
+ * card — and the pig's ears inside it — can never slide under the dismiss
+ * target.
+ */
+const CLOSE_CLEARANCE = 58;
+/** Taller than wide, so a tall item (a hat) has headroom above the pig. */
+const PREVIEW_RATIO = 0.85;
+/** The coin riding the spend CTAs' labels. */
+const COIN_MARK = 16;
+/** The fraction of an item's price that seeds a Trough. */
+const TROUGH_SEED_FRAC = 0.1;
 
 // Tickle-particle preview — loops the same burst the Barn would
 // fire on a tap (per-particle dx / rise / scale / tilt / duration
 // jitter) so the player sees the actual cosmetic, not a still
-// image. Bursts every ~900ms while the modal is mounted; clears
+// image. Bursts every ~1100ms while the modal is mounted; clears
 // its interval + in-flight animations on unmount.
-function TickleParticlePreview({
-	source,
-	glyph,
-}: {
-	source: number | null;
-	glyph?: string;
-}) {
+//
+// Under Reduce Motion the loop never starts: the sprite rests in a still ring
+// with a line naming what it would do, per the decorative-loop rule. [D-11]
+function TickleParticlePreview({ source }: { source: number | null }) {
 	type Float = {
 		id: number;
 		dx: number;
@@ -39,8 +71,13 @@ function TickleParticlePreview({
 	};
 	const [floats, setFloats] = useState<Float[]>([]);
 	const nextId = useRef(0);
+	const { reduceMotion } = useMotionPolicy();
+	// No PNG yet (e.g. particle_bubble) → the hand-drawn sparkle stands in, the
+	// same placeholder the Closet uses. [D-19]
+	const sprite = source ?? glyphSource("sparkle");
 
 	useEffect(() => {
+		if (reduceMotion) return;
 		let cancelled = false;
 		const burst = () => {
 			if (cancelled) return;
@@ -76,7 +113,30 @@ function TickleParticlePreview({
 			cancelled = true;
 			clearInterval(t);
 		};
-	}, []);
+	}, [reduceMotion]);
+
+	// The rest pose: three sprites at rest, and a line that says what the
+	// cosmetic does instead of showing it.
+	if (reduceMotion) {
+		return (
+			<View style={particleStyles.rest}>
+				<View style={particleStyles.restRow}>
+					{[0, 1, 2].map((i) => (
+						<Image
+							key={i}
+							source={sprite}
+							style={particleStyles.restSprite}
+							resizeMode="contain"
+							accessible={false}
+						/>
+					))}
+				</View>
+				<Hand tone="secondary" align="center">
+					Particles drift up on each tickle.
+				</Hand>
+			</View>
+		);
+	}
 
 	return (
 		<View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -97,28 +157,24 @@ function TickleParticlePreview({
 					inputRange: [0, 0.15, 1],
 					outputRange: [0.55, f.scaleMax, f.scaleMax * 0.9],
 				});
-				const animStyle = {
-					opacity,
-					transform: [
-						{ translateX },
-						{ translateY },
-						{ rotate: `${f.rot}deg` },
-						{ scale },
-					],
-				};
-				// No PNG yet (e.g. particle_bubble) → fall back to the item's
-				// emoji glyph so the burst still previews.
-				return source != null ? (
+				return (
 					<Animated.Image
 						key={f.id}
-						source={source}
+						source={sprite}
 						resizeMode="contain"
-						style={[particleStyles.particle, animStyle]}
+						style={[
+							particleStyles.particle,
+							{
+								opacity,
+								transform: [
+									{ translateX },
+									{ translateY },
+									{ rotate: `${f.rot}deg` },
+									{ scale },
+								],
+							},
+						]}
 					/>
-				) : (
-					<Animated.Text key={f.id} style={[particleStyles.glyph, animStyle]}>
-						{glyph || "✦"}
-					</Animated.Text>
 				);
 			})}
 		</View>
@@ -129,21 +185,20 @@ const particleStyles = StyleSheet.create({
 	particle: {
 		position: "absolute",
 		left: "50%",
-		bottom: 36,
-		width: 56,
-		height: 56,
-		marginLeft: -28,
+		bottom: PARTICLE_FLOOR,
+		width: PARTICLE,
+		height: PARTICLE,
+		marginLeft: -PARTICLE_HALF,
 	},
-	glyph: {
-		position: "absolute",
-		left: "50%",
-		bottom: 36,
-		width: 56,
-		marginLeft: -28,
-		fontSize: 38,
-		lineHeight: 56,
-		textAlign: "center",
+	rest: {
+		...StyleSheet.absoluteFill,
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.sm,
+		paddingHorizontal: SPACE.lg,
 	},
+	restRow: { flexDirection: "row", gap: SPACE.sm },
+	restSprite: { width: PARTICLE, height: PARTICLE },
 });
 
 interface Props {
@@ -154,6 +209,8 @@ interface Props {
 	balance: number;
 	busy?: boolean;
 	buyable?: boolean;
+	equippedHat?: EquippedItem | null;
+	equippedBow?: EquippedItem | null;
 	onClose: () => void;
 	onBuy: () => void;
 	onEquip: () => void;
@@ -174,6 +231,8 @@ export function ItemPreviewModal({
 	balance,
 	busy,
 	buyable = true,
+	equippedHat = null,
+	equippedBow = null,
 	onClose,
 	onBuy,
 	onEquip,
@@ -185,10 +244,18 @@ export function ItemPreviewModal({
 	// a queued popup over it — the #50152 wedge (issue #4). Keyed on `!!item` (the
 	// modal stays mounted with visible={false} when item is null).
 	useUnmanagedModalHold(!!item);
+	// Opening a Trough carries a 3-day opener cooldown — a mis-tap costs the
+	// player three days — so the seed spend is a DECISION, not a one-tap.
+	// [D-09] (2026-09-11)
+	const [confirmTrough, setConfirmTrough] = useState(false);
+	const [troughBusy, setTroughBusy] = useState(false);
 	if (!item) return null;
 	const rarity = item.rarity ?? "common";
-	const rarityColor = RARITY_COLORS[rarity];
+	const badge = RARITY_BADGE[rarity] ?? RARITY_BADGE.common;
+	// Sentence case: UPPERCASE is reserved for kicker-pill typography. [D-17]
+	const rarityLabel = rarity.charAt(0).toUpperCase() + rarity.slice(1);
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
+	const seed = Math.ceil(item.cost * TROUGH_SEED_FRAC);
 	// Backgrounds preview as the FULL image (no pig in the card). They
 	// fill the screen at runtime, so showing a scaled pig over them
 	// in the preview misrepresents what the player will see when
@@ -200,18 +267,56 @@ export function ItemPreviewModal({
 	// particle on top misrepresents what you'd actually see.
 	const isTickleParticle = item.category === "tickle_particle";
 
-	// Route the previewed item into the appropriate equip slot for
-	// PigStage. Auras go behind the pig; held items anchor to the
-	// right hand; everything else (hats, glasses, masks, scarves)
-	// is the main slot. PigStage handles z-order + HAT_REL anchor
-	// math from there — same code path the Barn uses, so re-tuning
-	// via the /item-anchor tool flows here automatically.
+	// Route the previewed item into its exact PigStage slot. Keep the currently
+	// worn Hat/Bow counterpart visible so a player can judge the combination
+	// before equipping it.
 	const previewSlot = { id: item.id, category: item.category ?? null, emoji: item.emoji ?? null };
-	const stageEquipped = item.category === "aura" || item.category === "held"
-		? null
-		: previewSlot;
+	const stageEquipped = item.category === "hat" ? previewSlot : equippedHat;
+	const stageEquippedBow = item.category === "bow" ? previewSlot : equippedBow;
+	const stageEquippedGlasses = item.category === "glasses" ? previewSlot : null;
+	const stageEquippedMask = item.category === "mask" ? previewSlot : null;
+	const stageEquippedNeck = item.category === "scarf" || item.category === "necklace"
+		? previewSlot
+		: null;
 	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
 	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
+
+	const openTrough = async () => {
+		if (troughBusy) return;
+		setTroughBusy(true);
+		// The RPC says WHY it refused (3-day opener cooldown, seed too low,
+		// can't afford). Discarding it made this CTA silently fail AND
+		// silently charge on success (#7).
+		const r = await rpcAction<{ drive_id?: string; balance?: number }>(
+			"open_item_drive",
+			{ target_item_id: item.id, seed_snouts: seed },
+		);
+		setTroughBusy(false);
+		if (r.ok) {
+			showPurchaseToast({
+				type: "success",
+				title: "Trough opened!",
+				text: "Your Sounder can chip in now — find it in the Shop.",
+				cost: seed,
+			});
+			onTroughOpened?.(seed, r.balance);
+			onClose();
+			return;
+		}
+		const msg =
+			r.reason === "opener_cooldown"
+				? "You opened a Trough recently — one per 3 days."
+				: r.reason === "insufficient"
+					? "Not enough snouts for the seed."
+					: r.reason === "seed_too_low"
+						? "Seed too small for this item."
+						: r.reason === "not_in_shop"
+							? "Troughs only open for items in today's shop."
+							: r.reason === "not_eligible"
+								? "This item can't be Trough-funded."
+								: "Couldn't open the Trough. Try again.";
+		showPurchaseToast({ type: "fail", title: "No Trough", text: msg });
+	};
 
 	return (
 		<AdaptiveModalScaffold
@@ -224,14 +329,15 @@ export function ItemPreviewModal({
 			contentContainerStyle={styles.modalContent}
 			testID="item-preview-modal"
 		>
-				<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.sheet}>
+				<Sticker color="paper" radius={RADII.xxl} style={styles.sheet}>
 					{/* Big preview. Two modes:
 					    • Backgrounds → render the image filling the
 					      preview card (no pig). The user will see it
 					      fullscreen at runtime, so we want the preview
 					      to match that "wallpaper" feel.
-					    • Everything else → the 300×300 pig stage with
-					      the item overlaid on the right anatomy point. */}
+					    • Everything else → the pig stage with the item
+					      overlaid on the right anatomy point, frozen at
+					      rest (the 2026-07-16 product-shot ruling). */}
 					<View
 						style={[
 							styles.previewCard,
@@ -239,12 +345,7 @@ export function ItemPreviewModal({
 						]}
 					>
 						{isTickleParticle ? (
-							// No `glyph` override — when there's no PNG art the
-							// preview falls back to the print glyph ✦, never a
-							// raw item emoji.
-							<TickleParticlePreview
-								source={itemSrc ?? null}
-							/>
+							<TickleParticlePreview source={itemSrc ?? null} />
 						) : isBackgroundItem && itemSrc ? (
 							<Image
 								source={itemSrc}
@@ -257,6 +358,10 @@ export function ItemPreviewModal({
 									pigAnimation="idle"
 									pigFrozen
 									equipped={stageEquipped}
+									equippedBow={stageEquippedBow}
+									equippedGlasses={stageEquippedGlasses}
+									equippedMask={stageEquippedMask}
+									equippedNeck={stageEquippedNeck}
 									equippedAura={stageEquippedAura}
 									equippedHeld={stageEquippedHeld}
 								/>
@@ -264,38 +369,52 @@ export function ItemPreviewModal({
 						)}
 					</View>
 
-					{/* Rarity tag */}
-					<View
-						style={[
-							styles.rarityBadge,
-							{ backgroundColor: rarityColor },
-						]}
-					>
-						<Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
-					</View>
+					{/* Rarity tag — the rarity's own dark ink on its own light fill,
+					    so "rare" still reads blue. The old saturated badge wrote
+					    paper on a mid-tone and failed AA at all five. [D-02] */}
+					<Tag
+						label={rarityLabel}
+						ink={badge.ink}
+						accessibilityLabel={`${rarity} rarity`}
+						style={[styles.rarityBadge, { backgroundColor: badge.bg }]}
+					/>
 
-					<Text style={styles.itemName}>{item.name}</Text>
+					<PageTitle style={styles.itemName}>{item.name}</PageTitle>
 					{item.description && (
-						<Text style={styles.itemDesc}>{item.description}</Text>
+						<Hand tone="secondary" style={styles.itemDesc}>
+							{item.description}
+						</Hand>
 					)}
 
 					{/* Price + CTA row */}
 					<View style={styles.ctaRow}>
 						{!owned && item.cost > 0 && (
 							<View style={styles.priceWrap}>
-								<SnoutCoin size={18} />
-								<Text style={styles.price}>
-									{item.cost.toLocaleString()}
-								</Text>
-								<Text style={styles.priceLabel}>snouts</Text>
+								<SnoutCoin size={COIN_MARK} />
+								<SectionTitle>{item.cost.toLocaleString()}</SectionTitle>
+								<Hand tone="secondary">snouts</Hand>
 							</View>
 						)}
 						{active ? (
-							<Button size="md" variant="ghost" full onPress={onUnequip}>
+							<Button
+								size="md"
+								variant="ghost"
+								full
+								onPress={onUnequip}
+								accessibilityLabel={`Take off ${item.name}`}
+								accessibilityHint="Removes this item from your pig"
+							>
 								Take off
 							</Button>
 						) : owned ? (
-							<Button size="md" variant="primary" full onPress={onEquip}>
+							<Button
+								size="md"
+								variant="primary"
+								full
+								onPress={onEquip}
+								accessibilityLabel={`Wear ${item.name}`}
+								accessibilityHint="Puts this item on your pig"
+							>
 								Wear
 							</Button>
 						) : item.cost <= 0 ? (
@@ -303,15 +422,34 @@ export function ItemPreviewModal({
 							// cost=0 in the catalog. They're earned, not bought —
 							// surface that instead of showing "0 snouts" + a
 							// misleading "Available in Today's Shop" lock.
-							<Button size="md" variant="locked" full disabled>
+							<Button
+								size="md"
+								variant="locked"
+								full
+								disabled
+								accessibilityHint="Unlock this from the Season Pass or a referral milestone"
+							>
 								Earned, not sold
 							</Button>
 						) : !buyable ? (
-							<Button size="md" variant="locked" full disabled>
+							<Button
+								size="md"
+								variant="locked"
+								full
+								disabled
+								accessibilityHint="This item isn't in today's shop"
+							>
 								Rotates in soon — not today's pick
 							</Button>
 						) : !canAfford ? (
-							<Button size="md" variant="locked" full disabled>
+							<Button
+								size="md"
+								variant="locked"
+								full
+								disabled
+								accessibilityLabel={`Not enough snouts, ${item.cost.toLocaleString()} needed`}
+								accessibilityHint={`Earn ${(item.cost - balance).toLocaleString()} more snouts to buy this`}
+							>
 								Not enough · need {item.cost - balance}
 							</Button>
 						) : (
@@ -321,6 +459,9 @@ export function ItemPreviewModal({
 								full
 								onPress={onBuy}
 								disabled={busy}
+								loading={busy}
+								accessibilityLabel={`Buy ${item.name} for ${item.cost.toLocaleString()} snouts`}
+								accessibilityHint={`Spends ${item.cost.toLocaleString()} snouts and adds this to your closet`}
 							>
 								Buy now
 							</Button>
@@ -332,169 +473,109 @@ export function ItemPreviewModal({
 					    out-of-rotation items just show the locked Buy row. */}
 					{!owned && item.cost > 0 && buyable && (
 						<View style={styles.troughCtaWrap}>
+							{/* A control that spends states its cost on its own face.
+							    This one used to be `ghost` — the quietest fill in the
+							    palette — with the price only in the caption. [D-09] */}
 							<Button
 								size="md"
-								variant="ghost"
+								variant="lilac"
 								full
-								onPress={async () => {
-									// The RPC says WHY it refused (3-day opener cooldown,
-									// seed too low, can't afford). Discarding it made this
-									// CTA silently fail AND silently charge on success (#7).
-									const seed = Math.ceil(item.cost * 0.1);
-									const r = await rpcAction<{
-										drive_id?: string;
-										balance?: number;
-									}>("open_item_drive", {
-										target_item_id: item.id,
-										seed_snouts: seed,
-									});
-									if (r.ok) {
-										showPurchaseToast({
-											type: "success",
-											title: "Trough opened!",
-											text: "Your Sounder can chip in now — find it in the Shop.",
-											cost: seed,
-										});
-										onTroughOpened?.(seed, r.balance);
-										onClose();
-										return;
-									}
-									const msg =
-										r.reason === "opener_cooldown"
-											? "You opened a Trough recently — one per 3 days."
-											: r.reason === "insufficient"
-												? "Not enough snouts for the seed."
-												: r.reason === "seed_too_low"
-													? "Seed too small for this item."
-													: r.reason === "not_in_shop"
-														? "Troughs only open for items in today's shop."
-														: r.reason === "not_eligible"
-															? "This item can't be Trough-funded."
-															: "Couldn't open the Trough. Try again.";
-									showPurchaseToast({ type: "fail", title: "No Trough", text: msg });
-								}}
+								icon={<SnoutCoin size={COIN_MARK} />}
+								onPress={() => setConfirmTrough(true)}
+								disabled={troughBusy}
+								loading={troughBusy}
+								accessibilityLabel={`Open a Trough for ${seed.toLocaleString()} snouts`}
+								accessibilityHint="Asks before spending; your Sounder chips in the rest"
 							>
-								Or open a Trough — friends chip in
+								Open a Trough · {seed.toLocaleString()}
 							</Button>
-							<Text style={styles.troughHint}>
-								Start it for {Math.ceil(item.cost * 0.1).toLocaleString()} snouts
-								— your Sounder chips in the rest.
-							</Text>
+							<T role="hand" tone="accent" align="center" style={styles.troughHint}>
+								Start it for {seed.toLocaleString()} snouts — your Sounder
+								chips in the rest.
+							</T>
 						</View>
 					)}
 				</Sticker>
+			<ConfirmDialog
+				open={confirmTrough}
+				presentation="inline"
+				title="Open a Trough for this item?"
+				body={`Seeding it costs ${seed.toLocaleString()} snouts — you'll have ${Math.max(
+					0,
+					balance - seed,
+				).toLocaleString()} left. You can only open one Trough every 3 days.`}
+				confirmLabel={`Open · ${seed.toLocaleString()}`}
+				confirmCoin
+				confirmHint={`Spends ${seed.toLocaleString()} snouts and starts a 3-day Trough`}
+				cancelLabel="Not now"
+				cancelHint="Closes this without spending"
+				busy={troughBusy}
+				onCancel={() => setConfirmTrough(false)}
+				onConfirm={() => {
+					setConfirmTrough(false);
+					void openTrough();
+				}}
+			/>
 		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	troughCtaWrap: { marginTop: 12, alignSelf: "stretch" },
+	troughCtaWrap: { marginTop: SPACE.md, alignSelf: "stretch" },
 	troughHint: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: 6,
+		marginTop: SPACE.sm,
 	},
 	modalContent: {
 		flexGrow: 1,
 		justifyContent: "center",
-		padding: 6,
+		padding: SPACE.sm,
 	},
 	sheet: {
-		paddingHorizontal: 22,
-		// Top padding clears the scaffold's 44pt close affordance so the
-		// preview card — and the pig's ears inside it — can never
-		// slide under the dismiss target.
-		paddingTop: 58,
-		paddingBottom: 24,
+		paddingHorizontal: SPACE.xl,
+		paddingTop: CLOSE_CLEARANCE,
+		paddingBottom: SPACE.xl,
 	},
 	previewCard: {
 		width: "100%",
-		// Taller than wide + pig anchored to the bottom, so tall items (hats)
-		// have headroom above and don't clip at the card's top edge.
-		aspectRatio: 0.85,
+		aspectRatio: PREVIEW_RATIO,
 		borderRadius: RADII.xl,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		overflow: "hidden",
 		alignItems: "center",
 		justifyContent: "flex-end",
-		marginBottom: 14,
+		marginBottom: SPACE.card,
 	},
 	// Fixed-size inner stage. Card-coord overlays land correctly only
 	// when the pig is at a known native size. Centered inside the
 	// (sometimes larger) preview card. Items position relative to
 	// THIS box, not the card.
 	previewStage: {
-		width: 300,
-		height: 300,
+		width: ART_SIZE.stage,
+		height: ART_SIZE.stage,
 		position: "relative",
-	},
-	previewPig: {
-		position: "absolute",
-		left: 0,
-		top: 0,
-		width: 300,
-		height: 300,
-	},
-	overlayBox: {
-		position: "absolute",
-		alignItems: "center",
-		justifyContent: "center",
 	},
 	fillImage: {
 		width: "100%",
 		height: "100%",
 	},
-	emojiPlaceholder: {
-		fontSize: 80,
-	},
 	rarityBadge: {
 		alignSelf: "flex-start",
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-		borderRadius: 8,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		marginBottom: 8,
-	},
-	rarityText: {
-		fontSize: 11,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.paper,
-		letterSpacing: 1.2,
+		marginBottom: SPACE.sm,
 	},
 	itemName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		marginBottom: 4,
+		marginBottom: SPACE.xs,
 	},
 	itemDesc: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		marginBottom: 14,
+		marginBottom: SPACE.card,
 	},
 	ctaRow: {
 		flexDirection: "column",
-		gap: 10,
+		gap: SPACE.md,
 	},
 	priceWrap: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 6,
-	},
-	price: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
-	priceLabel: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		marginLeft: 2,
+		gap: SPACE.sm,
 	},
 });

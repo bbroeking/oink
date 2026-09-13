@@ -1,5 +1,14 @@
 # Habitat — the inside-the-Barn decoratable space
 
+> **Housing implementation amendment (2026-09-06).** [ADR 0008](0008-personal-barn-housing.md)
+> adopts spec 24: partial starter, dedicated catalog and inventory, an
+> always-available Barn collection, and revisioned whole-room saves. Historical
+> proposals below remain for context; they are not the shipped API contract.
+
+> **Streak-placement note superseded (2026-08-29).** References below to a
+> Garden describe the historical decision context. Personal Streak now lives
+> around the Home Tickle-bank counter and no longer claims an Exterior anchor.
+
 Adopting a habitat system that bifurcates the current Barn screen into an **Exterior** view (Rosie + outdoor scene + clickable barn structure) and an **Interior** view (the decoratable indoor space). The Interior holds 6 typed slots that accept items from the existing `hats` catalog under new category values, plus an interior background. Slot-based placement (not free-drag), shop+earned sourcing (no crates in v1), and friends visiting see + tap items but cannot modify.
 
 The framing came from the user-described image: *"we can click into the barn, it opens and we can hang out in there with rosie."* That implicitly locks two architectural commitments — the Exterior is the world *outside* a building, and the Interior is a discrete second view reached via the building. The whole spec follows from that mental model.

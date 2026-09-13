@@ -1,0 +1,18 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "assets/concepts/digging/2026-09-12/04-living-mud-patch-active.png",
+  "assets": [
+    {
+      "asset": "scene",
+      "prompt": "Use case: stylized-concept. Asset type: production full-screen background layer for the portrait iPhone game Tickle the Pig, Living Mud Patch. Input image is a STYLE AND COMPOSITION reference, not a screenshot to retain. Create only the forest clearing and earthen patch environment from this warm hand-painted storybook world: leafy trees framing left and right, distant soft sage forest and blue sky at the top 20 percent, tangled roots and grass around the outside edges, broad quiet brown earth filling the center and lower area. The center 75 percent of the width must stay uncluttered for a separately rendered interactive digging surface. Match the reference's tactile gouache soil, golden daylight, warm ink outlines and cozy green leaves. Portrait 9:16 composition. Remove ALL pigs, characters, treasure, truffles, keys, motes, pouch, signs, text, UI, buttons, labels and numerical counters. No predug reward holes. No words or lettering anywhere. This is one usable game backdrop, not a board of multiple assets."
+    },
+    {
+      "asset": "mud",
+      "prompt": "Use case: stylized-concept. Asset type: production seamless soil texture for a native interactive digging canvas. Reference image supplies the warm hand-painted earth material only. Generate a single square top-down texture of soft crumbly warm brown earth, tiny granular clumps and low contrast irregular mud strokes. Cozy gouache storybook texture, subtly outlined soil fragments, honey-brown midtones, deep brown accents. Uniform diffuse lighting across the whole square so copies tile without directional seams. Full bleed to all edges. No perspective, rim, grass, plants, roots, large rocks, holes, objects, rewards, pigs, truffles, icons, text, UI, gradients, lighting vignette, border, or panel divisions. Fine and medium soil detail, no distracting focal object; intended to be revealed and masked by real gameplay."
+    },
+    {
+      "asset": "pouch",
+      "prompt": "Use case: stylized-concept. Asset type: isolated production inventory pouch sprite for Tickle the Pig Living Mud Patch, transparent PNG. Reference image supplies the hand-painted art style and pouch material. Draw one EMPTY small open burlap pouch, squat rounded warm cream woven fabric, thick turned-over rim and dark empty inside, slightly irregular cozy ink outline, a short drawstring, small blank hanging paper tag. Three-quarter front view like the reference pouch at the lower right. Occupies the center with clear padding on every edge. No pig, truffle, treasure, grass, soil, ground plane, lettering, symbols, text, numbers, UI or button. Genuine transparent background with alpha, not a painted checkerboard. Do not bake any reward or count into the sprite."
+    }
+  ]
+}

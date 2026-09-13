@@ -1,5 +1,10 @@
 # Streak as a second regen multiplier
 
+> **Partially superseded (2026-08-29).** The 24/36-hour manual-credit rule and
+> capped regen multiplier remain. The Garden, hidden count, lapse warning, and
+> ambient Barn placement are retired; the canonical surface is now an explicit
+> fiery count around the Home Tickle-bank counter. See `docs/streak.md`.
+
 Adopting a streak mechanic (consecutive-engagement state per player) that multiplies tickle regen rate on an independent axis from happiness, in the 0.75×–1.00× range, raised by tickling within a rolling 36-hour window of the last streak credit, hard-resetting on a 36h gap. Caps at day 30 = 0.75× (25% faster). Surfaced as a Garden — a 5-stage growing visual object in the Barn's ambient layer — with no exposed number.
 
 The motivation is what happiness *cannot* deliver for solo players: meaningful regen reward independent of friends. A solo player at happiness floor sits at 1.13× regen permanently. A solo player at floor + day 30 streak sits at `1.13 × 0.75 = 0.85×` — back below baseline. Streak is the loyalty axis; happiness is the social axis; together they let lonely-but-committed players catch up without forcing friend-acquisition. Companion to ADR-0001.

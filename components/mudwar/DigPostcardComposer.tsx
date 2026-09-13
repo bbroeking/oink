@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import type { DigShareData } from "@/utils/digShare";
 import {
@@ -8,15 +8,20 @@ import {
   fetchPostcardFriends,
   type PostcardFriend,
 } from "@/utils/digPostcards";
-import { AdaptiveModalScaffold } from "@/components/ui/AdaptiveModalScaffold";
 import {
-  FONTS,
-  RADII,
-  SHADOW_SM,
-  SPACE,
-  TYPE,
-  WHIMSY,
-} from "@/constants/theme";
+  AdaptiveModalScaffold,
+  Avatar,
+  Button,
+  CardTitle,
+  Hand,
+  Kicker,
+  Label,
+  ListRow,
+  PageTitle,
+  Sticker,
+  T,
+} from "@/components/ui";
+import { AVATAR_SIZE, BORDER, RADII, SPACE } from "@/constants/theme";
 
 export function DigPostcardComposer({ data }: { data: DigShareData }) {
   const [available, setAvailable] = useState(false);
@@ -75,14 +80,15 @@ export function DigPostcardComposer({ data }: { data: DigShareData }) {
 
   return (
     <>
-      <Pressable
+      <Button
+        variant="ghost"
+        size="sm"
         onPress={show}
-        accessibilityRole="button"
         accessibilityLabel="Send this dig as a postcard"
-        style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}
+        accessibilityHint="Opens the friend picker. Sending costs nothing."
       >
-        <Text style={styles.triggerText}>Send to a friend</Text>
-      </Pressable>
+        Send to a friend
+      </Button>
       <AdaptiveModalScaffold
         visible={open}
         onRequestClose={() => setOpen(false)}
@@ -90,64 +96,86 @@ export function DigPostcardComposer({ data }: { data: DigShareData }) {
         closeLabel="Close postcard picker"
         contentContainerStyle={styles.modal}
       >
-        <Text style={styles.kicker}>FROM THE TRUFFLE PATCH</Text>
-        <Text style={styles.title}>Leave a dig postcard</Text>
-        <Text style={styles.sub}>
+        <Kicker star={false} align="center">
+          FROM THE TRUFFLE PATCH
+        </Kicker>
+        <PageTitle align="center" style={styles.title}>
+          Leave a dig postcard
+        </PageTitle>
+        <T role="bodySm" tone="secondary" align="center" style={styles.sub}>
           One friend gets this feeding’s little mud-map. It stays in their
           Inbox, and they can leave one hoof cheer.
-        </Text>
-        <View
-          accessible
+        </T>
+        <Sticker
+          color="cream2"
+          radius={RADII.md}
+          border={BORDER.thin}
+          shadow="none"
+          rotate={0}
+          pad
+          accessibilityRole="text"
           accessibilityLabel={`${data.finds} finds in ${data.digs} digs`}
           style={styles.receipt}
         >
-          <Text style={styles.feeding}>FEEDING #{data.feedingNumber}</Text>
-          <Text style={styles.result}>
+          <Kicker star={false} align="center">
+            FEEDING #{data.feedingNumber}
+          </Kicker>
+          <CardTitle align="center" style={styles.result}>
             {data.finds} {data.finds === 1 ? "find" : "finds"} in {data.digs}{" "}
             {data.digs === 1 ? "dig" : "digs"}
-          </Text>
-        </View>
+          </CardTitle>
+        </Sticker>
         {!!feedback && (
-          <Text accessibilityLiveRegion="polite" style={styles.feedback}>
+          <T
+            role="kicker"
+            tone="accent"
+            align="center"
+            accessibilityLiveRegion="polite"
+            style={styles.feedback}
+          >
             {feedback}
-          </Text>
+          </T>
         )}
         {loading ? (
-          <Text style={styles.empty}>Checking the fence line…</Text>
+          <Hand tone="secondary" align="center" style={styles.empty}>
+            Checking the fence line…
+          </Hand>
         ) : friends.length === 0 ? (
-          <Text style={styles.empty}>
+          <Hand tone="secondary" align="center" style={styles.empty}>
             Add a friend first, then your next dig can travel.
-          </Text>
+          </Hand>
         ) : (
           <View style={styles.friendList}>
-            {friends.map((friend) => {
+            {friends.map((friend, index) => {
               const sent = sentTo != null;
+              const name = friend.username ?? "A friend";
+              const sending = busyId === friend.id;
               return (
-                <Pressable
+                <ListRow
                   key={friend.id}
+                  index={index}
+                  tilt={false}
+                  leading={
+                    <Avatar size={AVATAR_SIZE[0]} fill="rose" label={name}>
+                      <T role="cardTitleSm">
+                        {(friend.username ?? "?").slice(0, 1).toUpperCase()}
+                      </T>
+                    </Avatar>
+                  }
+                  title={`${name}${friend.discriminator ? ` #${friend.discriminator}` : ""}`}
+                  trailing={
+                    <Label tone={sent ? "secondary" : "accent"}>
+                      {sending ? "sending…" : sent ? "sent" : "send"}
+                    </Label>
+                  }
                   onPress={() => send(friend)}
+                  // A sent postcard is spent, not broken: the row keeps its
+                  // shape and reads as "trotted on" instead of dissolving.
                   disabled={sent || busyId != null}
-                  accessibilityRole="button"
+                  muted={sent}
                   accessibilityLabel={`Send postcard to ${friend.username ?? "friend"}`}
-                  style={({ pressed }) => [
-                    styles.friend,
-                    pressed && styles.pressed,
-                    sent && styles.disabled,
-                  ]}
-                >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {(friend.username ?? "?").slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.friendName}>
-                    {friend.username ?? "A friend"}
-                    {friend.discriminator ? ` #${friend.discriminator}` : ""}
-                  </Text>
-                  <Text style={styles.sendLabel}>
-                    {busyId === friend.id ? "sending…" : sent ? "sent" : "send"}
-                  </Text>
-                </Pressable>
+                  accessibilityHint="Leaves this dig in their Inbox. One postcard per dig."
+                />
               );
             })}
           </View>
@@ -158,84 +186,12 @@ export function DigPostcardComposer({ data }: { data: DigShareData }) {
 }
 
 const styles = StyleSheet.create({
-  trigger: {
-    borderWidth: 1.5,
-    borderColor: WHIMSY.ink,
-    borderRadius: RADII.pill,
-    backgroundColor: WHIMSY.paper,
-    paddingHorizontal: SPACE.md,
-    paddingVertical: SPACE.sm,
-    ...SHADOW_SM,
-  },
-  triggerText: { ...TYPE.label, color: WHIMSY.ink },
-  pressed: { opacity: 0.72, transform: [{ translateY: 1 }] },
-  disabled: { opacity: 0.48 },
   modal: { paddingHorizontal: SPACE.lg, paddingBottom: SPACE.lg },
-  kicker: {
-    ...TYPE.kicker,
-    color: WHIMSY.accent,
-    textAlign: "center",
-  },
-  title: {
-    ...TYPE.pageTitle,
-    color: WHIMSY.ink,
-    textAlign: "center",
-    marginTop: SPACE.xs,
-  },
-  sub: {
-    ...TYPE.bodySm,
-    color: WHIMSY.mute,
-    textAlign: "center",
-    marginTop: SPACE.sm,
-  },
-  receipt: {
-    alignItems: "center",
-    backgroundColor: WHIMSY.cream2,
-    borderWidth: 1.5,
-    borderColor: WHIMSY.ink,
-    borderRadius: RADII.md,
-    padding: SPACE.md,
-    marginTop: SPACE.md,
-  },
-  feeding: { ...TYPE.kicker, color: WHIMSY.accent },
-  result: { ...TYPE.cardTitle, color: WHIMSY.ink, marginTop: 2 },
-  feedback: {
-    fontFamily: FONTS.hand,
-    fontSize: 13,
-    color: WHIMSY.accent,
-    textAlign: "center",
-    marginTop: SPACE.sm,
-  },
-  empty: {
-    ...TYPE.hand,
-    color: WHIMSY.mute,
-    textAlign: "center",
-    marginTop: SPACE.lg,
-  },
+  title: { marginTop: SPACE.xs },
+  sub: { marginTop: SPACE.sm },
+  receipt: { alignItems: "center", marginTop: SPACE.md },
+  result: { marginTop: SPACE.xxs },
+  feedback: { marginTop: SPACE.sm },
+  empty: { marginTop: SPACE.lg },
   friendList: { gap: SPACE.sm, marginTop: SPACE.md },
-  friend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACE.sm,
-    borderWidth: 1.5,
-    borderColor: WHIMSY.ink,
-    borderRadius: RADII.md,
-    backgroundColor: WHIMSY.paper,
-    padding: SPACE.sm,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: WHIMSY.rose,
-  },
-  avatarText: {
-    fontFamily: FONTS.bodyExtra,
-    fontSize: 15,
-    color: WHIMSY.ink,
-  },
-  friendName: { ...TYPE.bodySm, color: WHIMSY.ink, flex: 1 },
-  sendLabel: { ...TYPE.label, color: WHIMSY.accent },
 });

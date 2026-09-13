@@ -7,7 +7,7 @@
 // the ceremony beat lands on time without an idle herd paying for a poll all day.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import {
 	RaceCrewDetail,
 	RaceStandings,

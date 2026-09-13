@@ -14,14 +14,17 @@
 // the mapped error copy. Skip advances unconditionally — the spec
 // makes redemption strictly signup-only, so a skipped code is gone
 // for that account.
+//
+// Rebuilt on the design system 2026-09-11 (wave 3 · area E): the code well is
+// `TextField` (a well-formed code earns the check, a refusal is the field's own
+// `errorText` instead of a loose red line), Apply/Skip/Paste are `Button` —
+// Apply's disabled state is now "a button, asleep" rather than the retired
+// opacity ghost, and Skip keeps its quiet hand voice as `handLink`. [E16]
 
 import React, { useEffect, useState } from "react";
 import {
 	View,
-	Text,
-	Pressable,
 	StyleSheet,
-	TextInput,
 	SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
@@ -30,8 +33,15 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
-import { Sticker } from "./ui/Sticker";
-import { FONTS, KICKER_TEXT, RADII, TYPE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import {
+	Button,
+	Hand,
+	Kicker,
+	SectionTitle,
+	Sticker,
+	TextField,
+} from "./ui";
+import { PAGE_PAD, RADII, SPACE, STICKER_SHADOW, UI_COLORS } from "@/constants/theme";
 import {
 	PENDING_REFERRAL_CODE_KEY,
 	REFERRAL_CODE_PATTERN,
@@ -49,6 +59,8 @@ interface Props {
 // so a future onboarding redesign doesn't accidentally re-show the
 // referral prompt.
 const SEEN_KEY = "seen_referral_step";
+
+const CODE_MAX = 20;
 
 // Explicit pixel dims for the Rosie hero. A percentage width + aspectRatio
 // collapses to zero height in this layout (tall, mostly-empty hero because
@@ -98,6 +110,7 @@ export function ReferralCodeEntry({ onDone }: Props) {
 
 	const trimmed = code.trim().toUpperCase();
 	const validShape = REFERRAL_CODE_PATTERN.test(trimmed);
+	const applying = status.kind === "applying";
 
 	// One-tap paste: pull the clipboard on demand and drop a matching
 	// code into the field. Complements the mount-time prefill for the
@@ -122,7 +135,7 @@ export function ReferralCodeEntry({ onDone }: Props) {
 	};
 
 	const apply = async () => {
-		if (!validShape || status.kind === "applying") return;
+		if (!validShape || applying) return;
 		setStatus({ kind: "applying" });
 		const result = await redeemReferralCode(trimmed);
 		if (result?.ok) {
@@ -148,21 +161,26 @@ export function ReferralCodeEntry({ onDone }: Props) {
 							style={styles.rosie}
 							resizeMode="contain"
 						/>
-						<Text style={styles.kicker}>★ you're in ★</Text>
-						<Text style={styles.title}>
+						<Kicker star={false}>★ you're in ★</Kicker>
+						<SectionTitle align="center" style={styles.title}>
 							{status.inviterName
 								? `${status.inviterName} brought you in!`
 								: "You're in — welcome!"}
-						</Text>
-						<Text style={styles.heroBody}>+50 snouts in your barn.</Text>
+						</SectionTitle>
+						<Hand tone="secondary" align="center" style={styles.heroBody}>
+							+50 snouts in your barn.
+						</Hand>
 					</View>
 					<View style={styles.cardWrap}>
-						<Pressable
+						<Button
+							full
+							variant="lilac"
 							onPress={finish}
-							style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
+							accessibilityLabel="Continue"
+							accessibilityHint="Opens the introduction storybook"
 						>
-							<Text style={styles.btnText}>Continue</Text>
-						</Pressable>
+							Continue
+						</Button>
 					</View>
 				</SafeAreaView>
 			</View>
@@ -182,13 +200,13 @@ export function ReferralCodeEntry({ onDone }: Props) {
 							style={styles.rosie}
 							resizeMode="contain"
 						/>
-						<Text style={styles.kicker}>★ got a friend's code? ★</Text>
-						<Text style={styles.title}>
+						<Kicker star={false}>★ got a friend's code? ★</Kicker>
+						<SectionTitle align="center" style={styles.title}>
 							Pop their code in for a +50 snout welcome.
-						</Text>
-						<Text style={styles.heroBody}>
+						</SectionTitle>
+						<Hand tone="secondary" align="center" style={styles.heroBody}>
 							Skip if not — most pigs don't have one their first time.
-						</Text>
+						</Hand>
 					</View>
 
 					<View style={styles.cardWrap}>
@@ -196,66 +214,83 @@ export function ReferralCodeEntry({ onDone }: Props) {
 							color="paper"
 							rotate={-0.6}
 							radius={RADII.xxl}
+							pad
 							style={[styles.card, STICKER_SHADOW]}
 						>
-							<Pressable
-								onPress={pasteFromClipboard}
-								disabled={status.kind === "applying"}
-								style={({ pressed }) => [
-									styles.pasteChip,
-									pressed && { opacity: 0.7 },
-								]}
-							>
-								<Text style={styles.pasteChipText}>Paste code</Text>
-							</Pressable>
-							<TextInput
-								style={[
-									styles.input,
-									status.kind === "error" && styles.inputError,
-								]}
-								placeholder="ROSIE-K3T9"
-								placeholderTextColor={WHIMSY.mute}
+							<View style={styles.pasteRow}>
+								<Button
+									variant="handLink"
+									size="sm"
+									onPress={pasteFromClipboard}
+									disabled={applying}
+									accessibilityLabel="Paste code from clipboard"
+									accessibilityHint="Fills the field with a code you copied"
+								>
+									Paste code
+								</Button>
+							</View>
+							<TextField
+								// The kicker above already asks for the code, so the
+								// field's label stays for VoiceOver only.
+								label="Your friend's invite code"
+								labelHidden
 								value={code}
 								onChangeText={(t) => {
 									setCode(t);
 									if (status.kind === "error") setStatus({ kind: "idle" });
 								}}
+								// The placeholder IS the format instruction here (audit
+								// E10), so there is no separate rules line to carry as
+								// `helper` — the well speaks in shapes, and a refusal
+								// arrives as `errorText`.
+								placeholder="ROSIE-K3T9"
+								variant="code"
+								state={
+									status.kind === "error"
+										? "error"
+										: validShape
+											? "valid"
+											: "default"
+								}
+								errorText={
+									status.kind === "error" ? status.message : undefined
+								}
 								autoCapitalize="characters"
 								autoCorrect={false}
-								maxLength={20}
-								editable={status.kind !== "applying"}
+								maxLength={CODE_MAX}
+								editable={!applying}
 							/>
-							{status.kind === "error" && (
-								<Text style={styles.errorText}>{status.message}</Text>
-							)}
 							<View style={styles.btnRow}>
-								<Pressable
+								<Button
+									variant="handLink"
 									onPress={finish}
-									style={({ pressed }) => [
-										styles.skipBtn,
-										pressed && { opacity: 0.7 },
-									]}
+									accessibilityLabel="Skip the invite code"
+									accessibilityHint="Continues without a code — this step won't come back"
 								>
-									<Text style={styles.skipText}>Skip</Text>
-								</Pressable>
-								<Pressable
-									onPress={apply}
-									disabled={!validShape || status.kind === "applying"}
-									style={({ pressed }) => [
-										styles.btn,
-										(!validShape || status.kind === "applying") &&
-											styles.btnDisabled,
-										pressed && { opacity: 0.85 },
-									]}
-								>
-									<Text style={styles.btnText}>
-										{status.kind === "applying"
-											? "Applying…"
-											: validShape
-												? `Apply ${trimmed}`
-												: "Apply"}
-									</Text>
-								</Pressable>
+									Skip
+								</Button>
+								<View style={styles.applyWrap}>
+									<Button
+										full
+										variant="lilac"
+										onPress={apply}
+										disabled={!validShape}
+										loading={applying}
+										loadingLabel="Applying…"
+										accessibilityLabel={
+											validShape
+												? `Apply invite code ${trimmed}`
+												: "Apply invite code"
+										}
+										accessibilityHint={
+											validShape
+												? "Adds 50 snouts to your barn"
+												: "Enter a code like ROSIE-K3T9 first"
+										}
+									>
+										{validShape ? `Apply ${trimmed}` : "Apply"}
+									</Button>
+								</View>
 							</View>
 						</Sticker>
 					</View>
@@ -273,101 +308,35 @@ export async function hasSeenReferralStep(): Promise<boolean> {
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
+	bg: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
 	flex: { flex: 1 },
-	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: PAGE_PAD },
 	hero: {
 		alignItems: "center",
-		paddingTop: 24,
+		paddingTop: SPACE.xl,
 		flex: 1,
 		justifyContent: "center",
 	},
 	rosie: {
 		width: ROSIE_W,
 		height: ROSIE_H,
-		marginBottom: 14,
+		marginBottom: SPACE.card,
 	},
-	kicker: { ...KICKER_TEXT, marginBottom: 6 },
 	title: {
-		...TYPE.sectionTitle,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		paddingHorizontal: 12,
-		marginBottom: 8,
+		paddingHorizontal: SPACE.md,
+		marginTop: SPACE.sm,
 	},
 	heroBody: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		paddingHorizontal: 24,
+		paddingHorizontal: SPACE.xl,
+		marginTop: SPACE.sm,
 	},
-	cardWrap: { paddingBottom: 24 },
-	card: { padding: 18 },
-	pasteChip: {
-		alignSelf: "flex-end",
-		paddingVertical: 6,
-		paddingHorizontal: 10,
-		marginBottom: 8,
-	},
-	pasteChipText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
-	input: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 18,
-		letterSpacing: 1.2,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		marginBottom: 10,
-		textAlign: "center",
-	},
-	inputError: { borderColor: WHIMSY.accent },
-	errorText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		marginBottom: 10,
-		textAlign: "center",
-	},
+	cardWrap: { paddingBottom: SPACE.xl },
+	card: { gap: SPACE.sm },
+	pasteRow: { alignItems: "flex-end" },
 	btnRow: {
 		flexDirection: "row",
-		gap: 10,
-		marginTop: 4,
+		gap: SPACE.md,
 		alignItems: "center",
 	},
-	skipBtn: {
-		paddingVertical: 13,
-		paddingHorizontal: 18,
-	},
-	skipText: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
-	btn: {
-		flex: 1,
-		backgroundColor: WHIMSY.lilac,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingVertical: 13,
-		alignItems: "center",
-	},
-	btnDisabled: { opacity: 0.5 },
-	btnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		letterSpacing: 0.3,
-	},
+	applyWrap: { flex: 1 },
 });

@@ -1,5 +1,7 @@
 import React from "react";
-import { SpritePig } from "./SpritePig";
+import { RasterPig } from "./RasterPig";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { usePigActive } from "@/hooks/usePigActive";
 import {
 	resolvePigAnimation,
 	type PigAnimation,
@@ -65,6 +67,9 @@ export function PigRenderer({
 	...props
 }: PigRendererComponentProps) {
 	const persistedRolloutEnabled = useRivePigRolloutEnabled();
+	const motion = useMotionPolicy();
+	const reduceMotion = props.reduceMotion ?? motion.reduceMotion;
+	const active = usePigActive(props.active);
 	const resolvedEquipment = resolveRivePigEquipment(props.equipment ?? {});
 	const effectiveAnimation = resolvePigAnimation(props.animation, props.mood);
 	const useRive = shouldUseRiveRenderer({
@@ -74,14 +79,16 @@ export function PigRenderer({
 		frameIdx,
 		skinTintOverride,
 		rolloutEnabled: rolloutEnabled ?? persistedRolloutEnabled,
-		reduceMotion: props.reduceMotion,
+		reduceMotion,
 		equipmentSupported: resolvedEquipment.supported,
 	});
 
 	if (!useRive) {
 		return (
-			<SpritePig
+			<RasterPig
 				{...props}
+				reduceMotion={reduceMotion}
+				active={active}
 				animation={effectiveAnimation}
 				customFrames={customFrames}
 				frameIdx={frameIdx}
@@ -96,6 +103,8 @@ export function PigRenderer({
 	return (
 		<RivePig
 			{...props}
+			reduceMotion={reduceMotion}
+			active={active}
 			animation={effectiveAnimation}
 			source={riveSource!}
 		/>

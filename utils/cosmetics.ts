@@ -101,3 +101,100 @@ export async function equipCosmetic(
 	// Server refused ({ok:false}) → no-op patch.
 	return {};
 }
+
+// ---------------------------------------------------------------------------
+// Accessibility composition for the two cosmetic grids.
+//
+// The Closet grid composed a state-aware label + hint by hand; the Shop grid
+// shipped with no accessibility props at all, so every purchasable item in the
+// game announced as two bare text runs [D-03, D-04]. The label/hint pair is a
+// RULE, not a rendering detail — a control that spends states its cost in its
+// label and its consequence in its hint (spec §3.5) — so it lives here beside
+// the equip rule rather than in either screen.
+// (2026-09-11)
+// ---------------------------------------------------------------------------
+
+export interface CosmeticA11ySubject {
+	name: string;
+	rarity?: string | null;
+	/** Catalog price. `0` is the "earned, not sold" sentinel. */
+	cost?: number | null;
+}
+
+export interface CosmeticA11yState {
+	owned: boolean;
+	/** Currently worn in its slot. */
+	active: boolean;
+	/** Members-only AND the viewer is not a Slop Club member. */
+	locked?: boolean;
+	/** The viewer's balance covers `cost`. Only meaningful when unowned. */
+	canAfford?: boolean;
+	/** In today's rotation. An out-of-rotation item can be previewed, not bought. */
+	buyable?: boolean;
+	/**
+	 * What a tap does. `equip` is the Closet tile (wear / take off in place);
+	 * `preview` is the Shop card (opens the buy sheet).
+	 */
+	action?: "preview" | "equip";
+}
+
+export interface CosmeticA11y {
+	accessibilityLabel: string;
+	accessibilityHint: string;
+	accessibilityState: { selected: boolean; disabled: boolean };
+}
+
+/** "wearing" / "owned" / "Slop Club members only" / "not owned" — one word set. */
+function ownershipWord(state: CosmeticA11yState): string {
+	if (state.active) return "wearing";
+	if (state.owned) return "owned";
+	if (state.locked) return "Slop Club members only";
+	return "not owned";
+}
+
+/**
+ * The spoken name + consequence for a cosmetic tile, in both grids.
+ *
+ * Label: name, rarity, ownership, and — for anything still for sale — its cost.
+ * Hint: what the tap will do, including why it can't be bought yet.
+ */
+export function cosmeticAccessibility(
+	item: CosmeticA11ySubject,
+	state: CosmeticA11yState,
+): CosmeticA11y {
+	const cost = item.cost ?? 0;
+	const forSale = !state.owned && cost > 0;
+	const parts = [item.name];
+	if (item.rarity) parts.push(item.rarity);
+	parts.push(ownershipWord(state));
+	if (forSale) parts.push(`${cost.toLocaleString()} snouts`);
+
+	const hint =
+		state.action === "equip"
+			? state.owned
+				? state.active
+					? "Removes this item from your pig"
+					: "Equips this item on your pig"
+				: state.locked
+					? "Opens a preview; Slop Club membership is required"
+					: "Opens a preview of this item"
+			: state.owned
+				? state.active
+					? "Opens the item sheet, where you can take it off"
+					: "Opens the item sheet, where you can wear it"
+				: state.locked
+					? "Opens a preview; Slop Club membership is required"
+					: cost <= 0
+						? "Opens a preview; this one is earned, not sold"
+						: state.buyable === false
+							? "Opens a preview; it isn't in today's shop"
+							: state.canAfford === false
+								? `Opens the buy sheet; you don't have ${cost.toLocaleString()} snouts yet`
+								: `Opens the buy sheet; buying costs ${cost.toLocaleString()} snouts`;
+
+	return {
+		accessibilityLabel: parts.join(", "),
+		accessibilityHint: hint,
+		accessibilityState: { selected: state.active, disabled: false },
+	};
+}

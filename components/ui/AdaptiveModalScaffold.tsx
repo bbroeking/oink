@@ -3,6 +3,7 @@ import {
 	KeyboardAvoidingView,
 	Modal,
 	Platform,
+	Pressable,
 	ScrollView,
 	StyleSheet,
 	View,
@@ -39,6 +40,13 @@ interface Props {
 		"contentContainerStyle" | "children"
 	>;
 	testID?: string;
+	presentation?: "native" | "inline";
+	/**
+	 * Tapping the scrim closes the dialog. Inline dialogs always do (they have
+	 * no hardware back); native ones opt in — a spend/decision dialog should
+	 * NOT dismiss on a stray tap, an explainer may. (2026-09-11)
+	 */
+	dismissOnBackdrop?: boolean;
 }
 
 /**
@@ -61,6 +69,8 @@ export function AdaptiveModalScaffold({
 	contentContainerStyle,
 	scrollViewProps,
 	testID,
+	presentation = "native",
+	dismissOnBackdrop,
 }: Props) {
 	const { width, height } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
@@ -105,6 +115,33 @@ export function AdaptiveModalScaffold({
 		</View>
 	);
 
+	const backdrop = (
+		<KeyboardAvoidingView
+			enabled={keyboardAware}
+			behavior={Platform.OS === "ios" ? "padding" : undefined}
+			style={[
+				styles.backdrop,
+				presentation === "inline" && styles.inlineBackdrop,
+				{
+					paddingTop: insets.top + gutter,
+					paddingBottom: insets.bottom + gutter,
+					paddingHorizontal: gutter,
+				},
+			]}
+		>
+			{presentation === "inline" || dismissOnBackdrop ? (
+				<Pressable
+					accessible={false}
+					onPress={onRequestClose}
+					style={StyleSheet.absoluteFill}
+				/>
+			) : null}
+			{body}
+		</KeyboardAvoidingView>
+	);
+
+	if (!visible && presentation === "inline") return null;
+	if (presentation === "inline") return backdrop;
 	return (
 		<Modal
 			visible={visible}
@@ -113,20 +150,7 @@ export function AdaptiveModalScaffold({
 			onRequestClose={onRequestClose}
 			statusBarTranslucent
 		>
-			<KeyboardAvoidingView
-				enabled={keyboardAware}
-				behavior={Platform.OS === "ios" ? "padding" : undefined}
-				style={[
-					styles.backdrop,
-					{
-						paddingTop: insets.top + gutter,
-						paddingBottom: insets.bottom + gutter,
-						paddingHorizontal: gutter,
-					},
-				]}
-			>
-				{body}
-			</KeyboardAvoidingView>
+			{backdrop}
 		</Modal>
 	);
 }
@@ -137,6 +161,15 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		backgroundColor: MODAL_BACKDROP_BG,
+	},
+	inlineBackdrop: {
+		position: "absolute",
+		top: 0,
+		right: 0,
+		bottom: 0,
+		left: 0,
+		zIndex: 1000,
+		elevation: 1000,
 	},
 	frame: {
 		overflow: "hidden",

@@ -10,16 +10,10 @@
 // member per feeding; a missed feeding costs nothing and is never displayed as a
 // loss (gift-not-guilt).
 
-import { ReactNode, useCallback, useEffect, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
-import {
-  AppState,
-  View,
-  Text,
-  Pressable,
-  Modal,
-  StyleSheet,
-} from "react-native";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect, useIsFocused } from "expo-router/react-navigation";
+import { router } from "expo-router";
+import { AppState, InteractionManager, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRooting } from "@/hooks/useRooting";
 import { feedingPhaseView, nextOpenCountdown } from "@/utils/rooting";
@@ -28,15 +22,11 @@ import {
   refreshFeedingSchedule,
 } from "@/utils/feedingConfig";
 import { TrufflePatch } from "./TrufflePatch";
+import { LivingMudReceipt, LivingMudRecovery } from "./LivingMudReceipt";
+import { AdaptiveModalScaffold } from "@/components/ui";
 import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
-import {
-  FONTS,
-  WHIMSY,
-  SPACE,
-  RADII,
-  SHADOW_SM,
-  MODAL_BACKDROP_BG,
-} from "@/constants/theme";
+
+import { subscribeFeedingTimeZone } from "@/utils/feedingTimeZone";
 
 export interface FeedingCta {
   /** True once the caller has rooted this feeding window. */
@@ -79,6 +69,12 @@ function ctaClock() {
   return { phaseOpen: open, countdown };
 }
 
+// Receipts can be recovered by both mounted tab hooks. Once dismissed, the
+// other instance must not present the same receipt on the next tab focus.
+const dismissedReceipts = new WeakSet<object>();
+const dismissedWindows = new Set<string>();
+const receiptListeners = new Set<() => void>();
+
 export function useFeedingCta(onDug?: () => void): FeedingCta {
   const {
     session,
@@ -89,12 +85,74 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
     submit,
     clear,
     reconcile,
+    submitting: serverBusy,
+    submissionUncertain,
+    pendingSubmission,
+    recoveredOutcome,
+    recoveredWindowIndex,
+    recoveredUserId,
+    retryPendingSubmission,
+    recoverSubmission,
   } = useRooting();
   // The dig experience is an unmanaged native Modal (visible={!!session}, below):
   // hold the popup queue while a dig session is open so a foreground poll can't
   // present a queued popup over the patch — the #50152 wedge (issue #4). Covers
   // the nested TrufflePatch + DigHelpModal too.
-  useUnmanagedModalHold(!!session);
+  const focused = useIsFocused();
+  const [, refreshReceipts] = useState(0);
+  useEffect(() => {
+    const listener = () => refreshReceipts((n) => n + 1);
+    receiptListeners.add(listener);
+    return () => {
+      receiptListeners.delete(listener);
+    };
+  }, []);
+  const receiptVisible =
+    !!recoveredOutcome &&
+    !dismissedReceipts.has(recoveredOutcome) &&
+    (recoveredWindowIndex == null ||
+      !dismissedWindows.has(`${recoveredUserId}:${recoveredWindowIndex}`));
+  const visible =
+    focused &&
+    (!!session || receiptVisible || !!pendingSubmission || submissionUncertain);
+  useUnmanagedModalHold(visible);
+  const [busy, setBusy] = useState(false);
+  const [brushing, setBrushing] = useState(false);
+  const [recoveryReason, setRecoveryReason] = useState<string | undefined>();
+  const leaveRef = useRef<(() => Promise<void>) | null>(null);
+  const registerLeave = useCallback((leave: (() => Promise<void>) | null) => {
+    leaveRef.current = leave;
+  }, []);
+  const close = useCallback(() => {
+    if (busy || serverBusy) return;
+    if (recoveredOutcome) dismissedReceipts.add(recoveredOutcome);
+    if (recoveredWindowIndex != null)
+      dismissedWindows.add(`${recoveredUserId}:${recoveredWindowIndex}`);
+    receiptListeners.forEach((listener) => listener());
+    clear();
+    InteractionManager.runAfterInteractions(() => router.navigate("/(tabs)"));
+  }, [
+    busy,
+    serverBusy,
+    recoveredOutcome,
+    recoveredWindowIndex,
+    recoveredUserId,
+    clear,
+  ]);
+  const requestClose = useCallback(() => {
+    if (busy || serverBusy) return;
+    if (leaveRef.current) leaveRef.current();
+    else close();
+  }, [busy, serverBusy, close]);
+  const retry = useCallback(async () => {
+    const result = await retryPendingSubmission();
+    setRecoveryReason(result.ok ? undefined : result.reason);
+    if (result.ok) {
+      onDug?.();
+      return { outcome: result.outcome };
+    }
+    return { outcome: null, failReason: result.reason };
+  }, [retryPendingSubmission, onDug]);
   const [note, setNote] = useState<string | null>(null);
   const [clock, setClock] = useState(ctaClock);
   const [digEnded, setDigEnded] = useState(false);
@@ -105,8 +163,15 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 
   useEffect(() => {
     const t = setInterval(() => setClock(ctaClock()), 15000);
-    return () => clearInterval(t);
-  }, []);
+    const unsubscribe = subscribeFeedingTimeZone(() => {
+      setClock(ctaClock());
+      reconcile();
+    });
+    return () => {
+      clearInterval(t);
+      unsubscribe();
+    };
+  }, [reconcile]);
 
   // Server-authoritative schedule sync: cache-hydrate then fetch on mount
   // (the founder's "schedule changes propagate without a binary"). A confirmed
@@ -141,6 +206,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
       if (s !== "active") return;
       setClock(ctaClock());
       reconcile();
+      if (focused) recoverSubmission().catch(() => {});
       refreshFeedingSchedule()
         .then((changed) => {
           if (changed) {
@@ -151,7 +217,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
         .catch(() => {});
     });
     return () => sub.remove();
-  }, [reconcile]);
+  }, [reconcile, focused, recoverSubmission]);
 
   // Home and Season each mount this reusable entry point. A dig completed on
   // one tab must heal the other instance when it next receives focus; tabs stay
@@ -183,51 +249,48 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
   const { phaseOpen, countdown } = clock;
 
   const modal = (
-    <Modal
-      visible={!!session}
-      transparent
-      animationType="fade"
-      onRequestClose={clear}
+    <AdaptiveModalScaffold
+      visible={visible}
+      onRequestClose={requestClose}
+      bare
+      contentContainerStyle={styles.modalBody}
+      scrollViewProps={{ scrollEnabled: !brushing }}
     >
-      <View style={styles.backdrop}>
-        <View style={styles.modalBody}>
-          {/* Leave without submitting — the session keeps its seed
-					    server-side, so coming back this feeding resumes the
-					    same board. Rendered as a paper sticker-chip (not bare
-					    underlined text) so the safe-to-leave affordance is
-					    unmissable; the explainer says the board is kept. */}
-          {!digEnded && (
-            <Pressable
-              onPress={clear}
-              style={({ pressed }) => [
-                styles.dismissChip,
-                pressed && { opacity: 0.7 },
-              ]}
-              hitSlop={8}
-            >
-              <Text style={styles.dismissText}>leave it for now ›</Text>
-            </Pressable>
-          )}
-          {session && (
-            <TrufflePatch
-              session={session}
-              onSubmit={async (finds, actions, missed) => {
-                const r = await submit(finds, actions, missed);
-                if (r.ok && r.outcome && !r.outcome.practice) onDug?.();
-                // Pass the refusal reason through so the end card can say
-                // WHY nothing banked (already_rooted, no_open_rooting, …).
-                return r.ok
-                  ? { outcome: r.outcome }
-                  : { outcome: null, failReason: r.reason };
-              }}
-              onClose={clear}
-              onEndChange={setDigEnded}
-              phaseOpen={clock.phaseOpen}
-            />
-          )}
-        </View>
-      </View>
-    </Modal>
+      {session ? (
+        <TrufflePatch
+          key={`${session.userId ?? "practice"}:${session.windowIndex}:${session.seed}`}
+          session={session}
+          onSubmit={async (finds, actions, missed) => {
+            const r = await submit(finds, actions, missed);
+            if (r.ok && r.outcome && !r.outcome.practice) onDug?.();
+            return r.ok
+              ? { outcome: r.outcome }
+              : { outcome: null, failReason: r.reason };
+          }}
+          onClose={close}
+          onEndChange={setDigEnded}
+          phaseOpen={clock.phaseOpen}
+          onBusyChange={setBusy}
+          onInteractionChange={setBrushing}
+          registerLeave={registerLeave}
+          onRetry={retry}
+          recoveredOutcome={
+            recoveredWindowIndex === session.windowIndex
+              ? recoveredOutcome
+              : null
+          }
+        />
+      ) : receiptVisible && recoveredOutcome ? (
+        <LivingMudReceipt outcome={recoveredOutcome} onClose={close} />
+      ) : (
+        <LivingMudRecovery
+          busy={serverBusy}
+          reason={recoveryReason}
+          onRetry={retry}
+          onClose={close}
+        />
+      )}
+    </AdaptiveModalScaffold>
   );
 
   return {
@@ -249,29 +312,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: MODAL_BACKDROP_BG,
-    justifyContent: "center",
-    padding: SPACE.lg,
-  },
-  modalBody: { width: "100%" },
-  // A paper sticker-chip in the same corner — ink border + hard offset shadow,
-  // so "you can safely leave" reads as a real, tappable control.
-  dismissChip: {
-    alignSelf: "flex-end",
-    marginBottom: SPACE.sm,
-    backgroundColor: WHIMSY.paper,
-    borderWidth: 1.5,
-    borderColor: WHIMSY.ink,
-    borderRadius: RADII.sm,
-    paddingHorizontal: SPACE.sm,
-    paddingVertical: 4,
-    ...SHADOW_SM,
-  },
-  dismissText: {
-    fontFamily: FONTS.hand,
-    fontSize: 13,
-    color: WHIMSY.ink,
-  },
+  // The scaffold centres and pads; this only stacks the escape chip above the
+  // patch and keeps them from touching.
+  modalBody: { justifyContent: "center" },
 });

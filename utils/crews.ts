@@ -172,6 +172,7 @@ export async function fetchInviteCandidates(
 
 export interface RosterProfile {
 	hatId: string | null;
+	bowId: string | null;
 	wallowCount: number;
 	title: { name: string; placement: TitlePlacement } | null;
 }
@@ -182,11 +183,12 @@ export async function fetchMemberProfiles(
 	if (userIds.length === 0) return new Map();
 	const rich = await supabase
 		.from("profiles")
-		.select("id, active_hat_id, wallow_count, active_title:titles!profiles_active_title_id_fkey(name, placement)")
+		.select("id, active_hat_id, active_bow_id, wallow_count, active_title:titles!profiles_active_title_id_fkey(name, placement)")
 		.in("id", userIds);
 	type Row = {
 		id: string;
 		active_hat_id: string | null;
+		active_bow_id?: string | null;
 		wallow_count?: number | null;
 		active_title?:
 			| { name: string; placement: TitlePlacement }
@@ -210,6 +212,7 @@ export async function fetchMemberProfiles(
 				row.id,
 				{
 					hatId: row.active_hat_id,
+					bowId: row.active_bow_id ?? null,
 					wallowCount: row.wallow_count ?? 0,
 					title: joined,
 				},
@@ -229,6 +232,11 @@ export function createCrew(): Promise<RpcResult<{ crew_id: string; name: string 
 }
 export function inviteToCrew(inviteeId: string): Promise<RpcResult<{}>> {
 	return rpcAction("invite_to_crew", { p_invitee: inviteeId });
+}
+export function inviteToCrewWithRecruiting(
+	inviteeId: string
+): Promise<RpcResult<{ invite_id: string; message_id: string }>> {
+	return rpcAction("invite_to_crew_with_recruiting", { p_invitee: inviteeId });
 }
 export function acceptInvite(inviteId: string): Promise<RpcResult<{ crew_id: string }>> {
 	return rpcAction<{ crew_id: string }>("accept_crew_invite", { p_invite: inviteId });

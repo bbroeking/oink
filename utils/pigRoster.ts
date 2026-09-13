@@ -92,8 +92,18 @@ export function parsePigRoster(raw: unknown): PigRoster {
 	};
 }
 
-export async function fetchPigRoster(): Promise<PigRoster> {
-	return parsePigRoster(await rpc<RawPigRoster>("pig_roster"));
+/**
+ * `null` = we never heard back (the RPC errored or returned no rows) — an
+ * ERROR, offered with a retry. It is NOT "you own only Rosie": returning
+ * DEFAULT_PIG_ROSTER on a failed read told a member their companion was gone
+ * and their choice unmade. The default roster is the shape we fall back to
+ * only when the server DID answer with something unusable (parsePigRoster).
+ * [B-02, B-14] (2026-09-11, wave 4)
+ */
+export async function fetchPigRoster(): Promise<PigRoster | null> {
+	const raw = await rpc<RawPigRoster>("pig_roster");
+	if (raw == null) return null;
+	return parsePigRoster(raw);
 }
 
 export function recruitPig(pigId: PigId) {

@@ -1,19 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Animated, Easing } from "react-native";
+import { View, StyleSheet, ScrollView, Animated, Easing } from "react-native";
 import {
 	PAGE_PAD,
 	RADII,
 	SPACE,
-	STICKER_SHADOW,
 	TAB_SAFE,
-	TYPE,
-	UI_COLORS,
-	WHIMSY,
 } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Sticker } from "@/components/ui/Sticker";
+import { ProgressTrack } from "@/components/ui/ProgressTrack";
+import { T } from "@/components/ui/Text";
 import {
 	CARDS,
 	ENEMIES,
@@ -66,24 +64,12 @@ export function ScuffleView({
 	const hp = state.wallHp ?? 0;
 	const maxHp = enemy ? enemy.hp : shownEnemy.hp;
 
-	// ── Motion: HP bar drops on hit, the enemy recoils, Rosie reacts per tickle ──
-	const hpAnim = useRef(new Animated.Value(maxHp > 0 ? hp / maxHp : 0)).current;
+	// ── Motion: the enemy recoils, Rosie reacts per tickle ──
+	// The wall's meter is a `ProgressTrack`, which changes state rather than
+	// tweening — the hit is felt in the recoil, which is the beat a Reduce-Motion
+	// player can also opt out of.
 	const recoil = useRef(new Animated.Value(0)).current; // enemy shake
 	const pulse = useRef(new Animated.Value(0)).current; // Rosie per-tickle bump
-
-	useEffect(() => {
-		const to = maxHp > 0 ? hp / maxHp : 0;
-		if (policy.reduceMotion) {
-			hpAnim.setValue(to);
-			return;
-		}
-		Animated.timing(hpAnim, {
-			toValue: to,
-			duration: policy.duration(280),
-			easing: Easing.out(Easing.quad),
-			useNativeDriver: false, // animating width %
-		}).start();
-	}, [hp, maxHp, hpAnim, policy]);
 
 	const impact = () => {
 		if (!policy.allowDecorativeMotion) return;
@@ -160,51 +146,51 @@ export function ScuffleView({
 
 			{enemy && (
 				<>
-					<View style={styles.hpRow}>
-						<Text style={styles.hpLabel}>
-							{hp}/{maxHp}
-						</Text>
-						<View style={styles.hpTrack}>
-							<Animated.View
-								style={[
-									styles.hpFill,
-									{
-										width: hpAnim.interpolate({
-											inputRange: [0, 1],
-											outputRange: ["0%", "100%"],
-										}),
-									},
-								]}
-							/>
-						</View>
-					</View>
-					<Text style={styles.behavior}>{enemy.behaviorLine}</Text>
+					<ProgressTrack
+						value={hp}
+						max={maxHp}
+						tone="rose"
+						label={`${enemy.name} holding the road`}
+					/>
+					<T role="hand" align="center">
+						{enemy.behaviorLine}
+					</T>
 					{state.openingHitPending && (
-						<Text style={styles.warn}>
+						<T role="bodySm" tone="accent" align="center">
 							She flinches — the {enemy.name} pecks first. A lid or Warm Tea would
 							block it.
-						</Text>
+						</T>
 					)}
 				</>
 			)}
 
 			{defeated && shownId !== "tollbooth_goose" && (
-				<Text style={styles.victory}>
+				<T role="hand" align="center">
 					The {shownEnemy.name} stepped aside. Head back and send Rosie rambling on.
-				</Text>
+				</T>
 			)}
 
 			{defeated && shownId === "tollbooth_goose" && (
 				<CeremonyCard color="sun" style={styles.victoryCard}>
-					<Text style={styles.victoryKicker}>★ the road is won</Text>
-					<Text style={styles.victoryTitle}>The Tollbooth Goose steps aside!</Text>
-					<Text style={styles.victoryBody}>
+					<T role="kickerPillSm" tone="accent" align="center">
+						★ the road is won
+					</T>
+					<T role="sectionTitle" align="center">
+						The Tollbooth Goose steps aside!
+					</T>
+					<T role="hand" align="center">
 						Chapter one is hers. Head back and let Rosie savor the open road.
-					</Text>
+					</T>
 				</CeremonyCard>
 			)}
 
-			<View style={styles.controls}>
+			<Sticker
+				color="paper"
+				rotate={0}
+				radius={RADII.xl}
+				shadow="none"
+				style={styles.controls}
+			>
 				<ZoomiesMeter value={state.zoomies} />
 				{!defeated && (
 					<>
@@ -228,10 +214,10 @@ export function ScuffleView({
 								<Button variant="locked" full disabled onPress={() => {}}>
 									{card.name} is a road card
 								</Button>
-								<Text style={styles.roadCardHint}>
+								<T role="bodySm" tone="secondary" align="center">
 									Its charm shapes the walk, not the wall — save it for the
 									send-off.
-								</Text>
+								</T>
 							</>
 						)}
 					</>
@@ -241,19 +227,22 @@ export function ScuffleView({
 						Back to the journal
 					</Button>
 				)}
-			</View>
+			</Sticker>
 
 			{log.length > 0 && (
-				<View style={styles.log}>
+				<Sticker
+					color="cream"
+					rotate={0}
+					radius={RADII.md}
+					shadow="none"
+					style={styles.log}
+				>
 					{log.map((line, i) => (
-						<Text
-							key={i}
-							style={[styles.logLine, i === 0 && styles.logLineHead]}
-						>
+						<T key={i} role="bodySm" tone={i === 0 ? "primary" : "secondary"}>
 							{line}
-						</Text>
+						</T>
 					))}
-				</View>
+				</Sticker>
 			)}
 		</ScrollView>
 	);
@@ -262,60 +251,19 @@ export function ScuffleView({
 const styles = StyleSheet.create({
 	root: { flex: 1 },
 	content: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE, gap: SPACE.md },
-	arena: { padding: SPACE.md, ...STICKER_SHADOW },
+	arena: { padding: SPACE.md },
 	arenaRow: {
 		flexDirection: "row",
 		alignItems: "flex-end",
 		justifyContent: "space-between",
 	},
-	hpRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
-	hpLabel: { ...TYPE.label, color: UI_COLORS.action, width: 52 },
-	hpTrack: {
-		flex: 1,
-		height: 14,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.pill,
-		backgroundColor: WHIMSY.paper,
-		overflow: "hidden",
-	},
-	hpFill: { height: "100%", backgroundColor: WHIMSY.accent },
-	behavior: { ...TYPE.hand, color: UI_COLORS.textPrimary, textAlign: "center" },
-	warn: { ...TYPE.bodySm, color: UI_COLORS.action, textAlign: "center" },
-	victory: {
-		...TYPE.hand,
-		color: UI_COLORS.textPrimary,
-		textAlign: "center",
-	},
 	victoryCard: { padding: SPACE.lg, gap: SPACE.xs },
-	victoryKicker: { ...TYPE.kickerPillSm, color: UI_COLORS.action, textAlign: "center" },
-	victoryTitle: {
-		...TYPE.sectionTitle,
-		color: UI_COLORS.textPrimary,
-		textAlign: "center",
-	},
-	victoryBody: { ...TYPE.hand, color: UI_COLORS.textPrimary, textAlign: "center" },
 	controls: {
 		gap: SPACE.sm,
 		padding: SPACE.md,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.xl,
-		backgroundColor: WHIMSY.paper,
-	},
-	roadCardHint: {
-		...TYPE.bodySm,
-		color: UI_COLORS.textSecondary,
-		textAlign: "center",
 	},
 	log: {
 		gap: SPACE.xs,
 		padding: SPACE.md,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
 	},
-	logLine: { ...TYPE.bodySm, color: UI_COLORS.textSecondary },
-	logLineHead: { color: UI_COLORS.textPrimary },
 });

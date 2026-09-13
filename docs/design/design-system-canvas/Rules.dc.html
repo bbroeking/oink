@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #fffaf0; color: #2a1f15; font-family: "Nunito", "Nunito Sans", "Trebuchet MS", sans-serif; font-weight: 700; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    .whimsy { font-family: "Caprasimo", "Cooper Black", "Georgia", serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0.4px; color: #a03e2f; }
+    .pill { font-family: "Nunito", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: 0.3; border-radius: 1px; }
+    .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-weight: 500; font-size: 12px; color: #605449; }
+    h2 { font-family: "Caprasimo", serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: 0.2px; margin: 0; }
+    p, li { font-size: 15px; line-height: 21px; margin: 0; }
+    ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+    table { border-collapse: collapse; width: 100%; }
+    th { text-align: left; font-family: "Nunito", sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; padding: 6px 8px; border-bottom: 2px solid #2a1f15; }
+    td { padding: 7px 8px; border-bottom: 1.5px solid #e8d9c6; font-size: 13px; line-height: 18px; vertical-align: top; }
+    .block { display: flex; flex-direction: column; gap: 10px; }
+  </style>
+</helmet>
+<div style="width: 900px; padding: 48px 56px 64px 56px; box-sizing: border-box; display: flex; flex-direction: column; gap: 28px; background: #fffaf0;">
+
+  <div style="display: flex; flex-direction: column; gap: 4px;">
+    <div class="pill">★ Tickle the Pig · design system v1</div>
+    <div class="whimsy" style="font-size: 32px; line-height: 34px;">Rules of the system</div>
+    <div class="rule"></div>
+    <div class="hand" style="font-size: 17px; line-height: 24px; color: #605449;">How every element is built, named, behaves, and is kept honest. Short on purpose — a rule that needs a second explanation is the wrong rule.</div>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 1</div>
+    <h2>Composition law</h2>
+    <p>A screen is: <strong>PageBackground → PageHeader → sections</strong>, each section a <strong>SectionHeader</strong> followed by Stickers, ListRows, or a Grid of Stickers, and at most one primary Button per screen. Sheets, Dialogs and Ceremonies float above through one of the three modal shapes. Nothing else exists. If a screen needs something the list lacks, the system grows first and the screen uses it second.</p>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 2</div>
+    <h2>Token law</h2>
+    <ul>
+      <li><strong>No literal styling values in screens or components.</strong> Color from <span class="mono">UI_COLORS</span> (roles) or <span class="mono">WHIMSY</span> (fills); type from <span class="mono">TYPE</span>; size from <span class="mono">SPACE</span> / <span class="mono">RADII</span> / <span class="mono">BORDER</span>; depth from the two shadows; alpha from <span class="mono">OPACITY</span> / <span class="mono">TINT</span>; time from <span class="mono">MOTION</span>.</li>
+      <li><strong>A missing token is added to theme.ts with a dated comment</strong>, never inlined. Every token names its job in one line.</li>
+      <li><strong>Primitives are the only place a token becomes a pixel.</strong> Button owns its SIZE_MAP; Sticker owns radius and border; screens pass variants and slots.</li>
+      <li><strong>Lint enforces it.</strong> An ESLint rule flags raw hex, <span class="mono">rgba(</span>, bare <span class="mono">fontSize</span>, <span class="mono">borderRadius</span>, <span class="mono">borderWidth</span>, padding/margin/gap numbers, and <span class="mono">opacity</span> literals outside <span class="mono">constants/theme.ts</span> and <span class="mono">components/ui/</span>. Existing sites are grandfathered by file until migrated under "leave it better".</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 3</div>
+    <h2>State law</h2>
+    <table>
+      <tr><th>State</th><th>How it looks</th><th>Never</th></tr>
+      <tr><td>Pressed</td><td>OPACITY.pressed (.85) on the whole control, or a 1px translate toward the shadow</td><td>A color swap that hides the outline</td></tr>
+      <tr><td>Disabled / resting</td><td>Full chrome kept: ink outline, surfaceStrong fill, textSecondary label; a countdown or reason in hand</td><td>An opacity crush; a borderless grey pill</td></tr>
+      <tr><td>Selected</td><td>BORDER.heavy (3px) and, for rows, the pinned tilt 0°</td><td>Color alone — pastels are too close to read as a state</td></tr>
+      <tr><td>Loading</td><td>LoadingBeat (Rosie + kicker) for regions; Skeleton rows for lists; a Button label swap for actions</td><td>ActivityIndicator; a blank region</td></tr>
+      <tr><td>Empty</td><td>EmptyState with a fitting Glyph and one warm hand line</td><td>"Nothing here." in grey</td></tr>
+      <tr><td>Error</td><td>Danger pair (dangerSurface / dangerText) on the element that failed, a hand line saying what to do next</td><td>A system Alert for in-world failures</td></tr>
+      <tr><td>Success</td><td>Success pair + Icon check, or the Button's success variant; a Toast if the effect is elsewhere</td><td>A number that claims a feeling</td></tr>
+      <tr><td>Gated (members)</td><td>Ribbon in slopGold; content at full contrast under the ribbon</td><td>A blanket dim over the whole card</td></tr>
+    </table>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 4</div>
+    <h2>Behaviour law</h2>
+    <ul>
+      <li><strong>The world responds now.</strong> Every tap has feedback inside MOTION.tap (120 ms); server truth reconciles after. A cleansed curse vanishes on tap, a claim animates on tap.</li>
+      <li><strong>Modals never stack.</strong> Everything that can appear at launch enters through PopupQueue at a declared priority. A sheet may present one nested dialog through its overlay slot, nothing more.</li>
+      <li><strong>Spend, leave, rename, purchase go through ConfirmDialog</strong> with the concrete number on the confirm label. Cancel is always the left, ghost button.</li>
+      <li><strong>Motion is springy and has a rest pose.</strong> Decorative loops run through useMotionPolicy and stop at a still frame under Reduce Motion; state changes still explain themselves without motion.</li>
+      <li><strong>Feelings are sprites, progression is numerals.</strong> Mood, hunger, warmth: shown. Snouts, finds, streak days, tiers: numbered, in Caprasimo.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 5</div>
+    <h2>Accessibility law</h2>
+    <ul>
+      <li>Every tappable is ≥ 44 pt or carries hitSlop to 44, and has <span class="mono">accessibilityRole</span> + <span class="mono">accessibilityLabel</span> (+ <span class="mono">State</span> when it has one). IconButton and Button enforce this; hand-rolled Pressables are the gap (28 of 98 files carry none).</li>
+      <li>Text pairs are AA on their surface: ink / mute on every pastel; accent only on paper, cream, rose; barkText on bark; goldInk on gold. muteSoft is never body text.</li>
+      <li>Type scales to 200 %. Paper grows with it; fixed heights on text containers are a defect.</li>
+      <li>Icon and Glyph carry a label or are marked decorative. Emoji never render.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 6</div>
+    <h2>Naming law</h2>
+    <ul>
+      <li>Technical names in code (<span class="mono">activeEffects</span>, <span class="mono">race</span>), cozy names on screen (Hoofprints, Dig-Off). One concept, one screen name, everywhere.</li>
+      <li>Kickers are lowercase hand (★ this week) or uppercase pill (★ YOUR HERD); titles are Title Case for proper nouns and sentence case otherwise; buttons are sentence case verbs.</li>
+      <li>★ ✦ · are typography and stay Text. ✓ ✕ ♥ are semantic and render through Icon / Glyph.</li>
+      <li>Variants are named by tone (<span class="mono">sun</span>, <span class="mono">rose</span>, <span class="mono">bark</span>) or job (<span class="mono">primary</span>, <span class="mono">locked</span>), never by hex or by screen.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 7</div>
+    <h2>Web parity law</h2>
+    <p>Landing, analytics dashboard and every future web surface consume a generated <span class="mono">tokens.css</span> emitted from <span class="mono">constants/theme.ts</span> — the same names as CSS custom properties, the same values, the same four fonts. No HTML file re-declares <span class="mono">.sticker</span>; one shared stylesheet does.</p>
+  </div>
+
+  <div class="block">
+    <div class="kicker">★ 8</div>
+    <h2>Migration order — all five waves landed 2026-09-11</h2>
+    <table>
+      <tr><th>Wave</th><th>What lands</th><th>Why first</th></tr>
+      <tr><td>1 · Tokens ✓</td><td>BORDER, OPACITY, TINT, MOTION, SPACE.xxs/xxl, RADII.hair, GRADIENT, goldInk/sageInk; fold COLORS into WHIMSY; delete Colors.ts / ThemedText; regenerate DESIGN.md from theme.ts; lint rule in warn mode</td><td>Everything after composes from these</td></tr>
+      <tr><td>2 · Primitives ✓</td><td>Text (per TYPE role), Sheet panel, ListRow, Avatar, Chip / Tag / Ribbon / Toast, TextField, Stat, Meter, Divider; Button + Sticker + EmptyState + SectionHeader lose their internal literals</td><td>Screens can only be rebuilt once the vocabulary exists</td></tr>
+      <tr><td>3 · Tabs ✓</td><td>Barn, Friends, Season, Shop, Me rebuilt from primitives, file by file; 33 raw Modal mounts classified into Sheet / Dialog / Ceremony</td><td>Highest traffic, most drift</td></tr>
+      <tr><td>4 · Stack screens &amp; sheets ✓</td><td>race-standings, sounder, achievements, closet, dig, expedition, lounge, habitat; every sheet on the Sheet panel</td><td>Long tail; lint flips to error per file as it lands</td></tr>
+      <tr><td>5 · Web ✓</td><td>tokens.css generator; landing + dashboard on the shared stylesheet</td><td>Parity is cheap once tokens are the source</td></tr>
+    </table>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

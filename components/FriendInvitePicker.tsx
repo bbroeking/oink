@@ -10,9 +10,9 @@
 // (the server enforces are_friends + the cap).
 
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { supabase } from "@/utils/supabase";
-import { CrewSheet } from "./CrewSheet";
+import { Sheet } from "./ui/Sheet";
 import {
 	AccentNote,
 	CrewPortrait,
@@ -21,7 +21,8 @@ import {
 	HandLink,
 	RowStatus,
 	SunPill,
-} from "./CrewRow";
+} from "./ui";
+import { Button } from "./ui/Button";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import { useInviteActions, type UseCrew } from "@/hooks/useCrew";
 import { fetchFriendsCrews, type FriendCrew } from "@/utils/crews";
@@ -92,14 +93,21 @@ export function FriendInvitePicker({
 		crewHook.crew.invitesOut.map((i) => [i.invitee_id, i.id])
 	);
 	return (
-		<CrewSheet
-			visible={visible}
-			onDismiss={onDismiss}
+		<Sheet
+			open={visible}
+			onClose={onDismiss}
 			title="Call a snout to your banner"
-			sub="tap a friend to pin them to an open slot"
+			subtitle="tap a friend to pin them to an open slot"
+			closeLabel="Done"
+			bottomInset="safe"
+			footer={
+				<Button variant="handLink" full onPress={onDismiss} accessibilityHint="Closes the invite list">
+					Done
+				</Button>
+			}
 		>
 			{friends === null ? (
-				<LoadingBeat />
+				<LoadingBeat label="finding your friends" />
 			) : friends.length === 0 ? (
 				<EmptyState
 					glyph="friends"
@@ -107,71 +115,70 @@ export function FriendInvitePicker({
 					sub="add some pigs on the Friends tab first."
 				/>
 			) : (
-				<ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-					{friends.map((f, idx) => {
-						const fc = crewsByFriend.get(f.id);
-						const crewmate = !!fc && fc.crew_id === myCrewId;
-						const waitingInvite = waitingInviteByFriend.get(f.id);
-						const waiting = waitingInvite != null;
-						const sub = crewmate
-							? "rides with you"
-							: fc
-								? `in ${fc.crew_name}`
-								: waiting
-									? "waiting on your last ask…"
-									: seatsFull
-										? "the banner's full"
-										: "no crew yet — free to ride";
-						const right = crewmate ? (
-							<RowStatus>crewmate</RowStatus>
-						) : fc ? (
-							<RowStatus>taken</RowStatus>
-						) : waiting ? (
-							// The ask is out — offer to take it back (frees the seat).
-							<HandLink
-								onPress={() => cancel(waitingInvite)}
-								textStyle={busyId === waitingInvite ? styles.dim : undefined}
-							>
-								take it back
-							</HandLink>
-						) : seatsFull ? (
-							<RowStatus>Sounder full</RowStatus>
-						) : (
-							<SunPill onPress={() => invite(f.id)} disabled={busyId !== null}>
-								{busyId === f.id ? "Inviting…" : "Invite"}
-							</SunPill>
-						);
-						return (
-							<CrewRow
-								key={f.id}
-								divider={idx > 0}
-								left={<CrewPortrait hatId={f.active_hat_id ?? null} />}
-								title={
-									<>
-										{f.username ?? "—"}
-										{f.discriminator ? <DiscText> #{f.discriminator}</DiscText> : null}
-									</>
-								}
-								sub={sub}
-								right={right}
-							/>
-						);
-					})}
-				</ScrollView>
+				friends.map((f, idx) => {
+					const fc = crewsByFriend.get(f.id);
+					const crewmate = !!fc && fc.crew_id === myCrewId;
+					const waitingInvite = waitingInviteByFriend.get(f.id);
+					const waiting = waitingInvite != null;
+					const name = f.username ?? "this pig";
+					const sub = crewmate
+						? "rides with you"
+						: fc
+							? `in ${fc.crew_name}`
+							: waiting
+								? "waiting on your last ask…"
+								: seatsFull
+									? "the banner's full"
+									: "no crew yet — free to ride";
+					const right = crewmate ? (
+						<RowStatus>crewmate</RowStatus>
+					) : fc ? (
+						<RowStatus>taken</RowStatus>
+					) : waiting ? (
+						// The ask is out — offer to take it back (frees the seat).
+						<HandLink
+							onPress={() => cancel(waitingInvite)}
+							disabled={busyId !== null}
+							accessibilityLabel={`Take back the invite to ${name}`}
+							accessibilityHint="Cancels the ask and frees the seat it was holding"
+						>
+							take it back
+						</HandLink>
+					) : seatsFull ? (
+						<RowStatus>Sounder full</RowStatus>
+					) : (
+						<SunPill
+							onPress={() => invite(f.id)}
+							disabled={busyId !== null}
+							accessibilityLabel={`Invite ${name}`}
+							accessibilityHint="Sends an invite and holds a seat on your banner until they answer"
+						>
+							{busyId === f.id ? "Inviting…" : "Invite"}
+						</SunPill>
+					);
+					return (
+						<CrewRow
+							key={f.id}
+							divider={idx > 0}
+							left={<CrewPortrait hatId={f.active_hat_id ?? null} />}
+							title={
+								<>
+									{f.username ?? "—"}
+									{f.discriminator ? <DiscText> #{f.discriminator}</DiscText> : null}
+								</>
+							}
+							sub={sub}
+							right={right}
+						/>
+					);
+				})
 			)}
 
 			{!!note && <AccentNote style={styles.note}>{note}</AccentNote>}
-
-			<HandLink onPress={onDismiss} style={styles.done}>
-				Done
-			</HandLink>
-		</CrewSheet>
+		</Sheet>
 	);
 }
 
 const styles = StyleSheet.create({
-	list: { maxHeight: 380 },
-	dim: { opacity: 0.5 },
 	note: { textAlign: "center", marginTop: SPACE.sm },
-	done: { alignSelf: "center", marginTop: SPACE.md, paddingHorizontal: SPACE.lg },
 });

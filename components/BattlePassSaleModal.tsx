@@ -6,19 +6,18 @@
 // the paid-pass decision: if a standalone pass ever ships, re-wire it here rather
 // than rebuilding the modal. No live caller today.
 import React from "react";
+import { View, StyleSheet, Linking } from "react-native";
 import {
-	Modal,
-	View,
-	Text,
-	Pressable,
-	StyleSheet,
-	ScrollView,
-	Linking,
-} from "react-native";
-import { Sticker, Tape } from "./ui/Sticker";
-import { TicketButton } from "./ui/TicketButton";
-import { DialogCloseRow } from "./ui/DialogCloseRow";
-import { FONTS, KICKER_TEXT, MODAL_BACKDROP_BG, WHIMSY, RADII } from "@/constants/theme";
+	AdaptiveModalScaffold,
+	Button,
+	DialogCloseRow,
+	Kicker,
+	Sticker,
+	T,
+	Tape,
+	TicketButton,
+} from "./ui";
+import { SPACE, RADII } from "@/constants/theme";
 import { restorePurchases } from "../utils/iap";
 
 interface Props {
@@ -40,6 +39,10 @@ const TC_URL = "https://ticklethepig.com/terms";
 const PRIVACY_URL =
 	process.env.EXPO_PUBLIC_PRIVACY_URL || "https://ticklethepig.com/privacy";
 
+// The strip of tape that pins the sheet to the page — drawing geometry.
+const TAPE_W = 80;
+const TAPE_H = 20;
+
 const PASS_PERKS = [
 	"All 30 premium-track rewards",
 	"Exclusive hats, props, auras, and scenes",
@@ -60,181 +63,138 @@ export function BattlePassSaleModal({
 }: Props) {
 	const price = `$${(priceCents / 100).toFixed(2)}`;
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={visible}
-			animationType="fade"
-			transparent
 			onRequestClose={onClose}
+			bare
+			contentContainerStyle={styles.content}
 		>
-			<View style={styles.backdrop}>
-				<View style={styles.sheetWrap}>
-					<Tape
-						color="rose"
-						rotate={-8}
-						width={80}
-						height={20}
-						style={styles.tapeTop}
+			<View style={styles.sheetWrap}>
+				<Tape
+					color="rose"
+					rotate={-8}
+					width={TAPE_W}
+					height={TAPE_H}
+					style={styles.tapeTop}
+				/>
+				<Sticker color="paper" rotate={-0.6} radius={RADII.xxl} style={styles.sheet}>
+					<DialogCloseRow
+						onPress={onClose}
+						label="Close season pass"
+						style={styles.closeRow}
 					/>
-					<Sticker color="paper" rotate={-0.6} radius={RADII.xxl} style={styles.sheet}>
-						<DialogCloseRow
-							onPress={onClose}
-							label="Close season pass"
-							style={styles.closeRow}
-						/>
 
-						<ScrollView
-							showsVerticalScrollIndicator={false}
-							contentContainerStyle={styles.body}
-						>
-							<Text style={styles.kicker}>★ season pass</Text>
-							<Text style={styles.title}>Unlock the premium track</Text>
-							<Text style={styles.subtitle}>
-								You're at tier {currentTier} of {totalTiers}. The Season
-								Pass opens 30 extra rewards along the way.
-							</Text>
+					<View style={styles.body}>
+						<Kicker>season pass</Kicker>
+						<T role="pageTitle" style={styles.title}>
+							Unlock the premium track
+						</T>
+						<T role="hand" tone="secondary" style={styles.subtitle}>
+							You're at tier {currentTier} of {totalTiers}. The Season
+							Pass opens 30 extra rewards along the way.
+						</T>
 
-							<Sticker color="rose" rotate={-1.2} radius={RADII.lg} style={styles.tierCard}>
-								<View style={styles.tierTop}>
-									<View style={{ flex: 1 }}>
-										<Text style={styles.tierName}>Season Pass</Text>
-										<Text style={styles.tierTagline}>
-											The premium reward track, all season.
-										</Text>
-									</View>
-									<Text style={styles.tierPrice}>{price}</Text>
+						<Sticker color="rose" rotate={-1.2} radius={RADII.lg} pad style={styles.tierCard}>
+							<View style={styles.tierTop}>
+								<View style={styles.tierCopy}>
+									<T role="sectionTitle">Season Pass</T>
+									<T role="hand" tone="secondary" style={styles.tierTagline}>
+										The premium reward track, all season.
+									</T>
 								</View>
-								<View style={styles.perks}>
-									{PASS_PERKS.map((p) => (
-										<View key={p} style={styles.perk}>
-											<Text style={styles.perkBullet}>✦</Text>
-											<Text style={styles.perkText}>{p}</Text>
-										</View>
-									))}
-								</View>
-								<TicketButton
-									label="Unlock Season Pass"
-									stub={price}
-									tone="season"
-									loading={busy}
-									loadingLabel="Unlocking…"
-									onPress={onUnlock}
-									style={{ marginTop: 12 }}
-								/>
-							</Sticker>
-
-							<View style={styles.footer}>
-								<Pressable onPress={() => restorePurchases().catch(() => {})}>
-									<Text style={styles.restoreLink}>Restore purchases</Text>
-								</Pressable>
-								<Text style={styles.legalLine}>
-									One-time purchase. The Season Pass lasts this season.
-								</Text>
-								<View style={styles.legalRow}>
-									<Pressable onPress={() => Linking.openURL(TC_URL)}>
-										<Text style={styles.legalLink}>Terms</Text>
-									</Pressable>
-									{PRIVACY_URL && (
-										<>
-											<Text style={styles.legalDot}>·</Text>
-											<Pressable onPress={() => Linking.openURL(PRIVACY_URL)}>
-												<Text style={styles.legalLink}>Privacy</Text>
-											</Pressable>
-										</>
-									)}
-								</View>
+								<T role="sectionTitle">{price}</T>
 							</View>
-						</ScrollView>
-					</Sticker>
-				</View>
+							<View style={styles.perks}>
+								{PASS_PERKS.map((p) => (
+									<View key={p} style={styles.perk}>
+										<T role="hand" style={styles.perkBullet}>✦</T>
+										<T role="hand" style={styles.perkText}>{p}</T>
+									</View>
+								))}
+							</View>
+							<TicketButton
+								label="Unlock Season Pass"
+								stub={price}
+								tone="season"
+								loading={busy}
+								loadingLabel="Unlocking…"
+								onPress={onUnlock}
+								style={styles.ticket}
+							/>
+						</Sticker>
+
+						<View style={styles.footer}>
+							<Button
+								variant="handLink"
+								size="sm"
+								onPress={() => restorePurchases().catch(() => {})}
+								accessibilityLabel="Restore purchases"
+								accessibilityHint="Re-applies a Season Pass bought on another device"
+							>
+								Restore purchases
+							</Button>
+							<T role="hand" tone="secondary" align="center" style={styles.legalLine}>
+								One-time purchase. The Season Pass lasts this season.
+							</T>
+							<View style={styles.legalRow}>
+								<Button
+									variant="link"
+									size="xs"
+									onPress={() => Linking.openURL(TC_URL)}
+									accessibilityLabel="Terms of service"
+									accessibilityHint="Opens the terms in your browser"
+								>
+									Terms
+								</Button>
+								{PRIVACY_URL && (
+									<>
+										<T role="hand" tone="secondary">·</T>
+										<Button
+											variant="link"
+											size="xs"
+											onPress={() => Linking.openURL(PRIVACY_URL)}
+											accessibilityLabel="Privacy policy"
+											accessibilityHint="Opens the privacy policy in your browser"
+										>
+											Privacy
+										</Button>
+									</>
+								)}
+							</View>
+						</View>
+					</View>
+				</Sticker>
 			</View>
-		</Modal>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		backgroundColor: MODAL_BACKDROP_BG,
-		justifyContent: "center",
-		paddingHorizontal: 16,
-	},
-	sheetWrap: { position: "relative", paddingTop: 12 },
+	content: { justifyContent: "center" },
+	sheetWrap: { position: "relative", paddingTop: SPACE.md },
 	tapeTop: { position: "absolute", top: 0, alignSelf: "center", zIndex: 2 },
-	sheet: { maxHeight: "92%", overflow: "hidden" },
+	sheet: { overflow: "hidden" },
 	closeRow: {
-		marginBottom: -12,
+		marginBottom: -SPACE.md,
 	},
-	body: { padding: 18, paddingTop: 22 },
-	kicker: { ...KICKER_TEXT, marginBottom: 4 },
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		lineHeight: 30,
-		marginBottom: 6,
-	},
-	subtitle: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		lineHeight: 18,
-		marginBottom: 16,
-	},
-	tierCard: { padding: 14, marginBottom: 14 },
+	body: { padding: SPACE.lg, paddingTop: SPACE.xl },
+	title: { marginBottom: SPACE.xs },
+	subtitle: { marginBottom: SPACE.lg },
+	tierCard: { marginBottom: SPACE.card },
 	tierTop: { flexDirection: "row", alignItems: "flex-start" },
-	tierName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		lineHeight: 24,
-	},
-	tierTagline: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
-	tierPrice: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
-	perks: { marginTop: 10, gap: 4 },
-	perk: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-	perkBullet: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.ink,
-		marginTop: 1,
-	},
-	perkText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.ink,
-		lineHeight: 18,
-		flex: 1,
-	},
-	footer: { alignItems: "center", marginTop: 8, gap: 6 },
-	restoreLink: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
-	legalLine: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		paddingHorizontal: 8,
-	},
+	tierCopy: { flex: 1 },
+	tierTagline: { marginTop: SPACE.xxs },
+	perks: { marginTop: SPACE.sm, gap: SPACE.xs },
+	perk: { flexDirection: "row", alignItems: "flex-start", gap: SPACE.sm },
+	perkBullet: { marginTop: 1 },
+	perkText: { flex: 1 },
+	ticket: { marginTop: SPACE.md },
+	footer: { alignItems: "center", marginTop: SPACE.sm, gap: SPACE.xs },
+	legalLine: { paddingHorizontal: SPACE.sm },
 	legalRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 8,
-		marginTop: 2,
+		gap: SPACE.sm,
+		marginTop: SPACE.xxs,
 	},
-	legalLink: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
-	legalDot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 });

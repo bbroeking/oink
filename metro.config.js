@@ -1,8 +1,7 @@
-// Trims what Metro crawls/hashes at startup — a direct fix for the dev-server
-// JS-heap OOMs. Metro builds an in-memory map of every asset (~93 MB / 417
-// PNGs); ~19 MB of that was the unused assets/images/hats/_mudwar_raw/ source
-// sheets, which the app never requires. Keep them out of Metro's file map.
+// Authoring sources and build evidence are not runtime dependencies. Keep
+// their large images, revisions, and recordings out of Metro's file map.
 const { getDefaultConfig } = require("expo/metro-config");
+const path = require("node:path");
 
 const config = getDefaultConfig(__dirname);
 
@@ -16,5 +15,17 @@ config.resolver.blockList = [
 	// Raw intermediate art — never imported by the app.
 	/assets[/\\]images[/\\]hats[/\\]_mudwar_raw[/\\].*/,
 ];
+
+const sourceOnlyDirectories = [
+	"artifacts", "docs", "assets/concepts", "assets/marketing",
+	"assets/rive/backups",
+];
+for (const directory of sourceOnlyDirectories) {
+	const absolutePath = path.resolve(__dirname, directory);
+	config.resolver.blockList.push(new RegExp(
+		`^${absolutePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[/\\\\]`,
+	));
+}
+config.resolver.blockList.push(/\.rev$/);
 
 module.exports = config;

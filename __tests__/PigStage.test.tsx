@@ -63,7 +63,7 @@ describe("PigStage — shop-preview freeze", () => {
 		const r = await renderAct(<PigStage pigAnimation="idle" />);
 		const first = visibleSource(r);
 		await act(async () => {
-			jest.advanceTimersByTime(1000 / 2.5 + 10); // one idle fps period
+			jest.advanceTimersByTime(800); // each matching standing pose holds for two ticks
 		});
 		expect(visibleSource(r)).not.toBe(first); // stepped forward
 		act(() => r.unmount());
@@ -77,6 +77,22 @@ describe("PigStage — shop-preview freeze", () => {
 
 		expect(sources).toContain(PIG_FRAMES[pigId].idle_1);
 		expect(sources).toContain(HAT_IMAGES.cowboy);
+		act(() => r.unmount());
+	});
+
+	test("renders an equipped hat and bow together", async () => {
+		const r = await renderAct(
+			<PigStage
+				pigAnimation="idle"
+				pigFrozen
+				equipped={{ id: "cowboy", category: "hat", emoji: null }}
+				equippedBow={{ id: "pink_bow", category: "bow", emoji: null }}
+			/>,
+		);
+		const sources = frameNodes(r).map((node) => node.props.source);
+
+		expect(sources).toContain(HAT_IMAGES.cowboy);
+		expect(sources).toContain(HAT_IMAGES.pink_bow);
 		act(() => r.unmount());
 	});
 

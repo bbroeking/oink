@@ -3,31 +3,26 @@
 // self and others render identically (the total is already public on the board).
 // Reached from leaderboard rows, UserSheet, and your own season count.
 //
-// Layout + animation mirror HoofprintsSheet: a decoupled backdrop fade +
-// slide-up sheet (the dim doesn't drag with the card), a paper Sticker, and the
-// dig-receipt row pattern from TrufflePatch's EndLine (fixed icon column + label
-// + right-aligned number). Tokens only, no emoji — Glyph/Icon in the icon column.
+// Wave-4 conformance pass: the panel is the `Sheet` primitive (its kicker/title
+// slots replace the in-sheet SectionHeader, and it takes the unmanaged-modal
+// latch itself), each lane is a `ListRow`, and the summed total keeps its dashed
+// rule through `BORDER.thin`. [C-09, C-18]
 //
 // It is an UNMANAGED native Modal, so it MUST take the useUnmanagedModalHold
 // latch (spec 02): while open the popup queue admits nothing and drains anything
 // presented, so a foreground poll (schism/finale/achievements on AppState
-// "active") can't wedge a queued popup over it (the #50152 bug). Closing lifts
-// the hold and queued popups re-admit after the handoff gap.
+// "active") can't wedge a queued popup over it (the #50152 bug). `Sheet` takes
+// that latch internally; closing lifts the hold and queued popups re-admit after
+// the handoff gap.
 
 import { useEffect, useState } from "react";
 import {
 	View,
-	Text,
 	Image,
-	Pressable,
 	StyleSheet,
 	type ImageSourcePropType,
 } from "react-native";
-import { Sticker } from "./ui/Sticker";
-import { SectionHeader } from "./ui/SectionHeader";
-import { LoadingBeat } from "./ui/EmptyState";
-import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
+import { ListRow, LoadingBeat, Sheet, T } from "./ui";
 import {
 	fetchTickleBreakdown,
 	tickleBreakdownRows,
@@ -35,14 +30,7 @@ import {
 	type TickleLane,
 	type TickleRow,
 } from "@/utils/tickleBreakdown";
-import {
-	FONTS,
-	RADII,
-	SPACE,
-	STICKER_SHADOW,
-	TYPE,
-	WHIMSY,
-} from "@/constants/theme";
+import { BORDER, SPACE, UI_COLORS } from "@/constants/theme";
 
 interface Props {
 	// The pig whose receipt to show. Null = closed (drives the sheet the same way
@@ -70,6 +58,12 @@ const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
 	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
 };
 
+// Drawing geometry: the fixed icon column every receipt line shares and the art
+// inside it, so labels and numbers stay in one vertical rhythm.
+const ICON_COL = 32;
+const RECEIPT_ART = 26;
+const TOTAL_ART = 24;
+
 function LaneIcon({ lane }: { lane: TickleLane }) {
 	return (
 		<Image
@@ -83,25 +77,27 @@ function LaneIcon({ lane }: { lane: TickleLane }) {
 
 // One receipt line — icon column + whimsy label + the real number, right-aligned.
 // Mirrors TrufflePatch's EndLine so the two ledgers read in the same voice.
-function ReceiptRow({ row }: { row: TickleRow }) {
+function ReceiptRow({ row, index }: { row: TickleRow; index: number }) {
 	return (
-		<View style={styles.row}>
-			<View style={styles.iconCol}>
-				<LaneIcon lane={row.lane} />
-			</View>
-			<Text style={styles.rowLabel} numberOfLines={1}>
-				{row.label}
-			</Text>
-			<Text style={styles.rowValue}>{row.value.toLocaleString("en-US")}</Text>
-		</View>
+		<ListRow
+			index={index}
+			tilt={false}
+			leading={
+				<View style={styles.iconCol}>
+					<LaneIcon lane={row.lane} />
+				</View>
+			}
+			title={row.label}
+			trailing={
+				<T role="cardTitle">{row.value.toLocaleString("en-US")}</T>
+			}
+			accessibilityLabel={`${row.label}, ${row.value}`}
+		/>
 	);
 }
 
 export function TickleBreakdownSheet({ userId, fallbackTotal, onClose }: Props) {
 	const open = !!userId;
-	// Unmanaged native Modal → hold the popup queue while open (spec 02). See the
-	// header note; HoofprintsSheet takes the identical latch.
-	useUnmanagedModalHold(open);
 
 	const [loading, setLoading] = useState(false);
 	const [data, setData] = useState<TickleBreakdown | null>(null);
@@ -136,54 +132,45 @@ export function TickleBreakdownSheet({ userId, fallbackTotal, onClose }: Props) 
 	const total = data ? data.total : (fallbackTotal ?? 0);
 
 	return (
-		<SlideUpSheet open={open} onClose={onClose} duration={320}>
-			<Pressable onPress={() => {}}>
-				<Sticker
-					color="paper"
-					rotate={-0.6}
-					radius={RADII.xxl}
-					style={[styles.sheet, STICKER_SHADOW]}
-				>
-					<SheetGrabber />
-					<SectionHeader
-						kicker="the tickle receipt"
-						title="How this pig earned it"
-					/>
-
-					{loading ? (
-						<View style={styles.loadingWrap}>
-							<LoadingBeat label="tallying the ledger" />
-						</View>
-					) : missing ? (
-						// Fail-soft: the RPC is dark (unpushed). Show the known total and
-						// a quiet line — never an error state (spec 17).
-						<>
-							<Text style={styles.secrets}>
-								the pig keeps its secrets for now
-							</Text>
-							<TotalRow total={total} />
-						</>
-					) : rows.length === 0 ? (
-						// A pig with nothing on its ledger yet (fresh, or all-zero).
-						<>
-							<Text style={styles.secrets}>
-								no tickles reclaimed yet this season
-							</Text>
-							<TotalRow total={total} />
-						</>
-					) : (
-						<>
-							<View style={styles.rows}>
-								{rows.map((row) => (
-									<ReceiptRow key={row.lane} row={row} />
-								))}
-							</View>
-							<TotalRow total={total} />
-						</>
-					)}
-				</Sticker>
-			</Pressable>
-		</SlideUpSheet>
+		<Sheet
+			open={open}
+			onClose={onClose}
+			kicker="the tickle receipt"
+			title="How this pig earned it"
+			testID="tickle-breakdown-sheet"
+		>
+			{loading ? (
+				<View style={styles.loadingWrap}>
+					<LoadingBeat label="tallying the ledger" />
+				</View>
+			) : missing ? (
+				// Fail-soft: the RPC is dark (unpushed). Show the known total and
+				// a quiet line — never an error state (spec 17).
+				<>
+					<T role="hand" tone="secondary" align="center" style={styles.secrets}>
+						the pig keeps its secrets for now
+					</T>
+					<TotalRow total={total} />
+				</>
+			) : rows.length === 0 ? (
+				// A pig with nothing on its ledger yet (fresh, or all-zero).
+				<>
+					<T role="hand" tone="secondary" align="center" style={styles.secrets}>
+						no tickles reclaimed yet this season
+					</T>
+					<TotalRow total={total} />
+				</>
+			) : (
+				<>
+					<View style={styles.rows}>
+						{rows.map((row, i) => (
+							<ReceiptRow key={row.lane} row={row} index={i} />
+						))}
+					</View>
+					<TotalRow total={total} />
+				</>
+			)}
+		</Sheet>
 	);
 }
 
@@ -200,43 +187,24 @@ function TotalRow({ total }: { total: number }) {
 					accessible={false}
 				/>
 			</View>
-			<Text style={styles.totalLabel}>tickles this season</Text>
-			<Text style={styles.totalValue}>{total.toLocaleString("en-US")}</Text>
+			<T role="cardTitle" style={styles.totalLabel}>
+				tickles this season
+			</T>
+			<T role="sectionTitle">{total.toLocaleString("en-US")}</T>
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	sheet: {
-		padding: 18,
-		paddingTop: 10,
-	},
 	loadingWrap: { paddingVertical: SPACE.xl, alignItems: "center" },
 	rows: { gap: SPACE.sm, marginTop: SPACE.xs },
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-	},
 	iconCol: {
-		width: 32,
-		height: 28,
+		width: ICON_COL,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	receiptIcon: { width: 26, height: 26 },
-	totalIcon: { width: 24, height: 24 },
-	rowLabel: {
-		...TYPE.body,
-		color: WHIMSY.ink,
-		flex: 1,
-		minWidth: 0,
-	},
-	rowValue: {
-		...TYPE.cardTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-	},
+	receiptIcon: { width: RECEIPT_ART, height: RECEIPT_ART },
+	totalIcon: { width: TOTAL_ART, height: TOTAL_ART },
 	// The total, set off by a dashed rule above it so it reads as the sum.
 	totalRow: {
 		flexDirection: "row",
@@ -244,26 +212,16 @@ const styles = StyleSheet.create({
 		gap: SPACE.md,
 		marginTop: SPACE.md,
 		paddingTop: SPACE.md,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
+		borderTopWidth: BORDER.thin,
+		borderTopColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	totalLabel: {
-		...TYPE.cardTitle,
-		color: WHIMSY.ink,
 		flex: 1,
 		minWidth: 0,
 	},
-	totalValue: {
-		...TYPE.sectionTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-	},
 	// The fail-soft / empty line — quiet hand voice, centered.
 	secrets: {
-		...TYPE.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
 		marginTop: SPACE.sm,
 		marginBottom: SPACE.xs,
 	},

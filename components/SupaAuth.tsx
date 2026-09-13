@@ -11,23 +11,28 @@
 // off-platform provider's empty frame can't render. The email path is
 // primarily for the App Store reviewer demo account but is available
 // to anyone who taps the link.
+//
+// Rebuilt on the design system 2026-09-11 (wave 3 · area E): both wells are
+// `TextField` (the refusal is the field's own written line, and the well wears
+// the error chrome rather than leaving a loose red string to carry it), the
+// three text links and the submit are `Button`, and both provider buttons now
+// share one chrome and one mark system. [E16, E23]
 import React, { useState } from "react";
 import {
 	StyleSheet,
 	View,
 	Image,
-	Text,
 	SafeAreaView,
-	TextInput,
-	Pressable,
 	KeyboardAvoidingView,
 	Platform,
 } from "react-native";
 import { AppleAuth } from "./AppleAuth";
 import { GoogleAuth } from "./GoogleAuth";
-import { Sticker } from "./ui/Sticker";
+import { Button, Hand, HandLg, Kicker, Sticker, T, TextField } from "./ui";
 import { supabase } from "../utils/supabase";
-import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, PAGE_PAD, RADII } from "@/constants/theme";
+import { PAGE_PAD, RADII, SPACE, STICKER_SHADOW, UI_COLORS } from "@/constants/theme";
+
+const PASSWORD_MIN = 6;
 
 export default function SupaAuth() {
 	const [showEmail, setShowEmail] = useState(false);
@@ -37,6 +42,10 @@ export default function SupaAuth() {
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const clearError = () => {
+		if (error) setError(null);
+	};
+
 	const handleEmailSubmit = async () => {
 		if (busy) return;
 		const trimmedEmail = email.trim();
@@ -44,7 +53,7 @@ export default function SupaAuth() {
 			setError("Email and password required.");
 			return;
 		}
-		if (mode === "signUp" && password.length < 6) {
+		if (mode === "signUp" && password.length < PASSWORD_MIN) {
 			setError("Password must be at least 6 characters.");
 			return;
 		}
@@ -71,6 +80,11 @@ export default function SupaAuth() {
 		// directly into the Barn (existing account).
 	};
 
+	// One refusal, spoken once: the wells wear the error chrome and the written
+	// line rides the password field (the last thing touched before submit), so a
+	// screen reader hears the reason instead of a border carrying it alone.
+	const fieldState = error && showEmail ? "error" : "default";
+
 	return (
 		<View style={styles.bg}>
 			<KeyboardAvoidingView
@@ -84,11 +98,13 @@ export default function SupaAuth() {
 							style={styles.rosie}
 							resizeMode="contain"
 						/>
-						<Text style={styles.kicker}>★ tickle the pig ★</Text>
-						<Text style={styles.title}>Meet Rosie</Text>
-						<Text style={styles.subtitle}>
+						<Kicker star={false}>★ tickle the pig ★</Kicker>
+						<T role="displayLg" align="center" style={styles.title}>
+							Meet Rosie
+						</T>
+						<HandLg tone="secondary" align="center" style={styles.subtitle}>
 							She'd like a tickle. Sign in to start.
-						</Text>
+						</HandLg>
 					</View>
 
 					<View style={styles.cardWrap}>
@@ -96,6 +112,7 @@ export default function SupaAuth() {
 							color="paper"
 							rotate={-0.8}
 							radius={RADII.xxl}
+							pad
 							style={[styles.card, STICKER_SHADOW]}
 						>
 							{Platform.OS === "ios" ? (
@@ -111,90 +128,99 @@ export default function SupaAuth() {
 							    social loop). Anyone can use this who'd rather not
 							    use the platform provider. */}
 							{!showEmail && (
-								<Pressable
+								<Button
+									variant="handLink"
 									onPress={() => setShowEmail(true)}
-									style={styles.emailToggle}
-									hitSlop={8}
+									accessibilityLabel="Use email instead"
+									accessibilityHint="Opens an email and password form"
 								>
-									<Text style={styles.emailToggleText}>or use email</Text>
-								</Pressable>
+									or use email
+								</Button>
 							)}
 
 							{/* Provider-level note (e.g. a Google failure) needs to
 							    show even while the email form is collapsed. */}
 							{error && !showEmail && (
-								<Text style={styles.noteText}>{error}</Text>
+								<Hand tone="danger" align="center" accessibilityRole="alert">
+									{error}
+								</Hand>
 							)}
 
 							{showEmail && (
 								<View style={styles.emailForm}>
-									<TextInput
-										style={styles.input}
-										placeholder="email"
-										placeholderTextColor={WHIMSY.mute}
+									<TextField
+										label="Email"
+										labelHidden
 										value={email}
 										onChangeText={(t) => {
 											setEmail(t);
-											if (error) setError(null);
+											clearError();
 										}}
+										placeholder="email"
+										state={fieldState}
 										autoCapitalize="none"
 										autoCorrect={false}
 										keyboardType="email-address"
 										textContentType="emailAddress"
 										editable={!busy}
 									/>
-									<TextInput
-										style={styles.input}
-										placeholder={
-											mode === "signUp" ? "password (6+ chars)" : "password"
-										}
-										placeholderTextColor={WHIMSY.mute}
+									<TextField
+										label="Password"
+										labelHidden
 										value={password}
 										onChangeText={(t) => {
 											setPassword(t);
-											if (error) setError(null);
+											clearError();
 										}}
+										placeholder={
+											mode === "signUp"
+												? "password (6+ chars)"
+												: "password"
+										}
+										state={fieldState}
+										errorText={error ?? undefined}
+										secure
 										autoCapitalize="none"
 										autoCorrect={false}
-										secureTextEntry
 										textContentType={
 											mode === "signUp" ? "newPassword" : "password"
 										}
 										editable={!busy}
 									/>
-									{error && <Text style={styles.errorText}>{error}</Text>}
-									<Pressable
+									<Button
+										full
+										variant="lilac"
 										onPress={handleEmailSubmit}
-										disabled={busy}
-										style={({ pressed }) => [
-											styles.signInBtn,
-											(pressed || busy) && { opacity: 0.7 },
-										]}
+										loading={busy}
+										loadingLabel={
+											mode === "signUp" ? "Creating…" : "Signing in…"
+										}
+										accessibilityLabel={
+											mode === "signUp"
+												? "Create account with email"
+												: "Sign in with email"
+										}
+										accessibilityHint="Brings you into the barn"
 									>
-										<Text style={styles.signInBtnText}>
-											{busy
-												? mode === "signUp"
-													? "Creating…"
-													: "Signing in…"
-												: mode === "signUp"
-													? "Create account"
-													: "Sign in"}
-										</Text>
-									</Pressable>
-									<Pressable
+										{mode === "signUp" ? "Create account" : "Sign in"}
+									</Button>
+									<Button
+										variant="handLink"
 										onPress={() => {
 											setMode((m) => (m === "signUp" ? "signIn" : "signUp"));
 											setError(null);
 										}}
-										style={styles.modeToggle}
-										hitSlop={6}
+										accessibilityLabel={
+											mode === "signUp"
+												? "Switch to signing in"
+												: "Switch to creating an account"
+										}
+										accessibilityHint="Swaps the form between sign-in and sign-up"
 									>
-										<Text style={styles.modeToggleText}>
-											{mode === "signUp"
-												? "Already have an account? Sign in"
-												: "No account yet? Create one"}
-										</Text>
-									</Pressable>
+										{mode === "signUp"
+											? "Already have an account? Sign in"
+											: "No account yet? Create one"}
+									</Button>
 								</View>
 							)}
 						</Sticker>
@@ -206,14 +232,14 @@ export default function SupaAuth() {
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
+	bg: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
 	// NOTE: horizontal padding lives on the children, not here — RN's
 	// built-in SafeAreaView replaces author padding with its own inset
 	// padding, so paddingHorizontal set on it silently drops on device.
 	safe: { flex: 1, justifyContent: "space-between" },
 	hero: {
 		alignItems: "center",
-		paddingTop: 24,
+		paddingTop: SPACE.xl,
 		paddingHorizontal: PAGE_PAD,
 		flex: 1,
 		justifyContent: "center",
@@ -221,96 +247,24 @@ const styles = StyleSheet.create({
 	rosie: {
 		width: "72%",
 		aspectRatio: 370 / 383, // matches idle_1.png native ratio (near-square)
-		marginBottom: 18,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 6,
+		marginBottom: SPACE.lg,
 	},
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 36,
-		color: WHIMSY.ink,
-		marginBottom: 6,
-		textAlign: "center",
+		marginTop: SPACE.sm,
 	},
 	subtitle: {
-		fontFamily: FONTS.hand,
-		fontSize: 16,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		paddingHorizontal: 20,
+		marginTop: SPACE.sm,
+		paddingHorizontal: SPACE.xl,
 	},
 	cardWrap: {
-		paddingBottom: 24,
+		paddingBottom: SPACE.xl,
 		paddingHorizontal: PAGE_PAD,
 	},
 	card: {
-		padding: 20,
+		gap: SPACE.md,
 	},
 	flex: { flex: 1 },
-	emailToggle: {
-		alignItems: "center",
-		marginTop: 14,
-		paddingVertical: 4,
-	},
-	emailToggleText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
 	emailForm: {
-		marginTop: 12,
-	},
-	input: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 15,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 11,
-		marginBottom: 8,
-	},
-	errorText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.accent,
-		marginBottom: 6,
-	},
-	noteText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: 8,
-	},
-	signInBtn: {
-		backgroundColor: WHIMSY.lilac,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 11,
-		alignItems: "center",
-		marginTop: 4,
-	},
-	signInBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
-	modeToggle: {
-		alignItems: "center",
-		marginTop: 10,
-		paddingVertical: 4,
-	},
-	modeToggleText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
+		gap: SPACE.md,
 	},
 });

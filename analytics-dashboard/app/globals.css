@@ -1,251 +1,256 @@
-@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap');
+/* Analytics dashboard — layout only.
+ *
+ * design-system-spec §3 rule 7: the web is a consumer of constants/theme.ts,
+ * not a second design system. Tokens come from ./tokens.css and primitives
+ * (.sticker, .btn, .kicker, .section-header, .field, .tag, .empty-state, the
+ * :focus-visible ring, the reduced-motion block) come from ./sticker.css —
+ * both GENERATED, both imported ahead of this file in layout.js.
+ *
+ * Nothing here declares :root, re-derives a primitive, or writes a literal
+ * color / size / radius / shadow. What is left is the dashboard's own
+ * composition: the page frame, the card grids, the chart wrapper, the bar /
+ * row / roster geometry, and the login page shell.
+ */
 
-:root{
-  --ink:#2a1f15;
-  --paper:#fffaf0;
-  --cream:#fbeee2;
-  --cream2:#f6e6d4;
-  --rose:#ffd6dc; --rose-deep:#f8a8b3;
-  --sky:#c8e3f0;
-  --sage:#c9dec1;
-  --sun:#ffd87a;
-  --lilac:#d6c8f0; --lilac-deep:#a89bff;
-  --peach:#ffc8a8;
-  --accent:#c25a3f;
-  --gold:#d4a437;
-  --barn:#C44848;
-  --grass:#8FBF6A;
-  --grey:#b8ad9e;
-}
+* { box-sizing: border-box; }
+html,
+body { margin: 0; min-height: 100%; }
 
-*{box-sizing:border-box;}
-html,body{margin:0;min-height:100%;}
 /* rotated stickers + hard offset shadows can poke past the viewport edge on
    phones — clip the x axis so they never trigger a horizontal scroll */
-html{overflow-x:clip;}
-body{
-  background:var(--paper);
-  background-image:radial-gradient(var(--cream2) 1.1px, transparent 1.2px);
-  background-size:22px 22px;
-  color:var(--ink);
-  font-family:"Nunito",system-ui,sans-serif;
-  font-weight:800;
-  -webkit-font-smoothing:antialiased;
+html { overflow-x: clip; }
+
+body {
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--cream2) var(--border-hair), transparent var(--border-thin));
+  background-size: var(--space-xl) var(--space-xl);
+  color: var(--text-primary);
+  font: var(--type-body);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ============ DASHBOARD ============ */
-.dashboard{padding:34px 20px 80px;}
-.wrap{max-width:1100px;margin:0 auto;}
-
-/* ---------- shared sticker ---------- */
-.sticker{
-  background:var(--fill,var(--paper));
-  border:2.5px solid var(--ink);
-  border-radius:18px;
-  box-shadow:4px 4px 0 var(--ink);
-  transform:rotate(var(--tilt,0deg));
+/* G-08 — sticker.css zeroes the outline on .field__input:focus at (0,2,0),
+   which outranks its own global :focus-visible ring at (0,1,0). Restore the
+   ring at equal specificity from the later stylesheet so every focusable
+   control on this surface shows one. */
+.field__input:focus-visible {
+  outline: var(--border-heavy) solid var(--focus);
+  outline-offset: var(--space-xxs);
 }
 
-/* ---------- header ---------- */
-.head{
-  display:flex;align-items:flex-end;justify-content:space-between;
-  gap:20px;flex-wrap:wrap;margin-bottom:14px;
-}
-.head .title-wrap{display:flex;align-items:center;gap:16px;}
-.kicker{
-  font-family:"Patrick Hand",cursive;font-weight:400;
-  color:var(--accent);font-size:18px;letter-spacing:.4px;line-height:1;
-  margin-bottom:4px;
-}
-h1.big{
-  font-family:"Caprasimo",cursive;font-weight:400;
-  font-size:clamp(40px,6vw,62px);line-height:.92;margin:0;color:var(--ink);
-}
-.pill{
-  font-family:"Nunito";font-weight:800;font-size:13px;
-  background:var(--sun);border:2.5px solid var(--ink);border-radius:999px;
-  box-shadow:3px 3px 0 var(--ink);padding:8px 16px;transform:rotate(1.4deg);
-  white-space:nowrap;
-}
-.rosie{flex:0 0 auto;filter:drop-shadow(3px 3px 0 rgba(42,31,21,.18));}
+/* ============ DASHBOARD FRAME ============ */
 
-/* ---------- section headers ---------- */
-.sec{margin:46px 0 18px;}
-.sec .kicker{font-size:19px;}
-.sec h2{
-  font-family:"Caprasimo",cursive;font-weight:400;
-  font-size:clamp(26px,3.4vw,34px);line-height:1;margin:0;display:inline-block;
+.dashboard {
+  /* the one page-level measure this surface owns; not a design token */
+  --wrap-max: 1100px;
+  padding: var(--space-xxl) var(--space-xl) var(--tab-safe);
 }
-.sec .rule{height:2px;width:84px;background:var(--ink);opacity:.3;margin-top:7px;border-radius:2px;}
+.wrap { max-width: var(--wrap-max); margin: 0 auto; }
 
-/* ---------- stat cards ---------- */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:20px;}
-.stat{position:relative;padding:20px 18px 17px;overflow:hidden;min-height:128px;display:flex;flex-direction:column;justify-content:flex-end;}
-.stat .num{font-family:"Fredoka",sans-serif;font-weight:700;font-size:clamp(34px,4vw,44px);line-height:.95;letter-spacing:-.5px;}
-.stat .lbl{font-family:"Nunito";font-weight:800;font-size:14.5px;margin-top:5px;}
-.stat .sub{font-family:"Patrick Hand",cursive;font-weight:400;font-size:14px;color:var(--accent);margin-top:3px;line-height:1;}
-.glyph{position:absolute;top:13px;right:13px;width:34px;height:34px;color:#fff;}
-.glyph svg{width:100%;height:100%;display:block;}
-
-/* ---------- two-up ---------- */
-.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-.panel{padding:22px 22px 24px;background:var(--fill,var(--paper));}
-.panel .ptitle{font-family:"Fredoka",sans-serif;font-weight:600;font-size:20px;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-.panel .ptitle .badge{margin-left:auto;font-family:"Fredoka";font-weight:700;font-size:14px;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:3px 11px;box-shadow:2px 2px 0 var(--ink);white-space:nowrap;}
-
-/* ---------- bar chart ---------- */
-.chartpanel{padding:22px 18px 18px;background:var(--paper);}
-.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:18px;}
-.legend .lg{display:flex;align-items:center;gap:7px;font-family:"Nunito";font-weight:800;font-size:12.5px;}
-.legend .sw{width:15px;height:15px;border:2px solid var(--ink);border-radius:4px;box-shadow:1.5px 1.5px 0 var(--ink);}
-.plot-scroll{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
-.plot{display:flex;align-items:flex-end;gap:10px;min-width:680px;}
-.group{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;}
-.bars{height:210px;display:flex;align-items:flex-end;gap:3px;}
-.bar{width:8px;border:1.5px solid var(--ink);border-radius:4px 4px 2px 2px;box-shadow:1.5px 1.5px 0 var(--ink);}
-.glabel{font-family:"Nunito";font-weight:800;font-size:11px;text-align:center;line-height:1.15;color:var(--ink);}
-.glabel .mo{display:block;font-family:"Patrick Hand",cursive;font-weight:400;font-size:11px;color:var(--accent);}
-
-/* ---------- mood rows ---------- */
-.mrow{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.mrow:last-child{margin-bottom:0;}
-.mrow .ml{font-family:"Nunito";font-weight:800;font-size:14px;width:74px;flex:0 0 auto;}
-.track{flex:1;height:26px;background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;overflow:hidden;box-shadow:2px 2px 0 var(--ink);}
-.fill{height:100%;border-right:2.5px solid var(--ink);border-radius:0 999px 999px 0;min-width:6px;}
-.mval{font-family:"Fredoka";font-weight:700;font-size:15px;width:78px;flex:0 0 auto;text-align:right;}
-.mval small{font-family:"Nunito";font-weight:800;font-size:11px;color:var(--accent);}
-
-/* ---------- leaderboard ---------- */
-.lb{display:flex;flex-direction:column;gap:10px;}
-.lbrow{
-  display:flex;align-items:center;gap:13px;
-  background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;
-  box-shadow:3px 3px 0 var(--ink);padding:10px 14px;
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-card);
 }
-.lbrow:nth-child(odd){transform:rotate(-.7deg);}
-.lbrow:nth-child(even){transform:rotate(.7deg);}
-.lbrow .rank{font-family:"Fredoka";font-weight:700;font-size:18px;width:24px;flex:0 0 auto;color:var(--accent);}
-.lbrow .who{font-family:"Nunito";font-weight:900;font-size:16px;display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto;}
-.lbrow .who .crown{width:22px;height:22px;color:var(--gold);flex:0 0 auto;}
-.lbrow .who svg{flex:0 0 auto;}
-.lbrow .who .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.lbrow .pts{flex:0 0 auto;}
-.lbrow .pts{margin-left:auto;font-family:"Fredoka";font-weight:700;font-size:19px;letter-spacing:-.5px;text-align:right;}
-.lbrow .pts small{display:block;font-family:"Patrick Hand",cursive;font-weight:400;font-size:11.5px;letter-spacing:0;color:var(--accent);margin-top:-1px;}
-.lbrow.top{background:var(--sun);}
-.align-chip{
-  font-family:"Fredoka",sans-serif;font-weight:700;font-size:12.5px;
-  border:2px solid var(--ink);border-radius:999px;
-  padding:1px 9px;box-shadow:1.5px 1.5px 0 var(--ink);
-  white-space:nowrap;flex:0 0 auto;
+.head .title-wrap { display: flex; align-items: center; gap: var(--space-lg); }
+.head h1 { margin: 0; }
+.head .tag { white-space: nowrap; }
+.rosie { flex: 0 0 auto; }
+
+/* the section crown is .section-header + .rule; only its rhythm is local */
+.dashboard .section-header { margin-block: var(--space-xxl) var(--space-lg); }
+
+/* a hand-written aside under a section header — not an empty state */
+.note {
+  margin: 0 0 var(--space-lg);
+  font: var(--type-hand-lg);
+  color: var(--text-secondary);
 }
 
-.empty{font-family:"Patrick Hand",cursive;font-weight:400;font-size:15px;color:var(--accent);opacity:.8;}
+/* ============ STAT CARDS ============ */
 
-/* ---------- per-pig mood roster ---------- */
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:14px;}
-.pig{padding:13px 14px 12px;}
-.pig .pname{font-family:"Nunito";font-weight:900;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pig .ph{font-family:"Fredoka",sans-serif;font-weight:700;font-size:30px;line-height:1;margin-top:3px;letter-spacing:-.5px;}
-.pig .ph small{font-family:"Patrick Hand",cursive;font-weight:400;font-size:13px;color:var(--accent);margin-left:4px;letter-spacing:0;}
-.pig .ptrack{height:9px;background:var(--paper);border:2px solid var(--ink);border-radius:999px;overflow:hidden;margin-top:9px;box-shadow:1.5px 1.5px 0 var(--ink);}
-.pig .pfill{height:100%;border-radius:999px;}
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--space-xl); }
+.stat {
+  padding: var(--space-lg) var(--page-pad);
+  overflow: hidden;
+  min-height: var(--art-portrait);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.stat .num { font: var(--type-hero); }
+.stat .lbl { margin-top: var(--space-xs); font: var(--type-body); }
+/* ACCENT_SAFE_FILLS: the accent clears 4.5:1 on paper / cream / cream2 / rose /
+   sky / sage / sun only. On lilac and peach the caption is ink instead. */
+.stat .sub { margin-top: var(--space-xxs); font: var(--type-hand); color: var(--text-primary); }
+.stat--accent-safe .sub { color: var(--accent); }
+.glyph {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: var(--art-glyph-sm);
+  height: var(--art-glyph-sm);
+  color: var(--paper);
+}
+.glyph svg { width: 100%; height: 100%; display: block; }
 
-/* ---------- error state ---------- */
-.errpanel{margin-top:18px;padding:22px;}
-.errpanel pre{white-space:pre-wrap;font-size:12px;font-family:ui-monospace,monospace;font-weight:400;}
+/* ============ TWO-UP PANELS ============ */
 
-@media(max-width:720px){
-  .two{grid-template-columns:1fr;}
-  .dashboard{padding:24px 14px 60px;}
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); }
+.panel { padding: var(--space-xl); }
+.panel .ptitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  font: var(--type-body-lg);
+  font-family: var(--font-display);
+}
+.panel .ptitle .tag { margin-left: auto; white-space: nowrap; }
+.panel-icon { width: var(--art-glyph-sm); height: var(--art-glyph-sm); flex: 0 0 auto; }
+
+/* ============ BAR CHART ============ */
+/* Six series × 14 days of grouped bars, drawn as HTML boxes (no SVG plot), so
+   every fill resolves a token at paint time. The legend is always present and
+   each bar carries its series + value as a title. */
+
+.chartpanel { padding: var(--space-xl) var(--page-pad) var(--page-pad); }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-lg); margin-bottom: var(--page-pad); }
+.legend .lg { display: flex; align-items: center; gap: var(--space-sm); font: var(--type-label); letter-spacing: var(--tracking-label); }
+.legend .sw {
+  width: var(--art-mark);
+  height: var(--art-mark);
+  border: var(--border-ink) solid var(--border);
+  border-radius: var(--radius-hair);
+}
+.plot-scroll { overflow-x: auto; padding-bottom: var(--space-sm); -webkit-overflow-scrolling: touch; }
+.plot { display: flex; align-items: flex-end; gap: var(--space-md); min-width: max-content; }
+.group { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+.bars { height: var(--art-stage); display: flex; align-items: flex-end; gap: var(--space-xxs); }
+.bar {
+  width: var(--space-sm);
+  min-height: var(--space-xs);
+  border: var(--border-thin) solid var(--border);
+  border-radius: var(--radius-hair) var(--radius-hair) 0 0;
+}
+.glabel { font: var(--type-label); letter-spacing: var(--tracking-label); text-align: center; color: var(--text-primary); }
+/* the chart panel is paper — an ACCENT_SAFE_FILL */
+.glabel .mo { display: block; font: var(--type-hand); color: var(--accent); }
+
+/* ============ MOOD ROWS ============ */
+/* ch-based widths so the labels survive 200% text zoom (G-19) */
+
+.mrow { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-card); }
+.mrow:last-child { margin-bottom: 0; }
+.mrow .ml { flex: 0 0 auto; min-width: 8ch; font: var(--type-body); }
+.track {
+  flex: 1;
+  height: var(--space-xl);
+  background: var(--paper);
+  border: var(--border-ink) solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.fill { height: 100%; min-width: var(--space-xs); border-right: var(--border-ink) solid var(--border); border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.mval { flex: 0 0 auto; min-width: 9ch; text-align: right; font: var(--type-body-lg); font-family: var(--font-display); }
+/* mood panels are cream — an ACCENT_SAFE_FILL */
+.mval small { font: var(--type-hand); color: var(--accent); }
+
+/* ============ LEADERBOARD ============ */
+
+.lb { display: flex; flex-direction: column; gap: var(--space-md); }
+.lbrow { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md) var(--space-card); }
+.lbrow.top { --fill: var(--fill-sun); }
+/* rows are paper or sun — both ACCENT_SAFE_FILLS */
+.lbrow .rank { flex: 0 0 auto; min-width: 3ch; font: var(--type-body-lg); font-family: var(--font-display); color: var(--accent); }
+.lbrow .who { display: flex; align-items: center; gap: var(--space-sm); min-width: 0; flex: 1 1 auto; font: var(--type-body-lg); }
+.lbrow .who svg { flex: 0 0 auto; }
+.lbrow .who .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lbrow .pts { flex: 0 0 auto; margin-left: auto; text-align: right; font: var(--type-body-lg); font-family: var(--font-display); }
+.lbrow .pts small { display: block; font: var(--type-hand); color: var(--accent); }
+.who-icon { width: var(--art-glyph-sm); height: var(--art-glyph-sm); flex: 0 0 auto; }
+.align-chip { flex: 0 0 auto; white-space: nowrap; }
+
+/* ============ PER-PIG MOOD ROSTER ============ */
+
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); gap: var(--space-card); }
+.pig { padding: var(--space-md) var(--space-card); }
+.pig .pname { font: var(--type-body-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pig .ph { margin-top: var(--space-xxs); font: var(--type-numeral-lg); font-family: var(--font-display); }
+/* pig cards are sage / cream / rose — all ACCENT_SAFE_FILLS */
+.pig .ph small { margin-left: var(--space-xs); font: var(--type-hand); color: var(--accent); }
+.pig .ptrack {
+  height: var(--space-sm);
+  margin-top: var(--space-sm);
+  background: var(--paper);
+  border: var(--border-ink) solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.pig .pfill { height: 100%; border-radius: var(--radius-pill); }
+
+/* ============ ERROR STATE ============ */
+
+.errpanel { margin-top: var(--page-pad); padding: var(--space-xl); }
+.errpanel pre { white-space: pre-wrap; font: var(--type-body-sm); font-family: ui-monospace, SFMono-Regular, monospace; }
+/* the error sticker is cream — an ACCENT_SAFE_FILL */
+.errpanel .why { margin-top: var(--space-sm); font: var(--type-hand); color: var(--accent); }
+
+@media (max-width: 720px) {
+  .two { grid-template-columns: 1fr; }
+  .dashboard { padding: var(--space-xl) var(--space-card) var(--space-xxl); }
   /* keep stat + pig cards at least 2-up instead of collapsing to one column */
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
-  .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-card); }
+  .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media(max-width:480px){
-  .dashboard{padding:20px 12px 52px;}
-  .sec{margin:32px 0 14px;}
-  .head{gap:12px;}
-  .head .title-wrap{gap:11px;}
-  .rosie{width:58px;height:58px;}
-  .grid{gap:11px;}
-  .stat{min-height:104px;padding:15px 13px 13px;}
-  .stat .num{font-size:30px;}
-  .stat .lbl{font-size:13px;}
-  .glyph{width:28px;height:28px;top:11px;right:11px;}
-  .panel{padding:18px 16px 18px;}
-  .panel .ptitle{font-size:18px;}
-  .pgrid{gap:11px;}
-  .pig .ph{font-size:26px;}
-  .mrow{gap:9px;}
-  .mrow .ml{width:58px;font-size:13px;}
-  .mval{width:60px;font-size:14px;}
-  .lbrow{padding:9px 12px;gap:10px;}
-  .lbrow .who{font-size:15px;}
-  .lbrow .pts{font-size:17px;}
+@media (max-width: 480px) {
+  .dashboard { padding: var(--space-lg) var(--space-md) var(--space-xxl); }
+  .dashboard .section-header { margin-block: var(--space-xl) var(--space-md); }
+  .head { gap: var(--space-md); }
+  .head .title-wrap { gap: var(--space-md); }
+  .grid { gap: var(--space-md); }
+  .stat { padding: var(--space-card) var(--space-md); }
+  .stat .num { font: var(--type-display-lg); font-family: var(--font-display); }
+  .panel { padding: var(--page-pad) var(--space-lg); }
+  .pgrid { gap: var(--space-md); }
+  .lbrow { padding: var(--space-sm) var(--space-md); }
 }
 
 /* ============ LOGIN ============ */
-.login-wrap{
-  min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  padding:28px;
+
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
 }
-.login-card{
-  width:100%;max-width:380px;
-  background:var(--cream);
-  border:2.5px solid var(--ink);
-  border-radius:24px;
-  box-shadow:4px 4px 0 var(--ink);
-  transform:rotate(-1.4deg);
-  padding:34px 30px 30px;
-  text-align:center;
+.login-card {
+  width: 100%;
+  max-width: var(--login-max);
+  padding: var(--space-xxl) var(--space-xl) var(--space-xl);
+  text-align: center;
+  --login-max: 380px;
 }
-.login-card .rosie{filter:drop-shadow(3px 3px 0 rgba(42,31,21,.18));margin-bottom:8px;}
-.login-card h1{
-  font-family:"Caprasimo",cursive;font-weight:400;
-  font-size:46px;line-height:.95;margin:0;color:var(--ink);
+.login-card h1 { margin: 0; }
+.login-card .sub { margin-top: var(--space-sm); font: var(--type-body-sm); color: var(--text-secondary); }
+.login-card form { display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-xl); text-align: left; }
+.login-err {
+  min-height: var(--space-xl);
+  font: var(--type-hand-lg);
+  color: var(--danger-text);
+  text-align: center;
+  visibility: hidden;
 }
-.login-card .sub{
-  font-family:"Nunito";font-weight:800;font-size:13.5px;
-  color:var(--ink);opacity:.5;margin-top:8px;
+.login-err.show { visibility: visible; }
+.login-err.show .x { display: inline-block; animation: shake var(--motion-fade) ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(calc(var(--space-xs) * -1)); }
+  75% { transform: translateX(var(--space-xs)); }
 }
-.login-card form{display:flex;flex-direction:column;gap:13px;margin-top:24px;}
-.pw{
-  font-family:"Nunito";font-weight:800;font-size:16px;color:var(--ink);
-  background:var(--paper);
-  border:2.5px solid var(--ink);
-  border-radius:14px;
-  box-shadow:3px 3px 0 var(--ink);
-  padding:14px 16px;width:100%;
-  transition:transform .08s ease, box-shadow .08s ease;
-}
-.pw::placeholder{color:var(--ink);opacity:.38;font-weight:800;}
-.pw:focus{
-  outline:none;
-  border-color:var(--accent);
-  transform:translate(1px,1px);
-  box-shadow:2px 2px 0 var(--ink);
-}
-.enter{
-  font-family:"Fredoka",sans-serif;font-weight:700;font-size:19px;letter-spacing:.3px;
-  color:var(--paper);background:var(--ink);
-  border:2.5px solid var(--ink);
-  border-radius:14px;
-  box-shadow:4px 4px 0 var(--accent);
-  padding:14px;width:100%;cursor:pointer;
-  transition:transform .08s ease, box-shadow .08s ease;
-}
-.enter:hover{transform:translate(4px,4px);box-shadow:0 0 0 var(--accent);}
-.enter:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--accent);}
-.enter:disabled{opacity:.6;cursor:default;}
-.login-err{
-  font-family:"Patrick Hand",cursive;font-weight:400;font-size:15px;
-  color:var(--accent);
-  min-height:20px;line-height:20px;margin-top:2px;white-space:nowrap;
-  visibility:hidden;
-}
-.login-err.show{visibility:visible;}
-.login-err.show .x{display:inline-block;animation:shake .4s ease;}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}

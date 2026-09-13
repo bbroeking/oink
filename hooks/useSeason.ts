@@ -31,7 +31,7 @@
 // claimed. Both are safe to retry: every claimer is idempotent server-side.
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { supabase } from "@/utils/supabase";
 import { rpc, rpcAction, RpcResult } from "@/utils/rpc";
 import * as seasonPass from "@/utils/seasonPass";
@@ -44,8 +44,14 @@ import type { MysteryBoxRevealPayload } from "@/components/MysteryHatReveal";
 
 // The raw claim RPC response — the same shape for claim_tier_reward and
 // claim_wallow_tier. Mystery-box claims carry their grant on it.
+interface MoteClaimFields {
+	reward_type?: string;
+	motes_granted?: number;
+	motes_balance?: number;
+}
+
 type RawClaim =
-	| ({ ok: boolean; reason?: string; current_tier?: number } & MysteryBoxRevealPayload)
+	| ({ ok: boolean; reason?: string; current_tier?: number } & MysteryBoxRevealPayload & MoteClaimFields)
 	| null;
 
 // A claim outcome the screen maps to its dialogs. Success carries current_tier +
@@ -54,15 +60,18 @@ type RawClaim =
 // the screen's maps — so it renders the same "Couldn't claim / give it another
 // tap" fallback the raw-null path always did.
 export type ClaimResult =
-	| ({ ok: true; current_tier?: number } & MysteryBoxRevealPayload)
+	| ({ ok: true; current_tier?: number } & MysteryBoxRevealPayload & MoteClaimFields)
 	| { ok: false; reason: string; current_tier?: number };
 
 // The claim-all tally. The screen turns this into its one summary beat (the
 // "N rewards — X tickles + the Reed Hat" line) and stages lastMystery to follow.
 export interface ClaimAllTally {
+	reason?: string;
 	claimedCount: number;
 	failed: number;
 	tickles: number;
+	motes: number;
+	motesBalance?: number;
 	items: string[];
 	lastMystery: MysteryBoxRevealPayload | null;
 }
@@ -77,6 +86,8 @@ type RawClaimAll = {
 	claimed_count?: number;
 	failed?: number;
 	tickles?: number;
+	motes?: number;
+	motes_balance?: number;
 	items?: string[];
 	mysteries?: MysteryBoxRevealPayload[];
 } | null;
@@ -90,9 +101,12 @@ type RawClaimAll = {
 export function tallyFromRpc(raw: RawClaimAll): ClaimAllTally {
 	const mysteries = Array.isArray(raw?.mysteries) ? raw!.mysteries! : [];
 	return {
+		...(raw?.ok === false && raw.reason ? { reason: raw.reason } : {}),
 		claimedCount: raw?.claimed_count ?? 0,
 		failed: raw?.failed ?? 0,
 		tickles: raw?.tickles ?? 0,
+		motes: raw?.motes ?? 0,
+		...(raw?.motes_balance !== undefined ? { motesBalance: raw.motes_balance } : {}),
 		items: Array.isArray(raw?.items) ? raw!.items! : [],
 		lastMystery: mysteries.length ? mysteries[mysteries.length - 1] : null,
 	};
@@ -108,6 +122,8 @@ export interface WallowFields {
 
 export interface UseSeason {
 	state: SeasonState | null;
+	// True when the last season_state read came back null (timeout/offline).
+	loadError: boolean;
 	busy: boolean;
 	uid: string | null;
 	alignmentScore: number;
@@ -134,6 +150,10 @@ export interface UseSeason {
 export function useSeason(): UseSeason {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
+	// A season_state read that came back null (timeout, offline) — the screen
+	// shows an error with a retry instead of reading the season forever.
+	// (2026-09-11 screen review)
+	const [loadError, setLoadError] = useState(false);
 	const [uid, setUid] = useState<string | null>(null);
 	// The alignment placard + YOUR TAKE tickle cell read off the profile, fetched
 	// alongside season_state (getSession is cached, so no extra round-trip beyond
@@ -144,10 +164,24 @@ export function useSeason(): UseSeason {
 	// The single in-flight guard — a ref (not busy state) so rapid double-taps are
 	// rejected synchronously, before setBusy's async commit lands.
 	const busyRef = useRef(false);
+	const readVersion = useRef(0);
+	const updateMotes = useCallback((balance: number | undefined) => {
+		if (balance === undefined) return;
+		readVersion.current += 1;
+		setState((current) => current ? { ...current, motes: balance } : current);
+	}, []);
 
 	const refresh = useCallback(async () => {
+		const version = ++readVersion.current;
 		const data = await rpc<SeasonState>("season_state");
-		if (data) setState(data);
+		if (version === readVersion.current) {
+			if (data) {
+				setState(data);
+				setLoadError(false);
+			} else {
+				setLoadError(true);
+			}
+		}
 		// Alignment placard reads the player's score directly off the profile
 		// (season_state doesn't carry it).
 		const { data: sess } = await supabase.auth.getSession();
@@ -206,6 +240,10 @@ export function useSeason(): UseSeason {
 			const r = await rpc<RawClaim>("claim_season_tier", {
 				target_tier: tier,
 				target_track: track,
+				...(state?.motes !== undefined ? {
+					expected_season_id: state.season?.id,
+					expected_wallow_lap: state.season_wallow_count ?? 0,
+				} : {}),
 			});
 			busyRef.current = false;
 			setBusy(false);
@@ -213,9 +251,10 @@ export function useSeason(): UseSeason {
 			// dialog maps don't key on, so it renders the generic retry copy.
 			if (!r) return { ok: false, reason: "network" };
 			if (!r.ok) return { ok: false, reason: r.reason ?? "", current_tier: r.current_tier };
+			updateMotes(r.motes_balance);
 			return { ...r, ok: true };
 		},
-		[]
+		[state, updateMotes]
 	);
 
 	const claimAll = useCallback(
@@ -228,15 +267,22 @@ export function useSeason(): UseSeason {
 			setBusy(true);
 			// ONE transaction claims every ready tier server-side. Track is a hint;
 			// prestige + track resolve server-side exactly as claim_season_tier.
-			const raw = await rpc<RawClaimAll>("claim_ready_tiers", { target_track: track });
+			const raw = await rpc<RawClaimAll>("claim_ready_tiers", {
+				target_track: track,
+				...(state?.motes !== undefined ? {
+					expected_season_id: state.season?.id,
+					expected_wallow_lap: state.season_wallow_count ?? 0,
+				} : {}),
+			});
 			// tallyFromRpc fail-softs a null (transport miss) into a zeroed tally, so a
 			// failed sweep reports nothing claimed rather than a phantom haul.
 			const tally = tallyFromRpc(raw);
+			updateMotes(tally.motesBalance);
 			busyRef.current = false;
 			setBusy(false);
 			return tally;
 		},
-		[]
+		[state, updateMotes]
 	);
 
 	const wallow = useCallback(async (): Promise<RpcResult<WallowFields> | null> => {
@@ -251,6 +297,7 @@ export function useSeason(): UseSeason {
 
 	return {
 		state,
+		loadError,
 		busy,
 		uid,
 		alignmentScore,

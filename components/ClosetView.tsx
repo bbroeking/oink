@@ -7,20 +7,34 @@
 // it off. Tiles carry a rarity stripe + tinted swatch and a clear lilac "ON" state.
 // A title chip under the pig + a TitlesSection at the bottom make the Closet the
 // canonical place to equip titles (the Shop's Titles tab stays for buying).
+//
+// Rebuilt on the design system (2026-09-11, wave 3 · area D): every surface is a
+// `Sticker`, every capsule a `Chip`, every category crown a `SectionHeader`, and
+// every string a text role. The living pig surface keeps its frame-sync per the
+// 2026-07-16 ruling.
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
 	View,
-	Text,
-	Pressable,
 	Image,
 	FlatList,
 	StyleSheet,
 	useWindowDimensions
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { PigStage } from "./ui/PigStage";
+import type { PigId } from "@/utils/pigs";
+import {
+	Button,
+	Chip,
+	EmptyState,
+	Glyph,
+	Icon,
+	IconButton,
+	PigStage,
+	SectionHeader,
+	Sticker,
+	T,
+} from "./ui";
 import { TitlesSection } from "./TitlesSection";
-import { EmptyState } from "./ui/EmptyState";
 import {
 	HAT_IMAGES,
 	HAT_THUMBNAILS_128,
@@ -38,19 +52,18 @@ import {
 	type EquipSlotKey
 } from "@/constants/slots";
 import {
-	FONTS,
-	STICKER_SHADOW,
-	SHADOW_SM,
+	ART_SIZE,
+	BORDER,
+	OPACITY,
 	WHIMSY,
 	RADII,
 	SPACE,
-	TYPE,
+	TAB_SAFE,
+	TAP_MIN,
 	RARITY_BG_SOLID,
-	RARITY_STRIPE
+	RARITY_STRIPE,
+	UI_COLORS,
 } from "@/constants/theme";
-import { Icon } from "./ui/Icon";
-import { IconButton } from "./ui/IconButton";
-import { Glyph } from "./ui/Glyph";
 
 // Explicit tile geometry. Yoga (this RN vintage) refuses to treat
 // aspectRatio-derived heights as definite when resolving children — both
@@ -58,6 +71,8 @@ import { Glyph } from "./ui/Glyph";
 // so big art cropped through every workaround. Measured numbers end it:
 // COLS columns inside the content padding (16*2) with the grid's 10pt gaps.
 interface Props {
+	pigId?: PigId;
+	active?: boolean;
 	ownedItems: HatRow[];
 	allItems: HatRow[];
 	activeIds: Record<string, string | null>;
@@ -143,6 +158,7 @@ const stripe = (r: string | undefined) => RARITY_STRIPE[r ?? "common"] ?? RARITY
 // item/category icon so the slots flanking Rosie read as a colourful dress-up tray.
 const SLOT_TINT: Record<string, string> = {
 	head: WHIMSY.sun,
+	bow: WHIMSY.rose,
 	face: WHIMSY.sky,
 	neck: WHIMSY.rose,
 	held: WHIMSY.sage,
@@ -151,15 +167,41 @@ const SLOT_TINT: Record<string, string> = {
 	background: WHIMSY.cream2
 };
 
+// ── Drawing geometry ───────────────────────────────────────────────────────
+// Measured boxes, not spacing steps: the paper-doll's slot chips, Rosie's
+// scene window, the tile grid's gutter and the two corner badges. Named here so
+// no style re-invents them (and so `SPACE` is never asked to mean "art size").
+//
 // Rosie's preview footprint in the paper-doll. Smaller than the old 200 so the
 // equip-slot columns have room to flank her on both sides.
 const PIG_PREVIEW = 150;
 // The scene window behind Rosie is a touch wider + taller than she is so a
-// margin of background shows all around her (room for the hat, aura + flag to
+// margin of background shows all around her (room for the hat and aura to
 // read). Capped so the flanking slot columns still clear a 64px chip on an SE
 // (card inner width = SCREEN_W − 60; each column = (inner − PIG_WINDOW_W) / 2).
 const PIG_WINDOW_W = 184;
 const PIG_WINDOW_H = 210;
+const SLOT_CHIP_W = 64;
+// The "remove" badge rides the slot chip's corner, half off the edge.
+const SLOT_REMOVE_INSET = -10;
+const SLOT_REMOVE_ICON = 10;
+const SLOT_REMOVE_VISUAL = 20;
+const SLOT_THUMB_ART = 30;
+const TITLE_CHIP_MAX_W = 240;
+// Three tiles per row; the gutter is both the gap and the row rhythm.
+const TILE_GAP = 10;
+const TILE_INSET = 4;
+const TILE_ART_INSET = 24;
+const TILE_ART_MIN = 44;
+// The rarity marker down the top edge of a tile. Borderless it measured
+// 1.69–2.95:1 against its own panel, so it carries a hair of ink [D-02].
+const STRIPE_H = 4;
+const CHECK_BADGE = 22;
+const BADGE_ICON = 12;
+const CHECK_ICON = 11;
+const BADGE_STROKE = 2.6;
+const CHECK_STROKE = 2.8;
+const SLOT_REMOVE_STROKE = 2.6;
 
 type ClosetListRow =
 	| {
@@ -182,6 +224,8 @@ const CLOSET_FILTERS: { value: ClosetFilter; label: string }[] = [
 ];
 
 export function ClosetView({
+	pigId = "rosie",
+	active = true,
 	ownedItems,
 	allItems,
 	activeIds,
@@ -196,8 +240,8 @@ export function ClosetView({
 	onClearPrestigeFilter,
 }: Props) {
 	const { width: windowWidth } = useWindowDimensions();
-	const tileWidth = Math.floor((windowWidth - SPACE.lg * 2 - 20) / 3);
-	const thumbArt = Math.max(44, tileWidth - 24);
+	const tileWidth = Math.floor((windowWidth - SPACE.lg * 2 - TILE_GAP * 2) / 3);
+	const thumbArt = Math.max(TILE_ART_MIN, tileWidth - TILE_ART_INSET);
 	const listRef = useRef<FlatList<ClosetListRow>>(null);
 	// Owned title rows, fed back by TitlesSection's load — the preview
 	// chip resolves the active title's display name from here.
@@ -244,17 +288,18 @@ export function ClosetView({
 		() => new Set(ownedItems.map((item) => item.id)),
 		[ownedItems],
 	);
-	// The merged Closet owns the whole collectible catalog. Flags, retired
-	// orphans, and members items whose art has not landed stay hidden.
+	// The merged Closet owns the whole collectible catalog. Retired orphans and
+	// members items whose art has not landed stay hidden. Retired flag rows have
+	// no registered artwork, so they fail the same asset-presence gate.
 	const closetItems = useMemo(
 		() =>
 			allItems.filter(
 				(i) =>
-					i.category !== "flag" &&
 					!HIDDEN_CLOSET_IDS.has(i.id) &&
 					(!i.members_only ||
 						!!HAT_IMAGES[i.id] ||
-						!!HAT_THUMBNAILS_256[i.id])
+						!!HAT_THUMBNAILS_256[i.id]) &&
+					(!!HAT_IMAGES[i.id] || !!HAT_THUMBNAILS_256[i.id])
 			),
 		[allItems],
 	);
@@ -275,8 +320,8 @@ export function ClosetView({
 		() =>
 			ownedItems.filter(
 				(item) =>
-					item.category !== "flag" &&
-					!HIDDEN_CLOSET_IDS.has(item.id),
+					!HIDDEN_CLOSET_IDS.has(item.id) &&
+					(!!HAT_IMAGES[item.id] || !!HAT_THUMBNAILS_256[item.id]),
 			),
 		[ownedItems],
 	);
@@ -329,7 +374,7 @@ export function ClosetView({
 				listRef.current?.scrollToIndex({
 					index: categoryIndex[category],
 					animated: true,
-					viewOffset: 8
+					viewOffset: SPACE.sm
 				});
 			}
 		},
@@ -377,11 +422,20 @@ export function ClosetView({
 		const it = equippedId ? byId.current.get(equippedId) : null;
 		const src = equippedId ? (HAT_THUMBNAILS_128[equippedId] ?? HAT_IMAGES[equippedId]) : null;
 		const thumbSrc = src ?? (it ? categoryIcon(it.category) : null);
+		const slotName = s === "background" ? "BG" : SLOT_LABEL[s];
 		return (
-			<Pressable
+			<Sticker
 				key={s}
+				color="paper"
+				rotate={0}
+				radius={RADII.lg}
+				shadow="sm"
 				onPress={() => scrollToCategory(s)}
-				style={({ pressed }) => [styles.slotChip, pressed && { opacity: 0.7 }]}
+				accessibilityLabel={
+					it ? `${slotName} slot, wearing ${it.name}` : `${slotName} slot, empty`
+				}
+				accessibilityHint="Jumps to this category in the Closet"
+				style={styles.slotChip}
 			>
 				{equippedId && it ? (
 					<IconButton
@@ -389,9 +443,9 @@ export function ClosetView({
 						label={`Remove ${it.name}`}
 						onPress={() => onEquip(null, it.category)}
 						variant="paper"
-						iconSize={10}
-						visualSize={20}
-						strokeWidth={2.6}
+						iconSize={SLOT_REMOVE_ICON}
+						visualSize={SLOT_REMOVE_VISUAL}
+						strokeWidth={SLOT_REMOVE_STROKE}
 						style={styles.slotRemove}
 					/>
 				) : null}
@@ -399,16 +453,19 @@ export function ClosetView({
 					{thumbSrc ? (
 						<Image source={thumbSrc} style={styles.slotThumbImg} resizeMode="contain" />
 					) : (
-						<Text style={styles.slotPlus}>+</Text>
+						<Icon name="plus" size={ART_SIZE.glyphSm} color={UI_COLORS.uiMuted} />
 					)}
 				</View>
-				<Text
-					style={styles.slotLabel}
+				<T
+					role="kickerPillSm"
+					tone="secondary"
+					align="center"
 					numberOfLines={2}
+					style={styles.slotLabel}
 				>
-					{s === "background" ? "BG" : SLOT_LABEL[s]}
-				</Text>
-			</Pressable>
+					{slotName}
+				</T>
+			</Sticker>
 		);
 	};
 
@@ -433,30 +490,34 @@ export function ClosetView({
 			ListHeaderComponent={
 				<>
 					{prestigeOnly && (
-						<View style={styles.prestigeFilter}>
+						<Sticker
+							color="sun"
+							rotate={0}
+							radius={RADII.md}
+							shadow="sm"
+							style={styles.prestigeFilter}
+						>
 							<View style={styles.prestigeFilterCopy}>
-								<Glyph name="crown" size={18} />
-								<Text style={styles.prestigeFilterText}>
+								<Glyph name="crown" size={ART_SIZE.glyphSm} />
+								<T role="bodySm" style={styles.prestigeFilterText}>
 									prestige gear earned from your Wallows
-								</Text>
+								</T>
 							</View>
-							<Pressable
-								onPress={onClearPrestigeFilter}
+							<Button
+								variant="ghost"
+								size="sm"
+								onPress={() => onClearPrestigeFilter?.()}
 								disabled={!onClearPrestigeFilter}
-								style={({ pressed }) => [
-									styles.clearPrestigeFilter,
-									pressed && { opacity: 0.65 },
-								]}
-								accessibilityRole="button"
 								accessibilityLabel="Show all Closet items"
+								accessibilityHint="Clears the prestige-only filter"
 							>
-								<Text style={styles.clearPrestigeFilterText}>Show all</Text>
-							</Pressable>
-						</View>
+								Show all
+							</Button>
+						</Sticker>
 					)}
 			{/* Paper-doll fitting room: Rosie centred, equip slots flank her,
 			    then her nameplate. */}
-			<View style={styles.previewCard}>
+			<Sticker color="cream" rotate={0} radius={RADII.xl} pad style={styles.previewCard}>
 				<View style={styles.paperDoll}>
 					<View style={styles.slotCol}>{leftSlots.map((s) => renderSlot(s))}</View>
 					{/* Scene window: the equipped background fills a rounded window with
@@ -470,9 +531,12 @@ export function ClosetView({
 						<View style={styles.pigVisualBox}>
 							<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
 								<PigStage
+									active={active}
+									pigId={pigId}
 									pigFrameIdx={pigFrameIdx}
 									onPigFrame={setPigFrameIdx}
 									equipped={slot("active_hat_id")}
+									equippedBow={slot("active_bow_id")}
 									equippedGlasses={slot("active_glasses_id")}
 									equippedMask={slot("active_mask_id")}
 									equippedNeck={slot("active_neck_id")}
@@ -487,29 +551,46 @@ export function ClosetView({
 
 				{/* Title chip — the pig's nameplate; tapping scrolls to Titles. */}
 				{userId != null && (
-							<Pressable
+							<Sticker
+								color="paper"
+								rotate={0}
+								radius={RADII.md}
+								shadow="none"
 								onPress={scrollToTitles}
-								style={({ pressed }) => [styles.titleChip, pressed && { opacity: 0.7 }]}
+								accessibilityLabel={
+									activeTitleName
+										? `Title: ${activeTitleName}`
+										: "No title chosen"
+								}
+								accessibilityHint="Scrolls to your titles"
+								style={styles.titleChip}
 							>
-						<Text style={styles.titleChipKicker}>title</Text>
-						<Text
-							style={[
-								styles.titleChipName,
-										activeTitleName == null && styles.titleChipNameEmpty
-							]}
+						<T role="kickerPillSm" tone="secondary">title</T>
+						<T
+							role="cardTitleSm"
+							tone={activeTitleName == null ? "secondary" : "primary"}
 							numberOfLines={1}
+							style={styles.titleChipName}
 						>
 							{activeTitleName ?? "No title — tap to pick"}
-						</Text>
-					</Pressable>
+						</T>
+					</Sticker>
 				)}
-			</View>
+			</Sticker>
 
-				<View style={styles.hint}>
-					<Text style={styles.hintText}>
+				<Sticker
+					color="cream"
+					rotate={0}
+					radius={RADII.md}
+					border={BORDER.thin}
+					borderStyle="dashed"
+					shadow="none"
+					style={styles.hint}
+				>
+					<T role="hand">
 						★ Owned items dress Rosie. Unowned items open a preview.
-					</Text>
-				</View>
+					</T>
+				</Sticker>
 				{!prestigeOnly && (
 					<FlatList
 						horizontal
@@ -520,24 +601,14 @@ export function ClosetView({
 						renderItem={({ item }) => {
 							const selected = filter === item.value;
 							return (
-								<Pressable
+								<Chip
+									label={item.label}
+									tone={selected ? "sun" : "paper"}
+									selected={selected}
 									onPress={() => setFilter(item.value)}
-									style={[
-										styles.filterChip,
-										selected && styles.filterChipSelected,
-									]}
-									accessibilityRole="radio"
-									accessibilityState={{ selected }}
-								>
-									<Text
-										style={[
-											styles.filterChipText,
-											selected && styles.filterChipTextSelected,
-										]}
-									>
-										{item.label}
-									</Text>
-								</Pressable>
+									accessibilityLabel={`${item.label} items`}
+									accessibilityHint="Filters the Closet catalog"
+								/>
 							);
 						}}
 					/>
@@ -548,29 +619,35 @@ export function ClosetView({
 				if (row.kind === "section") {
 					const collapsed = collapsedCategories.has(row.category);
 					return (
-						<Pressable
+						<Sticker
+							color="cream"
+							rotate={0}
+							border={0}
+							shadow="none"
 							onPress={() => toggleCategory(row.category)}
-							style={({ pressed }) => [
-								styles.sectionHead,
-								pressed && { opacity: 0.7 },
-							]}
-							accessibilityRole="button"
 							accessibilityState={{ expanded: !collapsed }}
 							accessibilityLabel={`${CAT_LABEL[row.category] ?? row.category}, ${row.ownedCount} owned, ${row.missingCount} missing`}
+							accessibilityHint={
+								collapsed ? "Opens this category" : "Collapses this category"
+							}
+							style={styles.sectionHead}
 						>
-							<Text style={styles.sectionTitle}>{CAT_LABEL[row.category] ?? row.category}</Text>
-							<View style={styles.sectionMeta}>
-								<Text style={styles.sectionCount}>
-									{row.ownedCount} owned · {row.missingCount} missing
-								</Text>
-								<Icon
-									name="chevronDown"
-									size={20}
-									color={WHIMSY.ink}
-									style={collapsed ? styles.sectionChevronCollapsed : undefined}
-								/>
-							</View>
-						</Pressable>
+							<SectionHeader
+								title={CAT_LABEL[row.category] ?? row.category}
+								right={
+									<>
+										<T role="kickerPillSm" tone="secondary">{row.ownedCount} owned · {row.missingCount} missing</T>
+										<Icon
+											name="chevronDown"
+											size={ART_SIZE.glyphSm}
+											color={WHIMSY.ink}
+											style={collapsed ? styles.sectionChevronCollapsed : undefined}
+										/>
+									</>
+								}
+								style={styles.sectionHeader}
+							/>
+						</Sticker>
 					);
 				}
 
@@ -584,21 +661,24 @@ export function ClosetView({
 							const src = HAT_THUMBNAILS_256[item.id] ?? HAT_IMAGES[item.id];
 							const thumbSrc = src ?? categoryIcon(item.category);
 								return (
-									<Pressable
+									<Sticker
 										key={item.id}
+										color="paper"
+										rotate={0}
+										radius={RADII.lg}
+										shadow="sm"
 										onPress={() => {
 											Haptics.selectionAsync().catch(() => {});
 											if (owned) onEquip(active ? null : item.id, item.category);
 											else onPreview(item);
 										}}
-										style={({ pressed }) => [
+										style={[
 										styles.itemCard,
 										{ width: tileWidth },
 										owned ? styles.itemCardOwned : styles.itemCardUnowned,
 										active && styles.itemCardActive,
-										pressed && { opacity: 0.7 }
 									]}
-									accessibilityRole="button"
+									accessibilityState={{ selected: active }}
 									accessibilityLabel={`${item.name}, ${active ? "wearing" : owned ? "owned" : "not owned"}`}
 									accessibilityHint={
 										owned
@@ -615,8 +695,8 @@ export function ClosetView({
 										style={[
 											styles.itemThumb,
 											{
-												width: tileWidth - 4,
-											height: tileWidth - 4,
+												width: tileWidth - TILE_INSET,
+											height: tileWidth - TILE_INSET,
 											backgroundColor: fill(item.rarity)
 										},
 										!owned && styles.itemThumbUnowned,
@@ -632,11 +712,11 @@ export function ClosetView({
 											resizeMode="contain"
 										/>
 												) : (
-													<Glyph name="sparkle" size={40} style={{ opacity: 0.85 }} />
+													<Glyph name="sparkle" size={ART_SIZE.glyph} style={styles.artFallback} />
 										)}
 											{active && (
 												<View style={styles.check}>
-													<Icon name="check" size={11} color={WHIMSY.paper} strokeWidth={2.8} />
+													<Icon name="check" size={CHECK_ICON} color={WHIMSY.paper} strokeWidth={CHECK_STROKE} />
 											</View>
 										)}
 										{!active && (
@@ -650,9 +730,9 @@ export function ClosetView({
 											>
 												<Icon
 													name={owned ? "check" : "lock"}
-													size={12}
+													size={BADGE_ICON}
 													color={WHIMSY.ink}
-													strokeWidth={2.6}
+													strokeWidth={BADGE_STROKE}
 												/>
 											</View>
 										)}
@@ -664,28 +744,28 @@ export function ClosetView({
 											active && styles.itemFootActive,
 										]}
 									>
-										<Text
-											style={[styles.itemName, !owned && styles.itemNameUnowned]}
+										<T
+											role="cardTitleSm"
+											tone={owned ? "primary" : "secondary"}
+											align="center"
 											numberOfLines={1}
 										>
 											{item.name}
-										</Text>
-										<Text
-											style={[
-												styles.itemStatus,
-												owned
-													? styles.itemStatusOwned
-													: styles.itemStatusUnowned,
-											]}
+										</T>
+										<T
+											role="label"
+											tone={owned ? "primary" : "secondary"}
+											align="center"
+											style={styles.itemStatus}
 										>
 											{active
 												? "Wearing"
 												: owned
 													? "Owned"
 													: "Not owned"}
-										</Text>
+										</T>
 										</View>
-									</Pressable>
+									</Sticker>
 								);
 							})}
 						</View>
@@ -696,6 +776,19 @@ export function ClosetView({
 					glyph="search"
 					title="No items match this filter"
 					sub="Try another Closet filter."
+					action={
+						filter === "all" ? undefined : (
+							<Button
+								variant="handLink"
+								size="sm"
+								onPress={() => setFilter("all")}
+								accessibilityLabel="Show every Closet item"
+								accessibilityHint="Clears the Closet filter"
+							>
+								Show every item ›
+							</Button>
+						)
+					}
 				/>
 			}
 			ListFooterComponent={
@@ -710,7 +803,7 @@ export function ClosetView({
 					/>
 				</View>
 			)}
-			<View style={{ height: 80 }} />
+			<View style={styles.tabSpacer} />
 				</>
 			}
 		/>
@@ -719,7 +812,7 @@ export function ClosetView({
 
 const styles = StyleSheet.create({
 	prestigeFilter: {
-		minHeight: 44,
+		minHeight: TAP_MIN,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
@@ -728,10 +821,6 @@ const styles = StyleSheet.create({
 		paddingLeft: SPACE.md,
 		paddingRight: SPACE.xs,
 		paddingVertical: SPACE.xs,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun
 	},
 	prestigeFilterCopy: {
 		flex: 1,
@@ -740,26 +829,12 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.xs,
 	},
-	prestigeFilterText: { ...TYPE.bodySm, flex: 1, color: WHIMSY.ink },
-	clearPrestigeFilter: {
-		minHeight: 44,
-		justifyContent: "center",
-		paddingHorizontal: SPACE.md,
-		borderRadius: RADII.sm,
-		backgroundColor: WHIMSY.paper,
-	},
-	clearPrestigeFilterText: { ...TYPE.label, color: WHIMSY.ink },
+	prestigeFilterText: { flex: 1 },
 	root: { flex: 1 },
-	content: { paddingHorizontal: SPACE.lg, paddingTop: 6 },
+	content: { paddingHorizontal: SPACE.lg, paddingTop: SPACE.sm },
 	previewCard: {
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.xl,
-		padding: 14,
 		alignItems: "center",
 		gap: SPACE.sm,
-		...STICKER_SHADOW
 	},
 	// Paper-doll: flex columns flank Rosie so she stays centred no matter how many
 	// slots each side has.
@@ -782,14 +857,14 @@ const styles = StyleSheet.create({
 	pigWindow: {
 		width: PIG_WINDOW_W,
 		height: PIG_WINDOW_H,
-		borderRadius: 16,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderRadius: RADII.xl,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.cream2,
 		overflow: "hidden",
 		alignItems: "center",
 		justifyContent: "flex-end",
-		paddingBottom: 8
+		paddingBottom: SPACE.sm
 	},
 	// Explicit numeric size (NOT inset:0 / percentage) — an inset-sized Image
 	// hits RN's indefinite-size fallback and renders a centered intrinsic band
@@ -816,36 +891,25 @@ const styles = StyleSheet.create({
 		top: (PIG_PREVIEW - PIG_CANVAS) / 2
 	},
 	slotChip: {
-		width: 64,
+		width: SLOT_CHIP_W,
 		alignItems: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		paddingVertical: 6,
+		paddingVertical: SPACE.xs,
 		position: "relative",
-		...SHADOW_SM
 	},
 	slotThumb: {
-		width: 40,
-		height: 40,
+		width: ART_SIZE.glyph,
+		height: ART_SIZE.glyph,
 		borderRadius: RADII.sm,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
 		overflow: "hidden"
 	},
 	// Explicit pt size (not %) — see itemThumbImg for why.
-	slotThumbImg: { width: 30, height: 30 },
-	slotPlus: { fontSize: 22, color: WHIMSY.mute },
+	slotThumbImg: { width: SLOT_THUMB_ART, height: SLOT_THUMB_ART },
 	slotLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.6,
-		color: WHIMSY.mute,
-		textTransform: "uppercase",
-		marginTop: 4
+		marginTop: SPACE.xs
 	},
 	// A small paper badge pinned to the chip's top-right corner. A bare ✕ over
 	// the thumbnail art read as a stray mark colliding with the tile; the filled
@@ -853,117 +917,66 @@ const styles = StyleSheet.create({
 	// the corner. hitSlop (on the Pressable) keeps the tap target generous.
 	slotRemove: {
 		position: "absolute",
-		top: -10,
-		right: -10,
+		top: SLOT_REMOVE_INSET,
+		right: SLOT_REMOVE_INSET,
 		zIndex: 3,
 	},
 	// Nameplate pill under the pig. minHeight 44 keeps it a full-size
 	// tap target without hitSlop.
 	titleChip: {
-		marginTop: 6,
-		minHeight: 44,
-		maxWidth: 240,
+		marginTop: SPACE.xs,
+		minHeight: TAP_MIN,
+		maxWidth: TITLE_CHIP_MAX_W,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingVertical: 5,
-		paddingHorizontal: 16
-	},
-	titleChipKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.6,
-		color: WHIMSY.mute,
-		textTransform: "uppercase"
+		paddingVertical: SPACE.xs,
+		paddingHorizontal: SPACE.lg
 	},
 	titleChipName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.ink,
 		marginTop: 1
 	},
-	titleChipNameEmpty: { color: WHIMSY.mute },
 	hint: {
-		borderWidth: 1.5,
-		borderColor: WHIMSY.mute,
-		borderStyle: "dashed",
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
-		paddingVertical: 9,
-		paddingHorizontal: 14,
-		marginVertical: SPACE.md
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.card,
+		marginVertical: SPACE.md,
+		borderColor: UI_COLORS.uiMuted,
 	},
-	hintText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.ink },
 	filterRow: {
 		gap: SPACE.sm,
 		paddingBottom: SPACE.md,
 	},
-	filterChip: {
-		minHeight: 44,
-		justifyContent: "center",
-		paddingHorizontal: SPACE.md,
-		borderRadius: RADII.pill,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.muteSoft,
-		backgroundColor: WHIMSY.paper,
-	},
-	filterChipSelected: {
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-	},
-	filterChipText: { ...TYPE.label, color: WHIMSY.mute },
-	filterChipTextSelected: { color: WHIMSY.ink },
-	section: { marginBottom: 18 },
+	section: { marginBottom: SPACE.lg },
 	sectionHead: {
-		minHeight: 48,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: SPACE.sm,
+		minHeight: TAP_MIN,
+		justifyContent: "center",
 		marginTop: SPACE.sm,
-		marginBottom: SPACE.sm,
 		paddingHorizontal: SPACE.xs,
 	},
-	sectionTitle: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
-	sectionMeta: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-	},
-	sectionCount: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 0.6,
-		textTransform: "uppercase"
-	},
+	sectionHeader: { marginBottom: 0 },
 	sectionChevronCollapsed: { transform: [{ rotate: "-90deg" }] },
 	gridRow: {
 		flexDirection: "row",
-		gap: 10,
-		marginBottom: 10
+		gap: TILE_GAP,
+		marginBottom: TILE_GAP
 	},
 	itemCard: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
 		overflow: "hidden",
-		...SHADOW_SM
 	},
 	itemCardOwned: {
-		borderColor: WHIMSY.ink,
+		borderColor: UI_COLORS.border,
 	},
 	itemCardUnowned: {
-		borderColor: WHIMSY.muteSoft,
-		shadowOpacity: 0.35,
+		borderColor: UI_COLORS.uiMuted,
 	},
 	itemCardActive: { borderColor: WHIMSY.lilacDeep },
-	itemStripe: { height: 4, width: "100%" },
+	// The rarity marker. Borderless it failed 3:1 against its own panel, so it
+	// closes with a hair of ink. [D-02] (2026-09-11)
+	itemStripe: {
+		height: STRIPE_H,
+		width: "100%",
+		borderBottomWidth: 1,
+		borderBottomColor: UI_COLORS.border,
+	},
 	itemThumb: {
 		alignItems: "center",
 		justifyContent: "center",
@@ -974,8 +987,9 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream2,
 	},
 	itemArtUnowned: {
-		opacity: 0.42,
+		opacity: OPACITY.ghost,
 	},
+	artFallback: { opacity: OPACITY.pressed },
 	// NUMERIC absolute insets only. %-insets hit the same Yoga quirk as
 	// %-sizes here (the aspectRatio-derived parent height isn't a definite
 	// basis at resolve time), so the Image reverted to intrinsic px size
@@ -983,47 +997,30 @@ const styles = StyleSheet.create({
 	// backstop CROPPED it — giant zoomed art in every tile. Fixed-point
 	// insets always resolve; resizeMode="contain" does the fitting.
 	itemFoot: {
-		borderTopWidth: 2,
-		borderTopColor: WHIMSY.ink,
-		paddingVertical: 6,
-		paddingHorizontal: 8,
+		borderTopWidth: BORDER.ink,
+		borderTopColor: UI_COLORS.border,
+		paddingVertical: SPACE.xs,
+		paddingHorizontal: SPACE.sm,
 		backgroundColor: WHIMSY.paper
 	},
 	itemFootUnowned: {
-		borderTopColor: WHIMSY.muteSoft,
+		borderTopColor: UI_COLORS.uiMuted,
 		backgroundColor: WHIMSY.cream2,
 	},
 	itemFootActive: { backgroundColor: WHIMSY.lilac },
-	itemName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		textAlign: "center"
-	},
-	itemNameUnowned: {
-		color: WHIMSY.mute,
-	},
 	itemStatus: {
-		...TYPE.label,
-		textAlign: "center",
-		marginTop: 2,
-	},
-	itemStatusOwned: {
-		color: WHIMSY.ink,
-	},
-	itemStatusUnowned: {
-		color: WHIMSY.mute,
+		marginTop: SPACE.xxs,
 	},
 	ownershipBadge: {
 		position: "absolute",
-		top: 6,
-		right: 6,
+		top: SPACE.xs,
+		right: SPACE.xs,
 		zIndex: 3,
-		width: 24,
-		height: 24,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		width: ART_SIZE.glyphSm,
+		height: ART_SIZE.glyphSm,
+		borderRadius: ART_SIZE.glyphSm / 2,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -1035,16 +1032,17 @@ const styles = StyleSheet.create({
 	},
 	check: {
 		position: "absolute",
-		top: 6,
-		right: 6,
+		top: SPACE.xs,
+		right: SPACE.xs,
 		zIndex: 3,
-		width: 22,
-		height: 22,
-		borderRadius: 11,
+		width: CHECK_BADGE,
+		height: CHECK_BADGE,
+		borderRadius: CHECK_BADGE / 2,
 		backgroundColor: WHIMSY.lilacDeep,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center"
-	}
+	},
+	tabSpacer: { height: TAB_SAFE }
 });

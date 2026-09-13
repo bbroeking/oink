@@ -5,43 +5,52 @@
 //   • Filter chips: All / Ready (badged) / Generous / Greedy / Social
 //   • Per-card states:
 //     - Ready (claimed + viewed_at NULL): cream tint, ! badge on icon,
-//       "earned · +N snouts" body, gold Claim ✦ button (calls
+//       "earned · +N snouts" body, gold "Got it ✦" button (calls
 //       mark_achievement_viewed → flips to "claimed/viewed" state).
 //     - In-progress (not claimed): paper card, description text,
 //       category tag top-right, progress bar, "N/G · reward · X" line.
 //     - Claimed + viewed: paper card, dim, ✓ badge.
 //
-// The "Claim" button on the page is the same acknowledgment the
+// The acknowledgement button on the page is the same one the
 // AchievementDigestModal batches on launch; auto-grant of the reward
-// itself happens server-side when the threshold is crossed.
+// itself happens server-side when the threshold is crossed — so the label is
+// "Got it", not "Claim" [D-17].
 import React, { useCallback, useMemo, useState } from "react";
-import { PageHeader } from "../components/ui/PageHeader";
 import {
 	View,
-	Text,
 	StyleSheet,
 	ScrollView,
 	SafeAreaView,
-	Pressable,
 	Image,
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
-import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
 import { achievementIcon } from "@/constants/emojiArt";
-import { Icon } from "../components/ui/Icon";
 import {
-	FONTS,
+	Avatar,
+	Button,
+	Chip,
+	EmptyState,
+	Icon,
+	LoadingBeat,
+	PageHeader,
+	ProgressTrack,
+	Sticker,
+	T,
+} from "../components/ui";
+import {
+	ART_SIZE,
+	AVATAR_SIZE,
+	BORDER,
 	WHIMSY,
-	KICKER_PILL,
+	OPACITY,
 	PAGE_PAD,
 	TAB_SAFE,
-	STICKER_SHADOW,
-	SHADOW_SM,
 	SPACE,
 	RADII,
+	UI_COLORS,
 } from "@/constants/theme";
 
 interface AchievementRow {
@@ -89,6 +98,12 @@ const CATEGORY_LABEL: Record<string, string> = {
 	the_dig:  "THE DIG",
 };
 
+// Drawing geometry — the two corner badges and the icon art inside the card's
+// Avatar frame. Sizes, not spacing steps.
+const BANG_BADGE = 18;
+const DONE_TICK = 14;
+const DONE_TICK_STROKE = 2.4;
+
 function catalogName(id: string): string {
 	return id
 		.split("_")
@@ -114,7 +129,7 @@ export default function AchievementsScreen() {
 	);
 
 	// "Ready" = claimed + not yet viewed. These are the cards that
-	// get the cream-tinted ! treatment + gold Claim button.
+	// get the cream-tinted ! treatment + gold acknowledge button.
 	const readyCount = useMemo(
 		() => rows.filter((r) => r.claimed && !r.viewed_at).length,
 		[rows]
@@ -146,25 +161,23 @@ export default function AchievementsScreen() {
 		<>
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
-				<SafeAreaView style={{ flex: 1 }}>
+				<SafeAreaView style={styles.safe}>
 					<PageHeader
 						kicker="achievements"
 						title="Achievements"
 						onBack={() => router.back()}
 						below={
-							<Text style={styles.statsLine}>
-								<Text style={styles.statsUnlocked}>
-									{claimedCount} / {rows.length} unlocked
-								</Text>
+							<T role="kickerPillSm">
+								{claimedCount} / {rows.length} unlocked
 								{readyCount > 0 && (
 									<>
-										<Text style={styles.statsDot}> · </Text>
-										<Text style={styles.statsReady}>
+										<T role="kickerPillSm" tone="secondary"> · </T>
+										<T role="kickerPillSm" tone="accent">
 											{readyCount} ready to claim
-										</Text>
+										</T>
 									</>
 								)}
-							</Text>
+							</T>
 						}
 					/>
 
@@ -176,42 +189,41 @@ export default function AchievementsScreen() {
 					<ScrollView
 						horizontal
 						showsHorizontalScrollIndicator={false}
-						style={{ flexGrow: 0 }}
+						style={styles.chipsScroll}
 						contentContainerStyle={styles.chipsRow}
 					>
 						{FILTERS.map((c) => {
 							const active = filter === c.key;
 							const showBadge = c.key === "ready" && readyCount > 0;
 							return (
-								<Pressable
+								<Chip
 									key={c.key}
+									label={c.label}
+									tone={active ? "lilac" : "paper"}
+									selected={active}
 									onPress={() => setFilter(c.key)}
-									style={({ pressed }) => [
-										styles.chip,
-										active && styles.chipActive,
-										pressed && { opacity: 0.7 },
-									]}
-								>
-									<Text
-										style={[
-											styles.chipText,
-											active && styles.chipTextActive,
-										]}
-									>
-										{c.label}
-									</Text>
-									{showBadge && (
-										<View style={styles.chipBadge}>
-											<Text style={styles.chipBadgeText}>{readyCount}</Text>
-										</View>
-									)}
-								</Pressable>
+									badge={
+										showBadge ? (
+											<View style={styles.chipBadge}>
+												<T role="kickerPillSm" tone="onDark">
+													{readyCount}
+												</T>
+											</View>
+										) : undefined
+									}
+									accessibilityLabel={
+										showBadge
+											? `${c.label}, ${readyCount} ready`
+											: c.label
+									}
+									accessibilityHint="Filters the trophy list"
+								/>
 							);
 						})}
 					</ScrollView>
 
 					<ScrollView
-						style={{ flex: 1 }}
+						style={styles.list}
 						contentContainerStyle={styles.grid}
 						showsVerticalScrollIndicator={false}
 					>
@@ -228,6 +240,19 @@ export default function AchievementsScreen() {
 									filter === "ready"
 										? "Earn one and it'll wait here for you."
 										: "Keep playing — they'll fill in."
+								}
+								action={
+									filter === "all" ? undefined : (
+										<Button
+											variant="handLink"
+											size="sm"
+											onPress={() => setFilter("all")}
+											accessibilityLabel="Show every trophy"
+											accessibilityHint="Clears the category filter"
+										>
+											Show every trophy ›
+										</Button>
+									)
 								}
 							/>
 						)}
@@ -253,8 +278,8 @@ function AchievementCard({
 	row: AchievementRow;
 	onAck: () => void;
 }) {
-	const pct = Math.min(100, Math.round((row.progress / row.threshold) * 100));
 	const ready = row.claimed && !row.viewed_at;
+	const done = row.claimed && !!row.viewed_at;
 	const categoryTag = CATEGORY_LABEL[row.display_category] ?? "";
 
 	// Reward summary line under the progress bar: lead with title,
@@ -268,87 +293,99 @@ function AchievementCard({
 	})();
 
 	return (
-		<View
-			style={[
-				styles.card,
-				ready && styles.cardReady,
-				row.claimed && row.viewed_at && styles.cardDone,
-			]}
+		<Sticker
+			color={ready ? "cream" : "paper"}
+			rotate={0}
+			radius={RADII.lg}
+			pad
+			style={[styles.card, done && styles.cardDone]}
 		>
 			<View style={styles.cardTop}>
 				<View style={styles.iconWrap}>
-					<View
-						style={[styles.iconBubble, ready && styles.iconBubbleReady]}
+					<Avatar
+						size={AVATAR_SIZE[2]}
+						fill={ready ? "sun" : "paper"}
+						label={row.name}
 					>
 						<Image
 							source={achievementIcon(row.id)}
 							style={styles.iconImg}
 						/>
-					</View>
+					</Avatar>
 					{/* Red "!" badge on the icon for Ready cards — the
 					    visual anchor that says "do something with me". */}
 					{ready && (
 						<View style={styles.bangBadge}>
-							<Text style={styles.bangBadgeText}>!</Text>
+							<T role="kickerPillSm" tone="onDark">!</T>
 						</View>
 					)}
 				</View>
 
 				<View style={styles.cardBody}>
 					<View style={styles.titleRow}>
-						<Text style={styles.cardName} numberOfLines={1}>
+						<T role="cardTitle" numberOfLines={1} style={styles.cardName}>
 							{row.name}
-						</Text>
+						</T>
 						{!!categoryTag && (
-							<Text style={styles.categoryTag}>{categoryTag}</Text>
+							<T role="kickerPillSm" tone="secondary">{categoryTag}</T>
 						)}
 					</View>
 					{!!row.description && (
-						<Text style={styles.cardDesc} numberOfLines={2}>
+						<T
+							role="hand"
+							tone="secondary"
+							numberOfLines={2}
+							style={styles.cardDesc}
+						>
 							{row.description}
-						</Text>
+						</T>
 					)}
 
 					{/* Ready state: progress bar is replaced by an earned
-					    summary + gold Claim button on the right. */}
+					    summary + gold acknowledge button on the right. */}
 					{ready ? (
 						<View style={styles.readyRow}>
-							<Text style={styles.earnedText}>
+							<T role="hand" tone="secondary" style={styles.earnedText}>
 								{row.reward_snouts > 0
 									? `earned · +${row.reward_snouts} snouts`
 									: "earned · keepsake unlocked"}
-							</Text>
-							<Pressable
+							</T>
+							<Button
+								variant="gold"
+								size="sm"
 								testID={`achievement-claim-${row.id}`}
 								onPress={onAck}
-								style={({ pressed }) => [
-									styles.claimBtn,
-									pressed && { opacity: 0.7 },
-								]}
+								accessibilityLabel={`Got it — ${row.name}`}
+								accessibilityHint="Marks this trophy as seen; the reward is already yours"
 							>
-								<Text style={styles.claimBtnText}>Claim ✦</Text>
-							</Pressable>
+								Got it ✦
+							</Button>
 						</View>
 					) : (
 						<>
-							<View style={styles.progressTrack}>
-								<View
-									style={[
-										styles.progressFill,
-										{ width: `${pct}%` },
-										row.claimed && styles.progressFillDone,
-									]}
-								/>
-							</View>
+							<ProgressTrack
+								value={row.progress}
+								max={row.threshold}
+								tone={row.claimed ? "sage" : "lilac"}
+								height="sm"
+								accessibilityLabel={`${row.name} progress`}
+								style={styles.progress}
+							/>
 							<View style={styles.metaRow}>
-								<Text style={styles.metaCount}>
+								<T role="label">
 									{Math.min(row.progress, row.threshold).toLocaleString()} /{" "}
 									{row.threshold.toLocaleString()}
-								</Text>
+								</T>
 								{!!rewardLabel && (
-									<Text style={styles.metaReward} numberOfLines={1}>
+									<T
+										role="hand"
+										tone="secondary"
+										numberOfLines={1}
+										align="right"
+										style={styles.metaReward}
+									>
 										{rewardLabel}
-									</Text>
+									</T>
 								)}
 							</View>
 						</>
@@ -358,28 +395,25 @@ function AchievementCard({
 
 			{/* Tiny ✓ badge bottom-right on done cards — quiet
 			    acknowledgment that this one's been wrapped up. */}
-			{row.claimed && row.viewed_at && (
+			{done && (
 				<View style={styles.doneTick}>
-					<Icon name="check" size={14} color={WHIMSY.mute} strokeWidth={2.4} />
+					<Icon
+						name="check"
+						size={DONE_TICK}
+						color={UI_COLORS.uiMuted}
+						strokeWidth={DONE_TICK_STROKE}
+					/>
 				</View>
 			)}
-		</View>
+		</Sticker>
 	);
 }
 
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	statsLine: {},
-	statsUnlocked: {
-		...KICKER_PILL,
-		color: WHIMSY.ink,
-	},
-	statsDot: { ...KICKER_PILL, color: WHIMSY.mute },
-	statsReady: {
-		...KICKER_PILL,
-		color: WHIMSY.accent,
-	},
+	safe: { flex: 1 },
+	chipsScroll: { flexGrow: 0 },
 	chipsRow: {
 		paddingHorizontal: PAGE_PAD,
 		paddingBottom: SPACE.md,
@@ -391,90 +425,47 @@ const styles = StyleSheet.create({
 		// ScrollView itself.
 		alignItems: "center",
 	},
-	chip: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingHorizontal: 14,
-		paddingVertical: SPACE.sm,
-		borderRadius: RADII.pill,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	chipActive: { backgroundColor: WHIMSY.lilac },
-	chipText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.mute },
-	chipTextActive: { color: WHIMSY.ink },
-	// Red badge on the Ready chip — matches the design's small
-	// dot with a count inside.
+	// The count pip on the Ready chip — the design's small dot with a
+	// count inside. `Chip badge` owns the corner it hangs off; this is
+	// only the drawing. [wave 4]
 	chipBadge: {
-		marginLeft: 6,
-		minWidth: 18,
-		height: 18,
-		borderRadius: 9,
-		paddingHorizontal: 4,
+		minWidth: BANG_BADGE,
+		height: BANG_BADGE,
+		borderRadius: BANG_BADGE / 2,
+		paddingHorizontal: SPACE.xs,
 		backgroundColor: WHIMSY.accent,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	chipBadgeText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.paper,
-	},
+	list: { flex: 1 },
 	grid: { padding: PAGE_PAD, gap: SPACE.md, paddingBottom: TAB_SAFE },
 	card: {
-		backgroundColor: WHIMSY.paper,
-		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		paddingHorizontal: 14,
-		paddingVertical: 14,
-		marginVertical: 0,
-		...STICKER_SHADOW,
 		position: "relative",
 	},
-	// Ready: cream-tinted card so the eye lands here first when
-	// scanning the list.
-	cardReady: {
-		backgroundColor: WHIMSY.cream,
-	},
 	cardDone: {
-		opacity: 0.86,
+		opacity: OPACITY.pressed,
 	},
-	cardTop: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
+	cardTop: { flexDirection: "row", gap: SPACE.card, alignItems: "flex-start" },
 	iconWrap: { position: "relative" },
-	iconBubble: {
-		width: 56,
-		height: 56,
-		borderRadius: 28,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
+	iconImg: {
+		width: ART_SIZE.glyph,
+		height: ART_SIZE.glyph,
+		resizeMode: "contain",
 	},
-	iconBubbleReady: { backgroundColor: WHIMSY.sun },
-	iconImg: { width: 40, height: 40, resizeMode: "contain" },
 	bangBadge: {
 		position: "absolute",
-		top: -4,
-		right: -4,
-		width: 18,
-		height: 18,
-		borderRadius: 9,
+		top: -SPACE.xs,
+		right: -SPACE.xs,
+		width: BANG_BADGE,
+		height: BANG_BADGE,
+		borderRadius: BANG_BADGE / 2,
 		backgroundColor: WHIMSY.accent,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		alignItems: "center",
 		justifyContent: "center",
-	},
-	bangBadgeText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.paper,
-		fontWeight: "900",
 	},
 	cardBody: { flex: 1, minWidth: 0 },
 	titleRow: {
@@ -484,89 +475,38 @@ const styles = StyleSheet.create({
 		gap: SPACE.sm,
 	},
 	cardName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-		color: WHIMSY.ink,
 		flexShrink: 1,
 	},
-	categoryTag: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1,
-		color: WHIMSY.mute,
-	},
 	cardDesc: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 2,
-		marginBottom: 8,
+		marginTop: SPACE.xxs,
+		marginBottom: SPACE.sm,
 	},
-	progressTrack: {
-		height: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		backgroundColor: WHIMSY.cream2,
-		overflow: "hidden",
-		marginTop: SPACE.xs,
-	},
-	progressFill: {
-		height: "100%",
-		backgroundColor: WHIMSY.lilacDeep,
-	},
-	progressFillDone: { backgroundColor: WHIMSY.sage },
+	progress: { marginTop: SPACE.xs },
 	metaRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		marginTop: 6,
-		gap: 8,
-	},
-	metaCount: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.ink,
+		marginTop: SPACE.xs,
+		gap: SPACE.sm,
 	},
 	metaReward: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
 		flexShrink: 1,
-		textAlign: "right",
 	},
-	// Ready-state body row: earned-N text on left, gold Claim on right.
+	// Ready-state body row: earned-N text on left, gold acknowledge on right.
 	readyRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		marginTop: 8,
-		gap: 10,
+		marginTop: SPACE.sm,
+		gap: SPACE.sm,
 	},
 	earnedText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
 		flexShrink: 1,
-	},
-	claimBtn: {
-		paddingHorizontal: 18,
-		paddingVertical: 9,
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-		...SHADOW_SM,
-	},
-	claimBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
 	},
 	doneTick: {
 		position: "absolute",
-		bottom: 8,
-		right: 10,
-		opacity: 0.5,
+		bottom: SPACE.sm,
+		right: SPACE.sm,
+		opacity: OPACITY.dim,
 	},
 });

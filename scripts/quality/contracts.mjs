@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import ts from "typescript";
 import { QUALITY_CONFIG } from "./quality.config.mjs";
 
 const EXCLUDED_DIRS = new Set(["dev", "prototypes", "tools"]);
@@ -57,7 +58,17 @@ export function inspectLayout(root) {
 	};
 
 	for (const file of files) {
-		const source = fs.readFileSync(path.join(root, file), "utf8");
+		// Audit executable JSX/styles rather than documentation examples. A TSX
+		// printer handles comments inside JSX and strings without regex stripping.
+		const source = ts.createPrinter({ removeComments: true }).printFile(
+			ts.createSourceFile(
+				file,
+				fs.readFileSync(path.join(root, file), "utf8"),
+				ts.ScriptTarget.Latest,
+				true,
+				ts.ScriptKind.TSX,
+			),
+		);
 		const shrink = matches(
 			source,
 			/\b(?:adjustsFontSizeToFit|minimumFontScale)\b/g,

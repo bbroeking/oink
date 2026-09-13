@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Rive, { Alignment, Fit, type RNRiveError } from "rive-react-native";
+import {
+	Alignment,
+	Fit,
+	RiveView,
+	useRive,
+	useRiveFile,
+} from "@rive-app/react-native";
 import { Button } from "@/components/ui/Button";
 import { SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
@@ -19,6 +25,35 @@ export function RiveRuntimeProbe({ autoStart = false }: { autoStart?: boolean })
 		autoStart ? "loading" : "idle",
 	);
 	const [error, setError] = useState<string | null>(null);
+	const { riveFile, error: fileError } = useRiveFile(
+		mounted ? OFFICIAL_RIVE_SAMPLE : undefined,
+	);
+	const { riveViewRef, setHybridRef } = useRive();
+
+	useEffect(() => {
+		if (!mounted || !riveViewRef) return;
+		let active = true;
+		riveViewRef
+			.awaitViewReady()
+			.then((ready) => {
+				if (active && ready) setStatus("rendering");
+			})
+			.catch((runtimeError: unknown) => {
+				if (!active) return;
+				const message = runtimeError instanceof Error ? runtimeError.message : String(runtimeError);
+				setError(message);
+				setStatus("error");
+			});
+		return () => {
+			active = false;
+		};
+	}, [mounted, riveViewRef]);
+
+	useEffect(() => {
+		if (!fileError) return;
+		setError(fileError.message);
+		setStatus("error");
+	}, [fileError]);
 
 	const start = () => {
 		setError(null);
@@ -53,19 +88,19 @@ export function RiveRuntimeProbe({ autoStart = false }: { autoStart?: boolean })
 				{status === "error" && `Rive error: ${error ?? "unknown error"}`}
 			</Text>
 
-			{mounted ? (
+			{mounted && riveFile ? (
 				<>
 					<View style={styles.stage} testID="rive-runtime-stage">
-						<Rive
-							source={OFFICIAL_RIVE_SAMPLE}
+						<RiveView
+							hybridRef={setHybridRef}
+							file={riveFile}
 							artboardName="Avatar 1"
 							stateMachineName="avatar"
 							fit={Fit.Contain}
 							alignment={Alignment.Center}
-							autoplay
+							autoPlay
 							style={styles.rive}
-							onPlay={() => setStatus("rendering")}
-							onError={(riveError: RNRiveError) => {
+							onError={(riveError) => {
 								setError(riveError.message);
 								setStatus("error");
 							}}

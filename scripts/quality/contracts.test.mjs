@@ -40,6 +40,26 @@ test("layout inspection sees shrinking and sub-11pt production text", () => {
 	}
 });
 
+test("layout inspection ignores documented anti-patterns while checking JSX", () => {
+	const root = fixture();
+	try {
+		put(root, "components/Documented.tsx", `
+/** Never use adjustsFontSizeToFit or minimumFontScale. */
+// Avoid fontSize: 10 and <Modal> in this component.
+export const Example = () => <Text minimumFontScale={0.7}>
+  {/* adjustsFontSizeToFit and fontSize: 9 are prohibited */}
+  readable
+</Text>;
+`);
+		const result = inspectLayout(root);
+		assert.equal(result.totals.shrinkToFit, 1);
+		assert.equal(result.totals.sub11LiteralFonts, 0);
+		assert.equal(result.totals.rawModalUses, 0);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test("security inspection rejects exposed definers and tables without RLS", () => {
 	const root = fixture();
 	try {

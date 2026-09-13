@@ -1,6 +1,6 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { TicketButton } from "../components/ui/TicketButton";
 
@@ -17,7 +17,9 @@ describe("TicketButton", () => {
       );
     });
 
-    const pressable = renderer.root.findByType(Pressable);
+    const pressable = renderer.root.findByProps({
+      accessibilityLabel: "Choose Rosie’s friend",
+    });
     const chrome = renderer.root
       .findAllByType(View)
       .map((node) => StyleSheet.flatten(node.props.style))
@@ -37,7 +39,9 @@ describe("TicketButton", () => {
       );
     });
 
-    const pressable = renderer.root.findByType(Pressable);
+    const pressable = renderer.root.findByProps({
+      accessibilityLabel: "Redeem ticket",
+    });
     expect(pressable.props.accessibilityState).toEqual({
       disabled: true,
       busy: false,
@@ -59,7 +63,9 @@ describe("TicketButton", () => {
       );
     });
 
-    const pressable = renderer.root.findByType(Pressable);
+    const pressable = renderer.root.findByProps({
+      accessibilityLabel: "Redeem ticket",
+    });
     const labels = renderer.root
       .findAllByType(Text)
       .map((node) => node.props.children);
@@ -68,6 +74,7 @@ describe("TicketButton", () => {
       busy: true,
     });
     expect(labels).toContain("Checking…");
+    expect(renderer.root.findAllByType(ActivityIndicator)).toHaveLength(0);
     act(() => renderer.unmount());
   });
 

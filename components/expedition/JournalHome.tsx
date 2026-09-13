@@ -1,20 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import {
 	PAGE_PAD,
 	RADII,
 	SPACE,
-	SHADOW_SM,
-	STICKER_SHADOW,
 	TAB_SAFE,
-	TYPE,
-	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Button } from "@/components/ui/Button";
 import { Sticker } from "@/components/ui/Sticker";
+import { T } from "@/components/ui/Text";
 import {
 	CARDS,
 	ENEMIES,
@@ -94,19 +91,19 @@ export function JournalHome({
 				kicker="chapter one · the insolent goose"
 				title="Rosie's Ramble"
 				below={
-					<Text style={styles.tickleBank}>
+					<T role="hand" tone="accent">
 						{state.mockTickles} tickles in the jar
-					</Text>
+					</T>
 				}
 			/>
 
 			{state.chapterCleared && (
 				<CeremonyCard color="sun" style={styles.clearCard}>
-					<Text style={styles.clearTitle}>Chapter one, cleared!</Text>
-					<Text style={styles.clearBody}>
+					<T role="sectionTitle">Chapter one, cleared!</T>
+					<T role="hand" style={styles.clearBody}>
 						The Tollbooth Goose stepped aside. The road rests here until the next
 						chapter's art is ready.
-					</Text>
+					</T>
 				</CeremonyCard>
 			)}
 
@@ -118,14 +115,21 @@ export function JournalHome({
 
 			{/* Satchel summary — persistent, so the tucked Trick is legible even on a
 			    day its card isn't in the hand. (Task 5b.) */}
-			<View style={styles.satchel}>
-				<Text style={styles.satchelKicker}>★ in the satchel</Text>
-				<Text style={styles.satchelText}>
+			<Sticker
+				color="cream"
+				radius={RADII.md}
+				shadow="sm"
+				style={styles.satchel}
+			>
+				<T role="kickerPillSm" tone="accent">
+					★ in the satchel
+				</T>
+				<T role="hand">
 					{tucked
 						? `${tucked.name} — ${tucked.ability.flavorLine}`
 						: "Draw three, tuck one for the road — its charm rides along, then comes home."}
-				</Text>
-			</View>
+				</T>
+			</Sticker>
 
 			<GearRack state={state} onEquip={onEquip} />
 
@@ -140,9 +144,9 @@ export function JournalHome({
 				radius={RADII.md}
 				style={styles.predict}
 			>
-				<Text style={styles.predictKicker}>★ the road ahead</Text>
-				<Text style={styles.predictWhy}>{prediction.why}</Text>
-				<Text style={styles.predictAsk}>{obstacleAsk}</Text>
+				<T role="kickerPillSm">★ the road ahead</T>
+				<T role="handLg">{prediction.why}</T>
+				<T role="bodySm">{obstacleAsk}</T>
 			</Sticker>
 
 			{/* Send-off — ONE primary at a time: at a wall the fight is the single
@@ -185,13 +189,13 @@ export function JournalHome({
 								: "Send-off tickle"}
 					</Button>
 				)}
-				<Text style={styles.sendoffHint}>
+				<T role="bodySm" tone="secondary">
 					{jarEmpty
 						? "The jar refills a little with time — one tickle every few minutes."
 						: fullOpenRoad
 							? "Zoomies at the brim — she'll carry them to the next wall."
 							: "Affection helps; absence never hurts."}
-				</Text>
+				</T>
 			</Sticker>
 
 			<View style={styles.shelfRow}>
@@ -209,43 +213,23 @@ export function JournalHome({
 const styles = StyleSheet.create({
 	root: { flex: 1 },
 	content: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE, gap: SPACE.md },
-	tickleBank: { ...TYPE.hand, color: UI_COLORS.action },
 	clearCard: { padding: SPACE.md },
-	clearTitle: { ...TYPE.sectionTitle, color: UI_COLORS.textPrimary },
-	clearBody: { ...TYPE.hand, color: UI_COLORS.textPrimary, marginTop: SPACE.xs },
+	clearBody: { marginTop: SPACE.xs },
 	hero: {
 		alignItems: "center",
 		paddingVertical: SPACE.md,
-		...STICKER_SHADOW,
 	},
 	satchel: {
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
 		padding: SPACE.md,
 		gap: SPACE.xs,
-		...SHADOW_SM,
 	},
-	satchelKicker: { ...TYPE.kickerPillSm, color: UI_COLORS.action },
-	satchelText: { ...TYPE.hand, color: UI_COLORS.textPrimary },
 	// Border + shadow now come from the Sticker primitive (Fix 6b); only the inner
 	// padding/gap live here.
 	predict: {
 		padding: SPACE.md,
 		gap: SPACE.xs,
 	},
-	predictKicker: { ...TYPE.kickerPillSm, color: UI_COLORS.textPrimary },
-	predictWhy: {
-		...TYPE.handLg,
-		color: UI_COLORS.textPrimary,
-	},
-	predictAsk: {
-		...TYPE.bodySm,
-		color: UI_COLORS.textPrimary,
-	},
-	sendoff: { padding: SPACE.lg, gap: SPACE.md, ...STICKER_SHADOW },
-	sendoffHint: { ...TYPE.bodySm, color: UI_COLORS.textSecondary },
+	sendoff: { padding: SPACE.lg, gap: SPACE.md },
 	shelfRow: { flexDirection: "row", gap: SPACE.sm },
 	shelfBtn: { flex: 1 },
 });

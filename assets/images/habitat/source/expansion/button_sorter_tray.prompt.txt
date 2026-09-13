@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: transparent furnishing sprite for a cozy mobile Barn-decorating game
+Primary request: Isolated transparent PNG: shallow pale-pine tray, blue dividers, red/brass/cream buttons, tiny label tabs; flat compartmented shelf tray; warm hand-painted storybook finish, readable at phone scale, correct surface_decor Barn perspective, no room background or cast shadow.
+Subject: Button Sorter Tray. Rows of bright buttons sort themselves into a satisfying rainbow.
+Style/medium: polished cozy storybook gouache and soft cel illustration, matching existing Tickle the Pig habitat furniture; warm brown contours, rounded chunky geometry, tactile painted materials, consistent upper-left light
+Composition/framing: exactly one complete isolated object centered with generous transparent margins; correct surface_decor Barn perspective; readable at phone scale
+Scene/backdrop: actual transparent alpha background
+Constraints: preserve every named color, material, and detail; full silhouette entirely inside canvas; no crop; no floor, cast shadow, room, wall, background, checkerboard, text, labels, watermark, border, grid, or extra object

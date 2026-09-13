@@ -1,8 +1,15 @@
+// The storybook — three pages that hand a brand-new player the Barn, the dig
+// and the herd. Third stop in the pre-shell gate chain (SupaAuth →
+// UsernameSetup → ReferralCodeEntry → here), so it wears the same cream ground
+// and the same Rosie hero: one continuous storybook, never a black flash.
+//
+// Rebuilt on the design system 2026-09-11 (wave 3 · area E): the hand-rolled
+// CTA is `Button`, the page copy speaks through the text roles, and the dot row
+// announces "page 2 of 3" instead of being three silent squares. [E24]
+// Wave 4: those dots graduated into the `PageDots` primitive.
 import React, { useRef, useState } from "react";
 import {
 	View,
-	Text,
-	Pressable,
 	StyleSheet,
 	ScrollView,
 	NativeSyntheticEvent,
@@ -12,9 +19,24 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { markStorybookSeenServer } from "@/utils/onboarding";
-import { SpritePig, PigAnimation } from "./ui/SpritePig";
-import { Sticker } from "./ui/Sticker";
-import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
+import type { PigAnimation } from "./ui/pigRendererContract";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import {
+	Button,
+	Kicker,
+	PageDots,
+	PageTitle,
+	PigRenderer,
+	RIVE_PIG_SOURCE,
+	Sticker,
+	T,
+} from "./ui";
+import { RADII, SPACE, UI_COLORS } from "@/constants/theme";
+
+// The Rosie hero on a storybook page — drawing geometry (the art's box), not a
+// spacing step, and larger than any ART_SIZE entry because this page is mostly
+// pig. (2026-09-11)
+const HERO_SIZE = 260;
 
 const STEPS: {
 	animation: PigAnimation;
@@ -24,19 +46,19 @@ const STEPS: {
 }[] = [
 	{
 		animation: "wave", // celebratory wave — arms_up was removed when
-		kicker: "★ care for rosie",
+		kicker: "care for rosie",
 		title: "Meet Rosie",
 		body: "Give Rosie a tickle in the Barn. Tickling earns snouts to spend in the Shop.",
 	},
 	{
 		animation: "idle", // calm 4-frame breathing
-		kicker: "★ follow the feeding",
+		kicker: "follow the feeding",
 		title: "Dig when it opens",
 		body: "See Dig now? The Truffle Patch is open. When it closes, Opening in tells you when to come back.",
 	},
 	{
 		animation: "wave",
-		kicker: "★ better together",
+		kicker: "better together",
 		title: "Help your herd",
 		body: "Visit friends and join a Sounder. Every find helps your herd push back the Great Hungerer.",
 	},
@@ -48,8 +70,10 @@ interface Props {
 
 export function Onboarding({ onDone }: Props) {
 	const [page, setPage] = useState(0);
+	const motion = useMotionPolicy();
 	const scrollRef = useRef<ScrollView>(null);
 	const { width: screenWidth } = useWindowDimensions();
+	const last = page === STEPS.length - 1;
 
 	// Persist storybook-seen BOTH locally and on the server. The local flag
 	// gates offline; the server mirror survives a reinstall so a veteran doesn't
@@ -60,15 +84,19 @@ export function Onboarding({ onDone }: Props) {
 		markStorybookSeenServer().catch(() => {});
 	};
 
+	const finish = () => {
+		markSeen();
+		onDone();
+	};
+
 	const goNext = () => {
-		if (page < STEPS.length - 1) {
+		if (!last) {
 			scrollRef.current?.scrollTo({
 				x: screenWidth * (page + 1),
-				animated: true,
+				animated: !motion.reduceMotion,
 			});
 		} else {
-			markSeen();
-			onDone();
+			finish();
 		}
 	};
 
@@ -85,67 +113,66 @@ export function Onboarding({ onDone }: Props) {
 					horizontal
 					pagingEnabled
 					showsHorizontalScrollIndicator={false}
-					onMomentumScrollEnd={onScroll}
+					onScroll={onScroll}
+					// 16ms, not 100 — at 100 the active dot lagged the swipe by up
+					// to a tenth of a second. [E24] (2026-09-11)
+					scrollEventThrottle={16}
 				>
 					{STEPS.map((step, i) => (
 						<View key={i} style={[styles.page, { width: screenWidth }]}>
 							<View style={styles.pigWrap}>
-								<SpritePig animation={step.animation} size={260} />
+								<PigRenderer animation={step.animation} size={HERO_SIZE} active={i === page} renderer="rive" riveSource={RIVE_PIG_SOURCE} rolloutEnabled />
 							</View>
 							<Sticker
 								color="paper"
 								rotate={-0.5}
-								radius={18}
+								radius={RADII.xl}
 								style={styles.card}
 							>
-								<Text style={styles.kicker}>{step.kicker}</Text>
-								<Text style={styles.title}>{step.title}</Text>
-								<Text style={styles.body}>{step.body}</Text>
+								<Kicker>{step.kicker}</Kicker>
+								<PageTitle align="center" style={styles.title}>
+									{step.title}
+								</PageTitle>
+								<T role="handLg" tone="secondary" align="center">
+									{step.body}
+								</T>
 							</Sticker>
 						</View>
 					))}
 				</ScrollView>
 
-				<View style={styles.dotsRow}>
-					{STEPS.map((_, i) => (
-						<View
-							key={i}
-							style={[
-								styles.dot,
-								i === page && styles.dotActive,
-							]}
-						/>
-					))}
-				</View>
+				<PageDots
+					count={STEPS.length}
+					index={page}
+					label="Introduction page"
+				/>
 
 				<View style={styles.ctaRow}>
-					{page < STEPS.length - 1 && (
-						<Pressable
-							onPress={() => {
-								markSeen();
-								onDone();
-							}}
-							accessibilityRole="button"
+					{!last && (
+						<Button
+							variant="handLink"
+							onPress={finish}
 							accessibilityLabel="Skip introduction"
+							accessibilityHint="Goes straight to the Barn without the rest of the storybook"
 						>
-							<Text style={styles.skipLink}>Skip</Text>
-						</Pressable>
+							Skip
+						</Button>
 					)}
-					<View style={{ flex: 1 }} />
-					<Pressable
+					<View style={styles.spacer} />
+					<Button
+						variant="primary"
 						onPress={goNext}
-						style={styles.cta}
-						accessibilityRole="button"
 						accessibilityLabel={
-							page < STEPS.length - 1
-								? "Next introduction page"
-								: "Finish introduction"
+							last ? "Finish introduction" : "Next introduction page"
+						}
+						accessibilityHint={
+							last
+								? "Opens the Barn"
+								: `Shows page ${page + 2} of ${STEPS.length}`
 						}
 					>
-						<Text style={styles.ctaText}>
-							{page < STEPS.length - 1 ? "Next" : "Meet Rosie"}
-						</Text>
-					</Pressable>
+						{last ? "Meet Rosie" : "Next"}
+					</Button>
 				</View>
 			</SafeAreaView>
 		</View>
@@ -153,83 +180,34 @@ export function Onboarding({ onDone }: Props) {
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: WHIMSY.cream },
+	container: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
 	safe: { flex: 1 },
 	page: {
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		paddingHorizontal: 28,
+		paddingHorizontal: SPACE.xxl,
 	},
 	pigWrap: {
-		marginBottom: 18,
+		marginBottom: SPACE.lg,
 	},
 	card: {
-		paddingHorizontal: 22,
-		paddingVertical: 20,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
 		width: "100%",
 		alignItems: "center",
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 6,
+		gap: SPACE.sm,
 	},
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		lineHeight: 30,
-		textAlign: "center",
-		marginBottom: 8,
-	},
-	body: {
-		fontFamily: FONTS.hand,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		opacity: 0.8,
-		lineHeight: 22,
-		textAlign: "center",
-	},
-	dotsRow: {
-		flexDirection: "row",
-		justifyContent: "center",
-		gap: 6,
-		paddingVertical: 14,
-	},
-	dot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4,
-		backgroundColor: WHIMSY.muteSoft,
-	},
-	dotActive: {
-		backgroundColor: WHIMSY.ink,
-		width: 24,
+		// PageTitle's own lineHeight, plus the storybook's centred measure.
+		paddingHorizontal: SPACE.sm,
 	},
 	ctaRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		paddingHorizontal: 24,
-		paddingBottom: 24,
-		gap: 10,
+		paddingHorizontal: SPACE.xl,
+		paddingBottom: SPACE.xl,
+		gap: SPACE.md,
 	},
-	skipLink: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
-	cta: {
-		paddingHorizontal: 28,
-		paddingVertical: 12,
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-	},
-	ctaText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
+	spacer: { flex: 1 },
 });

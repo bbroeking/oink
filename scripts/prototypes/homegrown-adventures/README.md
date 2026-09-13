@@ -1,5 +1,11 @@
 # Homegrown Adventures prototype
 
+> **Historical combined integration lab.** Farm Life and Beyond the Hedge are
+> separate validation lanes as of 2026-08-12. Use
+> `scripts/prototypes/adventures/` and `docs/adventures.html` for the canonical
+> Adventure-only click-through. This lab remains useful for reviewing the old
+> farm-to-Adventure handoff, but it no longer defines the Adventure boundary.
+
 The v0.105 Discovery-purpose pass makes yesterday's lasting world change the
 cause of today's preparation instead of leaving the new opportunity to feel
 scheduled. Three real Position 2 treatments were rendered at commit `f1fa423`

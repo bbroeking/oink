@@ -4,8 +4,18 @@
 //
 // Backed by utils/alignment for the label derivation so this
 // component is just presentation.
+//
+// Conformance pass [B-04, B-05, B-20] (2026-09-11):
+//   · the goblin tint was a raw `#D5E4C9` — a survivor of the 2026-07-12
+//     bless/curse tokenization, now `WHIMSY.curseSurface`, the token that
+//     records that exact value;
+//   · the label speaks in `TYPE.label`, the role spec §1.2 assigns to
+//     "chips, tags" — the voice `Chip`/`Tag` already use — instead of a
+//     three-step bare Caprasimo ramp;
+//   · the badge announces its standing, so `compact` (emblem only) is not
+//     silent to VoiceOver.
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import {
 	alignmentDisplay,
 	alignmentIcon,
@@ -13,9 +23,25 @@ import {
 	type AlignmentLabel,
 } from "@/utils/alignment";
 import { AlignmentEmblem } from "./AlignmentEmblem";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
+import { T } from "./Text";
 
 type Size = "sm" | "md" | "lg";
+
+// Drawing geometry, not spacing: the emblem is art sized to read at each
+// badge scale (a touch larger than the old emoji font sizes so the
+// halo/scales/horns still carry the signal at `sm`).
+const EMBLEM_SIZE: Record<Size, number> = { sm: 15, md: 18, lg: 22 };
+const PAD_X: Record<Size, number> = {
+	sm: SPACE.sm,
+	md: SPACE.md,
+	lg: SPACE.card,
+};
+const PAD_Y: Record<Size, number> = {
+	sm: SPACE.xxs,
+	md: SPACE.xs,
+	lg: SPACE.sm,
+};
 
 interface Props {
 	// Pass score and the badge derives the label, OR pass label
@@ -37,28 +63,27 @@ export function AlignmentBadge({
 }: Props) {
 	const label: AlignmentLabel =
 		labelProp ?? (score !== undefined ? alignmentLabel(score) : "neutral");
-	const bg = backgroundColor(label);
-	const dims = sizeProfile(size, compact);
+	const display = alignmentDisplay(label);
 
 	return (
 		<View
+			accessible
+			accessibilityRole="text"
+			accessibilityLabel={`${display} alignment`}
 			style={[
 				styles.badge,
 				{
-					backgroundColor: bg,
-					paddingHorizontal: dims.padX,
-					paddingVertical: dims.padY,
-					borderRadius: dims.radius,
-					gap: compact ? 0 : 4,
+					backgroundColor: backgroundColor(label),
+					// A compact badge is square: the emblem's own padding on both
+					// axes, so the capsule closes to a circle.
+					paddingHorizontal: compact ? PAD_Y[size] : PAD_X[size],
+					paddingVertical: PAD_Y[size],
+					gap: compact ? 0 : SPACE.xs,
 				},
 			]}
 		>
-			<AlignmentEmblem kind={alignmentIcon(label)} size={dims.emblem} />
-			{!compact && (
-				<Text style={[styles.label, { fontSize: dims.label }]}>
-					{alignmentDisplay(label)}
-				</Text>
-			)}
+			<AlignmentEmblem kind={alignmentIcon(label)} size={EMBLEM_SIZE[size]} />
+			{!compact && <T role="label">{display}</T>}
 		</View>
 	);
 }
@@ -68,24 +93,9 @@ function backgroundColor(label: AlignmentLabel): string {
 	// content and shouldn't shout. The emblem carries the signal.
 	switch (label) {
 		case "angel":   return WHIMSY.sun;
-		case "goblin":  return "#D5E4C9"; // moss tint
+		case "goblin":  return WHIMSY.curseSurface;
 		case "neutral": return WHIMSY.paper;
 	}
-}
-
-function sizeProfile(size: Size, compact: boolean) {
-	// emblem = the SVG Icon size; a touch larger than the old emoji
-	// font sizes so the halo/scales/horns read at small dimensions.
-	const base = {
-		sm: { padX: 8,  padY: 3, radius: 999, emblem: 15, label: 11 },
-		md: { padX: 10, padY: 5, radius: 999, emblem: 18, label: 13 },
-		lg: { padX: 14, padY: 7, radius: 999, emblem: 22, label: 15 },
-	}[size];
-	if (compact) {
-		// Square aspect for emblem-only mode.
-		return { ...base, padX: base.padY };
-	}
-	return base;
 }
 
 const styles = StyleSheet.create({
@@ -93,11 +103,8 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		alignSelf: "flex-start",
-		borderWidth: 1,
+		borderWidth: BORDER.hair,
 		borderColor: WHIMSY.ink,
-	},
-	label: {
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
+		borderRadius: RADII.pill,
 	},
 });

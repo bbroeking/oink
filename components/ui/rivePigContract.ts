@@ -2,6 +2,7 @@ import type {
 	PigAnimation,
 	PigEquipmentSelection,
 	PigRendererProps,
+	PigReactionKind,
 } from "./pigRendererContract";
 import { PIG_IDS, type PigId } from "@/utils/pigs";
 
@@ -36,7 +37,7 @@ export const RIVE_PIG_SKIN_INDEX = Object.freeze({
 export const RIVE_PIG_INPUTS = Object.freeze({
 	skin: "skin",
 	rest: "rest",
-	walk: "walk",
+	activity: "activity",
 	jump: "jump",
 	happy: "happy",
 	surprise: "surprise",
@@ -48,7 +49,7 @@ export const RIVE_PIG_INPUTS = Object.freeze({
 
 // The Rive renderer's props: the renderer-neutral contract plus the .riv sources
 // and artboard/state-machine names only a Rive renderer needs. Declared here so
-// the native renderer and the web fallback share ONE shape — they are two
+// the native and web renderers share ONE shape — they are two
 // implementations of the same component, and the platform split used to carry
 // two hand-copied declarations that could drift apart silently.
 export interface RivePigProps extends PigRendererProps {
@@ -58,7 +59,7 @@ export interface RivePigProps extends PigRendererProps {
 	stateMachineName?: string;
 }
 
-export type RivePigRestState = 0 | 1 | 2;
+export type RivePigRestState = 0 | 1 | 2 | 3;
 
 export interface RivePigEquipment {
 	hat?: 0 | 1;
@@ -81,33 +82,26 @@ export interface ResolvedRivePigEquipment {
 
 export type RivePigAnimationCommand =
 	| { kind: "rest"; value: RivePigRestState }
+	| { kind: "activity"; value: 1 | 2 | 3 }
 	| { kind: "trigger"; input: string };
 
 export const RIVE_PIG_ANIMATION_COMMANDS = Object.freeze({
 	idle: { kind: "rest", value: 0 },
-	walk: { kind: "trigger", input: RIVE_PIG_INPUTS.walk },
+	walk: { kind: "activity", value: 1 },
 	jump: { kind: "trigger", input: RIVE_PIG_INPUTS.jump },
-	bounce: { kind: "trigger", input: RIVE_PIG_INPUTS.jump },
-	happy: { kind: "trigger", input: RIVE_PIG_INPUTS.happy },
+	bounce: { kind: "activity", value: 2 },
+	happy: { kind: "rest", value: 3 },
 	sad: { kind: "rest", value: 1 },
 	tired: { kind: "rest", value: 2 },
 	surprise: { kind: "trigger", input: RIVE_PIG_INPUTS.surprise },
-	wave: { kind: "trigger", input: RIVE_PIG_INPUTS.wave },
+	wave: { kind: "activity", value: 3 },
 } satisfies Record<PigAnimation, RivePigAnimationCommand>);
 
-export const RIVE_PIG_PROTOTYPE_ANIMATIONS = Object.freeze([
-	"idle",
-	"jump",
-	"wave",
-] as const satisfies readonly PigAnimation[]);
+export const RIVE_PIG_REACTION_INPUTS = {
+	happy: "happy", jump: "jump", surprise: "surprise", wave: "wave",
+} as const satisfies Record<PigReactionKind, string>;
 
-export function isRivePigPrototypeAnimation(
-	animation: PigAnimation,
-): animation is (typeof RIVE_PIG_PROTOTYPE_ANIMATIONS)[number] {
-	return (RIVE_PIG_PROTOTYPE_ANIMATIONS as readonly PigAnimation[]).includes(
-		animation,
-	);
-}
+export const RIVE_PIG_COMPLETE_EVENT = "reaction_complete";
 
 export function rivePigSkinIndex(pigId: PigId): number {
 	return RIVE_PIG_SKIN_INDEX[pigId];
@@ -132,6 +126,7 @@ export function hasCompleteRiveSkinMap(): boolean {
  */
 export function resolveRivePigEquipment({
 	headId,
+	bowId,
 	faceId,
 	heldId,
 	maskId,
@@ -145,6 +140,7 @@ export function resolveRivePigEquipment({
 		heldId == null || heldId === RIVE_PIG_PROTOTYPE_EQUIPMENT_IDS.held;
 	const supported =
 		headSupported &&
+		bowId == null &&
 		faceSupported &&
 		heldSupported &&
 		maskId == null &&

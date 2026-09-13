@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { StyleSheet, View } from "react-native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { router } from "expo-router";
-import { fetchPorchRound, groupPorchPages } from "@/utils/porchRound";
+import { fetchPorchRound, groupPorchPages, PORCH_PAGE_SIZE } from "@/utils/porchRound";
 import { trackInteraction } from "@/utils/interactionAnalytics";
 import { Glyph } from "./ui/Glyph";
-import { RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { Sticker } from "./ui/Sticker";
+import { CardTitle, KickerPill, T } from "./ui/Text";
+import { ART_SIZE, BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
+
+// Three friendly doorsteps finish a scrapbook page. `utils/porchRound.ts`
+// hard-codes the same 3 in `groupPorchPages`; it belongs there, but that file
+// is outside this pass.
 
 export function PorchRoundLaunchCard({ refreshKey = 0 }: { refreshKey?: number }) {
 	const [stopCount, setStopCount] = useState<number | null>(null);
@@ -33,11 +39,16 @@ export function PorchRoundLaunchCard({ refreshKey = 0 }: { refreshKey?: number }
 	// The migration can ship after the client. Until the RPC exists, leave no
 	// dead launch door behind.
 	if (stopCount == null) return null;
-	const remaining = Math.max(0, 3 - stopCount);
+	const remaining = Math.max(0, PORCH_PAGE_SIZE - stopCount);
 
 	return (
-		<Pressable
+		<Sticker
 			testID="porch-round-open"
+			color="paper"
+			rotate={0}
+			radius={RADII.lg}
+			border={BORDER.thin}
+			shadow="sm"
 			onPress={() => {
 				void trackInteraction({
 					eventName: "porch_round_started",
@@ -47,44 +58,38 @@ export function PorchRoundLaunchCard({ refreshKey = 0 }: { refreshKey?: number }
 				});
 				router.push("/porch-round");
 			}}
-			style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-			accessibilityRole="button"
 			accessibilityLabel="Open your Porch Round scrapbook"
+			accessibilityHint="Shows the friends you've visited, three to a page"
+			style={styles.card}
 		>
 			<View style={styles.iconWell}>
-				<Glyph name="pigface" size={25} />
+				<Glyph name="pigface" size={ART_SIZE.glyphSm} />
 			</View>
 			<View style={styles.copy}>
-				<Text style={styles.kicker}>★ PORCH ROUND</Text>
-				<Text style={styles.title}>Your visit scrapbook</Text>
-				<Text style={styles.body}>
+				<KickerPill tone="secondary">Porch Round</KickerPill>
+				<CardTitle style={styles.title}>Your visit scrapbook</CardTitle>
+				<T role="bodySm" tone="secondary" style={styles.body}>
 					{stopCount === 0
-						? "Your next three Barn visits can make a page."
+						? `Your next ${PORCH_PAGE_SIZE} Barn visits can make a page.`
 						: `${stopCount} ${stopCount === 1 ? "visit" : "visits"} kept · ${remaining} more ${remaining === 1 ? "makes" : "make"} a page`}
-				</Text>
+				</T>
 			</View>
-			<Glyph name="arrowRight" size={16} />
-		</Pressable>
+			<Glyph name="arrowRight" size={ART_SIZE.mark} />
+		</Sticker>
 	);
 }
 
 const styles = StyleSheet.create({
 	card: {
-		backgroundColor: WHIMSY.paper,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		borderWidth: 1.5,
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm,
 		marginBottom: SPACE.md,
 		padding: SPACE.md,
-		...SHADOW_SM,
 	},
-	pressed: { transform: [{ scale: 0.985 }] },
 	iconWell: {
-		width: 45,
-		height: 45,
+		width: ART_SIZE.glyph,
+		height: ART_SIZE.glyph,
 		borderRadius: RADII.md,
 		backgroundColor: WHIMSY.peach,
 		alignItems: "center",
@@ -92,18 +97,6 @@ const styles = StyleSheet.create({
 		transform: [{ rotate: "-2deg" }],
 	},
 	copy: { flex: 1, minWidth: 0 },
-	kicker: {
-		color: WHIMSY.mute,
-		...TYPE.kickerPill,
-	},
-	title: {
-		color: WHIMSY.ink,
-		...TYPE.cardTitle,
-		marginTop: 1,
-	},
-	body: {
-		color: WHIMSY.mute,
-		...TYPE.bodySm,
-		marginTop: 2,
-	},
+	title: { marginTop: SPACE.xxs },
+	body: { marginTop: SPACE.xxs },
 });

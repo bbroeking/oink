@@ -12,28 +12,32 @@
 //   done   — you already cast this ritual on this friend today
 //   capped — you've used all today's blessings & curses
 //   error  — an unexpected failure; the Cast button stays for a retry
-import React, { useState, useEffect } from "react";
-import { View, Text, Image, StyleSheet, Pressable } from "react-native";
-import * as Haptics from "expo-haptics";
-import { rpcAction } from "@/utils/rpc";
+//
+// Audit A-05: casting is an irreversible, once-per-friend-per-day social send,
+// so the Cast control names its target in its label and its consequence in its
+// hint, and reports `disabled` as state. A-15: the cap / in-flight state is the
+// `Button` primitive's "asleep" chrome (muted fill, outline kept) instead of the
+// old `opacity: 0.7`, which spelled pressed and disabled the same way.
+import React, { useState } from "react";
+import { View, Image, StyleSheet } from "react-native";
+import { Button } from "./ui/Button";
+import { GameIcon } from "./ui/GameIcon";
 import { RitualIconWell } from "./ui/RitualIconWell";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
-import { dailyRitual, type RitualMode } from "../utils/rituals";
-import { formatHM } from "../utils/duration";
-import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
+import { CardTitle, Hand, Kicker, Label, T } from "./ui/Text";
+import { Sticker } from "./ui/Sticker";
+import { useRitualCaster } from "@/hooks/useRitualCaster";
+import { untilDailyReset, type RitualMode } from "../utils/rituals";
+import { BORDER, OPACITY, RADII, SPACE, WHIMSY } from "@/constants/theme";
 
-// Rituals reset at UTC midnight (the daily cap keys on the UTC date). "7h 23m"
-// until you can bless/curse again — a snapshot taken when the panel renders.
-function untilDailyReset(): string {
-	const now = new Date();
-	const next = Date.UTC(
-		now.getUTCFullYear(),
-		now.getUTCMonth(),
-		now.getUTCDate() + 1
-	);
-	const ms = next - now.getTime();
-	return formatHM(ms);
-}
+// The kicker's mark uses the shared ritual vocabulary at the kicker's cap height.
+const KICKER_ICON = SPACE.lg;
+// The ritual art on a terminal beat (sent / done). A drawing constant: the size
+// the ritual icon assets read at as the beat's subject rather than a marker.
+const BEAT_ICON = 56;
+// The ritual well in the ready state — bigger than the shared 40pt well because
+// here the art IS the offer.
+const WELL_SIZE = 60;
+const WELL_FILL = 0.84;
 
 interface Props {
 	mode: RitualMode;
@@ -49,93 +53,74 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 	const [busy, setBusy] = useState(false);
 	const [phase, setPhase] = useState<Phase>("ready");
 	const [result, setResult] = useState<string | null>(null);
-	// How many of today's rituals are left (used / cap), for the visible counter.
-	const [usage, setUsage] = useState<{ used: number; cap: number } | null>(null);
 
-	// Season-1 blessing set once world_boss is on — mirrors the server's
-	// daily_blessing_kind so the previewed kind matches the cast.
-	const s1 = useFeatureFlag("world_boss");
-	const ritual = dailyRitual(mode, new Date(), s1);
+	// The panel no longer owns any of this — today's ritual, the allowance, the
+	// RPC and the haptics all live in the shared caster, so the friend-row doors
+	// and this panel cast the same ritual the same way.
+	const caster = useRitualCaster();
+	const ritual = caster.today(mode);
+	const usage = caster.usage(mode);
 	const isBless = mode === "bless";
 
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			const r = await rpcAction<{
-				bless_used?: number;
-				bless_cap?: number;
-				curse_used?: number;
-				curse_cap?: number;
-			}>("ritual_status");
-			if (cancelled || !r.ok) return;
-			setUsage(
-				isBless
-					? { used: r.bless_used ?? 0, cap: r.bless_cap ?? 1 }
-					: { used: r.curse_used ?? 0, cap: r.curse_cap ?? 1 }
-			);
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [isBless]);
-
-	const remaining = usage ? Math.max(0, usage.cap - usage.used) : null;
+	const remaining = usage ? usage.remaining : null;
 
 	const cast = async () => {
 		if (busy) return;
 		setBusy(true);
 		setResult(null);
-		const rpcName = isBless ? "send_blessing" : "send_curse";
-		const r = await rpcAction(rpcName, { target_user_id: targetUserId });
+		const outcome = await caster.cast(mode, targetUserId, targetName);
 		setBusy(false);
 
-		if (r.ok) {
-			Haptics.notificationAsync(
-				isBless
-					? Haptics.NotificationFeedbackType.Success
-					: Haptics.NotificationFeedbackType.Warning
-			).catch(() => {});
-			setResult(
-				isBless
-					? `${ritual.name} sent to ${targetName}`
-					: `${targetName} has been cursed`
-			);
+		if (outcome.kind === "sent") {
+			setResult(outcome.text);
 			setPhase("sent");
-			setUsage((u) => (u ? { ...u, used: u.used + 1 } : u));
 			onCast?.();
 			return;
 		}
-
-		if (r.reason === "already_blessed_today" || r.reason === "already_cursed_today") {
+		if (outcome.kind === "done") {
 			setPhase("done");
-		} else if (r.reason === "daily_cap") {
+		} else if (outcome.kind === "capped") {
 			setPhase("capped");
 		} else {
-			setResult(reasonText(r.reason, isBless));
+			setResult(outcome.text);
 			setPhase("error");
 		}
 	};
 
+	const spent = remaining === 0;
+	const castLabel = isBless ? `Bless ${targetName}` : `Curse ${targetName}`;
+
 	return (
-		<View
-			style={[
-				styles.wrap,
-				{ backgroundColor: isBless ? WHIMSY.sun : "#D5E4C9" },
-			]}
+		<Sticker
+			color={isBless ? WHIMSY.sun : WHIMSY.curseSurface}
+			rotate={0}
+			radius={RADII.lg}
+			border={BORDER.ink}
+			shadow="none"
+			style={styles.wrap}
 		>
-			<Text style={styles.kicker}>
-				{isBless ? "✦ today's blessing" : "☁ today's curse"}
-			</Text>
+			{/* The kicker names the mode — the two sides share one drawing: a
+			    hand-drawn mark beside a hand-script line. */}
+			<View style={styles.kickerRow}>
+				<GameIcon name={mode} size={KICKER_ICON} />
+				<Kicker star={false}>
+					{isBless ? "today's blessing" : "today's curse"}
+				</Kicker>
+			</View>
 
 			{/* sent — the cast landed */}
 			{phase === "sent" && (
 				<View style={styles.beat}>
 					<Image source={ritual.icon} style={styles.beatImg} />
-					<Text style={styles.beatTitle}>
+					<CardTitle align="center">
 						{isBless ? "✦ blessing sent ✦" : "✦ curse cast ✦"}
-					</Text>
-					<Text style={styles.beatSub}>{result}</Text>
-					<Text style={styles.beatEffect}>{ritual.blurb}</Text>
+					</CardTitle>
+					<Hand align="center" style={styles.beatSub}>
+						{result}
+					</Hand>
+					<Label align="center" style={styles.beatEffect}>
+						{ritual.blurb}
+					</Label>
 				</View>
 			)}
 
@@ -144,30 +129,30 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 				<View style={styles.beat}>
 					<Image
 						source={ritual.icon}
-						style={[styles.beatImg, { opacity: 0.45 }]}
+						style={[styles.beatImg, styles.beatImgSpent]}
 					/>
-					<Text style={styles.beatTitle}>
+					<CardTitle align="center">
 						{isBless ? "already blessed today" : "already cursed today"}
-					</Text>
-					<Text style={styles.beatSub}>
+					</CardTitle>
+					<Hand align="center" style={styles.beatSub}>
 						Next {isBless ? "blessing" : "curse"} in {untilDailyReset()} —
 						one per friend a day.
-					</Text>
+					</Hand>
 				</View>
 			)}
 
 			{/* capped — today's blessing (or curse) is already spent */}
 			{phase === "capped" && (
 				<View style={styles.beat}>
-					<Text style={styles.beatTitle}>
+					<CardTitle align="center">
 						{isBless ? "blessing spent" : "curse spent"}
-					</Text>
-					<Text style={styles.beatSub}>
+					</CardTitle>
+					<Hand align="center" style={styles.beatSub}>
 						{usage
 							? `All ${usage.cap} ${isBless ? "blessings" : "curses"} used today`
 							: `${isBless ? "Blessings" : "Curses"} spent`}{" "}
 						— your next is in {untilDailyReset()}.
-					</Text>
+					</Hand>
 				</View>
 			)}
 
@@ -180,139 +165,98 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						<RitualIconWell
 							icon={ritual.icon}
 							blessed={isBless}
-							size={60}
-							fillRatio={0.84}
+							size={WELL_SIZE}
+							fillRatio={WELL_FILL}
 							badge={false}
 						/>
-						<View style={{ flex: 1, minWidth: 0 }}>
-							<Text style={styles.name}>{ritual.name}</Text>
-							<Text style={styles.blurb}>{ritual.blurb}</Text>
+						<View style={styles.ritualText}>
+							<T role="cardTitleSm">{ritual.name}</T>
+							<Hand>{ritual.blurb}</Hand>
 						</View>
 					</View>
-					<Pressable
+					<Button
+						variant="ghost"
+						full
 						testID="ritual-cast"
 						onPress={cast}
-						disabled={busy || remaining === 0}
-						style={({ pressed }) => [
-							styles.btn,
-							(pressed || busy || remaining === 0) && { opacity: 0.7 },
-						]}
+						disabled={spent}
+						loading={busy}
+						accessibilityLabel={castLabel}
+						accessibilityHint={
+							isBless
+								? `Sends today's blessing to ${targetName}. One blessing per friend a day — it can't be taken back.`
+								: `Casts today's curse on ${targetName}. One curse per friend a day — it can't be taken back.`
+						}
+						accessibilityState={{ disabled: busy || spent }}
 					>
-						<Text style={styles.btnText}>
-							{busy
-								? "…"
-								: isBless
-									? `Bless ${targetName}`
-									: `Curse ${targetName}`}
-						</Text>
-					</Pressable>
+						{castLabel}
+					</Button>
 					{remaining !== null && usage && (
-						<Text style={styles.left}>
+						<T role="kicker" tone="secondary" align="center" style={styles.left}>
 							{remaining} of {usage.cap} {isBless ? "blessings" : "curses"} left
 							today · resets in {untilDailyReset()}
-						</Text>
+						</T>
 					)}
 					{phase === "error" && !!result && (
-						<Text style={styles.result}>{result}</Text>
+						<Hand align="center" style={styles.result}>
+							{result}
+						</Hand>
 					)}
 				</>
 			)}
-		</View>
+		</Sticker>
 	);
-}
-
-// Only the unexpected cases reach here now — daily_cap and the
-// already-cast-today reasons are their own phases above.
-function reasonText(reason: string | undefined, isBless: boolean): string {
-	switch (reason) {
-		case "not_friends":
-			return "Only friends can be reached.";
-		case "self":
-			return "That's you.";
-		default:
-			return isBless
-				? "Couldn't bless. Try again."
-				: "Couldn't curse. Try again.";
-	}
 }
 
 const styles = StyleSheet.create({
 	wrap: {
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		padding: 12,
-		marginTop: 10,
+		padding: SPACE.md,
+		marginTop: SPACE.md,
 	},
-	kicker: { ...KICKER_TEXT, fontSize: 11, marginBottom: 8 },
+	kickerRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs,
+		marginBottom: SPACE.sm,
+	},
 	ritualRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
-		marginBottom: 10,
+		gap: SPACE.md,
+		marginBottom: SPACE.md,
 	},
-	name: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-	blurb: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		marginTop: 1,
+	ritualText: {
+		flex: 1,
+		minWidth: 0,
 	},
-	// paddingVertical 12 puts the Cast button at ~44pt tall — the
-	// minimum comfortable tap target.
-	btn: {
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 12,
-		alignItems: "center",
-	},
-	btnText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
 	result: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginTop: 8,
+		marginTop: SPACE.sm,
 	},
 	left: {
-		fontFamily: FONTS.hand,
-		fontSize: 11.5,
-		color: WHIMSY.ink,
-		opacity: 0.7,
-		textAlign: "center",
-		marginTop: 7,
+		marginTop: SPACE.sm,
 	},
 	// Shared terminal-state layout (sent / done / capped).
-	beat: { alignItems: "center", paddingVertical: 6 },
-	beatImg: {
-		width: 56,
-		height: 56,
-		resizeMode: "contain",
-		marginBottom: 4,
+	beat: {
+		alignItems: "center",
+		paddingVertical: SPACE.sm,
 	},
-	beatTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		letterSpacing: 0.4,
-		textAlign: "center",
+	beatImg: {
+		width: BEAT_ICON,
+		height: BEAT_ICON,
+		resizeMode: "contain",
+		marginBottom: SPACE.xs,
+	},
+	// The spent ritual's art is a ghost of itself — decorative, not a control,
+	// so it may fade where a disabled button may not.
+	beatImgSpent: {
+		opacity: OPACITY.ghost,
 	},
 	beatSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		marginTop: 2,
-		textAlign: "center",
+		marginTop: SPACE.xxs,
 	},
 	// The effect itself ("2× tickle regen for an hour") so the caster sees what
 	// the ritual actually does, not just that it sent.
 	beatEffect: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		marginTop: 4,
-		textAlign: "center",
+		marginTop: SPACE.xs,
 	},
 });

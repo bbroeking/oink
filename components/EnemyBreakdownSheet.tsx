@@ -1,22 +1,21 @@
 // Directional receipt for one Enemy-board rivalry. The leaderboard ranks the
 // pair by total curses; this bottom sheet answers the next question—who cursed
 // whom—without making every ranked row taller.
+//
+// Wave-4 conformance pass: the panel is the `Sheet` primitive (its kicker/title
+// slots replace the in-sheet SectionHeader), each direction is a `ListRow`, and
+// the summed total keeps its dashed rule through `BORDER.thin`. [C-09, C-18]
 
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import type { EnemyPairRow } from "@/utils/pairBonds";
-import {
-	FONTS,
-	RADII,
-	SPACE,
-	STICKER_SHADOW,
-	TYPE,
-	WHIMSY,
-} from "@/constants/theme";
-import { Icon } from "./ui/Icon";
-import { SectionHeader } from "./ui/SectionHeader";
-import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
-import { Sticker } from "./ui/Sticker";
-import { useUnmanagedModalHold } from "./ui/PopupQueue";
+import { BORDER, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
+import { Icon, ListRow, Sheet, T } from "./ui";
+
+// Drawing geometry: the fixed icon column every receipt line shares, so labels
+// and numbers stay in one vertical rhythm.
+const ICON_COL = 32;
+const ROW_MARK = 22;
+const TOTAL_MARK = 24;
 
 interface Props {
 	enemy: EnemyPairRow | null;
@@ -29,7 +28,6 @@ function name(value: string | null) {
 
 export function EnemyBreakdownSheet({ enemy, onClose }: Props) {
 	const open = !!enemy;
-	useUnmanagedModalHold(open);
 
 	if (!enemy) return null;
 
@@ -44,104 +42,74 @@ export function EnemyBreakdownSheet({ enemy, onClose }: Props) {
 				];
 
 	return (
-		<SlideUpSheet
+		<Sheet
 			open={open}
 			onClose={onClose}
-			duration={320}
-			backdropLabel="Close rivalry breakdown"
+			closeLabel="Close rivalry breakdown"
+			kicker="the rivalry receipt"
+			title={`${nameA} vs ${nameB}`}
+			testID="enemy-breakdown-sheet"
 		>
-			<Pressable onPress={() => {}}>
-				<Sticker
-					color="paper"
-					rotate={-0.6}
-					radius={RADII.xxl}
-					style={[styles.sheet, STICKER_SHADOW]}
-				>
-					<SheetGrabber />
-					<SectionHeader kicker="the rivalry receipt" title={`${nameA} vs ${nameB}`} />
-
-					{rows.length > 0 ? (
-						<View style={styles.rows}>
-							{rows.map((row) => (
-								<View key={row.key} style={styles.row}>
-									<View style={styles.iconCol}>
-										<Icon name="ghost" size={22} color={WHIMSY.curseGreen} />
-									</View>
-									<Text style={styles.rowLabel}>{row.label}</Text>
-									<Text style={styles.rowValue}>{row.value.toLocaleString()}</Text>
+			{rows.length > 0 ? (
+				<View style={styles.rows}>
+					{rows.map((row, i) => (
+						<ListRow
+							key={row.key}
+							index={i}
+							tilt={false}
+							leading={
+								<View style={styles.iconCol}>
+									<Icon name="ghost" size={ROW_MARK} color={WHIMSY.curseGreen} />
 								</View>
-							))}
-						</View>
-					) : (
-						<Text style={styles.secrets}>the rivalry ledger is still catching up</Text>
-					)}
+							}
+							title={row.label}
+							trailing={<T role="cardTitle">{row.value.toLocaleString()}</T>}
+							accessibilityLabel={`${row.label}, ${row.value}`}
+						/>
+					))}
+				</View>
+			) : (
+				<T role="hand" tone="secondary" align="center" style={styles.secrets}>
+					the rivalry ledger is still catching up
+				</T>
+			)}
 
-					<View style={styles.totalRow}>
-						<View style={styles.iconCol}>
-							<Icon name="ghost" size={24} color={WHIMSY.ink} />
-						</View>
-						<Text style={styles.totalLabel}>curses exchanged</Text>
-						<Text style={styles.totalValue}>{enemy.curses.toLocaleString()}</Text>
-					</View>
-				</Sticker>
-			</Pressable>
-		</SlideUpSheet>
+			<View style={styles.totalRow}>
+				<View style={styles.iconCol}>
+					<Icon name="ghost" size={TOTAL_MARK} color={WHIMSY.ink} />
+				</View>
+				<T role="cardTitle" style={styles.totalLabel}>
+					curses exchanged
+				</T>
+				<T role="sectionTitle">{enemy.curses.toLocaleString()}</T>
+			</View>
+		</Sheet>
 	);
 }
 
 const styles = StyleSheet.create({
-	sheet: {
-		padding: 18,
-		paddingTop: 10,
-	},
 	rows: { gap: SPACE.sm, marginTop: SPACE.xs },
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-	},
 	iconCol: {
-		width: 32,
-		height: 28,
+		width: ICON_COL,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	rowLabel: {
-		...TYPE.body,
-		color: WHIMSY.ink,
-		flex: 1,
-		minWidth: 0,
-	},
-	rowValue: {
-		...TYPE.cardTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-	},
+	// The total, set off by a dashed rule above it so it reads as the sum.
 	totalRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.md,
 		marginTop: SPACE.md,
 		paddingTop: SPACE.md,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
+		borderTopWidth: BORDER.thin,
+		borderTopColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	totalLabel: {
-		...TYPE.cardTitle,
-		color: WHIMSY.ink,
 		flex: 1,
 		minWidth: 0,
 	},
-	totalValue: {
-		...TYPE.sectionTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-	},
 	secrets: {
-		...TYPE.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
 		paddingVertical: SPACE.md,
 	},
 });

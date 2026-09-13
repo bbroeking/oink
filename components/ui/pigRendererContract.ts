@@ -3,6 +3,14 @@ import type { PigId } from "@/utils/pigs";
 
 export type PigMood = "content" | "happy" | "sad" | "tired";
 
+export type PigReactionKind = "happy" | "jump" | "surprise" | "wave";
+
+/** A new id always interrupts/restarts, including consecutive identical taps. */
+export interface PigReaction {
+	id: number;
+	kind: PigReactionKind;
+}
+
 export type PigAnimation =
 	| "idle"
 	| "walk"
@@ -16,6 +24,8 @@ export type PigAnimation =
 
 export interface PigAnimationSpec {
 	frames: readonly string[];
+	/** Source-frame indices per playback tick; manual previews retain raw indices. */
+	playback?: readonly number[];
 	fps: number;
 	loop: boolean;
 }
@@ -23,7 +33,10 @@ export interface PigAnimationSpec {
 export const PIG_ANIMATION_SPECS: Readonly<
 	Record<PigAnimation, PigAnimationSpec>
 > = Object.freeze({
-	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 2.5, loop: true },
+	// The original idle art alternates standing and splayed-leg poses. That
+	// exposes/hides the far rear hoof on every tick. Hold the two matching
+	// standing poses for 800 ms each, preserving the 1600 ms idle cycle.
+	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], playback: [1, 1, 3, 3], fps: 2.5, loop: true },
 	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 4, loop: true },
 	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: false },
 	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
@@ -41,6 +54,9 @@ export const PIG_ANIMATION_SPECS: Readonly<
 export interface PigRendererProps {
 	animation: PigAnimation;
 	mood?: PigMood;
+	reaction?: PigReaction | null;
+	/** Visibility belongs to the surface; navigation and AppState also pause it. */
+	active?: boolean;
 	pigId?: PigId;
 	equipment?: PigEquipmentSelection;
 	size?: number;
@@ -55,6 +71,9 @@ export interface PigRendererProps {
 
 export interface PigEquipmentSelection {
 	headId?: string | null;
+	// Bows remain raster overlays for now; supplying one forces the shared stage
+	// off the Rive prototype so its anatomy anchor stays in sync.
+	bowId?: string | null;
 	faceId?: string | null;
 	heldId?: string | null;
 	maskId?: string | null;
@@ -75,5 +94,5 @@ export function resolvePigAnimation(
 
 export function pigAnimationDurationMs(animation: PigAnimation): number {
 	const spec = PIG_ANIMATION_SPECS[animation] ?? PIG_ANIMATION_SPECS.idle;
-	return Math.round((spec.frames.length / spec.fps) * 1000);
+	return Math.round(((spec.playback?.length ?? spec.frames.length) / spec.fps) * 1000);
 }

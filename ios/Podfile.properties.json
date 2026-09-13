@@ -1,8 +1,8 @@
 {
   "expo.jsEngine": "hermes",
   "EX_DEV_CLIENT_NETWORK_INSPECTOR": "true",
-  "newArchEnabled": "true",
-  "apple.extraPods": "[]",
   "apple.ccacheEnabled": "false",
-  "apple.privacyManifestAggregationEnabled": "true"
+  "apple.privacyManifestAggregationEnabled": "true",
+  "expo.inlineModules.watchedDirectories": "[]",
+  "expo.inlineModules.xcodeProjectTargets": "{\"mainTarget\":\"ttp\",\"targets\":[]}"
 }

@@ -74,6 +74,9 @@ upload, exact-binary device-test, or go/no-go gates.
 
 - [ ] Classify the build using the table above and record the classification.
 - [ ] Define the user-facing scope and explicitly list deferred work.
+- [ ] Review `docs/release-followups.json`: enqueue every qualifying large
+      change and attach existing queued entries to this build/version. Record
+      the included follow-up IDs in the build changelog.
 - [ ] Review `git status --short`; every included change is intentional.
 - [ ] Record the candidate commit. If building from a dirty tree, record that
       fact and preserve the exact diff in the build changelog.
@@ -266,6 +269,9 @@ Then return to the repository root and rebuild.
 
 ## 8. Post-release
 
+- [ ] Confirm the public store serves this version, then run
+      `npm run release:followups -- release --version VERSION`; complete or
+      assign every surfaced production check and record the evidence here.
 - [ ] Apply post-binary migrations/settings only with explicit user **go**.
 - [ ] Run one-off release SQL and launch pushes only after their documented
       prerequisites are true; record who ran them and when.

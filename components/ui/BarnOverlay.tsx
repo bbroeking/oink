@@ -83,8 +83,8 @@ function CoinPile({
 }
 
 const styles = StyleSheet.create({
-	fill: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
-	tint: { ...StyleSheet.absoluteFillObject },
+	fill: { ...StyleSheet.absoluteFill, zIndex: 1 },
+	tint: { ...StyleSheet.absoluteFill },
 	// Sanctioned scene-wash exception: these alignment/effect washes and the
 	// overlays below are bespoke low-opacity gold/green tints tuned to
 	// sit over the painted Barn, NOT WHIMSY surface hues — they don't map to a

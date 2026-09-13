@@ -8,93 +8,97 @@
 <link rel="icon" href="/rosie.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/tokens.css" />
+<link rel="stylesheet" href="/sticker.css" />
 <style>
-  :root { --ink:#2a1f15; --paper:#fffaf0; --rose:#c0566a; --mute:#9a8c7a; --line:#ece0cc; }
+  /* No :root here — the web is a consumer of theme.ts (design-system-spec §3 rule 7).
+     Everything below composes tokens.css + sticker.css; no literal paint. */
   * { box-sizing:border-box; }
   body {
-    margin:0; color:var(--ink);
+    margin:0;
+    color:var(--text-primary);
     background:
-      radial-gradient(circle at 12% 6%, rgba(255,214,220,.35), transparent 32%),
-      radial-gradient(circle at 90% 96%, rgba(214,200,240,.30), transparent 34%),
+      radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--fill-rose) 35%, transparent), transparent 32%),
+      radial-gradient(circle at 90% 96%, color-mix(in srgb, var(--fill-lilac) 30%, transparent), transparent 34%),
       var(--paper);
-    font-family:"Archivo",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    line-height:1.65;
+    font:var(--type-body-lg);
   }
-  .wrap { max-width:720px; margin:0 auto; padding:8px 22px 80px; }
-  header.site { display:flex; align-items:center; gap:10px; padding:20px 0 16px; border-bottom:2px solid var(--line); margin-bottom:26px; }
-  header.site img { width:34px; height:34px; border-radius:50%; }
-  header.site a.brand { font-weight:800; font-size:19px; color:var(--ink); text-decoration:none; letter-spacing:-.01em; }
-  h1 { font-size:30px; font-weight:800; line-height:1.2; margin:6px 0 14px; letter-spacing:-.015em; }
-  p { font-size:15.5px; margin:10px 0; }
-  a { color:var(--rose); }
-  strong { font-weight:700; }
-  footer.site { margin-top:52px; padding-top:18px; border-top:2px solid var(--line); font-size:14px; color:var(--mute); display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
-  footer.site a { color:var(--mute); text-decoration:none; }
-  footer.site a:hover { color:var(--ink); }
+  .wrap { max-width:720px; margin:0 auto; padding:var(--space-sm) var(--space-xl) var(--tab-safe); }
+  header.site {
+    display:flex; align-items:center; gap:var(--space-md);
+    padding:var(--space-xl) 0 var(--space-lg);
+    border-bottom:var(--border-hair) solid var(--separator);
+    margin-bottom:var(--space-xl);
+  }
+  header.site img { width:var(--art-glyph); height:var(--art-glyph); border-radius:var(--radius-pill); }
+  header.site a.brand {
+    font:var(--type-card-title); letter-spacing:var(--tracking-card-title);
+    color:var(--text-primary); text-decoration:none;
+    display:inline-flex; align-items:center; min-height:var(--tap-min);
+  }
+  h1 { font:var(--type-display); margin:var(--space-sm) 0 var(--space-md); }
+  h1 + .rule { margin-bottom:var(--space-xl); }
+  h2 { font:var(--type-section-title); letter-spacing:var(--tracking-section-title); margin:var(--space-xxl) 0 var(--space-sm); }
+  h3 { font:var(--type-card-title); letter-spacing:var(--tracking-card-title); margin:var(--space-lg) 0 var(--space-xs); }
+  /* Long-form legal prose: the TYPE roles are tuned for mobile UI lines, so the
+     body-lg role keeps its family/size/weight and takes a document leading. */
+  p, li { font:var(--type-body-lg); line-height:1.6; }
+  p { margin:var(--space-md) 0; }
+  ul { padding-left:var(--space-xl); margin:var(--space-sm) 0; }
+  li { margin:var(--space-sm) 0; }
+  a { color:var(--accent); }
+  strong { font-weight:900; }
+  footer.site {
+    margin-top:var(--space-xxl); padding-top:var(--space-lg);
+    border-top:var(--border-hair) solid var(--separator);
+    font:var(--type-body-sm); color:var(--ink-mute);
+    display:flex; gap:var(--space-lg); flex-wrap:wrap; align-items:center;
+  }
+  footer.site a {
+    color:var(--ink-mute); text-decoration:none;
+    display:inline-flex; align-items:center; min-height:var(--tap-min); padding-inline:var(--space-xs);
+  }
+  footer.site a:hover { color:var(--text-primary); }
 
   /* ── report form ─────────────────────────────────────────────── */
-  form.report { margin:24px 0 0; }
-  fieldset.kinds { border:0; margin:0 0 22px; padding:0; }
-  legend { font-size:15px; font-weight:700; padding:0; margin:0 0 10px; }
-  .kind-grid { display:flex; flex-wrap:wrap; gap:10px; }
-  .kind {
-    flex:1 1 180px; cursor:pointer;
-    border:2px solid var(--line); border-radius:14px;
-    background:#fff; padding:14px 16px;
-    transition:border-color .12s ease, background .12s ease, transform .06s ease;
-  }
-  .kind:hover { border-color:#d9c8ab; }
-  .kind input { position:absolute; opacity:0; width:0; height:0; }
-  .kind .k-title { font-weight:700; font-size:15.5px; display:block; }
-  .kind .k-sub { font-size:13px; color:var(--mute); display:block; margin-top:2px; }
-  .kind:has(input:checked) { border-color:var(--rose); background:#fff4f5; }
-  .kind:has(input:focus-visible) { outline:2px solid var(--rose); outline-offset:2px; }
+  form.report { margin:var(--space-xl) 0 0; }
+  fieldset.kinds { border:0; margin:0 0 var(--space-xl); padding:0; }
+  legend { font:var(--type-label); letter-spacing:var(--tracking-label); color:var(--text-secondary); padding:0; margin:0 0 var(--space-md); }
+  .kind-grid { display:flex; flex-wrap:wrap; gap:var(--space-md); }
 
-  label.field { display:block; font-size:15px; font-weight:700; margin:0 0 6px; }
-  .field-wrap { margin-bottom:18px; }
-  textarea, input.name {
-    width:100%; font-family:inherit; font-size:15.5px; color:var(--ink);
-    background:#fff; border:2px solid var(--line); border-radius:14px;
-    padding:12px 14px; line-height:1.55; resize:vertical;
-  }
-  textarea { min-height:150px; }
-  textarea:focus, input.name:focus { outline:none; border-color:var(--rose); }
-  .counter { font-size:13px; color:var(--mute); text-align:right; margin:5px 2px 0; }
-  .counter.over { color:var(--rose); }
+  /* Radio card — the .sticker primitive wrapped round a visually-hidden native
+     radio. Selected = BORDER.heavy + a fill, never colour alone (§3 state law). */
+  .kind { flex:1 1 180px; cursor:pointer; transition:background var(--motion-tap) ease-out; }
+  .kind input { position:absolute; opacity:0; width:0; height:0; }
+  .kind .k-title { display:block; font:var(--type-card-title-sm); letter-spacing:var(--tracking-card-title-sm); }
+  .kind .k-sub { display:block; margin-top:var(--space-xxs); font:var(--type-body-sm); color:var(--text-secondary); }
+  .kind:hover { --fill:var(--cream); }
+  .kind:has(input:checked) { --fill:var(--fill-rose); border-width:var(--border-heavy); }
+  .kind:has(input:focus-visible) { outline:var(--border-heavy) solid var(--focus); outline-offset:var(--space-xxs); }
+
+  .field { margin-bottom:var(--space-lg); }
+  .field__optional { font-weight:400; color:var(--ink-mute); }
+  .counter { text-align:right; }
+  .counter.over { color:var(--danger-text); }
 
   /* honeypot — off-screen but focusable by dumb bots */
   .gate { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
 
-  button.submit {
-    appearance:none; cursor:pointer; font-family:inherit;
-    font-size:16px; font-weight:800; color:#fff;
-    background:var(--rose); border:0; border-radius:14px;
-    padding:14px 22px; width:100%; letter-spacing:.01em;
-    transition:opacity .12s ease, transform .06s ease;
-  }
-  button.submit:hover { opacity:.92; }
-  button.submit:active { transform:translateY(1px); }
-  button.submit:disabled { opacity:.55; cursor:default; }
+  .note { font:var(--type-body-sm); margin-top:var(--space-md); min-height:var(--space-xl); }
+  .note.err { color:var(--danger-text); }
+  .note.ok { color:var(--success-text); }
 
-  .note { font-size:14px; margin-top:12px; min-height:20px; }
-  .note.err { color:var(--rose); font-weight:600; }
-  .note.ok { color:#5A8338; font-weight:600; }
-
-  .done {
-    border:2px solid var(--line); border-radius:16px; background:#fff;
-    padding:26px 22px; text-align:center;
-  }
-  .done h2 { font-size:21px; font-weight:800; margin:0 0 8px; }
-  .done p { color:var(--mute); margin:6px 0 0; }
-  .done .again { margin-top:16px; }
-  .done .again a { color:var(--rose); text-decoration:none; font-weight:700; cursor:pointer; }
+  .done { padding:var(--space-xl); text-align:center; }
+  .done h2 { margin:0 0 var(--space-sm); }
+  .done .empty-state__line { margin:var(--space-xs) 0 0; }
+  .done .again { margin:var(--space-lg) 0 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
 <header class="site"><img src="/rosie.png" alt="Rosie the pig" /><a class="brand" href="/">Tickle the Pig</a></header>
 <h1>Report a bug or share an idea</h1>
+<div class="rule" aria-hidden="true"></div>
 
 <p>Found something broken, thought of something better, or just want to say hi? Whisper it here and it drops straight into the Den — the founder reads every one. No account needed.</p>
 
@@ -102,17 +106,17 @@
   <fieldset class="kinds">
     <legend>What kind of whisper is this?</legend>
     <div class="kind-grid">
-      <label class="kind">
+      <label class="kind sticker sticker--straight">
         <input type="radio" name="kind" value="bug" required />
         <span class="k-title">Something's broken</span>
         <span class="k-sub">A bug, a glitch, a thing that won't behave.</span>
       </label>
-      <label class="kind">
+      <label class="kind sticker sticker--straight">
         <input type="radio" name="kind" value="idea" />
         <span class="k-title">An idea</span>
         <span class="k-sub">Something you wish the game did.</span>
       </label>
-      <label class="kind">
+      <label class="kind sticker sticker--straight">
         <input type="radio" name="kind" value="love" />
         <span class="k-title">A love note</span>
         <span class="k-sub">A kind word for the bog. We keep these.</span>
@@ -120,16 +124,16 @@
     </div>
   </fieldset>
 
-  <div class="field-wrap">
-    <label class="field" for="body">Your message</label>
-    <textarea id="body" name="body" maxlength="1000" minlength="3"
+  <div class="field">
+    <label class="field__label" for="body">Your message</label>
+    <textarea class="field__input" id="body" name="body" rows="6" maxlength="1000" minlength="3"
       placeholder="What should the bog know?" required></textarea>
-    <div class="counter" id="counter">0 / 1000</div>
+    <div class="field__helper counter" id="counter">0 / 1000</div>
   </div>
 
-  <div class="field-wrap">
-    <label class="field" for="name">Your name <span style="font-weight:400;color:var(--mute)">(optional)</span></label>
-    <input class="name" id="name" name="name" type="text" maxlength="24"
+  <div class="field">
+    <label class="field__label" for="name">Your name <span class="field__optional">(optional)</span></label>
+    <input class="field__input" id="name" name="name" type="text" maxlength="24"
       placeholder="a passing pig" autocomplete="off" />
   </div>
 
@@ -139,14 +143,14 @@
     <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
   </div>
 
-  <button type="submit" class="submit" id="submit-btn">Send it to the Den</button>
+  <button type="submit" class="btn btn--primary btn--lg btn--full" id="submit-btn">Send it to the Den</button>
   <p class="note" id="note" role="status" aria-live="polite"></p>
 </form>
 
-<div class="done" id="done" style="display:none">
-  <h2>Folded into the Den — thank you</h2>
-  <p>The founder reads every whisper. This one landed.</p>
-  <p class="again"><a id="again">Send another ›</a></p>
+<div class="done sticker sticker--straight" id="done" style="display:none">
+  <h2 class="text-section-title">Folded into the Den — thank you</h2>
+  <p class="empty-state__line">The founder reads every whisper. This one landed.</p>
+  <p class="again"><button type="button" class="btn btn--link" id="again">Send another ›</button></p>
 </div>
 
 <footer class="site">

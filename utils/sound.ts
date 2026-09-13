@@ -19,7 +19,7 @@
 // Every native call is wrapped so a missing/omitted native module (tests, web)
 // degrades to a silent no-op rather than throwing.
 
-import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
+import type { AudioPlayer } from "expo-audio";
 
 export type SoundKey =
 	| "scrape"
@@ -56,10 +56,18 @@ const VOLUME: Record<SoundKey, number> = {
 const players = new Map<SoundKey, AudioPlayer>();
 let muted = false;
 let audioModeSet = false;
+const muteListeners = new Set<(muted: boolean) => void>();
+
+/** Feature SFX can follow the existing game mute without creating another toggle. */
+export function subscribeMuted(listener: (muted: boolean) => void): () => void {
+	muteListeners.add(listener);
+	return () => { muteListeners.delete(listener); };
+}
 
 /** Global mute for the game SFX layer. Honored by every play + the ambience bed. */
 export function setMuted(next: boolean): void {
 	muted = next;
+	for (const listener of muteListeners) listener(next);
 	if (muted) {
 		const bed = players.get("ambience");
 		try {
@@ -78,7 +86,8 @@ function ensureAudioMode(): void {
 	// Respect the hardware silent switch (OS default) — a cozy dig should go
 	// quiet when the phone is on silent.
 	try {
-		void setAudioModeAsync({ playsInSilentMode: false });
+		const { setAudioModeAsync } = require("expo-audio") as typeof import("expo-audio");
+		void setAudioModeAsync({ playsInSilentMode: false }).catch(() => {});
 	} catch {}
 }
 
@@ -86,6 +95,7 @@ function getPlayer(key: SoundKey): AudioPlayer | null {
 	let p = players.get(key);
 	if (p) return p;
 	try {
+		const { createAudioPlayer } = require("expo-audio") as typeof import("expo-audio");
 		p = createAudioPlayer(SOURCES[key]);
 		if (key === "ambience") p.loop = true;
 		p.volume = VOLUME[key];

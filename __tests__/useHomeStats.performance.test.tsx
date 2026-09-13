@@ -40,6 +40,8 @@ const HOME_STATS_RESPONSE = {
 	happiness: 50,
 	active_hat_id: null,
 	active_hat: null,
+	active_bow_id: null,
+	active_bow: null,
 	active_glasses_id: null,
 	active_glasses: null,
 	active_mask_id: null,

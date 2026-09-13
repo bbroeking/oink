@@ -6,27 +6,30 @@
 // Driven by check_schism_status RPC → app/_layout polls on focus →
 // if 'angel' or 'goblin' returned, mounts this modal. Dismiss calls
 // mark_schism_seen so the user never sees the same crossing twice.
+//
+// Wave-4 conformance pass: the raw Modal is `AdaptiveModalScaffold` with a
+// `DialogCloseRow` exit (C-14); `#D5E4C9` — a hex the token layer named as
+// already-retired — is `WHIMSY.curseSurface` (C-11); the headline, body, kicker
+// and score speak through text roles (C-19); and the CTA is a pressable
+// `Sticker`, which owns the sanctioned press, because the side tint IS the
+// message and `Button` has no identity-tinted variant (see System asks).
 import React, { useEffect, useRef } from "react";
-import {
-	Modal,
-	View,
-	Text,
-	StyleSheet,
-	Pressable,
-	Animated,
-	Easing,
-} from "react-native";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
-import { Sticker } from "./ui/Sticker";
-import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	WHIMSY,
+	AdaptiveModalScaffold,
+	AlignmentEmblem,
+	Sticker,
+	T,
+} from "./ui";
+import {
+	BORDER,
 	RADII,
+	SPACE,
+	STICKER_SHADOW,
+	UI_COLORS,
+	WHIMSY,
 } from "@/constants/theme";
 import {
 	MOTION_DURATION,
@@ -95,21 +98,21 @@ const COPY: Record<
 			icon: "horns",
 			headline: "You're becoming Greedy",
 			body: "You take more than you give. You hoard your debts. Embrace it and the throne of Goblin King awaits.",
-			buttonBg: "#D5E4C9",
+			buttonBg: WHIMSY.curseSurface,
 		},
 		50: {
 			kicker: "★ deeply greedy ★",
 			icon: "horns",
 			headline: "Friends step lightly",
 			body: "Half a hundred points of pinching. The sounder remembers what you took. Keep going and Goblin King is within reach.",
-			buttonBg: "#D5E4C9",
+			buttonBg: WHIMSY.curseSurface,
 		},
 		100: {
 			kicker: "★ goblin king ★",
 			icon: "horns",
 			headline: "Pure greed",
 			body: "A hundred points. Nowhere further to fall — the throne is yours. Every pig in the sounder pulls their snout away.",
-			buttonBg: "#D5E4C9",
+			buttonBg: WHIMSY.curseSurface,
 		},
 	},
 };
@@ -154,7 +157,7 @@ export function AlignmentSchismModal({
 			}),
 			Animated.timing(opacity, {
 				toValue: 1,
-				duration: 250,
+				duration: MOTION_DURATION.state,
 				easing: Easing.out(Easing.quad),
 				useNativeDriver: true,
 			}),
@@ -176,121 +179,123 @@ export function AlignmentSchismModal({
 
 	const copy = COPY[side][milestone];
 
+	const signed = score > 0 ? `+${score}` : `${score}`;
+
 	return (
-		<Modal
+		<AdaptiveModalScaffold
 			visible={visible}
-			transparent
-			animationType="fade"
 			onRequestClose={handleDismiss}
+			animationType="fade"
+			bare
+			maxWidth={CARD_WIDTH}
+			// The exit C-14 found missing in every modal in this area.
+			showCloseButton
+			closeLabel="Close"
+			contentContainerStyle={styles.content}
+			testID="schism-modal"
 		>
-			<View style={styles.backdrop}>
-				<Animated.View
-					style={[
-						styles.cardWrap,
-						{ opacity, transform: [{ scale }] },
-					]}
+			<Animated.View
+				style={[styles.cardWrap, { opacity, transform: [{ scale }] }]}
+			>
+				<Sticker
+					color={side === "angel" ? "sun" : "paper"}
+					rotate={TILT_CARD}
+					radius={RADII.xxl}
+					border={BORDER.heavy}
+					style={[styles.card, STICKER_SHADOW]}
 				>
-					<Sticker
-						color={side === "angel" ? "sun" : "paper"}
-						rotate={-1.2}
-						radius={RADII.xxl}
-						border={3}
-						style={[styles.card, STICKER_SHADOW]}
+					<T role="kicker" tone="accent" align="center" style={styles.kicker}>
+						{copy.kicker}
+					</T>
+					<AlignmentEmblem
+						kind={copy.icon}
+						size={EMBLEM_ART}
+						style={styles.emblem}
+					/>
+					<T
+						role="pageTitle"
+						align="center"
+						accessibilityRole="header"
+						style={styles.headline}
 					>
-						<Text style={styles.kicker}>{copy.kicker}</Text>
-						<AlignmentEmblem
-							kind={copy.icon}
-							size={84}
-							style={styles.emblem}
-						/>
-						<Text style={styles.headline}>{copy.headline}</Text>
-						<Text style={styles.body}>{copy.body}</Text>
-						<View style={styles.scoreRow}>
-							<Text style={styles.scoreLabel}>alignment</Text>
-							<Text style={styles.scoreValue}>
-								{score > 0 ? `+${score}` : score}
-							</Text>
-						</View>
-						<Pressable
-							testID="schism-dismiss"
-							onPress={handleDismiss}
-							style={({ pressed }) => [
-								styles.btn,
-								{ backgroundColor: copy.buttonBg },
-								pressed && { opacity: 0.75 },
-							]}
-						>
-							<Text style={styles.btnText}>I see my path</Text>
-						</Pressable>
+						{copy.headline}
+					</T>
+					<T role="handLg" align="center" style={styles.body}>
+						{copy.body}
+					</T>
+					<Sticker
+						color="cream"
+						rotate={0}
+						radius={RADII.pill}
+						border={BORDER.thin}
+						shadow="none"
+						accessibilityRole="text"
+						accessibilityLabel={`alignment ${signed}`}
+						style={styles.scoreRow}
+					>
+						<T role="kickerPillSm" tone="secondary">
+							alignment
+						</T>
+						<T role="numeral">{signed}</T>
 					</Sticker>
-				</Animated.View>
-			</View>
-		</Modal>
+					{/* The CTA wears the side's own tint, so it is a pressable
+					    Sticker (which owns the sanctioned press) rather than a
+					    Button, whose variants carry no identity hue. */}
+					<Sticker
+						color={copy.buttonBg}
+						rotate={0}
+						radius={RADII.lg}
+						border={BORDER.ink}
+						shadow="none"
+						testID="schism-dismiss"
+						onPress={handleDismiss}
+						accessibilityLabel="I see my path"
+						accessibilityHint="Closes this reveal and records that you have seen it"
+						style={styles.btn}
+					>
+						<T role="handLg" align="center">
+							I see my path
+						</T>
+					</Sticker>
+				</Sticker>
+			</Animated.View>
+		</AdaptiveModalScaffold>
 	);
 }
 
+// Drawing geometry: the card's ceiling width, its lean, and the emblem that
+// crowns it. Not spacing steps — named so no number floats.
+const CARD_WIDTH = 380;
+const TILT_CARD = -1.2;
+const EMBLEM_ART = 84;
+
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		alignItems: "center",
+	content: {
+		flexGrow: 1,
 		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 28,
+		padding: SPACE.sm,
 	},
-	cardWrap: { width: "100%", maxWidth: 380 },
+	cardWrap: { width: "100%" },
 	card: {
-		paddingHorizontal: 24,
-		paddingVertical: 28,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.xl,
 		alignItems: "center",
 	},
-	kicker: { ...KICKER_TEXT, marginBottom: 14, textAlign: "center" },
-	emblem: { marginBottom: 8 },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 12,
-	},
-	body: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		lineHeight: 22,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 18,
-	},
+	kicker: { marginBottom: SPACE.card },
+	emblem: { marginBottom: SPACE.sm },
+	headline: { marginBottom: SPACE.md },
+	body: { marginBottom: SPACE.lg },
 	scoreRow: {
 		flexDirection: "row",
 		alignItems: "baseline",
-		gap: 6,
-		marginBottom: 22,
-		paddingHorizontal: 14,
-		paddingVertical: 6,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream,
+		gap: SPACE.xs,
+		marginBottom: SPACE.xl,
+		paddingHorizontal: SPACE.card,
+		paddingVertical: SPACE.xs,
+		borderColor: UI_COLORS.border,
 	},
-	scoreLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.5,
-		textTransform: "uppercase",
-	},
-	scoreValue: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
 	btn: {
-		paddingHorizontal: 28,
-		paddingVertical: 12,
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-	},
-	btnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
-		color: WHIMSY.ink,
-		letterSpacing: 0.4,
+		paddingHorizontal: SPACE.xl,
+		paddingVertical: SPACE.md,
 	},
 });

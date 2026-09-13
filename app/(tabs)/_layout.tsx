@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, AppState, Image, Text, ActivityIndicator } from "react-native";
+import { View, AppState, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
@@ -11,9 +11,11 @@ import { Onboarding } from "@/components/Onboarding";
 import { getStorybookSeenServer, needsStorybook } from "@/utils/onboarding";
 import { ReferralCodeEntry } from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
+import { WaitingRosie } from "@/components/ui/WaitingRosie";
 import { Button } from "@/components/ui/Button";
+import { T } from "@/components/ui/Text";
 import { ActiveEffectsProvider } from "@/hooks/ActiveEffectsProvider";
-import { WHIMSY, KICKER_TEXT, TYPE } from "@/constants/theme";
+import { SPACE, UI_COLORS } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
 import { usePopupHold } from "@/components/ui/PopupQueue";
 import {
@@ -206,41 +208,28 @@ export default function TabLayout() {
 		// hold stays engaged the whole time (username is still
 		// undefined) so no launch modal leaks over this screen.
 		return (
-			<View
-				style={{
-					flex: 1,
-					backgroundColor: WHIMSY.cream,
-					alignItems: "center",
-					justifyContent: "center",
-					gap: 14,
-					paddingHorizontal: 32,
-				}}
-			>
-				<Image
-					source={require("../../assets/images/sprites/rosie/idle_1.png")}
-					style={{ width: 200, height: 207 }}
-					resizeMode="contain"
-				/>
+			<View style={styles.gate}>
+				<WaitingRosie size={GATE_ROSIE} active={!usernameError} />
 				{usernameError ? (
 					<>
-						<Text style={KICKER_TEXT}>★ the barn's being shy ★</Text>
-						<Text
-							style={[
-								TYPE.hand,
-								{ color: WHIMSY.mute, textAlign: "center", marginBottom: 4 },
-							]}
-						>
+						<T role="kicker" tone="accent">★ the barn's being shy ★</T>
+						<T role="hand" tone="secondary" align="center" style={styles.gateSub}>
 							Couldn't reach the farm. Give it another nudge.
-						</Text>
+						</T>
 						<Button variant="primary" onPress={retryUsername}>
 							Try again
 						</Button>
 					</>
 				) : (
-					<>
-						<Text style={KICKER_TEXT}>★ saddling up ★</Text>
-						<ActivityIndicator color={WHIMSY.ink} />
-					</>
+					<T
+						role="kicker"
+						tone="accent"
+						accessibilityRole="progressbar"
+						accessibilityLabel="saddling up"
+						accessibilityState={{ busy: true }}
+					>
+						★ saddling up ★
+					</T>
 				)}
 			</View>
 		);
@@ -285,3 +274,21 @@ export default function TabLayout() {
 		</ActiveEffectsProvider>
 	);
 }
+
+// Rosie's waiting size on the gate — drawing geometry for the hero of a
+// full-screen beat, not a spacing step, so it is named rather than inlined.
+const GATE_ROSIE = 200;
+
+const styles = StyleSheet.create({
+	gate: {
+		flex: 1,
+		backgroundColor: UI_COLORS.surfaceMuted,
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.card,
+		paddingHorizontal: SPACE.xxl,
+	},
+	gateSub: {
+		marginBottom: SPACE.xs,
+	},
+});

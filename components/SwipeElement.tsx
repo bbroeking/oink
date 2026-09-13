@@ -4,39 +4,32 @@ import {
 	Animated,
 	Pressable,
 	View,
-	Image,
-	Text,
 	Easing,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import { HAT_IMAGES, HAT_REL } from "../constants/hats";
 import { ANIM_SCALE } from "../constants/animScale.generated";
 import type { RelSpec } from "../constants/hat_overlay_types";
-import { PigAnimation, animDurationMs } from "./ui/SpritePig";
+import type { PigAnimation, PigMood, PigReaction, PigReactionKind } from "./ui/pigRendererContract";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { ART_SIZE, FONTS, RADII, SPACE, WHIMSY } from "@/constants/theme";
+import { squashAndSpring } from "@/utils/motionRecipes";
 
-import { PigStage, resolveSlot, type EquippedItem } from "./ui/PigStage";
-import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
+import { PigStage, type EquippedItem } from "./ui/PigStage";
 import { pigDefinition, type PigId } from "@/utils/pigs";
 
-// To swap to <RivePig> once you have a Rive build:
-//
-//   1. Drop the exported pig.riv into assets/rive/
-//   2. Rebuild the dev client so the rive-react-native native module
-//      gets linked into the binary: `npx expo run:ios` (~10 min)
-//   3. Import RivePig here and replace SpritePig in the render below
-//
-// Until step 2, importing RivePig at module level crashes because the
-// native event emitter has no Objective-C side. Don't add the import
-// until the dev-client rebuild is in.
+// PigStage owns renderer choice, appearance fallback, and reaction playback.
+// This surface owns taps, haptics, sound, and the special 6–7 celebration.
 
 interface SwipeElementProps {
 	onLuckySwipe: () => void;
+	active?: boolean;
 	pigId?: PigId;
 	restingAnim?: PigAnimation;
 	equipped?: EquippedItem | null;
+	equippedBow?: EquippedItem | null;
 	equippedGlasses?: EquippedItem | null;
 	equippedMask?: EquippedItem | null;
 	equippedNeck?: EquippedItem | null;
@@ -56,11 +49,22 @@ interface SwipeElementProps {
 
 const sixSevenSound = require("../assets/sounds/sixseven.m4a");
 
+// The 6–7 celebration digits are ART, not type: 90pt is the size the Barn's
+// best beat was tuned at, and TYPE's largest role (`hero`, 44) is half of it —
+// so this is a named drawing constant with its reason attached rather than a
+// bare literal or a role bent out of shape. The digits' resting offsets are the
+// same kind of geometry. [E19] (2026-09-11)
+const SIX_SEVEN_DIGIT_SIZE = 90;
+const SIX_SEVEN_BOTTOM = 100;
+const SIX_SEVEN_INSET = 40;
+
 export default function SwipeElement({
 	onLuckySwipe,
+	active = true,
 	pigId = "rosie",
 	restingAnim = "idle",
 	equipped,
+	equippedBow,
 	equippedGlasses,
 	equippedMask,
 	equippedNeck,
@@ -78,30 +82,20 @@ export default function SwipeElement({
 	const sixY = useRef(new Animated.Value(0)).current;
 	const sevenOpacity = useRef(new Animated.Value(0)).current;
 	const sevenY = useRef(new Animated.Value(0)).current;
-	const [pigAnim, setPigAnim] = useState<PigAnimation>("idle");
+	const motion = useMotionPolicy();
+	const [riveActive, setRiveActive] = useState(false);
+	const [reaction, setReaction] = useState<PigReaction | null>(null);
+	const [sixSevenActive, setSixSevenActive] = useState(false);
+	const reactionSequence = useRef(0);
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
-	// Single source of truth for "what's playing": the active reaction (or the
-	// 6-7 celebration), or null when Rosie is at her resting/mood pose. A tickle
-	// CUTS whatever's playing and starts fresh; nothing else may change pigAnim
-	// while a reaction is active. One revert timer, cleared on every cut.
-	const activeReactionRef = useRef<PigAnimation | "sixseven" | null>(null);
-	const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	// Latest mood pose, read by goToRest without closure staleness.
-	const restingRef = useRef(restingAnim);
-	restingRef.current = restingAnim;
-	const clearRevert = () => {
-		if (revertTimer.current) {
-			clearTimeout(revertTimer.current);
-			revertTimer.current = null;
-		}
-	};
-	// A reaction finished (or was cut) → settle back to the mood pose.
+	const activeReactionRef = useRef<PigReactionKind | "sixseven" | null>(null);
+	const restingMood: PigMood = restingAnim === "happy" || restingAnim === "sad" || restingAnim === "tired" ? restingAnim : "content";
+	const pigAnim = sixSevenActive ? "happy" : reaction?.kind ?? restingAnim;
 	const goToRest = () => {
-		clearRevert();
 		activeReactionRef.current = null;
-		setPigAnim(restingRef.current);
+		setSixSevenActive(false);
+		setReaction(null);
 	};
-	useEffect(() => clearRevert, []); // clear the timer on unmount
 	// Mirror /item-anchor screen rel-placement overrides (dev-only).
 	const [relOverrides, setRelOverrides] = useState<
 		Record<string, RelSpec>
@@ -118,17 +112,9 @@ export default function SwipeElement({
 		}, [])
 	);
 
-	// Resting pose follows mood (happiness) — but NEVER while a reaction or the
-	// 6-7 celebration is playing. (The old flash: `happy` doubles as a rest pose,
-	// so a happy REACTION got yanked back to idle mid-play. activeReactionRef gates
-	// it now.)
-	useEffect(() => {
-		if (activeReactionRef.current === null) setPigAnim(restingAnim);
-	}, [restingAnim]);
-
 	// Weighted reaction pool — jump is the default vibe, others are "spice".
 	// 3/6 = 50% jump, 1/6 each of happy/surprise/wave.
-	const REACTIONS: PigAnimation[] = [
+	const REACTIONS: PigReactionKind[] = [
 		"jump",
 		"jump",
 		"jump",
@@ -137,20 +123,15 @@ export default function SwipeElement({
 		"wave",
 	];
 
-	// Play one reaction + run the tickle. Cuts whatever's currently playing (a
-	// tap always interrupts), then arms a single revert timer back to rest.
+	// Sequence identity makes even consecutive identical taps interrupt immediately.
 	const fireReaction = () => {
 		if (canTickle) {
-			const pick = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
-			// CUT whatever's playing (clear its revert), then start the new one.
-			clearRevert();
-			activeReactionRef.current = pick;
-			setPigAnim(pick);
-			// One revert timer = both the natural exit AND the watchdog. loop:false
-			// (jump/surprise) also exit early via onComplete; loop:true (happy/wave)
-			// play exactly one full cycle then this fires. +120ms lets the final
-			// frame settle before reverting.
-			revertTimer.current = setTimeout(goToRest, animDurationMs(pick) + 120);
+			const kind = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
+			activeReactionRef.current = kind;
+			setSixSevenActive(false);
+			rotate.stopAnimation();
+			rotate.setValue(0);
+			setReaction({ id: ++reactionSequence.current, kind });
 		}
 		onLuckySwipe();
 	};
@@ -163,32 +144,17 @@ export default function SwipeElement({
 				? Haptics.ImpactFeedbackStyle.Light
 				: Haptics.ImpactFeedbackStyle.Soft
 		).catch(() => {});
-		Animated.sequence([
-			Animated.timing(scale, {
-				toValue: 0.94,
-				duration: 70,
-				useNativeDriver: true,
-			}),
-			Animated.spring(scale, {
-				toValue: 1,
-				friction: 4,
-				useNativeDriver: true,
-			}),
-		]).start();
+		// Rosie's press now lives in `squashAndSpring` — the recipe every other
+		// press in the app is matched to, policy and all. Reduce Motion is
+		// handled inside it (rest pose), so the only gate left here is the one
+		// this surface owns: Rive drives its own press.
+		if (!riveActive) squashAndSpring(scale, motion).start();
 
 		// A tickle ALWAYS interrupts: cut whatever Rosie is doing and kick off a
 		// fresh reaction. (The old path QUEUED the tap and replayed it once the
 		// current reaction ended — those back-to-back replays were the other half
 		// of the "flashing".)
 		fireReaction();
-	};
-
-	// A loop:false reaction (jump / surprise) finished its single play → settle
-	// back to rest. No-op if a tickle already cut to a new reaction: SpritePig
-	// clears the old frame interval on the swap, so a cut anim's onComplete never
-	// fires, and goToRest is idempotent anyway.
-	const handleAnimComplete = () => {
-		goToRest();
 	};
 
 	// 6-7 bounce sequence triggered by playSixSeven counter changing.
@@ -232,9 +198,9 @@ export default function SwipeElement({
 		sevenY.setValue(0);
 		// The 6-7 is a special celebration reaction — register it so the mood
 		// effect won't yank it and so a tickle can cut it like any other.
-		clearRevert();
 		activeReactionRef.current = "sixseven";
-		setPigAnim("happy");
+		setReaction(null);
+		setSixSevenActive(true);
 
 		try {
 			sixSevenPlayer.seekTo(0);
@@ -244,7 +210,8 @@ export default function SwipeElement({
 			() => {}
 		);
 
-		Animated.sequence([
+		if (motion.reduceMotion) { goToRest(); return; }
+		const celebration = Animated.sequence([
 			// "6" — tilt left + 6 text
 			Animated.parallel([tilt(-1), popText(sixOpacity, sixY)]),
 			tilt(1),
@@ -252,7 +219,8 @@ export default function SwipeElement({
 			Animated.parallel([tilt(-1, 180), popText(sevenOpacity, sevenY)]),
 			tilt(1, 180),
 			tilt(0, 200),
-		]).start(() => {
+		]);
+		celebration.start(() => {
 			// Revert only if the 6-7 is still the active reaction (a tickle may
 			// have already cut it to a new one).
 			if (activeReactionRef.current === "sixseven") goToRest();
@@ -270,34 +238,15 @@ export default function SwipeElement({
 		const safetyTimer = setTimeout(() => {
 			if (activeReactionRef.current === "sixseven") goToRest();
 		}, 3000);
-		return () => clearTimeout(safetyTimer);
-	}, [playSixSeven, canTickle]);
+		return () => { clearTimeout(safetyTimer); celebration.stop(); };
+	}, [playSixSeven, motion.reduceMotion]);
 
+	// resolveSlot lives in PigStage now — the single source of truth shared with
+	// the preview modal — so this surface no longer resolves slots at all. The
+	// four re-resolutions that used to live here fed an in-card
+	// `AnchorDebugOverlay` that was retired with the old item-anchor tools;
+	// placement now belongs to tools/placement_studio.py. (2026-09-11)
 	const mainEquipped: EquippedItem | null = equipped ?? null;
-
-	// resolveSlot lives in PigStage now (single source of truth shared
-	// with the preview modal). SwipeElement still computes the main
-	// slot once here because the AnchorDebugOverlay below + the
-	// hideAccessory logic need the item id / image, and we want the
-	// computation to match what PigStage will render.
-	const main = resolveSlot(mainEquipped, pigAnim, pigFrameIdx, relOverrides);
-
-	// Dev-only: feed the in-card anchor/placement overlay (see below).
-	// Re-resolve aura + held here just for the debug overlay; PigStage
-	// will resolve them again internally for rendering. Cheap (pure
-	// function on cached refs) and keeps the debug visualization
-	// consistent with what PigStage paints.
-	const auraSlot = resolveSlot(equippedAura, pigAnim, pigFrameIdx, relOverrides);
-	const heldSlot = resolveSlot(equippedHeld, pigAnim, pigFrameIdx, relOverrides);
-	const debugItems: DebugItem[] = __DEV__
-		? [main, auraSlot, heldSlot]
-				.filter((s) => s && s.overlay)
-				.map((s) => ({
-					label: s!.itemId,
-					category: s!.category,
-					overlay: s!.overlay!,
-				}))
-		: [];
 
 	const rotateDeg = rotate.interpolate({
 		inputRange: [-1, 1],
@@ -331,25 +280,28 @@ export default function SwipeElement({
 								{
 									scale: Animated.multiply(
 										scale,
-										ANIM_SCALE[pigAnim] ?? 1
+										motion.reduceMotion || riveActive ? 1 : ANIM_SCALE[pigAnim] ?? 1
 									),
 								},
-								{ rotate: rotateDeg },
+								{ rotate: motion.reduceMotion || riveActive ? "0deg" : rotateDeg },
 							],
 						},
 					]}
 				>
 					<PigStage
+						active={active}
 						pigId={pigId}
-						pigAnimation={pigAnim}
+						pigAnimation={sixSevenActive ? "bounce" : "idle"}
+						onRendererChange={(kind) => setRiveActive(kind === "rive")}
+						pigMood={restingMood}
+						pigReaction={reaction}
 						pigFrameIdx={pigFrameIdx}
 						onPigFrame={setPigFrameIdx}
-						onPigComplete={
-							pigAnim === "jump" || pigAnim === "surprise"
-							? handleAnimComplete
-							: undefined
-						}
+						onPigComplete={() => {
+							if (activeReactionRef.current !== "sixseven") goToRest();
+						}}
 						equipped={mainEquipped}
+						equippedBow={equippedBow}
 						equippedGlasses={equippedGlasses}
 						equippedMask={equippedMask}
 						equippedNeck={equippedNeck}
@@ -364,7 +316,7 @@ export default function SwipeElement({
 			<Animated.Text
 				style={[
 					styles.bigDigit,
-					{ left: 40, opacity: sixOpacity, transform: [{ translateY: sixY }], pointerEvents: "none" },
+					{ left: SIX_SEVEN_INSET, opacity: sixOpacity, transform: [{ translateY: sixY }], pointerEvents: "none" },
 				]}
 			>
 				6
@@ -372,7 +324,7 @@ export default function SwipeElement({
 			<Animated.Text
 				style={[
 					styles.bigDigit,
-					{ right: 40, opacity: sevenOpacity, transform: [{ translateY: sevenY }], pointerEvents: "none" },
+					{ right: SIX_SEVEN_INSET, opacity: sevenOpacity, transform: [{ translateY: sevenY }], pointerEvents: "none" },
 				]}
 			>
 				7
@@ -386,46 +338,27 @@ const styles = StyleSheet.create({
 		width: "100%",
 		alignItems: "center",
 		justifyContent: "center",
-		marginVertical: 20,
+		marginVertical: SPACE.xl,
 	},
+	// The pig's stage. Deliberately unclipped — overlay items (hats, glasses)
+	// anchor to body parts and may extend past the card edge during big motions
+	// like jump; clipping lopped off ear-tips and wide hats.
 	card: {
-		width: 300,
-		height: 300,
-		borderRadius: 15,
+		width: ART_SIZE.stage,
+		height: ART_SIZE.stage,
+		borderRadius: RADII.lg,
 		backgroundColor: "transparent",
 	},
-	cardImage: {
-		width: "100%",
-		height: "100%",
-		borderRadius: 15,
-		// Don't clip — overlay items (hats, glasses) anchor to body parts
-		// and may extend slightly past the 300×300 card edge during big
-		// motions like jump. Clipping here was lopping off ear-tips and
-		// the right side of monocle/wide hats.
-	},
-	cardImageStyle: {
-		borderRadius: 15,
-	},
-	overlayBox: {
-		position: "absolute",
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	fillImage: {
-		width: "100%",
-		height: "100%",
-	},
-	emojiPlaceholder: {
-		textAlign: "center",
-	},
+	// Caprasimo at 90 reads heavier and more hand-made than the system Black it
+	// replaced, and the celebration now uses the palette it lives in. [E19]
 	bigDigit: {
 		position: "absolute",
-		bottom: 100,
-		fontSize: 90,
-		fontWeight: "900",
-		color: "#fff",
-		textShadowColor: "#D17C92",
-		textShadowOffset: { width: 0, height: 4 },
+		bottom: SIX_SEVEN_BOTTOM,
+		fontFamily: FONTS.whimsy,
+		fontSize: SIX_SEVEN_DIGIT_SIZE,
+		color: WHIMSY.paper,
+		textShadowColor: WHIMSY.roseDeep,
+		textShadowOffset: { width: 0, height: SPACE.xs },
 		textShadowRadius: 0,
 	},
 });

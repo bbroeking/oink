@@ -13,8 +13,9 @@
 // FALLBACK DEFAULTS. The live values are SERVER-AUTHORITATIVE — the
 // app_settings.feeding_schedule row (migration 20260744100000), fetched and
 // clamped by utils/feedingConfig.ts — so a future schedule change is one
-// server UPDATE, never a binary. Keep these in sync with the seeded row
-// anyway: they're what a fresh install ticks on before its first fetch.
+// server UPDATE for modes the installed client understands. New modes require
+// a compatible binary first. These defaults match the original seeded row and
+// are used before the first fetch.
 export const ROOTING_WINDOW_SECS = 28800; // 8h feedings — 3 per day
 // The window anchor: boundaries sit at 02:00 / 10:00 / 18:00 UTC (epoch minus
 // this offset, bucketed by 8h). Founder call 2026-07-16 — the US-Eastern sweet
@@ -29,20 +30,24 @@ export const ROOTING_WINDOW_OFFSET_SECS = 7200; // +2h — windows at 02/10/18 U
 // patch_phase_open() — migrations 20260721000000 + 20260744000000.
 export const PATCH_OPEN_SECS = 14400;
 
-// Server-clock commuter schedule (America/New_York). Unlike PR #52's proposed
-// phone-local offset, these values never travel through an RPC argument: the
-// database resolves Eastern civil time itself, so changing a phone's clock or
-// timezone cannot create another eligible board. The client mirrors the clock
-// only for display and is always overruled by open_rooting()/submit_rooting().
+// Server-owned commuter schedules: legacy Eastern hours or three player-local
+// Feedings at 08–12, 16–20 and 00–04. The database resolves civil time from the
+// persisted zone; dig RPCs accept no phone offset. The client clock is for
+// display and is always overruled by open_rooting()/submit_rooting().
 export const DIG_TIME_ZONE = "America/New_York";
 export const DIG_DAY_ANCHOR_MIN = 360; // 6:00am Eastern
+export const DIG_LOCAL_DAY_ANCHOR_MIN = 480; // 8:00am in the persisted player zone
 export const DIG_DAY_MIN = 1440;
 export const DIG_BUCKET_STARTS = [0, 360, 660, 900] as const;
 export const DIG_BUCKET_OPEN_MINS = [240, 120, 180, 120] as const;
 export const DIG_WINDOWS_PER_DAY = DIG_BUCKET_STARTS.length;
-export const STIR_BUDGET = 20;  // a session ends (gracefully) at full stir
-export const STIR_RUB = 1;      // quiet scratch
-export const STIR_SHOVE = 3;    // loud scoop
+export const DIG_LOCAL_BUCKET_STARTS = [0, 480, 960] as const;
+export const DIG_LOCAL_BUCKET_OPEN_MINS = [240, 240, 240] as const;
+export const DIG_LOCAL_WINDOWS_PER_DAY = DIG_LOCAL_BUCKET_STARTS.length;
+export const DIG_LOCAL_WINDOW_ID_OFFSET = 1_000_000_000;
+export const STIR_BUDGET = 20; // a session ends (gracefully) at full stir
+export const STIR_RUB = 1; // quiet scratch
+export const STIR_SHOVE = 3; // loud scoop
 export const SHOVE_HOLD_MS = 400;
 export const PATCH_COLS = 6;
 export const PATCH_ROWS = 5;
@@ -64,65 +69,112 @@ export const RACE_QUORUM = 2;
 // the floor for any remaining ranked crew.
 // MUST match supabase/migrations/20260719000000.
 export const RACE_TRUFFLE_TABLE = {
-	1: 6,
-	2: 5,
-	3: 4,
-	topHalf: 3,
-	ranked: 2,
+  1: 6,
+  2: 5,
+  3: 4,
+  topHalf: 3,
+  ranked: 2,
 } as const;
 
 // ── The Truffle Exchange (Season 1 P4) — client mirror. ──────────────────────
 // MUST MATCH supabase/migrations/20260704300000_truffle_exchange.sql:
 // exchange_week_stock()'s tier arrays (alphabetic within tier) + token_cost
 // prices + the milestone table in mint_mud_milestones().
-export type ExchangeTier = "muddy" | "caked" | "prize" | "champion" | "heirloom";
+export type ExchangeTier =
+  "muddy" | "caked" | "prize" | "champion" | "heirloom";
 
 export const EXCHANGE_TIERS: Record<ExchangeTier, readonly string[]> = {
-	muddy: ["mud_pit_bg", "mud_shovel", "mud_splatter_aura", "muddy_cap", "slop_bucket"],
-	caked: ["mud_pie", "reed_hat", "reed_marsh_bg", "slop_bucket_hat", "swamp_bubble_aura"],
-	prize: ["bog_helmet", "crew_pennant", "firefly_aura", "golden_truffle", "mud_derby_bg", "prize_sash", "rosette_cap"],
-	champion: ["bog_dusk_bg", "confetti_aura", "festival_pennant", "golden_bog_aura", "swamp_crown"],
-	heirloom: ["festival_night_bg", "golden_mire_bg", "heirloom_mire_aura"],
+  muddy: [
+    "mud_pit_bg",
+    "mud_shovel",
+    "mud_splatter_aura",
+    "muddy_cap",
+    "slop_bucket",
+  ],
+  caked: [
+    "mud_pie",
+    "reed_hat",
+    "reed_marsh_bg",
+    "slop_bucket_hat",
+    "swamp_bubble_aura",
+  ],
+  prize: [
+    "bog_helmet",
+    "crew_pennant",
+    "firefly_aura",
+    "golden_truffle",
+    "mud_derby_bg",
+    "prize_sash",
+    "rosette_cap",
+  ],
+  champion: [
+    "bog_dusk_bg",
+    "confetti_aura",
+    "festival_pennant",
+    "golden_bog_aura",
+    "swamp_crown",
+  ],
+  heirloom: ["festival_night_bg", "golden_mire_bg", "heirloom_mire_aura"],
 };
 
 export const EXCHANGE_PRICES: Record<ExchangeTier, number> = {
-	muddy: 25,
-	caked: 60,
-	prize: 120,
-	champion: 250,
-	heirloom: 500,
+  muddy: 25,
+  caked: 60,
+  prize: 120,
+  champion: 250,
+  heirloom: 500,
 };
 
 // Tier names relabel the shipped hats.rarity values (spec §5).
 export const RARITY_TO_TIER: Record<string, ExchangeTier> = {
-	common: "muddy",
-	uncommon: "caked",
-	rare: "prize",
-	epic: "champion",
-	legendary: "heirloom",
+  common: "muddy",
+  uncommon: "caked",
+  rare: "prize",
+  epic: "champion",
+  legendary: "heirloom",
 };
 
 export const EXCHANGE_TIER_LABEL: Record<ExchangeTier, string> = {
-	muddy: "Muddy",
-	caked: "Caked",
-	prize: "Prize",
-	champion: "Champion",
-	heirloom: "Heirloom",
+  muddy: "Muddy",
+  caked: "Caked",
+  prize: "Prize",
+  champion: "Champion",
+  heirloom: "Heirloom",
 };
 
 // In-week personal milestone mints (cross threshold → truffles).
 export const TRUFFLE_MILESTONES: ReadonlyArray<readonly [number, number]> = [
-	[10, 5],
-	[25, 10],
-	[50, 15],
+  [10, 5],
+  [25, 10],
+  [50, 15],
 ];
 
 // The pool of exclusive cosmetics surfaced in the Exchange + the rewards
 // catalog. Sourced from the seeded cost=0 items (unbuyable with snouts).
 export const EXCHANGE_ITEM_IDS = [
-	"muddy_cap", "slop_bucket_hat", "reed_hat", "bog_helmet", "swamp_crown",
-	"slop_bucket", "mud_shovel", "mud_pie", "golden_truffle", "crew_pennant",
-	"mud_splatter_aura", "swamp_bubble_aura", "firefly_aura", "golden_bog_aura", "heirloom_mire_aura",
-	"mud_pit_bg", "reed_marsh_bg", "mud_derby_bg", "bog_dusk_bg", "golden_mire_bg", "festival_night_bg",
-	"rosette_cap", "prize_sash", "festival_pennant", "confetti_aura",
+  "muddy_cap",
+  "slop_bucket_hat",
+  "reed_hat",
+  "bog_helmet",
+  "swamp_crown",
+  "slop_bucket",
+  "mud_shovel",
+  "mud_pie",
+  "golden_truffle",
+  "crew_pennant",
+  "mud_splatter_aura",
+  "swamp_bubble_aura",
+  "firefly_aura",
+  "golden_bog_aura",
+  "heirloom_mire_aura",
+  "mud_pit_bg",
+  "reed_marsh_bg",
+  "mud_derby_bg",
+  "bog_dusk_bg",
+  "golden_mire_bg",
+  "festival_night_bg",
+  "rosette_cap",
+  "prize_sash",
+  "festival_pennant",
+  "confetti_aura",
 ] as const;

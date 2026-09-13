@@ -27,6 +27,14 @@ function textOf(tree: TestRenderer.ReactTestInstance): string {
 	return out.join("");
 }
 
+// The Pressable inside a primitive that forwards `testID` — where the
+// accessibility props actually land.
+function pressableFor(r: TestRenderer.ReactTestRenderer, testID: string) {
+	return r.root.findAll(
+		(n) => n.props.testID === testID && !!n.props.accessibilityRole
+	)[0];
+}
+
 async function renderAct(node: React.ReactElement) {
 	let r!: TestRenderer.ReactTestRenderer;
 	await act(async () => { r = TestRenderer.create(node); });
@@ -114,6 +122,40 @@ describe("RitualPicker", () => {
 			await Promise.resolve();
 		});
 		expect(onCast).toHaveBeenCalled();
+		act(() => r.unmount());
+	});
+
+	// Audit A-05: casting is an irreversible once-per-friend-per-day send, so the
+	// control names its TARGET in its label and its consequence in its hint.
+	test("the cast button names its target, its consequence and its state", async () => {
+		const r = await renderAct(
+			<RitualPicker mode="bless" targetUserId="u1" targetName="alice" />
+		);
+		// `findByProps` is shallow, and the shallowest match is the `Button`
+		// element; the a11y props live on the Pressable it renders.
+		const btn = pressableFor(r, "ritual-cast");
+		expect(btn.props.accessibilityRole).toBe("button");
+		expect(btn.props.accessibilityLabel).toBe("Bless alice");
+		expect(btn.props.accessibilityHint).toContain("alice");
+		expect(btn.props.accessibilityHint).toContain("can't be taken back");
+		expect(btn.props.accessibilityState).toEqual(
+			expect.objectContaining({ disabled: false })
+		);
+		act(() => r.unmount());
+	});
+
+	// Audit A-15: a spent allowance keeps the button's chrome and reports
+	// `disabled` — it does not dissolve to an opacity crush.
+	test("no rituals left today disables the cast button", async () => {
+		mockRpc.mockResolvedValue({
+			data: { ok: true, bless_used: 1, bless_cap: 1 },
+			error: null,
+		});
+		const r = await renderAct(
+			<RitualPicker mode="bless" targetUserId="u1" targetName="alice" />
+		);
+		const btn = pressableFor(r, "ritual-cast");
+		expect(btn.props.accessibilityState.disabled).toBe(true);
 		act(() => r.unmount());
 	});
 

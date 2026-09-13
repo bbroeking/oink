@@ -197,7 +197,9 @@ until docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1; do :; done
 
 # The commuter schedule intentionally replaces the legacy uniform clock. Apply
 # it only after historical clock smokes pin their own migrations, then exercise
-# the new authoritative clock in smoke 62.
+# the new authoritative clock in smoke 62. The Sounder-message prep later pins
+# _patch_clock to one fixture window, so the production clock is applied again
+# after smoke 68 before the perfect-week schedule is enumerated.
 cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/[1234]*_smoke.sql \
 		scripts/db-harness/54_feedback_den_smoke.sql \
@@ -210,6 +212,64 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/61_enemy_rankings_smoke.sql \
 		supabase/migrations/20260799000000_server_clock_commuter_windows.sql \
 		scripts/db-harness/62_commuter_clock_smoke.sql \
+		supabase/migrations/20260813000000_player_dig_stats.sql \
+		scripts/db-harness/63_player_dig_stats_smoke.sql \
+		scripts/db-harness/00i_mote_machine_prep.sql \
+		supabase/migrations/20260813010000_mote_machine.sql \
+		scripts/db-harness/64_mote_machine_smoke.sql \
+		scripts/db-harness/00k_sluggish_snout_regen_prep.sql \
+		supabase/migrations/20260826000000_preserve_sluggish_snout_regen.sql \
+		scripts/db-harness/66_sluggish_snout_regen_smoke.sql \
+		scripts/db-harness/00j_feeding_push_prep.sql \
+		supabase/migrations/20260826020000_persistent_feeding_pushes.sql \
+		scripts/db-harness/65_feeding_pushes_smoke.sql \
+		scripts/db-harness/00l_independent_bow_slot_prep.sql \
+		supabase/migrations/20260826030000_independent_bow_slot.sql \
+		scripts/db-harness/67_independent_bow_slot_smoke.sql \
+		scripts/db-harness/00m_sounder_messages_prep.sql \
+		supabase/migrations/20260826040000_preset_sounder_messages.sql \
+		scripts/db-harness/68_sounder_messages_smoke.sql \
+		supabase/migrations/20260799000000_server_clock_commuter_windows.sql \
+		supabase/migrations/20260829000000_contraptions_and_streaks.sql \
+		scripts/db-harness/70_contraptions_and_streaks_smoke.sql \
+		supabase/migrations/20260829010000_perfect_feeding_week.sql \
+		scripts/db-harness/69_perfect_feeding_week_smoke.sql \
+		scripts/db-harness/00n_prestige_mote_prep.sql \
+		supabase/migrations/20260769000000_prestige_wallow.sql \
+		supabase/migrations/20260773000000_claim_season_consolidation.sql \
+		supabase/migrations/20260779000000_prestige_curve_and_visit_window.sql \
+		supabase/migrations/20260784000000_wallow_truffle_overflow.sql \
+		supabase/migrations/20260812010000_auto_apply_season_pass_tickles.sql \
+		supabase/migrations/20260905174000_prestige_mote_rewards.sql \
+		scripts/db-harness/71_prestige_mote_rewards_smoke.sql \
+		supabase/migrations/20260906010000_mote_wagering_v2.sql \
+		scripts/db-harness/72_mote_wagering_v2_smoke.sql \
+		supabase/migrations/20260786000000_interaction_analytics.sql \
+		scripts/db-harness/00o_habitat_prep.sql \
+		supabase/migrations/20260906190000_player_barn_housing.sql \
+		scripts/db-harness/73_habitat_smoke.sql \
+		scripts/db-harness/74_habitat_concurrency_smoke.sql \
+		supabase/migrations/20260907010000_barn_furnishing_expansion.sql \
+		scripts/db-harness/76_barn_furnishing_expansion_smoke.sql \
+		scripts/db-harness/77_barn_furnishing_expansion_concurrency_smoke.sql \
+		supabase/migrations/20260908000000_habitat_starter_provisioning.sql \
+		scripts/db-harness/78_habitat_starter_provisioning_smoke.sql \
+		scripts/db-harness/00q_habitat_prestige_prep.sql \
+		supabase/migrations/20260910120000_habitat_prestige_rewards.sql \
+		scripts/db-harness/79_habitat_prestige_rewards_smoke.sql \
+		scripts/db-harness/00r_habitat_completion_prep.sql \
+		supabase/migrations/20260910130000_habitat_completion.sql \
+		scripts/db-harness/80_habitat_completion_smoke.sql \
+		scripts/db-harness/00s_empty_starter_barns_prep.sql \
+		supabase/migrations/20260912153621_empty_starter_barns.sql \
+		scripts/db-harness/81_empty_starter_barns_smoke.sql \
+		supabase/migrations/20260906200000_mote_secure_bucket_extension_resolution.sql \
+		scripts/db-harness/75_mote_secure_bucket_extension_resolution_smoke.sql \
+		supabase/migrations/20260913000000_player_local_feeding_schedule.sql \
+		scripts/db-harness/82_player_local_feeding_smoke.sql \
+		supabase/migrations/20260913010000_durable_rooting_receipts.sql \
+		scripts/db-harness/83_durable_rooting_receipt_smoke.sql \
+		scripts/db-harness/84_durable_rooting_receipt_concurrency_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

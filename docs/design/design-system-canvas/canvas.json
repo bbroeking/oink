@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1240, "h": 2000, "title": "Foundations" },
+    { "file": "Components.dc.html", "x": 1360, "y": 0, "w": 1240, "h": 2560, "title": "Components" },
+    { "file": "Screen.dc.html", "x": 2720, "y": 0, "w": 390, "h": 844, "title": "Rebuilt from the system — Dig-Off" },
+    { "file": "Rules.dc.html", "x": 2720, "y": 1000, "w": 900, "h": 1900, "title": "Rules", "print": "flow" }
+  ],
+  "annotations": [
+    { "id": "read-me", "x": -600, "y": 0, "w": 480, "text": "TTP design system v1 (2026-09-11).\nShipped values are lifted verbatim from constants/theme.ts; proposed tokens and components are marked. The phone frame is the proof: one stack screen composed only from the sheet.\nCompanion spec: docs/design/design-system-spec.md" }
+  ],
+  "launch": { "view": "canvas" }
+}

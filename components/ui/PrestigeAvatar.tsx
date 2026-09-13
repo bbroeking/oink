@@ -1,7 +1,8 @@
 import React from "react";
-import { Image, StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { Image, StyleSheet, View, type ViewStyle } from "react-native";
+import { BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import { PigAvatar } from "./PigAvatar";
+import { T } from "./Text";
 
 const AURAS = {
 	1: require("../../assets/images/prestige/wallow_aura_w1.png"),
@@ -11,40 +12,54 @@ const AURAS = {
 	5: require("../../assets/images/prestige/wallow_aura_w5.png"),
 } as const;
 
+// Drawing geometry. The core pig is inset inside the aura ring; the rank badge
+// tucks under it and narrows once the frame drops below a sheet-header size.
+const CORE_FRAC = 0.57;
+const BADGE_DROP = -2;
+const BADGE_MIN_WIDTH = 28;
+const BADGE_MIN_WIDTH_SMALL = 22;
+const SMALL_FRAME = 46;
+
 export function PrestigeAvatar({
 	size = 40,
 	hatId,
+	bowId,
 	prestigeLevel = 0,
 	showRank = true,
 	style,
 }: {
 	size?: number;
 	hatId?: string | null;
+	bowId?: string | null;
 	prestigeLevel?: number | null;
 	showRank?: boolean;
 	style?: ViewStyle;
 }) {
 	const rank = Math.max(0, Math.floor(prestigeLevel ?? 0));
-	if (rank === 0) return <PigAvatar size={size} hatId={hatId} style={style} />;
+	if (rank === 0) return <PigAvatar size={size} hatId={hatId} bowId={bowId} style={style} />;
 
 	const visualStage = Math.min(5, rank) as keyof typeof AURAS;
-	const coreSize = Math.round(size * 0.57);
+	const coreSize = Math.round(size * CORE_FRAC);
+	const small = size < SMALL_FRAME;
 	return (
 		<View
 			style={[styles.root, { width: size, height: size }, style]}
+			accessible
+			accessibilityRole="image"
 			accessibilityLabel={`Wallow Rank ${rank}`}
 		>
 			<Image
 				source={AURAS[visualStage]}
 				style={{ position: "absolute", width: size, height: size }}
 				resizeMode="contain"
+				accessible={false}
 			/>
 			<View style={styles.core}>
-				<PigAvatar size={coreSize} hatId={hatId} border={WHIMSY.ink} />
+				<PigAvatar size={coreSize} hatId={hatId} bowId={bowId} border={WHIMSY.ink} />
 			</View>
 			{showRank && (
-				<View style={[styles.badge, size < 46 && styles.badgeSmall]}>
-					<Text style={[styles.badgeText, size < 46 && styles.badgeTextSmall]}>W{rank}</Text>
+				<View style={[styles.badge, small && styles.badgeSmall]}>
+					<T role="label" align="center">W{rank}</T>
 				</View>
 			)}
 		</View>
@@ -56,22 +71,20 @@ const styles = StyleSheet.create({
 	core: { alignItems: "center", justifyContent: "center" },
 	badge: {
 		position: "absolute",
-		bottom: -2,
-		minWidth: 28,
-		paddingHorizontal: 5,
-		paddingVertical: 2,
-		borderRadius: 9,
-		borderWidth: 1.5,
+		bottom: BADGE_DROP,
+		minWidth: BADGE_MIN_WIDTH,
+		paddingHorizontal: SPACE.xs,
+		paddingVertical: SPACE.xxs,
+		borderRadius: RADII.sm,
+		borderWidth: BORDER.thin,
 		borderColor: WHIMSY.ink,
-		backgroundColor: "#D9A45D",
+		// The Wallow-rank gilt. Was a raw `#D9A45D` — a genuinely new semantic
+		// colour introduced by leak rather than by token. [B-05] (2026-09-11)
+		backgroundColor: WHIMSY.prestige,
 	},
-	badgeSmall: { minWidth: 22, paddingHorizontal: 3, paddingVertical: 1 },
-	badgeText: {
-		fontFamily: FONTS.bodyBlack,
-			fontSize: 11,
-			lineHeight: 12,
-		textAlign: "center",
-		color: WHIMSY.ink,
+	badgeSmall: {
+		minWidth: BADGE_MIN_WIDTH_SMALL,
+		paddingHorizontal: SPACE.xxs,
+		paddingVertical: SPACE.xxs,
 	},
-		badgeTextSmall: { fontSize: 11, lineHeight: 12 },
 });

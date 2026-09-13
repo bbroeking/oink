@@ -6,7 +6,6 @@
 // needs an e2e/Detox pass — but it locks the JS wiring.)
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
-import { Pressable } from "react-native";
 
 jest.mock("expo-audio", () => ({
 	useAudioPlayer: () => ({ seekTo: jest.fn(), play: jest.fn() }),
@@ -18,7 +17,7 @@ jest.mock("expo-haptics", () => ({
 	ImpactFeedbackStyle: { Light: "light", Soft: "soft", Medium: "medium" },
 	NotificationFeedbackType: { Success: "success", Warning: "warning", Error: "error" },
 }));
-jest.mock("@react-navigation/native", () => ({ useFocusEffect: jest.fn() }));
+jest.mock("expo-router/react-navigation", () => ({ useFocusEffect: jest.fn() }));
 jest.mock("@react-native-async-storage/async-storage", () => ({
 	getItem: jest.fn().mockResolvedValue(null),
 	setItem: jest.fn().mockResolvedValue(undefined),
@@ -27,10 +26,6 @@ jest.mock("../constants/hats", () => ({ HAT_IMAGES: {}, HAT_REL: {} }));
 jest.mock("../components/ui/PigStage", () => ({
 	PigStage: () => null,
 	resolveSlot: () => null,
-}));
-jest.mock("../components/ui/SpritePig", () => ({
-	PigAnimation: {},
-	animDurationMs: () => 1000,
 }));
 jest.mock("../components/dev/AnchorDebugOverlay", () => ({
 	AnchorDebugOverlay: () => null,
@@ -46,13 +41,17 @@ async function renderAct(node: React.ReactElement) {
 	return r;
 }
 
+function pigButton(renderer: TestRenderer.ReactTestRenderer, label = "Tickle Rosie") {
+	return renderer.root.findByProps({ accessibilityLabel: label });
+}
+
 describe("SwipeElement — pig tap wiring", () => {
 	test("tapping the pig fires onLuckySwipe when tickles are available", async () => {
 		const onLuckySwipe = jest.fn();
 		const r = await renderAct(
 			<SwipeElement onLuckySwipe={onLuckySwipe} canTickle={true} />
 		);
-		const pressable = r.root.findByType(Pressable);
+		const pressable = pigButton(r);
 		await act(async () => {
 			pressable.props.onPress();
 		});
@@ -65,7 +64,7 @@ describe("SwipeElement — pig tap wiring", () => {
 		const r = await renderAct(
 			<SwipeElement onLuckySwipe={onLuckySwipe} canTickle={false} />
 		);
-		const pressable = r.root.findByType(Pressable);
+		const pressable = pigButton(r);
 		await act(async () => {
 			pressable.props.onPress();
 		});
@@ -81,7 +80,7 @@ describe("SwipeElement — pig tap wiring", () => {
 		const r = await renderAct(
 			<SwipeElement onLuckySwipe={onLuckySwipe} canTickle={true} />
 		);
-		const pressable = r.root.findByType(Pressable);
+		const pressable = pigButton(r);
 
 		// 1st tap (pig at rest) → fires a reaction + the tickle.
 		await act(async () => {
@@ -105,7 +104,7 @@ describe("SwipeElement — pig tap wiring", () => {
 		const r = await renderAct(
 			<SwipeElement onLuckySwipe={jest.fn()} canTickle={true} />
 		);
-		const pressable = r.root.findByType(Pressable);
+		const pressable = pigButton(r);
 		expect(typeof pressable.props.onPress).toBe("function");
 		expect(pressable.props.disabled).toBeFalsy();
 		expect(pressable.props.accessibilityRole).toBe("button");
@@ -121,7 +120,7 @@ describe("SwipeElement — pig tap wiring", () => {
 				canTickle={true}
 			/>
 		);
-		const pressable = r.root.findByType(Pressable);
+		const pressable = pigButton(r, "Tickle Copper");
 		expect(pressable.props.accessibilityLabel).toBe("Tickle Copper");
 		act(() => r.unmount());
 	});

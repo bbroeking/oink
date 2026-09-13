@@ -1,0 +1,207 @@
+{
+  "version": "mote-audio-v1",
+  "sample_rate": 44100,
+  "channels": 1,
+  "source": "scripts/audio/author-mote-suite.py",
+  "authorship": "Original deterministic synthesis; no third-party samples.",
+  "cues": [
+    {
+      "cue": "room_tone",
+      "file": "room_tone.wav",
+      "duration_ms": 4000,
+      "loop": true,
+      "peak_dbfs": -25.65,
+      "rms_dbfs": -40.88,
+      "sha256": "9f86b39835e23592ebdd28b9e492a7a3c4ee298c95c2ef74a10afc78f9607a13"
+    },
+    {
+      "cue": "mote_ready",
+      "file": "mote_ready.wav",
+      "duration_ms": 650,
+      "loop": false,
+      "peak_dbfs": -20.82,
+      "rms_dbfs": -34.91,
+      "sha256": "92a4d842ece95d6726b5fea67017ae5dc1e8eb38be7b67c462de334d86689e19"
+    },
+    {
+      "cue": "deposit_1",
+      "file": "deposit_1.wav",
+      "duration_ms": 420,
+      "loop": false,
+      "peak_dbfs": -15.34,
+      "rms_dbfs": -30.57,
+      "sha256": "350dfe01ec79a2474707126be3e418ebe656bab536e3e0bb481f489c5f699ffb"
+    },
+    {
+      "cue": "deposit_bundle",
+      "file": "deposit_bundle.wav",
+      "duration_ms": 480,
+      "loop": false,
+      "peak_dbfs": -13.49,
+      "rms_dbfs": -29.44,
+      "sha256": "17dff2c5fdaa70b86abc8c37a1619f0f182df4971bf3bf59dbc3077d90ce37e4"
+    },
+    {
+      "cue": "lever_down",
+      "file": "lever_down.wav",
+      "duration_ms": 320,
+      "loop": false,
+      "peak_dbfs": -10.95,
+      "rms_dbfs": -26.57,
+      "sha256": "3b70d72dab633c8983f2b3d36cd6e50250c77aeee973d1012668706323c60590"
+    },
+    {
+      "cue": "lever_return",
+      "file": "lever_return.wav",
+      "duration_ms": 420,
+      "loop": false,
+      "peak_dbfs": -14.67,
+      "rms_dbfs": -31.39,
+      "sha256": "1cf0e27ce643ef905d30930ca6b00b9e9e174698c8d7e1bc3f39331ce912b3aa"
+    },
+    {
+      "cue": "reel_start",
+      "file": "reel_start.wav",
+      "duration_ms": 450,
+      "loop": false,
+      "peak_dbfs": -21.09,
+      "rms_dbfs": -34.09,
+      "sha256": "8cb2d5c7784c071ada96226480b523fde6256b36e50b8bb3fc71dfa1f8eda481"
+    },
+    {
+      "cue": "reel_loop",
+      "file": "reel_loop.wav",
+      "duration_ms": 800,
+      "loop": true,
+      "peak_dbfs": -26.06,
+      "rms_dbfs": -40.93,
+      "sha256": "d6b5ee870c2b0583ab712683a5eab9db7513c3c93b0e9370ff04fd33bce14d5a"
+    },
+    {
+      "cue": "reel_stop_1",
+      "file": "reel_stop_1.wav",
+      "duration_ms": 320,
+      "loop": false,
+      "peak_dbfs": -12.51,
+      "rms_dbfs": -28.99,
+      "sha256": "1ed1ae6358887e371ae9a30571454cd64aad715af1299088efe6c7eaed5262c3"
+    },
+    {
+      "cue": "reel_stop_2",
+      "file": "reel_stop_2.wav",
+      "duration_ms": 320,
+      "loop": false,
+      "peak_dbfs": -12.15,
+      "rms_dbfs": -28.86,
+      "sha256": "cbbff304c6ac92c34e410f7b082c5ac33aa8c50e86e2439b5102dd798d12bb66"
+    },
+    {
+      "cue": "reel_stop_3",
+      "file": "reel_stop_3.wav",
+      "duration_ms": 320,
+      "loop": false,
+      "peak_dbfs": -11.96,
+      "rms_dbfs": -28.46,
+      "sha256": "2ba4d8766e399affc0d362ae84e63359d0415a93d46f0b4226ad99c52d305f62"
+    },
+    {
+      "cue": "loss",
+      "file": "loss.wav",
+      "duration_ms": 600,
+      "loop": false,
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -35.96,
+      "sha256": "cb95b3f00be5f9607826f863d6eb1b0c81f635db7d07a83989c58d844d50dc61"
+    },
+    {
+      "cue": "stake_returned",
+      "file": "stake_returned.wav",
+      "duration_ms": 650,
+      "loop": false,
+      "peak_dbfs": -17.34,
+      "rms_dbfs": -35.11,
+      "sha256": "e8c355a1f6dab2df135a570d83c55f91b567815e849f22de12e02b35a4f792ed"
+    },
+    {
+      "cue": "small",
+      "file": "small.wav",
+      "duration_ms": 800,
+      "loop": false,
+      "peak_dbfs": -15.66,
+      "rms_dbfs": -28.95,
+      "sha256": "34092b4504b0f29e1ac73d72e9fef371d9f58247a910e6c422f40f2251b73202"
+    },
+    {
+      "cue": "medium",
+      "file": "medium.wav",
+      "duration_ms": 950,
+      "loop": false,
+      "peak_dbfs": -15.66,
+      "rms_dbfs": -28.11,
+      "sha256": "5cef77f65f03390dccfcaefb982b950b93dde68819962f8e83107180edeb07d2"
+    },
+    {
+      "cue": "big",
+      "file": "big.wav",
+      "duration_ms": 1200,
+      "loop": false,
+      "peak_dbfs": -15.66,
+      "rms_dbfs": -28.11,
+      "sha256": "62d8c8fed4863da8a2708c296ad8c69c13d4cc7ef4de2fa6593d33e5cf7a17d2"
+    },
+    {
+      "cue": "jackpot",
+      "file": "jackpot.wav",
+      "duration_ms": 1950,
+      "loop": false,
+      "peak_dbfs": -12.14,
+      "rms_dbfs": -27.54,
+      "sha256": "5862fa0809a117734eb00e8715308b3a1fcb6b60783d789c51b5ed0a83db61b2"
+    },
+    {
+      "cue": "acorn_award",
+      "file": "acorn_award.wav",
+      "duration_ms": 550,
+      "loop": false,
+      "peak_dbfs": -15.25,
+      "rms_dbfs": -32.27,
+      "sha256": "5ca27647ce38daf2b4a6a2fdc2c2dc26f459427cef0f32f53b62876ac5ba934c"
+    },
+    {
+      "cue": "first_unlock",
+      "file": "first_unlock.wav",
+      "duration_ms": 900,
+      "loop": false,
+      "peak_dbfs": -18.56,
+      "rms_dbfs": -30.79,
+      "sha256": "3c0b84af8077cf12600f904789392e8aa516536c95c43310358b828e8542b4b5"
+    },
+    {
+      "cue": "receipt_replay",
+      "file": "receipt_replay.wav",
+      "duration_ms": 650,
+      "loop": false,
+      "peak_dbfs": -21.77,
+      "rms_dbfs": -36.16,
+      "sha256": "dd4ebe9decf0258f8b6dcf149473477068e14efefd740b1aa421f778835ad1ac"
+    },
+    {
+      "cue": "recovery_ok",
+      "file": "recovery_ok.wav",
+      "duration_ms": 400,
+      "loop": false,
+      "peak_dbfs": -25.56,
+      "rms_dbfs": -39.72,
+      "sha256": "97c665dd0f7772ca692568e94c399ca4419d24c5be38df429bc6d4bb89312b16"
+    },
+    {
+      "cue": "recovery_error",
+      "file": "recovery_error.wav",
+      "duration_ms": 450,
+      "loop": false,
+      "peak_dbfs": -22.58,
+      "rms_dbfs": -39.76,
+      "sha256": "8fde6957c809c275f6f1d898b0e97b4c42518644afb0538306831f34b3e5d233"
+    }
+  ]
+}

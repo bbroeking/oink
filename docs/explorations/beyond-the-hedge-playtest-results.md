@@ -4,7 +4,7 @@
 
 **Protocol:** docs/beyond-the-hedge-playtest-guide.md
 
-**Prototype:** https://bbroeking.github.io/oink/idle-lab.html?variant=A
+**Prototype:** https://ticklethepig.com/adventures?fresh=1
 
 ## Decision question
 
@@ -12,13 +12,13 @@
 
 ## Evidence received
 
-| Session | Start | Place | Causality | Dry Bag inference | Hedge Bell recall | Home change | Curious resend | Loot-primary | Strongest UI |
-| ------- | ----- | ----- | --------- | ----------------- | ----------------- | ----------- | -------------- | ------------ | ------------ |
-| 1       | A     | —     | —         | —                 | —                 | —           | —              | —            | —            |
-| 2       | B     | —     | —         | —                 | —                 | —           | —              | —            | —            |
-| 3       | C     | —     | —         | —                 | —                 | —           | —              | —            | —            |
-| 4       | A     | —     | —         | —                 | —                 | —           | —              | —            | —            |
-| 5       | B     | —     | —         | —                 | —                 | —           | —              | —            | —            |
+| Session | Device | Place | Causality | Dry Bag inference | Hedge Bell recall | Home change | Curious resend | Loot-primary | First hesitation |
+| ------- | ------ | ----- | --------- | ----------------- | ----------------- | ----------- | -------------- | ------------ | ---------------- |
+| 1       | —      | —     | —         | —                 | —                 | —           | —              | —            | —                |
+| 2       | —      | —     | —         | —                 | —                 | —           | —              | —            | —                |
+| 3       | —      | —     | —         | —                 | —                 | —           | —              | —            | —                |
+| 4       | —      | —     | —         | —                 | —                 | —           | —              | —            | —                |
+| 5       | —      | —     | —         | —                 | —                 | —           | —              | —            | —                |
 
 Use:
 
@@ -49,7 +49,7 @@ Copy this section once per tester.
 
 ### Session N
 
-**Starting variant:** A / B / C
+**Device / viewport:**
 
 **Unprimed behavioral evidence:**
 

@@ -8,29 +8,42 @@
 // Incoming trade rows are styled as Stockyard pen cards — the theme
 // the retired TickleTradeModal carried. See
 // docs/season-1-social-redesign.md §"The Inbox feed".
+//
+// Wave-3 conformance pass (2026-09-11): every band row is a `ListRow`, every
+// event mark is a shared drawing inside an `Avatar` (the six kinds each carry their own
+// fill, so no two events read alike) [B-07], and every control is a `Button`
+// with a role, a label and a hint [B-04, B-12].
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, Image, StyleSheet, Pressable, FlatList } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View, StyleSheet, FlatList } from "react-native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { usePostgresChanges } from "@/hooks/usePostgresChanges";
 import { ActiveEffects } from "./ActiveEffects";
+import { GameIcon } from "./ui/GameIcon";
 import {
-	FONTS,
-	WHIMSY,
-	STICKER_SHADOW,
-	SHADOW_SM,
-	RADII,
+	AVATAR_SIZE,
+	PAGE_PAD,
+	SPACE,
 	TAB_SAFE,
-	SPACE
 } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
-import { SectionHeader } from "./ui/SectionHeader";
-import { Sticker } from "./ui/Sticker";
-import { Icon } from "./ui/Icon";
-import { Glyph } from "./ui/Glyph";
-import { EmptyState, LoadingBeat } from "./ui/EmptyState";
+import {
+	Avatar,
+	Button,
+	CardTitle,
+	EmptyState,
+	IconButton,
+	Label,
+	ListRow,
+	LoadingBeat,
+	SectionHeader,
+	Sticker,
+	T,
+	type AvatarFill,
+	type GlyphName,
+} from "@/components/ui";
 import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
 import {
 	BLESSING_META,
@@ -40,6 +53,10 @@ import {
 	type RitualMeta,
 } from "../utils/rituals";
 import { DigPostcardInbox } from "./DigPostcardInbox";
+import {
+	fetchSounderMessages,
+	type SounderMessageRow,
+} from "@/utils/sounderMessages";
 
 interface FriendReq {
 	requester_id: string;
@@ -69,11 +86,35 @@ interface AcceptedFriend {
 	updated_at: string;
 }
 
+type PassiveKind =
+	| "answered"
+	| "gifted"
+	| "friended"
+	| "blessed"
+	| "cursed"
+	| "sounder";
+
 type PassiveEvent = {
 	id: string;
 	text: string;
-	kind: "answered" | "gifted" | "friended" | "blessed" | "cursed";
+	kind: PassiveKind;
 	at: number;
+};
+
+// The feed's mark vocabulary: ONE drawing per event kind — a hand-drawn mark
+// in an `Avatar` frame — and a fill nobody else wears, so two kinds are never
+// told apart by their glyph alone (the Gestalt-similarity failure the audit
+// found when `gifted` and `sounder` were both sun). [B-07] (2026-09-11)
+const KIND_MARK: Record<
+	PassiveKind,
+	{ glyph?: GlyphName; gameIcon?: "bless" | "curse"; fill: AvatarFill; word: string }
+> = {
+	answered: { glyph: "heart", fill: "rose", word: "trade answered" },
+	gifted: { glyph: "gift", fill: "sun", word: "gift given" },
+	friended: { glyph: "handshake", fill: "sage", word: "new friend" },
+	blessed: { gameIcon: "bless", fill: "lilac", word: "blessing" },
+	cursed: { gameIcon: "curse", fill: "curseSurface", word: "curse" },
+	sounder: { glyph: "crown", fill: "sky", word: "Sounder oink" },
 };
 
 // Inbox copy mirrors what the SENDER saw when they cast the effect
@@ -115,6 +156,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [blessings, setBlessings] = useState<RitualRow[]>([]);
 	const [curses, setCurses] = useState<RitualRow[]>([]);
 	const [acceptedFriends, setAcceptedFriends] = useState<AcceptedFriend[]>([]);
+	const [sounderMessages, setSounderMessages] = useState<SounderMessageRow[]>([]);
 	// Caller's tickle balance — drives "Give N" → "Need N more" on
 	// incoming trade cards when they can't afford to fulfill. Polled
 	// on every load(), so post-action refreshes catch the deduction.
@@ -130,6 +172,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		setOutgoingTrades(trades.filter((t) => t.status === "pending" && t.requester_id === userId));
 		setAnswered(trades.filter((t) => t.status === "fulfilled" && t.requester_id === userId));
 		setGifted(trades.filter((t) => t.status === "fulfilled" && t.target_id === userId));
+		setSounderMessages(await fetchSounderMessages(100));
 
 		// Incoming friend requests.
 		const { data: incRows } = await supabase
@@ -402,9 +445,15 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			text: `${c.from_username ?? "Someone"} cursed you — ${curseDescription(c.kind)}`,
 			kind: "cursed" as const,
 					at: Date.parse(c.sent_at)
-				}))
+				})),
+		...sounderMessages.map((message) => ({
+			id: `sounder-${message.id}`,
+			text: `${message.sender_username ?? "A crewmate"} Oinked ${message.crew_name} — ${message.body}`,
+			kind: "sounder" as const,
+			at: Date.parse(message.created_at),
+		}))
 			].sort((a, b) => (b.at || 0) - (a.at || 0)),
-		[answered, gifted, acceptedFriends, blessings, curses]
+		[answered, gifted, acceptedFriends, blessings, curses, sounderMessages]
 	);
 	// "Up to 100 in the past" — start at shownCount (10), Load-more grows it,
 	// capped at FEED_CAP. Display-only depth; no event is ever deleted.
@@ -439,222 +488,239 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			removeClippedSubviews
 			ListHeaderComponent={
 				<>
-			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+					{!!feedback && (
+						<T role="kicker" tone="accent" align="center" style={styles.feedback}>
+							{feedback}
+						</T>
+					)}
 
-			{/* Receiver bless/curse status — what's active on you now. */}
-			<ActiveEffects />
-			<DigPostcardInbox userId={userId} onPresence={setHasPostcards} />
+					{/* Receiver bless/curse status — what's active on you now. */}
+					<ActiveEffects />
+					<DigPostcardInbox userId={userId} onPresence={setHasPostcards} />
 
-			{empty && (
-				<EmptyState
-					glyph="bell"
-					title="The yard's quiet"
-					sub="Trade or bless a friend and the news lands here."
-				/>
-			)}
+					{empty && (
+						<EmptyState
+							glyph="bell"
+							title="The yard's quiet"
+							sub="Trade or bless a friend and the news lands here."
+						/>
+					)}
 
-			{/* Out to market — your pending outgoing trade requests */}
-			{outgoingTrades.length > 0 && (
-				<>
-					<View style={styles.headerWrap}>
-								<SectionHeader kicker="out to market" title="Your trades" ruleWidth={88} />
-					</View>
-					{/* Flat paper sticker with dashed-divided rows so the
-					    list reads as one card rather than loose lines
-					    nudging against the screen edge. */}
-							<Sticker color="paper" rotate={-0.3} radius={14} style={styles.flatList}>
-						{outgoingTrades.map((t, i) => {
-							const last = i === outgoingTrades.length - 1;
-							return (
-										<View key={t.id} style={[styles.marketRow, !last && styles.flatRowDivider]}>
-									<Text style={styles.marketText} numberOfLines={1}>
-										{t.partner_username ?? "—"}
-										{t.partner_discriminator && (
-													<Text style={styles.marketDisc}> #{t.partner_discriminator}</Text>
-										)}{" "}
-										· you'd pocket {t.amount * 2}
-									</Text>
-									<Pressable
-										onPress={() => withdrawTrade(t)}
-										disabled={busy === t.id}
-										hitSlop={8}
-									>
-												<Text style={styles.withdraw}>{busy === t.id ? "…" : "withdraw"}</Text>
-									</Pressable>
-								</View>
-							);
-						})}
-					</Sticker>
-				</>
-			)}
-
-			{/* Actionable — friend + trade requests */}
-			{actionableCount > 0 && (
-				<>
-					<View style={styles.headerWrap}>
-								<SectionHeader kicker="needs you" title="Pen cards" ruleWidth={70} />
-					</View>
-					{friendReqs.map((r) => (
-						<View key={`fr-${r.requester_id}`} style={styles.card}>
-							<Image
-								source={require("../assets/images/emoji/friend-request.png")}
-								style={styles.cardIcon}
+					{/* Out to market — your pending outgoing trade requests */}
+					{outgoingTrades.length > 0 && (
+						<>
+							<SectionHeader
+								kicker="out to market"
+								title="Your trades"
+								style={styles.bandHeader}
 							/>
-							<View style={{ flex: 1, minWidth: 0 }}>
-								<Text style={styles.cardTitle} numberOfLines={1}>
-									{r.username ?? "Someone"}
-								</Text>
-								<Text style={styles.cardSub}>wants to be friends</Text>
-							</View>
-							<Pressable
-								onPress={() => acceptFriend(r)}
-								disabled={busy === r.requester_id}
-								style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.7 }]}
-							>
-								<Text style={styles.primaryBtnText}>
-									{busy === r.requester_id ? "…" : "Accept"}
-								</Text>
-							</Pressable>
-							<Pressable
-								onPress={() => declineFriend(r)}
-								disabled={busy === r.requester_id}
-								hitSlop={6}
-								style={({ pressed }) => [styles.declineGhost, pressed && { opacity: 0.7 }]}
-							>
-								<Icon name="x" size={14} color={WHIMSY.mute} strokeWidth={2} />
-							</Pressable>
-						</View>
-					))}
-					{incomingTrades.map((t) => {
-						// Affordance: can we actually pay this trade right
-						// now? Disable + relabel "Need N more" when the
-						// balance is short, so the player isn't tapping a
-						// button just to get a rejection toast back.
-						const canAfford = balance !== null && balance >= t.amount;
-								const shortBy = balance !== null && balance < t.amount ? t.amount - balance : 0;
-						return (
-							<View key={`tr-${t.id}`} style={styles.pen}>
-								<View style={styles.penHeader}>
-									<Image
-										source={require("../assets/images/emoji/pig.png")}
-										style={styles.cardIcon}
-									/>
-									<View style={{ flex: 1, minWidth: 0 }}>
-										<Text style={styles.cardTitle} numberOfLines={1}>
-											{t.partner_username ?? "A friend"}
-											{t.partner_discriminator && (
-														<Text style={styles.cardTitleDisc}> #{t.partner_discriminator}</Text>
-											)}
-										</Text>
-										<Text style={styles.cardSub}>
-											asks for {t.amount} tickles
-											{balance !== null && (
-														<Text style={canAfford ? styles.balanceHint : styles.balanceHintShort}>
-													{"  ·  you have "}
-													{balance}
-												</Text>
-											)}
-										</Text>
-									</View>
-								</View>
-								<View style={styles.penActions}>
-									<Pressable
-										onPress={() => canAfford && giveTrade(t)}
-										disabled={busy === t.id || !canAfford}
-										style={[
-											styles.penBtn,
-													canAfford ? styles.penBtnPrimary : styles.penBtnLocked
-										]}
-									>
-										<Text
-													style={canAfford ? styles.penBtnPrimaryText : styles.penBtnLockedText}
+							{outgoingTrades.map((t, i) => (
+								<ListRow
+									key={t.id}
+									index={i}
+									title={
+										<T role="kicker" numberOfLines={1}>
+											{t.partner_username ?? "—"}
+											{t.partner_discriminator ? (
+												<Label tone="secondary"> #{t.partner_discriminator}</Label>
+											) : null}
+											{` · you'd pocket ${t.amount * 2}`}
+										</T>
+									}
+									accessibilityLabel={`Your trade with ${t.partner_username ?? "a friend"} — you'd pocket ${t.amount * 2} tickles`}
+									trailing={
+										<Button
+											variant="handLink"
+											size="xs"
+											onPress={() => withdrawTrade(t)}
+											loading={busy === t.id}
+											accessibilityLabel={`Withdraw your trade with ${t.partner_username ?? "a friend"}`}
+											accessibilityHint="Takes the lot off the market; nothing is spent"
 										>
-											{busy === t.id
-												? "…"
-												: canAfford
-													? `Give ${t.amount}`
-													: `Need ${shortBy} more`}
-										</Text>
-									</Pressable>
-									<Pressable
-										onPress={() => passTrade(t)}
-										disabled={busy === t.id}
-										style={[styles.penBtn, styles.penBtnGhost]}
-									>
-										<Text style={styles.penBtnGhostText}>Pass</Text>
-									</Pressable>
-								</View>
-							</View>
-						);
-					})}
-				</>
-			)}
+											withdraw
+										</Button>
+									}
+								/>
+							))}
+						</>
+					)}
 
-			{/* Recent — passive events */}
-			{passive.length > 0 && (
-					<View style={styles.headerWrap}>
-							<SectionHeader kicker="recent" title="What happened" ruleWidth={96} />
-					</View>
+					{/* Actionable — friend + trade requests */}
+					{actionableCount > 0 && (
+						<>
+							<SectionHeader
+								kicker="needs you"
+								title="Pen cards"
+								style={styles.bandHeader}
+							/>
+							{friendReqs.map((r, i) => {
+								const who = r.username ?? "Someone";
+								return (
+									<ListRow
+										key={`fr-${r.requester_id}`}
+										index={i}
+										leading={
+											<Avatar
+												size={AVATAR_SIZE[0]}
+												fill="sage"
+												glyph="handshake"
+												label="Friend request"
+											/>
+										}
+										title={who}
+										sub="wants to be friends"
+										accessibilityLabel={`${who} wants to be friends`}
+										trailing={
+											<View style={styles.rowActions}>
+												<Button
+													variant="lilac"
+													size="xs"
+													onPress={() => acceptFriend(r)}
+													loading={busy === r.requester_id}
+													accessibilityLabel={`Accept ${who}'s friend request`}
+													accessibilityHint="Adds them to your friends list"
+												>
+													Accept
+												</Button>
+												<IconButton
+													name="x"
+													variant="none"
+													iconSize={SPACE.card}
+													label={`Decline ${who}'s friend request`}
+													accessibilityHint="Removes the request; they aren't told"
+													disabled={busy === r.requester_id}
+													onPress={() => declineFriend(r)}
+												/>
+											</View>
+										}
+									/>
+								);
+							})}
+							{incomingTrades.map((t) => {
+								// Affordance: can we actually pay this trade right
+								// now? Disable + relabel "Need N more" when the
+								// balance is short, so the player isn't tapping a
+								// button just to get a rejection toast back.
+								const canAfford = balance !== null && balance >= t.amount;
+								const shortBy = balance !== null && balance < t.amount ? t.amount - balance : 0;
+								const who = t.partner_username ?? "A friend";
+								return (
+									<Sticker key={`tr-${t.id}`} color="peach" style={styles.pen}>
+										<View style={styles.penHeader}>
+											<Avatar
+												size={AVATAR_SIZE[0]}
+												fill="cream"
+												glyph="pigface"
+												label="Tickle trade"
+											/>
+											<View style={styles.penBody}>
+												<CardTitle numberOfLines={1}>
+													{who}
+													{t.partner_discriminator ? (
+														<Label tone="secondary"> #{t.partner_discriminator}</Label>
+													) : null}
+												</CardTitle>
+												<T role="hand" tone="secondary">
+													asks for {t.amount} tickles
+													{balance !== null && (
+														<T role="hand" tone={canAfford ? "secondary" : "primary"}>
+															{"  ·  you have "}
+															{balance}
+														</T>
+													)}
+												</T>
+											</View>
+										</View>
+										<View style={styles.penActions}>
+											<Button
+												variant="purple"
+												size="sm"
+												style={styles.penBtn}
+												onPress={() => giveTrade(t)}
+												disabled={!canAfford}
+												loading={busy === t.id}
+												accessibilityLabel={
+													canAfford
+														? `Give ${t.amount} tickles to ${who}`
+														: `Need ${shortBy} more tickles to answer ${who}`
+												}
+												accessibilityHint={
+													canAfford
+														? `Spends ${t.amount} of your tickles; they pocket ${t.amount * 2}.`
+														: "Earn more tickles and come back to this pen card."
+												}
+											>
+												{canAfford ? `Give ${t.amount}` : `Need ${shortBy} more`}
+											</Button>
+											<Button
+												variant="ghost"
+												size="sm"
+												style={styles.penBtn}
+												onPress={() => passTrade(t)}
+												disabled={busy === t.id}
+												accessibilityLabel={`Pass on ${who}'s ask`}
+												accessibilityHint="Closes the pen card; nothing is spent and they aren't told"
+											>
+												Pass
+											</Button>
+										</View>
+									</Sticker>
+								);
+							})}
+						</>
+					)}
+
+					{/* Recent — passive events */}
+					{passive.length > 0 && (
+						<SectionHeader
+							kicker="recent"
+							title="What happened"
+							style={styles.bandHeader}
+						/>
 					)}
 				</>
 			}
 			renderItem={({ item: event, index }) => {
-				const last = index === passiveShown.length - 1 && !hasMorePassive;
-							const bubbleStyle =
-					event.kind === "answered"
-									? styles.passiveBubbleAnswered
-						: event.kind === "gifted"
-										? styles.passiveBubbleGifted
-							: event.kind === "friended"
-											? styles.passiveBubbleFriended
-								: event.kind === "blessed"
-												? styles.passiveBubbleBlessed
-												: styles.passiveBubbleCursed;
-							const glyph =
-					event.kind === "gifted"
-									? "★"
-						: event.kind === "friended"
-										? "+"
-							: event.kind === "blessed"
-											? "✦"
-											: "☁";
-							return (
-								<View
-									style={[
-							styles.passiveCardRow,
-							index === 0 && styles.passiveCardRowFirst,
-							last && styles.passiveCardRowLast,
-							!last && styles.flatRowDivider
-									]}
-								>
-									<View style={[styles.passiveBubble, bubbleStyle]}>
-							{event.kind === "answered" ? (
-											<Glyph name="heart" size={16} />
-										) : (
-								<Text
-									style={
-										event.kind === "cursed"
-											? styles.passiveBubbleGlyphInverted
-											: styles.passiveBubbleGlyph
-									}
-								>
-									{glyph}
-										</Text>
-									)}
-								</View>
-						<Text style={styles.passiveText}>{event.text}</Text>
-						{!!relTime(event.at) && <Text style={styles.passiveTime}>{relTime(event.at)}</Text>}
-					</View>
-							);
+				const mark = KIND_MARK[event.kind];
+				const age = relTime(event.at);
+				return (
+					<ListRow
+						index={index}
+						leading={
+							<Avatar
+								size={AVATAR_SIZE[0]}
+								fill={mark.fill}
+								glyph={mark.glyph}
+								label={mark.word}
+							>
+								{mark.gameIcon ? <GameIcon name={mark.gameIcon} size={20} /> : null}
+							</Avatar>
+						}
+						title={<T role="kicker">{event.text}</T>}
+						accessibilityLabel={age ? `${event.text}, ${age} ago` : event.text}
+						trailing={
+							age ? (
+								<T role="kickerPillSm" tone="secondary">
+									{age}
+								</T>
+							) : undefined
+						}
+					/>
+				);
 			}}
 			ListFooterComponent={
 				hasMorePassive ? (
-							<Pressable
-						style={styles.loadMoreCard}
-						onPress={() => setShownCount((n) => Math.min(n + 10, FEED_CAP))}
-							>
-								<Text style={styles.loadMoreText}>Load more</Text>
-							</Pressable>
+					<View style={styles.loadMore}>
+						<Button
+							variant="ghost"
+							size="sm"
+							onPress={() => setShownCount((n) => Math.min(n + 10, FEED_CAP))}
+							accessibilityLabel="Load more of what happened"
+							accessibilityHint="Shows ten older events"
+						>
+							Load more
+						</Button>
+					</View>
 				) : null
 			}
 		/>
@@ -663,278 +729,41 @@ export function Inbox({ userId, onActionableCount }: Props) {
 
 const styles = StyleSheet.create({
 	scroll: { flex: 1 },
-	content: { paddingHorizontal: 14, paddingBottom: TAB_SAFE + SPACE.xl },
+	// PAGE_PAD, same as the hub header and the Friends segment — the band used
+	// to sit 4pt wider than its own header, which jogged on a segment switch.
+	// [B-14] (2026-09-11)
+	content: {
+		paddingHorizontal: PAGE_PAD,
+		paddingBottom: TAB_SAFE,
+		gap: SPACE.sm,
+	},
 	center: { flex: 1, alignItems: "center", justifyContent: "center" },
-	feedback: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		paddingVertical: 8
-	},
-	// Wrap SectionHeaders so they get the same vertical breathing room
-	// the old band labels did.
-	headerWrap: {
-		marginTop: 14,
-		marginBottom: 4
-	},
-	// Decline ghost — small ✕ button next to Accept on friend requests.
-	declineGhost: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.muteSoft,
-		alignItems: "center",
-		justifyContent: "center"
-	},
-	// Wraps Out-to-market + Recent rows in a single flat sticker.
-	// Padding 0 inside (rows manage their own horizontal padding) so
-	// dividers run the full card width.
-	flatList: { paddingVertical: 4, paddingHorizontal: 0 },
-	// Dashed bottom divider used between rows in flatList. Suppressed
-	// on the last row so the bottom border doesn't double up against
-	// the sticker's own ink edge.
-	// Right-aligned compact age on each What-happened row.
-	passiveTime: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		marginLeft: 8
-	},
-	// "Load more" footer row inside the What-happened sticker.
-	loadMoreRow: {
-		paddingVertical: 11,
-		alignItems: "center"
-	},
-	loadMoreText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.accent
-	},
-	loadMoreCard: {
-		paddingVertical: 12,
-		alignItems: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderTopWidth: 0,
-		borderColor: WHIMSY.ink,
-		borderBottomLeftRadius: 14,
-		borderBottomRightRadius: 14,
-		...SHADOW_SM
-	},
-	flatRowDivider: {
-		borderBottomWidth: 1.5,
-		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed"
-	},
-	// Out-to-market row — now a flat row inside the flatList Sticker
-	// wrapper, so it drops its old standalone bg + border + margin
-	// and just contributes horizontal padding to keep content off
-	// the sticker's ink edge.
-	marketRow: {
+	feedback: { paddingVertical: SPACE.sm },
+	// Band crowns get the same breathing room the old hand-rolled labels did.
+	bandHeader: { marginTop: SPACE.sm, marginBottom: 0 },
+	rowActions: {
 		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "space-between",
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		gap: 8
+		gap: SPACE.xs,
 	},
-	marketText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		flex: 1
-	},
-	withdraw: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
-	// actionable card (friend request)
-	card: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 10,
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		marginBottom: 6
-	},
-	cardIcon: { width: 30, height: 30, resizeMode: "contain" },
-	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-	// Inline "you have N" hint after "asks for N tickles". Mute when
-	// affordable, accent when short — pre-warns the player before
-	// they even reach the disabled button.
-	balanceHint: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute
-	},
-	balanceHintShort: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.accent
-	},
-	cardSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 1
-	},
-	primaryBtn: {
-		backgroundColor: WHIMSY.lilac,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 7
-	},
-	primaryBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
-	declineText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
-	// Trade pen card — peach paper sticker with Avatar+ask body and
-	// stacked Give/Pass row beneath. Replaces the old Stockyard rail
-	// look so the trade card sits inside the rest of the redesign's
-	// paper-sticker DNA. Diagonal stripe overlay isn't worth the SVG
-	// cost — flat peach + ink border captures the look.
+	// Trade pen card — peach paper sticker with Avatar+ask body and stacked
+	// Give/Pass row beneath, and the segment's ONE full sticker shadow (the
+	// loudest thing on screen is the thing to do).
 	pen: {
-		backgroundColor: WHIMSY.peach,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		marginBottom: 8,
-		...STICKER_SHADOW
+		paddingHorizontal: SPACE.card,
+		paddingVertical: SPACE.md,
 	},
 	penHeader: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10
+		gap: SPACE.md,
 	},
+	penBody: { flex: 1, minWidth: 0 },
 	penActions: {
 		flexDirection: "row",
-		gap: 8,
-		marginTop: 10
+		gap: SPACE.sm,
+		marginTop: SPACE.md,
 	},
-	penBtn: {
-		flex: 1,
-		paddingVertical: 9,
-		alignItems: "center",
-		borderRadius: RADII.pill,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink
-	},
-	penBtnPrimary: {
-		backgroundColor: WHIMSY.lilacDeep,
-		...SHADOW_SM
-	},
-	penBtnPrimaryText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.paper
-	},
-	penBtnGhost: {
-		backgroundColor: "transparent",
-		borderColor: WHIMSY.muteSoft
-	},
-	penBtnGhostText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink
-	},
-	// "Need N more" — the trade is unaffordable. Muted fill + dashed
-	// ink border so the button reads as locked-but-still-meaningful,
-	// not greyed-out-and-broken. Companion to the balance hint on the
-	// row's "asks for N · you have M" line.
-	// Cream fill + mute (not muteSoft) text/border so the locked button
-	// clears contrast — the old muteSoft-on-paper text washed out. Still
-	// disabled; reads as locked-but-legible, not greyed-out-and-broken.
-	penBtnLocked: {
-		backgroundColor: WHIMSY.cream,
-		borderColor: WHIMSY.mute
-	},
-	penBtnLockedText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.mute
-	},
-	// Recent / passive row — lives inside the flatList Sticker so
-	// horizontal padding mirrors the marketRow above. Bumped from 4
-	// to 14 so the bubble doesn't kiss the sticker's ink border.
-	passiveRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-		paddingVertical: 10,
-		paddingHorizontal: 14
-	},
-	passiveCardRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-		paddingVertical: 10,
-		paddingHorizontal: 14,
-		backgroundColor: WHIMSY.paper,
-		borderLeftWidth: 2,
-		borderRightWidth: 2,
-		borderColor: WHIMSY.ink
-	},
-	passiveCardRowFirst: {
-		borderTopWidth: 2,
-		borderTopLeftRadius: 14,
-		borderTopRightRadius: 14,
-		paddingTop: 14
-	},
-	passiveCardRowLast: {
-		borderBottomWidth: 2,
-		borderBottomLeftRadius: 14,
-		borderBottomRightRadius: 14,
-		paddingBottom: 14,
-		...SHADOW_SM
-	},
-	// Recent feed bubble — small ink-outlined circle with a glyph,
-	// per kind: rose ♥ for answered, lilac ✦ for blessed, ink ☁ for
-	// cursed. Replaces the PNG icon to match the design.
-	passiveBubble: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center"
-	},
-	passiveBubbleAnswered: { backgroundColor: WHIMSY.rose },
-	passiveBubbleGifted:   { backgroundColor: WHIMSY.sun },
-	passiveBubbleFriended: { backgroundColor: WHIMSY.sage },
-	passiveBubbleBlessed:  { backgroundColor: WHIMSY.lilac },
-	passiveBubbleCursed:   { backgroundColor: WHIMSY.ink },
-	passiveBubbleGlyph: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink
-	},
-	passiveBubbleGlyphInverted: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.paper
-	},
-	// Discriminator suffix on trade rows + outgoing market rows.
-	marketDisc: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.mute
-	},
-	cardTitleDisc: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute
-	},
-	passiveText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		flex: 1,
-		lineHeight: 18
-	}
+	penBtn: { flex: 1 },
+	loadMore: { alignItems: "center", marginTop: SPACE.sm },
 });

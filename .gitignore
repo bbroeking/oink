@@ -44,6 +44,9 @@ app-example
 # iOS build artifacts (xcarchive, IPA exports)
 .build/
 
+# Per-task evidence dumps (screenshots, IPAs, dSYMs, source snapshots) — GBs, never source
+artifacts/
+
 # Metro / dev-build .ipa output
 *.ipa
 build-*.ipa

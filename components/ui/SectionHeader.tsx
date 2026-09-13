@@ -1,12 +1,20 @@
+// The in-screen SECTION crown — kicker, title, right-slot meta, ink rule
+// (design-system-spec §2, row 03).
+//
+// The counterpart to `PageHeader`, and the split between them is a ruling, not
+// a preference: **a page kicker is `KickerPill` (tracked uppercase Nunito,
+// mute); a section kicker is `Kicker` (PatrickHand, accent)** — see the header
+// comment in PageHeader.tsx. One screen, two voices, each with one job.
+//
+// Everything it draws now comes from the text + rule primitives (`Kicker`,
+// `SectionTitle`, `Label`, `TitleRule`), so the ★ prefix, the accent ink, the
+// 12pt right-slot meta and the rule width live in exactly one place each. The
+// internal 12 / 4 / 8 / 10 literals the audit flagged are folded onto `SPACE`.
 import React from "react";
-import { View, Text, StyleSheet, ViewStyle, StyleProp } from "react-native";
-import {
-	FONTS,
-	KICKER_TEXT,
-	TITLE_RULE,
-	TYPE,
-	UI_COLORS,
-} from "@/constants/theme";
+import { View, StyleSheet, type ViewStyle, type StyleProp } from "react-native";
+import { RULE_WIDTH, SPACE } from "@/constants/theme";
+import { Kicker, Label, SectionTitle } from "./Text";
+import { TitleRule } from "./Divider";
 
 interface Props {
 	/** Hand-script accent line above the title. Prefix "★ " baked in. */
@@ -15,7 +23,7 @@ interface Props {
 	title: string;
 	/** Right-aligned secondary text (e.g. "resets in 4d", "12 items"). */
 	right?: React.ReactNode;
-	/** Width of the ink underline rule (in px). Canonical 64 (June 2026 UI audit). */
+	/** Width of the ink underline rule (in px). Canonical `RULE_WIDTH`. */
 	ruleWidth?: number;
 	/** Container style override. */
 	style?: StyleProp<ViewStyle>;
@@ -23,42 +31,43 @@ interface Props {
 
 /**
  * The kicker + title + right-text + underline-rule header used everywhere
- * in the redesign (Barn, Friends, Season, Shop, Account). Mirrors
- * `SectionHeader` from the design's ui.jsx so the same shape lands in
- * every screen.
+ * in the redesign (Barn, Friends, Season, Shop, Account).
  */
 export function SectionHeader({
 	kicker,
 	title,
 	right,
-	ruleWidth = 64,
+	ruleWidth = RULE_WIDTH,
 	style,
 }: Props) {
 	return (
 		<View style={[styles.wrap, style]}>
-			{kicker ? <Text style={styles.kicker}>★ {kicker}</Text> : null}
+			{kicker ? <Kicker style={styles.kicker}>{kicker}</Kicker> : null}
 			<View style={styles.row}>
-				<Text style={styles.title}>{title}</Text>
+				<SectionTitle accessibilityRole="header" style={styles.title}>
+					{title}
+				</SectionTitle>
 				{right ? (
 					typeof right === "string" ? (
-						<Text style={styles.right}>{right}</Text>
+						<Label tone="secondary" style={styles.right}>
+							{right}
+						</Label>
 					) : (
 						<View style={styles.rightSlot}>{right}</View>
 					)
 				) : null}
 			</View>
-			<View style={[styles.rule, { width: ruleWidth }]} />
+			<TitleRule width={ruleWidth} style={styles.rule} />
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
 	wrap: {
-		marginBottom: 12,
+		marginBottom: SPACE.md,
 	},
 	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
+		marginBottom: SPACE.xs,
 	},
 	row: {
 		flexDirection: "row",
@@ -66,25 +75,19 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 	},
 	title: {
-		...TYPE.sectionTitle,
-		color: UI_COLORS.textPrimary,
 		flexShrink: 1,
 	},
 	right: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: UI_COLORS.textSecondary,
-		marginLeft: 8,
+		marginLeft: SPACE.sm,
 	},
 	rightSlot: {
-		marginLeft: 8,
+		marginLeft: SPACE.sm,
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 8,
+		gap: SPACE.sm,
 	},
 	rule: {
-		...TITLE_RULE,
-		marginTop: 4,
-		marginBottom: 10,
+		marginTop: SPACE.xs,
+		marginBottom: SPACE.sm,
 	},
 });

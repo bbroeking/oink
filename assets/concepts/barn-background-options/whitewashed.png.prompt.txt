@@ -1,0 +1,7 @@
+Use case: stylized-concept.
+Asset type: full-bleed portrait mobile-game background plate, EMPTY BARN INTERIOR.
+Create a cozy, completely unfurnished INSIDE OF A BARN. The camera is INSIDE a simple wooden room facing the broad blank rear wall straight-on, with small visible side-wall returns and a bare timber floor receding in gentle perspective. A few structural ceiling rafters sit only at the very top. Walls fill upper 57%, uninterrupted floor fills lower 43%. Center of the room and every part of the floor must be completely empty for separately added game characters and objects.
+Style: professional hand-painted 2D storybook gouache game art, warm handmade pigment texture, simplified broad forms, soft outlines, matte surfaces. Soft evenly diffused light with subtle corner shade. Bright enough for a cozy pig game; never spooky or photorealistic. Balanced, level camera, no dramatic wide-angle lens or tilted floor.
+STRICT EMPTY SCENE: no pigs, animals, people, furniture, hay, straw, barrels, crates, buckets, plants, tools, tack, lanterns, objects, debris, bunting, cobwebs, troughs, signage, UI, text, border, or watermark. No outdoor landscape and no view out of doors or windows. No grass or sky. Architectural structure and empty wooden surfaces ONLY.
+Portrait image, 1024x2048. Render only one image.
+Option: Whitewashed. Pale creamwashed timber wall boards with very subtle grain; a light natural oak floor and pale wooden structural posts. Airy cream and warm ivory tones, welcoming diffused daylight. It must still clearly read as inside a wooden barn.

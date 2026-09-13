@@ -12,7 +12,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
 	Pressable,
 	StyleSheet,
-	Text,
 	View,
 	useWindowDimensions,
 } from "react-native";
@@ -38,7 +37,20 @@ import { supabase } from "@/utils/supabase";
 import { useLoungePeers } from "@/hooks/useLoungePeers";
 import { IconButton } from "@/components/ui/IconButton";
 import { Glyph, glyphSource, type GlyphName } from "@/components/ui/Glyph";
-import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
+import { KickerPill, Label } from "@/components/ui/Text";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import {
+	ART_SIZE,
+	BORDER,
+	PAGE_PAD,
+	PRESSED_FLAT,
+	RADII,
+	SPACE,
+	STATUS_SAFE,
+	TAP_MIN,
+	WHIMSY,
+} from "@/constants/theme";
+import { LOUNGE_VISIBLE } from "@/constants/featureFlags";
 import { PIG_LOUNGE_FRAMES } from "@/constants/pigFrames.generated";
 import { isPigId, type PigId } from "@/utils/pigs";
 
@@ -57,6 +69,8 @@ const SEAT_DX = 54;
 const SEESAW_TAP_R = 55;
 const SPEED = 170; // walk speed, pt/s
 const FRAME_MS = 125; // 8 fps walk cycle
+// The seat crossfade's standard duration — handed to the motion policy at use
+// so Reduce Motion can shorten it instead of the screen ignoring the setting.
 const SIT_MS = 320;
 
 type SeesawStation = { id: "seesaw"; slot: number; since: number };
@@ -102,10 +116,14 @@ function usePigLoungeImages(pigId: PigId) {
 	};
 }
 
-function seesawRotation(stations: SeesawStation[], now: number) {
+// `animate` is the motion policy's decorative switch. The plank's REST POSE is
+// the balanced, level plank two riders would settle at — so Reduce Motion sees a
+// seesaw with two pigs on it, not a seesaw that vanished.
+function seesawRotation(stations: SeesawStation[], now: number, animate = true) {
 	const left = stations.some((station) => station.slot === 0);
 	const right = stations.some((station) => station.slot === 1);
 	if (left && right) {
+		if (!animate) return 0;
 		const rideSince = Math.max(...stations.map((station) => station.since));
 		return Math.sin((now - rideSince) / 450) * 0.2;
 	}
@@ -245,6 +263,16 @@ export function LoungePrototype() {
 	const seatMode = useSharedValue(0);
 	const rideSince = useSharedValue(0);
 	const seesawRot = useSharedValue(0);
+	// The idle breathing loop and the seesaw ride are DECORATIVE — ambience, not
+	// the thing you tapped. The walk itself is the interaction and always runs.
+	// Mirrored into a shared value so the frame worklet can read the policy.
+	const motion = useMotionPolicy();
+	const decorative = useSharedValue(motion.allowDecorativeMotion ? 1 : 0);
+	const sitMs = useRef(SIT_MS);
+	useEffect(() => {
+		decorative.value = motion.allowDecorativeMotion ? 1 : 0;
+		sitMs.current = motion.duration(SIT_MS);
+	}, [motion, decorative]);
 
 	useFrameCallback((info) => {
 		"worklet";
@@ -260,16 +288,22 @@ export function LoungePrototype() {
 			resting.value = 0;
 			frame.value = Math.floor(walkClock.value / FRAME_MS) % 4;
 			dir.value = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 2 : 3) : dy > 0 ? 0 : 1;
-		} else {
+		} else if (decorative.value) {
 			// At rest: gentle S-facing idle loop (other facings hold frame 1).
 			resting.value = 1;
 			walkClock.value += dtMs;
 			frame.value = Math.floor(walkClock.value / (FRAME_MS * 3)) % 4;
+		} else {
+			// Reduce Motion's rest pose: the first idle frame, held.
+			resting.value = 1;
+			frame.value = 0;
 		}
 		// Seesaw plank: deterministic on every client — pure f(now, since).
 		seesawRot.value =
 			seatMode.value === 3
-				? Math.sin((Date.now() - rideSince.value) / 450) * 0.2
+				? decorative.value
+					? Math.sin((Date.now() - rideSince.value) / 450) * 0.2
+					: 0
 				: seatMode.value === 1
 				? -0.16
 				: seatMode.value === 2
@@ -459,7 +493,7 @@ export function LoungePrototype() {
 					dir.value = st.slot === 0 ? 2 : 3;
 					mySlot.value = st.slot;
 					seatProgress.value = 0;
-					seatProgress.value = withTiming(1, { duration: SIT_MS });
+					seatProgress.value = withTiming(1, { duration: sitMs.current });
 				}
 			}
 		}, 100);
@@ -538,7 +572,11 @@ export function LoungePrototype() {
 			since: practiceSince.current,
 		});
 	}
-	const visibleSeesawRotation = seesawRotation(visibleSitters, now);
+	const visibleSeesawRotation = seesawRotation(
+		visibleSitters,
+		now,
+		motion.allowDecorativeMotion
+	);
 
 	return (
 		<GestureHandlerRootView style={styles.root}>
@@ -620,7 +658,7 @@ export function LoungePrototype() {
 											font={tagFont}
 											x={px2 - peer.username.length * 3.3}
 											y={py2 + 14 + rideDy}
-											color="#4a3325"
+											color={WHIMSY.bark}
 										/>
 									)}
 									{eimg && (
@@ -659,7 +697,7 @@ export function LoungePrototype() {
 												8 +
 												Math.sin(visibleSeesawRotation) * (practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
 											}
-											color="#4a3325"
+											color={WHIMSY.bark}
 										/>
 									)}
 								</Group>
@@ -725,12 +763,18 @@ export function LoungePrototype() {
 			{allowed && !myStation && (
 				<Pressable
 					onPress={boardSeesaw}
-					style={({ pressed }) => [styles.boardBtn, pressed && { opacity: 0.85 }]}
+					accessibilityRole="button"
+					accessibilityLabel="Hop on the seesaw"
+					accessibilityHint="Walks Rosie over to a free seat"
+					style={({ pressed }) => [styles.boardBtn, pressed && PRESSED_FLAT]}
 				>
-					<Text style={styles.boardBtnText}>hop on the seesaw ›</Text>
+					<Label>hop on the seesaw</Label>
+					<Glyph name="arrowRight" size={ART_SIZE.mark} />
 				</Pressable>
 			)}
-			{allowed && (
+			{/* Developer toggle — a second rider so the ride can be watched solo.
+			    __DEV__ only: it was shipping beside the player-facing HUD. [B-10] */}
+			{allowed && __DEV__ && (
 				<Pressable
 					onPress={() => {
 						practiceSince.current = Date.now();
@@ -739,26 +783,27 @@ export function LoungePrototype() {
 					style={({ pressed }) => [
 						styles.practiceBtn,
 						practiceRiderEnabled && styles.practiceBtnOn,
-						pressed && { opacity: 0.85 },
+						pressed && PRESSED_FLAT,
 					]}
 					accessibilityRole="button"
 					accessibilityLabel={`${
 						practiceRiderEnabled ? "Remove" : "Add"
 					} the practice seesaw rider`}
+					accessibilityState={{ selected: practiceRiderEnabled }}
 				>
-					<Text style={styles.practiceBtnText}>
-						practice pig {practiceRiderEnabled ? "on" : "off"}
-					</Text>
+					<Label>practice pig {practiceRiderEnabled ? "on" : "off"}</Label>
 				</Pressable>
 			)}
 			{allowed && __DEV__ && (
 				<Pressable
 					onPress={() => router.push("/member-perks-prototype" as never)}
-					style={({ pressed }) => [styles.perkLabBtn, pressed && { opacity: 0.85 }]}
+					style={({ pressed }) => [styles.perkLabBtn, pressed && PRESSED_FLAT]}
 					accessibilityRole="button"
 					accessibilityLabel="Open the Slop Club perk lab"
 				>
-					<Text style={styles.perkLabBtnText}>perk lab</Text>
+					<KickerPill star={false} tone="onDarkAccent">
+						perk lab
+					</KickerPill>
 				</Pressable>
 			)}
 
@@ -775,20 +820,27 @@ export function LoungePrototype() {
 									sendEmote(i);
 									setEmotesOpen(false);
 								}}
-								style={({ pressed }) => [styles.emoteBtn, pressed && { opacity: 0.8 }]}
+								accessibilityRole="button"
+								accessibilityLabel={`Send the ${g} emote`}
+								accessibilityHint="Everyone in the Lounge sees it over your pig"
+								style={({ pressed }) => [styles.emoteBtn, pressed && PRESSED_FLAT]}
 							>
-								<Glyph name={g} size={22} />
+								<Glyph name={g} size={ART_SIZE.glyphSm} />
 							</Pressable>
 						))}
 					<Pressable
 						onPress={() => setEmotesOpen((o) => !o)}
+						accessibilityRole="button"
+						accessibilityLabel={emotesOpen ? "Close the emotes" : "Open the emotes"}
+						accessibilityHint="Picks a mark to show over your pig"
+						accessibilityState={{ expanded: emotesOpen }}
 						style={({ pressed }) => [
 							styles.emoteFab,
 							emotesOpen && styles.emoteFabOpen,
-							pressed && { opacity: 0.85 },
+							pressed && PRESSED_FLAT,
 						]}
 					>
-						<Glyph name={emotesOpen ? "close" : "party"} size={24} />
+						<Glyph name={emotesOpen ? "close" : "party"} size={ART_SIZE.glyphSm} />
 					</Pressable>
 				</View>
 			)}
@@ -798,7 +850,7 @@ export function LoungePrototype() {
 				name="x"
 				label="Leave the Lounge"
 				onPress={() => router.back()}
-				visualSize={40}
+				visualSize={ART_SIZE.glyph}
 				style={styles.exit}
 			/>
 		</GestureHandlerRootView>
@@ -806,11 +858,24 @@ export function LoungePrototype() {
 }
 
 export default function LoungeScreen() {
-	return <Redirect href="/(tabs)/shop" />;
+	// The Lounge is dark-launched, not retired: `LOUNGE_VISIBLE` (constants/
+	// featureFlags.ts) carries the reason and the pillar, and flipping it to
+	// true makes the field below reachable again with no other edit. An
+	// unconditional `<Redirect>` above a live screen body read as dead code and
+	// hid the fact that there was a switch at all. (2026-09-11, wave 4)
+	if (!LOUNGE_VISIBLE) return <Redirect href="/(tabs)/shop" />;
+	return <LoungePrototype />;
 }
 
+// HUD geometry — the two round buttons and the world-edge insets. Drawn
+// furniture, not spacing steps, so they are named rather than borrowed.
+const FAB_SIZE = 54;
+const EMOTE_SIZE = 46;
+const HUD_EDGE = PAGE_PAD;
+const HUD_BOTTOM = 42;
+
 const styles = StyleSheet.create({
-	root: { flex: 1, backgroundColor: COLORS.grass },
+	root: { flex: 1, backgroundColor: WHIMSY.grass },
 	canvas: {
 		position: "absolute",
 		top: 0,
@@ -820,17 +885,17 @@ const styles = StyleSheet.create({
 	},
 	emoteWrap: {
 		position: "absolute",
-		bottom: 42,
-		right: 18,
+		bottom: HUD_BOTTOM,
+		right: HUD_EDGE,
 		alignItems: "center",
-		gap: 10,
+		gap: SPACE.sm,
 	},
 	emoteFab: {
-		width: 54,
-		height: 54,
-		borderRadius: 27,
+		width: FAB_SIZE,
+		height: FAB_SIZE,
+		borderRadius: FAB_SIZE / 2,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
@@ -838,68 +903,62 @@ const styles = StyleSheet.create({
 	emoteFabOpen: { backgroundColor: WHIMSY.sun },
 	boardBtn: {
 		position: "absolute",
-		bottom: 48,
-		left: 18,
+		bottom: HUD_BOTTOM,
+		left: HUD_EDGE,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.xs,
+		minHeight: TAP_MIN,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
-		borderRadius: 18,
-		paddingVertical: 9,
-		paddingHorizontal: 14,
-	},
-	boardBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
+		borderRadius: RADII.xl,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.card,
 	},
 	practiceBtn: {
 		position: "absolute",
-		bottom: 94,
-		left: 18,
+		bottom: HUD_BOTTOM + FAB_SIZE,
+		left: HUD_EDGE,
+		alignItems: "center",
+		justifyContent: "center",
+		minHeight: TAP_MIN,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
-		paddingVertical: 7,
-		paddingHorizontal: 12,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.md,
 	},
 	practiceBtnOn: { backgroundColor: WHIMSY.sun },
-	practiceBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-	},
 	perkLabBtn: {
 		position: "absolute",
-		top: 58,
-		left: 18,
+		top: STATUS_SAFE,
+		left: HUD_EDGE,
+		alignItems: "center",
+		justifyContent: "center",
+		minHeight: TAP_MIN,
 		backgroundColor: WHIMSY.bark,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
-		paddingVertical: 7,
-		paddingHorizontal: 12,
-	},
-	perkLabBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.sun,
-		textTransform: "uppercase",
-		letterSpacing: 1.1,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.md,
 	},
 	emoteBtn: {
-		width: 46,
-		height: 46,
-		borderRadius: 23,
+		width: EMOTE_SIZE,
+		height: EMOTE_SIZE,
+		borderRadius: EMOTE_SIZE / 2,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	exit: {
 		position: "absolute",
-		top: 58,
-		right: 18,
+		top: STATUS_SAFE,
+		right: HUD_EDGE,
 	},
 });

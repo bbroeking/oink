@@ -8,7 +8,17 @@
 import { CREW_CAP } from "@/constants/crews";
 import type { InviteIn } from "@/utils/crews";
 
-const SEAT_WORDS = ["", "one", "two", "three", "four", "five"];
+const SEAT_WORDS = [
+	"",
+	"one",
+	"two",
+	"three",
+	"four",
+	"five",
+	"six",
+	"seven",
+	"eight",
+];
 
 // An incoming invite is stale — its Join would lie — when the server already
 // bounced its accept with crew_full (recorded in staleIds) OR the inviting
@@ -65,20 +75,6 @@ export function acceptInviteResult(reason?: string): AcceptOutcome {
 			note: "one Sounder at a time — leave yours to answer an invite.",
 		};
 	return { kind: "note", note: "Couldn't join — try again." };
-}
-
-// Joining an open Sounder (JoinableSounders) failure copy.
-export function joinError(reason?: string): string {
-	switch (reason) {
-		case "crew_full":
-			return "Just filled up — the herd moves fast.";
-		case "crew_in_war":
-			return "They're mid-war — catch them after.";
-		case "already_in_crew":
-			return "You're already in a Sounder.";
-		default:
-			return "Couldn't join — try another Sounder.";
-	}
 }
 
 // Knocking on an open Sounder (request_to_join) failure copy — an open Sounder

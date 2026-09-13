@@ -15,25 +15,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	View,
-	Text,
 	StyleSheet,
 	SafeAreaView,
-	TextInput,
 	Image,
 	Linking,
 	ScrollView,
 	KeyboardAvoidingView,
 	Platform,
 } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Sticker } from "@/components/ui/Sticker";
-import { Button, TicketButton } from "@/components/ui";
-import { EmptyState, LoadingBeat } from "@/components/ui/EmptyState";
-import { Glyph } from "@/components/ui/Glyph";
-import { SnoutCoin } from "@/components/ui/SnoutCoin";
+import {
+	Button,
+	CardTitle,
+	Glyph,
+	Hand,
+	Kicker,
+	LoadingBeat,
+	PageHeader,
+	SnoutCoin,
+	Sticker,
+	T,
+	Tag,
+	TextField,
+	TicketButton,
+} from "@/components/ui";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
 import {
@@ -43,14 +50,17 @@ import {
 	redemptionErrorMessage,
 	PENDING_REDEMPTION_CODE_KEY,
 } from "@/utils/redemption";
-import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
+import { HAT_IMAGES, type Rarity } from "@/constants/hats";
 import {
-	FONTS,
+	ART_SIZE,
+	BORDER,
+	LENS_TEXT_SHADOW,
 	RADII,
+	RARITY_BADGE,
 	SHADOW_SM,
 	SPACE,
-	TYPE,
-	WHIMSY,
+	UI_COLORS,
+	WHIMSY_LENS,
 	PAGE_PAD,
 	TAB_SAFE,
 } from "@/constants/theme";
@@ -81,7 +91,9 @@ type CameraModule = {
 };
 let Camera: CameraModule | null = null;
 try {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// A static import cannot be wrapped in this try/catch — the whole point is to
+	// survive a build whose native module is absent — so the require stays.
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const mod = require("expo-camera");
 	if (mod?.CameraView && mod?.useCameraPermissions) {
 		Camera = mod as CameraModule;
@@ -216,59 +228,58 @@ export default function ScanCodeScreen() {
 		// makes a given code submit at most once regardless of re-runs.
 	}, [params.code, submit]);
 
+	// The root <Stack> declares `headerShown: false` for every route (E13), so
+	// this screen no longer opts out for itself.
 	return (
-		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={{ flex: 1 }}>
-					<PageHeader
-						kicker="golden ticket"
-						title="Redeem a Code"
-						onBack={() => router.back()}
-					/>
-					<KeyboardAvoidingView
-						style={{ flex: 1 }}
-						behavior={Platform.OS === "ios" ? "padding" : undefined}
+		<View style={styles.bg}>
+			<SafeAreaView style={{ flex: 1 }}>
+				<PageHeader
+					kicker="golden ticket"
+					title="Redeem a Code"
+					onBack={() => router.back()}
+				/>
+				<KeyboardAvoidingView
+					style={{ flex: 1 }}
+					behavior={Platform.OS === "ios" ? "padding" : undefined}
+				>
+					<ScrollView
+						contentContainerStyle={[
+							styles.scroll,
+							// Center the reveal card in the available height; the
+							// scan/type flow flows from the top.
+							reveal && styles.scrollCentered,
+						]}
+						showsVerticalScrollIndicator={false}
+						keyboardShouldPersistTaps="handled"
 					>
-						<ScrollView
-							contentContainerStyle={[
-								styles.scroll,
-								// Center the reveal card in the available height; the
-								// scan/type flow flows from the top.
-								reveal && styles.scrollCentered,
-							]}
-							showsVerticalScrollIndicator={false}
-							keyboardShouldPersistTaps="handled"
-						>
-							{reveal ? (
-								<RevealCard reveal={reveal} onDone={() => router.back()} />
-							) : (
-								<>
-									<CameraPane
-										permission={permission}
-										requestPermission={requestPermission}
-										onScanned={onScanned}
-									/>
-									<ManualEntry
-										value={manual}
-										onChange={(t) => {
-											setManual(t);
-											if (error) setError(null);
-											// Editing clears the failed-payload guard so a manual
-											// re-submit isn't suppressed by the scanner cooldown.
-											lastFailedPayload.current = null;
-										}}
-										onSubmit={() => submit(manual)}
-										busy={busy}
-										error={error}
-									/>
-								</>
-							)}
-						</ScrollView>
-					</KeyboardAvoidingView>
-				</SafeAreaView>
-			</View>
-		</>
+						{reveal ? (
+							<RevealCard reveal={reveal} onDone={() => router.back()} />
+						) : (
+							<>
+								<CameraPane
+									permission={permission}
+									requestPermission={requestPermission}
+									onScanned={onScanned}
+								/>
+								<ManualEntry
+									value={manual}
+									onChange={(t) => {
+										setManual(t);
+										if (error) setError(null);
+										// Editing clears the failed-payload guard so a manual
+										// re-submit isn't suppressed by the scanner cooldown.
+										lastFailedPayload.current = null;
+									}}
+									onSubmit={() => submit(manual)}
+									busy={busy}
+									error={error}
+								/>
+							</>
+						)}
+					</ScrollView>
+				</KeyboardAvoidingView>
+			</SafeAreaView>
+		</View>
 	);
 }
 
@@ -289,12 +300,12 @@ function CameraPane({
 	if (!Camera) {
 		return (
 			<Sticker color="paper" rotate={0.4} radius={RADII.lg} style={styles.permCard}>
-				<Glyph name="search" size={36} style={{ opacity: 0.9, marginBottom: 8 }} />
-				<Text style={styles.permTitle}>Type your code below</Text>
-				<Text style={styles.permSub}>
+				<Glyph name="search" size={ART_SIZE.glyph} style={styles.permGlyph} />
+				<CardTitle align="center">Type your code below</CardTitle>
+				<PermSub>
 					The camera scanner isn't available on this device — pop your Golden
 					Ticket code into the field below.
-				</Text>
+				</PermSub>
 			</Sticker>
 		);
 	}
@@ -312,16 +323,17 @@ function CameraPane({
 	if (!permission.granted && permission.canAskAgain) {
 		return (
 			<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.permCard}>
-				<Glyph name="search" size={36} style={{ opacity: 0.9, marginBottom: 8 }} />
-				<Text style={styles.permTitle}>Point at a Golden Ticket</Text>
-				<Text style={styles.permSub}>
+				<Glyph name="search" size={ART_SIZE.glyph} style={styles.permGlyph} />
+				<CardTitle align="center">Point at a Golden Ticket</CardTitle>
+				<PermSub>
 					Rosie only peeks through the camera to read a giveaway QR — nothing else.
-				</Text>
+				</PermSub>
 				<Button
 					variant="primary"
 					size="md"
-					style={{ marginTop: SPACE.md }}
+					style={styles.permCta}
 					onPress={requestPermission}
+					accessibilityHint="Asks iOS for camera access so Rosie can read a Golden Ticket QR."
 				>
 					Open the camera
 				</Button>
@@ -333,16 +345,17 @@ function CameraPane({
 	if (!permission.granted) {
 		return (
 			<Sticker color="paper" rotate={0.4} radius={RADII.lg} style={styles.permCard}>
-				<Glyph name="zzz" size={36} style={{ opacity: 0.9, marginBottom: 8 }} />
-				<Text style={styles.permTitle}>Camera's napping</Text>
-				<Text style={styles.permSub}>
+				<Glyph name="zzz" size={ART_SIZE.glyph} style={styles.permGlyph} />
+				<CardTitle align="center">Camera's napping</CardTitle>
+				<PermSub>
 					Type the code below instead — or wake the camera in Settings.
-				</Text>
+				</PermSub>
 				<Button
 					variant="ghost"
 					size="md"
-					style={{ marginTop: SPACE.md }}
+					style={styles.permCta}
 					onPress={() => Linking.openSettings()}
+					accessibilityHint="Leaves the app for the iOS Settings screen for Tickle the Pig."
 				>
 					Open Settings
 				</Button>
@@ -361,13 +374,27 @@ function CameraPane({
 				onBarcodeScanned={({ data }: { data: string }) => onScanned(data)}
 			/>
 			<View pointerEvents="none" style={styles.reticle} />
-			<Text style={styles.scanHint}>hold a Golden Ticket in the frame</Text>
+			<T role="kicker" tone="onDark" style={styles.scanHint}>
+				hold a Golden Ticket in the frame
+			</T>
 		</View>
 	);
 }
 
-// The always-visible manual-entry row: monospace-ish field + Redeem button.
-// This is the whole UI on a simulator / no-camera device.
+// The two-line reassurance under a permission card's title. One definition, so
+// the three states can't drift apart.
+function PermSub({ children }: { children: React.ReactNode }) {
+	return (
+		<Hand tone="secondary" align="center" style={styles.permSub}>
+			{children}
+		</Hand>
+	);
+}
+
+// The always-visible manual-entry row: the shared `TextField` + the ticket
+// button. This is the whole UI on a simulator / no-camera device. A refusal is
+// the field's own error state now (danger fill, written line, spoken hint)
+// rather than a loose accent-coloured string underneath it.
 function ManualEntry({
 	value,
 	onChange,
@@ -383,30 +410,35 @@ function ManualEntry({
 }) {
 	return (
 		<View style={styles.manualWrap}>
-			<Text style={styles.manualLabel}>★ or type your code</Text>
-			<TextInput
+			<TextField
+				label="or type your code"
+				variant="code"
 				value={value}
 				onChangeText={onChange}
 				placeholder="PIG-XXXX-XXXX"
-				placeholderTextColor={WHIMSY.mute}
+				helper="The code printed on your Golden Ticket."
+				state={error ? "error" : "default"}
+				errorText={error ?? undefined}
 				autoCapitalize="characters"
 				autoCorrect={false}
 				autoComplete="off"
-				style={styles.input}
 				editable={!busy}
 				returnKeyType="go"
 				onSubmitEditing={onSubmit}
 			/>
-			{!!error && <Text style={styles.errorText}>{error}</Text>}
 			<TicketButton
 				label="Redeem ticket"
 				stub="Golden"
 				tone="golden"
 				loading={busy}
 				loadingLabel="Checking…"
-				style={{ marginTop: SPACE.md }}
+				style={styles.redeem}
 				disabled={value.trim().length === 0}
 				onPress={onSubmit}
+				accessibilityLabel={
+					value.trim() ? `Redeem Golden Ticket ${value.trim()}` : "Redeem ticket"
+				}
+				accessibilityHint="Claims this code's gift and shows what it held."
 			/>
 		</View>
 	);
@@ -419,22 +451,32 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 
 	if (reveal.kind === "hat") {
 		const art = reveal.id ? HAT_IMAGES[reveal.id] : undefined;
-		const color = reveal.rarity ? RARITY_COLORS[reveal.rarity] : WHIMSY.ink;
+		// The rarity is a badge, not a tint on the name: RARITY_BADGE's fill/ink
+		// pairs are each verified ≥4.5:1, where the old saturated legend-dot
+		// colours were being read as text. [D-02, E30]
+		const badge = reveal.rarity ? RARITY_BADGE[reveal.rarity] : undefined;
 		body = (
 			<>
 				{art ? (
 					<Image source={art} style={styles.hatArt} resizeMode="contain" />
 				) : (
-					<Glyph name="gift" size={72} style={{ marginBottom: SPACE.sm }} />
+					<Glyph name="gift" size={ART_SIZE.thumb} style={styles.grantGlyph} />
 				)}
-				<Text style={[styles.grantName, { color }]}>
+				<T role="pageTitle" align="center">
 					{reveal.name ?? "A new keepsake"}
-				</Text>
-				<Text style={styles.grantSub}>
+				</T>
+				{badge && reveal.rarity ? (
+					<Tag
+						label={reveal.rarity}
+						ink={badge.ink}
+						style={[styles.rarityTag, { backgroundColor: badge.bg }]}
+					/>
+				) : null}
+				<Hand tone="secondary" align="center" style={styles.grantSub}>
 					{reveal.already_owned
 						? "Rosie already has this one — it's still yours."
 						: "A new one for Rosie's closet."}
-				</Text>
+				</Hand>
 			</>
 		);
 	} else if (reveal.kind === "truffles") {
@@ -445,12 +487,12 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 				{truffleArt ? (
 					<Image source={truffleArt} style={styles.countIconArt} resizeMode="contain" />
 				) : (
-					<Glyph name="gem" size={56} style={{ marginBottom: SPACE.xs }} />
+					<Glyph name="gem" size={ART_SIZE.badge} style={styles.countGlyph} />
 				)}
-				<Text style={styles.grantCount}>+{amt}</Text>
-				<Text style={styles.grantSub}>
+				<T role="hero">+{amt}</T>
+				<Hand tone="secondary" align="center" style={styles.grantSub}>
 					golden {amt === 1 ? "truffle" : "truffles"}
-				</Text>
+				</Hand>
 			</>
 		);
 	} else {
@@ -458,11 +500,13 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 		const amt = reveal.amount ?? 0;
 		body = (
 			<>
-				<View style={{ marginBottom: SPACE.xs }}>
-					<SnoutCoin size={56} />
+				<View style={styles.countGlyph}>
+					<SnoutCoin size={ART_SIZE.badge} />
 				</View>
-				<Text style={styles.grantCount}>+{amt}</Text>
-				<Text style={styles.grantSub}>{amt === 1 ? "snout" : "snouts"}</Text>
+				<T role="hero">+{amt}</T>
+				<Hand tone="secondary" align="center" style={styles.grantSub}>
+					{amt === 1 ? "snout" : "snouts"}
+				</Hand>
 			</>
 		);
 	}
@@ -470,15 +514,16 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 	return (
 		<View style={styles.revealWrap}>
 			<Sticker color="sun" rotate={-0.6} radius={RADII.lg} style={styles.revealCard}>
-				<Text style={styles.revealKicker}>★ a gift for you</Text>
+				<Kicker style={styles.revealKicker}>a gift for you</Kicker>
 				{body}
 			</Sticker>
 			<Button
 				variant="primary"
 				size="lg"
 				full
-				style={{ marginTop: SPACE.xl }}
+				style={styles.done}
 				onPress={onDone}
+				accessibilityHint="Closes the gift and goes back."
 			>
 				Done
 			</Button>
@@ -487,19 +532,19 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
+	bg: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
 	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
 	// When the reveal card is up it's the only content — grow to fill and
 	// center it vertically so the gift sits mid-screen, not pinned to the top.
 	scrollCentered: { flexGrow: 1, justifyContent: "center" },
-	// Camera pane — a tall rounded ink-framed window.
+	// Camera pane — a tall rounded ink-framed window onto the lens.
 	cameraFrame: {
 		aspectRatio: 1,
 		width: "100%",
 		borderRadius: RADII.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: "#000",
+		borderWidth: BORDER.ink,
+		borderColor: UI_COLORS.border,
+		backgroundColor: WHIMSY_LENS,
 		overflow: "hidden",
 		alignItems: "center",
 		justifyContent: "center",
@@ -510,18 +555,13 @@ const styles = StyleSheet.create({
 		width: "62%",
 		aspectRatio: 1,
 		borderRadius: RADII.md,
-		borderWidth: 3,
-		borderColor: WHIMSY.sun,
-		opacity: 0.9,
+		borderWidth: BORDER.heavy,
+		borderColor: UI_COLORS.actionSurface,
 	},
 	scanHint: {
 		position: "absolute",
 		bottom: SPACE.md,
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.cream,
-		textShadowColor: "rgba(0,0,0,0.6)",
-		textShadowRadius: 4,
+		...LENS_TEXT_SHADOW,
 	},
 	// Permission cards (collapsed camera pane).
 	permCard: {
@@ -531,45 +571,12 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.lg,
 		...SHADOW_SM,
 	},
-	permTitle: { ...TYPE.cardTitle, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
-	permSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		lineHeight: 19,
-		marginTop: 4,
-	},
+	permGlyph: { marginBottom: SPACE.sm },
+	permSub: { marginTop: SPACE.xs },
+	permCta: { marginTop: SPACE.md },
 	// Manual entry.
 	manualWrap: { paddingTop: SPACE.xs },
-	manualLabel: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		marginBottom: SPACE.xs,
-	},
-	input: {
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.md,
-		// No mono token in FONTS; bodyExtra (Nunito 800) + wide tracking reads
-		// as a code field within the existing type system.
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 20,
-		letterSpacing: 3,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
-	errorText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.sm,
-	},
+	redeem: { marginTop: SPACE.md },
 	// Reveal.
 	revealWrap: { paddingTop: SPACE.md },
 	revealCard: {
@@ -578,25 +585,20 @@ const styles = StyleSheet.create({
 		paddingVertical: SPACE.xl,
 		...SHADOW_SM,
 	},
-	revealKicker: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		marginBottom: SPACE.md,
+	revealKicker: { marginBottom: SPACE.md },
+	hatArt: {
+		width: ART_SIZE.portrait,
+		height: ART_SIZE.portrait,
+		marginBottom: SPACE.sm,
 	},
-	hatArt: { width: 148, height: 148, marginBottom: SPACE.sm },
-	countIconArt: { width: 72, height: 72, marginBottom: SPACE.xs },
-	grantName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		textAlign: "center",
+	grantGlyph: { marginBottom: SPACE.sm },
+	countIconArt: {
+		width: ART_SIZE.thumb,
+		height: ART_SIZE.thumb,
+		marginBottom: SPACE.xs,
 	},
-	grantCount: { fontFamily: FONTS.whimsy, fontSize: 44, color: WHIMSY.ink },
-	grantSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 2,
-	},
+	countGlyph: { marginBottom: SPACE.xs },
+	rarityTag: { marginTop: SPACE.sm },
+	grantSub: { marginTop: SPACE.xxs },
+	done: { marginTop: SPACE.xl },
 });

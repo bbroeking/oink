@@ -34,9 +34,11 @@ design, not the slop. Our DNA:
   (whimsy titles), PatrickHand (hand-drawn kickers). Never reach for a system font.
 - **One palette: WHIMSY.** Muted storybook pastels on warm paper/cream. Accent rust for
   kickers. Alignment = angel-lilac vs goblin-gold. New color = a token, never a fresh hex.
-- **Show feelings, never state them.** Mood = Rosie's sprite. Streak = the Garden growing.
-  No meters/numbers/labels for anything emotional — the heart-counter is the *only* number that
-  earns its place. (Progression systems — XP, tiers, prices — may show numbers; feelings may not.)
+- **Show feelings, never state them.** Mood = Rosie's sprite, never a number. Streak is an
+  engagement progression rather than a feeling: its explicit consecutive-day count earns a
+  fiery treatment around the Home/Barn Tickle-bank counter. The retired Garden metaphor must
+  not return as a second Streak readout. (Progression systems — Streak, XP, tiers, prices — may
+  show numbers; feelings may not.)
 - **No emoji in UI, ever.** Use `Glyph` (hand-drawn art) or `Icon` (SVG). An emoji character in
   a render is an automatic taste failure.
 - **The world responds *now*.** A cleansed curse vanishes immediately, a claim animates on tap.
@@ -96,6 +98,14 @@ Fixing it means **enforcing the taste that already exists**, not imposing a new 
 
 ## Decision log
 
+- **2026-08-28 — Streak moves from the Garden to the fiery Home Tickle counter.** The Garden
+  metaphor and its no-number rule are retired. The Home/Barn spendable Tickle-bank counter now
+  carries a fire treatment plus the explicit number of consecutive personal days, keeping the
+  loyalty signal attached to the manual action that sustains it. Auto-Tickler activity never
+  advances or preserves the count. Serves **craft / comprehension** (one Streak surface rather
+  than two competing metaphors) and **Connect** (a clear achievement can become something worth
+  sharing without making an empty state public).
+
 - **2026-07-16 — The shop item preview is a product shot; living surfaces stay alive.** The preview
   pig animated its idle loop while the equipped item stayed pinned to frame 0's anchor (PigStage
   resolves anchors at `pigFrameIdx=0` but never fed SpritePig a `frameIdx`) — the item visibly
@@ -131,3 +141,142 @@ Fixing it means **enforcing the taste that already exists**, not imposing a new 
 - **2026-07-13 — The dingbat ruling: `✦`/`·` are typography; `✓`/`✕`/`♥` are semantic.** The audit kept flagging the same character two ways across files, so we drew the line by *what the mark does*, not by what it is. **`✦` and `·` are SANCTIONED as label typography** — hand-drawn marks in the whimsy voice (a sparkle flourish on a CTA label, a mid-dot separator), like `★` before them. They stay as `Text`. **`✓`, `✕`, and `♥` are SEMANTIC** — they carry meaning (done / dismiss / love-count) and must scale and color like the rest of the iconography, so they render through the `Icon`/`Glyph` primitives (`Icon "check"`, `Icon "x"`, `Glyph "heart"`), never as a raw `Text` glyph. Why: `✦`/`·` read as flourish and never need to match an icon's weight or hue; `✓`/`✕`/`♥` are the *same concept the app already draws as art elsewhere in the same file*, and a text-glyph version of a semantic mark is the inconsistency the June audit named. Swept the remaining player-facing `✓`/`✕`/`♥` text glyphs onto the primitives where an equivalent exists. Serves **craft / governance** (one concept, one drawing).
 
 - **2026-07-07 — The `locked` Button variant is now "a button, asleep."** The disabled/waiting CTA used to render as a borderless `paper3` pill under a blanket `opacity: 0.5` crush — a washed-out ghost that didn't read as a button at all. It now carries full button chrome: the signature 2px ink outline, `paper3` fill, `ink4` text, and *no* opacity crush (the muted fill/ink already say "disabled"; dimming a bordered pill just erases the shape). Rule going forward: waiting/cooldown states keep the control's shape — you mute the fill, you never dissolve the outline. Also moved the season guide link ("how it works ›") out of the Sounder card body and into the "your sounder" `SectionHeader`'s right slot, so the card starts at content and the header owns navigation. Serves **craft / hierarchy & comprehension** (a disabled control still reads as a control).
+
+- **2026-09-11 — Full UI/UX audit run; Design System v1 drafted for ratification.** Seven parallel Opus auditors ran ten
+  selected evaluation prompts (`docs/design/audit-2026-09/00-evaluation-prompts.md`) against every app and web UI file:
+  204 findings (6 P0 · 70 P1 · 87 P2 · 41 P3), synthesized in `docs/design/audit-2026-09/01-audit-report.md`. The
+  headline: the system stops at the token file — 357 pressables vs 98 primitive buttons, 33 raw Modals, nine files
+  using a system `Alert` as the commit dialog, two rendered emoji, no `BORDER`/`OPACITY`/`TINT`/`PRESSED`/`DISABLED`
+  tokens, and contrast failures rooted in `muteSoft`/`accent`/the rarity badge. The draft system that answers it lives
+  in `docs/design/design-system-spec.md` and the "Tickle the Pig Design System" canvas (`docs/design/design-system-canvas/`):
+  the shipped tokens verbatim, the proposed token families, fourteen primitives, the state/behaviour/a11y/naming/web-parity
+  laws, a lint rule set, and a five-wave migration. **Status: proposed, pending founder ratification** of the six open
+  questions in the spec's §5. Serves **craft / governance** (enforcing the taste that already exists, through components
+  rather than discipline).
+
+- **2026-09-11 — Design System v1 ratified in principle; wave 0 begins.** Founder delegated the six open questions in
+  `docs/design/design-system-spec.md` §5 and set one: **the Mote Machine is hidden** (`MOTE_MACHINE_VISIBLE = false`)
+  until `MoteWageringScreen` is rebuilt from the primitives. The delegated calls: Fredoka keeps one job as `TYPE.hero`;
+  the accent stays a single token restricted by rule to the six fills where it clears AA (ink elsewhere);
+  `SPACE.card 14` is sanctioned as the Sticker's inner pad; Habitat is rebuilt on the primitives with its VoiceOver
+  labelling kept as the reference; `DESIGN.md` is demoted to a historical export until a generator regenerates it.
+  Wave 0 lands now: every `Alert.alert` outside `components/dev/**` becomes a toast (outcome), `ConfirmDialog`
+  (decision) or the new `ActionSheet` (pick-where-to-go); the two rendered emoji become `Glyph`/SVG; three ESLint rules
+  (`no-restricted-properties` for `Alert.alert`, `no-restricted-imports` for `@expo/vector-icons`, `no-restricted-syntax`
+  for emoji in JSX) land as errors, plus `npm run lint:web` for the landing/dashboard. Rule going forward: **refusals are
+  toasts · decisions are ConfirmDialog · Alert is for nothing.** Serves **craft / governance** (the door closes while it
+  has only nine offenders).
+
+- **2026-09-11 — Wave 1 of the design system lands: the token families exist, the legacy palette is gone, lint sees the
+  whole debt.** `constants/theme.ts` gains `BORDER`, `OPACITY`, `TINT` (+ `inkAlpha`, scrim corrected to derive from
+  ink), `PRESSED`/`DISABLED`, `MOTION`/`MOTION_SPRING`, `TILT`, `TAP_MIN`, `GRADIENT`, `BUTTON_SIZE`, `PODIUM`,
+  `RARITY_BADGE` (every pair ≥ 4.5:1), `DIG_TILE`, `PIG_ACCENT`, `COSMETIC_ACCENT`, `WOOD`, `SPACE.xxs/card/xxl`,
+  `RADII.hair`, `TYPE.hero/displayLg/numeralLg` and a lineHeight on every role. Contrast at the root: `textDisabled`
+  now resolves to the text-safe `muteDim`; `muteSoft` becomes `uiMuted` (icons, rules, never text); the accent is nudged
+  `#a13f30` → `#a03e2f` so it clears AA on all seven `ACCENT_SAFE_FILLS`. `Button` disabled is the locked look for
+  every variant (no opacity), `Sticker` reads its radius/border/tilt from tokens and grows `shadow="sm"`, and the
+  app's last blurred shadow (`TierUpBanner`) is gone. The Expo template palette (`COLORS`, `Colors.ts`, `ThemedText`,
+  `ThemedView`, `useThemeColor`, `useColorScheme`) is deleted and `+not-found` is rebuilt on the system. Seven
+  `eslint-plugin-ttp` rules run in warn mode (baseline ≈ 3.7k warnings: 2,924 raw style literals, 192 unlabelled
+  pressables, 108 `SPACE` arithmetic, 33 raw Modals, 13 spinners, 10 motion-policy gaps); each file flips to error as it
+  migrates. Serves **craft / governance** (the vocabulary exists before the screens are asked to speak it).
+
+- **2026-09-11 — Wave 2 lands: the vocabulary exists.** `components/ui/` gains the primitives the audit said the app
+  builds most and never had: text roles (`T` + `Display…Numeral`, `Kicker`/`KickerPill` own the ★), `Sheet` (the panel
+  on `SlideUpSheet`, Reduce Motion fade), `ListRow`/`NavRow`, `Avatar`, `Chip`/`Tag`/`Ribbon`, `Toast` (success · fail ·
+  info, announced), `TextField`, `ProgressTrack`, `Stat`, `Divider`/`TitleRule`, `DialogButtonRow`, `EffectCard`
+  (one drawing for the blessing/curse at chip · row · detail). `Sticker` gains press (the shadow-collapse DNA press) and
+  title/right/footer slots; `Button` gains `link`, `destructive`, `xs`, `loading`; `SegmentedControl` gains
+  icon-over-label and per-option disabled/badge; `PageHeader` gains `tab` and `plaque`; `EmptyState` gains
+  `kind="error"` + an action slot; `ConfirmDialog` is rebuilt on the scaffold with full a11y; `Spotlight` cannot strand
+  a VoiceOver player. Rulings recorded in code: **page kicker = `KickerPill`, section kicker = `Kicker`; the page title
+  is `pageTitle` in every variant** (the tabs' 32px display folds). The barrel exports everything (140 symbols) and is
+  the one sanctioned import path. `npm run scorecard` measures conformance per file. Serves **craft / governance** —
+  from here on, a screen that re-rolls a row, a sheet, a chip or a kicker is choosing to.
+
+- **2026-09-11 — Wave 3 · section A: the Barn and its Habitat are on the system.** 27 files, 556 → 0 taste-lint
+  warnings, lint flipped to error for the area. The Habitat cluster — the audit's one design-specificity failure inside
+  the app — is rebuilt on the primitives with its VoiceOver labelling untouched; the blessing/curse is one `EffectCard`
+  drawing everywhere; every spend/cast control names its cost and consequence to a screen reader; three hand-rolled
+  full-screen dialogs are scaffolds with a visible exit; the Barn honours Reduce Motion. The section forced eleven small
+  primitive additions (recorded in `findings-A-home-barn.md`'s conformance note) — the expected shape of a section
+  pass: the screen asks, the system grows, the screen composes. Serves **craft / governance**.
+
+- **2026-09-11 — Wave 3 · section C: Season, the Dig-Off and the dig are on the system.** 48 files, 1,137 → 0
+  taste-lint warnings, lint at error for the area. The three page crowns are one `PageHeader`; the interaction layer
+  the audit called ungoverned (nine pressed idioms, five dissolves, four extra shadow tiers, four segmented controls)
+  is tokens and primitives; the Great Hunger and Zoomies meters are `ProgressTrack`s that speak a word, never a
+  number; the Truffle Patch honours Reduce Motion while keeping the app's best VoiceOver work intact; every spend
+  control names its cost and consequence; the Season tab wears one hero. Fourteen small primitive additions landed
+  on the section's asks. Serves **Contend** (a race everyone can read, in one language) and **craft / governance**.
+
+- **2026-09-11 — Wave 3 complete: every screen in the app speaks the system.** Sections A (Barn), C (Season/Dig),
+  D (Shop), B (Friends) and E (Account/shell) landed the same day, each as parallel section passes against
+  `docs/design/audit-2026-09/03-section-pass-brief.md`: 3,269 → 0 taste-lint warnings across 201 files, lint at error
+  for every area, no `eslint-disable` left standing, 207 suites green. The app's three specificity failures (the
+  Habitat cluster, `MoteWageringScreen`, and the web's redeem page still pending in wave 5) are down to one. Every
+  spend, cast, claim and irreversible action names its cost and consequence to a screen reader; every `null` fetch is
+  an error with a retry; every meter that is a feeling speaks a word. The system grew by ~45 small additions the
+  sections asked for — each recorded in its area's conformance note — which is the proof the shape was right: the
+  screen asks, the system grows, the screen composes. Serves **craft / governance**, and all three pillars by making
+  Connect, Collect and Contend read as one hand.
+
+- **2026-09-11 — Wave 4 lands: the polish list is closed and the token file reaches the web.** The taste rules are
+  errors by default for `app/` + `components/` (no per-area overrides); `Toggle` and `PageDots` join the primitives;
+  `Chip` gains `sub`/`badge`; the social rows (`CrewRow`, `SunPill`, `HandLink`, `CrewPortrait`) graduate into
+  `components/ui`; `BlockedUsersModal` is `BlockedUsersSheet`; the one-hero rule is a unit-tested derivation
+  (`utils/seasonHero.ts`) across the whole Season scroll; `PIG_ACCENT` solids clear ink contrast; a dead roster read is
+  an error with a retry; portrait+name rows are `UserSheet` doors; `/sounder` is `/recruits` (the route was referrals,
+  not the herd); the lounge is dark-launched behind `LOUNGE_VISIBLE` instead of an unconditional redirect. Two
+  generators now derive `web/tokens.css`, `web/sticker.css` and `DESIGN.md` from `constants/theme.ts`, and
+  `npm run lint:web` fails when they drift — the web parity law has teeth before wave 5 migrates a single page.
+  Serves **craft / governance**.
+
+- **2026-09-11 — Wave 5 lands; the migration is complete.** Every public web surface — the landing family, the legal
+  and report pages, redeem, the adventures click-through and the analytics dashboard — consumes `tokens.css` and
+  `sticker.css` generated from `constants/theme.ts`; no HTML file declares a `:root`; Archivo is gone; the sticker card
+  is drawn once; the invite page is a thin page over the landing page's shared block; focus rings, contrast and the
+  silent copy failure are fixed. Standing gates from here on: `npx eslint` (taste rules are errors), `npm run scorecard`
+  (prints 0), `npm run lint:web` (emoji + generated-CSS freshness), `npm run build:tokens` after any theme edit. The
+  2026-06 audit's verdict was "governance erosion"; the answer was not discipline but components — the vocabulary
+  exists, the screens speak it, and the lint keeps it so. Serves **craft is belief**, across every surface at once.
+
+- **2026-09-11 — One door language at two scales.** The barn structure's leaves and the full-screen panels are the same doors: both *slide* apart (never rotate), both fade after 35% of travel, both take the rest pose under Reduce Motion (zero travel, `crossfade`). Two tempos, both from `MOTION_DURATION`: the **threshold** on the Exterior closes at `state` (220ms), the **room** opens at `celebration` (450ms) — the route cut happens behind closed doors where it cannot be seen. Sprite dimensions, leaf travel and the ground offset are named art constants, never `SPACE` steps. Serves **craft** (the object you tap is the object that becomes the transition).
+
+- **2026-09-12 — The stat tickets stay a matched pair; the streak is a stamp, not a row.** A badge that grows one ticket makes the two-up unbalanced, so the tickets stretch to one height and the streak (flame + day count) becomes a corner stamp overlapping the ticket's top-right edge, like the lucky/wallow ribbon overlaps the bottom. The bank numeral never truncates; the `/ cap` unit yields. Explored on a design canvas (three directions; A chosen). Same day: the glyph sheet's sheet-cut slivers (a stray column of the neighbouring glyph on 23 files) were erased in the assets — the "cut-off emoji" look was asset bleed, not layout. Serves **craft** (balance is a property of the pair, not of one card).
+
+- **2026-09-12 — Rosie's bounce is the app's press, extracted.** Her tickle press (70ms squash to 0.94, spring back at Origami friction 4 ≈ damping 13 / stiffness 230) now lives in `utils/motionRecipes.ts` as `squashAndSpring`, honouring Reduce Motion inside the recipe, and is what the barn structure does on tap; the door leaves and the full-screen panels swing on `MOTION_SPRING` springs (`settle` for the room, `tap` for the threshold) instead of linear timing, clamped at the closed end so an overshoot never crosses the seam. The barn itself is painted art now (ChatGPT ImageGen in Rosie's sticker hand, keyed off magenta and sliced into body + two leaves by `scripts/habitat/slice_barn.py`), replacing the code-drawn SVG. Serves **craft** (rule 6: motion has weight and warmth; one bounce, everywhere).
+
+- **2026-09-12 — A row's actions slide over its name; they never sit beside it.** The friend row's four 32pt controls clipped on phones for a structural reason: `ListRow`'s text column had `flex: 1` without `minWidth: 0`, so a sub line with a non-shrinking `Tag` set the column's floor and shoved the rail past the card — worse under Dynamic Type. The fix is the primitive (`minWidth: 0`, shrinkable sub-line children, a 1.3 font-scale cap on compact rows) plus a rule: **a list row keeps one main control and a chevron in its rail (56pt); everything else lives in a tray that springs in from under the rail and slides over the name column, inside the row's own height**. No row grows on tap, the list never reflows, and the tray's cells are ≥44pt with one-word state lines (`3`, `twice`, `done`). Two phone tiers only (`constants/layoutBreakpoints.ts`): below 390pt the cell labels drop a step. Explored on a design canvas (slide-over vs action sheet vs swipe); chosen for discoverability. Serves **craft** (the name is the row; the actions visit it).
+
+- **2026-09-12 — Chrome caps Dynamic Type at 1.3x; the slot's exit outranks its errand; a room anchors to
+  the floor of a short stage.** A 17 Pro `accessibility-medium` pass on the simplified Barn visit found three
+  defects with one shape each. (1) **Type.** The visit's chrome is fixed-height around a `flex: 1` stage, so
+  past one step of Dynamic Type it clipped rather than grew ("× Lea", "O" / "I", "Leave a h"). `Button`,
+  `Chip`/`Tag` and `SegmentedControl` now take an optional `maxFontSizeMultiplier` (undefined by default —
+  spec §1.2's 200% is still the rule) and the whole visit chrome passes `VISIT_TYPE_CAP` 1.3, the same cap the
+  friend row took. The structural half matters more than the cap: **React Native defaults `flexShrink` to 0**,
+  so a `Tag`'s label and a segment's label measured at their content width and pushed their capsule past the
+  row instead of wrapping. Both are shrinkable now, and the status capsules carry `maxWidth: "100%"`, which is
+  what makes the row's long-claimed `flexWrap` actually wrap. (2) **Precedence.** The bottom slot put the
+  hoofprint ahead of the exit — correct under the retired one-tickle visit, wrong under the 3–7 tap cap, where
+  the hoofprint has had the whole visit to be taken and the player who is tickled out wants the way out.
+  **Tired outranks the errand.** (3) **Anchoring.** `HabitatScene` centres a fixed 390x844 room, which is right
+  when the Habitat is the screen and wrong on the visit's short stage, where the leftover read as a cream band
+  above the action bar. An additive `anchor="bottom"` (scene) + `ground="transparent"` (doors) pins the floor to
+  the stage and hands the leftover to the top, under the header's fade, painted by the host's own background.
+  Rule going forward: **a fixed-aspect scene states where its leftover goes, and compact chrome states its type
+  ceiling — neither is the caller's problem to patch from outside.** Serves **craft** (the layout holds at every
+  text size) and **Connect** (the visit reads, and ends, cleanly).
+
+- **2026-09-12 — Live Dynamic Type changes refresh the native text measurement.** The visit's
+  `Leave`, `Outside` / `Inside`, and visits-left labels fit on a cold accessibility-medium
+  render but clipped after increasing text size while the visit was open. The same symptom
+  is reported upstream for iOS Fabric in React Native [#57512](https://github.com/react/react-native/issues/57512).
+  `DynamicTypeText` now observes the system font scale and replaces only its native Text
+  node when that scale changes. `Button`, `Chip`/`Tag`, `SegmentedControl`, and the role-based
+  `T` use it; the controls and visit state stay mounted. This corrects measurement without
+  adding width patches, reducing text size, or changing the existing caps. Verify both
+  a cold launch and a live default → accessibility-medium → default transition: static
+  prop tests alone cannot catch a native layout cache bug. Serves **craft / comprehension**
+  and **Connect** (the visit's controls remain readable).

@@ -4,12 +4,19 @@
 // mounts this; the events also live in the Friends-tab Inbox, this
 // is just the can't-miss-it announcement.
 import React from "react";
-import { Modal, View, Text, ScrollView, StyleSheet, Pressable, Image } from "react-native";
-import { Sticker } from "./ui/Sticker";
-import { Button } from "./ui/Button";
-import { Glyph } from "./ui/Glyph";
-import { Icon } from "./ui/Icon";
-import { RitualIconWell } from "./ui/RitualIconWell";
+import { View, ScrollView, StyleSheet, Image } from "react-native";
+import {
+	AdaptiveModalScaffold,
+	Avatar,
+	Button,
+	Hand,
+	Icon,
+	Kicker,
+	ListRow,
+	PageTitle,
+	RitualIconWell,
+	Sticker,
+} from "./ui";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -18,15 +25,26 @@ import {
 	type RitualMeta,
 } from "../utils/rituals";
 import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	TYPE,
-	WHIMSY,
+	AVATAR_SIZE,
+	BORDER,
 	RADII,
+	SPACE,
+	STICKER_SHADOW,
+	UI_COLORS,
+	WHIMSY,
 } from "@/constants/theme";
 import { VISIT_EMOTE_IMAGES, type VisitEmoteId } from "@/utils/visitEmotes";
+
+// Drawing constants, not spacing steps: the interface mark inside a 40pt well
+// (one step under the well's own glyph so an Icon reads as a companion to the
+// row, not as art), and the commissioned visit sticker's square well — a
+// sticker is not a portrait, so it keeps its own rounded-square frame instead
+// of being cropped into an Avatar's circle.
+const WELL_ICON = 18;
+const EMOTE_WELL = 52;
+const EMOTE_ART = 48;
+// How much of the dialog the recap list may claim before it scrolls.
+const RECAP_MAX_H = 270;
 
 // Discriminated union — blessings + curses + trades + system
 // announcements all surface in the same launch modal so the player
@@ -37,6 +55,13 @@ export type WhileAwayEvent =
 	| { source: "blessing"; kind: string; from: string | null }
 	| { source: "curse"; kind: string; from: string | null }
 	| { source: "trade_fulfilled"; amount: number; from: string | null }
+	| {
+			source: "sounder";
+			messageId: string;
+			from: string | null;
+			crewName: string;
+			body: string;
+	  }
 	| {
 			source: "system";
 			announcementId: number;
@@ -61,7 +86,9 @@ export function WhileAwayModal({
 	// Driven by the popup-queue slot in _layout. The native Modal must
 	// animate out on visible=false BEFORE the parent unmounts it, or the
 	// next queued popup can present into a mid-teardown window and come
-	// up invisible (see PopupQueue.tsx).
+	// up invisible (see PopupQueue.tsx). AdaptiveModalScaffold keeps its
+	// Modal mounted and drives `visible` straight through, so the slot's
+	// contract survives the scaffold.
 	visible: boolean;
 	events: WhileAwayEvent[];
 	onDismiss: () => void;
@@ -74,13 +101,22 @@ export function WhileAwayModal({
 	const curses = events.filter((e) => e.source === "curse").length;
 	const trades = events.filter((e) => e.source === "trade_fulfilled").length;
 	const systems = events.filter((e) => e.source === "system").length;
+	const sounders = events.filter((e) => e.source === "sounder").length;
 	// Pick the headline from whichever event class dominates — the
 	// modal isn't going to summarize a mix perfectly, so lean on the
 	// most-numerous one. System announcements take precedence when
 	// present + numerous because they're admin-issued and usually
 	// the most important thing in the batch.
 	const headline =
-		systems > 0 && systems >= trades && systems >= blessings && systems >= curses
+		sounders > 0 &&
+		sounders >= systems &&
+		sounders >= trades &&
+		sounders >= blessings &&
+		sounders >= curses
+			? sounders === 1
+				? "Your Sounder Oinked"
+				: "Oinks from your Sounder"
+			: systems > 0 && systems >= trades && systems >= blessings && systems >= curses
 			? systems === 1
 				? "A note from the barn"
 				: "Notes from the barn"
@@ -97,206 +133,187 @@ export function WhileAwayModal({
 						: "Blessings & curses landed";
 
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-			<View style={styles.backdrop}>
-				<Sticker
-					color="paper"
-					rotate={-1}
-					radius={RADII.xxl}
-					style={[styles.sheet, STICKER_SHADOW]}
-				>
-					<Text style={styles.kicker}>★ while you were away</Text>
-					<Text style={styles.headline}>{headline}</Text>
+		<AdaptiveModalScaffold
+			visible={visible}
+			onRequestClose={onDismiss}
+			animationType="fade"
+			bare
+			contentContainerStyle={styles.frame}
+		>
+			<Sticker
+				color="paper"
+				rotate={-1}
+				radius={RADII.xxl}
+				style={[styles.sheet, STICKER_SHADOW]}
+			>
+				<Kicker>while you were away</Kicker>
+				<PageTitle style={styles.headline}>{headline}</PageTitle>
 
-					<ScrollView style={{ maxHeight: 270 }} showsVerticalScrollIndicator={false}>
-						{events.map((e, i) => {
-							if (e.source === "system") {
-								const route = e.route ?? null;
-								const tappable = !!route && !!onNavigate;
-								const emoteSource =
-									e.emoteId && Object.prototype.hasOwnProperty.call(VISIT_EMOTE_IMAGES, e.emoteId)
-										? VISIT_EMOTE_IMAGES[e.emoteId as VisitEmoteId]
-										: null;
-								const inner = (
-									<>
-										{emoteSource ? (
-											<View style={styles.systemEmoteWell}>
+				<ScrollView
+					style={styles.list}
+					showsVerticalScrollIndicator={false}
+				>
+					{events.map((e, i) => {
+						if (e.source === "sounder") {
+							return (
+								<ListRow
+									key={e.messageId || i}
+									index={i}
+									leading={
+										<Avatar fill="paper" label="Your Sounder">
+											<Icon
+												name="bell"
+												size={WELL_ICON}
+												color={UI_COLORS.textPrimary}
+											/>
+										</Avatar>
+									}
+									title={`${e.from ?? "A crewmate"} · ${e.crewName}`}
+									sub={e.body}
+									style={[styles.row, styles.rowSounder]}
+								/>
+							);
+						}
+						if (e.source === "system") {
+							const route = e.route ?? null;
+							const tappable = !!route && !!onNavigate;
+							const emoteSource =
+								e.emoteId && Object.prototype.hasOwnProperty.call(VISIT_EMOTE_IMAGES, e.emoteId)
+									? VISIT_EMOTE_IMAGES[e.emoteId as VisitEmoteId]
+									: null;
+							return (
+								<ListRow
+									key={i}
+									index={i}
+									leading={
+										emoteSource ? (
+											<View style={styles.emoteWell}>
 												<Image
 													source={emoteSource}
-													style={styles.systemEmote}
+													style={styles.emote}
 													resizeMode="contain"
 												/>
 											</View>
 										) : (
-											<View style={styles.systemGlyphWell}>
-												<Text style={styles.systemGlyph}>★</Text>
-											</View>
-										)}
-										<View style={{ flex: 1, minWidth: 0 }}>
-											<Text style={styles.rowName} numberOfLines={1}>
-												{e.title}
-											</Text>
-											<Text style={styles.rowBlurb} numberOfLines={3}>
-												{e.body}
-											</Text>
-										</View>
-										{tappable && <Icon name="arrowRight" size={18} color={WHIMSY.ink} />}
-									</>
-								);
-								if (tappable) {
-									return (
-										<Pressable
-											key={i}
-											style={({ pressed }) => [
-												styles.row,
-												styles.rowSystem,
-												pressed && styles.rowPressed,
-											]}
-											onPress={() => {
-												// The parent persists the batch marker, releases
-												// the popup, then routes after native teardown.
-												onNavigate!(route!);
-											}}
-										>
-											{inner}
-										</Pressable>
-									);
-								}
-								return (
-									<View key={i} style={[styles.row, styles.rowSystem]}>
-										{inner}
-									</View>
-								);
-							}
-							if (e.source === "trade_fulfilled") {
-								return (
-									<View key={i} style={[styles.row, styles.rowTrade]}>
-										<View style={styles.tradeGlyphWell}>
-											<Glyph name="heart" size={18} />
-										</View>
-										<View style={{ flex: 1, minWidth: 0 }}>
-											<Text style={styles.rowName} numberOfLines={1}>
-												{e.from ?? "A friend"} answered your trade
-											</Text>
-											<Text style={styles.rowBlurb} numberOfLines={2}>
-												+{e.amount * 2} tickles landed in your barn.
-											</Text>
-										</View>
-									</View>
-								);
-							}
-							const blessed = e.source === "blessing";
-							// Raw server string → the lookup can miss; annotated so the
-							// `meta?.` guards below stay type-enforced.
-							const meta: RitualMeta | undefined = blessed
-								? BLESSING_META[e.kind as BlessingKind]
-								: CURSE_META[e.kind as CurseKind];
-							return (
-								<View key={i} style={[styles.row, blessed ? styles.rowBless : styles.rowCurse]}>
-									<RitualIconWell icon={meta?.icon} blessed={blessed} size={40} />
-									<View style={{ flex: 1, minWidth: 0 }}>
-										<Text style={styles.rowName} numberOfLines={1}>
-											{e.from ?? (blessed ? "A friend" : "Someone")}{" "}
-											{blessed ? "blessed" : "cursed"} you
-										</Text>
-										<Text style={styles.rowBlurb} numberOfLines={2}>
-											{meta?.name ?? e.kind}
-											{meta?.blurb ? ` — ${meta.blurb}` : ""}
-										</Text>
-									</View>
-								</View>
+											<Avatar fill="sun" label="From the barn">
+												<Icon
+													name="star"
+													size={WELL_ICON}
+													color={UI_COLORS.textPrimary}
+												/>
+											</Avatar>
+										)
+									}
+									title={e.title}
+									sub={e.body}
+									trailing={
+										tappable ? (
+											<Icon
+												name="arrowRight"
+												size={WELL_ICON}
+												color={UI_COLORS.textPrimary}
+											/>
+										) : undefined
+									}
+									// The parent persists the batch marker, releases the
+									// popup, then routes after native teardown.
+									onPress={tappable ? () => onNavigate!(route!) : undefined}
+									accessibilityLabel={`${e.title}. ${e.body}`}
+									accessibilityHint={
+										tappable ? "Opens this note from the barn" : undefined
+									}
+									style={[styles.row, styles.rowSystem]}
+								/>
 							);
-						})}
-					</ScrollView>
+						}
+						if (e.source === "trade_fulfilled") {
+							return (
+								<ListRow
+									key={i}
+									index={i}
+									leading={
+										<Avatar fill="paper" glyph="heart" label="Trade answered" />
+									}
+									title={`${e.from ?? "A friend"} answered your trade`}
+									sub={`+${e.amount * 2} tickles landed in your barn.`}
+									style={[styles.row, styles.rowTrade]}
+								/>
+							);
+						}
+						const blessed = e.source === "blessing";
+						// Raw server string → the lookup can miss; annotated so the
+						// `meta?.` guards below stay type-enforced.
+						const meta: RitualMeta | undefined = blessed
+							? BLESSING_META[e.kind as BlessingKind]
+							: CURSE_META[e.kind as CurseKind];
+						return (
+							<ListRow
+								key={i}
+								index={i}
+								leading={
+									<RitualIconWell
+										icon={meta?.icon}
+										blessed={blessed}
+										size={AVATAR_SIZE[1]}
+									/>
+								}
+								title={`${e.from ?? (blessed ? "A friend" : "Someone")} ${
+									blessed ? "blessed" : "cursed"
+								} you`}
+								sub={`${meta?.name ?? e.kind}${
+									meta?.blurb ? ` — ${meta.blurb}` : ""
+								}`}
+								style={[styles.row, blessed ? styles.rowBless : styles.rowCurse]}
+							/>
+						);
+					})}
+				</ScrollView>
 
-					<Button variant="purple" size="md" full onPress={onDismiss} style={{ marginTop: 6 }}>
-						Got it
-					</Button>
-					<Text style={styles.foot}>See the full activity in the Friends tab.</Text>
-				</Sticker>
-			</View>
-		</Modal>
+				<Button
+					variant="purple"
+					size="md"
+					full
+					onPress={onDismiss}
+					style={styles.dismiss}
+					accessibilityLabel="Got it"
+					accessibilityHint="Closes this recap"
+				>
+					Got it
+				</Button>
+				<Hand tone="secondary" align="center" style={styles.foot}>
+					See the full activity in the Friends tab.
+				</Hand>
+			</Sticker>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		justifyContent: "center",
-		padding: 24,
-		backgroundColor: MODAL_BACKDROP_BG,
-	},
-	sheet: { padding: 20 },
-	kicker: { ...KICKER_TEXT, fontSize: 11, marginBottom: 4 },
-	headline: {
-		...TYPE.pageTitle,
-		color: WHIMSY.ink,
-		marginBottom: 14,
-	},
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 10,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		paddingHorizontal: 10,
-		paddingVertical: 9,
-		marginBottom: 8,
-	},
-	rowBless: { backgroundColor: WHIMSY.sun, borderColor: WHIMSY.ink },
-	rowCurse: { backgroundColor: WHIMSY.sage, borderColor: WHIMSY.ink },
-	rowTrade: { backgroundColor: WHIMSY.rose, borderColor: WHIMSY.ink },
-	// 40pt to match the bless/curse RitualIconWell so all four row
-	// kinds share one left-column height.
-	tradeGlyphWell: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-		justifyContent: "center",
-	},
+	frame: { padding: SPACE.xs },
+	sheet: { padding: SPACE.lg },
+	headline: { marginBottom: SPACE.md },
+	list: { maxHeight: RECAP_MAX_H },
+	// Each row keeps its event class's fill; the drawing (border, radius,
+	// shadow, tilt, text roles) is ListRow's.
+	row: { marginBottom: SPACE.sm },
+	rowBless: { backgroundColor: WHIMSY.sun },
+	rowCurse: { backgroundColor: WHIMSY.sage },
+	rowTrade: { backgroundColor: WHIMSY.rose },
+	rowSounder: { backgroundColor: WHIMSY.sun },
 	// System announcement row — cream (paper-toned) so it reads as
 	// "from the barn" rather than from any specific friend or kind.
-	rowSystem: { backgroundColor: WHIMSY.cream, borderColor: WHIMSY.ink },
-	// Press feedback for a tappable (deep-linking) system row.
-	rowPressed: { opacity: 0.7 },
-	systemGlyphWell: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
+	rowSystem: { backgroundColor: WHIMSY.cream },
+	emoteWell: {
+		width: EMOTE_WELL,
+		height: EMOTE_WELL,
+		borderRadius: RADII.xl,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
+		backgroundColor: UI_COLORS.surface,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	systemGlyph: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
-	systemEmoteWell: {
-		width: 52,
-		height: 52,
-		borderRadius: 16,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	systemEmote: { width: 48, height: 48 },
-	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-	rowBlurb: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		marginTop: 1,
-	},
-	foot: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 8,
-	},
+	emote: { width: EMOTE_ART, height: EMOTE_ART },
+	dismiss: { marginTop: SPACE.sm },
+	foot: { marginTop: SPACE.sm },
 });

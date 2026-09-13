@@ -1,26 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-	ActivityIndicator,
-	Alert,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { PigPortrait } from "./ui/PigPortrait";
 import { Glyph, type GlyphName } from "./ui/Glyph";
-import { SectionHeader } from "./ui";
+import {
+	Body,
+	BodySm,
+	Button,
+	CardTitle,
+	ConfirmDialog,
+	EmptyState,
+	Hand,
+	LoadingBeat,
+	SectionHeader,
+	SectionTitle,
+	Sticker,
+	T,
+	Tag,
+	Tape,
+} from "./ui";
+import { showPurchaseToast } from "./PurchaseToast";
 import {
 	PAGE_PAD,
-	FONTS,
+	BORDER,
+	PIG_ACCENT,
 	RADII,
-	SHADOW_SM,
 	SPACE,
-	STICKER_SHADOW,
 	TAB_SAFE,
-	TYPE,
+	TAP_MIN,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
 import { pigRosterActionMessage, type PigRoster } from "@/utils/pigRoster";
@@ -30,6 +38,15 @@ import type { RpcResult } from "@/utils/rpc";
 interface Props {
 	roster: PigRoster;
 	loading: boolean;
+	/**
+	 * The roster read never came back. The Pen keeps its scene but must not draw
+	 * a shelf of "Recruit" buttons off a roster it doesn't have — a failed read
+	 * used to arrive as DEFAULT_PIG_ROSTER and quietly un-recruit a member's
+	 * companion. `null` is unknown, not empty. [B-02, B-14] (2026-09-11, wave 4)
+	 */
+	error?: boolean;
+	/** Re-asks for the roster from the error state (`usePigRoster().refresh`). */
+	onRetry?: () => void;
 	busyPigId: PigId | null;
 	onJoinSlopClub: (pigId: PigId) => Promise<void>;
 	onRecruit: (pigId: PigId) => Promise<RpcResult<{ pig_id: PigId }>>;
@@ -37,6 +54,34 @@ interface Props {
 }
 
 const FRIENDS = PIGS.filter((pig) => pig.id !== "rosie");
+
+// ── Drawing constants ───────────────────────────────────────────────────────
+// The Pen is a drawn scene — a fenced paddock with two pigs in it — so its
+// geometry is art, not spacing. Named here so no style block carries a bare
+// number. (2026-09-11)
+/** The paddock and the pigs standing in it. */
+const HERO_H = 260;
+const HERO_PIG = 148;
+/** The fence: overall height, the lower rail's drop, and one post. */
+const FENCE_H = 74;
+const FENCE_RAIL_DROP = 42;
+const FENCE_POST_H = 70;
+/** A roster card's art window and the portrait inside it. */
+const CARD_ART_H = 120;
+const CARD_PIG = 116;
+/** The motif badge in the art window's corner. */
+const MOTIF_BADGE = 28;
+const MOTIF_MARK = 18;
+/** The pig's nameplate — wide enough for the longest name. */
+const NAMEPLATE_MIN_W = 104;
+/** Two lines of coat description, so the grid's cards stay the same height. */
+const COAT_LINES_H = 38;
+/** A "put at home" choice card — a 44pt tap with its own breathing room. */
+const HOME_CHOICE_H = 52;
+/** The alternating scrapbook lean across the two grid columns. */
+const CARD_TILT = 0.5;
+/** The widest a centred paragraph gets before it stops being readable. */
+const STORY_MAX_W = 330;
 
 function motifGlyph(motif: (typeof PIGS)[number]["motif"]): GlyphName {
 	if (motif === "mask") return "mask";
@@ -49,6 +94,8 @@ function motifGlyph(motif: (typeof PIGS)[number]["motif"]): GlyphName {
 export function PigPenView({
 	roster,
 	loading,
+	error = false,
+	onRetry,
 	busyPigId,
 	onJoinSlopClub,
 	onRecruit,
@@ -57,8 +104,10 @@ export function PigPenView({
 	const [previewPigId, setPreviewPigId] = useState<PigId>(
 		roster.recruitedPigId ?? "bandit"
 	);
-	const [message, setMessage] = useState<string | null>(null);
 	const [joining, setJoining] = useState(false);
+	// The companion choice is permanent, so it's a decision — a ConfirmDialog,
+	// never a system Alert. Holds the pig awaiting confirmation.
+	const [pendingRecruitId, setPendingRecruitId] = useState<PigId | null>(null);
 
 	useEffect(() => {
 		if (roster.recruitedPigId) setPreviewPigId(roster.recruitedPigId);
@@ -84,11 +133,16 @@ export function PigPenView({
 	);
 
 	const runAction = async (pigId: PigId, action: "recruit" | "activate") => {
-		setMessage(null);
 		Haptics.selectionAsync().catch(() => {});
 		const result =
 			action === "recruit" ? await onRecruit(pigId) : await onActivate(pigId);
-		setMessage(pigRosterActionMessage(result));
+		// The outcome used to land as a bare centred sentence at the bottom of a
+		// long scroll, often off-screen from the control that caused it. The rest
+		// of the Shop reports outcomes as toasts. [D-16] (2026-09-11)
+		showPurchaseToast({
+			type: result.ok ? "success" : "fail",
+			title: pigRosterActionMessage(result),
+		});
 		if (result.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 		}
@@ -96,19 +150,12 @@ export function PigPenView({
 
 	const recruit = (pigId: PigId) => {
 		if (roster.recruitedPigId) return;
-		const pig = pigDefinition(pigId);
-		Alert.alert(
-			`Choose ${pig.name} as Rosie’s friend?`,
-			"This is your one long-term companion choice. You can’t change it right now.",
-			[
-				{ text: "Keep looking", style: "cancel" },
-				{
-					text: `Choose ${pig.name}`,
-					onPress: () => void runAction(pigId, "recruit"),
-				},
-			],
-		);
+		setPendingRecruitId(pigId);
 	};
+
+	const pendingRecruitPig = pendingRecruitId
+		? pigDefinition(pendingRecruitId)
+		: null;
 
 	const join = async () => {
 		if (joining) return;
@@ -129,7 +176,17 @@ export function PigPenView({
 		>
 			<SectionHeader kicker="rosie’s place" title="The Pen" ruleWidth={92} />
 
-			<View style={styles.hero}>
+			<Sticker
+				color="sky"
+				rotate={0}
+				style={styles.hero}
+				accessibilityRole="image"
+				accessibilityLabel={
+					recruitedPig
+						? `Rosie and ${recruitedPig.name} in the Pen`
+						: `Rosie in the Pen, previewing ${previewPig.name}`
+				}
+			>
 				<View style={styles.sky} />
 				<View style={styles.grass} />
 				<View style={styles.fence} pointerEvents="none">
@@ -141,107 +198,146 @@ export function PigPenView({
 				</View>
 				<View style={styles.heroPigs}>
 					<View style={styles.heroPig}>
-						<PigPortrait
-							pigId="rosie"
-							size={148}
-						/>
+						<PigPortrait pigId="rosie" size={HERO_PIG} />
 					</View>
 					<View style={styles.heroPig}>
-						<PigPortrait
-							pigId={heroFriend.id}
-							size={148}
-						/>
+						<PigPortrait pigId={heroFriend.id} size={HERO_PIG} />
 					</View>
 				</View>
-				<View style={styles.heroNote}>
-					<Text style={styles.heroNoteText}>
+				<Sticker
+					color="paper"
+					rotate={0}
+					radius={RADII.sm}
+					shadow="sm"
+					border={BORDER.thin}
+					style={styles.heroNote}
+				>
+					<Hand>
 						{recruitedPig
 							? `${recruitedPig.name} lives here with Rosie`
 							: `previewing ${previewPig.name}`}
-					</Text>
-				</View>
-			</View>
+					</Hand>
+				</Sticker>
+			</Sticker>
 
 			{roster.isMember ? (
-				<View style={styles.memberStory}>
-					<Text style={styles.storyTitle}>
+				<Sticker color="paper" rotate={0} style={styles.memberStory}>
+					<SectionTitle align="center">
 						{recruitedPig ? `${recruitedPig.name} joined the Pen.` : "Choose Rosie’s friend."}
-					</Text>
-					<Text style={styles.storyBody}>
+					</SectionTitle>
+					<Body tone="secondary" align="center" style={styles.storyBody}>
 						{recruitedPig
 							? "Choose who greets you at home. Your other pig will stay cozy in the Pen."
 							: "Your Slop Club membership includes one companion. Choose carefully—your pick is locked for now."}
-					</Text>
+					</Body>
 					{recruitedPig ? (
 						<View style={styles.homeChoices}>
 							{(["rosie", recruitedPig.id] as PigId[]).map((pigId) => {
 								const pig = pigDefinition(pigId);
 								const active = roster.activePigId === pigId;
-								return (
-									<Pressable
+								// The pig already at home is a STATUS, not a control: it
+								// keeps the sage fill and the heavy selected outline and
+								// announces as text. Only the other card is tappable, so
+								// "selected" never has to be drawn as "asleep".
+								return active ? (
+									<Sticker
 										key={pigId}
-										disabled={active || busyPigId != null}
-										onPress={() => void runAction(pigId, "activate")}
-										style={({ pressed }) => [
-											styles.homeChoice,
-											active && styles.homeChoiceActive,
-											pressed && styles.pressed,
-										]}
-										accessibilityRole="button"
-										accessibilityLabel={
-											active ? `${pig.name} is at home` : `Put ${pig.name} at home`
-										}
+										color="sage"
+										rotate={0}
+										radius={RADII.md}
+										shadow="sm"
+										border={BORDER.heavy}
+										accessibilityRole="text"
+										accessibilityLabel={`${pig.name} is at home`}
+										style={styles.homeChoice}
 									>
-										<Text style={styles.homeChoiceName}>{pig.name}</Text>
-										<Text style={styles.homeChoiceState}>
-											{active ? "At home" : "Put at home"}
-										</Text>
-									</Pressable>
+										<CardTitle>{pig.name}</CardTitle>
+										<Hand tone="secondary">At home</Hand>
+									</Sticker>
+								) : (
+									<Sticker
+										key={pigId}
+										color="cream"
+										rotate={0}
+										radius={RADII.md}
+										shadow="none"
+										disabled={busyPigId != null}
+										onPress={() => void runAction(pigId, "activate")}
+										accessibilityLabel={`Put ${pig.name} at home`}
+										accessibilityHint={`Makes ${pig.name} the pig who greets you at home`}
+										style={styles.homeChoice}
+									>
+										<CardTitle>{pig.name}</CardTitle>
+										<Hand tone="secondary">Put at home</Hand>
+									</Sticker>
 								);
 							})}
 						</View>
 					) : null}
-				</View>
+				</Sticker>
 			) : (
 				<View style={styles.joinStory}>
-					<Text style={styles.storyTitle}>Rosie has room for a friend.</Text>
-					<Text style={styles.storyBody}>
+					<SectionTitle align="center">Rosie has room for a friend.</SectionTitle>
+					<Body tone="secondary" align="center" style={styles.storyBody}>
 						Slop Club members choose one long-term companion. This choice cannot be changed right now.
-					</Text>
-					<Pressable
+					</Body>
+					<Button
+						variant="gold"
+						size="md"
+						full
 						onPress={() => void join()}
-						disabled={joining}
-						style={({ pressed }) => [
-							styles.joinButton,
-							pressed && styles.pressed,
-							joining && styles.disabled,
-						]}
-						accessibilityRole="button"
+						loading={joining}
 						accessibilityLabel={`Join Slop Club and recruit ${previewPig.name}`}
+						accessibilityHint="Opens the Slop Club purchase, then puts this pig in the Pen"
+						style={styles.joinButton}
 					>
-						{joining ? (
-							<ActivityIndicator size="small" color={WHIMSY.ink} />
-						) : (
-							<Text style={styles.joinButtonText}>
-								Join Slop Club — recruit {previewPig.name}
-							</Text>
-						)}
-					</Pressable>
-					<Text style={styles.slotNote}>one companion · one long-term choice</Text>
+						Join Slop Club — recruit {previewPig.name}
+					</Button>
+					<Hand tone="secondary" style={styles.slotNote}>
+						one companion · one long-term choice
+					</Hand>
 				</View>
 			)}
 
 			<View style={styles.rosterHeader}>
-				<Text style={styles.rosterTitle}>Meet Rosie’s friends</Text>
-				<Text style={styles.rosterHint}>
-					{roster.isMember
-						? roster.recruitedPigId
-							? "Your companion choice is locked for now."
-							: "Choose carefully. You can recruit only one."
-						: "Tap a pig to preview them with Rosie."}
-				</Text>
+				<SectionTitle align="center">Meet Rosie’s friends</SectionTitle>
+				{!error && (
+					<BodySm tone="secondary" align="center" style={styles.rosterHint}>
+						{roster.isMember
+							? roster.recruitedPigId
+								? "Your companion choice is locked for now."
+								: "Choose carefully. You can recruit only one."
+							: "Tap a pig to preview them with Rosie."}
+					</BodySm>
+				)}
 			</View>
 
+			{/* A failed roster read replaces the shelf rather than decorating it:
+			    the grid's owned / recruitable / locked states are exactly what we
+			    don't know, and a permanent choice must never be offered off a
+			    guess. [B-02] */}
+			{error && (
+				<EmptyState
+					kind="error"
+					title="Couldn't round up your pigs"
+					sub="They're out in the field somewhere. Give it another go."
+					action={
+						onRetry ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								onPress={onRetry}
+								accessibilityLabel="Try again"
+								accessibilityHint="Asks for your pigs again"
+							>
+								Try again
+							</Button>
+						) : undefined
+					}
+				/>
+			)}
+
+			{!error && (
 			<View style={styles.grid}>
 				{friendRoster.map((pig, index) => {
 					const previewing = pig.id === previewPigId;
@@ -254,77 +350,103 @@ export function PigPenView({
 						: replacing
 							? "Choice locked"
 							: "Recruit";
+					const actionDisabled =
+						recruited ||
+						replacing ||
+						busyPigId != null ||
+						(!pig.recruitable && !pig.owned);
 
 					return (
-						<Pressable
+						<Sticker
 							key={pig.id}
+							color={recruited ? "sage" : previewing ? "rose" : "paper"}
+							rotate={index % 2 === 0 ? -CARD_TILT : CARD_TILT}
+							radius={RADII.md}
+							shadow="sm"
 							onPress={() => setPreviewPigId(pig.id)}
-							style={({ pressed }) => [
-								styles.pigCard,
-								{ transform: [{ rotate: index % 2 === 0 ? "-0.5deg" : "0.5deg" }] },
-								previewing && styles.pigCardPreviewing,
-								recruited && styles.pigCardRecruited,
-								pressed && styles.pressed,
-							]}
-							accessibilityRole="button"
 							accessibilityLabel={`Preview ${pig.name}, ${pig.coat}`}
+							accessibilityHint="Shows this pig beside Rosie in the Pen above"
+							accessibilityState={{ selected: previewing }}
+							style={styles.pigCard}
 						>
-							<View style={styles.tape} />
-							<View style={[styles.pigArt, { backgroundColor: `${pig.accent}33` }]}>
+							<Tape color="sun" rotate={0} style={styles.tape} />
+							<View
+								style={[
+									styles.pigArt,
+									{ backgroundColor: PIG_ACCENT[pig.id].tint },
+								]}
+							>
 								<View style={styles.motif}>
-									<Glyph name={motifGlyph(pig.motif)} size={18} />
+									<Glyph name={motifGlyph(pig.motif)} size={MOTIF_MARK} />
 								</View>
-								<PigPortrait
-									pigId={pig.id}
-									size={116}
-								/>
+								<PigPortrait pigId={pig.id} size={CARD_PIG} />
 							</View>
-							<View style={[styles.ribbon, { backgroundColor: pig.accent }]}>
-								<Text style={styles.pigName}>{pig.name}</Text>
+							<View style={[styles.nameplate, { backgroundColor: pig.accent }]}>
+								<T role="handDisplay">{pig.name}</T>
 							</View>
-							<Text style={styles.pigCoat}>{pig.coat}</Text>
+							<Hand tone="secondary" align="center" style={styles.pigCoat}>
+								{pig.coat}
+							</Hand>
 							{roster.isMember ? (
-								<Pressable
-									disabled={
-										recruited ||
-										replacing ||
-										busyPigId != null ||
-										(!pig.recruitable && !pig.owned)
-									}
-									onPress={() => recruit(pig.id)}
-									style={({ pressed }) => [
-										styles.cardAction,
-										recruited && styles.cardActionOwned,
-										(recruited ||
-											replacing ||
-											busyPigId != null ||
-											(!pig.recruitable && !pig.owned)) &&
-											styles.disabled,
-										pressed && styles.pressed,
-									]}
-									accessibilityRole="button"
-									accessibilityLabel={`${actionLabel} ${pig.name}`}
-								>
-									{busyPigId === pig.id ? (
-										<ActivityIndicator size="small" color={WHIMSY.ink} />
-									) : (
-										<Text style={styles.cardActionText}>{actionLabel}</Text>
-									)}
-								</Pressable>
+								recruited ? (
+									// A recruited pig's line is a state readout, not a
+									// control — a disabled button would say "tap me later",
+									// and there is no later. [D-12]
+									<Tag
+										tone="sage"
+										icon="check"
+										label={actionLabel}
+										style={styles.cardState}
+									/>
+								) : (
+									<Button
+										variant="lilac"
+										size="sm"
+										full
+										disabled={actionDisabled}
+										loading={busyPigId === pig.id}
+										onPress={() => recruit(pig.id)}
+										accessibilityLabel={`${actionLabel} ${pig.name}`}
+										accessibilityHint={
+											actionDisabled
+												? "Your companion choice is already made"
+												: `Asks you to confirm ${pig.name} as Rosie's one companion`
+										}
+									>
+										{actionLabel}
+									</Button>
+								)
 							) : (
-								<Text style={styles.previewLabel}>
+								<Hand tone="secondary" align="center" style={styles.previewLabel}>
 									{previewing ? "Previewing with Rosie" : "Tap to preview"}
-								</Text>
+								</Hand>
 							)}
-						</Pressable>
+						</Sticker>
 					);
 				})}
 			</View>
+			)}
 
 			{loading && busyPigId == null ? (
-				<ActivityIndicator size="small" color={WHIMSY.ink} />
+				<LoadingBeat label="gathering the pigs" />
 			) : null}
-			{message ? <Text style={styles.message}>{message}</Text> : null}
+
+			<ConfirmDialog
+				open={pendingRecruitPig != null}
+				title={`Choose ${pendingRecruitPig?.name ?? "this pig"} as Rosie’s friend?`}
+				body="This is your one long-term companion choice. You can’t change it right now."
+				confirmLabel={`Choose ${pendingRecruitPig?.name ?? "pig"}`}
+				confirmHint="Puts this pig in the Pen for good — the choice can't be changed right now"
+				cancelLabel="Keep looking"
+				cancelHint="Closes this without choosing"
+				destructive={false}
+				onCancel={() => setPendingRecruitId(null)}
+				onConfirm={() => {
+					const pigId = pendingRecruitId;
+					setPendingRecruitId(null);
+					if (pigId) void runAction(pigId, "recruit");
+				}}
+			/>
 		</ScrollView>
 	);
 }
@@ -337,17 +459,12 @@ const styles = StyleSheet.create({
 		paddingBottom: TAB_SAFE,
 	},
 	hero: {
-		height: 260,
+		height: HERO_H,
 		marginTop: SPACE.md,
 		overflow: "hidden",
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		backgroundColor: WHIMSY.sky,
-		...STICKER_SHADOW,
 	},
 	sky: {
-		...StyleSheet.absoluteFillObject,
+		...StyleSheet.absoluteFill,
 		bottom: "34%",
 		backgroundColor: WHIMSY.sky,
 	},
@@ -364,7 +481,7 @@ const styles = StyleSheet.create({
 		left: SPACE.sm,
 		right: SPACE.sm,
 		bottom: SPACE.xl,
-		height: 74,
+		height: FENCE_H,
 		flexDirection: "row",
 		justifyContent: "space-between",
 	},
@@ -373,17 +490,17 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		height: SPACE.sm,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.cream2,
 	},
 	fenceRailTop: { top: SPACE.md },
-	fenceRailBottom: { top: 42 },
+	fenceRailBottom: { top: FENCE_RAIL_DROP },
 	fencePost: {
 		width: SPACE.md,
-		height: 70,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		height: FENCE_POST_H,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.sm,
 		backgroundColor: WHIMSY.cream,
 	},
@@ -403,13 +520,7 @@ const styles = StyleSheet.create({
 		bottom: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.xs,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.sm,
-		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM,
 	},
-	heroNoteText: { ...TYPE.kicker, color: WHIMSY.ink },
 	joinStory: {
 		alignItems: "center",
 		marginTop: SPACE.xl,
@@ -418,45 +529,16 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		marginTop: SPACE.xl,
 		padding: SPACE.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		backgroundColor: WHIMSY.paper,
-	},
-	storyTitle: {
-		...TYPE.sectionTitle,
-		color: WHIMSY.ink,
-		textAlign: "center",
 	},
 	storyBody: {
-		...TYPE.body,
-		maxWidth: 330,
+		maxWidth: STORY_MAX_W,
 		marginTop: SPACE.sm,
-		color: WHIMSY.mute,
-		textAlign: "center",
 	},
 	joinButton: {
-		width: "100%",
-		minHeight: 48,
-		alignItems: "center",
-		justifyContent: "center",
 		marginTop: SPACE.md,
-		paddingHorizontal: SPACE.lg,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.xl,
-		backgroundColor: WHIMSY.slopGold,
-		...SHADOW_SM,
-	},
-	joinButtonText: {
-		...TYPE.label,
-		color: WHIMSY.ink,
-		textAlign: "center",
 	},
 	slotNote: {
-		...TYPE.kicker,
 		marginTop: SPACE.sm,
-		color: WHIMSY.mute,
 	},
 	homeChoices: {
 		width: "100%",
@@ -466,32 +548,17 @@ const styles = StyleSheet.create({
 	},
 	homeChoice: {
 		flex: 1,
-		minHeight: 52,
+		minHeight: HOME_CHOICE_H,
 		alignItems: "center",
 		justifyContent: "center",
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
 	},
-	homeChoiceActive: { backgroundColor: WHIMSY.sage, ...SHADOW_SM },
-	homeChoiceName: { ...TYPE.cardTitle, color: WHIMSY.ink },
-	homeChoiceState: { ...TYPE.kicker, color: WHIMSY.mute },
 	rosterHeader: {
 		alignItems: "center",
 		marginTop: SPACE.xl,
 		marginBottom: SPACE.md,
 	},
-	rosterTitle: {
-		...TYPE.sectionTitle,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
 	rosterHint: {
-		...TYPE.bodySm,
 		marginTop: SPACE.xs,
-		color: WHIMSY.mute,
-		textAlign: "center",
 	},
 	grid: {
 		flexDirection: "row",
@@ -503,28 +570,15 @@ const styles = StyleSheet.create({
 		width: "48%",
 		alignItems: "center",
 		padding: SPACE.sm,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM,
 	},
-	pigCardPreviewing: { backgroundColor: WHIMSY.rose },
-	pigCardRecruited: { backgroundColor: WHIMSY.sage },
 	tape: {
 		position: "absolute",
 		top: -SPACE.sm,
-		width: 48,
-		height: SPACE.lg,
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-		opacity: 0.82,
 		zIndex: 3,
 	},
 	pigArt: {
 		width: "100%",
-		height: 120,
+		height: CARD_ART_H,
 		alignItems: "center",
 		justifyContent: "center",
 		overflow: "hidden",
@@ -534,63 +588,31 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		top: SPACE.xs,
 		right: SPACE.xs,
-		width: 28,
-		height: 28,
+		width: MOTIF_BADGE,
+		height: MOTIF_BADGE,
 		alignItems: "center",
 		justifyContent: "center",
 		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.paper,
 		zIndex: 2,
 	},
-	ribbon: {
-		minWidth: 104,
+	nameplate: {
+		minWidth: NAMEPLATE_MIN_W,
 		alignItems: "center",
 		marginTop: -SPACE.xs,
 		paddingHorizontal: SPACE.md,
-		paddingVertical: 2,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		paddingVertical: SPACE.xxs,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
 		borderRadius: RADII.sm,
 	},
-	pigName: {
-		fontFamily: FONTS.hand,
-		fontSize: 26,
-		lineHeight: 29,
-		color: WHIMSY.ink,
-	},
 	pigCoat: {
-		...TYPE.kicker,
-		minHeight: 38,
+		minHeight: COAT_LINES_H,
 		marginTop: SPACE.xs,
-		color: WHIMSY.mute,
-		textAlign: "center",
 	},
-	cardAction: {
-		width: "100%",
-		minHeight: 44,
-		alignItems: "center",
-		justifyContent: "center",
-		paddingHorizontal: SPACE.xs,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		backgroundColor: WHIMSY.lilac,
-	},
-	cardActionOwned: { backgroundColor: WHIMSY.sage },
-	cardActionText: { ...TYPE.label, color: WHIMSY.ink, textAlign: "center" },
 	previewLabel: {
-		...TYPE.kicker,
-		minHeight: 44,
+		minHeight: TAP_MIN,
 		paddingTop: SPACE.md,
-		color: WHIMSY.ink,
-		textAlign: "center",
 	},
-	message: {
-		...TYPE.bodySm,
-		marginTop: SPACE.md,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
-	pressed: { opacity: 0.82, transform: [{ scale: 0.98 }] },
-	disabled: { opacity: 0.5 },
+	cardState: { alignSelf: "stretch", marginTop: SPACE.xs },
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import fs from "node:fs";
 import path from "node:path";
 import { IconButton } from "@/components/ui/IconButton";
@@ -24,7 +24,9 @@ describe("polish control primitives", () => {
 			);
 		});
 
-		const button = renderer.root.findByType(Pressable);
+		const button = renderer.root.find(
+			(node) => node.props.accessibilityRole === "button",
+		);
 		const style = StyleSheet.flatten(button.props.style({ pressed: false }));
 		expect(style.width).toBe(44);
 		expect(style.height).toBe(44);
@@ -52,9 +54,11 @@ describe("polish control primitives", () => {
 			);
 		});
 
-		const options = renderer.root
-			.findAllByType(Pressable)
-			.filter((node) => node.props.accessibilityRole === "radio");
+		const options = renderer.root.findAll(
+			(node) =>
+				node.props.accessibilityRole === "radio" &&
+				typeof node.props.style === "function",
+		);
 		expect(options).toHaveLength(2);
 		expect(options[0].props.accessibilityState).toEqual({ selected: true });
 		expect(options[1].props.accessibilityState).toEqual({ selected: false });
@@ -62,6 +66,56 @@ describe("polish control primitives", () => {
 		expect(style.minHeight).toBeGreaterThanOrEqual(44);
 		act(() => options[1].props.onPress());
 		expect(onChange).toHaveBeenCalledWith("friends");
+		act(() => renderer.unmount());
+	});
+
+	test("SegmentedControl stacks icon over label and gates one option", () => {
+		const onChange = jest.fn();
+		let renderer!: TestRenderer.ReactTestRenderer;
+		act(() => {
+			renderer = TestRenderer.create(
+				<SegmentedControl
+					label="Hub"
+					layout="icon-over-label"
+					value="barn"
+					onChange={onChange}
+					options={[
+						{ value: "barn", label: "Barn", icon: "tabBarn" },
+						{
+							value: "season",
+							label: "Season",
+							icon: "tabSeason",
+							disabled: true,
+							badge: <Text>2</Text>,
+						},
+					]}
+				/>,
+			);
+		});
+
+		const options = renderer.root.findAll(
+			(node) =>
+				node.props.accessibilityRole === "radio" &&
+				typeof node.props.style === "function",
+		);
+		expect(options[0].props.accessibilityState).toEqual({ selected: true });
+		expect(options[1].props.accessibilityState).toEqual({
+			selected: false,
+			disabled: true,
+		});
+		expect(options[1].props.disabled).toBe(true);
+
+		// The stacked layout keeps the 44pt target and drops the icon above the
+		// tracked pill kicker.
+		const style = StyleSheet.flatten(options[0].props.style({ pressed: false }));
+		expect(style.minHeight).toBeGreaterThanOrEqual(44);
+		expect(style.flexDirection).toBe("column");
+
+		// The badge rides the segment's top-right corner.
+		const badge = renderer.root
+			.findAllByType(Text)
+			.find((node) => node.props.children === "2");
+		expect(badge).toBeDefined();
 		act(() => renderer.unmount());
 	});
 
@@ -73,9 +127,9 @@ describe("polish control primitives", () => {
 			);
 		});
 
-		const back = renderer.root
-			.findAllByType(Pressable)
-			.find((node) => node.props.accessibilityLabel === "Back");
+		const back = renderer.root.findAll(
+			(node) => node.props.accessibilityLabel === "Back",
+		)[0];
 		expect(back?.props.accessibilityRole).toBe("button");
 		const style = StyleSheet.flatten(back?.props.style);
 		expect(style.minHeight).toBeGreaterThanOrEqual(44);

@@ -286,6 +286,59 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+	{
+		version: "1.12.0",
+		date: "2026-08-12",
+		availableFrom: "2026-08-12",
+		headline: "More room under the banner",
+		items: [
+			{
+				title: "Sounders grow to eight",
+				body: "Your Sounder can now welcome up to eight pigs — more friends at the trough, more snouts digging together.",
+			},
+		],
+	},
+	{
+		version: "1.13.0",
+		date: "2026-08-26",
+		availableFrom: "2026-08-26",
+		headline: "Oink when the herd needs you",
+		items: [
+			{
+				title: "Oink the Sounder",
+				body: "Send a short preset note to coordinate the herd. New Oinks appear when crewmates return and stay in their notification board.",
+			},
+			{
+				title: "Every Feeding, if you want it",
+				body: "Turn on Feeding alerts once and Rosie will keep reminding you whenever the Truffle Patch opens. The same switch turns them off.",
+			},
+			{
+				title: "Hats and bows together",
+				body: "Bows now have their own closet slot, so Rosie can wear a hat and a bow at the same time.",
+			},
+			{
+				title: "Little things, set right",
+				body: "Sluggish Snout accounting is fairer, Barn totals read cleanly, and a few favorite accessories now sit where they belong.",
+			},
+		],
+	},
+	{
+		version: "1.14.0",
+		date: "2026-08-30",
+		availableFrom: "2026-08-30",
+		headline: "Every Feeding counts",
+		items: [
+			{
+				emoji: "🔔",
+				title: "Every Last Feeding",
+				body: "Dig in every scheduled Feeding of a full Dig-Off week to earn 500 snouts, the Every Last Feeding achievement, and the Unmissable title. Even a zero-find dig counts — showing up is what matters.",
+			},
+			{
+				title: "Keep the streak alive",
+				body: "Your first home tickle of the day grows Rosie's personal Streak, and visits build a shared Streak with each friend. Return within the grace window to keep it going.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

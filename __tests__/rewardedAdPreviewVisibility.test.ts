@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 test("the rewarded-ad simulator preview is development-only", () => {
-	const source = fs.readFileSync(
-		path.join(__dirname, "..", "app", "ad-refill-preview.tsx"),
-		"utf8"
-	);
-	expect(source).toContain("if (!__DEV__) return <Redirect");
-	expect(source).toContain("createAdMobRewardedProvider");
+  const read = (file: string) => fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+  const route = read("app/ad-refill-preview.tsx");
+  expect(route).toMatch(/__DEV__\s*\? require/);
+  expect(route).toContain(': () => <Redirect href="/" />');
+  expect(route).not.toContain("createAdMobRewardedProvider");
+  expect(read("components/dev/screens/ad-refill-preview.tsx")).toContain("createAdMobRewardedProvider");
 });

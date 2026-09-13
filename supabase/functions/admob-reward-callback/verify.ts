@@ -10,7 +10,7 @@ export interface AdMobRewardCallback {
 	timestampMs: number;
 }
 
-function decodeBase64Url(value: string): Uint8Array {
+function decodeBase64Url(value: string): Uint8Array<ArrayBuffer> {
 	const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
 	const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
 	const binary = atob(padded);
@@ -20,8 +20,10 @@ function decodeBase64Url(value: string): Uint8Array {
 // WebCrypto verifies ECDSA as fixed-width IEEE-P1363 (r || s). Google's
 // verifier signs with SHA256withECDSA and can supply ASN.1 DER, so normalize
 // either representation without accepting malformed integers.
-export function ecdsaSignatureToP1363(signature: Uint8Array): Uint8Array {
-	if (signature.length === 64) return signature;
+export function ecdsaSignatureToP1363(
+	signature: Uint8Array
+): Uint8Array<ArrayBuffer> {
+	if (signature.length === 64) return new Uint8Array(signature);
 	if (signature.length < 8 || signature[0] !== 0x30) {
 		throw new Error("invalid_signature_encoding");
 	}

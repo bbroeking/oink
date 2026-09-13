@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import {
+	BORDER,
 	RADII,
 	SPACE,
 	STICKER_SHADOW,
-	TYPE,
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
+import { T } from "@/components/ui/Text";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import {
 	CHAPTER_END,
@@ -32,8 +33,7 @@ export function RoadMap({ state }: { state: ExpeditionState }) {
 	const idx = Math.max(0, state.segment - 1);
 	useEffect(() => {
 		if (viewW <= 0) return;
-		const colStride = DOT + 12 + SPACE.sm; // stopCol width + row gap
-		const center = SPACE.xs + idx * colStride + (DOT + 12) / 2;
+		const center = TRACK_INSET + idx * COL_STRIDE + COL_W / 2;
 		const x = Math.max(0, center - viewW / 2);
 		scrollRef.current?.scrollTo({ x, animated: !policy.reduceMotion });
 	}, [idx, viewW, policy.reduceMotion]);
@@ -71,22 +71,30 @@ export function RoadMap({ state }: { state: ExpeditionState }) {
 							) : bramble ? (
 								<EnemySilhouette id="the_bramble" size={34} />
 							) : (
-								<Text style={styles.num}>{seg.segment}</Text>
+								<T role="numeral" tone="secondary">
+									{seg.segment}
+								</T>
 							)}
 						</View>
-						{here && <Text style={styles.pigTag}>Rosie</Text>}
+						{here && (
+							<T role="kickerPillSm" tone="accent" style={styles.pigTag}>
+								Rosie
+							</T>
+						)}
 						{wall && (
-							<Text style={styles.stopLabel}>
+							<T role="kicker" tone="secondary" align="center" style={styles.stopLabel}>
 								{defeated ? "cleared" : wall.name}
-							</Text>
+							</T>
 						)}
 						{bramble && (
-							<Text style={styles.stopLabel}>
+							<T role="kicker" tone="secondary" align="center" style={styles.stopLabel}>
 								Cushion {BRAMBLE_CUSHION_ASK}
-							</Text>
+							</T>
 						)}
 						{seg.segment === CHAPTER_END && !wall && (
-							<Text style={styles.stopLabel}>end</Text>
+							<T role="kicker" tone="secondary" align="center" style={styles.stopLabel}>
+								end
+							</T>
 						)}
 					</View>
 				);
@@ -95,21 +103,34 @@ export function RoadMap({ state }: { state: ExpeditionState }) {
 	);
 }
 
+// Track geometry. These are MEASUREMENTS of the drawing below — what the
+// auto-centre scroll has to know about the row it is scrolling — not spacing
+// decisions, so the gap and the edge inset are read once from the scale here
+// and the styles below consume the same names. Keeping them in one place is
+// what stops the maths and the layout drifting apart.
 const DOT = 48;
+const DOT_GUTTER = 12;
+const COL_W = DOT + DOT_GUTTER;
+const STOP_GAP = SPACE.sm;
+const TRACK_INSET = SPACE.xs;
+const COL_STRIDE = COL_W + STOP_GAP;
+// The caption under a stop wraps inside its own column, a hair narrower.
+const LABEL_MAX_W = DOT + 10;
+
 const styles = StyleSheet.create({
 	track: {
 		flexDirection: "row",
 		alignItems: "flex-start",
-		gap: SPACE.sm,
+		gap: STOP_GAP,
 		paddingVertical: SPACE.sm,
-		paddingHorizontal: SPACE.xs,
+		paddingHorizontal: TRACK_INSET,
 	},
-	stopCol: { alignItems: "center", width: DOT + 12 },
+	stopCol: { alignItems: "center", width: COL_W },
 	dot: {
 		width: DOT,
 		height: DOT,
 		borderRadius: RADII.md,
-		borderWidth: 2,
+		borderWidth: BORDER.ink,
 		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.paper,
 		alignItems: "center",
@@ -117,21 +138,14 @@ const styles = StyleSheet.create({
 	},
 	dotDone: { backgroundColor: WHIMSY.sage },
 	dotHere: { backgroundColor: WHIMSY.sun, ...STICKER_SHADOW },
-	num: { ...TYPE.numeral, color: UI_COLORS.textSecondary },
 	pigTag: {
-		...TYPE.kickerPillSm,
-		color: UI_COLORS.action,
-		marginTop: 3,
+		marginTop: SPACE.xxs,
 	},
-	// A mixed-case caption (enemy names, "cleared", "Cushion 3", "end") — reads as
-	// small body text, NOT a tracked uppercase pill, so it stays bodySm. The 10px
-	// is deliberate (a caption tighter than bodySm's 13) and left as-is.
+	// A mixed-case caption (enemy names, "cleared", "Cushion 3", "end"). It is a
+	// caption in the hand voice, NOT a tracked uppercase pill — `kicker` is that
+	// role, and it reads a step smaller than body at the same size.
 	stopLabel: {
-		...TYPE.bodySm,
-		fontSize: 11,
-		color: UI_COLORS.textSecondary,
-		marginTop: 2,
-		maxWidth: DOT + 10,
-		textAlign: "center",
+		marginTop: SPACE.xxs,
+		maxWidth: LABEL_MAX_W,
 	},
 });

@@ -43,9 +43,12 @@ describe("Closet section density", () => {
 
 describe("merged collectible Closet", () => {
 	test("removes the Collectibles destination and defaults the unified catalog to All", () => {
-		expect(shop).toContain(
-			'(["daily", "wardrobe", "pen"] as const)',
-		);
+		// The three views are now a SegmentedControl's option list (wave-3
+		// section pass) rather than an inline `as const` tuple.
+		expect(shop).toContain('type ShopView = "daily" | "wardrobe" | "pen"');
+		expect(shop).toContain('value: "daily"');
+		expect(shop).toContain('value: "wardrobe"');
+		expect(shop).toContain('value: "pen"');
 		expect(shop).not.toContain('? "Collectibles"');
 		expect(shop).toContain('params.view === "browse"');
 		expect(shop).toContain('setView("wardrobe")');

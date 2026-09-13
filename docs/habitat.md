@@ -1,5 +1,10 @@
 # Habitat — Spec
 
+> **Housing implementation amendment (2026-09-06).** [ADR 0008](adr/0008-personal-barn-housing.md)
+> adopts spec 24: partial starter, dedicated catalog and inventory, an
+> always-available Barn collection, and revisioned whole-room saves. Historical
+> proposals below remain for context; they are not the shipped API contract.
+
 The player's decoratable Interior of the Barn. Reached by tapping the barn structure on the [[Exterior]] view; opens with a door-swing animation; holds 6 typed decor slots plus an interior background. Items come from the existing shop + earned milestones, route to slots by category, and friends visiting can see + tap items but cannot modify.
 
 Companion to ADR-0003 (`docs/adr/0003-habitat.md`), which captures the design rationale.
@@ -235,11 +240,12 @@ The new category values flow through this RPC without modification. The daily-sh
 - Empty-slot markers + tap-to-shop CTA flow.
 - Filled-slot detail sheet + Replace/Remove flow.
 
-### Phase 3 — Exterior barn structure
+### Phase 3 — Exterior barn structure ✅ 2026-09-11
 
-- Sprite for the clickable barn building on the exterior.
-- Tap target + transition trigger.
-- One-time art (the building exterior).
+- Sprite for the clickable barn building on the exterior — `components/BarnStructure.tsx`, drawn in code with react-native-svg (body + two sliding door leaves + doorway glow), bottom-left on Rosie's ground plane, behind her, on every background.
+- Tap target + transition trigger — the Exterior wraps itself in `HabitatDoorTransition` at the `threshold` tempo; the route push happens behind closed doors. Placement rationale, states and the trigger timeline: `docs/barn-entrance-plan.md`.
+- The "Enter Barn" button and the ghost silhouette are retired; `HabitatEntry` survives only as the shop's `collection` variant.
+- Painted layers landed 2026-09-12 (`assets/images/barn/exterior/`, sliced from one ChatGPT image by `scripts/habitat/slice_barn.py`); the SVG drawing is retired.
 
 ### Phase 4 — Shop integration polish
 

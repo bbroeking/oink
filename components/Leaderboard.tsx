@@ -2,7 +2,7 @@
 // the outer chrome (SafeAreaView + tab title), so this component is
 // just the scope toggle + the ranked list + UserSheet.
 import { memo, useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, FlatList, SectionList, Pressable, Text } from "react-native";
+import { View, StyleSheet, ScrollView, FlatList, SectionList, Pressable } from "react-native";
 import {
 	bondBreakdown,
 	type EnemyPairRow,
@@ -16,25 +16,63 @@ import {
 	type BoardScope
 } from "@/hooks/useLeaderboard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
-import { Icon } from "./ui/Icon";
-import { Glyph, IconText } from "./ui/Glyph";
-import { PrestigeAvatar } from "./ui/PrestigeAvatar";
-import { ProfileIdentity } from "./ui/ProfileIdentity";
-import { Sticker, Tape } from "./ui/Sticker";
-import { ListRowSkeleton } from "./ui/Skeleton";
+import {
+	Button,
+	CardTitle,
+	Chip,
+	EmptyState,
+	Glyph,
+	Hand,
+	Icon,
+	IconText,
+	Kicker,
+	ListRow,
+	ListRowSkeleton,
+	PrestigeAvatar,
+	ProfileIdentity,
+	SectionHeader,
+	SectionTitle,
+	SegmentedControl,
+	Sticker,
+	T,
+	Tag,
+	Tape
+} from "./ui";
 import { UserSheet } from "./UserSheet";
 import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
 import { EnemyBreakdownSheet } from "./EnemyBreakdownSheet";
-import { SegmentedControl } from "./ui/SegmentedControl";
 import {
-	FONTS,
-	KICKER_TEXT,
-	SHADOW_SM,
+	BORDER,
+	RADII,
+	SPACE,
 	TAB_SAFE,
-	TYPE,
-	UI_COLORS,
-	WHIMSY
+	TILT,
+	UI_COLORS
 } from "@/constants/theme";
+
+// The champion poster's decorations: the crown that marks the leader and the
+// two marks that ride a score. Drawing geometry, not spacing steps.
+// (2026-09-11)
+const CROWN_SIZE = 36;
+const SCORE_MARK = 14;
+const ROW_MARK = 12;
+// The poster's pig sits larger when it is wearing Wallow ranks.
+const CHAMP_AVATAR = 64;
+const CHAMP_AVATAR_PRESTIGE = 84;
+const ROW_AVATAR = 32;
+const ROW_AVATAR_PRESTIGE = 46;
+// The two fixed columns of a board row: the rank stamp's width and the score
+// column's floor, so a 5-digit number never squeezes the name.
+const RANK_COL = 28;
+const SCORE_COL = 60;
+// The score's own tap target — the breakdown receipt is a small number, so the
+// frame comes back as hitSlop rather than by inflating the column. [C-04]
+const SCORE_HIT_SLOP = {
+	top: SPACE.md,
+	bottom: SPACE.md,
+	left: SPACE.md,
+	right: SPACE.sm
+};
 
 // The Board's fetch/pagination now lives in hooks/useLeaderboard.ts, which owns
 // the row types (LeaderboardEntry), the scope union, and the page-size/cap
@@ -91,23 +129,21 @@ function DevWallowPreview() {
 	const noop = () => {};
 	return (
 		<ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-			<Text style={styles.previewNote}>
+			<Hand tone="secondary" align="center" style={styles.previewNote}>
 				Production leaderboard treatment · ranks 0, 1, 2, and 5
-			</Text>
+			</Hand>
 			<ChampionPoster champ={champ} onPress={noop} onPressScore={noop} />
-			<Sticker color="paper" rotate={-0.3} radius={14} style={styles.listSticker}>
-				{rows.map((player, index) => (
-					<ClippingRow
-						key={player.id}
-						player={player}
-						rank={index + 2}
-						isYou={false}
-						last={index === rows.length - 1}
-						onPress={noop}
-						onPressScore={noop}
-					/>
-				))}
-			</Sticker>
+			{rows.map((player, index) => (
+				<ClippingRow
+					key={player.id}
+					player={player}
+					rank={index + 2}
+					index={index}
+					isYou={false}
+					onPress={noop}
+					onPressScore={noop}
+				/>
+			))}
 		</ScrollView>
 	);
 }
@@ -124,8 +160,17 @@ function ChampionPoster({
 	onPressScore: (userId: string, total: number) => void;
 }) {
 	return (
-		<Pressable style={styles.champWrap} onPress={() => onPress(champ.id)}>
-			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
+		<View style={styles.champWrap}>
+			<Sticker
+				color="sun"
+				rotate={TILT.dialog}
+				radius={RADII.xl}
+				border={BORDER.heavy}
+				onPress={() => onPress(champ.id)}
+				accessibilityLabel={`${champ.username}, the all-time leader`}
+				accessibilityHint="Opens this pig's profile"
+				style={styles.champ}
+			>
 				{/* Rose tape pinning the poster — small decorative pin in
 				    the top-left so the champion poster reads as "tacked up"
 				    on the leaderboard wall. */}
@@ -134,14 +179,20 @@ function ChampionPoster({
 				    is the all-time leader — calling them 'today's
 				    champion' would imply a daily reset the schema
 				    doesn't have. Restored the accurate label. */}
-				<Text style={styles.champOver}>★ all-time leader ★</Text>
+				<T role="kicker" tone="accent" style={styles.champOver}>
+					★ all-time leader ★
+				</T>
 				<View style={styles.champBody}>
 					<PrestigeAvatar
-						size={(champ.wallow_count ?? 0) > 0 ? 84 : 64}
+						size={
+							(champ.wallow_count ?? 0) > 0
+								? CHAMP_AVATAR_PRESTIGE
+								: CHAMP_AVATAR
+						}
 						hatId={champ.active_hat_id}
 						prestigeLevel={champ.wallow_count}
 					/>
-					<View style={{ flex: 1, minWidth: 0 }}>
+					<View style={styles.champIdentity}>
 						<ProfileIdentity username={champ.username} title={champ.active_title} variant="hero" />
 						{/* Second line — tickles count is always present
 						    (it's what earned them the leader spot), the
@@ -160,43 +211,47 @@ function ChampionPoster({
 							accessibilityRole="button"
 							accessibilityLabel="How this pig earned its tickles"
 						>
-							<IconText left={<Glyph name="heart" size={14} />} gap={5}>
-								<Text style={styles.champScore} numberOfLines={1}>
+							<IconText left={<Glyph name="heart" size={SCORE_MARK} />} gap={5}>
+								<Hand tone="secondary" numberOfLines={1} style={styles.champScore}>
 									{champ.tickles_earned.toLocaleString()}
 									{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
-								</Text>
+								</Hand>
 							</IconText>
 						</Pressable>
 						{(champ.wallow_count ?? 0) > 0 && (
-							<Text style={styles.champPrestige} numberOfLines={1}>
+							<T
+								role="label"
+								tone="accent"
+								numberOfLines={1}
+								style={styles.champPrestige}
+							>
 								{wallowStanding(champ.wallow_count)}
-							</Text>
+							</T>
 						)}
 					</View>
 					{/* Crown — the de-facto leader glyph. Replaces the old
 					    rotated "1" badge so the role reads instantly. */}
-					<Icon name="crown" size={36} color={WHIMSY.ink} />
+					<Icon name="crown" size={CROWN_SIZE} color={UI_COLORS.textPrimary} />
 				</View>
 			</Sticker>
-		</Pressable>
+		</View>
 	);
 }
 
 const ClippingRow = memo(function ClippingRow({
 	player,
 	rank,
+	index = 0,
 	isYou,
-	last,
 	onPress,
 	onPressScore,
 	showAlignment = false
 }: {
 	player: LeaderboardEntry;
 	rank: number;
+	// Position in the list, so each row takes its own turn from ROW_TILTS.
+	index?: number;
 	isYou: boolean;
-	// Marks the last row in the flat sticker — suppresses its bottom
-	// dashed border so the divider only appears between rows.
-	last?: boolean;
 	onPress: (userId: string) => void;
 	// Tapping the tickle count opens the breakdown receipt (spec 17). Absent in
 	// the alignment scope (the number there is the align score, not tickles).
@@ -204,76 +259,93 @@ const ClippingRow = memo(function ClippingRow({
 	showAlignment?: boolean;
 }) {
 	const score = player.alignment_score ?? 0;
+	const scoreText = showAlignment
+		? score > 0
+			? `+${score}`
+			: `${score}`
+		: player.tickles_earned.toLocaleString();
 	return (
-		<Pressable
+		<ListRow
+			index={index}
+			selected={isYou}
 			onPress={() => onPress(player.id)}
-			style={[styles.row, isYou && styles.rowYouHighlight, !last && styles.rowDivider]}
-		>
-			<Text style={styles.rowRank}>#{rank}</Text>
-			<PrestigeAvatar
-				size={(player.wallow_count ?? 0) > 0 ? 46 : 32}
-				hatId={player.active_hat_id}
-				prestigeLevel={player.wallow_count}
-			/>
-			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+			accessibilityLabel={`Rank ${rank}, ${player.username}, ${scoreText}`}
+			accessibilityHint="Opens this pig's profile"
+			leading={
+				<View style={styles.rowLead}>
+					<T role="numeral" style={styles.rowRank}>
+						#{rank}
+					</T>
+					<PrestigeAvatar
+						size={
+							(player.wallow_count ?? 0) > 0
+								? ROW_AVATAR_PRESTIGE
+								: ROW_AVATAR
+						}
+						hatId={player.active_hat_id}
+						prestigeLevel={player.wallow_count}
+					/>
+				</View>
+			}
+			title={
 				<ProfileIdentity
 					username={player.username}
 					title={player.active_title}
 					discriminator={player.discriminator}
 					suffix={isYou ? "(you)" : null}
 				/>
-				{/* Second line — what the pig is wearing, falling
-					    back to the active title when nothing is
-					    equipped. PigAvatar already shows the hat as a
-					    sprite; the text labels the item so the row
-					    reads even at a glance. */}
-				{(player.wallow_count ?? 0) > 0 ? (
-					<Text style={styles.rowSub} numberOfLines={1}>
+			}
+			// Second line — what the pig is wearing, falling back to the active
+			// title when nothing is equipped. PigAvatar already shows the hat as
+			// a sprite; the text labels the item so the row reads at a glance.
+			sub={
+				(player.wallow_count ?? 0) > 0 ? (
+					<T role="label" tone="secondary" numberOfLines={1}>
 						{wallowStanding(player.wallow_count)}
-					</Text>
+					</T>
 				) : player.active_hat?.name ? (
-					<Text style={styles.rowSub} numberOfLines={1}>
+					<T role="label" tone="secondary" numberOfLines={1}>
 						wears {player.active_hat.name}
-					</Text>
-				) : null}
-			</View>
-			{/* Score column. In the tickles scopes the count is a nested
-				    Pressable → the breakdown receipt (spec 17): generous hit-slop,
-				    no layout change, and it captures the tap so it opens the receipt
-				    rather than the row's profile sheet. Alignment scope stays a
-				    plain View (its number is the align score, not tickles). */}
-			{!showAlignment && onPressScore ? (
-				<Pressable
-					style={styles.rowScoreCol}
-					onPress={() => onPressScore(player.id, player.tickles_earned)}
-					hitSlop={{ top: 10, bottom: 10, left: 12, right: 8 }}
-					accessibilityRole="button"
-					accessibilityLabel="How this pig earned its tickles"
-				>
-					<Text style={styles.rowScore} numberOfLines={1}>
-						{player.tickles_earned.toLocaleString()}
-					</Text>
-					<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
-				</Pressable>
-			) : (
-				<View style={styles.rowScoreCol}>
-					{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
+					</T>
+				) : null
+			}
+			// Score column. In the tickles scopes the count is a nested Pressable
+			// → the breakdown receipt (spec 17): generous hit-slop, no layout
+			// change, and it captures the tap so it opens the receipt rather than
+			// the row's profile sheet. Alignment scope stays a plain View (its
+			// number is the align score, not tickles).
+			trailing={
+				!showAlignment && onPressScore ? (
+					<Pressable
+						style={styles.rowScoreCol}
+						onPress={() => onPressScore(player.id, player.tickles_earned)}
+						hitSlop={SCORE_HIT_SLOP}
+						accessibilityRole="button"
+						accessibilityLabel="How this pig earned its tickles"
+					>
+						<T role="numeral" numberOfLines={1}>
+							{scoreText}
+						</T>
+						<Glyph name="heart" size={ROW_MARK} style={styles.scoreMark} />
+					</Pressable>
+				) : (
+					<View style={styles.rowScoreCol}>
+						{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
 						    stay on one line instead of wrapping the column. */}
-					<Text style={styles.rowScore} numberOfLines={1}>
-						{showAlignment
-							? score > 0
-								? `+${score}`
-								: `${score}`
-							: player.tickles_earned.toLocaleString()}
-					</Text>
-					{showAlignment ? (
-						<Text style={styles.rowScoreUnit}>align</Text>
-					) : (
-						<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
-					)}
-				</View>
-			)}
-		</Pressable>
+						<T role="numeral" numberOfLines={1}>
+							{scoreText}
+						</T>
+						{showAlignment ? (
+							<T role="label" tone="secondary">
+								align
+							</T>
+						) : (
+							<Glyph name="heart" size={ROW_MARK} style={styles.scoreMark} />
+						)}
+					</View>
+				)
+			}
+		/>
 	);
 });
 
@@ -288,26 +360,34 @@ function pairTitle(row: PairBondRow): string {
 function PairChampionPoster({ champ }: { champ: PairBondRow }) {
 	return (
 		<View style={styles.champWrap}>
-			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
+			<Sticker
+				color="sun"
+				rotate={TILT.dialog}
+				radius={RADII.xl}
+				border={BORDER.heavy}
+				style={styles.champ}
+			>
 				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
-				<Text style={styles.champOver}>★ the strongest pair in the bog ★</Text>
+				<T role="kicker" tone="accent" style={styles.champOver}>
+					★ the strongest pair in the bog ★
+				</T>
 				<View style={styles.champBody}>
-					<View style={{ flex: 1, minWidth: 0 }}>
-						<Text style={styles.champName} numberOfLines={2}>
-							{pairTitle(champ)}
-						</Text>
+					<View style={styles.champIdentity}>
+						<SectionTitle numberOfLines={2}>{pairTitle(champ)}</SectionTitle>
 						{/* Breakdown sub-line — the three bond acts that add up to the
 						    total, dropping any zero component. */}
-						<Text style={styles.pairChampSub} numberOfLines={1}>
+						<Hand tone="secondary" numberOfLines={1} style={styles.pairChampSub}>
 							{bondBreakdown(champ)}
-						</Text>
+						</Hand>
 					</View>
 					{/* Total bond, right-aligned — ONE number, the sum. */}
 					<View style={styles.rowScoreCol}>
-						<Text style={styles.champBond} numberOfLines={1}>
+						<T role="sectionTitle" numberOfLines={1}>
 							{champ.bond.toLocaleString()}
-						</Text>
-						<Text style={styles.rowScoreUnit}>bond</Text>
+						</T>
+						<T role="label" tone="secondary">
+							bond
+						</T>
 					</View>
 				</View>
 			</Sticker>
@@ -319,32 +399,51 @@ function PairChampionPoster({ champ }: { champ: PairBondRow }) {
 // (matching the self-highlight grammar used for the you-row elsewhere).
 const PairRow = memo(function PairRow({
 	row,
-	last,
+	index = 0,
 	isYou
 }: {
 	row: PairBondRow;
-	last?: boolean;
+	index?: number;
 	isYou?: boolean;
 }) {
 	return (
-		<View style={[styles.row, isYou && styles.pairRowYou, !last && styles.rowDivider]}>
-			<Text style={styles.rowRank}>#{row.rank}</Text>
-			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
-				<Text style={styles.rowName} numberOfLines={2}>
+		<ListRow
+			index={index}
+			selected={isYou}
+			fill={isYou ? "rose" : undefined}
+			accessibilityLabel={`Rank ${row.rank}, ${pairTitle(row)}, ${row.bond} bond`}
+			leading={
+				<T role="numeral" style={styles.rowRank}>
+					#{row.rank}
+				</T>
+			}
+			title={
+				<CardTitle numberOfLines={2}>
 					{pairTitle(row)}
-					{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
-				</Text>
-				<Text style={styles.rowSub} numberOfLines={1}>
+					{isYou && (
+						<T role="hand" tone="accent">
+							{" "}
+							(you)
+						</T>
+					)}
+				</CardTitle>
+			}
+			sub={
+				<T role="label" tone="secondary" numberOfLines={1}>
 					{bondBreakdown(row)}
-				</Text>
-			</View>
-			<View style={styles.rowScoreCol}>
-				<Text style={styles.rowScore} numberOfLines={1}>
-					{row.bond.toLocaleString()}
-				</Text>
-				<Text style={styles.rowScoreUnit}>bond</Text>
-			</View>
-		</View>
+				</T>
+			}
+			trailing={
+				<View style={styles.rowScoreCol}>
+					<T role="numeral" numberOfLines={1}>
+						{row.bond.toLocaleString()}
+					</T>
+					<T role="label" tone="secondary">
+						bond
+					</T>
+				</View>
+			}
+		/>
 	);
 });
 
@@ -360,63 +459,89 @@ function EnemyChampionPoster({
 	onPress: (enemy: EnemyPairRow) => void;
 }) {
 	return (
-		<Pressable
-			style={styles.champWrap}
-			onPress={() => onPress(champ)}
-			accessibilityRole="button"
-			accessibilityLabel={`Open rivalry breakdown for ${enemyTitle(champ)}`}
-		>
-			<Sticker color="sage" rotate={1.2} radius={18} border={2.5} style={styles.champ}>
+		<View style={styles.champWrap}>
+			<Sticker
+				color="sage"
+				rotate={-TILT.dialog}
+				radius={RADII.xl}
+				border={BORDER.heavy}
+				onPress={() => onPress(champ)}
+				accessibilityLabel={`Open rivalry breakdown for ${enemyTitle(champ)}`}
+				accessibilityHint="Shows who cursed whom"
+				style={styles.champ}
+			>
 				<Tape color="lilac" rotate={10} width={48} height={12} style={styles.champTape} />
-				<Text style={[styles.champOver, styles.enemyAccent]}>
+				<T role="kicker" tone="curse" style={styles.champOver}>
 					★ the biggest enemies in the bog ★
-				</Text>
+				</T>
 				<View style={styles.champBody}>
-					<View style={{ flex: 1, minWidth: 0 }}>
-						<Text style={styles.champName}>{enemyTitle(champ)}</Text>
-						<Text style={styles.pairChampSub}>tap to see who cursed whom</Text>
+					<View style={styles.champIdentity}>
+						<SectionTitle>{enemyTitle(champ)}</SectionTitle>
+						<Hand tone="secondary" style={styles.pairChampSub}>
+							tap to see who cursed whom
+						</Hand>
 					</View>
 					<View style={styles.rowScoreCol}>
-						<Text style={styles.champBond}>{champ.curses.toLocaleString()}</Text>
-						<Text style={styles.rowScoreUnit}>curses</Text>
+						<T role="sectionTitle">{champ.curses.toLocaleString()}</T>
+						<T role="label" tone="secondary">
+							curses
+						</T>
 					</View>
 				</View>
 			</Sticker>
-		</Pressable>
+		</View>
 	);
 }
 
 const EnemyRow = memo(function EnemyRow({
 	row,
-	last,
+	index = 0,
 	isYou,
 	onPress
 }: {
 	row: EnemyPairRow;
-	last?: boolean;
+	index?: number;
 	isYou?: boolean;
 	onPress: (enemy: EnemyPairRow) => void;
 }) {
 	return (
-		<Pressable
+		<ListRow
+			index={index}
+			selected={isYou}
+			fill={isYou ? "sage" : undefined}
 			onPress={() => onPress(row)}
-			accessibilityRole="button"
 			accessibilityLabel={`Open rivalry breakdown for ${enemyTitle(row)}`}
-			style={[styles.row, isYou && styles.enemyRowYou, !last && styles.rowDivider]}
-		>
-			<Text style={styles.rowRank}>#{row.rank}</Text>
-			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
-				<Text style={styles.rowName}>
+			accessibilityHint="Shows who cursed whom"
+			leading={
+				<T role="numeral" style={styles.rowRank}>
+					#{row.rank}
+				</T>
+			}
+			title={
+				<CardTitle>
 					{enemyTitle(row)}
-					{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
-				</Text>
-				<Text style={styles.rowSub}>tap to see who cursed whom</Text>
-			</View>
-			<View style={styles.rowScoreCol}>
-				<Text style={styles.rowScore}>{row.curses.toLocaleString()}</Text>
-				<Text style={styles.rowScoreUnit}>curses</Text>
-			</View>
-		</Pressable>
+					{isYou && (
+						<T role="hand" tone="accent">
+							{" "}
+							(you)
+						</T>
+					)}
+				</CardTitle>
+			}
+			sub={
+				<T role="label" tone="secondary">
+					tap to see who cursed whom
+				</T>
+			}
+			trailing={
+				<View style={styles.rowScoreCol}>
+					<T role="numeral">{row.curses.toLocaleString()}</T>
+					<T role="label" tone="secondary">
+						curses
+					</T>
+				</View>
+			}
+		/>
 	);
 });
 
@@ -475,13 +600,15 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				{
 					key: "generous",
 					title: "GENEROUS",
-					titleStyle: styles.alignSectionGenerous,
+					// The bless side wears sun, the curse side sage — the same
+					// two-sided identity the Barn's effect cards use.
+					tone: "sun" as const,
 					data: leaderboard.filter((row) => row.align_side === "generous")
 				},
 				{
 					key: "greedy",
 					title: "GREEDY",
-					titleStyle: styles.alignSectionGreedy,
+					tone: "sage" as const,
 					data: leaderboard.filter((row) => row.align_side === "greedy")
 				}
 			].filter((section) => section.data.length > 0),
@@ -530,21 +657,17 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				</View>
 			)}
 			{__DEV__ && (
-				<Pressable
+				<Chip
 					onPress={() => setShowWallowPreview((shown) => !shown)}
-					style={({ pressed }) => [
-						styles.previewToggle,
-						showWallowPreview && styles.previewToggleOn,
-						pressed && { opacity: 0.75 }
-					]}
-					accessibilityRole="button"
-					accessibilityState={{ selected: showWallowPreview }}
-				>
-					<Glyph name="flame" size={16} />
-					<Text style={styles.previewToggleText}>
-						{showWallowPreview ? "Showing Wallow ranks" : "Preview Wallow ranks"}
-					</Text>
-				</Pressable>
+					selected={showWallowPreview}
+					tone={showWallowPreview ? "sun" : "paper"}
+					glyph="flame"
+					style={styles.previewToggle}
+					accessibilityHint="Dev-only: renders the board with Wallow ranks"
+					label={
+						showWallowPreview ? "Showing Wallow ranks" : "Preview Wallow ranks"
+					}
+				/>
 			)}
 
 			{showWallowPreview ? (
@@ -556,15 +679,24 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					))}
 				</View>
 			) : error ? (
-				// Fetch failed (both selects threw) — a cozy card with a
-				// hand-link retry, so the Board never renders silently empty.
+				// Fetch failed (both selects threw) — the error state, with the
+				// way out on its face, so the Board never renders silently empty.
 				<View style={styles.emptyWrap}>
-					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
-						<Text style={styles.emptyText}>the Board is being shy — give it another nudge.</Text>
-						<Pressable onPress={fetchLeaderboard} hitSlop={8} style={styles.retryLink}>
-							<Text style={styles.retryText}>try again ›</Text>
-						</Pressable>
-					</Sticker>
+					<EmptyState
+						kind="error"
+						title="the Board is being shy"
+						sub="give it another nudge."
+						action={
+							<Button
+								variant="handLink"
+								size="sm"
+								onPress={fetchLeaderboard}
+								accessibilityLabel="Try loading the Board again"
+							>
+								try again ›
+							</Button>
+						}
+					/>
 				</View>
 			) : scope === "pairs" && pairView === "pairs" ? (
 				// Strongest pairs — the bond between two specific pigs, ranked.
@@ -573,11 +705,11 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				// falls outside the top slice.
 				pairs.length === 0 ? (
 					<View style={styles.emptyWrap}>
-						<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
-							<Text style={styles.emptyText}>
-								no bonds yet. trade, bless, and visit a friend to build one.
-							</Text>
-						</Sticker>
+						<EmptyState
+							glyph="handshake"
+							title="no bonds yet"
+							sub="trade, bless, and visit a friend to build one."
+						/>
 					</View>
 				) : (
 					<FlatList
@@ -591,24 +723,14 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 						removeClippedSubviews
 						ListHeaderComponent={<PairChampionPoster champ={pairs[0]} />}
 						renderItem={({ item: row, index }) => (
-							<View
-								style={[
-									styles.virtualBoardRow,
-									index === 0 && styles.virtualBoardRowFirst,
-									index === pairRest.length - 1 && styles.virtualBoardRowLast
-								]}
-							>
-								<PairRow row={row} isYou={row.is_self} last={index === pairRest.length - 1} />
-							</View>
+							<PairRow row={row} index={index} isYou={row.is_self} />
 						)}
 						ListFooterComponent={
 							youPair ? (
-								<>
-									<Text style={styles.youPairLabel}>★ your strongest pair</Text>
-									<Sticker color="rose" rotate={0.4} radius={14} style={styles.listSticker}>
-										<PairRow row={youPair} isYou last />
-									</Sticker>
-								</>
+								<View style={styles.pinnedWrap}>
+									<Kicker>your strongest pair</Kicker>
+									<PairRow row={youPair} isYou />
+								</View>
 							) : null
 						}
 					/>
@@ -616,11 +738,11 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 			) : scope === "pairs" && pairView === "enemies" ? (
 				enemies.length === 0 ? (
 					<View style={styles.emptyWrap}>
-						<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
-							<Text style={styles.emptyText}>
-								no enemies yet. swap a curse with a friend to start a rivalry.
-							</Text>
-						</Sticker>
+						<EmptyState
+							glyph="ghost"
+							title="no enemies yet"
+							sub="swap a curse with a friend to start a rivalry."
+						/>
 					</View>
 				) : (
 					<FlatList
@@ -636,48 +758,44 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 							<EnemyChampionPoster champ={enemies[0]} onPress={setSelectedEnemy} />
 						}
 						renderItem={({ item: row, index }) => (
-							<View
-								style={[
-									styles.virtualBoardRow,
-									index === 0 && styles.virtualBoardRowFirst,
-									index === enemyRest.length - 1 && styles.virtualBoardRowLast
-								]}
-							>
-								<EnemyRow
-									row={row}
-									isYou={row.is_self}
-									last={index === enemyRest.length - 1}
-									onPress={setSelectedEnemy}
-								/>
-							</View>
+							<EnemyRow
+								row={row}
+								index={index}
+								isYou={row.is_self}
+								onPress={setSelectedEnemy}
+							/>
 						)}
 						ListFooterComponent={
 							youEnemy ? (
-								<>
-									<Text style={[styles.youPairLabel, styles.enemyAccent]}>
-										★ your biggest enemy
-									</Text>
-									<Sticker color="sage" rotate={-0.4} radius={14} style={styles.listSticker}>
-										<EnemyRow row={youEnemy} isYou last onPress={setSelectedEnemy} />
-									</Sticker>
-								</>
+								<View style={styles.pinnedWrap}>
+									<Kicker tone="curse">your biggest enemy</Kicker>
+									<EnemyRow row={youEnemy} isYou onPress={setSelectedEnemy} />
+								</View>
 							) : null
 						}
 					/>
 				)
 			) : leaderboard.length === 0 ? (
-				// Empty state on a paper Sticker so it matches the Friends
-				// segment's empty card instead of reading as bare text.
+				// The one empty treatment, so the Board matches the Friends
+				// segment instead of reading as bare text.
 				<View style={styles.emptyWrap}>
-					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
-						<Text style={styles.emptyText}>
-							{scope === "friends"
-								? "No friends yet. Add some on the Friends segment."
+					<EmptyState
+						glyph={scope === "friends" ? "friends" : "heart"}
+						title={
+							scope === "friends"
+								? "No friends yet"
 								: scope === "alignment"
-									? "No one has taken a side yet. Trade to tip the scales."
-									: "No tickles yet. Be the first!"}
-						</Text>
-					</Sticker>
+									? "No one has taken a side yet"
+									: "No tickles yet"
+						}
+						sub={
+							scope === "friends"
+								? "Add some on the Friends segment."
+								: scope === "alignment"
+									? "Trade to tip the scales."
+									: "Be the first!"
+						}
+					/>
 				</View>
 			) : scope === "alignment" ? (
 				// Alignment leaderboard — TWO independent boards
@@ -697,29 +815,26 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					windowSize={7}
 					removeClippedSubviews
 					renderSectionHeader={({ section }) => (
-						<View style={styles.alignSectionHeader}>
-							<Text style={[styles.alignSectionText, section.titleStyle]}>
-								{section.title} · top {section.data.length}
-							</Text>
-						</View>
+						<SectionHeader
+							title={section.title}
+							right={
+								<Tag
+									label={`top ${section.data.length}`}
+									tone={section.tone}
+								/>
+							}
+							style={styles.alignSectionHeader}
+						/>
 					)}
-					renderItem={({ item, index, section }) => (
-						<View
-							style={[
-								styles.virtualBoardRow,
-								index === 0 && styles.virtualBoardRowFirst,
-								index === section.data.length - 1 && styles.virtualBoardRowLast
-							]}
-						>
-							<ClippingRow
-								player={item}
-								rank={item.align_side_rank ?? index + 1}
-								isYou={item.id === myId}
-								last={index === section.data.length - 1}
-								onPress={setSelectedUserId}
-								showAlignment
-							/>
-						</View>
+					renderItem={({ item, index }) => (
+						<ClippingRow
+							player={item}
+							rank={item.align_side_rank ?? index + 1}
+							index={index}
+							isYou={item.id === myId}
+							onPress={setSelectedUserId}
+							showAlignment
+						/>
 					)}
 				/>
 			) : (
@@ -746,45 +861,35 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 						) : null
 					}
 					renderItem={({ item, index }) => (
-						<View
-							style={[
-								styles.virtualBoardRow,
-								index === 0 && styles.virtualBoardRowFirst,
-								index === rest.length - 1 && styles.virtualBoardRowLast
-							]}
-						>
-							<ClippingRow
-								player={item}
-								rank={index + 2}
-								isYou={item.id === myId}
-								last={index === rest.length - 1}
-								onPress={setSelectedUserId}
-								onPressScore={openBreakdown}
-							/>
-						</View>
+						<ClippingRow
+							player={item}
+							rank={index + 2}
+							index={index}
+							isYou={item.id === myId}
+							onPress={setSelectedUserId}
+							onPressScore={openBreakdown}
+						/>
 					)}
 					ListFooterComponent={
-						<>
+						<View style={styles.footer}>
 							{scope === "global" && hasMore && (
-								<Pressable
+								<Button
+									variant="ghost"
+									size="sm"
 									onPress={loadMore}
-									disabled={loadingMore}
-									style={({ pressed }) => [
-										styles.loadMoreBtn,
-										(pressed || loadingMore) && { opacity: 0.7 }
-									]}
+									loading={loadingMore}
+									accessibilityLabel="Load more pigs"
+									accessibilityHint="Pulls the next page of the leaderboard"
 								>
-									<Text style={styles.loadMoreBtnText}>
-										{loadingMore ? "Loading…" : "Load more"}
-									</Text>
-								</Pressable>
+									Load more
+								</Button>
 							)}
 							{scope === "global" && !hasMore && leaderboard.length >= LEADERBOARD_MAX_ROWS && (
-								<Text style={styles.capNote}>
+								<Hand tone="secondary" align="center">
 									★ top {LEADERBOARD_MAX_ROWS} pigs — that's the floor of the leaderboard
-								</Text>
+								</Hand>
 							)}
-						</>
+						</View>
 					}
 				/>
 			)}
@@ -811,250 +916,78 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 
 const styles = StyleSheet.create({
 	container: { flex: 1 },
-	toggleWrap: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 2 },
+	toggleWrap: {
+		paddingHorizontal: SPACE.card,
+		paddingTop: SPACE.xs,
+		paddingBottom: SPACE.xxs
+	},
 	pairToggleWrap: {
 		// Match the primary scope track exactly so both outlined controls share
 		// one left/right edge; only the number of segments changes.
-		paddingHorizontal: 14,
-		paddingTop: 6,
-		paddingBottom: 2
+		paddingHorizontal: SPACE.card,
+		paddingTop: SPACE.sm,
+		paddingBottom: SPACE.xxs
 	},
-	previewToggle: {
-		alignSelf: "center",
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 7,
-		marginTop: 8,
-		paddingHorizontal: 12,
-		paddingVertical: 7,
-		borderRadius: 18,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper
-	},
-	previewToggleOn: { backgroundColor: WHIMSY.sun },
-	previewToggleText: { ...TYPE.label, color: WHIMSY.ink },
+	previewToggle: { alignSelf: "center", marginTop: SPACE.sm },
 	previewNote: {
-		...TYPE.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 8,
-		marginBottom: 2
+		marginTop: SPACE.sm,
+		marginBottom: SPACE.xxs
 	},
-	champWrap: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
-	// Poster padding aligned to the ranked-row horizontal padding (14) so
-	// the champion card and the rows below share one left edge.
-	champ: { paddingVertical: 16, paddingHorizontal: 14 },
+	champWrap: {
+		paddingHorizontal: SPACE.card,
+		paddingTop: SPACE.md,
+		paddingBottom: SPACE.sm
+	},
+	// Poster padding aligned to the ranked-row horizontal padding so the
+	// champion card and the rows below share one left edge.
+	champ: { paddingVertical: SPACE.lg, paddingHorizontal: SPACE.card },
 	// Tape decoration tucked into the corner of the champion poster —
 	// rotated rose strip matching the design's `Tape color="rose"`.
 	champTape: {
 		position: "absolute",
-		top: -6,
-		left: 14
+		top: -SPACE.sm,
+		left: SPACE.card
 	},
-	champOver: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.5,
-		marginBottom: 8
-	},
-	champBody: { flexDirection: "row", alignItems: "center", gap: 14 },
-	champName: { ...TYPE.sectionTitle, color: WHIMSY.ink },
-	champScore: {
-		...TYPE.hand,
-		color: WHIMSY.mute,
-		marginTop: 2
-	},
-	champPrestige: {
-		...TYPE.label,
-		color: WHIMSY.accent,
-		marginTop: 3
-	},
+	champOver: { marginBottom: SPACE.sm },
+	champBody: { flexDirection: "row", alignItems: "center", gap: SPACE.card },
+	champIdentity: { flex: 1, minWidth: 0 },
+	champScore: { marginTop: SPACE.xxs },
+	champPrestige: { marginTop: SPACE.xxs },
 	// Pair champion — bond breakdown sub-line + the big bond number, matching
 	// the ranked-row score treatment so the number reads as ONE thing.
-	pairChampSub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: 2 },
-	champBond: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
+	pairChampSub: { marginTop: SPACE.xxs },
 	// Crown moved off Text-emoji onto <Icon name="crown" /> as part of
 	// the no-emoji sweep — no inline style needed; Icon takes size +
 	// color directly.
 	list: { flex: 1 },
 	listContent: {
-		paddingHorizontal: 14,
-		paddingTop: 4,
-		paddingBottom: TAB_SAFE
+		paddingHorizontal: SPACE.card,
+		paddingTop: SPACE.xs,
+		paddingBottom: TAB_SAFE,
+		// The board is a stack of scrapbook row stickers now (one `ListRow` per
+		// pig), so the rhythm between them is a gap rather than a dashed rule
+		// inside one flat card. [D-13, spec §2 row 06] (2026-09-11)
+		gap: SPACE.sm
 	},
-	// Single sticker wrapping every ranked row — replaces per-row
-	// tilted stickers so the leaderboard reads as one cohesive card.
-	listSticker: {
-		marginTop: 12,
-		paddingHorizontal: 0,
-		paddingVertical: 4
-	},
-	// Virtualized rows keep the old single-sticker silhouette without mounting
-	// the whole board at once. Only the visible window is decoded and laid out.
-	virtualBoardRow: {
-		backgroundColor: WHIMSY.paper,
-		borderLeftWidth: 2,
-		borderRightWidth: 2,
-		borderColor: WHIMSY.ink
-	},
-	virtualBoardRowFirst: {
-		marginTop: 12,
-		borderTopWidth: 2,
-		borderTopLeftRadius: 14,
-		borderTopRightRadius: 14,
-		paddingTop: 4
-	},
-	virtualBoardRowLast: {
-		borderBottomWidth: 2,
-		borderBottomLeftRadius: 14,
-		borderBottomRightRadius: 14,
-		paddingBottom: 4,
-		...SHADOW_SM
-	},
-	// Per-side section header for the alignment scope. Generous gets
-	// a gold-ish tint, Greedy gets the sage-green miasma — matches
-	// the bless/curse color identity used elsewhere.
-	alignSectionHeader: {
-		marginTop: 12,
-		marginBottom: 4,
-		paddingHorizontal: 4
-	},
-	// In-card section header — unified on KICKER_TEXT (13px hand) per the
-	// UI audit so it matches the in-card kicker treatment elsewhere; the
-	// per-side gold/green color is overridden below.
-	alignSectionText: {
-		...KICKER_TEXT
-	},
-	alignSectionGenerous: { color: UI_COLORS.warningText }, // Barn blessing countdown (shared token)
-	alignSectionGreedy: { color: WHIMSY.curseGreen }, // Barn curse countdown (shared token)
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingVertical: 12,
-		paddingHorizontal: 14,
-		gap: 12
-	},
-	rowYouHighlight: {
-		backgroundColor: WHIMSY.cream
-	},
-	// A pair row the caller is in — rose wash matching the you-row self-highlight
-	// grammar used elsewhere (referral card, pinned you-pair sticker).
-	pairRowYou: {
-		backgroundColor: WHIMSY.rose
-	},
-	enemyRowYou: {
-		backgroundColor: WHIMSY.sage
-	},
-	enemyAccent: {
-		color: WHIMSY.curseGreen
-	},
-	// Kicker over the pinned "your strongest pair" sticker.
-	youPairLabel: {
-		...KICKER_TEXT,
-		marginTop: 16,
-		marginBottom: 2,
-		paddingHorizontal: 4,
-		color: WHIMSY.accent
-	},
-	rowDivider: {
-		borderBottomWidth: 1.5,
-		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed"
-	},
-	rowRank: {
-		width: 28,
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-		textAlign: "center"
-	},
-	// Name + discriminator on a baseline-aligned line.
-	rowNameLine: {
-		flexDirection: "row",
-		alignItems: "baseline",
-		gap: 6
-	},
-	rowName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-		flexShrink: 1
-	},
-	rowDisc: {
-		...TYPE.label,
-		color: WHIMSY.mute
-	},
-	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
-	// Second-line under the name — "wears <hat>", falls back to
-	// the active title when no hat is equipped.
-	rowSub: {
-		...TYPE.label,
-		color: WHIMSY.mute,
-		marginTop: 2
-	},
-	// Score column — number above tiny ♥ suffix, right-aligned. Sizes to
-	// its content (flexShrink 0) so a 5-digit score keeps its own column
-	// and the name (flex:1) yields width instead of the number wrapping.
+	// The pinned "your strongest pair" / "your biggest enemy" block under the
+	// list — its own kicker over one selected row.
+	pinnedWrap: { marginTop: SPACE.lg, gap: SPACE.xs },
+	// Per-side section header for the alignment scope. The bless/curse identity
+	// rides a `Tag` in the right slot instead of re-colouring the title.
+	alignSectionHeader: { marginTop: SPACE.md },
+	// The rank stamp + portrait ride together at the head of a row.
+	rowLead: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+	rowRank: { minWidth: RANK_COL, textAlign: "center" },
+	// Score column — number above a tiny ♥ suffix, right-aligned. Sizes to its
+	// content so a 5-digit score keeps its own column and the name yields width
+	// instead of the number wrapping.
 	rowScoreCol: {
 		alignItems: "flex-end",
-		minWidth: 60,
+		minWidth: SCORE_COL,
 		flexShrink: 0
 	},
-	rowScore: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-	rowScoreUnit: {
-		...TYPE.label,
-		color: WHIMSY.mute,
-		marginTop: 2
-	},
-	// "Load more" pill at the bottom of the global leaderboard.
-	// Reads as a deliberate action button rather than infinite-scroll
-	// magic — each tap pulls one more page of 25.
-	loadMoreBtn: {
-		alignSelf: "center",
-		marginTop: 16,
-		paddingHorizontal: 20,
-		paddingVertical: 10,
-		borderRadius: 999,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM
-	},
-	loadMoreBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink
-	},
-	capNote: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 14
-	},
-	// Empty state — paper Sticker card matching the Friends segment's
-	// empty card. Replaces the old bare centered Text.
-	emptyWrap: { paddingHorizontal: 14, paddingTop: 12 },
-	emptyCard: {
-		paddingHorizontal: 16,
-		paddingVertical: 16
-	},
-	emptyText: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		lineHeight: 21
-	},
-	// Hand-link retry under the error copy — accent + underline, matching
-	// the "leave it for now ›" hand-link grammar used elsewhere.
-	retryLink: { alignSelf: "center", marginTop: 10, paddingHorizontal: 4 },
-	retryText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline"
-	}
+	scoreMark: { marginTop: SPACE.xxs },
+	// The list footer — "Load more", or the cap note once the floor is reached.
+	footer: { alignItems: "center", gap: SPACE.sm, marginTop: SPACE.lg },
+	emptyWrap: { paddingHorizontal: SPACE.card, paddingTop: SPACE.md }
 });

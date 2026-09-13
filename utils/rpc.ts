@@ -45,10 +45,20 @@ async function callRpc(
 // poll/focus, so they log as a warning (Sentry breadcrumb, no LogBox red
 // box) instead of an error. Every OTHER failure class (permission denied,
 // SQL error, bad params, …) still routes to log.error → Sentry issue.
-function isTransientNetworkError(error: { message?: string; name?: string } | null): boolean {
+//
+// The API edge answering for a slow or briefly unreachable database is the
+// same class: PostgREST/Kong return a bare "Gateway Timeout" / "Bad Gateway" /
+// "Service Unavailable" (HTTP 502–504) body, and Postgres itself cancels an
+// over-budget statement with SQLSTATE 57014. Each self-heals on the next poll,
+// so none of them is a code bug worth a LogBox red box or a Sentry issue —
+// the 30s bounty_ready_count poll was raising five in a row through one
+// slow patch. (2026-09-12)
+const STATEMENT_TIMEOUT_SQLSTATE = "57014";
+function isTransientNetworkError(error: { message?: string; name?: string; code?: string } | null): boolean {
 	if (!error) return false;
 	if (error.name === "TypeError") return true;
-	return /network request failed|failed to fetch|fetch failed|network error|request timed out/i.test(
+	if (error.code === STATEMENT_TIMEOUT_SQLSTATE) return true;
+	return /network request failed|failed to fetch|fetch failed|network error|request timed out|gateway time-?out|bad gateway|service unavailable|upstream request timeout|statement timeout/i.test(
 		error.message ?? ""
 	);
 }

@@ -1,20 +1,25 @@
 import React, { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { RARITY_COLORS } from "@/constants/hats";
+import { View, StyleSheet } from "react-native";
 import {
+	BORDER,
 	RADII,
+	RARITY_STRIPE,
 	ROW_TILTS,
 	SPACE,
-	SHADOW_SM,
-	STICKER_SHADOW,
-	TYPE,
 	UI_COLORS,
-	WHIMSY,
 } from "@/constants/theme";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Sticker } from "@/components/ui/Sticker";
+import { T } from "@/components/ui/Text";
 import { CARDS, drawHand, type ExpeditionState } from "@/utils/expedition";
 import { StatPips, abilityPips } from "./StatPips";
+
+// Drawing geometry, not spacing: the height a dealt card holds open so three
+// cards in a hand stay the same size whatever their copy, and the rarity stripe
+// down a card's spine. Neither is a SPACE step — they are the card's shape.
+const CARD_MIN_H = 140;
+const SPINE_W = 6;
 
 // The daily 3-card draw: pick one to TUCK in the satchel (its passive shapes the
 // trip; it can be played in a fight instead). The hand is seeded stable per day.
@@ -45,37 +50,44 @@ export function CardHand({
 						if (!card) return null;
 						const tucked = state.tuckedCardId === id;
 						return (
-							<Pressable
+							<Sticker
 								key={`${id}-${i}`}
-								onPress={() => onTuck(id)}
-								accessibilityRole="button"
-								accessibilityLabel={`Tuck ${card.name}`}
+								color={tucked ? "sun" : "paper"}
 								// Light hand-drawn scrapbook angle, cycled like the shared row
-								// tilts so no two cards sit at the same tidy angle.
-								style={({ pressed }) => [
-									styles.card,
-									{ transform: [{ rotate: `${ROW_TILTS[i % ROW_TILTS.length]}deg` }] },
-									tucked && styles.cardTucked,
-									pressed && styles.pressed,
-								]}
+								// tilts so no two cards sit at the same tidy angle. A tucked
+								// card sits straight, the way a pinned row does.
+								rotate={tucked ? 0 : ROW_TILTS[i % ROW_TILTS.length]}
+								radius={RADII.md}
+								border={tucked ? BORDER.heavy : BORDER.ink}
+								shadow={tucked ? "sticker" : "sm"}
+								onPress={() => onTuck(id)}
+								accessibilityLabel={`${card.name}, ${card.rarity} Trick`}
+								accessibilityHint={
+									tucked
+										? "Already tucked in the satchel for this trip."
+										: "Tucks it in the satchel for the road."
+								}
+								accessibilityState={{ selected: tucked }}
+								style={styles.card}
 							>
 								<View
 									style={[
-										styles.rarityStripe,
-										{ backgroundColor: RARITY_COLORS[card.rarity] ?? WHIMSY.muteSoft },
+										styles.spine,
+										{
+											backgroundColor:
+												RARITY_STRIPE[card.rarity] ?? UI_COLORS.uiMuted,
+										},
 									]}
 								/>
-								<Text style={styles.cardName}>
-									{card.name}
-								</Text>
+								<T role="cardTitleSm">{card.name}</T>
 								<StatPips pips={abilityPips(card.ability)} />
-								<Text style={styles.cardBody}>
+								<T role="bodySm" tone="secondary" style={styles.cardBody}>
 									{card.ability.flavorLine}
-								</Text>
-								<Text style={styles.tuckTag}>
+								</T>
+								<T role="kickerPillSm" tone="accent" style={styles.tuckTag}>
 									{tucked ? "TUCKED" : "tap to tuck"}
-								</Text>
-							</Pressable>
+								</T>
+							</Sticker>
 						);
 					})}
 				</View>
@@ -88,35 +100,23 @@ const styles = StyleSheet.create({
 	hand: { flexDirection: "row", gap: SPACE.sm },
 	card: {
 		flex: 1,
-		minHeight: 140,
+		minHeight: CARD_MIN_H,
 		padding: SPACE.sm,
 		paddingLeft: SPACE.md,
-		borderWidth: 2,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
 		overflow: "hidden",
-		...SHADOW_SM,
 	},
-	cardTucked: { backgroundColor: WHIMSY.sun, ...STICKER_SHADOW },
-	rarityStripe: {
+	spine: {
 		position: "absolute",
 		left: 0,
 		top: 0,
 		bottom: 0,
-		width: 6,
+		width: SPINE_W,
 	},
-	cardName: { ...TYPE.cardTitleSm, color: UI_COLORS.textPrimary },
 	cardBody: {
-		...TYPE.bodySm,
-		color: UI_COLORS.textSecondary,
 		marginTop: SPACE.xs,
 		flex: 1,
 	},
 	tuckTag: {
-		...TYPE.kickerPillSm,
-		color: UI_COLORS.action,
 		marginTop: SPACE.xs,
 	},
-	pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
 });

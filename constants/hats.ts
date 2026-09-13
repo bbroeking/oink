@@ -1,5 +1,4 @@
 // Static mapping for require() — RN bundler needs literal paths.
-import { WORLD_CUP_FLAG_IMAGES } from "./worldCupFlags";
 import { MEMBERS_IMAGES } from "./membersImages.generated";
 
 export const HAT_IMAGES: Record<string, number> = {
@@ -53,9 +52,8 @@ export const HAT_IMAGES: Record<string, number> = {
 	magic_wand: require("../assets/images/hats/magic_wand.png"),
 	toy_sword: require("../assets/images/hats/toy_sword.png"),
 	controller: require("../assets/images/hats/controller.png"),
-	// World Cup soccer ball (catalog row from 20260589). The art existed as a
-	// glyph but was never wired here, so the shop/on-pig render fell back to the
-	// "held" wand placeholder — now keyed to its real art.
+	// Soccer ball is now an ordinary held cosmetic; the retired allegiance
+	// feature no longer owns it.
 	soccer_ball: require("../assets/images/hats/soccer_ball.png"),
 	// Batch 5 — necklaces: REMOVED 2026-05-22. The necklace art never
 	// sat right on the pig (it didn't read as "around the neck").
@@ -112,8 +110,7 @@ export const HAT_IMAGES: Record<string, number> = {
 	underwater: require("../assets/images/backgrounds/underwater.png"),
 	desert_dunes: require("../assets/images/backgrounds/desert_dunes.png"),
 	mountain_top: require("../assets/images/backgrounds/mountain_top.png"),
-	// World Cup soccer backgrounds (granted via the allegiance pick +
-	// buyable). Art lives alongside the other backdrops.
+	// Soccer backdrops remain ordinary cosmetics after the allegiance feature.
 	soccer_field_day: require("../assets/images/backgrounds/soccer_field_day.png"),
 	soccer_street: require("../assets/images/backgrounds/soccer_street.png"),
 	soccer_podium: require("../assets/images/backgrounds/soccer_podium.png"),
@@ -142,8 +139,7 @@ export const HAT_IMAGES: Record<string, number> = {
 	wallow_gilded_bow: require("../assets/images/hats/wallow_gilded_bow.png"),
 	wallow_golden_trowel: require("../assets/images/hats/wallow_golden_trowel.png"),
 	wallow_sovereign_crown: require("../assets/images/hats/wallow_sovereign_crown.png"),
-	// 2026 Hog Cup champions' reward — grant-only held trophy for players flying
-	// Spain's flag at closeout. Seeded by the World Cup closeout migration.
+	// Legacy tournament trophy remains usable by players who earned it.
 	golden_hog_cup: require("../assets/images/hats/golden_hog_cup.png"),
 	golden_truffle: require("../assets/images/hats/golden_truffle.png"),
 	crew_pennant: require("../assets/images/hats/crew_pennant.png"),
@@ -261,12 +257,6 @@ export const HAT_THUMBNAILS_256: Partial<Record<string, number>> = {
 // the base map so a members id can't collide with a base id (catalog is
 // collision-checked).
 Object.assign(HAT_IMAGES, MEMBERS_IMAGES);
-
-// Retired from current UI, but kept wired as real cosmetics so the preserved
-// World Cup picker/event code can return later without rebuilding its catalog.
-for (const [slug, src] of Object.entries(WORLD_CUP_FLAG_IMAGES)) {
-	HAT_IMAGES[`flag_${slug}`] = src;
-}
 
 // Per-hat overlay positioning on the 300x300 pig card.
 // Anchored from the bottom so each hat's bottom edge sits on the pig's head.
@@ -1013,10 +1003,6 @@ export const CATEGORY_OVERLAYS: Record<string, HatOverlay> = {
 	// faint on neighbours. Background stays exactly the 300 canvas (opaque page).
 	aura:       { bottom: -105, left: -105, width: 510, height: 510 },
 	background: { bottom: 0,   left: 0,   width: 300, height: 300 },
-	// Country flag — a tilted sticker tucked into the bottom-right corner
-	// of the card (no CATEGORY_ANCHORS entry, so it stays fixed rather than
-	// tracking the pig). Iterate placement/angle here.
-	flag: { bottom: 10, left: 188, width: 104, height: 88, rotate: -12 }
 };
 
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
@@ -1044,10 +1030,8 @@ export interface HatRow {
 	members_only?: boolean;
 }
 
-export const RARITY_COLORS: Record<string, string> = {
-	common: "#9098A2",
-	uncommon: "#5BC97D",
-	rare: "#5C9DFF",
-	epic: "#9078FF",
-	legendary: "#F5C44A"
-};
+// RARITY_COLORS lived here as a compatibility shim over theme.ts's
+// RARITY_BADGE. Its last two callers (app/scan-code.tsx, TruffleExchangeSheet)
+// now read `RARITY_BADGE[rarity].ink` directly, so the alias is gone: one
+// validated fill/ink pair per rarity, in the token file. [D-02, E30]
+// (2026-09-11)

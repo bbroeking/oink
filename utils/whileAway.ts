@@ -40,6 +40,11 @@ function emoteIdOf(data: unknown): string | null {
 	return typeof raw === "string" && raw.length > 0 ? raw : null;
 }
 
+function screenOf(data: unknown): string | null {
+	const raw = (data as { screen?: unknown } | null | undefined)?.screen;
+	return typeof raw === "string" && raw.length > 0 ? raw : null;
+}
+
 // The in-app route an announcement taps through to, or null when it has no
 // destination (unknown kind, or a trough_nudge missing its drive_id). Null
 // rows render non-pressable — no dead affordance.
@@ -49,7 +54,10 @@ export function systemAnnouncementRoute(kind: string | undefined, data: unknown)
 		// screen→route map (utils/notificationRouting).
 		return routeForScreen("trough");
 	}
-	return null;
+	// Keep malformed trough nudges non-pressable, but let ordinary feature and
+	// admin announcements opt into the same allow-listed destinations as push.
+	if (kind === "trough_nudge") return null;
+	return routeForScreen(screenOf(data));
 }
 
 // Map an unseen-announcement row to the While-Away modal's system event,

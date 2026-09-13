@@ -7,17 +7,62 @@
 // (setSession). The client currently defaults to the implicit flow (see
 // utils/supabase.ts — no `flowType` set), so the fragment path is primary, but
 // both are covered so a later flip to PKCE keeps working.
+//
+// The button is the app's own `Button` in the `ghost` variant — Google's
+// approved light-background treatment — carrying the OFFICIAL four-colour "G".
+// It used to be a Caprasimo letter "G" on an ink pill: the only place in the
+// app a letterform stood in for an icon, and a branding-compliance risk on the
+// Play listing. [E23] (2026-09-11)
 import React, { useState } from "react";
-import { Pressable, Text, View, StyleSheet } from "react-native";
+import { View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { supabase } from "../utils/supabase";
 import { paramsFromUrl } from "../utils/authCallback";
 import { log } from "../utils/log";
-import { WHIMSY, FONTS, RADII } from "@/constants/theme";
+import { Button } from "./ui";
+import { ART_SIZE } from "@/constants/theme";
 
 // Lets the auth session browser dismiss cleanly when it redirects back.
 WebBrowser.maybeCompleteAuthSession();
+
+// Google's brand hexes. The ONE sanctioned foreign palette in the app: a
+// third-party mark may not be recoloured, so these are brand facts, not theme
+// tokens — named here (never inline in the JSX) so nothing mistakes them for
+// precedent. [E23] (2026-09-11)
+const GOOGLE_BLUE = "#4285F4";
+const GOOGLE_GREEN = "#34A853";
+const GOOGLE_YELLOW = "#FBBC05";
+const GOOGLE_RED = "#EA4335";
+
+// The mark's drawing box — a glyph, not a spacing step.
+const MARK_BOX = ART_SIZE.glyphSm;
+
+function GoogleMark() {
+	return (
+		<View accessible={false}>
+			<Svg width={MARK_BOX} height={MARK_BOX} viewBox="0 0 48 48">
+				<Path
+					fill={GOOGLE_BLUE}
+					d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"
+				/>
+				<Path
+					fill={GOOGLE_GREEN}
+					d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"
+				/>
+				<Path
+					fill={GOOGLE_YELLOW}
+					d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"
+				/>
+				<Path
+					fill={GOOGLE_RED}
+					d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"
+				/>
+			</Svg>
+		</View>
+	);
+}
 
 export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 	const [busy, setBusy] = useState(false);
@@ -105,58 +150,18 @@ export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 	};
 
 	return (
-		<Pressable
-			onPress={handlePress}
-			disabled={busy}
-			style={({ pressed }) => [
-				styles.btn,
-				(pressed || busy) && { opacity: 0.7 },
-			]}
-			accessibilityRole="button"
+		<Button
+			full
+			size="lg"
+			variant="ghost"
+			icon={<GoogleMark />}
+			onPress={() => void handlePress()}
+			loading={busy}
+			loadingLabel="Opening Google…"
 			accessibilityLabel="Continue with Google"
+			accessibilityHint="Opens Google in a browser and brings you into the barn"
 		>
-			<View style={styles.gBadge}>
-				<Text style={styles.gMark}>G</Text>
-			</View>
-			<Text style={styles.label}>
-				{busy ? "Opening Google…" : "Continue with Google"}
-			</Text>
-		</Pressable>
+			Continue with Google
+		</Button>
 	);
 }
-
-// Matches AppleAuth's visual weight — full-width, 52-tall, radius 12 — but in
-// the paper-craft idiom: ink fill with paper text (the storybook parallel to
-// Apple's black-and-white), a paper "G" chip standing in for the wordmark.
-const styles = StyleSheet.create({
-	btn: {
-		width: "100%",
-		height: 52,
-		borderRadius: RADII.md,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.ink,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	gBadge: {
-		width: 24,
-		height: 24,
-		borderRadius: RADII.sm,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-		justifyContent: "center",
-		marginRight: 10,
-	},
-	gMark: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
-	label: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
-		color: WHIMSY.paper,
-	},
-});
