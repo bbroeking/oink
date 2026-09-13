@@ -61,14 +61,18 @@ The kernel is today's `applySplash`, unchanged, floored at 0:
 
 - A **half-cleared tile** (depth ≤ 1) shows the silhouette of what is under it
   (`gildedSilhouetteDepth` as today, now at depth 1).
-- Two adjacent rubs clear a 2-wide strip (the second's half-splash finishes
-  the first). Accepted: the sniff's value is skipping empty tiles, not the rubs.
+- On 2-deep tiles two adjacent **rubs** leave both at ½ (the second's
+  half-splash only halves the first); a third rub finishes both, so a domino
+  is 3 rubs and an L is 5. Two adjacent **shoves** clear a strip. Accepted:
+  the sniff's value is skipping empty tiles, not the rubs.
 - **No-ops.** Any verb on a cleared tile, a sniff on an already-sniffed tile,
   or an action on an out-of-bounds neighbour is a no-op: no action counted,
   no roll drawn, no log entry.
 - Every non-no-op verb is **one action** (toward the 45 cap) and **one entry
   in the action log** (`s2:14` / `r2:14` / `h2:14` = sniff / rub / shove,
-  layer, tile).
+  layer 0–2, tile 0–29).
+- **The waking action lands first, then rolls.** A thing revealed on the
+  waking action is kept; a truffle uncovered on it goes straight to *missed*.
 
 ### 1.3 Scent
 
@@ -408,7 +412,8 @@ restore replays through `reduce`).
 4. Every thing revealed before a wake is in `things` after it.
 5. Scent on any tile equals the count of find tiles in its 3 × 3, stones
    excluded; a `0` tile has no find in its 3 × 3.
-6. Two adjacent rubs on buried tiles leave both at depth 0.
+6. Two adjacent rubs on buried tiles leave both at depth ½; a third rub on
+   either clears both. Two adjacent shoves leave both at 0.
 7. An action on a cleared tile changes nothing: same state object.
 8. `receipt(state)` matches the canvas's rows for tie and woke.
 9. Uncrewed: `receipt` carries no GT and the join line; `things` pay.

@@ -22,10 +22,24 @@ import {
   DIG_LOCAL_WINDOWS_PER_DAY,
   DIG_LOCAL_WINDOW_ID_OFFSET,
   DIG_WINDOWS_PER_DAY,
+  DIG_FINDS,
+  DIG_JUNK_VARIANTS,
+  DIG_LAYER_STONES,
+  isDigFood,
   PATCH_COLS,
+  PATCH_LAYERS,
   PATCH_ROWS,
   STIR_RUB,
   STIR_SHOVE,
+  TILE_DEPTH,
+  WAKE_COOP_LAYER,
+  WAKE_COOP_VERBS,
+  WAKE_DIE,
+  WAKE_TABLE,
+  type DigFindKind,
+  type DigJunkVariant,
+  type SnoutDeepLayer,
+  type SnoutDeepVerb,
 } from "@/constants/dig";
 import { feedingNowMs, feedingClockSnapshot } from "@/utils/feedingClock";
 import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
@@ -985,4 +999,189 @@ export function simulateGreedyClear(
   }
   const remaining = layers.reduce((a, d) => a + d, 0);
   return (total - remaining) / total;
+}
+
+// ── Snout Deep — the layered board + the wake stream ────────────────────────
+//
+// The press-your-luck dig (docs/dig-redesign/a-snout-deep-spec.md). Three
+// layers from ONE seed — topsoil · mud · the root — each PATCH_COLS × PATCH_ROWS,
+// every tile TILE_DEPTH deep. The find set per layer is spec §2; the odds come
+// from constants/dig.ts (server config once `app_settings.dig_finds` ships).
+//
+// PARITY: generateLayeredBoard consumes the SAME first four draws as
+// generateBoard (L orientation, domino orientation, shimmer present, junk
+// kind), so rooting_finds(seed) still names the base set (`baseFinds` below is
+// exactly generateBoard(seed).finds). Every draw after those four is layout —
+// and the layered layout draws are the layered board's own, so a Snout Deep
+// board and a classic board from one seed share their find set and nothing
+// else. Do NOT reorder draws.
+
+/** One buried find: a cluster of tiles with a kind. `food` is true for the
+ *  truffles only — loose until banked, his if he wakes. Stones are inert
+ *  finds: they occupy tiles, never reveal, never count toward scent. */
+export interface LayerFind {
+  id: string;
+  kind: DigFindKind;
+  tiles: number[];
+  food: boolean;
+  /** The topsoil keepsake this junk is (boot · horseshoe · cap), or the
+   *  server-rolled relic id at the root. Absent on every other kind. */
+  variant?: string;
+}
+
+export interface LayerBoard {
+  /** Depth per tile (TILE_DEPTH → 0), row-major, PATCH_ROWS * PATCH_COLS. */
+  depths: number[];
+  finds: LayerFind[];
+}
+
+export interface SnoutDeepBoard {
+  seed: number;
+  layers: [LayerBoard, LayerBoard, LayerBoard];
+  /** The parity set — MUST equal rooting_finds(seed) (= generateBoard's). */
+  baseFinds: ClaimableFind[];
+}
+
+// The placement order per layer. Fixed: the k-th board from a seed is the same
+// on every device and on the server. Optional kinds draw their odds first (one
+// nextInt(den) each, ALWAYS consumed so a miss costs the same draws as a hit),
+// then place; always-present kinds just place.
+const LAYER_FIND_TABLE: Readonly<
+  Record<SnoutDeepLayer, readonly DigFindKind[]>
+> = {
+  0: ["truffle_d", "boom", "junk", "stone", "pouch", "apple"],
+  1: ["truffle_l", "shimmer", "acorn", "tea", "scroll", "stone"],
+  2: ["relic", "furnishing", "bow", "charm", "stone"],
+};
+
+/** The find kinds a layer can hold, in placement order (spec §2). Exposed for
+ *  the tests and the Field Guide, never mutated. */
+export function layerFindTable(layer: SnoutDeepLayer): readonly DigFindKind[] {
+  return LAYER_FIND_TABLE[layer];
+}
+
+const SINGLE: readonly (readonly [number, number])[] = [[0, 0]];
+
+export function generateLayeredBoard(
+  seed: number,
+  uniqueId?: string | null,
+): SnoutDeepBoard {
+  const rng = new Minstd(seed);
+  const total = PATCH_ROWS * PATCH_COLS;
+
+  // Draws 1–4: the find-set draws — identical to generateBoard (server parity).
+  const orient = rng.nextInt(4);
+  const vert = rng.nextInt(2);
+  const shimmerPresent = rng.nextInt(2) === 1;
+  const junkKind: ClaimableFind =
+    rng.nextInt(2) === 0 ? "junk_boot" : "junk_wrap";
+  const baseFinds: ClaimableFind[] = ["truffle_l", "truffle_d"];
+  if (shimmerPresent) baseFinds.push("shimmer");
+  baseFinds.push(junkKind);
+
+  const dominoOffsets: readonly (readonly [number, number])[] = vert
+    ? [
+        [0, 0],
+        [1, 0],
+      ]
+    : [
+        [0, 0],
+        [0, 1],
+      ];
+
+  // Draws 5+: layout, layer by layer. The shimmer's 1-in-2 IS the parity draw
+  // (spec §2 odds match rooting_finds), so it never draws again here.
+  const layers: LayerBoard[] = [];
+  for (let layer = 0; layer < PATCH_LAYERS; layer++) {
+    const occupied: boolean[] = new Array(total).fill(false);
+    const finds: LayerFind[] = [];
+    let stoneN = 0;
+    for (const kind of LAYER_FIND_TABLE[layer as SnoutDeepLayer]) {
+      if (kind === "stone") {
+        for (let s = 0; s < DIG_LAYER_STONES[layer as SnoutDeepLayer]; s++) {
+          finds.push({
+            id: `l${layer}:stone:${stoneN++}`,
+            kind,
+            tiles: placeShape(rng, occupied, SINGLE),
+            food: false,
+          });
+        }
+        continue;
+      }
+      if (kind === "shimmer") {
+        if (!shimmerPresent) continue;
+      } else {
+        const odds = DIG_FINDS[kind];
+        if (odds) {
+          const hit = rng.nextInt(odds[1]) < odds[0];
+          // The relic is also present when the server rolled one for this
+          // board (uniqueId) — the odds draw is still consumed either way.
+          if (!hit && !(kind === "relic" && uniqueId)) continue;
+        }
+      }
+      let variant: string | undefined;
+      let shape: readonly (readonly [number, number])[] = SINGLE;
+      if (kind === "truffle_l") shape = L_ORIENTS[orient];
+      else if (kind === "truffle_d") shape = dominoOffsets;
+      else if (kind === "junk") {
+        // The keepsake is one of three (§2) — its own layout draw; the parity
+        // junk draw above only names the base set.
+        variant = DIG_JUNK_VARIANTS[rng.nextInt(DIG_JUNK_VARIANTS.length)] as DigJunkVariant;
+      } else if (kind === "relic" && uniqueId) variant = uniqueId;
+      finds.push({
+        id: `l${layer}:${kind}`,
+        kind,
+        tiles: placeShape(rng, occupied, shape),
+        food: isDigFood(kind),
+        ...(variant ? { variant } : {}),
+      });
+    }
+    layers.push({ depths: new Array(total).fill(TILE_DEPTH), finds });
+  }
+
+  return {
+    seed,
+    layers: layers as [LayerBoard, LayerBoard, LayerBoard],
+    baseFinds,
+  };
+}
+
+// The wake stream: a second Park–Miller stream keyed off the seed so the wake
+// rolls are independent of the layout draws. The k-th non-no-op action draws
+// the k-th nextInt(WAKE_DIE); client and server replay the same stream.
+export const WAKE_SEED_MULT = 7919;
+
+export function wakeSeed(seed: number): number {
+  // 7919 × 2147483646 ≈ 1.7e13 < 2^53 — exact in a double.
+  return (seed * WAKE_SEED_MULT) % 2147483647;
+}
+
+export class WakeStream {
+  private rng: Minstd;
+  constructor(seed: number) {
+    this.rng = new Minstd(wakeSeed(seed));
+  }
+  /** The next draw, in [0, WAKE_DIE). */
+  next(): number {
+    return this.rng.nextInt(WAKE_DIE);
+  }
+  /** Advance past the first `n` draws (a replay from a saved wakeIndex). */
+  skip(n: number): this {
+    for (let i = 0; i < n; i++) this.rng.next();
+    return this;
+  }
+}
+
+/** The wake threshold (in 120ths) for a verb on a layer — spec §1.4. Co-op
+ *  halves the root's sniff and rub (integer floor + 1: 7 → 4, 15 → 8). */
+export function wakeThreshold(
+  layer: SnoutDeepLayer,
+  verb: SnoutDeepVerb,
+  coop: boolean,
+): number {
+  const base = WAKE_TABLE[layer][verb];
+  if (coop && layer === WAKE_COOP_LAYER && WAKE_COOP_VERBS.includes(verb) && base > 0) {
+    return Math.floor(base / 2) + 1;
+  }
+  return base;
 }

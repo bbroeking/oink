@@ -175,3 +175,89 @@ export const EXCHANGE_ITEM_IDS = [
   "festival_pennant",
   "confetti_aura",
 ] as const;
+
+// ── Snout Deep (the press-your-luck dig with a nose) — client mirror. ────────
+// Spec: docs/dig-redesign/a-snout-deep-spec.md. The patch is three layers
+// (topsoil · mud · the root), each PATCH_COLS × PATCH_ROWS, every tile
+// TILE_DEPTH deep so a rub half-clears and shows the silhouette. No stir
+// budget: the cost of an action is noise — its chance of waking the Great
+// Hungerer. MUST match the server once `submit_rooting_deep` lands (§6).
+export const PATCH_LAYERS = 3;
+export const TILE_DEPTH = 2;
+// The dig ends as a tie on its 45th action (a wake on the 45th still wins).
+export const SNOUT_DEEP_ACTION_CAP = 45;
+
+export type SnoutDeepVerb = "sniff" | "rub" | "shove";
+export type SnoutDeepLayer = 0 | 1 | 2;
+
+// The wake die: every non-no-op action draws one nextInt(WAKE_DIE) from the
+// seed's wake stream and wakes him when the draw is BELOW the threshold.
+export const WAKE_DIE = 120;
+// Wake thresholds in 120ths, by layer then verb (spec §1.4). Sniffs never
+// wake him in topsoil or the mud — the nose is the mechanic those layers
+// teach, so it must be safe there. Mud rub = 1 in 20 · shove = 1 in 6 · root
+// sniff ≈ 1 in 17 · rub = 1 in 8 · shove = 1 in 3.
+export const WAKE_TABLE: Readonly<
+  Record<SnoutDeepLayer, Readonly<Record<SnoutDeepVerb, number>>>
+> = {
+  0: { sniff: 0, rub: 0, shove: 10 },
+  1: { sniff: 0, rub: 6, shove: 20 },
+  2: { sniff: 7, rub: 15, shove: 40 },
+};
+// Co-op (a crewmate submitted this Feeding) halves the ROOT's sniff and rub
+// thresholds — integer floor + 1, so 7 → 4 and 15 → 8. Shove is unchanged,
+// and nothing else in the game changes with co-op (§1.4).
+export const WAKE_COOP_LAYER: SnoutDeepLayer = 2;
+export const WAKE_COOP_VERBS: readonly SnoutDeepVerb[] = ["sniff", "rub"];
+
+// What can be buried. Food is truffles, only — loose until banked, his if he
+// wakes. Everything else is a thing: yours the moment its last tile clears.
+// Stones are inert (never a find, never scent).
+export type DigFindKind =
+  | "truffle_d"
+  | "truffle_l"
+  | "boom"
+  | "pouch"
+  | "apple"
+  | "junk"
+  | "shimmer"
+  | "acorn"
+  | "tea"
+  | "scroll"
+  | "relic"
+  | "furnishing"
+  | "bow"
+  | "charm"
+  | "stone";
+export const DIG_FOOD_KINDS: readonly DigFindKind[] = ["truffle_d", "truffle_l"];
+export function isDigFood(kind: DigFindKind): boolean {
+  return DIG_FOOD_KINDS.includes(kind);
+}
+
+// Per-layer find odds (spec §2), as [numerator, denominator] "n in d". The
+// live values are server config (`app_settings.dig_finds`); these are the
+// compiled fallbacks. A find with no entry is always present (the truffles,
+// the Boom, the junk keepsake, the stones — see DIG_LAYER_STONES).
+export const DIG_FINDS: Readonly<
+  Partial<Record<DigFindKind, readonly [number, number]>>
+> = {
+  pouch: [1, 2],
+  apple: [1, 3],
+  shimmer: [1, 2],
+  acorn: [1, 2],
+  tea: [1, 3],
+  scroll: [1, 3],
+  relic: [2, 5],
+  furnishing: [1, 4],
+  bow: [1, 12],
+  charm: [1, 3],
+};
+// Stones per layer: 3 in topsoil, 2 in the mud, 1 at the root.
+export const DIG_LAYER_STONES: Readonly<Record<SnoutDeepLayer, number>> = {
+  0: 3,
+  1: 2,
+  2: 1,
+};
+// The three shelf keepsakes the topsoil junk can be (one per board).
+export const DIG_JUNK_VARIANTS = ["boot", "horseshoe", "cap"] as const;
+export type DigJunkVariant = (typeof DIG_JUNK_VARIANTS)[number];

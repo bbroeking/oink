@@ -109,6 +109,7 @@ describe("motion-policy migration coverage", () => {
 		"components/AchievementDigestModal.tsx",
 		"components/SeasonEndModal.tsx",
 		"components/MysteryHatReveal.tsx",
+		"components/mudwar/Hungerer.tsx",
 	];
 
 	test.each(namedSurfaces)("%s consumes the shared policy", (file) => {
