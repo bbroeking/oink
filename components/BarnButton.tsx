@@ -57,7 +57,11 @@ const OPTION = 50;
 const OPTION_DEFAULT = 58;
 const OPTION_ART = 28;
 const OPTION_ART_DEFAULT = 34;
-// How far each option climbs from the button when the fan opens.
+// The fan's column: one pitch from mark centre to mark centre, the gap between
+// the button's rim and the first mark, and how far each option climbs from the
+// button as the fan opens.
+const OPTION_PITCH = 70;
+const FAN_GAP = 18;
 const OPTION_RISE = 24;
 // How far a fanned row may reach left from the button: the page's width inside
 // its gutters. An absolute child of the 72pt anchor is otherwise measured
@@ -226,9 +230,12 @@ export function BarnButton({
 							const isDefault = index === 0;
 							const size = isDefault ? OPTION_DEFAULT : OPTION;
 							const art = isDefault ? OPTION_ART_DEFAULT : OPTION_ART;
-							// Each option rises from the button: the first one clears it,
-							// the rest stack above at one option's pitch.
-							const rest = FAB + OPTION_RISE + index * (OPTION + OPTION_RISE);
+							// ONE COLUMN, ONE PITCH. Every mark — small, default, and the
+							// button under them — shares the button's centre line, and the
+							// marks' centres sit one pitch apart whatever their size, so
+							// the fan reads as a ladder rather than a scatter.
+							const rest = FAB + FAN_GAP + index * OPTION_PITCH + (OPTION_DEFAULT - size) / 2;
+							const inset = (FAB - size) / 2;
 							const translateY = fan.interpolate({
 								inputRange: [0, 1],
 								outputRange: [OPTION_RISE, 0],
@@ -238,7 +245,7 @@ export function BarnButton({
 									key={option.key}
 									style={[
 										styles.option,
-										{ bottom: rest, opacity: fanOpacity, transform: [{ translateY }] },
+										{ bottom: rest, right: inset, opacity: fanOpacity, transform: [{ translateY }] },
 									]}
 								>
 									<Pressable
@@ -410,7 +417,6 @@ const styles = StyleSheet.create({
 	// column and its title to the left.
 	option: {
 		position: "absolute",
-		right: 0,
 		width: FAN_SPAN,
 		alignItems: "flex-end",
 	},
