@@ -1,5 +1,4 @@
-/** Frozen alongside the authored V4 manifest. Times are milliseconds after spin. */
-export const MOTE_TIMING_VERSION = "mote-animation-v4" as const;
+/** Times are milliseconds after spin, frozen alongside the authored V4 manifest. */
 export type MotePresentationOutcome = "loss" | "returned_stake" | "small" | "medium" | "big" | "jackpot";
 export const MOTE_TIMING = {
   deposit: 0, leverDown: 120, leverReturn: 560, reelStart: 520, reelCruise: 920,

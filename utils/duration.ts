@@ -11,6 +11,9 @@
 //                                                        minutes ROUNDED (regen rates)
 //   formatClockMS(secs)     "30s" / "1m 30s"          — mm:ss clock, no hour rollover,
 //                                                        seconds zero-padded
+//   formatExpiry(ms)        "45m" / "3h" / "2h 10m"    — effect countdowns: minutes
+//                                                        ROUNDED, exact hour collapses,
+//                                                        "expiring" once past
 //
 // plus remainingMs(iso): the "how long until this ISO timestamp" span callers
 // then format themselves.
@@ -54,6 +57,20 @@ export function formatClockMS(totalSeconds: number): string {
 	const s = totalSeconds % 60;
 	if (m === 0) return `${s}s`;
 	return `${m}m ${s.toString().padStart(2, "0")}s`;
+}
+
+// The countdown on every active-effect surface (chip, row, sheet, inbox, a
+// push body): hours and minutes only, minutes ROUNDED so a 44m30s tail reads
+// "45m", an exact hour collapses to "3h", and anything at or past the deadline
+// reads "expiring". Two callers (utils/activeEffects.formatLeft and
+// EffectCard.formatEffectCountdown) each hand-rolled this exact kernel.
+export function formatExpiry(ms: number): string {
+	if (ms <= 0) return "expiring";
+	const mins = Math.round(ms / MS_PER_MIN);
+	if (mins < 60) return `${mins}m`;
+	const h = Math.floor(mins / 60);
+	const m = mins % 60;
+	return m ? `${h}h ${m}m` : `${h}h`;
 }
 
 // Milliseconds remaining until an ISO-8601 instant (negative once it's past).

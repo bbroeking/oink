@@ -27,15 +27,6 @@
 // design specificity) pending a rebuild on the design-system primitives.
 export const MOTE_MACHINE_VISIBLE = false;
 
-// Slop Club / premium-pass PURCHASE CTAs. Flipped live 2026-07-17: the
-// storefront is real — RevenueCat App Store app + appl_ key wired,
-// ASC products (monthly/yearly/season_pass) staged to ride the 1.3
-// review, revenuecat-webhook deployed as the authoritative is_vip flip.
-// Buy buttons render on the Account membership card + the season pass
-// PremiumLockedBanner. Purchases complete in sandbox/TestFlight now and
-// in production once App Review approves the IAPs with the version.
-export const PURCHASES_LIVE = true;
-
 // Spotlight coach-marks (components/ui/Spotlight.tsx) — the dim-the-screen /
 // cut-a-hole onboarding nudge — shipped dark behind SPOTLIGHT_ENABLED and were
 // lit for everyone in 1.3 (build 149). The flag is gone; the coach-mark's only
@@ -54,8 +45,3 @@ export const PURCHASES_LIVE = true;
 // same time and wave at each other; it ships when that reads as ours, and not
 // as a half-drawn field, which is the same bar the Mote Machine was held to.
 export const LOUNGE_VISIBLE = false;
-
-// Personal Barn housing ships to everyone in the next binary. The legacy
-// server habitat flag is intentionally not used by this client, so old builds
-// remain dark until players upgrade. No tester override is required.
-export const HABITAT_VISIBLE = true;

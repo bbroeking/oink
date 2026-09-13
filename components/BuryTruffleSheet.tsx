@@ -52,7 +52,8 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 		if (busy) return;
 		setBusy(true);
 		setNote(null);
-		const r = await rpcAction("bury_truffle", { p_amount: stake });
+		// `next_at` rides only the reclaim_cooldown refusal (Partial<T> on failure).
+		const r = await rpcAction<{ next_at?: string }>("bury_truffle", { p_amount: stake });
 		setBusy(false);
 		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -75,7 +76,7 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 		} else if (r.reason === "reclaim_cooldown") {
 			// Host dug up their own truffle — 12h settle before the next bury
 			// (server-enforced; see 20260738400000_truffle_reclaim_cooldown).
-			const nextAt = Date.parse((r as { next_at?: string }).next_at ?? "");
+			const nextAt = Date.parse(r.next_at ?? "");
 			const hours = Number.isFinite(nextAt)
 				? Math.max(1, Math.ceil((nextAt - Date.now()) / 3.6e6))
 				: 12;

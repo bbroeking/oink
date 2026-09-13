@@ -246,7 +246,7 @@ export const GEAR: Record<string, GearPiece> = Object.fromEntries(
 	GEAR_LIST.map((g) => [g.id, g])
 );
 
-export const CARD_LIST: TrickCard[] = [
+const CARD_LIST: TrickCard[] = [
 	{
 		id: "press_on",
 		name: "Press On",
@@ -349,9 +349,9 @@ export const CARDS: Record<string, TrickCard> = Object.fromEntries(
 	CARD_LIST.map((c) => [c.id, c])
 );
 
-export const STARTER_CARD_IDS = CARD_LIST.filter((c) => c.starter).map((c) => c.id);
+const STARTER_CARD_IDS = CARD_LIST.filter((c) => c.starter).map((c) => c.id);
 
-export const ENEMY_LIST: EnemyDef[] = [
+const ENEMY_LIST: EnemyDef[] = [
 	{
 		id: "gate_snail",
 		name: "Gate Snail",
@@ -385,7 +385,7 @@ export const ENEMIES: Record<string, EnemyDef> = Object.fromEntries(
 // The Bramble is a hazard, not a fight — a Cushion gate that still lights a
 // Bestiary page when she passes it.
 export const BRAMBLE_ID = "the_bramble";
-export const BRAMBLE_NAME = "The Bramble";
+const BRAMBLE_NAME = "The Bramble";
 export const BRAMBLE_SEGMENT = 8;
 export const BRAMBLE_CUSHION_ASK = 3;
 
@@ -933,12 +933,15 @@ export function tickle(
 
 	if (s.mockTickles <= 0) return { state: s, burst: null, refusal: "empty" };
 
-	const atWall = !!s.wallEnemyId && s.wallHp !== null;
+	// Hoisted so the wall's identity + HP stay narrowed (non-null) for the burst
+	// below — `working` is a spread of `s`, so its fields would re-widen.
+	const wallEnemyId = s.wallEnemyId;
+	const wallHp = s.wallHp;
 
 	// Not at a wall → a send-off / affection tickle just charges Zoomies. But at
 	// FULL charge there is no wall to burst against, so the spend would be a silent
 	// no-op — refuse it (no decrement) so the UI can say she's already bursting.
-	if (!atWall) {
+	if (!wallEnemyId || wallHp === null) {
 		if (s.zoomies >= ZOOMIES_MAX) {
 			return { state: s, burst: null, refusal: "full_open_road" };
 		}
@@ -988,10 +991,10 @@ export function tickle(
 	}
 
 	// Burst!
-	const enemy = ENEMIES[working.wallEnemyId!];
-	const isFirst = working.wallHp === enemy.hp;
+	const enemy = ENEMIES[wallEnemyId];
+	const isFirst = wallHp === enemy.hp;
 	const damage = burstDamage(working, isFirst, recipes);
-	const wallHpBefore = working.wallHp!;
+	const wallHpBefore = wallHp;
 	const wallHpAfter = Math.max(0, wallHpBefore - damage);
 	const defeated = wallHpAfter === 0;
 	const lines: string[] = [

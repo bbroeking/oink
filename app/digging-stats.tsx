@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	Image,
-	SafeAreaView,
 	ScrollView,
 	StyleSheet,
 	View,
 } from "react-native";
-import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StackPage } from "@/components/ui/StackPage";
 import { Glyph } from "@/components/ui/Glyph";
 import { EmptyState, LoadingBeat } from "@/components/ui/EmptyState";
 import { Sticker, Tape } from "@/components/ui/Sticker";
@@ -131,59 +131,56 @@ export default function DiggingStatsScreen() {
 
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.page}>
-				<SafeAreaView style={styles.safe}>
-					<PageHeader
-						kicker={isSelf ? "your truffle patch" : `${displayName}'s truffle patch`}
-						title={isSelf ? "Your digging story" : "Digging story"}
-						onBack={() => router.back()}
-					/>
+			<StackPage>
+				<PageHeader
+					kicker={isSelf ? "your truffle patch" : `${displayName}'s truffle patch`}
+					title={isSelf ? "Your digging story" : "Digging story"}
+					onBack={() => router.back()}
+				/>
 
-					{visibleStats === undefined ? (
-						<LoadingBeat label="counting muddy hoofprints" />
-					) : visibleStats === null ? (
-						// `null` from the fetch is a FAILURE, not an empty shelf — it wears
-						// the error state, announces itself, and offers the retry.
-						<View style={styles.messageWrap}>
-							<EmptyState
-								kind="error"
-								glyph="zzz"
-								title="The ledger stayed shut."
-								sub="Couldn't open this digging story. Give the patch another try."
-								action={
-									<Button
-										variant="gold"
-										size="sm"
-										onPress={tryAgain}
-										accessibilityLabel="Try again"
-										accessibilityHint="Asks the patch for this digging story once more."
-									>
-										Try again
-									</Button>
-								}
-							/>
+				{visibleStats === undefined ? (
+					<LoadingBeat label="counting muddy hoofprints" />
+				) : visibleStats === null ? (
+					// `null` from the fetch is a FAILURE, not an empty shelf — it wears
+					// the error state, announces itself, and offers the retry.
+					<View style={styles.messageWrap}>
+						<EmptyState
+							kind="error"
+							glyph="zzz"
+							title="The ledger stayed shut."
+							sub="Couldn't open this digging story. Give the patch another try."
+							action={
+								<Button
+									variant="gold"
+									size="sm"
+									onPress={tryAgain}
+									accessibilityLabel="Try again"
+									accessibilityHint="Asks the patch for this digging story once more."
+								>
+									Try again
+								</Button>
+							}
+						/>
+					</View>
+				) : zero ? (
+					<ZeroStory isSelf={isSelf} />
+				) : (
+					<ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+						<DigHero digs={visibleStats.digs} />
+						<FindLedger finds={visibleStats.finds} />
+						<View style={styles.scrapRow}>
+							{MOTE_MACHINE_VISIBLE && (
+								<MoteScrap
+									motes={visibleStats.motes}
+									onPress={isSelf ? () => router.push("/mote-machine" as Href) : undefined}
+								/>
+							)}
+							<SounderBonusScrap bonuses={visibleStats.echoes} />
 						</View>
-					) : zero ? (
-						<ZeroStory isSelf={isSelf} />
-					) : (
-						<ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-							<DigHero digs={visibleStats.digs} />
-							<FindLedger finds={visibleStats.finds} />
-							<View style={styles.scrapRow}>
-								{MOTE_MACHINE_VISIBLE && (
-									<MoteScrap
-										motes={visibleStats.motes}
-										onPress={isSelf ? () => router.push("/mote-machine" as Href) : undefined}
-									/>
-								)}
-								<SounderBonusScrap bonuses={visibleStats.echoes} />
-							</View>
-							<MeaningLedger />
-						</ScrollView>
-					)}
-				</SafeAreaView>
-			</View>
+						<MeaningLedger />
+					</ScrollView>
+				)}
+			</StackPage>
 		</>
 	);
 }
@@ -345,8 +342,6 @@ function ZeroStory({ isSelf }: { isSelf: boolean }) {
 }
 
 const styles = StyleSheet.create({
-	page: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1 },
 	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE, gap: SPACE.lg },
 	hero: {
 		minHeight: COLLAGE.heroH,

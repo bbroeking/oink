@@ -439,7 +439,6 @@ export function PigPenView({
 				confirmHint="Puts this pig in the Pen for good — the choice can't be changed right now"
 				cancelLabel="Keep looking"
 				cancelHint="Closes this without choosing"
-				destructive={false}
 				onCancel={() => setPendingRecruitId(null)}
 				onConfirm={() => {
 					const pigId = pendingRecruitId;

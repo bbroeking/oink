@@ -39,6 +39,7 @@ export {
 } from "./Text";
 export { Divider, TitleRule } from "./Divider";
 export { PageHeader, type PageHeaderVariant } from "./PageHeader";
+export { StackPage } from "./StackPage";
 export { SectionHeader } from "./SectionHeader";
 
 // ── surfaces ───────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ export {
 
 // ── lists ──────────────────────────────────────────────────────────────────
 export { ListRow, NavRow, type ListRowProps, type NavRowProps } from "./ListRow";
+export { ReceiptRows, ReceiptRow, ReceiptNote, ReceiptTotal } from "./Receipt";
 export { CrewRow } from "./CrewRow";
 export {
 	Accent,

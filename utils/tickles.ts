@@ -1,3 +1,13 @@
+// The `tickle_info(uid)` RPC shape — the spendable (regen-caught-up) balance
+// plus its cap and regen clock. Callers read a subset each; the shape lives
+// here so the Inbox's give-vs-need check and the home-stats fallback can't
+// drift on the field names.
+export interface TickleInfo {
+	balance?: number;
+	cap?: number;
+	next_regen_seconds?: number | null;
+}
+
 // Lifetime tickles = ALL-TIME across seasons.
 //
 // Season-0 graduation (migrations 20260726 / 20260736) archived each player's

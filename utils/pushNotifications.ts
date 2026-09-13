@@ -16,7 +16,6 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpcAction } from "./rpc";
-import { nextOpenAtMs } from "./rooting";
 import { foregroundNotificationBehavior } from "./notificationPolicy";
 
 const PUSH_TOKEN_CACHE_KEY = "ttp_push_token_v1";
@@ -202,71 +201,12 @@ export async function getDevicePushPermission(): Promise<
 	}
 }
 
-// ── Legacy one-local-notification compatibility ─────────────────────────────
-// A player who reaches the dig while the patch is GUARDED (or right after a dig)
-// could opt into a single local push in older builds. New UI must use the durable
-// account preference above. These helpers remain temporarily so the new toggle
-// and a completed dig can cancel jobs left behind by an older installed build.
-
-// Stable identifier so a re-schedule REPLACES the pending one (dedupe) rather
-// than stacking three "the patch is open" alerts across three opt-ins.
+// ── Older-build local reminder cleanup ──────────────────────────────────────
+// Older builds let a player opt into ONE local "the patch is open" push under
+// this fixed identifier. Delivery is server-owned now (the durable feeding
+// preference above), so all that remains is cancelling a job an older
+// installed build may have left behind.
 const OPEN_REMINDER_ID = "patch-open-reminder";
-const OPEN_REMINDER_TITLE = "the patch is open";
-const OPEN_REMINDER_BODY = "the Hungerer's gorging — dig quick, dig quiet.";
-
-// The outcome of a schedule attempt, so the caller can speak plainly:
-//   scheduled — the local oink is set for the next open.
-//   denied    — notification permission isn't granted (soft no-op, tell gently).
-//   unavailable — web / no future open time / scheduling failed (quiet no-op).
-export type OpenReminderResult = "scheduled" | "denied" | "unavailable";
-
-/**
- * Schedule (or replace) ONE local notification at the next feeding-window open.
- * Requests notification permission via the shared lane if needed; a decline is
- * a quiet no-op ("denied"). Safe to call repeatedly — the fixed identifier
- * means the pending reminder is always de-duplicated to the latest next-open.
- */
-export async function scheduleOpenReminder(
-	nowMs: number = Date.now()
-): Promise<OpenReminderResult> {
-	if (Platform.OS === "web") return "unavailable";
-
-	// A local alert still needs OS permission — reuse the feature-tied lane so
-	// the grant prompt rides a moment the player already cares about.
-	const { status: existing } = await Notifications.getPermissionsAsync();
-	let status = existing;
-	if (status !== "granted" && status !== "denied") {
-		const res = await Notifications.requestPermissionsAsync();
-		status = res.status;
-	}
-	if (status !== "granted") return "denied";
-
-	const openAt = nextOpenAtMs(nowMs);
-	const secondsUntil = Math.round((openAt - nowMs) / 1000);
-	if (secondsUntil <= 0) return "unavailable"; // already open — nothing to wait for
-
-	try {
-		// Replace any pending reminder first so opting in twice never stacks.
-		await Notifications.cancelScheduledNotificationAsync(OPEN_REMINDER_ID).catch(
-			() => {}
-		);
-		await Notifications.scheduleNotificationAsync({
-			identifier: OPEN_REMINDER_ID,
-			content: {
-				title: OPEN_REMINDER_TITLE,
-				body: OPEN_REMINDER_BODY,
-			},
-			trigger: {
-				type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-				seconds: secondsUntil,
-			},
-		});
-		return "scheduled";
-	} catch (e) {
-		console.warn("Failed to schedule open reminder:", e);
-		return "unavailable";
-	}
-}
 
 /** Cancel a pending "patch is open" reminder (e.g. the player just dug). */
 export async function cancelOpenReminder(): Promise<void> {

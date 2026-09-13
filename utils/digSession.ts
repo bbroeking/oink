@@ -19,6 +19,7 @@
 //     feeding_state read (shouldReconcile), and the server's truth for ITS
 //     window index reconciles the local flag.
 
+import { feedingNowMs } from "@/utils/feedingClock";
 import { dugInCurrentWindow } from "@/utils/rooting";
 // A crewmate who has already dug this feeding — the feeding-state read module
 // owns that shape.
@@ -175,7 +176,7 @@ export function digSessionReducer(
  */
 export function isDugThisWindow(
   state: DigSessionState,
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
 ): boolean {
   return dugInCurrentWindow(state.dugWindow, nowMs);
 }

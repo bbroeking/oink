@@ -96,3 +96,28 @@ describe("effective feeding timezone lifecycle", () => {
     expect(feedingTimeZone()).toBe("America/New_York");
   });
 });
+
+
+test("late timezone registration cannot overwrite a newer effective zone", async () => {
+  resetFeedingTimeZoneSession("pig-a");
+  let resolve!: (value: { feeding_time_zone: string }) => void;
+  mockRpc.mockReturnValueOnce(new Promise((r) => { resolve = r; }));
+  const older = registerDeviceFeedingTimeZone("pig-a");
+  mockRpc.mockResolvedValueOnce({ feeding_time_zone: "Europe/London" });
+  await registerDeviceFeedingTimeZone("pig-a");
+  resolve({ feeding_time_zone: "America/New_York" });
+  await expect(older).resolves.toBe(false);
+  expect(feedingTimeZone()).toBe("Europe/London");
+});
+
+test("cache hydration cannot overwrite a zone already confirmed by the server", async () => {
+  resetFeedingTimeZoneSession("pig-a");
+  let resolve!: (value: string) => void;
+  mockGetItem.mockReturnValueOnce(new Promise((r) => { resolve = r; }));
+  const hydration = hydrateFeedingTimeZone("pig-a");
+  mockRpc.mockResolvedValueOnce({ feeding_time_zone: "Europe/London" });
+  await registerDeviceFeedingTimeZone("pig-a");
+  resolve("America/New_York");
+  await hydration;
+  expect(feedingTimeZone()).toBe("Europe/London");
+});

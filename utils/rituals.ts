@@ -41,7 +41,7 @@ export const BLESSING_ROTATION: BlessingKind[] = [
 // Season-1 set — mechanical analogs in the same rotation slots
 // (regen / lucky / +tickles / +snouts), so the day's MECHANIC is
 // identical across seasons and only the fiction changes.
-export const BLESSING_ROTATION_S1: BlessingKind[] = [
+const BLESSING_ROTATION_S1: BlessingKind[] = [
 	"mud_wrap",
 	"glimmer_truffle",
 	"snoot_boop",

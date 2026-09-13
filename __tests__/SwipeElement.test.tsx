@@ -27,9 +27,6 @@ jest.mock("../components/ui/PigStage", () => ({
 	PigStage: () => null,
 	resolveSlot: () => null,
 }));
-jest.mock("../components/dev/AnchorDebugOverlay", () => ({
-	AnchorDebugOverlay: () => null,
-}));
 
 import SwipeElement from "../components/SwipeElement";
 

@@ -107,12 +107,17 @@ export function MoteMachineRive(props: MoteMachineRiveViewModel) {
       const reset = instance.trigger(keys.reset); const enter = instance.trigger(keys.enter);
       const v4NumberBindings = v4Numbers.map(([name]) => instance.number(name));
       const v4BooleanBindings = v4Booleans.map(([name]) => instance.boolean(name));
-      const v4Ready = Boolean(reset && enter && v4NumberBindings.every(Boolean) && v4BooleanBindings.every(Boolean));
-      if (v4Ready) {
-        v4Numbers.forEach(([, value], index) => { v4NumberBindings[index]!.value = value; });
-        v4Booleans.forEach(([, value], index) => { v4BooleanBindings[index]!.value = value; });
-        if (props.resetToken && props.resetToken !== lastReset.current) { lastReset.current = props.resetToken; reset!.trigger(); }
-        if (props.enterToken && props.enterToken !== lastEnter.current) { lastEnter.current = props.enterToken; enter!.trigger(); }
+      const bound = <T,>(binding: T | null): binding is T => binding !== null;
+      // Every v4 binding must resolve; a v3 file misses some and takes the legacy path.
+      const v4 = reset && enter && v4NumberBindings.every(bound) && v4BooleanBindings.every(bound)
+        ? { reset, enter, numbers: v4NumberBindings, booleans: v4BooleanBindings }
+        : null;
+      const v4Ready = v4 !== null;
+      if (v4) {
+        v4.numbers.forEach((binding, index) => { binding.value = v4Numbers[index][1]; });
+        v4.booleans.forEach((binding, index) => { binding.value = v4Booleans[index][1]; });
+        if (props.resetToken && props.resetToken !== lastReset.current) { lastReset.current = props.resetToken; v4.reset.trigger(); }
+        if (props.enterToken && props.enterToken !== lastEnter.current) { lastEnter.current = props.enterToken; v4.enter.trigger(); }
       }
       if (props.spinToken > 0 && props.spinToken !== lastSpin.current) {
         lastSpin.current = props.spinToken;

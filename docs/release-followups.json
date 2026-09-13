@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-12T23:13:51.748Z",
+  "updatedAt": "2026-09-13T01:23:09.350Z",
   "items": [
     {
       "id": "sounder-capacity-eight",
@@ -502,6 +502,24 @@
       "queuedAt": "2026-09-12T23:02:50.570Z",
       "build": null,
       "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "dig-server-clock",
+      "title": "Verify per-player digging clock",
+      "summary": "Dig phase, countdown, window identity and session expiry now use a session-scoped server clock and the effective player timezone; feeding_state adds server_now and the schedule.",
+      "owner": "Brian",
+      "checks": [
+        "Apply the feeding_state server-clock migration before validating the containing client build",
+        "Verify Home and Season open and close at the server boundary with device clocks ahead and behind",
+        "Verify a dig started before phase close remains playable until its server window ends",
+        "Verify foreground resume, account changes, pending timezone changes and DST boundaries"
+      ],
+      "status": "included",
+      "queuedAt": "2026-09-13T00:58:19.891Z",
+      "build": 182,
+      "releaseVersion": "1.3",
       "releasedAt": null,
       "notifiedAt": null
     }

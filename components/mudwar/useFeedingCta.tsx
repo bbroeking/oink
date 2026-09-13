@@ -11,12 +11,13 @@
 // loss (gift-not-guilt).
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { useFocusEffect, useIsFocused } from "expo-router/react-navigation";
+import { useIsFocused } from "expo-router/react-navigation";
 import { router } from "expo-router";
 import { AppState, InteractionManager, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRooting } from "@/hooks/useRooting";
-import { feedingPhaseView, nextOpenCountdown } from "@/utils/rooting";
+import { useFeedingClock } from "@/hooks/useFeedingClock";
+import { nextOpenCountdown } from "@/utils/rooting";
 import {
   hydrateFeedingScheduleCache,
   refreshFeedingSchedule,
@@ -25,8 +26,6 @@ import { TrufflePatch } from "./TrufflePatch";
 import { LivingMudReceipt, LivingMudRecovery } from "./LivingMudReceipt";
 import { AdaptiveModalScaffold } from "@/components/ui";
 import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
-
-import { subscribeFeedingTimeZone } from "@/utils/feedingTimeZone";
 
 export interface FeedingCta {
   /** True once the caller has rooted this feeding window. */
@@ -59,14 +58,6 @@ export interface FeedingCta {
   startPractice?: () => void;
   /** The dig modal — render it once beside whatever trigger you show. */
   modal: ReactNode;
-}
-
-// The CTA's clock is the shared feedingPhaseView projected onto this hook's
-// field names — the SAME phase→countdown pairing bannerDigStatus reads, so the
-// banner and the CTA can never show a different phase or number.
-function ctaClock() {
-  const { open, countdown } = feedingPhaseView();
-  return { phaseOpen: open, countdown };
 }
 
 // Receipts can be recovered by both mounted tab hooks. Once dismissed, the
@@ -154,24 +145,11 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
     return { outcome: null, failReason: result.reason };
   }, [retryPendingSubmission, onDug]);
   const [note, setNote] = useState<string | null>(null);
-  const [clock, setClock] = useState(ctaClock);
-  const [digEnded, setDigEnded] = useState(false);
-
-  useEffect(() => {
-    if (!session) setDigEnded(false);
-  }, [session]);
-
-  useEffect(() => {
-    const t = setInterval(() => setClock(ctaClock()), 15000);
-    const unsubscribe = subscribeFeedingTimeZone(() => {
-      setClock(ctaClock());
-      reconcile();
-    });
-    return () => {
-      clearInterval(t);
-      unsubscribe();
-    };
-  }, [reconcile]);
+  const {
+    open: phaseOpen,
+    countdown,
+    refresh: refreshClock,
+  } = useFeedingClock({ focused, reconcile });
 
   // Server-authoritative schedule sync: cache-hydrate then fetch on mount
   // (the founder's "schedule changes propagate without a binary"). A confirmed
@@ -183,56 +161,41 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
     (async () => {
       await hydrateFeedingScheduleCache();
       if (!alive) return;
-      setClock(ctaClock()); // cached schedule may differ from compiled defaults
+      refreshClock(); // cached schedule may differ from compiled defaults
       const changed = await refreshFeedingSchedule();
       if (!alive || !changed) return;
-      setClock(ctaClock());
-      reconcile();
+      refreshClock();
+      reconcile(true);
     })().catch(() => {});
     return () => {
       alive = false;
     };
-  }, [reconcile]);
+  }, [reconcile, refreshClock]);
 
-  // Foreground heal — useFocusEffect never fires on background → active, so a
-  // player who backgrounds on "opens in 2h" and returns hours later would sit
-  // on a stale clock until the next 15s tick and a stale dug flag until a
-  // navigation. On 'active': re-derive the clock THIS frame, fire the
-  // fail-soft server reconcile (debounced inside useRooting, so rapid fg/bg
-  // flips cost at most one feeding_state read), and re-check the server
-  // schedule (its own debounce) — a remote shift lands on the next foreground.
+  // The clock hook owns the immediate foreground repaint and state reconcile.
+  // This companion listener recovers submissions and refreshes the remotely
+  // configurable schedule; a confirmed shift is reconciled without debounce.
   useEffect(() => {
     const sub = AppState.addEventListener("change", (s) => {
       if (s !== "active") return;
-      setClock(ctaClock());
-      reconcile();
       if (focused) recoverSubmission().catch(() => {});
       refreshFeedingSchedule()
         .then((changed) => {
           if (changed) {
-            setClock(ctaClock());
-            reconcile();
+            refreshClock();
+            reconcile(true);
           }
         })
         .catch(() => {});
     });
     return () => sub.remove();
-  }, [reconcile, focused, recoverSubmission]);
-
-  // Home and Season each mount this reusable entry point. A dig completed on
-  // one tab must heal the other instance when it next receives focus; tabs stay
-  // mounted, so mount-only reconciliation is not enough.
-  useFocusEffect(
-    useCallback(() => {
-      setClock(ctaClock());
-      reconcile();
-    }, [reconcile]),
-  );
+  }, [reconcile, focused, recoverSubmission, refreshClock]);
 
   const start = async () => {
     setNote(null);
     Haptics.selectionAsync().catch(() => {});
     const r = await open();
+    refreshClock();
     if (!r.ok) {
       setNote(
         r.reason === "already_rooted"
@@ -245,8 +208,6 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
       );
     }
   };
-
-  const { phaseOpen, countdown } = clock;
 
   const modal = (
     <AdaptiveModalScaffold
@@ -268,8 +229,6 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
               : { outcome: null, failReason: r.reason };
           }}
           onClose={close}
-          onEndChange={setDigEnded}
-          phaseOpen={clock.phaseOpen}
           onBusyChange={setBusy}
           onInteractionChange={setBrushing}
           registerLeave={registerLeave}

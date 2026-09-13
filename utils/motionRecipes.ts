@@ -18,8 +18,8 @@
 // arrives as an argument and is honoured on the first line of the recipe — so
 // the rule's heuristic cannot see what it is asking for here.
 /* eslint-disable ttp/animated-needs-motion-policy */
-import { Animated } from "react-native";
-import type { MotionPolicy } from "@/hooks/useMotionPolicy";
+import { Animated, Easing } from "react-native";
+import { MOTION_DURATION, type MotionPolicy } from "@/hooks/useMotionPolicy";
 
 // --- THE RECIPE ------------------------------------------------------------
 // How deep the squash goes and how long it takes. 70ms has no step on
@@ -88,6 +88,47 @@ export function squashAndSpring(
 		Animated.spring(value, {
 			toValue: rest,
 			...spring,
+			useNativeDriver: true,
+		}),
+	]);
+}
+
+// --- THE DIALOG POP-IN -----------------------------------------------------
+// The alignment dialogs' entrance: the card springs up from nothing while its
+// opacity eases in over the `state` step. A loose spring so the sticker
+// overshoots a touch before settling — hand-wound, not a linear fade.
+// The pair lived as two identical 25-line effects in AlignmentExplainerModal
+// and AlignmentSchismModal; here it is once, by name. (2026-09-12)
+export const POP_IN_SPRING = { tension: 60, friction: 7 } as const;
+
+/**
+ * Spring `scale` 0 → 1 while `opacity` fades 0 → 1. Under Reduce Motion the
+ * scale snaps home and only the opacity crossfades, so the dialog still
+ * arrives with a beat rather than teleporting in.
+ */
+export function popIn(
+	scale: Animated.Value,
+	opacity: Animated.Value,
+	policy: MotionPolicy
+): Animated.CompositeAnimation {
+	if (policy.reduceMotion) {
+		scale.setValue(1);
+		return Animated.timing(opacity, {
+			toValue: 1,
+			duration: MOTION_DURATION.crossfade,
+			useNativeDriver: true,
+		});
+	}
+	return Animated.parallel([
+		Animated.spring(scale, {
+			toValue: 1,
+			...POP_IN_SPRING,
+			useNativeDriver: true,
+		}),
+		Animated.timing(opacity, {
+			toValue: 1,
+			duration: MOTION_DURATION.state,
+			easing: Easing.out(Easing.quad),
 			useNativeDriver: true,
 		}),
 	]);

@@ -35,6 +35,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import { AVATAR_SIZE, SPACE, WHIMSY } from "@/constants/theme";
+import { formatExpiry } from "@/utils/duration";
 import { Avatar, type AvatarFill } from "./Avatar";
 import { Chip, Tag, type ChipTone } from "./Chip";
 import { Glyph, type GlyphName } from "./Glyph";
@@ -100,7 +101,6 @@ const KIND = {
 const DETAIL_GLYPH = AVATAR_SIZE[2];
 
 const MS_PER_MINUTE = 60_000;
-const MINUTES_PER_HOUR = 60;
 
 /**
  * The countdown text on every effect surface: "45m", "3h", "2h 10m", and
@@ -115,13 +115,7 @@ export function formatEffectCountdown(expiresAt?: string | number): string {
 	if (expiresAt === undefined) return "";
 	const at = typeof expiresAt === "number" ? expiresAt : Date.parse(expiresAt);
 	if (Number.isNaN(at)) return "";
-	const ms = at - Date.now();
-	if (ms <= 0) return "expiring";
-	const mins = Math.round(ms / MS_PER_MINUTE);
-	if (mins < MINUTES_PER_HOUR) return `${mins}m`;
-	const h = Math.floor(mins / MINUTES_PER_HOUR);
-	const m = mins % MINUTES_PER_HOUR;
-	return m ? `${h}h ${m}m` : `${h}h`;
+	return formatExpiry(at - Date.now());
 }
 
 // How long is left, in ms, or `undefined` when the caller gave us nothing

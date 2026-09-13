@@ -19,6 +19,7 @@ import { supabase } from "@/utils/supabase";
 import { markFirstRealDig } from "@/utils/sounderPath";
 import { cancelOpenReminder } from "@/utils/pushNotifications";
 import { fetchFeedingState } from "@/utils/dig";
+import { hasFeedingClock } from "@/utils/feedingClock";
 import {
   ClaimableFind,
   claimableFinds,
@@ -256,16 +257,16 @@ export function useRooting() {
   }, [win]);
 
   // Server reconciliation — one cheap feeding_state() read that makes the
-  // server's "did I dig this window" (keyed by ITS window_index, the same
-  // offset-anchored floor((epoch - 7200)/28800) the client mirrors)
-  // authoritative over local state.
+  // server's "did I dig this window", per-player phase boundaries and clock
+  // authoritative over local state. A boundary/foreground read bypasses the
+  // debounce so a response just before the transition cannot hide the change.
   // Fired on window rollover and app foreground (useFeedingCta's AppState
   // listener). Fail-soft: a missing RPC / transport error keeps local state;
   // debounced so rapid fg/bg flips don't spam the poll.
-  const lastReconcileRef = useRef(0);
-  const reconcile = useCallback(async () => {
-    const now = Date.now();
-    if (!shouldReconcile(lastReconcileRef.current, now)) return;
+  const lastReconcileRef = useRef(-Infinity);
+  const reconcile = useCallback(async (force = false) => {
+    const now = performance.now();
+    if (!force && !shouldReconcile(lastReconcileRef.current, now)) return;
     lastReconcileRef.current = now;
     try {
       const uid = await mirrorUid();
@@ -301,6 +302,17 @@ export function useRooting() {
     const r = await rpcAction<OpenPayload>("open_rooting");
     if ((await mirrorUid()) !== openingUid) {
       return { ok: false, reason: "account_changed" };
+    }
+    // Refresh even on a phase refusal: its explanatory countdown must come
+    // from the same server that just accepted or rejected the open.
+    await reconcile(true);
+    if ((await mirrorUid()) !== openingUid) {
+      return { ok: false, reason: "account_changed" };
+    }
+    // A successful open followed by a failed initial clock read must not
+    // start a real board on an untrusted phone clock. Reopening is safe.
+    if ((r.ok || r.reason === "patch_closed") && !hasFeedingClock()) {
+      return { ok: false, reason: "clock_unavailable" };
     }
     if (r.ok) {
       setRecoveredOutcome(null);
@@ -373,7 +385,7 @@ export function useRooting() {
       return { ok: true, session: s };
     }
     return { ok: false, reason: r.reason };
-  }, [win]);
+  }, [win, reconcile]);
 
   const markWindowDug = useCallback(
     async (uid: string | null, window: number) => {

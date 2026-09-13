@@ -19,11 +19,11 @@ import {
 	View,
 	Image,
 	StyleSheet,
-	SafeAreaView,
 	ScrollView,
 } from "react-native";
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import { PageHeader } from "../components/ui/PageHeader";
+import { StackPage } from "../components/ui/StackPage";
 import { SectionHeader } from "../components/ui/SectionHeader";
 import { Glyph } from "../components/ui/Glyph";
 import { LoadingBeat } from "../components/ui/EmptyState";
@@ -92,78 +92,75 @@ export default function DigCollectionScreen() {
 
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={{ flex: 1 }}>
-					<PageHeader
-						kicker="the truffle patch"
-						title="The Collection"
-						onBack={() => router.back()}
-					/>
-					{mine === undefined ? (
-						<View style={styles.loadingWrap}>
-							<LoadingBeat label="dusting off the shelf" />
+			<StackPage>
+				<PageHeader
+					kicker="the truffle patch"
+					title="The Collection"
+					onBack={() => router.back()}
+				/>
+				{mine === undefined ? (
+					<View style={styles.loadingWrap}>
+						<LoadingBeat label="dusting off the shelf" />
+					</View>
+				) : (
+					<ScrollView
+						contentContainerStyle={styles.scroll}
+						showsVerticalScrollIndicator={false}
+					>
+						{/* ── Shelf 1: the Burrow Book (seasonal) ─────────────────── */}
+						<SectionHeader
+							kicker="season 1 relics"
+							title="The Burrow Book"
+							right={`${discoveredCount}/${UNIQUE_POOL.length}`}
+						/>
+						<View style={styles.grid}>
+							{UNIQUE_POOL.map((u, i) => (
+								<RelicCell
+									key={u.id}
+									index={i}
+									def={u}
+									mine={found[u.id] ?? null}
+								/>
+							))}
 						</View>
-					) : (
-						<ScrollView
-							contentContainerStyle={styles.scroll}
-							showsVerticalScrollIndicator={false}
+						<T
+							role="kicker"
+							tone="secondary"
+							align="center"
+							style={styles.caption}
 						>
-							{/* ── Shelf 1: the Burrow Book (seasonal) ─────────────────── */}
-							<SectionHeader
-								kicker="season 1 relics"
-								title="The Burrow Book"
-								right={`${discoveredCount}/${UNIQUE_POOL.length}`}
-							/>
-							<View style={styles.grid}>
-								{UNIQUE_POOL.map((u, i) => (
-									<RelicCell
-										key={u.id}
-										index={i}
-										def={u}
-										mine={found[u.id] ?? null}
-									/>
-								))}
-							</View>
-							<T
-								role="kicker"
-								tone="secondary"
-								align="center"
-								style={styles.caption}
-							>
-								found {discoveredCount} of {UNIQUE_POOL.length} — the shelf
-								remembers
-							</T>
+							found {discoveredCount} of {UNIQUE_POOL.length} — the shelf
+							remembers
+						</T>
 
-							{/* ── Shelf 2: the Field Guide (evergreen) ────────────────── */}
-							<SectionHeader
-								kicker="the economy, discovered"
-								title="The Field Guide"
-								right={`${metCount}/${FIELD_GUIDE_ENTRIES.length}`}
-								style={styles.guideHeader}
-							/>
-							<View style={styles.guideList}>
-								{FIELD_GUIDE_ENTRIES.map((e, i) => (
-									<FieldGuideRow
-										key={e.id}
-										index={i}
-										entry={e}
-										met={guide.has(e.id)}
-									/>
-								))}
-							</View>
-							<T
-								role="kicker"
-								tone="secondary"
-								align="center"
-								style={styles.caption}
-							>
-								a journal, not a manual — pages light when you meet the thing
-							</T>
-						</ScrollView>
-					)}
-				</SafeAreaView>
-			</View>
+						{/* ── Shelf 2: the Field Guide (evergreen) ────────────────── */}
+						<SectionHeader
+							kicker="the economy, discovered"
+							title="The Field Guide"
+							right={`${metCount}/${FIELD_GUIDE_ENTRIES.length}`}
+							style={styles.guideHeader}
+						/>
+						<View style={styles.guideList}>
+							{FIELD_GUIDE_ENTRIES.map((e, i) => (
+								<FieldGuideRow
+									key={e.id}
+									index={i}
+									entry={e}
+									met={guide.has(e.id)}
+								/>
+							))}
+						</View>
+						<T
+							role="kicker"
+							tone="secondary"
+							align="center"
+							style={styles.caption}
+						>
+							a journal, not a manual — pages light when you meet the thing
+						</T>
+					</ScrollView>
+				)}
+			</StackPage>
 		</>
 	);
 }
@@ -314,7 +311,6 @@ function FieldGuideRow({
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
 	loadingWrap: { marginTop: SPACE.xl, alignItems: "center" },
 	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
 	grid: {

@@ -18,7 +18,7 @@ import { View, StyleSheet, FlatList } from "react-native";
 import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
-import { rpc } from "@/utils/rpc";
+import { rpc, type RpcName } from "@/utils/rpc";
 import { usePostgresChanges } from "@/hooks/usePostgresChanges";
 import { ActiveEffects } from "./ActiveEffects";
 import { GameIcon } from "./ui/GameIcon";
@@ -45,12 +45,15 @@ import {
 	type GlyphName,
 } from "@/components/ui";
 import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
+import { fetchUsernamesById } from "@/utils/profiles";
+import type { TickleInfo } from "@/utils/tickles";
 import {
 	BLESSING_META,
 	CURSE_META,
 	type BlessingKind,
 	type CurseKind,
 	type RitualMeta,
+	type RitualMode,
 } from "../utils/rituals";
 import { DigPostcardInbox } from "./DigPostcardInbox";
 import {
@@ -107,7 +110,7 @@ type PassiveEvent = {
 // found when `gifted` and `sounder` were both sun). [B-07] (2026-09-11)
 const KIND_MARK: Record<
 	PassiveKind,
-	{ glyph?: GlyphName; gameIcon?: "bless" | "curse"; fill: AvatarFill; word: string }
+	{ glyph?: GlyphName; gameIcon?: RitualMode; fill: AvatarFill; word: string }
 > = {
 	answered: { glyph: "heart", fill: "rose", word: "trade answered" },
 	gifted: { glyph: "gift", fill: "sun", word: "gift given" },
@@ -182,11 +185,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			.eq("status", "pending");
 		const incIds = (incRows ?? []).map((r) => r.requester_id);
 		if (incIds.length > 0) {
-			const { data: profs } = await supabase
-				.from("profiles")
-				.select("id, username")
-				.in("id", incIds);
-			const byId = new Map((profs ?? []).map((p) => [p.id, p.username]));
+			const byId = await fetchUsernamesById(incIds);
 			setFriendReqs(
 				incIds.map((id) => ({
 					requester_id: id,
@@ -209,14 +208,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				.limit(100);
 			const rows = data ?? [];
 			if (rows.length === 0) return [];
-			const { data: profs } = await supabase
-				.from("profiles")
-				.select("id, username")
-				.in(
-					"id",
-					rows.map((r) => r.sender_id)
-				);
-			const byId = new Map((profs ?? []).map((p) => [p.id, p.username]));
+			const byId = await fetchUsernamesById(rows.map((r) => r.sender_id));
 			return rows.map((r) => ({
 				id: r.id,
 				kind: r.kind,
@@ -231,9 +223,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		// incoming trade cards. tickle_info returns the
 		// regen-catchup balance, which is what the player can
 		// actually spend right now.
-		const t = await rpc<{ balance?: number }>("tickle_info", {
-			uid: userId
-		});
+		const t = await rpc<TickleInfo>("tickle_info", { uid: userId });
 		setBalance(typeof t?.balance === "number" ? t.balance : null);
 
 		// Recently-accepted outgoing friend requests — surfaced in the
@@ -253,14 +243,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		if (accList.length === 0) {
 			setAcceptedFriends([]);
 		} else {
-			const { data: accProfs } = await supabase
-				.from("profiles")
-				.select("id, username")
-				.in(
-					"id",
-					accList.map((r) => r.receiver_id)
-				);
-			const accById = new Map((accProfs ?? []).map((p) => [p.id, p.username]));
+			const accById = await fetchUsernamesById(
+				accList.map((r) => r.receiver_id)
+			);
 			setAcceptedFriends(
 				accList.map((r) => ({
 					receiver_id: r.receiver_id,
@@ -345,7 +330,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		onActionableCount?.(friendReqs.length + incomingTrades.length);
 	}, [friendReqs.length, incomingTrades.length, onActionableCount]);
 
-	const doRpc = async (rpcName: string, args: Record<string, unknown>, id: string, ok: string) => {
+	const doRpc = async (rpcName: RpcName, args: Record<string, unknown>, id: string, ok: string) => {
 		if (busy) return;
 		setBusy(id);
 		const r = await rpc<{

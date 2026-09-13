@@ -16,10 +16,9 @@ it scales across screen sizes. RelSpecs live in `constants/hat_rel.generated.ts`
 (written by the studio) and `constants/membersRel.generated.ts` (category
 defaults for members items). `resolveSlot` (in `components/ui/PigStage.tsx`) uses
 the RelSpec whenever one exists; an item's pivot point lands on its pig anchor,
-sized to `widthFrac × 300`. The **legacy** `HAT_OVERLAYS` path (absolute
-`bottom/left/width/height`) now only serves the handful of items that don't yet
-have a RelSpec — including an aura until it is deliberately tuned — see
-"Legacy" below.
+sized to `widthFrac × 300`. An item without a RelSpec — an aura until it is
+deliberately tuned — renders from its category preset; see "Items without a
+RelSpec" below.
 
 ---
 
@@ -61,19 +60,13 @@ aren't directly editable.
 
 ---
 
-## Legacy `HAT_OVERLAYS` (being retired)
+## Items without a RelSpec
 
-`scripts/compute_overlays.py` generates `constants/hat_overlays.generated.ts`,
-but now **only for items without a RelSpec** (fixed-canvas backgrounds and
-tickle_particle are skipped; any item with a RelSpec is skipped because RelSpec
-wins in `resolveSlot`). Untuned auras keep their category fallback; tuning one
-gives it a RelSpec. This file is the shrinking legacy backlog — tune each item
-in the studio and it drops out on the next `compute_overlays.py` run. `tophat`
-keeps a manual entry in `constants/hats.ts` until it's tuned.
-
-```bash
-python3 scripts/compute_overlays.py   # regenerate after tuning legacy items
-```
+An item the studio hasn't tuned renders from its category preset
+(`CATEGORY_OVERLAYS` in `constants/hats.ts`) — that is the only fallback.
+The per-item legacy `HAT_OVERLAYS` map, `scripts/compute_overlays.py` and
+`constants/hat_overlays.generated.ts` were retired 2026-09-12 once the
+generated map was empty; `resolveSlot` is RelSpec → category preset.
 
 ---
 
@@ -103,8 +96,7 @@ category defaults the studio seeds from.
 - **No pig in the PNG** — items render alone on transparent background; the pig
   comes from the runtime.
 - **Don't hand-edit the generated files** (`hat_rel.generated.ts`,
-  `hat_overlays.generated.ts`, `membersRel.generated.ts`) — the studio and
-  scripts own them.
+  `membersRel.generated.ts`) — the studio and scripts own them.
 
 ---
 
@@ -117,6 +109,4 @@ category defaults the studio seeds from.
 | `constants/hats.ts` | `HAT_IMAGES`, `REST_ANCHORS`, `PIG_FRAME_ANCHORS`, category defaults, `resolveSlot` data. |
 | `constants/hat_rel.generated.ts` | Hand-tuned RelSpecs (studio writes these). |
 | `constants/membersRel.generated.ts` | Members category-default RelSpecs. |
-| `constants/hat_overlays.generated.ts` | Legacy overlays — only items without a RelSpec. **Do not hand-edit.** |
-| `scripts/compute_overlays.py` | Regenerates the legacy overlay file. |
 | `scripts/pig_preview.py` | Bakes on-pig preview PNGs for the review gallery. |

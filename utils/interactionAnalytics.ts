@@ -7,7 +7,7 @@
 
 import { rpcAction } from "./rpc";
 
-export const ANALYTICS_EVENT_SURFACES = {
+const ANALYTICS_EVENT_SURFACES = {
 	habitat_opened: ["habitat", "visit"],
 	habitat_edit_started: ["habitat"],
 	habitat_layout_saved: ["habitat"],

@@ -61,7 +61,6 @@ interface Props {
 	source?: ImageSourcePropType;
 	/** What this avatar depicts — required; an unlabelled face is unreadable. */
 	label: string;
-	/** Style override. */
 	style?: StyleProp<ViewStyle>;
 }
 

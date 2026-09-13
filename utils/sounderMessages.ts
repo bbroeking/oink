@@ -63,15 +63,3 @@ export function sendSounderCoordination(
 export async function fetchSounderMessages(limit = 100): Promise<SounderMessageRow[]> {
 	return (await rpc<SounderMessageRow[]>("my_sounder_messages", { p_limit: limit })) ?? [];
 }
-
-export async function fetchUnshownSounderMessages(limit = 20): Promise<SounderMessageRow[]> {
-	return (await rpc<SounderMessageRow[]>("my_unshown_sounder_messages", {
-		p_limit: limit,
-	})) ?? [];
-}
-
-export function markSounderMessagesShown(
-	messageIds: string[]
-): Promise<RpcResult<{ shown: number }>> {
-	return rpcAction("mark_sounder_messages_shown", { p_message_ids: messageIds });
-}

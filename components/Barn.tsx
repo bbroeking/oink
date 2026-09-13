@@ -97,8 +97,7 @@ import { useHomeHabitatPigPublisher } from "@/hooks/useHabitatPigBridge";
 const PHANTOM_ITCH_MISS_CHANCE = 0.33;
 
 // Two pig-laugh variants; one is picked at random on each tickle
-// so the sound feels alive instead of looping the same clip. Old
-// oink_1..4 set was replaced with cuter cartoon-pig laughs.
+// so the sound feels alive instead of looping the same clip.
 const laughSound1 = require("../assets/sounds/laugh_1.mp3");
 const laughSound2 = require("../assets/sounds/laugh_2.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
@@ -488,7 +487,6 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// Every duration on this screen is run past the policy, so a player with
 	// Reduce Motion on gets the same information without the travel. [A-07]
 	const motion = useMotionPolicy();
-	const habitatEnabled = useFeatureFlag("habitat");
 	const rewardedAdsEnabled = useFeatureFlag("rewarded_ads");
 	const rewardedAdBackend = React.useMemo(createSupabaseRewardedAdBackend, []);
 	const rewardedAdProvider = React.useMemo(createAdMobRewardedProvider, []);
@@ -545,9 +543,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	);
 
 	// Home stats (counter, balance, equipped cosmetics, season tier).
-	// Owned by useHomeStats; the fallback alignment hydration still
-	// flows through onAlignmentLoaded for dev-sim parity. Effects are
-	// no longer routed through here — useActiveEffects above owns them.
+	// Owned by useHomeStats. Effects are no longer routed through here —
+	// useActiveEffects above owns them.
 	const {
 		stats,
 		statsLoaded,
@@ -555,9 +552,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		refresh: fetchStats,
 		scheduleRefresh: scheduleStatsRefresh,
 		applyOptimistic,
-	} = useHomeStats({
-		onAlignmentLoaded: setAlignment,
-	});
+	} = useHomeStats();
 	// React state updates on the tap, but a ref is the synchronous admission
 	// gate for a high-latency burst. Without it, several presses can all read the
 	// same pre-render balance and start mutations that the server must reject.
@@ -592,7 +587,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// `interiorPigOnly` is the bridge's pig-only fallback render: no barn on
 	// screen, so it must not pay for the journal (the interior already has one).
 	const journal = useHabitatJournal(
-		habitatEnabled && !interiorPigOnly ? habitatAccountId : null,
+		!interiorPigOnly ? habitatAccountId : null,
 	);
 	const threshold = useBarnThreshold({
 		push: useCallback(
@@ -772,8 +767,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		showToast(`${sign}${delta} toward ${dir}`, `Now ${scoreText} — ${label}`);
 	};
 
-	// fetchStats is now homeStats.refresh from useHomeStats; the
-	// inline RPC + fallback path moved into hooks/useHomeStats.ts.
+	// fetchStats is homeStats.refresh from useHomeStats (hooks/useHomeStats.ts).
 
 	const handleIncrement = async () => {
 		if (ticklesAvailableRef.current <= 0) {
@@ -885,15 +879,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			// worst case. The hook's realtime channel doesn't watch
 			// UPDATE on blessings, so a manual refresh syncs the
 			// derived predicate.
+			// Best-effort; the 4h expiry caps the worst case.
 			void (async () => {
-				try {
-					await rpc("clear_blessing", {
-						target_kind: effects.luckyKind,
-					});
-					await activeEffects.refresh();
-				} catch {
-					// best-effort; the 4h expiry caps worst case
-				}
+				await rpc("clear_blessing", {
+					target_kind: effects.luckyKind,
+				});
+				await activeEffects.refresh();
 			})();
 		}
 
@@ -1087,21 +1078,14 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				doublePercent={luckyPig.doublePercent}
 				unlockedTitle={luckyPig.unlockedTitle}
 				onEquipTitle={async (id) => {
-					// The failure toast used to hang off a catch alone, which never
-					// fired: rpc() resolves null on a transport error and equip_title
-					// answers { ok:false, reason } for a title the player doesn't own
-					// — so every miss claimed success. Branch on the RESULT (the shape
-					// TitlesSection already reads); the catch stays as the transport
-					// backstop only.
-					let ok = false;
-					try {
-						const r = await rpc<{ ok?: boolean }>("equip_title", {
-							target_title_id: id,
-						});
-						ok = r?.ok === true;
-					} catch {
-						ok = false;
-					}
+					// Branch on the RESULT (the shape TitlesSection already reads):
+					// rpc() resolves null on a transport error and equip_title answers
+					// { ok:false, reason } for a title the player doesn't own, so
+					// anything but ok:true is a miss.
+					const r = await rpc<{ ok?: boolean }>("equip_title", {
+						target_title_id: id,
+					});
+					const ok = r?.ok === true;
 					showToast(
 						ok ? "Title equipped" : "Couldn't equip title",
 						ok
@@ -1270,7 +1254,6 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						    home, not scenery a cosmetic can paint over. */}
 						<BarnStructure
 							state={threshold.structure}
-							disabled={!habitatEnabled}
 							onPress={enterBarn}
 							style={styles.barnStructure}
 						/>
@@ -1302,12 +1285,6 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						    control lives up in the top-left now (TruffleButton). */}
 					</View>
 				</View>
-
-				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
-				    on the home screen now that the season pass surfaces
-				    progress in its own tab. Keeping the WoodenSign
-				    component around so it can be re-enabled later or
-				    re-purposed for a different stat. */}
 
 {pigPresentedInHabitat ? null : toastContent}
 			</SafeAreaView>
@@ -1394,7 +1371,6 @@ const styles = StyleSheet.create({
 		width: PIG_STAGE,
 		height: PIG_STAGE,
 	},
-	// Placard styles dropped with the JSX above.
 	// tickleHint dropped — the "tap rosie to tickle" prompt was
 	// noise once the pig was the only thing on screen.
 	ticketWrap: {

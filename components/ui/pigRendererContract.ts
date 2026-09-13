@@ -1,5 +1,6 @@
 import type { StyleProp, ViewStyle } from "react-native";
 import type { PigId } from "@/utils/pigs";
+import type { PigAnimationKey } from "@/constants/hat_overlay_types";
 
 export type PigMood = "content" | "happy" | "sad" | "tired";
 
@@ -11,16 +12,10 @@ export interface PigReaction {
 	kind: PigReactionKind;
 }
 
-export type PigAnimation =
-	| "idle"
-	| "walk"
-	| "jump"
-	| "bounce"
-	| "happy"
-	| "sad"
-	| "tired"
-	| "surprise"
-	| "wave";
+// Every anchor-table animation (constants/hat_overlay_types) plus "bounce", a
+// render-only variant that rides jump's per-frame anchors (PigStage maps it).
+// Derived, not re-listed, so a new anchor animation can't be missed here.
+export type PigAnimation = PigAnimationKey | "bounce";
 
 export interface PigAnimationSpec {
 	frames: readonly string[];

@@ -216,7 +216,7 @@ describe("sticker fill contrast", () => {
 
 // Every PIG_ACCENT entry is a fill with ink text on it: `solid` is the pig's
 // nameplate (PigPenView, PigFriendsLaunchModal), `tint` is the art well and the
-// name ribbon (PigRosterPicker). So both halves are held to the Sticker-fill
+// name ribbon. So both halves are held to the Sticker-fill
 // law. (2026-09-11, wave 4)
 describe("pig accent contrast", () => {
 	const entries = Object.entries(PIG_ACCENT);

@@ -67,7 +67,7 @@ export interface RivePigEquipment {
 	held?: 0 | 1;
 }
 
-export const RIVE_PIG_PROTOTYPE_EQUIPMENT_IDS = Object.freeze({
+const RIVE_PIG_PROTOTYPE_EQUIPMENT_IDS = Object.freeze({
 	hat: "party",
 	face: "pixel_glasses",
 	held: "garden_trowel_held",

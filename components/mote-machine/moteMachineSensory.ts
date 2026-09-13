@@ -55,7 +55,8 @@ export function createMoteSensoryController(driver: MoteSensoryDriver) {
           if (!active || disposed) return;
           if (event.stopReels) safely(() => driver.pause("reel_loop"));
           if (event.cue) cue(event.cue);
-          if (event.haptic && settings.haptics) safely(() => driver.haptic(event.haptic!));
+          const haptic = event.haptic;
+          if (haptic && settings.haptics) safely(() => driver.haptic(haptic));
         }, event.at);
         timers.add(timer);
       }

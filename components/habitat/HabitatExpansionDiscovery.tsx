@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, useWindowDimensions, View } from "react-native";
 import { router } from "expo-router";
-import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import {
   useHabitatExpansionDiscovery,
   type HabitatExpansionDiscoveryBackend,
@@ -46,8 +45,7 @@ export function HabitatExpansionDiscovery({
 }) {
   const { width, fontScale } = useWindowDimensions();
   const stackCompactRows = width < 350 || fontScale >= 1.3;
-  const flag = useFeatureFlagState("habitat");
-  const enabled = enabledOverride ?? (flag.loaded && flag.visible);
+  const enabled = enabledOverride ?? true;
   const discovery = useHabitatExpansionDiscovery(accountId, enabled, backend);
   const [closing, setClosing] = useState(false);
   const [replayAccountId, setReplayAccountId] = useState<string | null>(null);

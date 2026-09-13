@@ -3,9 +3,9 @@
 ## What to test (paste into App Store Connect → TestFlight → this build → "What to Test")
 
 ```
-Build 180 (v1.3) — personal Barn housing and the current app redesign.
+Build 182 (v1.3) — server-synchronized digging clock.
 
-Use ordinary non-admin accounts. Cold-launch Home and confirm Rosie reacts to tickles while Ready to Tickle decreases and earned tickles/Snouts increase; spend the bank to zero and verify visible feedback. Open the personal Barn, check starter ownership, place and remove furnishings, save/relaunch, buy a design and verify exactly one charge. Check prestige gifts, collection discovery, wishlist and both room presets, including reconnect/conflict recovery. Visit two differently decorated friends and confirm the host, saved room, two pigs, tickle target and Visit allowance agree; verify blocked/non-friend access is refused and guestbook access still works. Check Home/Friends/Shop/Season/Account layouts with large text, VoiceOver and Reduce Motion. Smoke sign-in, background/resume, purchases/restore, notifications and deep links. Mote Machine and Lounge should remain hidden. The new three-image background chooser is not part of this app. Empty starter placement is pending its separately authorized server migration; record database state when testing it.
+Use ordinary non-admin accounts. Compare Home and Season countdowns while the phone clock is ahead and behind. Feedings should open at midnight, 8 a.m. and 4 p.m. in the account's registered timezone, and close four hours later. Check the exact opening/closing edges and completed-dig hiding. Start a dig just before close and verify the existing session can finish before its server window ends. Background/resume, switch accounts, and reconnect; neither the old account's clock nor an old response should overwrite current state. Check pending timezone changes and daylight-saving dates. Re-run the core loop: home tickling, empty bank, friend visit, Snout earning and purchase, sign-in, restore purchases, notification/deep-link routing and accessibility. Mote Machine and Lounge remain hidden. This focused build preserves build 181's UI; Living Mud and unrelated Barn changes are not included.
 ```
 
 ## How to set this in App Store Connect
@@ -14,7 +14,7 @@ Use ordinary non-admin accounts. Cold-launch Home and confirm Rosie reacts to ti
    Transporter, following `docs/RELEASE_CHECKLIST.md`.
 2. Sign in to Transporter and click **Deliver**, then wait for Apple to process.
 3. Visit https://appstoreconnect.apple.com/apps/6740339848/testflight/ios
-4. Click build 180 → **Test Information** → paste the block above
+4. Click build 182 → **Test Information** → paste the block above
    into **What to Test**.
 5. Save. Testers see it on their next TestFlight launch.
 

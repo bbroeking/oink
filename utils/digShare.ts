@@ -21,7 +21,6 @@
 // CLUSTERS collapse to a single 🍄 (a multi-tile truffle is one find, as the
 // receipt counts it), so the grid's find-emoji count equals the "N finds" stat.
 
-import { PATCH_COLS } from "@/constants/dig";
 import { clusterAnchor } from "@/utils/rooting";
 import type { Find, PatchBoard } from "@/utils/rooting";
 

@@ -89,7 +89,7 @@ export function resetHabitatPigBridgeForTests() {
   listeners.clear();
 }
 
-export function useHabitatBridgeAccount() {
+function useHabitatBridgeAccount() {
   const [state, setState] = useState<{
     accountId: string | null;
     loaded: boolean;

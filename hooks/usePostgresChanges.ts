@@ -33,14 +33,18 @@
 
 import { useEffect, useRef } from "react";
 import type { DependencyList } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+	RealtimePostgresChangesPayload,
+	SupabaseClient,
+} from "@supabase/supabase-js";
 import { supabase } from "@/utils/supabase";
 
 export type PgChangeEvent = "INSERT" | "UPDATE" | "DELETE" | "*";
 
-// The callbacks all ignore the payload today (`() => refresh()`); the
-// payload shape is kept loose so a caller that wants it isn't blocked.
-export type PgChangePayload = Record<string, unknown>;
+// The callbacks all ignore the payload today (`() => refresh()`); the row
+// shape stays generic so a caller that wants it isn't blocked, but the
+// envelope (eventType / new / old / errors) is the realtime client's own type.
+export type PgChangePayload = RealtimePostgresChangesPayload<Record<string, unknown>>;
 
 export interface PostgresChangeSpec {
 	event: PgChangeEvent;

@@ -1,6 +1,6 @@
-// Shared overlay positioning type. Lives in its own module so both
-// `hats.ts` and the auto-generated `hat_overlays.generated.ts` can
-// depend on it without forming a circular import.
+// Shared overlay positioning types. Live in their own module so `hats.ts`
+// and the generated RelSpec files (`hat_rel.generated.ts`,
+// `membersRel.generated.ts`) can depend on them without a circular import.
 //
 // `bottom`/`left` define the item's REST position on the 300×300 pig
 // card — i.e., where the item sits when the pig is in its idle pose.
@@ -57,7 +57,7 @@ export interface RelSpec {
 	widthFrac: number;
 	anchor?: AnchorName;
 	// Render behind the pig (true) or in front (false/undefined).
-	// Set per-item in the /item-anchor tool.
+	// Set per-item in tools/placement_studio.py.
 	behind?: boolean;
 }
 

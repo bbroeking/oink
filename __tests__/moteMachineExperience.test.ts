@@ -37,7 +37,7 @@ describe("native Mote Machine experience", () => {
     const patch = read("components/mudwar/TrufflePatch.tsx");
     expect(patch).toContain('end.finds.includes("shimmer")');
     expect(patch).toContain('router.push("/mote-machine")');
-    expect(patch).toContain("Shimmer pocket: +1 Mote");
+    expect(patch).toContain("Use your Mote");
   });
 
   it("gates the completed machine behind the shared visibility flag", () => {
@@ -54,16 +54,17 @@ describe("native Mote Machine experience", () => {
     expect(route).toContain("if (!MOTE_MACHINE_VISIBLE && !canPreviewLocally)");
     expect(route).toContain('return <Redirect href="/(tabs)/season" />');
     expect(route).toContain('typeof __DEV__ !== "undefined" && __DEV__');
+    expect(route).toContain("<MoteWageringScreen />");
     expect(read("app/contraptions.tsx")).toContain(
       'if (!MOTE_MACHINE_VISIBLE && !canPreviewLocally)',
     );
   });
 
   it("uses Rive for the full-page lever and reel motion", () => {
-    const screen = read("app/mote-machine.tsx");
+    const screen = read("components/mote-machine/MoteWageringScreen.tsx");
     const binding = read("components/mote-machine/MoteMachineRive.native.tsx");
     expect(screen).toContain(
-      'import { MoteMachineRive } from "@/components/mote-machine/MoteMachineRive"',
+      'import { MoteMachineRive } from "./MoteMachineRive"',
     );
     expect(screen).not.toContain("components/prototypes");
     expect(binding).toContain("DataBindByName");
@@ -76,19 +77,6 @@ describe("native Mote Machine experience", () => {
     expect(binding).not.toMatch(/Math\.random|Snout/i);
   });
 
-  it("keeps the play control and receipt readable outside the Rive canvas", () => {
-    const screen = read("app/mote-machine.tsx");
-    expect(screen).toContain(
-      'import { IconButton } from "@/components/ui/IconButton"',
-    );
-    expect(screen).not.toContain("topChromeBackdrop");
-    expect(screen).not.toContain("backGlyph");
-    expect(screen).toContain('"Uses one Mote."');
-    expect(screen).toContain("<Button");
-    expect(screen).toContain("styles.receiptPanel");
-    expect(screen).not.toContain("styles.srOnly");
-
-  });
 
   it("declares the reel-machine View Model without alchemy controls", () => {
     const contract = read("components/mote-machine/moteMachineRiveContract.ts");
@@ -112,32 +100,11 @@ describe("native Mote Machine experience", () => {
     expect(contract).not.toMatch(/requestWarmth|requestWhirl|requestResonance/);
   });
 
-  it("latches synchronously before durable request and network work", () => {
-    const screen = read("app/mote-machine.tsx");
-    const latch = screen.indexOf("inFlight.current = true;");
-    const durableWrite = screen.indexOf("AsyncStorage.setItem(");
-    const serverRequest = screen.indexOf("await requestMachineSpin(");
-    expect(latch).toBeGreaterThan(-1);
-    expect(latch).toBeLessThan(durableWrite);
-    expect(durableWrite).toBeLessThan(serverRequest);
-    expect(screen).toContain("announcedSpinIds.current.has(spin.spin_id)");
-  });
 
-  it("keeps the reveal status until the confirmed resource is readable", () => {
-    const screen = read("app/mote-machine.tsx");
-    expect(screen).toContain(
-      'phase === "revealing" || (phase === "settled" && !revealed)',
-    );
-    expect(screen).toContain("spin.resource_amount");
-    expect(screen).toContain("spin.resource_balance");
-    expect(screen).toContain("showToast(rewardNotification(spin))");
-    expect(screen).toContain("${spin.resource_balance} stored");
-    expect(screen).not.toContain("won.${unlockCopy}");
-  });
 
   it("keeps deterministic acceptance traffic local to development builds", () => {
-    const seam = read("utils/moteMachineAcceptance.ts");
-    expect(seam).toContain('typeof __DEV__ !== "undefined" && __DEV__');
+    const seam = read("utils/moteGameAcceptance.ts");
+    expect(seam).toContain('typeof __DEV__ === "undefined" || !__DEV__');
     expect(seam).not.toContain("rpcAction");
     expect(seam).not.toContain("supabase");
   });

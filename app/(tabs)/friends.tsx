@@ -18,6 +18,7 @@ import { useFocusEffect } from "expo-router/react-navigation";
 import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
+import type { TradeRow } from "@/constants/trade_types";
 import type { IconName } from "@/components/ui";
 import {
 	PageHeader,
@@ -29,7 +30,7 @@ import Friends from "../../components/Friends";
 import { Inbox } from "../../components/Inbox";
 import { Leaderboard, type BoardScope } from "../../components/Leaderboard";
 import { SounderCard } from "../../components/SounderCard";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { useCrew } from "@/hooks/useCrew";
 import {
 	BORDER,
@@ -107,13 +108,9 @@ function CountBadge({ count }: { count: number }) {
 }
 
 export default function FriendsHubScreen() {
-	// Sounder (co-op crews) — gate on the SAME condition as the Season tab
-	// (`world_boss || __DEV__`), not the standalone `coop_dig` flag. coop_dig
-	// stayed false and hid the Sounder from Friends even while Season showed it
-	// (and would keep hiding it after the world_boss flip). Aligning the two
-	// keeps the crew visible in both places whenever the season is live.
-	const worldBoss = useFeatureFlag("world_boss");
-	const coopDig = worldBoss || __DEV__;
+	// Sounder (co-op crews) — the same Season-1 switch the Season tab uses, so
+	// the crew is visible in both places whenever the season is live.
+	const coopDig = useSeason1Active();
 	// Crew state is owned here (not inside SounderCard) so the page title and
 	// the card share ONE fetch: the header reads "Find your Sounder" while
 	// crewless and "Your Sounder" once you ride with a crew. Enabled only when
@@ -152,9 +149,7 @@ export default function FriendsHubScreen() {
 			.select("requester_id", { count: "exact", head: true })
 			.eq("receiver_id", uid)
 			.eq("status", "pending");
-		const trades = await rpc<{ status: string; target_id: string }[]>(
-			"my_tickle_trades"
-		);
+		const trades = await rpc<TradeRow[]>("my_tickle_trades");
 		const trCount = (trades ?? []).filter(
 			(t) => t.status === "pending" && t.target_id === uid
 		).length;

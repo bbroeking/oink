@@ -44,7 +44,7 @@ export const HAT_IMAGES: Record<string, number> = {
 	// sat right on the pig (capes wrap the body — front-only art looks
 	// broken when the pig leans). TODO: regenerate the cape set with
 	// art tuned to the pig, then re-add the 10 items here, to
-	// HAT_OVERLAYS / the generated overlays, the assets/images/hats/
+	// hat_rel.generated (via tools/placement_studio), the assets/images/hats/
 	// PNGs, and the `hats` shop-catalog rows. The `cape` category
 	// scaffold (CATEGORY_ANCHORS / PIVOTS / OVERLAYS / EMOJI /
 	// Z_BEHIND_PIG) is kept below.
@@ -58,8 +58,8 @@ export const HAT_IMAGES: Record<string, number> = {
 	// Batch 5 — necklaces: REMOVED 2026-05-22. The necklace art never
 	// sat right on the pig (it didn't read as "around the neck").
 	// TODO: regenerate the necklace set with art tuned to the pig's
-	// neck anatomy, then re-add the 10 items here, to HAT_OVERLAYS /
-	// the generated overlays, the assets/images/hats/ PNGs, and the
+	// neck anatomy, then re-add the 10 items here, to hat_rel.generated
+	// (via tools/placement_studio), the assets/images/hats/ PNGs, and the
 	// `hats` shop-catalog rows. The `necklace` category scaffold
 	// (CATEGORY_ANCHORS / PIVOTS / OVERLAYS / EMOJI) is kept below.
 	// Batch 6 — held + bows
@@ -273,31 +273,17 @@ import type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_type
 export const PIG_CANVAS = 300;
 
 // Per-item anchor-RELATIVE placement specs (see RelSpec). An item with
-// an entry here is positioned the relative way; items without keep the
-// absolute HAT_OVERLAYS path. The data is auto-written by the
-// tools/item-anchor web tool — drag an attach point and it persists
-// into hat_rel.generated.ts, which Metro hot-reloads.
+// an entry here is positioned the relative way; items without fall into
+// their category's preset box (CATEGORY_OVERLAYS). The data is auto-written
+// by tools/placement_studio — drag an attach point and it persists into
+// hat_rel.generated.ts, which Metro hot-reloads.
 import { HAT_REL_DATA } from "./hat_rel.generated";
 import { MEMBERS_REL_DATA } from "./membersRel.generated";
 // Members items get category-default anchor placement; any hand-tuned entry in
-// hat_rel.generated (via tools/item-anchor) overrides it.
+// hat_rel.generated (via tools/placement_studio) overrides it.
 export const HAT_REL: Record<string, RelSpec> = {
 	...MEMBERS_REL_DATA,
 	...HAT_REL_DATA
-};
-
-// Per-item overlay overrides. Auto-generated coordinates from
-// scripts/compute_overlays.py are spread first; manual tweaks below override.
-import { HAT_OVERLAYS_GENERATED } from "./hat_overlays.generated";
-
-export const HAT_OVERLAYS: Record<string, HatOverlay> = {
-	// MIGRATION COMPLETE: every worn item now has an anchor-relative RelSpec
-	// (constants/hat_rel.generated + membersRel.generated), so this legacy
-	// absolute-overlay map is empty — HAT_OVERLAYS_GENERATED is generated empty
-	// by compute_overlays.py (it skips any item with a RelSpec). Kept only as
-	// the resolveSlot fallback for a future item that somehow lacks a RelSpec;
-	// tune new items in tools/placement_studio instead of adding rows here.
-	...HAT_OVERLAYS_GENERATED
 };
 
 // Per-category z-order: items rendered BEHIND the pig vs IN FRONT.
@@ -367,24 +353,6 @@ const REST_ANCHORS: Record<AnchorName, Anchor> = {
 	leg_r: { x: 107, y: 265 },
 	feet: { x: 68, y: 266 } // midpoint of leg_l/leg_r (virtual)
 };
-
-// Helper: builds an anchor frame where every anchor shifts by dy (negative =
-// up on screen). Used for animations where the whole pig translates.
-// Declared before PIG_FRAME_ANCHORS so the const initializer can reach it
-// without relying on function-declaration hoisting in the bundler.
-// Anchors that are virtual (computed midpoints) — never stored per-frame.
-const VIRTUAL_ANCHORS = new Set<AnchorName>(["eyes", "feet"]);
-
-function shiftAll(dy: number): Partial<Record<AnchorName, Anchor>> {
-	if (dy === 0) return {};
-	const out: Partial<Record<AnchorName, Anchor>> = {};
-	for (const k of Object.keys(REST_ANCHORS) as AnchorName[]) {
-		if (VIRTUAL_ANCHORS.has(k)) continue;
-		const r = REST_ANCHORS[k];
-		out[k] = { x: r.x, y: r.y + dy };
-	}
-	return out;
-}
 
 // Per-animation per-frame anchor positions. Only define what changes from
 // REST_ANCHORS — anchors not listed in a frame inherit from rest. Numbers
@@ -917,28 +885,6 @@ export const CATEGORY_ANCHORS: Record<string, AnchorName> = {
 	held: "hand_r",
 	aura: "body",
 	background: "body"
-};
-
-// Pivot point per category — fraction (0..1) of the item's bounding box
-// that lines up with the anchor on the pig. (0.5, 1.0) = bottom-center;
-// (0.5, 0.5) = center; (0.5, 0.0) = top-center.
-//
-// Hats sit ON TOP OF the head, so their bottom-center contacts the head
-// anchor. Glasses straddle the eye line so their center contacts the eye
-// anchor. Scarves/necklaces hang down from the neck so their top-center
-// contacts the neck anchor. compute_overlays.py reads this to derive
-// each item's `bottom`/`left` from its bbox dimensions.
-export const CATEGORY_PIVOTS: Record<string, { x: number; y: number }> = {
-	hat: { x: 0.5, y: 1.0 },
-	bow: { x: 0.5, y: 1.0 },
-	glasses: { x: 0.5, y: 0.5 },
-	mask: { x: 0.5, y: 0.5 },
-	scarf: { x: 0.5, y: 0.0 },
-	necklace: { x: 0.5, y: 0.0 },
-	cape: { x: 0.5, y: 0.0 },
-	held: { x: 0.0, y: 1.0 },
-	aura: { x: 0.5, y: 0.5 },
-	background: { x: 0.5, y: 0.5 }
 };
 
 // Per-category, per-animation positional shift applied AFTER the

@@ -38,10 +38,11 @@ export function HabitatPresetSheet({ accountId, visible, onClose, positions, roo
   const [names, setNames] = useState<Record<1 | 2, string>>({ 1: "Room 1", 2: "Room 2" });
   const [edited, setEdited] = useState<ReadonlySet<1 | 2>>(new Set());
   useEffect(() => {
-    if (!presets.data) return;
+    const data = presets.data;
+    if (!data) return;
     setNames((current) => ({
-      1: edited.has(1) ? current[1] : presets.data!.presets.find((p) => p.slot === 1)?.name ?? current[1],
-      2: edited.has(2) ? current[2] : presets.data!.presets.find((p) => p.slot === 2)?.name ?? current[2],
+      1: edited.has(1) ? current[1] : data.presets.find((p) => p.slot === 1)?.name ?? current[1],
+      2: edited.has(2) ? current[2] : data.presets.find((p) => p.slot === 2)?.name ?? current[2],
     }));
   }, [edited, presets.data]);
   useEffect(() => {

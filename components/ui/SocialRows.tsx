@@ -58,7 +58,7 @@ import {
 // so the follow-up copy (the stale-invite note) can indent past the portrait and
 // line up with the row body.
 export const ROW_GAP = SPACE.md;
-export const PORTRAIT_SIZE = 48;
+const PORTRAIT_SIZE = 48;
 export const CREW_ROW_INDENT = PORTRAIT_SIZE + ROW_GAP;
 
 // The portrait's inner art, as a fraction of the ring — the crown perches at

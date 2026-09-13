@@ -44,9 +44,6 @@ interface Props {
 	confirmLabel: string;
 	confirmCoin?: boolean;
 	cancelLabel?: string;
-	// Legacy flag, kept so the ~8 existing call sites don't move: a true here is
-	// exactly `tone="destructive"`.
-	destructive?: boolean;
 	// The decision's weight. `warm` is the default spend/choice; `destructive`
 	// paints the confirm on the irreversible ramp and says so in its hint.
 	tone?: DialogTone;
@@ -70,8 +67,7 @@ export function ConfirmDialog({
 	confirmLabel,
 	confirmCoin,
 	cancelLabel = "Cancel",
-	destructive,
-	tone,
+	tone = "warm",
 	onConfirm,
 	onCancel,
 	busy,
@@ -84,8 +80,6 @@ export function ConfirmDialog({
 	// slot-driven visible so release() hides the native modal a beat before
 	// `open` unmounts it.
 	const nativeVisible = visible ?? open;
-	const resolvedTone: DialogTone =
-		tone ?? (destructive ? "destructive" : "warm");
 
 	return (
 		<AdaptiveModalScaffold
@@ -117,7 +111,7 @@ export function ConfirmDialog({
 						cancelLabel={cancelLabel}
 						onConfirm={onConfirm}
 						onCancel={onCancel}
-						tone={resolvedTone}
+						tone={tone}
 						busy={busy}
 						confirmCoin={confirmCoin}
 						confirmHint={confirmHint}

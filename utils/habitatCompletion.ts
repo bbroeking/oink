@@ -58,7 +58,7 @@ const parsePositions = (
   ) as Record<HabitatPosition, string | null>;
 };
 
-export function parseHabitatJournal(raw: unknown): HabitatJournal | null {
+function parseHabitatJournal(raw: unknown): HabitatJournal | null {
   if (
     !isObject(raw) ||
     !Array.isArray(raw.acquisitions) ||
@@ -90,7 +90,7 @@ export function parseHabitatJournal(raw: unknown): HabitatJournal | null {
   };
 }
 
-export function parseHabitatPreset(raw: unknown): HabitatPreset | null {
+function parseHabitatPreset(raw: unknown): HabitatPreset | null {
   if (
     !isObject(raw) ||
     (raw.slot !== 1 && raw.slot !== 2) ||
@@ -110,7 +110,7 @@ export function parseHabitatPreset(raw: unknown): HabitatPreset | null {
     : null;
 }
 
-export function parseHabitatPresetsData(
+function parseHabitatPresetsData(
   raw: unknown,
 ): HabitatPresetsData | null {
   if (

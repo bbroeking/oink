@@ -6,12 +6,10 @@ import { rpcAction } from "@/utils/rpc";
 import { recordPorchStop } from "@/utils/porchRound";
 import { showToast } from "@/components/ui";
 
-const mockHabitatFlag = jest.fn(() => true);
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 let authListener: ((event: string, session: { user: { id: string } } | null) => void) | undefined;
 
 jest.mock("@sentry/react-native", () => ({ captureException: jest.fn(), captureMessage: jest.fn(), addBreadcrumb: jest.fn() }));
-jest.mock("@/hooks/useFeatureFlags", () => ({ useFeatureFlag: () => mockHabitatFlag() }));
 jest.mock("@/hooks/useMotionPolicy", () => ({
   MOTION_DURATION: { feedback: 120, state: 220, modal: 300, celebration: 450, crossfade: 150 },
   useMotionPolicy: () => ({
@@ -55,7 +53,6 @@ describe("existing Visit with a saved Barn Interior", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     authListener = undefined;
-    mockHabitatFlag.mockReturnValue(true);
     rpc.mockImplementation(async (name) => name === "barn_visit_status"
       ? { ok: true, visits_left: 3, visit_budget: 3 }
       : { ok: true, taps_left: 3, tap_cap: 5, visits_left: 2 });
@@ -205,16 +202,8 @@ describe("existing Visit with a saved Barn Interior", () => {
     expect(recordPorchStop).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back outside when housing is disabled or the saved room is unavailable", async () => {
-    mockHabitatFlag.mockReturnValue(false);
+  it("falls back outside when the saved room is unavailable", async () => {
     await renderVisit();
-    expect(tree.root.findAllByType(HabitatFriendRoom)).toHaveLength(0);
-    expect(tree.root.findAll((n) => n.props.accessibilityLabel === "Inside")).toHaveLength(0);
-
-    mockHabitatFlag.mockReturnValue(true);
-    await act(async () => {
-      tree.update(<BarnVisitModal targetUserId="friend" targetName="Maple" onClose={jest.fn()} />);
-    });
     expect(tree.root.findAllByType(HabitatFriendRoom)).toHaveLength(1);
     act(() => tree.root.findByType(HabitatFriendRoom).props.onUnavailable());
     expect(tree.root.findAllByType(HabitatFriendRoom)).toHaveLength(0);

@@ -1,7 +1,9 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { applyFeedingClock, feedingClockRequest, resetFeedingClockSession } from "@/utils/feedingClock";
 import { AppState } from "react-native";
 import { useFeedingTimeZoneRegistration } from "@/hooks/useFeedingTimeZoneRegistration";
+jest.mock("@/utils/dig", () => ({ fetchFeedingState: jest.fn(async () => null) }));
 import {
   hydrateFeedingTimeZone,
   pendingFeedingTimeZoneRefreshAt,
@@ -56,8 +58,43 @@ describe("useFeedingTimeZoneRegistration", () => {
   });
 
   afterEach(() => {
+    resetFeedingClockSession(null);
     jest.restoreAllMocks();
     jest.useRealTimers();
+  });
+
+  test("a response arriving after its pending boundary triggers one immediate refresh", async () => {
+    pendingAt.mockReturnValue(Date.now() - 1);
+    let tree!: TestRenderer.ReactTestRenderer;
+    await act(async () => { tree = TestRenderer.create(<Probe userId="pig-a" />); });
+    expect(register).toHaveBeenCalledTimes(1);
+    await act(async () => { jest.advanceTimersByTime(250); });
+    expect(register).toHaveBeenCalledTimes(2);
+    await act(async () => { jest.advanceTimersByTime(10_000); });
+    expect(register).toHaveBeenCalledTimes(2);
+    act(() => tree.unmount());
+  });
+
+  test("server clock sync reschedules a pending timezone boundary on a slow phone", async () => {
+    const serverNow = Date.now() + 2 * 3600_000;
+    pendingAt.mockReturnValue(serverNow + 60_000);
+    resetFeedingClockSession("pig-a");
+    let tree!: TestRenderer.ReactTestRenderer;
+    await act(async () => { tree = TestRenderer.create(<Probe userId="pig-a" />); });
+    expect(register).toHaveBeenCalledTimes(1);
+    act(() => {
+      applyFeedingClock("pig-a", {
+        server_now: new Date(serverNow).toISOString(),
+        window_index: 123,
+        phase_open: false,
+        phase_ends_at: new Date(serverNow + 3600_000).toISOString(),
+        window_ends_at: new Date(serverNow + 3600_000).toISOString(),
+        opens_at: new Date(serverNow + 3600_000).toISOString(),
+      }, feedingClockRequest());
+    });
+    await act(async () => { jest.advanceTimersByTime(60_250); });
+    expect(register).toHaveBeenCalledTimes(2);
+    act(() => tree.unmount());
   });
 
   test("a pending zone discovered on foreground refreshes once at its boundary", async () => {

@@ -94,8 +94,8 @@ const EMPTY_GLYPH = 28;
 // cosmeticName (id → "Mud Derby Bg") + cosmeticImage (id → sprite) now live in
 // utils/rewardArt, the single owner of cosmetic art/name resolution.
 
-// "3rd of 12" — ordinal placement. Exported so the full-field page reuses it.
-export function ordinal(n: number): string {
+// "3rd of 12" — ordinal placement.
+function ordinal(n: number): string {
 	const v = Math.max(1, Math.floor(n));
 	const rem100 = v % 100;
 	if (rem100 >= 11 && rem100 <= 13) return `${v}th`;
@@ -472,7 +472,7 @@ function WeeklyRow({
 	);
 }
 
-export function weeklyRowKey(r: StandingsRow, i: number): string {
+function weeklyRowKey(r: StandingsRow, i: number): string {
 	if (r.kind === "separator") return `sep-${i}`;
 	return `${r.crew_id || r.name}-${i}`;
 }
@@ -548,9 +548,9 @@ function raceCountdownChip(
 }
 
 // ── Last-race line (settled state) ────────────────────────────────────────────
-function LastRaceLine({ last }: { last: LastRace }) {
-	const cosmetic = last.cosmetic_hat_id;
-	const cosmeticImg = cosmetic ? cosmeticImage(cosmetic) : undefined;
+// What the payout banked — truffles + tickles, whichever were paid. Shared by
+// the settled line and the ceremony card so the two never word it differently.
+function spoilsLines(last: LastRace): string[] {
 	const spoils: string[] = [];
 	if (last.truffles_paid > 0) {
 		spoils.push(`+${last.truffles_paid} Golden Truffles`);
@@ -560,6 +560,13 @@ function LastRaceLine({ last }: { last: LastRace }) {
 			`+${last.tickles_paid} ${last.tickles_paid === 1 ? "tickle" : "tickles"}`,
 		);
 	}
+	return spoils;
+}
+
+function LastRaceLine({ last }: { last: LastRace }) {
+	const cosmetic = last.cosmetic_hat_id;
+	const cosmeticImg = cosmetic ? cosmeticImage(cosmetic) : undefined;
+	const spoils = spoilsLines(last);
 	// rank < 1 → a sub-quorum PARTICIPATION result (the server sent rank null); it
 	// has no placement, only the tickle floor. Never render a bogus "1st of N".
 	const placed = last.rank >= 1;
@@ -617,16 +624,7 @@ function Ceremony({
 		onDismiss();
 	}, [onDismiss]);
 
-	// The spoils line — truffles + tickles, whichever the payout banked.
-	const spoils: string[] = [];
-	if (last.truffles_paid > 0) {
-		spoils.push(`+${last.truffles_paid} Golden Truffles`);
-	}
-	if (last.tickles_paid > 0) {
-		spoils.push(
-			`+${last.tickles_paid} ${last.tickles_paid === 1 ? "tickle" : "tickles"}`,
-		);
-	}
+	const spoils = spoilsLines(last);
 
 	return (
 		<View style={styles.wrap}>

@@ -18,8 +18,10 @@ const seasonFeeding = fs.readFileSync(
   path.join(ROOT, "components/season1/SounderHomeCard.tsx"),
   "utf8",
 );
-const patch = fs.readFileSync(
-  path.join(ROOT, "components/mudwar/TrufflePatch.tsx"),
+// The after-dig payoff copy lives on the receipt the patch renders once a dig
+// banks (LivingMudReceipt), not in TrufflePatch itself.
+const receipt = fs.readFileSync(
+  path.join(ROOT, "components/mudwar/LivingMudReceipt.tsx"),
   "utf8",
 );
 
@@ -51,11 +53,9 @@ describe("Barn Truffle Patch entry", () => {
     expect(barn).toContain('showToast("Truffle Patch", digNote)');
   });
 
-  test("mounted Home and Season entry points reconcile on focus", () => {
-    expect(feedingCta).toContain("useFocusEffect(");
-    expect(feedingCta).toMatch(
-      /useFocusEffect\([\s\S]*setClock\(ctaClock\(\)\);[\s\S]*reconcile\(\);/,
-    );
+  test("Home and Season delegate focus synchronization to the feeding clock", () => {
+    expect(feedingCta).toContain("const focused = useIsFocused();");
+    expect(feedingCta).toContain("useFeedingClock({ focused, reconcile })");
   });
 
   test("states the personal and shared payoff before and after a dig", () => {
@@ -67,12 +67,11 @@ describe("Barn Truffle Patch entry", () => {
     expect(seasonFeeding).toContain(
       "15-Truffle stage reward and your Sounder's Monday payout",
     );
-    expect(patch).toContain("Season Pass: +20 XP");
-    expect(patch).toContain(
-      "No finds made it home this time — the Hungerer and Dig-Off stay put.",
+    expect(receipt).toContain(
+      "Your finds helped your Sounder and weakened the Hungerer.",
     );
-    expect(patch).toContain(
-      "qualified for this stage's 15-Truffle reward and Monday's Dig-Off spoils",
+    expect(receipt).toContain(
+      "No finds were banked this time. Another patch awaits next Feeding.",
     );
   });
 });

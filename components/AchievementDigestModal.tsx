@@ -29,7 +29,7 @@ export interface UnlockedAchievement {
 	is_top_tier: boolean;
 }
 
-export function achievementRewardSummary(
+function achievementRewardSummary(
 	achievement: UnlockedAchievement
 ): string | null {
 	const rewards: string[] = [];
@@ -87,7 +87,7 @@ export function AchievementDigestModal({
 			achievements.map((achievement) =>
 				rpc("mark_achievement_viewed", {
 					target_id: achievement.id,
-				}).catch(() => null)
+				})
 			)
 		);
 	};

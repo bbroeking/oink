@@ -24,9 +24,8 @@
 // This module is now a thin DECLARATION over utils/configCell — the shared
 // "server-tuned config with compiled fallback" lifecycle (cache + debounce +
 // change-detection). This cell opts into BOTH the AsyncStorage cache and the
-// fetch debounce; the shape below is exactly the byte-for-byte behavior the
-// hand-rolled version had. The build-151 "config over constants" contract and
-// the lazy-require dependency note now live on the primitive.
+// fetch debounce. The build-151 "config over constants" contract and the
+// lazy-require dependency note live on the primitive.
 //
 // DEPENDENCY NOTE: the rpc chain + AsyncStorage are require()d lazily inside the
 // cell's async paths, so importing this module (and utils/rooting, which reads

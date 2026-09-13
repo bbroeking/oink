@@ -17,7 +17,6 @@ describe("approved pig portraits", () => {
 
 	test.each([
 		"components/PigPenView.tsx",
-		"components/PigRosterPicker.tsx",
 		"components/PigFriendsLaunchModal.tsx",
 	])("%s renders approved portraits on character-selection surfaces", (relative) => {
 		const source = fs.readFileSync(path.join(ROOT, relative), "utf8");

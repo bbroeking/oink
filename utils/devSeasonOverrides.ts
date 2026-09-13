@@ -19,7 +19,7 @@ export function getDevSeasonOverrides(): DevSeasonOverrides {
 	return __DEV__ ? snapshot : EMPTY_SNAPSHOT;
 }
 
-export function setDevSeasonOverrides(next: DevSeasonOverrides): void {
+function setDevSeasonOverrides(next: DevSeasonOverrides): void {
 	if (!__DEV__) return;
 	snapshot = next;
 	listeners.forEach((listener) => listener());

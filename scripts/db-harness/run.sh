@@ -270,6 +270,8 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		supabase/migrations/20260913010000_durable_rooting_receipts.sql \
 		scripts/db-harness/83_durable_rooting_receipt_smoke.sql \
 		scripts/db-harness/84_durable_rooting_receipt_concurrency_smoke.sql \
+		supabase/migrations/20260913030000_feeding_state_server_clock.sql \
+		scripts/db-harness/86_feeding_state_server_clock_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

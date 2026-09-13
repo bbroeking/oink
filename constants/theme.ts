@@ -200,14 +200,6 @@ export const STICKER_SHADOW = {
 	elevation: 4,
 };
 
-/**
- * @deprecated Legacy ramp from the pre-WHIMSY bundle. Its 14 remaining call
- * sites are folding into UI_COLORS / WHIMSY (successText → UI_COLORS.successText,
- * barn → WHIMSY.barnRed, grass → WHIMSY.grass, gold/silver/bronze → PODIUM);
- * the export is deleted once they land. Do not reach for it in new code.
- * (2026-09-11)
- */
-
 export const FONTS = {
 	display: "Fredoka_700Bold",
 	displaySemi: "Fredoka_600SemiBold",
@@ -460,8 +452,8 @@ export const TILT = {
 export const MODAL_BACKDROP_BG = TINT.scrim;
 
 // Tiny accent text that sits above a section title — e.g. "★ welcome",
-// "★ snout season 0". Identical across Account, Onboarding, season,
-// BattlePassSaleModal. Compose with marginBottom override per screen.
+// "★ snout season 0". Identical across Account, Onboarding and season.
+// Compose with marginBottom override per screen.
 export const KICKER_TEXT = {
 	...TYPE.kicker,
 	color: WHIMSY.accent,
@@ -499,7 +491,7 @@ export const GRADIENT = {
 // The ember ramp for boost/heat surfaces. No ramp existed to promote — the
 // pass track burns a single WHIMSY.flame — so this names the flame→goblin
 // gradient the audit asked for before a second orange gets invented. [C-23]
-// (2026-09-11)
+// (2026-09-11) Unused by design until a heat surface needs it.
 export const EMBER_GRADIENT = [WHIMSY.flame, WHIMSY.goblin] as const;
 
 // Podium metals — deliberately NOT WHIMSY.slopGold. First place is a medal,
@@ -511,25 +503,16 @@ export const PODIUM = {
 	bronze: "#C68A5C",
 } as const;
 
-// Per-rarity color tokens. The gradient pair is used by the Shop's
-// LinearGradient card backgrounds (top-light → bottom-darker); the
-// single-color shorthand picks the light end for surfaces that need
-// a solid swatch (e.g. ItemPreviewModal). One source of truth so the
-// two surfaces can't drift apart again.
-export const RARITY_GRADIENT: Record<string, readonly [string, string]> = {
-	common:    ["#FAF7F3", "#EFEAE3"],
-	uncommon:  ["#E8F5E0", "#CFE8C0"],
-	rare:      ["#E0EBFF", "#B7CFFA"],
-	epic:      ["#EFE9FF", "#CFC4FF"],
-	legendary: ["#FFF3D0", "#FFD96B"],
-};
-
+// Per-rarity light fill — the tinted panel behind an item on shop cards,
+// closet cards and ItemPreviewModal. One source of truth so the surfaces
+// can't drift apart. (This was the light end of a RARITY_GRADIENT pair the
+// Shop's LinearGradient cards once drew; the gradient retired with them.)
 export const RARITY_BG_SOLID: Record<string, string> = {
-	common:    RARITY_GRADIENT.common[0],
-	uncommon:  RARITY_GRADIENT.uncommon[0],
-	rare:      RARITY_GRADIENT.rare[0],
-	epic:      RARITY_GRADIENT.epic[0],
-	legendary: RARITY_GRADIENT.legendary[0],
+	common:    "#FAF7F3",
+	uncommon:  "#E8F5E0",
+	rare:      "#E0EBFF",
+	epic:      "#EFE9FF",
+	legendary: "#FFF3D0",
 };
 
 // Saturated per-rarity accent — the color DOT in the shop legend and the

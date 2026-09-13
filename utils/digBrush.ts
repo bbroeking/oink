@@ -37,7 +37,7 @@ export interface DigBrushOptions {
   moveTolerance: number;
 }
 
-export const DEFAULT_DIG_BRUSH_OPTIONS: DigBrushOptions = {
+const DEFAULT_DIG_BRUSH_OPTIONS: DigBrushOptions = {
   rubSpacing: 28,
   tapMaxMs: 250,
   holdMs: 400,

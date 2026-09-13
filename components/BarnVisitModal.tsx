@@ -40,6 +40,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
+import { fetchBarnVisitStatus } from "@/utils/barnVisit";
 import { remainingMs } from "@/utils/duration";
 import {
 	AdaptiveModalScaffold,
@@ -90,7 +91,6 @@ import {
 } from "@/utils/visitEmotes";
 import { HabitatFriendRoom } from "./habitat/HabitatFriendRoom";
 import { openOwnHabitatCollection } from "@/utils/habitatNavigation";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { trackInteraction } from "@/utils/interactionAnalytics";
 import { recordPorchStop } from "@/utils/porchRound";
@@ -301,27 +301,17 @@ function BarnVisitSession({
       data.subscription.unsubscribe();
     };
   }, []);
-  const habitatEnabled = useFeatureFlag("habitat");
+  // A visit opens Inside; a new target resets to Inside.
   const [interiorState, setInteriorState] = useState(() => ({
     targetUserId,
-    habitatEnabled,
-    inside: habitatEnabled,
+    inside: true,
     leaving: false,
   }));
-  const interiorStateIsCurrent =
-    interiorState.targetUserId === targetUserId &&
-    interiorState.habitatEnabled === habitatEnabled;
+  const interiorStateIsCurrent = interiorState.targetUserId === targetUserId;
   if (!interiorStateIsCurrent) {
-    setInteriorState({
-      targetUserId,
-      habitatEnabled,
-      inside: habitatEnabled,
-      leaving: false,
-    });
+    setInteriorState({ targetUserId, inside: true, leaving: false });
   }
-  const inside = interiorStateIsCurrent
-    ? interiorState.inside
-    : habitatEnabled;
+  const inside = interiorStateIsCurrent ? interiorState.inside : true;
   const leavingInterior = interiorStateIsCurrent
     ? interiorState.leaving
     : false;
@@ -330,7 +320,6 @@ function BarnVisitSession({
   ) => {
     setInteriorState({
       targetUserId,
-      habitatEnabled,
       inside,
       leaving: leavingInterior,
       ...update,
@@ -340,7 +329,6 @@ function BarnVisitSession({
   const {
     width: screenWidth,
     height: screenHeight,
-    fontScale,
   } = useWindowDimensions();
   const motionPolicy = useMotionPolicy();
 	const [barn, setBarn] = useState<Barn | null>(() =>
@@ -533,7 +521,7 @@ function BarnVisitSession({
 			// The host's truffle is a shared, depleting pot: show the shovel only
 			// if it still has snouts left AND your latest bite is past the 3h
 			// re-dig cooldown (server 20260629; it stays authoritative — a stale
-			// shovel just gets the dig_cooldown / already_dug note from dig()).
+			// shovel just gets the dig_cooldown / emptied note from dig()).
 			const { data: tr } = await supabase
 				.from("truffles")
 				.select("id, remaining")
@@ -563,17 +551,7 @@ function BarnVisitSession({
 			// the pigs already napped. Visiting no longer spends YOUR tickle
 			// bank (server 20260646) — the bank fields in the response are
 			// ignored; the visit budget is the random 3–7 sleepy roll.
-			const st = await rpcAction<{
-				resting?: boolean;
-				locked?: boolean;
-				next_at?: string | null;
-				taps_left?: number | null;
-				tap_cap?: number | null;
-				visits_left?: number | null;
-				visit_budget?: number | null;
-				visits_refresh_at?: string | null;
-        visit_window_hours?: number | null;
-			}>("barn_visit_status", { p_target: targetUserId });
+			const st = await fetchBarnVisitStatus(targetUserId);
 			if (!cancelled && st.ok) {
 				if (st.locked) {
 					setLockedUntil(st.next_at ?? null);
@@ -746,11 +724,9 @@ function BarnVisitSession({
       setDigNote(
         `You've dug here recently — come back in ${lockLabel(r.next_at ?? null)}.`,
       );
-		} else if (r.reason === "none" || r.reason === "already_dug") {
-			// Terminal: someone else emptied the shared pot first — or, on a server
-			// older than 20260629 (one dig EVER, no re-dig cooldown), we already
-			// took our share. The shovel is genuinely spent — retire it with a note
-			// instead of vanishing silently.
+		} else if (r.reason === "none") {
+			// Terminal: someone else emptied the shared pot first. The shovel is
+			// genuinely spent — retire it with a note instead of vanishing silently.
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
         () => {},
       );
@@ -856,7 +832,7 @@ function BarnVisitSession({
 		HAT_IMAGES.homestead_barn ||
 		require("../assets/images/homepage-bg.jpg");
 
-	const showInterior = inside && habitatEnabled;
+	const showInterior = inside;
 	const visitContent = (
 		<View style={styles.overlay} pointerEvents="box-none">
 			{/* soft top fade for title legibility — fades fully to the single
@@ -1023,36 +999,34 @@ function BarnVisitSession({
 							{/* One toggle, and it is the CONTROL that is positioned — never a
 								  full-width wrapper, which on the new architecture would sit
 								  over the whole stage and swallow every tap on the pigs. */}
-							{habitatEnabled && (
-								<SegmentedControl
-									label="Where in the barn"
-									maxFontSizeMultiplier={VISIT_TYPE_CAP}
-									value={inside && !leavingInterior ? "inside" : "outside"}
-									onChange={(next) => {
-										if (leavingInterior) return;
-										updateInteriorState(
-											next === "inside"
-												? { inside: true }
-												: { leaving: true },
-										);
-									}}
-									options={[
-										{
-											value: "outside",
-											label: "Outside",
-											accessibilityHint:
-												"Returns to the same Visit outside",
-										},
-										{
-											value: "inside",
-											label: "Inside",
-											accessibilityHint:
-												"Looks at the saved room without using a Visit",
-										},
-									]}
-									style={styles.stageToggle}
-								/>
-							)}
+							<SegmentedControl
+								label="Where in the barn"
+								maxFontSizeMultiplier={VISIT_TYPE_CAP}
+								value={inside && !leavingInterior ? "inside" : "outside"}
+								onChange={(next) => {
+									if (leavingInterior) return;
+									updateInteriorState(
+										next === "inside"
+											? { inside: true }
+											: { leaving: true },
+									);
+								}}
+								options={[
+									{
+										value: "outside",
+										label: "Outside",
+										accessibilityHint:
+											"Returns to the same Visit outside",
+									},
+									{
+										value: "inside",
+										label: "Inside",
+										accessibilityHint:
+											"Looks at the saved room without using a Visit",
+									},
+								]}
+								style={styles.stageToggle}
+							/>
 						</View>
 
 						{/* One secondary action, at the bottom. */}

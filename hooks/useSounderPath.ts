@@ -99,7 +99,7 @@ export interface SounderPath {
 // After this many sessions parked on the same step, the inline card compresses to
 // its single-line "still herdless — join a Sounder ›" variant (escape valve so
 // persistence never curdles into nagging).
-export const SOUNDER_STALL_SESSIONS = 3;
+const SOUNDER_STALL_SESSIONS = 3;
 
 // Per-step session counter — remembers which step we last counted a session for,
 // and how many sessions have accrued on it. Resets to 1 whenever the step changes.

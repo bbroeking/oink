@@ -11,6 +11,16 @@
 import { rpc } from "./rpc";
 import { MILESTONE_THRESHOLDS } from "@/constants/dig";
 import { applyFeedingStateTimeZone } from "@/utils/feedingTimeZone";
+import {
+  applyFeedingClock,
+  feedingClockRequest,
+  isCurrentFeedingClockRequest,
+  type FeedingClockPayload,
+} from "@/utils/feedingClock";
+import {
+  applyFeedingSchedule,
+  sanitizeFeedingSchedule,
+} from "@/utils/feedingConfig";
 
 // A crewmate who has already dug this feeding (feeding_state / open_rooting).
 export interface CrewDug {
@@ -18,7 +28,7 @@ export interface CrewDug {
   display_name: string;
 }
 
-export interface FeedingState {
+export interface FeedingState extends FeedingClockPayload {
   window_index: number;
   window_ends_at: string;
   dug: boolean;
@@ -27,13 +37,26 @@ export interface FeedingState {
   pending_feeding_time_zone?: string | null;
   pending_effective_at?: string | null;
   feeding_time_zone_changed_at?: string | null;
+  feeding_schedule?: unknown;
 }
 
 export async function fetchFeedingState(
   userId?: string | null,
 ): Promise<FeedingState | null> {
+  const request = userId ? feedingClockRequest(userId) : null;
   const state = await rpc<FeedingState>("feeding_state");
-  if (state && userId) await applyFeedingStateTimeZone(userId, state);
+  if (
+    userId && request && !isCurrentFeedingClockRequest(userId, request)
+  ) return null;
+  if (state && userId && request) {
+    const schedule = sanitizeFeedingSchedule(state.feeding_schedule);
+    if (schedule) applyFeedingSchedule(schedule);
+    // Install the effective zone before its phase snapshot, and exclude
+    // AsyncStorage latency from the round-trip estimate.
+    const persisted = applyFeedingStateTimeZone(userId, state);
+    applyFeedingClock(userId, state, request);
+    await persisted;
+  }
   return state;
 }
 
@@ -77,7 +100,7 @@ export function milestoneProgress(lifetimeFinds: number): MilestoneProgress {
   }
   const allDone = nextThreshold == null;
   const floor = earnedThreshold ?? 0;
-  const span = allDone ? 0 : nextThreshold! - floor;
+  const span = nextThreshold == null ? 0 : nextThreshold - floor;
   const pct = allDone
     ? 1
     : span <= 0

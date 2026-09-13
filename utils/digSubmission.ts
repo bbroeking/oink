@@ -148,15 +148,17 @@ export async function loadDigProgress(
       value.layers.length !== 30 ||
       !value.layers.every((n) => Number.isFinite(n) && n >= 0 && n <= 10) ||
       !stringArray(value.collected) ||
+      typeof value.actions !== "number" ||
       !Number.isInteger(value.actions) ||
-      value.actions! < 0 ||
-      value.actions! > 25 ||
+      value.actions < 0 ||
+      value.actions > 25 ||
       !Array.isArray(value.dugOrder) ||
       !value.dugOrder.every((n) => Number.isInteger(n) && n >= 0 && n < 30) ||
       new Set(value.dugOrder).size !== value.dugOrder.length ||
+      typeof value.streak !== "number" ||
       !Number.isInteger(value.streak) ||
-      value.streak! < 0 ||
-      value.streak! > 25 ||
+      value.streak < 0 ||
+      value.streak > 25 ||
       typeof value.freeNext !== "boolean" ||
       typeof value.savedAt !== "string"
     )

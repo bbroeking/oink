@@ -16,7 +16,7 @@ Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS
 
 ## Cosmetic placement
 
-`tools/placement_studio.py` (→ `http://127.0.0.1:8124/`) is the **single** tool for placing cosmetics on Rosie — item anchors (Items mode) and pig anatomy anchors (Pig mode). It auto-discovers every item, shows a live on-pig preview matching `PigStage.resolveSlot`, and autosaves: item RelSpecs → `constants/hat_rel.generated.ts` (rebuild-all, sorted), pig anchors → `PIG_FRAME_ANCHORS` in `constants/hats.ts` (and keeps `REST_ANCHORS` synced). `RelSpec` (pivot/widthFrac/anchor) is canonical; the legacy `HAT_OVERLAYS` path is being retired — `scripts/compute_overlays.py` now emits overlays only for items WITHOUT a RelSpec. Full workflow in `docs/placement-process.md`. (The old `item-anchor*`/`anchor-editor` tools were removed.)
+`tools/placement_studio.py` (→ `http://127.0.0.1:8124/`) is the **single** tool for placing cosmetics on Rosie — item anchors (Items mode) and pig anatomy anchors (Pig mode). It auto-discovers every item, shows a live on-pig preview matching `PigStage.resolveSlot`, and autosaves: item RelSpecs → `constants/hat_rel.generated.ts` (rebuild-all, sorted), pig anchors → `PIG_FRAME_ANCHORS` in `constants/hats.ts` (and keeps `REST_ANCHORS` synced). `RelSpec` (pivot/widthFrac/anchor) is the only per-item placement model; items without one fall back to their category preset (`CATEGORY_OVERLAYS`). The legacy per-item `HAT_OVERLAYS` path, `compute_overlays.py`, and `hat_overlays.generated.ts` were removed 2026-09-12. Full workflow in `docs/placement-process.md`. (The old `item-anchor*`/`anchor-editor` tools were removed.)
 
 ## Build + ship
 

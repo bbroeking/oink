@@ -45,7 +45,11 @@ export type NotificationScreen = keyof typeof NOTIFICATION_ROUTES;
 // screen). A plain table lookup so adding a screen means adding one table entry.
 export function routeForScreen(screen: string | null | undefined): string | null {
 	if (screen == null) return null;
-	return (NOTIFICATION_ROUTES as Record<string, string>)[screen] ?? null;
+	// Own-key check (not a widened index) so a stray "constructor"/"toString"
+	// screen can't walk up the prototype and hand back a function as a route.
+	return Object.hasOwn(NOTIFICATION_ROUTES, screen)
+		? NOTIFICATION_ROUTES[screen as NotificationScreen]
+		: null;
 }
 
 // AsyncStorage key for the consume-once guard below. Persistent (not module

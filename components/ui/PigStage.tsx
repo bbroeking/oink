@@ -6,8 +6,8 @@
 // optional dev-tool rel overrides.
 //
 // Lifted out of SwipeElement so the preview no longer duplicates
-// the positioning math. Anchor re-tuning via /item-anchor flows
-// through both surfaces from one component.
+// the positioning math; a RelSpec tuned in tools/placement_studio.py
+// lands on both surfaces from this one component.
 
 import React from "react";
 import {
@@ -21,7 +21,6 @@ import { Glyph } from "./Glyph";
 import { categoryIcon } from "../../constants/emojiArt";
 import {
 	HAT_IMAGES,
-	HAT_OVERLAYS,
 	HAT_REL,
 	CATEGORY_OVERLAYS,
 	CATEGORY_ANCHORS,
@@ -135,7 +134,7 @@ export interface PigStageProps {
 	equippedAura?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
 
-	// Dev-only: overrides written by the /item-anchor tool. Pass an
+	// Dev-only: live overrides from tools/placement_studio.py. Pass an
 	// empty map (or omit) in non-dev contexts.
 	relOverrides?: Record<string, RelSpec>;
 
@@ -254,15 +253,12 @@ export function resolveSlot(
 		return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
 	}
 
-	// Legacy absolute-overlay path — only items not yet tuned in the
-	// /item-anchor tool fall back here.
+	// Category-box path: full-canvas categories (background / untuned aura)
+	// and any worn item still without a RelSpec (tune it in
+	// tools/placement_studio) sit in the category's preset box.
 	const rawBase = prebaked
 		? null
-		: category === "background" || category === "aura"
-			? (category && CATEGORY_OVERLAYS[category]) || DEFAULT_HAT_OVERLAY
-			: HAT_OVERLAYS[itemId] ||
-				(category && CATEGORY_OVERLAYS[category]) ||
-				DEFAULT_HAT_OVERLAY;
+		: (category && CATEGORY_OVERLAYS[category]) || DEFAULT_HAT_OVERLAY;
 
 	const baseOverlay = rawBase
 		? {

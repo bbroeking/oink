@@ -148,7 +148,6 @@ describe("player-facing roster wiring", () => {
       "utf8",
     );
 
-    expect(source).not.toContain("<PigRosterPicker");
     expect(source).not.toContain("switch pig");
     expect(source).toContain("pigId={pigRoster.roster.activePigId}");
   });
@@ -183,19 +182,14 @@ describe("player-facing roster wiring", () => {
     expect(source).not.toContain("DELETE FROM public.user_pigs");
   });
 
-  test("player-facing roster surfaces describe the long-term locked choice", () => {
+  test("the pig pen describes the long-term locked choice", () => {
     const pen = fs.readFileSync(
       path.join(__dirname, "..", "components", "PigPenView.tsx"),
       "utf8",
     );
-    const picker = fs.readFileSync(
-      path.join(__dirname, "..", "components", "PigRosterPicker.tsx"),
-      "utf8",
-    );
 
     expect(pen).toContain("one long-term companion choice");
-    expect(picker).toContain("one long-term friend");
-    expect(`${pen}\n${picker}`).not.toContain("change friends again later");
-    expect(`${pen}\n${picker}`).not.toContain("swap that friend later");
+    expect(pen).not.toContain("change friends again later");
+    expect(pen).not.toContain("swap that friend later");
   });
 });

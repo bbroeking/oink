@@ -24,8 +24,5 @@ Replaces the retired tools: `item-anchor.html` + `anchor-server.py`,
 
 ## Related
 
-- `scripts/compute_overlays.py` — emits the **legacy** `HAT_OVERLAYS` only for
-  items WITHOUT a RelSpec (full-canvas + tuned items are skipped). As you tune a
-  legacy item in the studio it gains a RelSpec and drops out of that file.
 - `scripts/pig_preview.py` — bakes on-pig preview PNGs for the review gallery
   (`scripts/factory_server.py`, the image-generation factory).

@@ -25,7 +25,6 @@ import {
 interface DividerProps {
 	/** Breathing room above and below, as a SPACE step. */
 	space?: keyof typeof SPACE;
-	/** Style override. */
 	style?: StyleProp<ViewStyle>;
 }
 
@@ -42,7 +41,6 @@ export function Divider({ space = "md", style }: DividerProps) {
 interface TitleRuleProps {
 	/** Rule width. The canonical 64 unless a surface genuinely needs otherwise. */
 	width?: number;
-	/** Style override. */
 	style?: StyleProp<ViewStyle>;
 }
 

@@ -52,8 +52,9 @@ export function AppleAuth() {
 					} catch (e) {
 						// A user-cancelled prompt is expected — ignore it.
 						// expo-apple-authentication tags it with this code.
-						const err = e as { code?: string };
-						if (err.code !== "ERR_REQUEST_CANCELED") {
+						const code =
+							typeof e === "object" && e !== null && "code" in e ? e.code : undefined;
+						if (code !== "ERR_REQUEST_CANCELED") {
 							log.error("Apple sign-in failed", e);
 						}
 					}

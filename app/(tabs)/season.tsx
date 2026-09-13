@@ -92,14 +92,14 @@ import {
 	type SeasonInfoTopic,
 } from "../../components/season1/SeasonInfoModal";
 import { useCrew } from "../../hooks/useCrew";
-import { useFeatureFlag } from "../../hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
 import { alignmentEffects } from "@/utils/alignment";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
 import { resolveRewardArt, rewardItemId, WEARABLE_REWARD_TYPES } from "@/utils/rewardArt";
 import { useSeason } from "../../hooks/useSeason";
 import * as seasonPass from "@/utils/seasonPass";
-import type { TierRow, TierState } from "@/utils/seasonPass";
+import type { PassTrack, TierRow, TierState } from "@/utils/seasonPass";
 import {
 	BORDER,
 	OPACITY,
@@ -115,7 +115,6 @@ import {
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
-import { daysUntilJudgement } from "@/utils/season";
 import { formatDurationCompact } from "@/utils/duration";
 import {
 	WALLOW_MAX_POWER_LEVEL,
@@ -125,7 +124,6 @@ import {
 } from "@/utils/wallow";
 import {
 	MOTE_MACHINE_VISIBLE,
-	PURCHASES_LIVE,
 } from "../../constants/featureFlags";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
@@ -602,8 +600,8 @@ function VerticalListPassTrack({
 	currentTier: number;
 	tiersByNumber: Record<number, { free?: TierRow; premium?: TierRow }>;
 	claimedSet: Set<string>;
-	onClaim: (tier: number, track: "free" | "premium") => void;
-	track: "free" | "premium";
+	onClaim: (tier: number, track: PassTrack) => void;
+	track: PassTrack;
 	premiumUnlocked: boolean;
 	sparse?: boolean;
 	tierLabel?: string;
@@ -717,23 +715,14 @@ function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
 					The premium track comes with Slop Club — join to claim every reward on it.
 				</Hand>
 			</View>
-			{/* The "coming soon" state is a button asleep, not a dissolved one:
-			    full chrome, muted fill, no opacity crush. [C-07] */}
 			<Button
 				size="xs"
-				variant={PURCHASES_LIVE ? "dark" : "locked"}
-				disabled={!PURCHASES_LIVE}
+				variant="dark"
 				onPress={onUnlock}
-				accessibilityLabel={
-					PURCHASES_LIVE ? "Join the Slop Club" : "Slop Club coming soon"
-				}
-				accessibilityHint={
-					PURCHASES_LIVE
-						? "Opens the Slop Club subscription — it unlocks every premium tier"
-						: undefined
-				}
+				accessibilityLabel="Join the Slop Club"
+				accessibilityHint="Opens the Slop Club subscription — it unlocks every premium tier"
 			>
-				{PURCHASES_LIVE ? "Join ›" : "Soon…"}
+				Join ›
 			</Button>
 		</Sticker>
 	);
@@ -1012,12 +1001,8 @@ export default function SeasonScreen() {
 	useEffect(() => {
 		if (wallowGiftAccount && wallowGiftAccount !== uid) setWallowGiftAccount(null);
 	}, [uid, wallowGiftAccount]);
-	// Season-1 mode — the world_boss server flag (seeded by the held
-	// 20260704200000 migration) with the __DEV__ escape hatch so the local
-	// test account lives in the new season before the flag flips for anyone
-	// else. Season-0 rendering is fully preserved on the else-branch.
-	const worldBoss = useFeatureFlag("world_boss");
-	const s1 = worldBoss || __DEV__;
+	// Season 1 vs the preserved Season-0 rendering on the else-branch.
+	const s1 = useSeason1Active();
 	// The Great Hunger intro — the tale cinematic. Auto-opens on this account's
 	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
 	// re-opens any time from the hero's "Hear the tale again" chip.
@@ -1092,7 +1077,7 @@ export default function SeasonScreen() {
 	const [devTierIdx, setDevTierIdx] = useState(0);
 	// Which pass track the player is browsing — free by default. Only
 	// surfaces tabs when the season actually has premium rewards.
-	const [passTrack, setPassTrack] = useState<"free" | "premium">("free");
+	const [passTrack, setPassTrack] = useState<PassTrack>("free");
 	// The season's reference sheets (story / earnables) — opened from the two
 	// header icon buttons; the tab's scroll stays the playable path.
 	const [infoTopic, setInfoTopic] = useState<SeasonInfoTopic | null>(null);
@@ -1261,7 +1246,7 @@ export default function SeasonScreen() {
 		if (uid) setWallowGiftAccount(uid);
 	};
 
-	const handleClaim = async (tier: number, track: "free" | "premium") => {
+	const handleClaim = async (tier: number, track: PassTrack) => {
 		const r = await claim(tier, track);
 		if (!r) return;
 		if (!r.ok) {
@@ -1319,7 +1304,7 @@ export default function SeasonScreen() {
 	// (which tab the player is browsing — view state), so they stay in the screen,
 	// composed from useSeason's state + the pure seasonPass selectors. readyTiers
 	// powers the "claim all ›" affordance and the sweep.
-	const shownTrack: "free" | "premium" = useMemo(
+	const shownTrack: PassTrack = useMemo(
 		() => seasonPass.shownTrack(state, passTrack, prestigeMode),
 		[state, passTrack, prestigeMode]
 	);
@@ -1387,12 +1372,8 @@ export default function SeasonScreen() {
 		});
 	};
 
-	// NOTE: the standalone paid Season-Pass purchase path (handleBuySeasonPass +
-	// BattlePassSaleModal) was removed here — it was unreachable (PAID_BATTLE_PASS_
-	// ENABLED is false and nothing ever opened the sale modal), and the premium
-	// track now unlocks via Slop Club membership (handleUnlockPremium). The
-	// BattlePassSaleModal component file is kept, marked dormant, pending the
-	// paid-pass decision.
+	// The premium track unlocks via Slop Club membership (handleUnlockPremium);
+	// there is no standalone paid-pass purchase path.
 
 	if (!state) {
 		return (
@@ -1419,7 +1400,8 @@ export default function SeasonScreen() {
 			</View>
 		);
 	}
-	if (!state.active) {
+	const season = state.active ? state.season : undefined;
+	if (!season) {
 		return (
 			<View style={[styles.container, styles.center]}>
 				<EmptyState
@@ -1431,7 +1413,6 @@ export default function SeasonScreen() {
 		);
 	}
 
-	const season = state.season!;
 	const tier = state.current_tier ?? 1;
 	const premium = state.premium_unlocked ?? false;
 	// Show the Free/Premium tabs only when the season actually seeds
@@ -1511,7 +1492,7 @@ export default function SeasonScreen() {
 						) : undefined
 					}
 					below={
-						__DEV__ || (!s1 && daysUntilJudgement() > 0) ? (
+						__DEV__ ? (
 						<>
 							{/* Live entry point is the pass header's recap icon (only shows
 							    when a real grant exists). This __DEV__-only chip cycles the
@@ -1546,18 +1527,6 @@ export default function SeasonScreen() {
 										</T>
 									</Pressable>
 								</View>
-							)}
-							{/* Season 0 only — S1's clock is the Hungerer's drain + the
-							    feeding cadence, not a doomsday date. */}
-							{!s1 && daysUntilJudgement() > 0 && (
-								<Tag
-									tone="lilac"
-									icon="scales"
-									label={`Judgement Day in ${daysUntilJudgement()} ${
-										daysUntilJudgement() === 1 ? "day" : "days"
-									}`}
-									style={styles.judgementBanner}
-								/>
 							)}
 						</>
 						) : undefined
@@ -1735,7 +1704,7 @@ export default function SeasonScreen() {
 											<Glyph name="star" size={CHIP_MARK} />
 										</ChipDoor>
 										{showVip &&
-											(IAP_ENABLED && PURCHASES_LIVE ? (
+											(IAP_ENABLED ? (
 												<Button
 													size="xs"
 													variant="gold"
@@ -2365,10 +2334,6 @@ const styles = StyleSheet.create({
 	// A `Button variant="link"` in a header's right slot keeps its full 44pt
 	// frame; this only stops its own padding from pushing the title row apart.
 	headerLink: { paddingHorizontal: 0, paddingVertical: 0 },
-	judgementBanner: {
-		marginTop: SPACE.sm,
-		alignSelf: "center",
-	},
 	safeArea: { flex: 1 },
 	center: { alignItems: "center", justifyContent: "center" },
 	// Section seams inside the scroll — the container gap carries the rest.

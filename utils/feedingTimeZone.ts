@@ -1,3 +1,9 @@
+import {
+  feedingClockRequest,
+  isCurrentFeedingClockRequest,
+  invalidateFeedingClockSnapshot,
+  resetFeedingClockSession,
+} from "@/utils/feedingClock";
 import { DIG_TIME_ZONE } from "@/constants/dig";
 
 const CACHE_PREFIX = "feeding_time_zone_v1:";
@@ -22,9 +28,10 @@ type TimeZoneState = {
 let effectiveZone = DIG_TIME_ZONE;
 let activeUserId: string | null = null;
 let pendingRefreshAtMs: number | null = null;
+let zoneRevision = 0;
 const listeners = new Set<() => void>();
 
-export function isIanaTimeZone(value: unknown): value is string {
+function isIanaTimeZone(value: unknown): value is string {
   if (typeof value !== "string" || value.length === 0) return false;
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: value }).format(0);
@@ -41,6 +48,7 @@ export function feedingTimeZone(): string {
 export function applyEffectiveFeedingTimeZone(zone: unknown): boolean {
   if (!isIanaTimeZone(zone) || zone === effectiveZone) return false;
   effectiveZone = zone;
+  invalidateFeedingClockSnapshot();
   listeners.forEach((listener) => listener());
   return true;
 }
@@ -58,6 +66,8 @@ export function resetFeedingTimeZoneSession(
   userId: string | null = null,
 ): void {
   activeUserId = userId;
+  zoneRevision += 1;
+  resetFeedingClockSession(userId);
   pendingRefreshAtMs = null;
   if (effectiveZone !== DIG_TIME_ZONE) {
     effectiveZone = DIG_TIME_ZONE;
@@ -135,14 +145,14 @@ export function zonedCivilToEpochMs(
 
 function applyServerState(userId: string, state: TimeZoneState): boolean {
   if (activeUserId !== userId) return false;
+  zoneRevision += 1;
   const pendingAt =
     typeof state.pending_effective_at === "string"
       ? new Date(state.pending_effective_at).getTime()
       : NaN;
   pendingRefreshAtMs =
     isIanaTimeZone(state.pending_feeding_time_zone) &&
-    Number.isFinite(pendingAt) &&
-    pendingAt > Date.now()
+    Number.isFinite(pendingAt)
       ? pendingAt
       : null;
   return applyEffectiveFeedingTimeZone(state.feeding_time_zone);
@@ -170,11 +180,12 @@ export async function applyFeedingStateTimeZone(
 export async function hydrateFeedingTimeZone(userId: string): Promise<boolean> {
   activeUserId = userId;
   effectiveZone = DIG_TIME_ZONE;
+  const revision = zoneRevision;
   try {
     const AsyncStorage =
       require("@react-native-async-storage/async-storage").default;
     const cached = await AsyncStorage.getItem(`${CACHE_PREFIX}${userId}`);
-    if (activeUserId !== userId) return false;
+    if (activeUserId !== userId || revision !== zoneRevision) return false;
     return applyEffectiveFeedingTimeZone(cached);
   } catch {
     return false;
@@ -187,19 +198,20 @@ export async function registerDeviceFeedingTimeZone(
   if (activeUserId !== userId) return false;
   const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   if (!isIanaTimeZone(deviceZone)) return false;
+  const request = feedingClockRequest(userId);
   try {
     const { rpc } = require("@/utils/rpc") as typeof import("@/utils/rpc");
     const state = await rpc<TimeZoneState>("set_feeding_time_zone", {
       p_time_zone: deviceZone,
     });
-    if (activeUserId !== userId || !state) return false;
+    if (
+      activeUserId !== userId ||
+      !state ||
+      !isCurrentFeedingClockRequest(userId, request)
+    ) return false;
     return await applyFeedingStateTimeZone(userId, state);
   } catch {
     // Older backends do not have the RPC yet; Eastern remains the safe clock.
     return false;
   }
-}
-
-export function resetFeedingTimeZoneForTests(): void {
-  resetFeedingTimeZoneSession();
 }

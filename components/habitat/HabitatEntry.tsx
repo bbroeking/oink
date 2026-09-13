@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { View, Image, StyleSheet } from "react-native";
 import { BodySm, Button } from "@/components/ui";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { HABITAT_CHROME_ASSETS } from "@/constants/habitat";
 import { SPACE, PAGE_PAD, UI_COLORS, RADII } from "@/constants/theme";
 
@@ -13,8 +12,6 @@ const DOOR_ART = { width: 32, height: 36 } as const;
 const DOOR_ART_COMPACT = { width: 24, height: 28 } as const;
 
 export function HabitatEntry({ collection = false, compact = false }: { collection?: boolean; compact?: boolean }) {
-  const enabled = useFeatureFlag("habitat");
-  if (!enabled) return null;
   return (
     <View style={[styles.entry, compact && styles.compactEntry]}>
       <Button

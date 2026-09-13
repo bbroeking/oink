@@ -67,7 +67,7 @@ export const BETA_TIER_TITLE: Record<BetaTier, string> = {
 // rank title on top). Kept in sync with the migration by betaRewards.test.ts.
 export const BETA_FOUNDING_HERD_TITLE = "Founding Herd";
 export const BETA_FOUNDER_RIBBON_ID = "beta_founder_ribbon";
-export const BETA_FOUNDER_RIBBON_NAME = "Founder's Mud Ribbon";
+const BETA_FOUNDER_RIBBON_NAME = "Founder's Mud Ribbon";
 export const BETA_FOUNDER_RIBBON_RARITY = "legendary";
 
 // One earned reward, rendered as a chip in the founder's-gift reveal. Generic

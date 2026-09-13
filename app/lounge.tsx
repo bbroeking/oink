@@ -152,23 +152,11 @@ export function LoungePrototype() {
 				router.back();
 				return;
 			}
-			let { data, error } = await supabase
+			const { data } = await supabase
 				.from("profiles")
 				.select("is_vip, username, active_pig_id")
 				.eq("id", user.id)
 				.single();
-			// Rollout-safe against a client briefly reaching production before
-			// the roster migration: the Lounge stays usable as Rosie.
-			if (error) {
-				const fallback = await supabase
-					.from("profiles")
-					.select("is_vip, username")
-					.eq("id", user.id)
-					.single();
-				data = fallback.data
-					? { ...fallback.data, active_pig_id: "rosie" }
-					: null;
-			}
 			if (cancelled) return;
 			if (data?.is_vip) {
 				setMe({
@@ -334,7 +322,7 @@ export function LoungePrototype() {
 	// seesaw walks to a free seat; anywhere else stands up + walks.
 	const boardSeesaw = () => {
 		const taken = new Set(
-			peers.filter((pr) => pr.station?.id === "seesaw").map((pr) => pr.station!.slot)
+			peers.flatMap((pr) => (pr.station?.id === "seesaw" ? [pr.station.slot] : []))
 		);
 		if (myStation) taken.add(myStation.slot);
 		if (practiceSlot !== null) taken.add(practiceSlot);
@@ -511,7 +499,7 @@ export function LoungePrototype() {
 	// to the person who sent it.
 	const myEmoteImage = myEmote && now - myEmote.at < 1800 ? emoteImgs[myEmote.i] : null;
 	const realTakenSlots = new Set(
-		peers.filter((peer) => peer.station?.id === "seesaw").map((peer) => peer.station!.slot)
+		peers.flatMap((peer) => (peer.station?.id === "seesaw" ? [peer.station.slot] : []))
 	);
 	if (myStation) realTakenSlots.add(myStation.slot);
 	const preferredPracticeSlot = myStation ? 1 - myStation.slot : 1;
@@ -519,6 +507,8 @@ export function LoungePrototype() {
 		practiceRiderEnabled && !realTakenSlots.has(preferredPracticeSlot)
 			? preferredPracticeSlot
 			: null;
+	const practiceImage =
+		practiceSlot === null ? null : practiceSlot === 0 ? sitE : sitW;
 	// Mirror seesaw occupancy into UI-thread values for the plank worklet.
 	useEffect(() => {
 		// A peer's station arrives over presence with `id: string` (it's another
@@ -618,7 +608,8 @@ export function LoungePrototype() {
 						{/* Remote pigs — plain props re-rendered at ~10 Hz; walk
 						    frames advance while their last pos event is fresh. */}
 						{peers.map((peer) => {
-							const seated = peer.station?.id === "seesaw";
+							const seat = peer.station?.id === "seesaw" ? peer.station : null;
+							const seated = seat !== null;
 							const moving = !seated && now - peer.movedAt < 250;
 							// Seated: sideways profile facing the pivot, riding
 							// the plank end (same deterministic rotation the
@@ -627,22 +618,22 @@ export function LoungePrototype() {
 							let drawDir = peer.dir;
 							let px2 = peer.x;
 							let py2 = peer.y;
-							if (seated) {
-								const slot = peer.station!.slot;
+							if (seat) {
+								const slot = seat.slot;
 								drawDir = slot === 0 ? 2 : 3;
 								px2 = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
 								py2 = SEESAW.y - 6;
 									rideDy = Math.sin(visibleSeesawRotation) * (slot === 0 ? -SEAT_DX : SEAT_DX);
 							}
 								const peerPack = packs[peer.pigId];
-							const img = seated
-								? peer.station!.slot === 0
+							const img = seat
+								? seat.slot === 0
 										? peerPack.sitE
 										: peerPack.sitW
 									: peerPack.dirs[drawDir]?.[moving ? remoteTick % 4 : 0];
 							if (!img) return null;
-								const emoteFresh = peer.emote && now - peer.emote.at < 1800;
-								const eimg = emoteFresh ? emoteImgs[peer.emote!.i] : null;
+								const emote = peer.emote;
+								const eimg = emote && now - emote.at < 1800 ? emoteImgs[emote.i] : null;
 							return (
 								<Group key={peer.key}>
 									<SkiaImage
@@ -673,10 +664,10 @@ export function LoungePrototype() {
 								</Group>
 							);
 						})}
-							{practiceSlot !== null && (practiceSlot === 0 ? sitE : sitW) && (
+							{practiceSlot !== null && practiceImage && (
 								<Group>
 									<SkiaImage
-										image={practiceSlot === 0 ? sitE! : sitW!}
+										image={practiceImage}
 										x={SEESAW.x + (practiceSlot === 0 ? -SEAT_DX : SEAT_DX) - PIG / 2}
 										y={
 											SEESAW.y -

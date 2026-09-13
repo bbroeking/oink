@@ -15,6 +15,7 @@ import { supabase } from "@/utils/supabase";
 import { usePostgresChanges } from "./usePostgresChanges";
 import {
 	CrewState,
+	EMPTY_CREW_STATE,
 	JoinableCrew,
 	fetchCrewState,
 	fetchJoinable,
@@ -33,17 +34,6 @@ import {
 import { markSounderLeft } from "@/utils/sounderPath";
 import { RpcResult } from "@/utils/rpc";
 import { CREW_CAP } from "@/constants/crews";
-
-const EMPTY: CrewState = {
-	crew: null,
-	members: [],
-	invitesIn: [],
-	invitesOut: [],
-	joinRequestsIn: [],
-	joinRequestsOut: [],
-	lifetime_finds: 0,
-	milestones_claimed: [],
-};
 
 export interface UseCrew {
 	crew: CrewState;
@@ -67,7 +57,7 @@ export interface UseCrew {
 }
 
 export function useCrew(enabled = true): UseCrew {
-	const [crew, setCrew] = useState<CrewState>(EMPTY);
+	const [crew, setCrew] = useState<CrewState>(EMPTY_CREW_STATE);
 	const [loading, setLoading] = useState(false);
 
 	const refresh = useCallback(async () => {
@@ -94,7 +84,7 @@ export function useCrew(enabled = true): UseCrew {
 		topic: "crew",
 		enabled,
 		keyParts: [crewId],
-		onDisabled: () => setCrew(EMPTY),
+		onDisabled: () => setCrew(EMPTY_CREW_STATE),
 		specs: (uid) => {
 			const specs = [
 				{

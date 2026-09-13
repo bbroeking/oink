@@ -25,6 +25,10 @@ jest.mock("@/utils/supabase", () => ({
     },
   },
 }));
+jest.mock("@/utils/feedingClock", () => ({
+  ...jest.requireActual("@/utils/feedingClock"),
+  hasFeedingClock: () => true,
+}));
 jest.mock("@/utils/dig", () => ({
   fetchFeedingState: (...args: unknown[]) => mockFeedingState(...args),
 }));
@@ -253,11 +257,12 @@ describe("useRooting durable recovery", () => {
       crew_dug: never[];
     }>();
     mockRpcAction.mockResolvedValue(OPEN);
-    mockFeedingState.mockReturnValue(readingState.promise);
     const probe = await mount();
     await act(async () => {
       await probe.get().open();
     });
+    // Delay the submit's authoritative read, after open has synced its clock.
+    mockFeedingState.mockReturnValue(readingState.promise);
     let request!: Promise<unknown>;
     act(() => {
       request = probe.get().submit([], 0, []);

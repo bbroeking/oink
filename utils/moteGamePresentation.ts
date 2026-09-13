@@ -1,6 +1,6 @@
 import type { AnyMoteReceipt, MoteGameMode, MoteGameOutcome, MoteGameReceipt, MoteLegacyReceipt } from "@/utils/moteGame";
 
-export const MOTE_PRESENTATION_V4 = "mote-animation-v4";
+const MOTE_PRESENTATION_V4 = "mote-animation-v4";
 export type MotePresentation = {
   mode: 0 | 1; stakeMotes: number; outcomeCode: number;
   leftStop: number; centerStop: number; rightStop: number;

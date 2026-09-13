@@ -24,6 +24,36 @@ export interface LoungePeer {
 	station?: { id: string; slot: number; since: number } | null;
 }
 
+// Wire shapes of the two broadcast events (see `send` below). Both are vetted
+// on receipt — a peer on a different build could send anything.
+interface PosPayload {
+	key: string;
+	x: number;
+	y: number;
+	dir: number;
+	pigId?: string;
+}
+interface EmotePayload {
+	key: string;
+	i: number;
+}
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+	typeof v === "object" && v !== null;
+function isPosPayload(v: unknown): v is PosPayload {
+	return (
+		isRecord(v) &&
+		typeof v.key === "string" &&
+		v.key.length > 0 &&
+		typeof v.x === "number" &&
+		typeof v.y === "number" &&
+		typeof v.dir === "number" &&
+		(v.pigId === undefined || typeof v.pigId === "string")
+	);
+}
+function isEmotePayload(v: unknown): v is EmotePayload {
+	return isRecord(v) && typeof v.key === "string" && v.key.length > 0 && typeof v.i === "number";
+}
+
 export interface LoungeRoom {
 	peers: LoungePeer[];
 	// Publish my position (throttle at the call site).
@@ -93,14 +123,9 @@ export function useLoungePeers(
 		});
 
 		chan.on("broadcast", { event: "pos" }, ({ payload }) => {
-			const p = payload as {
-				key: string;
-				x: number;
-				y: number;
-				dir: number;
-				pigId?: string;
-			};
-			if (!p?.key || p.key === uid) return;
+			// Broadcast payloads are untyped jsonb; vet the shape before trusting it.
+			const p = isPosPayload(payload) ? payload : null;
+			if (!p || p.key === uid) return;
 			const peer = peersRef.current.get(p.key);
 			if (peer) {
 				peer.x = p.x;
@@ -123,8 +148,8 @@ export function useLoungePeers(
 		});
 
 		chan.on("broadcast", { event: "emote" }, ({ payload }) => {
-			const p = payload as { key: string; i: number };
-			if (!p?.key || p.key === uid) return;
+			const p = isEmotePayload(payload) ? payload : null;
+			if (!p || p.key === uid) return;
 			const peer = peersRef.current.get(p.key);
 			if (peer) {
 				peer.emote = { i: p.i, at: Date.now() };

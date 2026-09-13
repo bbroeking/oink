@@ -56,7 +56,7 @@ tab bar [F-6].
 **`GRADIENT` (proposed)** — the three sanctioned button ramps, moved out of Button.tsx:
 `rose ["#F0B8C8","#E8A7B9"]` · `purple ["#7052EE","#5C3FE0"]` · `gold ["#F8D068","#F5C44A"]`.
 
-**`RARITY_GRADIENT` / `RARITY_BG_SOLID` / `RARITY_STRIPE` (shipped)** — unchanged.
+**`RARITY_BG_SOLID` / `RARITY_STRIPE` (shipped)** — unchanged. (`RARITY_GRADIENT` retired 2026-09-12 with the Shop's LinearGradient cards; `RARITY_BG_SOLID` carries its light ends.)
 
 **Retire:** `COLORS` (legacy ramp; 14 call sites, mostly `successText` → `UI_COLORS.successText`), `constants/Colors.ts`
 (Expo template), `ThemedText`/`ThemedView`/`useThemeColor` (template leftovers; `#0a7ea4` link blue).

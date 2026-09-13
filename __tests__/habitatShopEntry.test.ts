@@ -17,7 +17,7 @@ describe("Shop Barn furnishings section", () => {
     expect(source).toContain("Shop with Snouts.");
     expect(source).toContain("at four and eight owned designs");
     expect(source).toContain("<HabitatEntry collection />");
-    expect(source).toContain('useFeatureFlag("habitat")');
-    expect(source).toContain("habitatEnabled ?");
+    // Housing is always on — no flag gate around the band (2026-09-12).
+    expect(source).not.toContain('"habitat"');
   });
 });

@@ -8,7 +8,7 @@
 // claim-all tally, the wallow RpcResult — and NOTHING user-facing. All UI stays
 // in app/(tabs)/season.tsx: the dialog copy (title/body maps), the summary-text
 // building, the mystery-reveal staging, the claim chime + haptic. The screen maps
-// each structured result to its existing dialogs, so behavior is unchanged. busy
+// each structured result to its existing dialogs. busy
 // lives here (the guard every action funnels through); the screen reads it to
 // disable the wallow + claim-all buttons and calls refresh() at the original beat.
 //
@@ -37,6 +37,7 @@ import { rpc, rpcAction, RpcResult } from "@/utils/rpc";
 import * as seasonPass from "@/utils/seasonPass";
 import type {
 	NextReward,
+	PassTrack,
 	SeasonState,
 	TiersByNumber,
 } from "@/utils/seasonPass";
@@ -99,7 +100,9 @@ type RawClaimAll = {
 // a missing key / an {ok:false} refusal / a foreign shape degrades to zeros rather
 // than throwing (fail-soft, matching the transport-miss path).
 export function tallyFromRpc(raw: RawClaimAll): ClaimAllTally {
-	const mysteries = Array.isArray(raw?.mysteries) ? raw!.mysteries! : [];
+	const rawMysteries = raw?.mysteries;
+	const mysteries = Array.isArray(rawMysteries) ? rawMysteries : [];
+	const rawItems = raw?.items;
 	return {
 		...(raw?.ok === false && raw.reason ? { reason: raw.reason } : {}),
 		claimedCount: raw?.claimed_count ?? 0,
@@ -107,7 +110,7 @@ export function tallyFromRpc(raw: RawClaimAll): ClaimAllTally {
 		tickles: raw?.tickles ?? 0,
 		motes: raw?.motes ?? 0,
 		...(raw?.motes_balance !== undefined ? { motesBalance: raw.motes_balance } : {}),
-		items: Array.isArray(raw?.items) ? raw!.items! : [],
+		items: Array.isArray(rawItems) ? rawItems : [],
 		lastMystery: mysteries.length ? mysteries[mysteries.length - 1] : null,
 	};
 }
@@ -139,10 +142,10 @@ export interface UseSeason {
 	nextReward: NextReward | null;
 	// Actions over the consolidation RPCs. null = the in-flight guard skipped
 	// (or, for claimAll, nothing to claim) — the screen shows nothing.
-	claim: (tier: number, track: "free" | "premium") => Promise<ClaimResult | null>;
+	claim: (tier: number, track: PassTrack) => Promise<ClaimResult | null>;
 	claimAll: (
 		tiers: number[],
-		track: "free" | "premium"
+		track: PassTrack
 	) => Promise<ClaimAllTally | null>;
 	wallow: () => Promise<RpcResult<WallowFields> | null>;
 }
@@ -193,9 +196,8 @@ export function useSeason(): UseSeason {
 				.select("alignment_score, tickles_earned")
 				.eq("id", id)
 				.single();
-			const p = prof as { alignment_score?: number; tickles_earned?: number } | null;
-			setAlignmentScore(p?.alignment_score ?? 0);
-			setTicklesEarned(p?.tickles_earned ?? 0);
+			setAlignmentScore(prof?.alignment_score ?? 0);
+			setTicklesEarned(prof?.tickles_earned ?? 0);
 		}
 	}, []);
 
@@ -230,7 +232,7 @@ export function useSeason(): UseSeason {
 	);
 
 	const claim = useCallback(
-		async (tier: number, track: "free" | "premium"): Promise<ClaimResult | null> => {
+		async (tier: number, track: PassTrack): Promise<ClaimResult | null> => {
 			if (busyRef.current) return null;
 			busyRef.current = true;
 			setBusy(true);
@@ -258,7 +260,7 @@ export function useSeason(): UseSeason {
 	);
 
 	const claimAll = useCallback(
-		async (tiers: number[], track: "free" | "premium"): Promise<ClaimAllTally | null> => {
+		async (tiers: number[], track: PassTrack): Promise<ClaimAllTally | null> => {
 			if (busyRef.current) return null;
 			// `tiers` (the screen's readyTiers) survives ONLY as the no-op guard — the
 			// server decides what's actually ready; we never send the list.

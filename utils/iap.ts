@@ -33,13 +33,7 @@
 // tests would be a third adapter at the same seam — no call-site
 // changes needed.
 
-import Purchases, {
-	CustomerInfo,
-	PurchasesError,
-	PurchasesOffering,
-	PurchasesPackage,
-	LOG_LEVEL,
-} from "react-native-purchases";
+import Purchases, { CustomerInfo, LOG_LEVEL } from "react-native-purchases";
 import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 import { Platform } from "react-native";
 import { log } from "./log";
@@ -78,16 +72,7 @@ export const IAP_ENABLED =
 // in the RevenueCat dashboard. The user-facing name is "Slop Club";
 // the identifier slug below is internal and stays as-is (renaming it
 // means re-configuring App Store Connect + RevenueCat).
-export const ENTITLEMENT_PRO = "tickle_the_pig_pro";
-
-// Product identifiers — must match App Store Connect AND the RC
-// offering. `monthly` / `yearly` are the Slop Club subscription;
-// `seasonPass` is the one-time per-season Season Pass.
-export const PRODUCT_IDS = {
-	yearly: "yearly",
-	monthly: "monthly",
-	seasonPass: "season_pass",
-} as const;
+const ENTITLEMENT_PRO = "tickle_the_pig_pro";
 
 // Offering identifiers. Each RevenueCat *paywall design* is attached to
 // an Offering, so to route to a specific design you present a specific
@@ -105,12 +90,6 @@ export type PaywallOutcome = {
 	reason?: "purchased" | "restored" | "cancelled" | "no_offering" | "error";
 };
 
-export type PurchaseOutcome = {
-	ok: boolean;
-	customerInfo?: CustomerInfo;
-	reason?: string;
-};
-
 export type RestoreOutcome = {
 	ok: boolean;
 	customerInfo?: CustomerInfo;
@@ -123,16 +102,11 @@ export type RestoreOutcome = {
 interface IAP {
 	initIAP(userId: string): Promise<void>;
 	isPro(): Promise<boolean>;
-	getCustomerInfo(): Promise<CustomerInfo | null>;
 	onCustomerInfoUpdate(cb: (info: CustomerInfo) => void): () => void;
-	getCurrentOffering(): Promise<PurchasesOffering | null>;
 	// offeringId routes to that offering's paywall design; omit for the
 	// dashboard's `current` offering.
-	presentPaywallIfNeeded(offeringId?: string): Promise<PaywallOutcome>;
 	presentPaywall(offeringId?: string): Promise<PaywallOutcome>;
 	presentCustomerCenter(): Promise<void>;
-	purchasePackage(pkg: PurchasesPackage): Promise<PurchaseOutcome>;
-	purchaseProductId(productId: string): Promise<PurchaseOutcome>;
 	restorePurchases(): Promise<RestoreOutcome>;
 }
 
@@ -176,8 +150,8 @@ const realIAP: IAP = (() => {
 					? REVENUECAT_IOS_API_KEY
 					: REVENUECAT_ANDROID_API_KEY;
 			if (!apiKey) return;
-			if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 			try {
+				if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 				await Purchases.configure({
 					apiKey,
 					appUserID: userId,
@@ -197,47 +171,9 @@ const realIAP: IAP = (() => {
 			}
 		},
 
-		async getCustomerInfo() {
-			try {
-				return await Purchases.getCustomerInfo();
-			} catch (e) {
-				log.error("[iap] getCustomerInfo:", e);
-				return null;
-			}
-		},
-
 		onCustomerInfoUpdate(cb) {
 			Purchases.addCustomerInfoUpdateListener(cb);
 			return () => Purchases.removeCustomerInfoUpdateListener(cb);
-		},
-
-		async getCurrentOffering() {
-			try {
-				const offerings = await Purchases.getOfferings();
-				return offerings.current;
-			} catch (e) {
-				log.error("[iap] getCurrentOffering:", e);
-				return null;
-			}
-		},
-
-		async presentPaywallIfNeeded(offeringId) {
-			try {
-				let offering: PurchasesOffering | undefined;
-				if (offeringId) {
-					const offerings = await Purchases.getOfferings();
-					offering = offerings.all[offeringId];
-					if (!offering) return { ok: false, reason: "no_offering" };
-				}
-				const result = await RevenueCatUI.presentPaywallIfNeeded({
-					requiredEntitlementIdentifier: ENTITLEMENT_PRO,
-					...(offering ? { offering } : {}),
-				});
-				return mapPaywallResult(result);
-			} catch (e) {
-				log.error("[iap] presentPaywallIfNeeded:", e);
-				return { ok: false, reason: "error" };
-			}
 		},
 
 		async presentPaywall(offeringId) {
@@ -268,27 +204,6 @@ const realIAP: IAP = (() => {
 			}
 		},
 
-		async purchasePackage(pkg) {
-			try {
-				const { customerInfo } = await Purchases.purchasePackage(pkg);
-				return { ok: true, customerInfo };
-			} catch (e) {
-				const err = e as PurchasesError;
-				if (err.userCancelled) return { ok: false, reason: "cancelled" };
-				log.error("[iap] purchase:", e);
-				return { ok: false, reason: err.message ?? "unknown" };
-			}
-		},
-
-		async purchaseProductId(productId) {
-			const offerings = await Purchases.getOfferings();
-			const pkg = Object.values(offerings.all)
-				.flatMap((o) => o.availablePackages)
-				.find((p) => p.product.identifier === productId);
-			if (!pkg) return { ok: false, reason: "product_not_found" };
-			return this.purchasePackage(pkg);
-		},
-
 		async restorePurchases() {
 			try {
 				const info = await Purchases.restorePurchases();
@@ -309,20 +224,12 @@ const realIAP: IAP = (() => {
 const noopIAP: IAP = {
 	initIAP: async () => {},
 	isPro: async () => false,
-	getCustomerInfo: async () => null,
 	onCustomerInfoUpdate: () => () => {},
-	getCurrentOffering: async () => null,
-	presentPaywallIfNeeded: async (_offeringId?: string) => ({
-		ok: false,
-		reason: "cancelled" as const,
-	}),
 	presentPaywall: async (_offeringId?: string) => ({
 		ok: false,
 		reason: "cancelled" as const,
 	}),
 	presentCustomerCenter: async () => {},
-	purchasePackage: async () => ({ ok: false, reason: "cancelled" }),
-	purchaseProductId: async () => ({ ok: false, reason: "cancelled" }),
 	restorePurchases: async () => ({ ok: false }),
 };
 
@@ -338,17 +245,9 @@ const iap: IAP = IAP_ENABLED ? realIAP : noopIAP;
 
 export const initIAP = (userId: string) => iap.initIAP(userId);
 export const isPro = () => iap.isPro();
-export const getCustomerInfo = () => iap.getCustomerInfo();
 export const onCustomerInfoUpdate = (cb: (info: CustomerInfo) => void) =>
 	iap.onCustomerInfoUpdate(cb);
-export const getCurrentOffering = () => iap.getCurrentOffering();
-export const presentPaywallIfNeeded = (offeringId?: string) =>
-	iap.presentPaywallIfNeeded(offeringId);
 export const presentPaywall = (offeringId?: string) =>
 	iap.presentPaywall(offeringId);
 export const presentCustomerCenter = () => iap.presentCustomerCenter();
-export const purchasePackage = (pkg: PurchasesPackage) =>
-	iap.purchasePackage(pkg);
-export const purchaseProductId = (productId: string) =>
-	iap.purchaseProductId(productId);
 export const restorePurchases = () => iap.restorePurchases();

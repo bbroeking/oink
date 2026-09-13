@@ -24,19 +24,19 @@ import {
 } from "react";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { HABITAT_VISIBLE } from "@/constants/featureFlags";
 
 // Add a key here as each dark-launched surface moves to a server flag. The
 // string must match an app_config.key seeded by a migration.
-//   coop_dig        — Season 1 co-op Truffle Patch surfaces (crew + feeding)
-//   world_boss      — The Great Hunger server-wide co-op event (intro + raid)
+//   world_boss      — The Great Hunger server-wide co-op event (intro + raid).
+//                     Since 2026-07-03 this IS the "Season 1 exists" switch;
+//                     read it ONLY through hooks/useSeason1Active.ts.
 //   season1_finale  — the SEASON-0 end reveal: beta founder rewards recap
 //                     (20260704400000). LEGACY NAME: the key predates the
 //                     2026-07-06 renumber (greedy/generous era = Season 0,
 //                     The Great Hunger = Season 1). Shipped build 103 reads
 //                     this exact string — never rename it.
 export type FeatureFlagKey =
-  "coop_dig" | "world_boss" | "season1_finale" | "rewarded_ads" | "habitat";
+  "world_boss" | "season1_finale" | "rewarded_ads";
 
 type FlagMap = Partial<Record<FeatureFlagKey, boolean>>;
 
@@ -90,7 +90,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
 // The effective on/off for a flag. Loading / failure → false (safe default).
 export function useFeatureFlag(key: FeatureFlagKey): boolean {
   const { flags } = useContext(FeatureFlagsContext);
-  return key === "habitat" ? HABITAT_VISIBLE : !!flags[key];
+  return !!flags[key];
 }
 
 // For guards that must distinguish "still loading" from "off" — e.g. a screen
@@ -101,8 +101,5 @@ export function useFeatureFlagState(key: FeatureFlagKey): {
   loaded: boolean;
 } {
   const { flags, loaded } = useContext(FeatureFlagsContext);
-  // Housing is released with this binary; legacy server targeting must not
-  // hide it or wait on a flag fetch. Authentication remains owned by each route.
-  if (key === "habitat") return { visible: HABITAT_VISIBLE, loaded: true };
   return { visible: !!flags[key], loaded };
 }

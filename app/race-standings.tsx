@@ -22,8 +22,8 @@
 // dissolve-pressed rows became `Button` + the `PRESSED` token [C-01, C-07].
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, SafeAreaView, FlatList } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { View, StyleSheet, FlatList } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import {
 	Button,
 	CardTitle,
@@ -36,6 +36,7 @@ import {
 	SegmentedControl,
 	Sticker,
 	T,
+	StackPage,
 } from "@/components/ui";
 import { useCrewLedger, useRace } from "@/hooks/useRace";
 import {
@@ -208,25 +209,22 @@ export default function RaceStandingsScreen() {
 	);
 }
 
-// The page chrome — headerless Stack screen, cream bg, the plaque crown, tab-safe
-// pad. The crown is `PageHeader variant="plaque"`, the variant that was written
+// The page chrome — StackPage (headerless, cream, safe area), the plaque crown,
+// tab-safe pad. The crown is `PageHeader variant="plaque"`, the variant that was written
 // from this screen's own hanging sign. [C-10] (2026-09-11)
 function Shell({ children }: { children: React.ReactNode }) {
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={styles.safe}>
-					<PageHeader
-						variant="plaque"
-						kicker="the dig-off"
-						title="The Dig-Off"
-						subtitle="sounders, one board"
-						onBack={() => router.back()}
-					/>
-					{children}
-				</SafeAreaView>
-			</View>
+			<StackPage>
+				<PageHeader
+					variant="plaque"
+					kicker="the dig-off"
+					title="The Dig-Off"
+					subtitle="sounders, one board"
+					onBack={() => router.back()}
+				/>
+				{children}
+			</StackPage>
 		</>
 	);
 }
@@ -733,8 +731,6 @@ function ScoreRow({
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1 },
 	loadingWrap: { marginTop: SPACE.xl, alignItems: "center" },
 	stateWrap: { paddingHorizontal: PAGE_PAD, paddingTop: SPACE.md },
 	// The reference groups period selection into one slightly tilted paper card.

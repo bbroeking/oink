@@ -15,7 +15,7 @@
 import { useCallback, type ReactNode } from "react";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { useSounderPath } from "@/hooks/useSounderPath";
 import { useFeedingCta } from "@/components/mudwar/useFeedingCta";
 import type { SounderStep } from "@/hooks/useSounderPath";
@@ -56,10 +56,9 @@ export const DIG_HINT_CREWED = "Opens the dig";
 export const DIG_HINT_UNCREWED = "Opens the Season tab to start digging";
 
 export function useDigEntry(): DigEntry {
-  // Same effective gate the Season tab + Sounder segment + launch nudge use:
-  // the world_boss flag (or DEV), NOT the standalone coop_dig flag which never
-  // flipped. Loading/failure reads false, so no surface flashes pre-confirm.
-  const coopDig = useFeatureFlag("world_boss") || __DEV__;
+  // The same Season-1 switch the Season tab + Sounder segment + launch nudge
+  // use. Loading/failure reads false, so no surface flashes pre-confirm.
+  const coopDig = useSeason1Active();
 
   // The path hook does the one-shot crew read and distinguishes the crewless
   // onboarding doors from the normal, crewed digging loop.

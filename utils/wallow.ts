@@ -15,7 +15,7 @@ export interface WallowTuning {
 	visitMinHours: number;
 }
 
-export const DEFAULT_WALLOW_TUNING: WallowTuning = Object.freeze({
+const DEFAULT_WALLOW_TUNING: WallowTuning = Object.freeze({
 	majorRanks: 2,
 	majorStepPct: 25,
 	minorStepPct: 5,
@@ -30,7 +30,7 @@ function positive(raw: unknown, fallback: number): number {
 	return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-export function sanitizeWallowTuning(raw: unknown): WallowTuning {
+function sanitizeWallowTuning(raw: unknown): WallowTuning {
 	if (!raw || typeof raw !== "object") return DEFAULT_WALLOW_TUNING;
 	const value = raw as Record<string, unknown>;
 	const defaults = DEFAULT_WALLOW_TUNING;
@@ -62,9 +62,8 @@ const tuningCell = createConfigCell<WallowTuning>({
 	minRefreshMs: 60_000,
 });
 
-export const wallowTuning = tuningCell.read;
+const wallowTuning = tuningCell.read;
 export const refreshWallowTuning = tuningCell.refresh;
-export const resetWallowTuningForTests = tuningCell.resetForTests;
 
 // Compatibility exports for the existing progress-pip surfaces.
 export const WALLOW_REGEN_STEP_PCT = DEFAULT_WALLOW_TUNING.majorStepPct;

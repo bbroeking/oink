@@ -10,7 +10,7 @@ const PREFIX = "mote_game_pending_v2";
 export const pendingMoteCommandKey = (accountId: string) => `${PREFIX}:${accountId}`;
 export const rememberedMoteModeKey = (accountId: string) => `mote_game_mode_v1:${accountId}`;
 
-export function parsePendingMoteCommand(raw: string | null, accountId: string): MotePlayCommand | null {
+function parsePendingMoteCommand(raw: string | null, accountId: string): MotePlayCommand | null {
   if (!raw) return null;
   try {
     const value = JSON.parse(raw) as Partial<MotePlayCommand>;

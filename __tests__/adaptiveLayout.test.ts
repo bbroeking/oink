@@ -31,10 +31,7 @@ describe("native adaptive layout guardrails", () => {
 		const closeRow = read("components/ui/DialogCloseRow.tsx");
 		expect(closeRow).not.toMatch(/position:\s*["']absolute["']/);
 
-		for (const file of [
-			"components/AchievementDigestModal.tsx",
-			"components/BattlePassSaleModal.tsx",
-		]) {
+		for (const file of ["components/AchievementDigestModal.tsx"]) {
 			const source = read(file);
 			expect(source).toContain("DialogCloseRow");
 			expect(source).not.toMatch(/<Icon[^>]+name=["']x["']/s);

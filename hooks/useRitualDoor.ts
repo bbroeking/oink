@@ -49,7 +49,7 @@ export const RITUAL_DOOR: Record<RitualMode, RitualDoorCopy> = {
 
 // How long an armed curse stays armed. Three beats: long enough to move a thumb
 // across the tray, short enough that a forgotten arm doesn't fire tomorrow.
-export const CURSE_ARM_MS = MOTION.beat * 3;
+const CURSE_ARM_MS = MOTION.beat * 3;
 
 export type RitualDoorState = "ready" | "armed" | "busy" | "settled" | "capped";
 

@@ -20,7 +20,6 @@ import {
   newerWallet, playMoteGame, type MoteGameMode, type MoteGameReceipt,
   type AnyMoteReceipt, type MoteGameState, type MoteHistoryEnvelope, type MotePlayCommand, type MoteWallet,
 } from "@/utils/moteGame";
-import { fetchMoteMachineState } from "@/utils/moteMachine";
 import { createMoteGameAcceptanceClient } from "@/utils/moteGameAcceptance";
 import { canPresentMode, legacyOutcomeForAmount, receiptToMotePresentation, validateAnyMoteReceipt, validateMoteGameReceipt } from "@/utils/moteGamePresentation";
 import { clearMoteCommand, loadMoteCommand, persistMoteCommand, rememberedMoteModeKey } from "@/utils/moteGameSession";
@@ -42,7 +41,7 @@ const MACHINE_BOTTOM = "42%";
 const POUCH_WIDTH = 88;
 const CONSOLE_MAX_HEIGHT = "52%";
 
-export function MoteWageringScreen({ onLegacyServer }: { onLegacyServer?: () => void }) {
+export function MoteWageringScreen() {
   const params = useLocalSearchParams<{ acceptance?: string; acceptanceSession?: string; forceRiveFailure?: string }>();
   const acceptance = useMemo(() => createMoteGameAcceptanceClient(params.acceptance, params.acceptanceSession), [params.acceptance, params.acceptanceSession]);
   const insets = useSafeAreaInsets(); const motion = useMotionPolicy();
@@ -86,22 +85,14 @@ export function MoteWageringScreen({ onLegacyServer }: { onLegacyServer?: () => 
         client.state(), loadMoteCommand(AsyncStorage, id), AsyncStorage.getItem(rememberedMoteModeKey(id)),
       ]);
       if (!mounted.current || run !== generation.current || activeAccount.current !== id) return;
-      if (!game.ok) {
-        if (!acceptance && !command) {
-          const legacy = await fetchMoteMachineState().catch(() => ({ ok: false as const, reason: "network" }));
-          if (!mounted.current || run !== generation.current || activeAccount.current !== id) return;
-          if (legacy.ok) { onLegacyServer?.(); return; }
-        }
-        if (!mounted.current || run !== generation.current || activeAccount.current !== id) return;
-        setState(null); setError(moteGameErrorMessage(game.reason)); return;
-      }
+      if (!game.ok) { setState(null); setError(moteGameErrorMessage(game.reason)); return; }
       setState(game); applyWallet(game.wallet); setPhase(game.wallet.motes > 0 ? 0 : 1); pending.current = command; setUncertain(Boolean(command));
       setMode(remembered === "wager" && game.wager_enabled ? "wager" : "reveal");
     } catch {
       if (!mounted.current || run !== generation.current) return;
       setState(null); setError("Couldn't safely check your saved play. Try again.");
     }
-  }, [acceptance, applyWallet, client, onLegacyServer]);
+  }, [acceptance, applyWallet, client]);
   useEffect(() => {
     const auth = acceptance ? null : supabase.auth.onAuthStateChange((_event, session) => {
       activeAccount.current = session?.user.id ?? null; generation.current += 1;

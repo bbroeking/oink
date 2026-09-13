@@ -41,6 +41,7 @@ import * as Sentry from "@sentry/react-native";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/supabase";
+import { fetchUsernamesById } from "@/utils/profiles";
 import { rpc } from "@/utils/rpc";
 import {
   planTapRoute,
@@ -68,7 +69,8 @@ import {
   type UnlockedAchievement,
 } from "@/components/AchievementDigestModal";
 import { GreatHungerIntroModal } from "@/components/GreatHungerIntroModal";
-import { FeatureFlagsProvider, useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { FeatureFlagsProvider } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { PurchaseToastHost, showAppToast } from "@/components/PurchaseToast";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
@@ -162,13 +164,8 @@ function RootLayoutInner() {
   // arming only sets state; the queue holds it off the storybook.
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   useFeedingTimeZoneRegistration(sessionUserId);
-  // Season 1 co-op dig visibility — server flag (Brian-overridden). Gates the
-  // "start a Sounder" launch nudge.
-  // Align with the Season tab's crew gate (world_boss || __DEV__). coop_dig
-  // stayed false, so the Sounder launch nudge never fired even after the season
-  // went live. See friends.tsx for the matching fix.
-  const worldBoss = useFeatureFlag("world_boss");
-  const coopDig = worldBoss || __DEV__;
+  // Season 1 co-op dig visibility — gates the "start a Sounder" launch nudge.
+  const coopDig = useSeason1Active();
   // Season 0: pending alignment-schism reveal. Set by the polling
   // effect below when a user first crosses ±25 alignment.
   const [schism, setSchism] = useState<{
@@ -570,18 +567,10 @@ function RootLayoutInner() {
       }
       // Profile hydration only needed for rows with an actor_id
       // (rituals + trades). System rows skip this.
-      const actorIds = [
-        ...new Set(all.map((r) => r.actor_id).filter((x): x is string => !!x)),
-      ];
-      let byId = new Map<string, string | null>();
-      if (actorIds.length > 0) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, username")
-          .in("id", actorIds);
-        if (cancelled) return;
-        byId = new Map((profs ?? []).map((p) => [p.id, p.username]));
-      }
+      const byId = await fetchUsernamesById(
+        all.map((r) => r.actor_id).filter((x): x is string => !!x),
+      );
+      if (cancelled) return;
       all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
       // Marker semantics: newest ritual/trade ts when present (system
       // rows have their own server-side seen tracking); otherwise

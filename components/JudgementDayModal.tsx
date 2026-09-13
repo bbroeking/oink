@@ -134,16 +134,11 @@ export function JudgementDayModal({ result, visible = true, onDismiss }: Props) 
 	}, [visible, fade, motionPolicy]);
 
 	const handleDismiss = async () => {
-		try {
-			await rpc("mark_finale_seen", {
-				target_season_key: result.season_key,
-			});
-		} catch {
-			// best-effort; the modal can re-show on next focus if this fails.
-			// Belt-and-braces: rpc() resolves null rather than rejecting today, but
-			// dismissing must survive ANY seen-marking failure (contract pinned by
-			// __tests__/JudgementDayModal.test.tsx).
-		}
+		// Best-effort: the modal can re-show on next focus if this fails, and
+		// dismissing goes ahead regardless (rpc() resolves null, never rejects).
+		await rpc("mark_finale_seen", {
+			target_season_key: result.season_key,
+		});
 		onDismiss();
 	};
 

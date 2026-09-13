@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
-import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
-import { Stack, router } from "expo-router";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StackPage } from "@/components/ui/StackPage";
 import { PrestigeAvatar } from "@/components/ui/PrestigeAvatar";
 import { Glyph } from "@/components/ui/Glyph";
 import { Sticker } from "@/components/ui/Sticker";
@@ -18,7 +19,6 @@ import {
 	RADII,
 	SPACE,
 	TAB_SAFE,
-	WHIMSY,
 } from "@/constants/theme";
 
 // Three friendly doorsteps finish a scrapbook page. `utils/porchRound.ts`
@@ -95,103 +95,100 @@ export default function PorchRoundScreen() {
 
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={styles.safe}>
-					<PageHeader kicker="three friendly doorsteps" title="Porch Round" onBack={() => router.back()} />
-					{loading ? (
-						<View style={styles.loading}><LoadingBeat label="opening your scrapbook" /></View>
-					) : (
-						<ScrollView
-							contentContainerStyle={styles.scroll}
-							showsVerticalScrollIndicator={false}
-							refreshControl={
-								<RefreshControl
-									refreshing={refreshing}
-									onRefresh={() => { setRefreshing(true); void refresh(); }}
-								/>
-							}
+			<StackPage>
+				<PageHeader kicker="three friendly doorsteps" title="Porch Round" onBack={() => router.back()} />
+				{loading ? (
+					<View style={styles.loading}><LoadingBeat label="opening your scrapbook" /></View>
+				) : (
+					<ScrollView
+						contentContainerStyle={styles.scroll}
+						showsVerticalScrollIndicator={false}
+						refreshControl={
+							<RefreshControl
+								refreshing={refreshing}
+								onRefresh={() => { setRefreshing(true); void refresh(); }}
+							/>
+						}
+					>
+						<Sticker
+							color="sun"
+							rotate={0}
+							radius={RADII.lg}
+							border={BORDER.thin}
+							shadow="none"
+							style={styles.intro}
 						>
-							<Sticker
-								color="sun"
-								rotate={0}
-								radius={RADII.lg}
-								border={BORDER.thin}
-								shadow="none"
-								style={styles.intro}
-							>
-								<Glyph name="barn" size={ART_SIZE.glyphSm} />
-								<Body style={styles.introText}>
-									Every successful Barn visit belongs here. {PORCH_PAGE_SIZE} different pigs finish a page—no timer, streak, or prize attached.
-								</Body>
-							</Sticker>
+							<Glyph name="barn" size={ART_SIZE.glyphSm} />
+							<Body style={styles.introText}>
+								Every successful Barn visit belongs here. {PORCH_PAGE_SIZE} different pigs finish a page—no timer, streak, or prize attached.
+							</Body>
+						</Sticker>
 
-							{failed ? (
-								<EmptyState
-									kind="error"
-									sub="Your scrapbook didn't come back this time."
-									action={
-										<Button
-											variant="ghost"
-											size="sm"
-											onPress={() => { setLoading(true); void refresh(); }}
-											accessibilityHint="Asks for your scrapbook again"
-										>
-											Try again
-										</Button>
-									}
-								/>
-							) : pages.length === 0 ? (
-								<EmptyState
-									glyph="barn"
-									title="Visit a friend when you feel like it."
-									sub="Their pig will appear here after the first tickle. Nothing is lost if you stop at one."
-								/>
-							) : (
-								pages.map((page) => (
-									<Sticker
-										key={page.pageNumber}
-										color="paper"
-										rotate={0}
-										radius={RADII.xl}
-										border={BORDER.thin}
-										shadow="sm"
-										style={styles.page}
+						{failed ? (
+							<EmptyState
+								kind="error"
+								sub="Your scrapbook didn't come back this time."
+								action={
+									<Button
+										variant="ghost"
+										size="sm"
+										onPress={() => { setLoading(true); void refresh(); }}
+										accessibilityHint="Asks for your scrapbook again"
 									>
-										<View style={styles.pageHeading}>
-											<View>
-												<KickerPill tone="secondary" star={false}>
-													Scrapbook page {page.pageNumber}
-												</KickerPill>
-												<CardTitle style={styles.pageTitle}>
-													{page.complete ? "A finished Porch Round" : "Visits worth keeping"}
-												</CardTitle>
-											</View>
-											{page.complete && <Glyph name="sparkle" size={ART_SIZE.glyphSm} />}
+										Try again
+									</Button>
+								}
+							/>
+						) : pages.length === 0 ? (
+							<EmptyState
+								glyph="barn"
+								title="Visit a friend when you feel like it."
+								sub="Their pig will appear here after the first tickle. Nothing is lost if you stop at one."
+							/>
+						) : (
+							pages.map((page) => (
+								<Sticker
+									key={page.pageNumber}
+									color="paper"
+									rotate={0}
+									radius={RADII.xl}
+									border={BORDER.thin}
+									shadow="sm"
+									style={styles.page}
+								>
+									<View style={styles.pageHeading}>
+										<View>
+											<KickerPill tone="secondary" star={false}>
+												Scrapbook page {page.pageNumber}
+											</KickerPill>
+											<CardTitle style={styles.pageTitle}>
+												{page.complete ? "A finished Porch Round" : "Visits worth keeping"}
+											</CardTitle>
 										</View>
-										<View style={styles.panels}>
-											{page.stops.map((stop) => (
-												<StopPanel
-													key={stop.id}
-													stop={stop}
-													onPress={() => setSelectedUserId(stop.targetUserId)}
-												/>
-											))}
-										</View>
-										{!page.complete && (
-											<T role="bodySm" tone="secondary" style={styles.openNote}>
-												{page.stops.length === 1
-													? "This visit stands on its own. Two future friends can join it."
-													: "These visits stand on their own. One future friend can join them."}
-											</T>
-										)}
-									</Sticker>
-								))
-							)}
-						</ScrollView>
-					)}
-				</SafeAreaView>
-			</View>
+										{page.complete && <Glyph name="sparkle" size={ART_SIZE.glyphSm} />}
+									</View>
+									<View style={styles.panels}>
+										{page.stops.map((stop) => (
+											<StopPanel
+												key={stop.id}
+												stop={stop}
+												onPress={() => setSelectedUserId(stop.targetUserId)}
+											/>
+										))}
+									</View>
+									{!page.complete && (
+										<T role="bodySm" tone="secondary" style={styles.openNote}>
+											{page.stops.length === 1
+												? "This visit stands on its own. Two future friends can join it."
+												: "These visits stand on their own. One future friend can join them."}
+										</T>
+									)}
+								</Sticker>
+							))
+						)}
+					</ScrollView>
+				)}
+			</StackPage>
 
 			{/* The one door for a pig's page. A new visit can add a stop, so the
 			    scrapbook re-reads when the sheet closes on a friendship change. */}
@@ -205,8 +202,6 @@ export default function PorchRoundScreen() {
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1 },
 	loading: { flex: 1, alignItems: "center", justifyContent: "center" },
 	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
 	intro: {

@@ -262,7 +262,7 @@ export function SounderCard({
 		</View>
 	);
 
-	if (!inCrew) {
+	if (!crew.crew) {
 		const hasInvites = crew.invitesIn.length > 0;
 		const hasJoinable = joinable.crews.length > 0;
 		const anyStale = crew.invitesIn.some(isStale);
@@ -366,6 +366,10 @@ export function SounderCard({
 		);
 	}
 
+	// Narrowed above (the crewless branch returned); a const so JSX callbacks
+	// below keep the non-null type.
+	const myCrew = crew.crew;
+
 	return (
 		<ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 			{/* Crew mini card — name, count, a pip per CREW_CAP slot (every
@@ -373,7 +377,7 @@ export function SounderCard({
 			<Sticker color="paper" rotate={0} radius={RADII.xl} style={styles.crewMini}>
 				<View style={styles.crewTop}>
 					<SectionTitle numberOfLines={1} style={styles.crewName} accessibilityRole="header">
-						{crew.crew!.name}
+						{myCrew.name}
 					</SectionTitle>
 					<T role="body" tone="secondary" style={styles.crewCount}>
 						{memberCount}/{CREW_CAP}
@@ -586,7 +590,7 @@ export function SounderCard({
 									<Accent>{inv.crew_name}</Accent>
 								</>
 							}
-							sub={`you're riding with ${theCrew(crew.crew!.name)}`}
+							sub={`you're riding with ${theCrew(myCrew.name)}`}
 							right={
 							<HandLink
 								onPress={() => decline(inv.id)}
@@ -686,7 +690,7 @@ export function SounderCard({
 				open={confirmLeave}
 				tone="warm"
 				title="Leave your Sounder?"
-				body={`You give up your seat in ${theCrew(crew.crew!.name)}. If the banner fills up, there's no way back in.`}
+				body={`You give up your seat in ${theCrew(myCrew.name)}. If the banner fills up, there's no way back in.`}
 				confirmLabel="Leave"
 				confirmHint="Gives up your seat and forfeits this week's spoils claim"
 				cancelLabel="Stay"
@@ -699,7 +703,7 @@ export function SounderCard({
 				open={kickTarget !== null}
 				tone="destructive"
 				title={kickTarget ? `Remove ${kickTarget.name}?` : "Remove them?"}
-				body={`${kickTarget?.name ?? "They"} loses their seat in ${theCrew(crew.crew!.name)} right away. You can invite them back if a slot opens.`}
+				body={`${kickTarget?.name ?? "They"} loses their seat in ${theCrew(myCrew.name)} right away. You can invite them back if a slot opens.`}
 				confirmLabel="Remove"
 				confirmHint={`Takes ${kickTarget?.name ?? "their"} seat back at once`}
 				cancelLabel="Keep them"

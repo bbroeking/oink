@@ -15,7 +15,7 @@ import {
 	type Scope,
 	type BoardScope
 } from "@/hooks/useLeaderboard";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import {
 	Button,
 	CardTitle,
@@ -565,7 +565,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	);
 	// Alignment isn't a thing in Season 1 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s1 is live.
-	const s1 = useFeatureFlag("world_boss") || __DEV__;
+	const s1 = useSeason1Active();
 	// S1 swaps the alignment board for the strongest-pairs board — the bond
 	// between two specific pigs, made visible and ranked.
 	const scopes: Scope[] = s1

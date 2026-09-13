@@ -18,7 +18,7 @@
 // screen's alignment story block. Wire-up is intentionally light so
 // it's easy to move once the copy + layout are signed off.
 import React, { useEffect, useRef } from "react";
-import { View, StyleSheet, Animated, Easing } from "react-native";
+import { View, StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
 import {
 	AdaptiveModalScaffold,
@@ -37,10 +37,8 @@ import {
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
-import {
-	MOTION_DURATION,
-	useMotionPolicy,
-} from "@/hooks/useMotionPolicy";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { popIn } from "@/utils/motionRecipes";
 
 interface Props {
 	onDismiss: () => void;
@@ -82,30 +80,8 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 
 	useEffect(() => {
 		Haptics.selectionAsync().catch(() => {});
-		if (motionPolicy.reduceMotion) {
-			scale.setValue(1);
-			Animated.timing(opacity, {
-				toValue: 1,
-				duration: MOTION_DURATION.crossfade,
-				useNativeDriver: true,
-			}).start();
-			return;
-		}
-		Animated.parallel([
-			Animated.spring(scale, {
-				toValue: 1,
-				tension: 60,
-				friction: 7,
-				useNativeDriver: true,
-			}),
-			Animated.timing(opacity, {
-				toValue: 1,
-				duration: MOTION_DURATION.state,
-				easing: Easing.out(Easing.quad),
-				useNativeDriver: true,
-			}),
-		]).start();
-	}, [scale, opacity, motionPolicy.reduceMotion]);
+		popIn(scale, opacity, motionPolicy).start();
+	}, [scale, opacity, motionPolicy]);
 
 	return (
 		<AdaptiveModalScaffold

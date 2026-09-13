@@ -81,7 +81,6 @@
 		"expo-apple-authentication": "~57.0.1",
 		"expo-asset": "~57.0.10",
 		"expo-audio": "~57.0.3",
-		"expo-blur": "~57.0.2",
 		"expo-camera": "~57.0.3",
 		"expo-clipboard": "~57.0.1",
 		"expo-constants": "~57.0.10",
@@ -136,8 +135,6 @@
 		"eslint-plugin-ttp": "file:tools/eslint-plugin-ttp",
 		"jest": "^29.2.1",
 		"jest-expo": "~57.0.4",
-		"patch-package": "^8.0.1",
-		"postinstall-postinstall": "^2.1.0",
 		"qrcode": "^1.5.4",
 		"react-test-renderer": "19.2.3",
 		"typescript": "^6.0.3"

@@ -15,7 +15,6 @@ import { HabitatEntry } from "@/components/habitat/HabitatEntry";
 import { useShopCatalog } from "@/hooks/useShopCatalog";
 import { useTroughDrives } from "@/hooks/useTroughDrives";
 import { usePigRoster } from "@/hooks/usePigRoster";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { cosmeticAccessibility, equipCosmetic } from "@/utils/cosmetics";
 import { formatCountdownHM } from "@/utils/duration";
 import { IAP_ENABLED, presentPaywall, OFFERING_IDS } from "../../utils/iap";
@@ -428,7 +427,6 @@ const shopCardStyles = StyleSheet.create({
 });
 
 export default function ShopScreen() {
-  const habitatEnabled = useFeatureFlag("habitat");
   // Catalog data lifecycle (fetch + derived state + reset countdown) lives in
   // useShopCatalog; the screen owns only rendering, modals, and the purchase /
   // equip flows. Optimistic setters (setCounter/setOwned/patchActiveIds/
@@ -714,7 +712,6 @@ export default function ShopScreen() {
     // on that round trip to show.
     setCounter((c) => r.remaining ?? Math.max(0, c - hat.cost));
     setOwned((prev) => new Set(prev).add(hat.id));
-    // Show the success toast with the cost chip.
     showPurchaseToast({
       type: "success",
       title: `${hat.name} · Bought`,
@@ -744,7 +741,7 @@ export default function ShopScreen() {
   // face-slot exclusivity rule and the profiles write live in
   // utils/cosmetics (equipCosmetic); the screen keeps the equip haptic +
   // SFX and patches activeIds optimistically from the returned column patch
-  // (same ordering as before: write, then patch).
+  // (write, then patch).
   const handleEquip = async (
     itemId: string | null,
     category: string | null | undefined,
@@ -863,20 +860,18 @@ export default function ShopScreen() {
           </View>
         ) : null}
 
-        {habitatEnabled ? (
-          <View style={styles.barnFurnishings}>
-            <SectionHeader
-              kicker="decorate your room"
-              title="Barn Furnishings"
-              right="Furnish your room"
-            />
-            <T role="body" tone="secondary" style={styles.barnFurnishingsCopy}>
-              Shop with Snouts. Complete themed collections to earn bonus
-              furnishings at four and eight owned designs.
-            </T>
-            <HabitatEntry collection />
-          </View>
-        ) : null}
+        <View style={styles.barnFurnishings}>
+          <SectionHeader
+            kicker="decorate your room"
+            title="Barn Furnishings"
+            right="Furnish your room"
+          />
+          <T role="body" tone="secondary" style={styles.barnFurnishingsCopy}>
+            Shop with Snouts. Complete themed collections to earn bonus
+            furnishings at four and eight owned designs.
+          </T>
+          <HabitatEntry collection />
+        </View>
         <View style={styles.viewSwitch}>
           <SegmentedControl
             label="Shop view"

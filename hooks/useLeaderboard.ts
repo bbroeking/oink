@@ -10,12 +10,11 @@
 //   • alignment — the two-sided alignment RPC (season-0 internal).
 // It refreshes on focus and on demand (refresh()), and pages the global scope
 // through loadMore() with a stable-id cursor + dedupe. The mark_all_pass_events_seen
-// side-effect fires once per global load, as before.
+// side-effect fires once per global load.
 //
 // SEAM: the hook returns data + status ONLY. Every graceful fallback (the
-// titles/wallows select retries, the null-RPC empty boards) lives here; the
-// component maps `error`/`loading`/`rows` to its cozy cards, champion poster, and
-// ranked rows. Behavior is unchanged from the inlined version.
+// null-RPC empty boards) lives here; the component maps
+// `error`/`loading`/`rows` to its cozy cards, champion poster, and ranked rows.
 
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -35,7 +34,7 @@ import { log } from "@/utils/log";
 // just over a single phone screen so each "Load more" is a deliberate
 // reach; 100 is the highest rank that's still meaningful to the
 // average player (the long tail past rank 100 is competitive noise).
-export const LEADERBOARD_PAGE_SIZE = 25;
+const LEADERBOARD_PAGE_SIZE = 25;
 export const LEADERBOARD_MAX_ROWS = 100;
 
 export type Scope = "global" | "friends" | "pairs" | "alignment";
@@ -113,7 +112,7 @@ export interface UseLeaderboard {
 	loading: boolean;
 	loadingMore: boolean;
 	hasMore: boolean;
-	/** Both the titles-join select AND its no-titles retry threw — show a retry. */
+	/** The global page read threw — show a retry. */
 	error: boolean;
 	/** Re-fetch the current scope (focus, retry, a friendship changed). */
 	refresh: () => Promise<void>;
@@ -121,12 +120,17 @@ export interface UseLeaderboard {
 	loadMore: () => Promise<void>;
 }
 
+// The ranked-row projection shared by the global and friends scopes. The
+// active_hat join lights up the "wears X" second line, active_title carries
+// the placement-aware title, wallow_count drives the prestige frame.
+const RANKED_PROFILE_SELECT =
+	"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
+
 export function useLeaderboard(scope: Scope): UseLeaderboard {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 	const [loading, setLoading] = useState(true);
-	// A failed fetch (both the titles-join select AND its no-titles retry
-	// threw) surfaces as a cozy error card with a retry, instead of silently
-	// rendering an empty board. A later successful fetch clears it.
+	// A failed fetch surfaces as a cozy error card with a retry, instead of
+	// silently rendering an empty board. A later successful fetch clears it.
 	const [error, setError] = useState(false);
 	const [myId, setMyId] = useState<string | null>(null);
 	// Paginated load-more state for the global scope. Friends scope is
@@ -143,32 +147,19 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 	const [youEnemy, setYouEnemy] = useState<EnemyPairRow | null>(null);
 
 	// Fetches `count` rows starting at `from` from profiles, ordered
-	// by tickles_earned desc. Falls back to the no-titles select if
-	// the active_title join 400s (pre-titles-migration installs).
+	// by tickles_earned desc.
 	const fetchGlobalPage = useCallback(
 		async (from: number, count: number): Promise<LeaderboardEntry[]> => {
-			// active_hat join lights up the "wears X" second-line on
-			// each ranked row. The titles join is independent; if the
-			// titles migration isn't deployed, retry without titles
-			// but keep the hat join (its migration is much older).
-			const SELECT_WITH_WALLOWS =
-				"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
-			const SELECT_WITH_TITLES =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
-			const SELECT_BASIC =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
 			// is_test filter only fires on the global scope — friends
 			// list intentionally shows any account you've friended,
-			// test or not. The 'or' wrap handles legacy rows where
-			// the column is missing (pre-20260548 migration), which
-			// PostgREST treats as NULL ≠ true → row included.
-			const run = async (select: string) =>
+			// test or not. Column is NOT NULL DEFAULT false (20260548).
+			const run = async () =>
 				supabase
 					.from("profiles")
-					.select(select)
+					.select(RANKED_PROFILE_SELECT)
 					.not("username", "is", null)
 					.neq("username", "")
-					.or("is_test.is.null,is_test.eq.false")
+					.eq("is_test", false)
 					// Hidden accounts (demo reviewer, junk usernames) never
 					// appear on the global board. Column is NOT NULL DEFAULT
 					// false, so eq(false) covers every row.
@@ -187,22 +178,8 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					// row shape; declare our known row type through the builder
 					// so .data lands as RawRow[] without an escape-hatch cast.
 					.returns<RawRow[]>();
-			// First try the prestige projection. Until its migration is pushed,
-			// PostgREST rejects wallow_count; fall back to today's exact select so
-			// the board stays live while the feature is dark.
-			let result = await run(SELECT_WITH_WALLOWS);
-			if (result.error) {
-				log.warn(
-					"Leaderboard Wallow field unavailable, retrying without:",
-					result.error.message,
-					result.error.code,
-				);
-				result = await run(SELECT_WITH_TITLES);
-				if (result.error) {
-					result = await run(SELECT_BASIC);
-					if (result.error) throw result.error;
-				}
-			}
+			const result = await run();
+			if (result.error) throw result.error;
 			return normalize(result.data);
 		},
 		[],
@@ -275,35 +252,18 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					setLeaderboard([]);
 					return;
 				}
-				const SELECT_BASIC =
-					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
-				const SELECT_WITH_WALLOWS =
-					"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
-				const SELECT_WITH_TITLES =
-					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
-				// The titles join 400s when the titles migration isn't
-				// deployed; retry without it. Untyped intermediate so
-				// both selects can land in the same variable.
-				const runFriends = async (sel: string) =>
-					supabase
-						.from("profiles")
-						.select(sel)
-						.in("id", friendIds)
-						.not("username", "is", null)
-						.neq("username", "")
-						.order("tickles_earned", { ascending: false })
-						// Dynamic select string → PostgREST infers a parser-error
-						// row shape; declare our known row type through the builder
-						// (matches the global path) instead of casting .data.
-						.returns<RawRow[]>();
-				let result = await runFriends(SELECT_WITH_WALLOWS);
-				if (result.error) {
-					result = await runFriends(SELECT_WITH_TITLES);
-					if (result.error) {
-						result = await runFriends(SELECT_BASIC);
-						if (result.error) throw result.error;
-					}
-				}
+				const result = await supabase
+					.from("profiles")
+					.select(RANKED_PROFILE_SELECT)
+					.in("id", friendIds)
+					.not("username", "is", null)
+					.neq("username", "")
+					.order("tickles_earned", { ascending: false })
+					// Dynamic select string → PostgREST infers a parser-error
+					// row shape; declare our known row type through the builder
+					// (matches the global path) instead of casting .data.
+					.returns<RawRow[]>();
+				if (result.error) throw result.error;
 				setLeaderboard(normalize(result.data));
 				return;
 			}

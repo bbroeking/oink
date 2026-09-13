@@ -29,9 +29,13 @@ export interface SeasonRow {
 // here so the season-pass rows and the art resolver can't drift apart.
 export type { RewardValue };
 
+// The two reward tracks a tier can sit on. Declared once here (the RPC-shape
+// owner) so the hook + screen signatures can't drift from the row shape.
+export type PassTrack = "free" | "premium";
+
 export interface TierRow {
 	tier: number;
-	track: "free" | "premium";
+	track: PassTrack;
 	reward_type: string;
 	reward_value: RewardValue;
 	display_label: string;
@@ -39,7 +43,7 @@ export interface TierRow {
 
 export interface ClaimRow {
 	tier: number;
-	track: "free" | "premium";
+	track: PassTrack;
 }
 
 export interface SeasonState {
@@ -131,7 +135,7 @@ export function tierStatsFor(
 	rewardTiers: number[],
 	currentTier: number,
 	claimed: Set<string>,
-	track: "free" | "premium"
+	track: PassTrack
 ): { claimed: number; ready: number; locked: number } {
 	let claimedN = 0,
 		ready = 0,
@@ -202,7 +206,7 @@ export function nextReward(
 	const xpPer = state.season.xp_per_tier || 1;
 	const xp = state.xp ?? 0;
 	const curTier = state.current_tier ?? 1;
-	const track: "free" | "premium" = maps.prestige
+	const track: PassTrack = maps.prestige
 		? "free"
 		: state.premium_unlocked ? "premium" : "free";
 	const source = maps.prestige ? maps.wallowTiersByNumber : maps.tiersByNumber;
@@ -212,9 +216,10 @@ export function nextReward(
 		if (!reward) continue;
 		// A tier's premium reward is gated for non-members — skip it so the
 		// strip never advertises something un-claimable, and fall to free.
+		const premiumReward = source[t]?.premium;
 		const shown =
-			track === "premium" && source[t]?.premium
-				? source[t].premium!
+			track === "premium" && premiumReward
+				? premiumReward
 				: source[t]?.free ?? reward;
 		if (claims.has(`${t}:${shown.track}`)) continue;
 		const ready = t <= curTier;
@@ -235,9 +240,9 @@ export function nextReward(
 // premium track (else the free list stands alone).
 export function shownTrack(
 	state: SeasonState | null,
-	passTrack: "free" | "premium",
+	passTrack: PassTrack,
 	prestige: boolean
-): "free" | "premium" {
+): PassTrack {
 	if (prestige) return "free";
 	const hasPremium = (state?.tiers ?? []).some((r) => r.track === "premium");
 	return hasPremium ? passTrack : "free";
@@ -250,7 +255,7 @@ export function readyTiers(
 	state: SeasonState | null,
 	opts: {
 		prestige: boolean;
-		shownTrack: "free" | "premium";
+		shownTrack: PassTrack;
 		tiersByNumber: TiersByNumber;
 		claimedSet: Set<string>;
 		wallowTiersByNumber: TiersByNumber;

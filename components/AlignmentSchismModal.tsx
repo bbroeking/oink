@@ -14,7 +14,7 @@
 // `Sticker`, which owns the sanctioned press, because the side tint IS the
 // message and `Button` has no identity-tinted variant (see System asks).
 import React, { useEffect, useRef } from "react";
-import { View, StyleSheet, Animated, Easing } from "react-native";
+import { StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
 import {
@@ -31,12 +31,11 @@ import {
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
-import {
-	MOTION_DURATION,
-	useMotionPolicy,
-} from "@/hooks/useMotionPolicy";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { popIn } from "@/utils/motionRecipes";
+import type { AlignmentLabel } from "@/utils/alignment";
 
-export type SchismSide = "angel" | "goblin";
+export type SchismSide = Exclude<AlignmentLabel, "neutral">;
 export type SchismMilestone = 25 | 50 | 100;
 
 interface Props {
@@ -139,41 +138,14 @@ export function AlignmentSchismModal({
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
-		if (motionPolicy.reduceMotion) {
-			scale.setValue(1);
-			Animated.timing(opacity, {
-				toValue: 1,
-				duration: MOTION_DURATION.crossfade,
-				useNativeDriver: true,
-			}).start();
-			return;
-		}
-		Animated.parallel([
-			Animated.spring(scale, {
-				toValue: 1,
-				tension: 60,
-				friction: 7,
-				useNativeDriver: true,
-			}),
-			Animated.timing(opacity, {
-				toValue: 1,
-				duration: MOTION_DURATION.state,
-				easing: Easing.out(Easing.quad),
-				useNativeDriver: true,
-			}),
-		]).start();
-	}, [visible, scale, opacity, motionPolicy.reduceMotion]);
+		popIn(scale, opacity, motionPolicy).start();
+	}, [visible, scale, opacity, motionPolicy]);
 
 	const handleDismiss = async () => {
-		try {
-			await rpc("mark_schism_seen", { side, milestone });
-		} catch {
-			// best-effort; if it fails the user might see the modal
-			// again on next focus, which is annoying but not broken.
-			// Belt-and-braces: rpc() resolves null rather than rejecting today,
-			// but dismissing must survive ANY seen-marking failure (contract
-			// pinned by __tests__/AlignmentSchismModal.test.tsx).
-		}
+		// Best-effort: if it fails the modal may re-show on next focus, which is
+		// annoying but not broken; dismissing goes ahead regardless (rpc()
+		// resolves null, never rejects — __tests__/AlignmentSchismModal.test.tsx).
+		await rpc("mark_schism_seen", { side, milestone });
 		onDismiss();
 	};
 

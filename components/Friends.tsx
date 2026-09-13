@@ -14,6 +14,7 @@ import {
 import { useFocusEffect } from "expo-router/react-navigation";
 import { supabase } from "../utils/supabase";
 import { rpcAction } from "@/utils/rpc";
+import { fetchBarnVisitStatus } from "@/utils/barnVisit";
 import {
 	FRIEND_CAP_LIMIT,
 	getFriendIds,
@@ -24,7 +25,7 @@ import {
 } from "@/utils/friendships";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { fetchFriendsCrews } from "@/utils/crews";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { type UseCrew } from "@/hooks/useCrew";
 import {
 	AlignmentBadge,
@@ -290,10 +291,7 @@ export default function Friends({
 				// per-row gate). Both fail soft — a dark migration leaves the
 				// state at its permissive default (null budget / empty lock set).
 				const [st, locks, streaks] = await Promise.all([
-					rpcAction<{
-						visits_left?: number | null;
-						visits_refresh_at?: string | null;
-					}>("barn_visit_status", { p_target: probe.id }),
+					fetchBarnVisitStatus(probe.id),
 					rpcAction<{
 						pairs?: { target_id: string; locked: boolean }[];
 					}>("barn_pair_locks", { p_targets: list.map((p) => p.id) }),
@@ -996,7 +994,7 @@ export function FriendsList({
 	header?: React.ReactNode;
 }) {
 	// Alignment isn't a thing in Season 1 — the badge retires with S0.
-	const s1 = useFeatureFlag("world_boss") || __DEV__;
+	const s1 = useSeason1Active();
 	// One caster for the whole list: one `ritual_status` read, one allowance
 	// every door and the strip agree on, one memory of who's already had today's
 	// ritual from you.

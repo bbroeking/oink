@@ -1,13 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Image, ScrollView, StyleSheet, View } from "react-native";
-import { Redirect, Stack, router, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
-import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { createMoteMachineAcceptanceClient } from "@/utils/moteMachineAcceptance";
 import { createMoteGameAcceptanceClient } from "@/utils/moteGameAcceptance";
 import { LoadingBeat } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StackPage } from "@/components/ui/StackPage";
 import { Sticker } from "@/components/ui/Sticker";
 import { Button } from "@/components/ui/Button";
 import { T } from "@/components/ui/Text";
@@ -36,10 +35,7 @@ export default function ContraptionsRoute() {
     acceptanceSession?: string;
   }>();
   const canPreviewLocally = Boolean(
-    createMoteGameAcceptanceClient(params.acceptance, params.acceptanceSession) ?? createMoteMachineAcceptanceClient(
-      params.acceptance,
-      params.acceptanceSession,
-    ),
+    createMoteGameAcceptanceClient(params.acceptance, params.acceptanceSession),
   );
   if (!MOTE_MACHINE_VISIBLE && !canPreviewLocally)
     return <Redirect href="/(tabs)/season" />;
@@ -53,10 +49,7 @@ function ContraptionInventoryScreen() {
   }>();
   const client = useMemo(
     () =>
-      createMoteGameAcceptanceClient(params.acceptance, params.acceptanceSession) ?? createMoteMachineAcceptanceClient(
-        params.acceptance,
-        params.acceptanceSession,
-      ),
+      createMoteGameAcceptanceClient(params.acceptance, params.acceptanceSession),
     [params.acceptance, params.acceptanceSession],
   );
   const fetchInventory = client?.fetchInventory ?? fetchContraptionInventory;
@@ -144,8 +137,7 @@ function ContraptionInventoryScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <Stack.Screen options={{ headerShown: false }} />
+    <StackPage>
       <PageHeader
         kicker="workshop shelf"
         title="Contraptions"
@@ -273,7 +265,7 @@ function ContraptionInventoryScreen() {
           </T>
         ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </StackPage>
   );
 }
 
@@ -334,7 +326,6 @@ function serviceLabel(activeUntil: string | null): string {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: WHIMSY.cream },
   content: {
     paddingHorizontal: PAGE_PAD,
     paddingTop: SPACE.lg,

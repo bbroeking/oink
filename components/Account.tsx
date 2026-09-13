@@ -36,6 +36,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { lifetimeTickles } from "@/utils/tickles";
+import type { SeasonState } from "@/utils/seasonPass";
 import { submitFeedback, type FeedbackKind } from "@/utils/feedback";
 import { stampFeedbackEverSent } from "@/utils/feedbackNudge";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
@@ -99,7 +100,7 @@ import {
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
-import { MOTE_MACHINE_VISIBLE, PURCHASES_LIVE } from "@/constants/featureFlags";
+import { MOTE_MACHINE_VISIBLE } from "@/constants/featureFlags";
 import {
 	myReferralSummary,
 	shareMessageForCode,
@@ -113,7 +114,6 @@ import {
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 import { isUsernameAllowed } from "@/constants/bannedWords";
-import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { showHabitatIntro } from "@/utils/habitatIntro";
 import {
 	refreshWallowTuning,
@@ -158,7 +158,6 @@ const CODE_TRACKING = 1.2;
 type ProfileState = "loading" | "ready" | "error";
 
 export function Account({ session }: { session: Session }) {
-	const habitatFlag = useFeatureFlagState("habitat");
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	// One gate for six independent reads — the tab shows one loading beat, not N
@@ -203,7 +202,7 @@ export function Account({ session }: { session: Session }) {
 		next_threshold: number | null;
 		next_title: string | null;
 	} | null>(null);
-	// New code-based referral state (per docs/referrals.md). The
+	// Code-based referral state (per docs/referrals.md). The
 	// "Refer friends" card hydrates from my_referral_summary on focus
 	// so the milestone progress bar advances live as friends cross
 	// the engagement gate.
@@ -281,7 +280,7 @@ export function Account({ session }: { session: Session }) {
 	};
 	useFocusEffect(
 		useCallback(() => {
-			// New referral summary — drives the "Refer friends" card.
+			// Referral summary — drives the "Refer friends" card.
 			// Cheap RPC; refetch on focus so milestone progress bumps
 			// as soon as the user returns from sharing.
 			myReferralSummary().then((r) => {
@@ -375,8 +374,6 @@ export function Account({ session }: { session: Session }) {
 	// state's retry run exactly the same thing. [E7]
 	const loadProfile = useCallback(() => {
 			// active_title joins through the FK on profiles.active_title_id.
-			// If the titles migration isn't deployed yet the join 400s; fall
-			// back to the no-title select so Account still loads.
 			supabase
 				.from("profiles")
 				.select(
@@ -384,7 +381,7 @@ export function Account({ session }: { session: Session }) {
 				)
 				.eq("id", session.user.id)
 				.single()
-				.then(async ({ data, error }) => {
+				.then(({ data, error }) => {
 					type ProfileRow = {
 						username?: string | null;
 						discriminator?: string | null;
@@ -409,16 +406,10 @@ export function Account({ session }: { session: Session }) {
 					// narrows it to the TitlePlacement union the renderer switches
 					// on. That narrowing is all this assertion does — every other
 					// field comes straight from the generated row type.
-					let row: ProfileRow | null = data as ProfileRow | null;
-					if (error) {
-						const fallback = await supabase
-							.from("profiles")
-							.select("username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, vip_until, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed")
-							.eq("id", session.user.id)
-							.single();
-						row = fallback.data;
-					}
-					// A null row is UNKNOWN, not empty: both selects failed, so the
+					const row: ProfileRow | null = error
+						? null
+						: (data as ProfileRow | null);
+					// A null row is UNKNOWN, not empty: the read failed, so the
 					// screen says so and offers the read again. [E7]
 					if (!row) {
 						setProfileState("error");
@@ -471,7 +462,7 @@ export function Account({ session }: { session: Session }) {
 				.then(({ data, error }) => {
 					if (!error) setWallowCount(data?.wallow_count ?? 0);
 				});
-			rpc<{ wallow_regen_seconds?: number }>("season_state").then((state) => {
+			rpc<SeasonState>("season_state").then((state) => {
 				if (typeof state?.wallow_regen_seconds === "number") {
 					setWallowRegenSeconds(state.wallow_regen_seconds);
 				}
@@ -679,9 +670,8 @@ export function Account({ session }: { session: Session }) {
 	const handleUnlockPro = async () => {
 		if (busy) return;
 		setBusy(true);
-		try {
-			await initIAP(session.user.id);
-		} catch {}
+		// initIAP absorbs its own failures (logged in utils/iap) — it never rejects.
+		await initIAP(session.user.id);
 		// Plan selection (monthly/yearly) + purchase live entirely in
 		// RevenueCat's hosted paywall. is_vip is flipped server-side by the
 		// webhook on the purchase; we set it optimistically for instant UI.
@@ -1068,25 +1058,16 @@ export function Account({ session }: { session: Session }) {
 											variant="gold"
 											full
 											style={styles.slopBtn}
-											onPress={PURCHASES_LIVE ? handleUnlockPro : undefined}
-											disabled={!PURCHASES_LIVE}
+											onPress={handleUnlockPro}
 											loading={busy}
-											accessibilityLabel={
-												PURCHASES_LIVE
-													? "Join the Slop Club"
-													: "Join the Slop Club — coming soon"
-											}
-											accessibilityHint={
-												PURCHASES_LIVE
-													? "Opens the subscription plans and prices"
-													: "Memberships aren't on sale yet"
-											}
+											accessibilityLabel="Join the Slop Club"
+											accessibilityHint="Opens the subscription plans and prices"
 										>
-											{PURCHASES_LIVE ? "Join the Slop Club" : "Coming soon…"}
+											Join the Slop Club
 										</Button>
 									)}
 
-									{!isVip && PURCHASES_LIVE && (
+									{!isVip && (
 										<BodySm
 											tone="secondary"
 											align="center"
@@ -1197,9 +1178,9 @@ export function Account({ session }: { session: Session }) {
 													{recruiterStats.engaged_count} completed{" "}
 													{recruiterStats.engaged_count === 1 ? "referral" : "referrals"}
 												</BodySm>
-												{recruiterStats.next_title && (
+												{recruiterStats.next_title && recruiterStats.next_threshold !== null && (
 													<Hand tone="secondary">
-														{recruiterStats.next_threshold! - recruiterStats.engaged_count} more to
+														{recruiterStats.next_threshold - recruiterStats.engaged_count} more to
 														unlock{" "}
 														<T role="hand" tone="accent">
 															{recruiterStats.next_title}
@@ -1334,14 +1315,12 @@ export function Account({ session }: { session: Session }) {
 										onPress={() => setReleaseNotesOpen(true)}
 										accessibilityHint="Opens the release notes"
 									/>
-									{habitatFlag.loaded && habitatFlag.visible ? (
-										<NavRow
-											icon="refresh"
-											label="Barn introduction"
-											onPress={() => showHabitatIntro(session.user.id)}
-											accessibilityHint="Replays the barn introduction"
-										/>
-									) : null}
+									<NavRow
+										icon="refresh"
+										label="Barn introduction"
+										onPress={() => showHabitatIntro(session.user.id)}
+										accessibilityHint="Replays the barn introduction"
+									/>
 									{/* Report a bug / idea — the single quiet door into the
 									    in-app Den whisper, grouped with the rest of "your
 									    pig" rather than orphaned below the card. [E25] */}
@@ -1424,13 +1403,10 @@ export function Account({ session }: { session: Session }) {
 				onConfirm={async () => {
 					if (deleting) return;
 					setDeleting(true);
-					try {
-						await rpc("delete_my_account");
-					} catch {
-						// Sign the device out either way — a half-failed delete must
-						// never strand the player inside the account they just asked
-						// us to destroy.
-					}
+					// Sign the device out whatever the delete returned — a half-failed
+					// delete must never strand the player inside the account they just
+					// asked us to destroy. (rpc() never rejects; it resolves null.)
+					await rpc("delete_my_account");
 					await clearPushToken();
 					await supabase.auth.signOut();
 					setDeleting(false);

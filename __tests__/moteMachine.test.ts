@@ -3,8 +3,6 @@ import {
   activateContraption,
   fetchContraptionInventory,
   fetchMoteMachineState,
-  moteMachineErrorMessage,
-  spinMoteMachine,
 } from "@/utils/moteMachine";
 
 jest.mock("@/utils/rpc", () => ({ rpcAction: jest.fn() }));
@@ -36,28 +34,6 @@ describe("Mote Machine and Contraption client contracts", () => {
     expect(mockedRpcAction).toHaveBeenCalledWith("mote_machine_state");
   });
 
-  it("sends only the idempotency key and returns positive Contraption fuel", async () => {
-    mockedRpcAction.mockResolvedValue({
-      ok: true,
-      spin_id: "spin-1",
-      contraption_id: "auto_tickler",
-      resource_amount: 3,
-      resource_balance: 8,
-      reel_value: 10,
-      motes_remaining: 2,
-      replayed: false,
-    } as never);
-
-    await expect(spinMoteMachine("mote-request-1")).resolves.toMatchObject({
-      ok: true,
-      resource_amount: 3,
-      resource_balance: 8,
-      motes_remaining: 2,
-    });
-    expect(mockedRpcAction).toHaveBeenCalledWith("spin_mote_machine", {
-      p_request_id: "mote-request-1",
-    });
-  });
 
   it("reads inventory and activates the exact requested service duration", async () => {
     mockedRpcAction.mockResolvedValue({ ok: true, items: [], events: [] } as never);
@@ -79,20 +55,5 @@ describe("Mote Machine and Contraption client contracts", () => {
     });
   });
 
-  it("turns a lost response into a replay-safe check instead of hanging", async () => {
-    jest.useFakeTimers();
-    mockedRpcAction.mockReturnValue(new Promise(() => {}) as never);
-    const result = spinMoteMachine("mote-request-timeout");
 
-    jest.advanceTimersByTime(8_000);
-    await expect(result).resolves.toEqual({ ok: false, reason: "network" });
-    jest.useRealTimers();
-  });
-
-  it("explains an uncertain network result without claiming a refund", () => {
-    expect(moteMachineErrorMessage("network")).toBe(
-      "The signal failed. Check the last play.",
-    );
-    expect(moteMachineErrorMessage("no_motes")).toContain("empty");
-  });
 });

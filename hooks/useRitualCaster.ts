@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { dailyRitual, type RitualMode, type TodayRitual } from "@/utils/rituals";
 
 // What a cast came back as. `sent` and `error` carry the line a surface shows;
@@ -64,8 +64,8 @@ interface RitualStatus {
 type Allowance = { used: number; cap: number } | null;
 
 // Only the unexpected cases reach here — `daily_cap` and the already-cast-today
-// reasons are outcomes of their own. Moved from RitualPicker unchanged.
-export function ritualReasonText(reason: string | undefined, isBless: boolean): string {
+// reasons are outcomes of their own.
+function ritualReasonText(reason: string | undefined, isBless: boolean): string {
 	switch (reason) {
 		case "not_friends":
 			return "Only friends can be reached.";
@@ -77,9 +77,9 @@ export function ritualReasonText(reason: string | undefined, isBless: boolean): 
 }
 
 export function useRitualCaster(): UseRitualCaster {
-	// Season-1 blessing set once world_boss is on — mirrors the server's
-	// daily_blessing_kind so the previewed kind matches the cast.
-	const s1 = useFeatureFlag("world_boss");
+	// Season-1 blessing set — mirrors the server's daily_blessing_kind so the
+	// previewed kind matches the cast.
+	const s1 = useSeason1Active();
 	const [allowance, setAllowance] = useState<Record<RitualMode, Allowance>>({
 		bless: null,
 		curse: null,

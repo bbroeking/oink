@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { Redirect, Stack, router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useIsFocused } from "expo-router/react-navigation";
-import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { useHabitat, type HabitatBackend } from "@/hooks/useHabitat";
 import { useHabitatAccount } from "@/hooks/useHabitatAccount";
 import {
@@ -42,17 +41,15 @@ const CONTROL_ICON = 22;
 const TOOLTIP_CLEARANCE = 64;
 
 // The doors the interior can be reached through. `structure` is the barn on the
-// Exterior's ground plane, `button` the retired gold entry, `shop` the purchase
-// hand-off, `visit` a friend's room. `unknown` is a deep link or a cold start.
+// Exterior's ground plane, `shop` the purchase hand-off, `visit` a friend's
+// room. `unknown` is a deep link or a cold start.
 export type HabitatEntryPoint =
   | "structure"
-  | "button"
   | "shop"
   | "visit"
   | "unknown";
 
 export default function BarnInteriorRoute() {
-  const { visible, loaded } = useFeatureFlagState("habitat");
   const { id: accountId, loaded: authLoaded } = useHabitatAccount();
   // The interior is a full-bleed wood scene: the status bar goes light while
   // this route is FOCUSED and back to the app's dark bar the moment another
@@ -65,13 +62,13 @@ export default function BarnInteriorRoute() {
       return () => setStatusBarStyle("dark");
     }, [])
   );
-  if (!loaded || !authLoaded)
+  if (!authLoaded)
     return (
       <View style={styles.loading}>
         <LoadingBeat label="opening the Barn" />
       </View>
     );
-  if (!visible || !accountId) return <Redirect href="/(tabs)" />;
+  if (!accountId) return <Redirect href="/(tabs)" />;
   return <BarnInterior key={accountId} accountId={accountId} />;
 }
 export function BarnInterior({

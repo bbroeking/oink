@@ -27,6 +27,7 @@ import {
   STIR_RUB,
   STIR_SHOVE,
 } from "@/constants/dig";
+import { feedingNowMs, feedingClockSnapshot } from "@/utils/feedingClock";
 import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
 import { formatHM } from "@/utils/duration";
 import { getDevSeasonOverrides } from "@/utils/devSeasonOverrides";
@@ -453,9 +454,11 @@ function normalizedBucket(win: number, windowsPerDay: number): number {
 }
 
 export function windowIndex(
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
   sched?: FeedingSchedule,
 ): number {
+  const authoritative = sched ? null : feedingClockSnapshot(nowMs);
+  if (authoritative) return authoritative.windowIndex;
   const active = sched ?? feedingSchedule();
   const commuter = commuterSchedule(active);
   if (commuter) {
@@ -472,6 +475,9 @@ export function windowIndex(
 }
 
 export function windowEndsAtMs(win: number, sched?: FeedingSchedule): number {
+  const authoritative = sched ? null : feedingClockSnapshot(feedingNowMs());
+  if (authoritative && authoritative.windowIndex === win)
+    return authoritative.windowEndsAtMs;
   const active = sched ?? feedingSchedule();
   const commuter = commuterSchedule(active);
   if (commuter) {
@@ -491,7 +497,7 @@ export function windowEndsAtMs(win: number, sched?: FeedingSchedule): number {
 }
 
 /** "2h 10m" until the Hunger's next gorge (end of the current feeding). */
-export function feedingCountdown(nowMs: number = Date.now()): string {
+export function feedingCountdown(nowMs: number = feedingNowMs()): string {
   const left = Math.max(0, windowEndsAtMs(windowIndex(nowMs)) - nowMs);
   return formatLeft(left);
 }
@@ -510,9 +516,12 @@ const formatLeft = (leftMs: number): string =>
 
 /** True while the patch is diggable (the open head of the current window). */
 export function patchPhaseOpen(
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
   sched?: FeedingSchedule,
 ): boolean {
+  const authoritative = sched ? null : feedingClockSnapshot(nowMs);
+  if (authoritative)
+    return authoritative.phaseOpen && nowMs < authoritative.phaseEndsAtMs;
   const active = sched ?? feedingSchedule();
   const commuter = commuterSchedule(active);
   if (commuter) {
@@ -532,9 +541,11 @@ export function patchPhaseOpen(
 
 /** Ms timestamp when the CURRENT open phase closes (only valid while open). */
 export function phaseClosesAtMs(
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
   sched?: FeedingSchedule,
 ): number {
+  const authoritative = sched ? null : feedingClockSnapshot(nowMs);
+  if (authoritative?.phaseOpen) return authoritative.phaseEndsAtMs;
   const active = sched ?? feedingSchedule();
   const commuter = commuterSchedule(active);
   if (commuter) {
@@ -562,15 +573,17 @@ export function phaseClosesAtMs(
 
 /** Ms timestamp of the NEXT open phase (= the next window's start). */
 export function nextOpenAtMs(
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
   sched?: FeedingSchedule,
 ): number {
+  const authoritative = sched ? null : feedingClockSnapshot(nowMs);
+  if (authoritative) return authoritative.opensAtMs;
   const active = sched ?? feedingSchedule();
   return windowEndsAtMs(windowIndex(nowMs, active), active);
 }
 
 /** Current commuter bucket geometry for the Feeding strip. */
-export function patchWindowShape(nowMs: number = Date.now()): {
+export function patchWindowShape(nowMs: number = feedingNowMs()): {
   open: boolean;
   openFrac: number;
   marker: number;
@@ -606,12 +619,12 @@ export function patchWindowShape(nowMs: number = Date.now()): {
 }
 
 /** "1h 12m" until the current open phase closes. */
-export function phaseClosesCountdown(nowMs: number = Date.now()): string {
+export function phaseClosesCountdown(nowMs: number = feedingNowMs()): string {
   return formatLeft(Math.max(0, phaseClosesAtMs(nowMs) - nowMs));
 }
 
 /** "3h 45m" until the patch next opens. */
-export function nextOpenCountdown(nowMs: number = Date.now()): string {
+export function nextOpenCountdown(nowMs: number = feedingNowMs()): string {
   return formatLeft(Math.max(0, nextOpenAtMs(nowMs) - nowMs));
 }
 
@@ -628,7 +641,7 @@ export interface FeedingPhaseView {
   countdown: string;
 }
 
-export function feedingPhaseView(nowMs: number = Date.now()): FeedingPhaseView {
+export function feedingPhaseView(nowMs: number = feedingNowMs()): FeedingPhaseView {
   const forced = getDevSeasonOverrides().phase;
   if (forced) {
     return { open: forced === "open", countdown: "dev · forced" };
@@ -661,7 +674,7 @@ export function patchCtaLabel(phaseOpen: boolean, countdown: string): string {
 /** True while a dig recorded in `dugWindow` still belongs to the current feeding. */
 export function dugInCurrentWindow(
   dugWindow: number | null,
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
 ): boolean {
   return dugWindow !== null && dugWindow === windowIndex(nowMs);
 }
@@ -677,7 +690,7 @@ export function dugInCurrentWindow(
 export function bannerDigStatus(
   phaseOpen: boolean,
   dug: boolean,
-  nowMs: number = Date.now(),
+  nowMs: number = feedingNowMs(),
 ): string | null {
   if (phaseOpen && !dug) return null; // the button state — no status line
   if (phaseOpen) return "dug this feeding — back next feeding ★";

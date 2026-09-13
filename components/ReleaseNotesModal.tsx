@@ -10,7 +10,7 @@
 // a backdrop tap dismisses too. Each note is a `ListRow`, so the list reads as
 // scrapbook rather than as a bulleted spec.
 //
-// `visible` / `onClose` are unchanged: Account.tsx drives both.
+// Account.tsx drives `visible` / `onClose`.
 import React from "react";
 import { Image, StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";

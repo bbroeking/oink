@@ -5,7 +5,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { View, StyleSheet, Animated, Text, Easing } from "react-native";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 

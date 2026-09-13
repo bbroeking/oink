@@ -107,7 +107,9 @@ export interface InviteCandidate {
 // ── Query wrappers (rpc<T>) ──────────────────────────────────────────────────
 // Each always resolves to a usable rest-state value (null/empty on error).
 
-const EMPTY_CREW_STATE: CrewState = {
+// The crewless rest state — what fetchCrewState resolves to on any miss and
+// what useCrew boots with (it used to keep its own identical copy).
+export const EMPTY_CREW_STATE: CrewState = {
 	crew: null,
 	members: [],
 	invitesIn: [],
@@ -130,14 +132,18 @@ export async function fetchCrewState(): Promise<CrewState> {
 	// camelCase — map them here, fail-soft to [] so the client is safe against an
 	// older server that predates the migration.
 	const s = await rpc<Partial<CrewState> & {
+		// The wire nests the herd-milestone fields under `crew`; the values are
+		// raw jsonb until the coercers below vet them.
+		crew?: (Crew & { lifetime_finds?: unknown; milestones_claimed?: unknown }) | null;
 		join_requests_in?: JoinRequestIn[];
 		join_requests_out?: JoinRequestOut[];
 	}>("crew_state");
 	if (!s) return EMPTY_CREW_STATE;
-	const nested = (s.crew ?? null) as Record<string, unknown> | null;
+	const nested = s.crew ?? null;
 	return {
 		...EMPTY_CREW_STATE,
 		...s,
+		crew: nested,
 		joinRequestsIn: Array.isArray(s.join_requests_in) ? s.join_requests_in : [],
 		joinRequestsOut: Array.isArray(s.join_requests_out) ? s.join_requests_out : [],
 		lifetime_finds: nonneg(nested?.lifetime_finds ?? s.lifetime_finds),

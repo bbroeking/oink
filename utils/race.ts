@@ -118,7 +118,7 @@ export interface RacePrizes {
 // only what a pre-push client ticks on). MUST match the server payout helpers in
 // migrations 20260793000000 (_race_tickles_for_rank) and 20260719000000
 // (_race_truffles_for_rank).
-export const DEFAULT_RACE_PRIZES: RacePrizes = {
+const DEFAULT_RACE_PRIZES: RacePrizes = {
 	tickles: {
 		first: 500,
 		second: 300,
@@ -596,6 +596,10 @@ export type SeasonStandingsRow =
 	  }
 	| { kind: "separator" };
 
+function seasonRow(s: SeasonStanding, highlighted: boolean): SeasonStandingsRow {
+	return { kind: "ranked", ...s, highlighted };
+}
+
 export function standingsRowsSeason(
 	season: SeasonStanding[],
 	mineSeason: MineSeason | null,
@@ -603,16 +607,7 @@ export function standingsRowsSeason(
 	visible = 5,
 ): SeasonStandingsRow[] {
 	const top = season.slice(0, Math.max(0, visible));
-	const rows: SeasonStandingsRow[] = top.map((s) => ({
-		kind: "ranked" as const,
-		rank: s.rank,
-		crew_id: s.crew_id,
-		name: s.name,
-		total_finds: s.total_finds,
-		diggers: s.diggers,
-		roster_size: s.roster_size,
-		highlighted: !!myCrewId && s.crew_id === myCrewId,
-	}));
+	const rows: SeasonStandingsRow[] = allSeasonRows(top, myCrewId);
 
 	if (myCrewId) {
 		const inTop = top.some((s) => s.crew_id === myCrewId);
@@ -620,7 +615,7 @@ export function standingsRowsSeason(
 			const mineFull = season.find((s) => s.crew_id === myCrewId);
 			if (mineFull) {
 				rows.push({ kind: "separator" });
-				rows.push({ kind: "ranked", ...mineFull, highlighted: true });
+				rows.push(seasonRow(mineFull, true));
 			} else if (mineSeason && mineSeason.rank > 0) {
 				// Ranked per `mineSeason` but truncated out of the array — synthesize
 				// the pin so I always see where I stand.
@@ -652,16 +647,7 @@ export function allSeasonRows(
 	season: SeasonStanding[],
 	myCrewId: string | null,
 ): SeasonStandingsRow[] {
-	return season.map((s) => ({
-		kind: "ranked" as const,
-		rank: s.rank,
-		crew_id: s.crew_id,
-		name: s.name,
-		total_finds: s.total_finds,
-		diggers: s.diggers,
-		roster_size: s.roster_size,
-		highlighted: !!myCrewId && s.crew_id === myCrewId,
-	}));
+	return season.map((s) => seasonRow(s, !!myCrewId && s.crew_id === myCrewId));
 }
 
 /** Every weekly row, mine flagged: ranked in order, then sub-quorum grayed. */

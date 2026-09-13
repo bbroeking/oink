@@ -22,7 +22,14 @@ import {
 	StyleSheet,
 	type ImageSourcePropType,
 } from "react-native";
-import { ListRow, LoadingBeat, Sheet, T } from "./ui";
+import {
+	LoadingBeat,
+	ReceiptNote,
+	ReceiptRow,
+	ReceiptRows,
+	ReceiptTotal,
+	Sheet,
+} from "./ui";
 import {
 	fetchTickleBreakdown,
 	tickleBreakdownRows,
@@ -30,7 +37,7 @@ import {
 	type TickleLane,
 	type TickleRow,
 } from "@/utils/tickleBreakdown";
-import { BORDER, SPACE, UI_COLORS } from "@/constants/theme";
+import { SPACE } from "@/constants/theme";
 
 interface Props {
 	// The pig whose receipt to show. Null = closed (drives the sheet the same way
@@ -58,9 +65,7 @@ const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
 	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
 };
 
-// Drawing geometry: the fixed icon column every receipt line shares and the art
-// inside it, so labels and numbers stay in one vertical rhythm.
-const ICON_COL = 32;
+// The art in the receipt's icon column.
 const RECEIPT_ART = 26;
 const TOTAL_ART = 24;
 
@@ -75,23 +80,13 @@ function LaneIcon({ lane }: { lane: TickleLane }) {
 	);
 }
 
-// One receipt line — icon column + whimsy label + the real number, right-aligned.
-// Mirrors TrufflePatch's EndLine so the two ledgers read in the same voice.
-function ReceiptRow({ row, index }: { row: TickleRow; index: number }) {
+function LaneRow({ row, index }: { row: TickleRow; index: number }) {
 	return (
-		<ListRow
+		<ReceiptRow
 			index={index}
-			tilt={false}
-			leading={
-				<View style={styles.iconCol}>
-					<LaneIcon lane={row.lane} />
-				</View>
-			}
-			title={row.label}
-			trailing={
-				<T role="cardTitle">{row.value.toLocaleString("en-US")}</T>
-			}
-			accessibilityLabel={`${row.label}, ${row.value}`}
+			icon={<LaneIcon lane={row.lane} />}
+			label={row.label}
+			value={row.value}
 		/>
 	);
 }
@@ -147,26 +142,22 @@ export function TickleBreakdownSheet({ userId, fallbackTotal, onClose }: Props) 
 				// Fail-soft: the RPC is dark (unpushed). Show the known total and
 				// a quiet line — never an error state (spec 17).
 				<>
-					<T role="hand" tone="secondary" align="center" style={styles.secrets}>
-						the pig keeps its secrets for now
-					</T>
+					<ReceiptNote>the pig keeps its secrets for now</ReceiptNote>
 					<TotalRow total={total} />
 				</>
 			) : rows.length === 0 ? (
 				// A pig with nothing on its ledger yet (fresh, or all-zero).
 				<>
-					<T role="hand" tone="secondary" align="center" style={styles.secrets}>
-						no tickles reclaimed yet this season
-					</T>
+					<ReceiptNote>no tickles reclaimed yet this season</ReceiptNote>
 					<TotalRow total={total} />
 				</>
 			) : (
 				<>
-					<View style={styles.rows}>
+					<ReceiptRows>
 						{rows.map((row, i) => (
-							<ReceiptRow key={row.lane} row={row} index={i} />
+							<LaneRow key={row.lane} row={row} index={i} />
 						))}
-					</View>
+					</ReceiptRows>
 					<TotalRow total={total} />
 				</>
 			)}
@@ -174,55 +165,27 @@ export function TickleBreakdownSheet({ userId, fallbackTotal, onClose }: Props) 
 	);
 }
 
-// The total, pinned at the bottom above a hairline rule — the one number the
-// board competes on, now shown as the sum of its parts.
+// The total — the one number the board competes on, shown as the sum of its
+// parts.
 function TotalRow({ total }: { total: number }) {
 	return (
-		<View style={styles.totalRow}>
-			<View style={styles.iconCol}>
+		<ReceiptTotal
+			icon={
 				<Image
 					source={RECEIPT_HEART}
 					style={styles.totalIcon}
 					resizeMode="contain"
 					accessible={false}
 				/>
-			</View>
-			<T role="cardTitle" style={styles.totalLabel}>
-				tickles this season
-			</T>
-			<T role="sectionTitle">{total.toLocaleString("en-US")}</T>
-		</View>
+			}
+			label="tickles this season"
+			value={total}
+		/>
 	);
 }
 
 const styles = StyleSheet.create({
 	loadingWrap: { paddingVertical: SPACE.xl, alignItems: "center" },
-	rows: { gap: SPACE.sm, marginTop: SPACE.xs },
-	iconCol: {
-		width: ICON_COL,
-		alignItems: "center",
-		justifyContent: "center",
-	},
 	receiptIcon: { width: RECEIPT_ART, height: RECEIPT_ART },
 	totalIcon: { width: TOTAL_ART, height: TOTAL_ART },
-	// The total, set off by a dashed rule above it so it reads as the sum.
-	totalRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-		marginTop: SPACE.md,
-		paddingTop: SPACE.md,
-		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.uiMuted,
-		borderStyle: "dashed",
-	},
-	totalLabel: {
-		flex: 1,
-		minWidth: 0,
-	},
-	// The fail-soft / empty line — quiet hand voice, centered.
-	secrets: {
-		marginTop: SPACE.sm,
-		marginBottom: SPACE.xs,
-	},
 });

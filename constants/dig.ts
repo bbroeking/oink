@@ -51,7 +51,6 @@ export const STIR_SHOVE = 3; // loud scoop
 export const SHOVE_HOLD_MS = 400;
 export const PATCH_COLS = 6;
 export const PATCH_ROWS = 5;
-export const TRUFFLE_POUCH_CAP = 999; // golden_truffles hard cap (never lossy)
 
 // The global-meter milestones the whole barnyard crosses as it drains the
 // Hungerer. MUST match the migration's milestone table (finds-denominated).
@@ -62,8 +61,6 @@ export const MILESTONE_THRESHOLDS = [150, 600, 1800];
 // every Mon + Thu 00:00 UTC; 3-day / 4-day alternate). Score is finds per
 // digging snout; QUORUM diggers are needed to be ranked. Rank-scaled truffle
 // spoils pay at cycle end. Draining is instant always — no banked pot anymore.
-export const RACE_QUORUM = 2;
-
 // Rank-scaled truffle payout per crew member at cycle end. Keys 1/2/3 are the
 // podium; `topHalf` covers every other ranked crew in the top 50%; `ranked` is
 // the floor for any remaining ranked crew.

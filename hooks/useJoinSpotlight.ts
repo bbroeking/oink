@@ -18,7 +18,7 @@ import type { SounderStep } from "@/hooks/useSounderPath";
 
 // Per-install stamp — versioned so a future copy/target revision can re-arm the
 // spotlight for everyone by bumping the suffix.
-export const JOIN_SPOTLIGHT_SEEN_KEY = "spotlight_seen_join_v1";
+const JOIN_SPOTLIGHT_SEEN_KEY = "spotlight_seen_join_v1";
 
 // The registry id the SpotlightTarget wrapping the join affordance uses. Exported
 // so the target and the overlay reference one constant, never a loose string.

@@ -17,7 +17,7 @@ export type EquipSlotKey =
 // player-facing "Face" slot (the old separate Eyes chip read as clutter);
 // they still persist to their own profile columns — see columnForCategory.
 // tickle_particle gets a real chip too (it has a column + closet section).
-export const SLOT_FOR_CATEGORY: Record<string, EquipSlotKey> = {
+const SLOT_FOR_CATEGORY: Record<string, EquipSlotKey> = {
 	hat: "head",
 	bow: "bow",
 	glasses: "face",
@@ -31,7 +31,7 @@ export const SLOT_FOR_CATEGORY: Record<string, EquipSlotKey> = {
 };
 
 // profiles column that stores each slot's equipped item id.
-export const SLOT_COLUMN: Record<EquipSlotKey, string> = {
+const SLOT_COLUMN: Record<EquipSlotKey, string> = {
 	head: "active_hat_id",
 	bow: "active_bow_id",
 	face: "active_mask_id",

@@ -103,8 +103,13 @@ describe("AlignmentSchismModal", () => {
 		expect(onDismiss).toHaveBeenCalled();
 	});
 
-	test("dismiss still fires onDismiss even if rpc throws", async () => {
-		mockRpc.mockRejectedValueOnce(new Error("network down"));
+	test("dismiss still fires onDismiss when the seen-mark fails", async () => {
+		// supabase-js reports a transport failure as { error }; rpc() folds
+		// that into null rather than rejecting.
+		mockRpc.mockResolvedValueOnce({
+			data: null,
+			error: { message: "network down", code: "" },
+		});
 		const onDismiss = jest.fn();
 		renderer = await renderAct(
 			<AlignmentSchismModal side="goblin" score={-30} onDismiss={onDismiss} />

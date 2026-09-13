@@ -19,8 +19,9 @@
 // Serves **Connect**: the board is now a way back to the friends you brought in.
 import React, { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
-import { View, StyleSheet, ScrollView, SafeAreaView } from "react-native";
-import { Stack, router } from "expo-router";
+import { StackPage } from "../components/ui/StackPage";
+import { View, StyleSheet, ScrollView } from "react-native";
+import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
@@ -82,123 +83,120 @@ export default function SounderScreen() {
 
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={styles.safe}>
-					<PageHeader
-						kicker="refer friends"
-						title="Your Recruits"
-						onBack={() => router.back()}
-					/>
+			<StackPage>
+				<PageHeader
+					kicker="refer friends"
+					title="Your Recruits"
+					onBack={() => router.back()}
+				/>
 
-					<ScrollView
-						style={styles.scroll}
-						contentContainerStyle={styles.list}
-						showsVerticalScrollIndicator={false}
-					>
-						{loading && <LoadingBeat label="gathering your recruits" />}
-						{!loading && rows === null && (
-							<EmptyState
-								kind="error"
-								sub="The recruit board didn't come back."
-								action={
-									<Button
-										variant="ghost"
-										size="sm"
-										onPress={load}
-										accessibilityHint="Asks the board again"
-									>
-										Try again
-									</Button>
-								}
-							/>
-						)}
-						{!loading && rows?.length === 0 && (
-							<EmptyState
-								glyph="friends"
-								title="No recruits yet"
-								sub="Be the first to bring a friend in."
-							/>
-						)}
+				<ScrollView
+					style={styles.scroll}
+					contentContainerStyle={styles.list}
+					showsVerticalScrollIndicator={false}
+				>
+					{loading && <LoadingBeat label="gathering your recruits" />}
+					{!loading && rows === null && (
+						<EmptyState
+							kind="error"
+							sub="The recruit board didn't come back."
+							action={
+								<Button
+									variant="ghost"
+									size="sm"
+									onPress={load}
+									accessibilityHint="Asks the board again"
+								>
+									Try again
+								</Button>
+							}
+						/>
+					)}
+					{!loading && rows?.length === 0 && (
+						<EmptyState
+							glyph="friends"
+							title="No recruits yet"
+							sub="Be the first to bring a friend in."
+						/>
+					)}
 
-						{champ && (
-							<Sticker
-								color="rose"
-								rotate={-1.5}
-								radius={RADII.xl}
-								border={BORDER.heavy}
-								onPress={() => setSelectedUserId(champ.user_id)}
-								accessibilityLabel={`Top recruiter ${champ.username ?? "unknown pig"}${
-									champ.is_self ? ", you" : ""
-								}, ${champ.engaged_count} brought in`}
-								accessibilityHint="Opens this pig's page"
-								style={styles.champ}
-							>
-								<KickerPill tone="accent" style={styles.champKicker}>
-									top recruiter
-								</KickerPill>
-								<View style={styles.champRow}>
-									<View style={styles.champBody}>
-										<SectionTitle numberOfLines={2}>
-											{champ.username ?? "—"}
-											{champ.is_self && (
-												<T role="kicker" tone="accent">
-													{" "}
-													· you
-												</T>
-											)}
-										</SectionTitle>
-										<T role="kicker" tone="secondary" style={styles.champCount}>
-											{champ.engaged_count === 1 ? "pig" : "pigs"} brought in
-										</T>
-									</View>
-									{/* The big number is the COUNT (the board's one metric),
-									    matching the rows' right-hand numbers — rank is already
-									    told by the kicker. It briefly showed rank ("1") here,
-									    which read as a count in the count position. */}
-									<View style={styles.medallion}>
-										<SectionTitle>{champ.engaged_count}</SectionTitle>
-									</View>
-								</View>
-							</Sticker>
-						)}
-
-						{rest.map((r, i) => (
-							<ListRow
-								key={r.user_id}
-								index={i}
-								fill={r.is_self ? "rose" : "paper"}
-								leading={
-									<T role="numeral" tone="secondary" style={styles.rowRank}>
-										#{r.rank}
-									</T>
-								}
-								title={
-									<T role="cardTitleSm" numberOfLines={2}>
-										{r.username ?? "—"}
-										{r.is_self && (
+					{champ && (
+						<Sticker
+							color="rose"
+							rotate={-1.5}
+							radius={RADII.xl}
+							border={BORDER.heavy}
+							onPress={() => setSelectedUserId(champ.user_id)}
+							accessibilityLabel={`Top recruiter ${champ.username ?? "unknown pig"}${
+								champ.is_self ? ", you" : ""
+							}, ${champ.engaged_count} brought in`}
+							accessibilityHint="Opens this pig's page"
+							style={styles.champ}
+						>
+							<KickerPill tone="accent" style={styles.champKicker}>
+								top recruiter
+							</KickerPill>
+							<View style={styles.champRow}>
+								<View style={styles.champBody}>
+									<SectionTitle numberOfLines={2}>
+										{champ.username ?? "—"}
+										{champ.is_self && (
 											<T role="kicker" tone="accent">
 												{" "}
 												· you
 											</T>
 										)}
+									</SectionTitle>
+									<T role="kicker" tone="secondary" style={styles.champCount}>
+										{champ.engaged_count === 1 ? "pig" : "pigs"} brought in
 									</T>
-								}
-								trailing={
-									<T role="numeral" style={styles.rowCount}>
-										{r.engaged_count}
-									</T>
-								}
-								onPress={() => setSelectedUserId(r.user_id)}
-								accessibilityLabel={`Rank ${r.rank}, ${r.username ?? "unknown pig"}${
-									r.is_self ? ", you" : ""
-								}, ${r.engaged_count} brought in`}
-								accessibilityHint="Opens this pig's page"
-							/>
-						))}
-					</ScrollView>
-				</SafeAreaView>
-			</View>
+								</View>
+								{/* The big number is the COUNT (the board's one metric),
+								    matching the rows' right-hand numbers — rank is already
+								    told by the kicker. It briefly showed rank ("1") here,
+								    which read as a count in the count position. */}
+								<View style={styles.medallion}>
+									<SectionTitle>{champ.engaged_count}</SectionTitle>
+								</View>
+							</View>
+						</Sticker>
+					)}
+
+					{rest.map((r, i) => (
+						<ListRow
+							key={r.user_id}
+							index={i}
+							fill={r.is_self ? "rose" : "paper"}
+							leading={
+								<T role="numeral" tone="secondary" style={styles.rowRank}>
+									#{r.rank}
+								</T>
+							}
+							title={
+								<T role="cardTitleSm" numberOfLines={2}>
+									{r.username ?? "—"}
+									{r.is_self && (
+										<T role="kicker" tone="accent">
+											{" "}
+											· you
+										</T>
+									)}
+								</T>
+							}
+							trailing={
+								<T role="numeral" style={styles.rowCount}>
+									{r.engaged_count}
+								</T>
+							}
+							onPress={() => setSelectedUserId(r.user_id)}
+							accessibilityLabel={`Rank ${r.rank}, ${r.username ?? "unknown pig"}${
+								r.is_self ? ", you" : ""
+							}, ${r.engaged_count} brought in`}
+							accessibilityHint="Opens this pig's page"
+						/>
+					))}
+				</ScrollView>
+			</StackPage>
 
 			{/* The one door for a pig's page — bless, visit, befriend, block. A
 			    friendship change can reorder the board, so re-read on dismiss. */}
@@ -212,8 +210,6 @@ export default function SounderScreen() {
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1 },
 	scroll: { flex: 1 },
 	list: { padding: PAGE_PAD, gap: SPACE.sm },
 	champ: { paddingHorizontal: PAGE_PAD, paddingVertical: SPACE.lg, marginBottom: SPACE.xs },

@@ -31,9 +31,6 @@ export const FIELD_GUIDE_PAGE_IDS = [
 export type FieldGuidePageId = (typeof FIELD_GUIDE_PAGE_IDS)[number];
 
 const PAGE_SET: ReadonlySet<string> = new Set(FIELD_GUIDE_PAGE_IDS);
-const PAGE_INDEX: ReadonlyMap<string, number> = new Map(
-	FIELD_GUIDE_PAGE_IDS.map((id, i) => [id, i])
-);
 
 /** Whitelist guard — a forged/typo'd id never reaches the mirror or the RPC. */
 export function isFieldGuidePageId(id: unknown): id is FieldGuidePageId {
@@ -123,7 +120,7 @@ export async function fetchFieldGuideUnlocks(): Promise<FieldGuidePageId[]> {
  * Load the durable local + account state once per app process. Encounter paths
  * await it so a fast first tap cannot race an empty in-memory mirror.
  */
-export function initializeFieldGuide(): Promise<FieldGuidePageId[]> {
+function initializeFieldGuide(): Promise<FieldGuidePageId[]> {
 	if (!initialization) {
 		initialization = (async () => {
 			await hydrateFieldGuideCache();

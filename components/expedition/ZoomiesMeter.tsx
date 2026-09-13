@@ -13,7 +13,7 @@ import { ZOOMIES_MAX } from "@/utils/expedition";
 
 // The charge, in words — since there is no visible number, this is what a screen
 // reader announces and what the caption would have said.
-export function zoomiesLabel(value: number): string {
+function zoomiesLabel(value: number): string {
 	if (value <= 0) return "Zoomies resting";
 	if (value < Math.ceil(ZOOMIES_MAX / 2)) return "Zoomies stirring";
 	if (value < ZOOMIES_MAX) return "Zoomies nearly bursting";

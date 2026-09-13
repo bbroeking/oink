@@ -25,7 +25,6 @@ import {
   useHabitatJournal,
   type HabitatJournalBackend,
 } from "@/hooks/useHabitatJournal";
-import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { useHabitatAccount } from "@/hooks/useHabitatAccount";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { trackInteraction } from "@/utils/interactionAnalytics";
@@ -64,15 +63,14 @@ import {
 const CARD_ART_H = 150;
 
 export default function BarnCollectionRoute() {
-  const flag = useFeatureFlagState("habitat");
   const { id, loaded } = useHabitatAccount();
-  if (!flag.loaded || !loaded)
+  if (!loaded)
     return (
       <View style={styles.loading}>
         <LoadingBeat label="opening the collection" />
       </View>
     );
-  if (!flag.visible || !id) return <Redirect href="/(tabs)" />;
+  if (!id) return <Redirect href="/(tabs)" />;
   return <BarnCollection key={id} accountId={id} />;
 }
 export function BarnCollection({
@@ -184,20 +182,23 @@ export function BarnCollection({
   const prestigeRewards = useMemo(
     () =>
       h.data?.catalog
-        .filter((item) => item.prestigeRank !== undefined)
-        .sort((a, b) => a.prestigeRank! - b.prestigeRank!) ?? [],
+        .filter(
+          (item): item is HabitatCatalogItem & { prestigeRank: number } =>
+            item.prestigeRank !== undefined,
+        )
+        .sort((a, b) => a.prestigeRank - b.prestigeRank) ?? [],
     [h.data],
   );
   const ownedIds = useMemo(
     () => new Set(h.data?.owned.map((item) => item.id) ?? []),
     [h.data?.owned],
   );
+  const wallowRank = h.data?.wallowRank;
   const nextPrestigeReward =
-    h.data?.wallowRank !== undefined
+    wallowRank !== undefined
       ? prestigeRewards.find(
           (reward) =>
-            reward.prestigeRank! > h.data!.wallowRank! &&
-            !ownedIds.has(reward.id),
+            reward.prestigeRank > wallowRank && !ownedIds.has(reward.id),
         )
       : prestigeRewards.find((reward) => !ownedIds.has(reward.id));
   const items = useMemo(
@@ -224,7 +225,7 @@ export function BarnCollection({
         )
         .sort((a, b) =>
           collectionFilter === "prestige"
-            ? a.prestigeRank! - b.prestigeRank!
+            ? (a.prestigeRank ?? 0) - (b.prestigeRank ?? 0)
             : a.displayOrder - b.displayOrder,
         ) ?? [],
     [
@@ -259,6 +260,22 @@ export function BarnCollection({
         : h.data?.snapshot.positions[candidate] === null,
     );
     return empty ?? compatible[0];
+  };
+  // Hand the item back to the Barn: the embedded sheet places it in-draft via
+  // onPurchased; the standalone route dismisses to the interior with the slot
+  // (when one fits) and the item pre-selected.
+  const handOffToBarn = (item: HabitatCatalogItem) => {
+    const compatible = compatiblePositionFor(item);
+    if (onPurchased && compatible) onPurchased(compatible, item.id);
+    else
+      router.dismissTo({
+        pathname: "/barn-interior",
+        params: {
+          ...(compatible ? { position: compatible } : {}),
+          purchasedItemId: item.id,
+          entry: "shop",
+        },
+      });
   };
   const confirmPurchase = async () => {
     const item = previewItem;
@@ -329,17 +346,7 @@ export function BarnCollection({
           .filter((name): name is string => Boolean(name)) ?? [];
       const returnToDraft = () => {
         if (activeAccount.current !== accountId) return;
-        const compatible = compatiblePositionFor(item);
-        if (onPurchased && compatible) onPurchased(compatible, item.id);
-        else
-          router.dismissTo({
-            pathname: "/barn-interior",
-            params: {
-              ...(compatible ? { position: compatible } : {}),
-              purchasedItemId: item.id,
-              entry: "shop",
-            },
-          });
+        handOffToBarn(item);
         showPurchaseToast({
           type: "success",
           title: item.name,
@@ -377,7 +384,7 @@ export function BarnCollection({
         // The guestbook was retired 2026-09-12; owners keep the keepsake, nobody
         // new earns it.
         guestbook_keepsake: "A keepsake from the guestbook days. No longer given out.",
-      }) as Record<string, string>
+      }) as Record<string, string | undefined>
     )[id];
   const itemEarnCopy = (item: HabitatCatalogItem) => {
     if (item.prestigeRank !== undefined)
@@ -453,17 +460,7 @@ export function BarnCollection({
   }, [requestedItemId, Boolean(h.data)]);
   const placeItem = (item: HabitatCatalogItem) => {
     setPreviewItem(null);
-    const compatible = compatiblePositionFor(item);
-    if (onPurchased && compatible) onPurchased(compatible, item.id);
-    else
-      router.dismissTo({
-        pathname: "/barn-interior",
-        params: {
-          ...(compatible ? { position: compatible } : {}),
-          purchasedItemId: item.id,
-          entry: "shop",
-        },
-      });
+    handOffToBarn(item);
   };
   return (
     <SafeAreaView style={styles.root}>

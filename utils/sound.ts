@@ -184,14 +184,3 @@ export function startAmbience(fadeMs = 900): void {
 export function stopAmbience(fadeMs = 700): void {
 	fadeAmbience(0, fadeMs, true);
 }
-
-/** Release every player (call when the game unmounts for good). */
-export function teardown(): void {
-	clearFade();
-	for (const p of players.values()) {
-		try {
-			p.remove();
-		} catch {}
-	}
-	players.clear();
-}

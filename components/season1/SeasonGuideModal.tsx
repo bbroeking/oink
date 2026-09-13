@@ -110,7 +110,7 @@ export function SeasonGuideModal({
 				body="You'll stop digging with this herd. You can join another any time."
 				confirmLabel="Leave"
 				cancelLabel="Stay"
-				destructive
+				tone="destructive"
 				onConfirm={doLeave}
 				onCancel={() => setLeaveConfirm(false)}
 			/>

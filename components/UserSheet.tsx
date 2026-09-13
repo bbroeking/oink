@@ -35,14 +35,15 @@ import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { router, type Href } from "expo-router";
 import { supabase } from "../utils/supabase";
-import { rpc, rpcAction } from "@/utils/rpc";
+import { rpc } from "@/utils/rpc";
+import { fetchBarnVisitStatus, type BarnVisitStatus } from "@/utils/barnVisit";
 import { pairBondWith, bondBreakdown, type PairBondWith } from "@/utils/pairBonds";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { RitualPicker } from "./RitualPicker";
 import { GameIcon } from "./ui/GameIcon";
 import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
 import { useCrew } from "@/hooks/useCrew";
-import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { MOTE_MACHINE_VISIBLE } from "@/constants/featureFlags";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
@@ -124,7 +125,7 @@ type AskState =
 	| { kind: "pending" }
 	| { kind: "cooldown"; hours: number };
 
-type ActionTab = "ask" | "bless" | "curse";
+type ActionTab = "ask" | RitualMode;
 
 const ACTION_TABS = [
 	{ value: "ask" as const, label: "Ask" },
@@ -211,7 +212,7 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// the handoff gap.
 	useUnmanagedModalHold(!!targetUserId);
 	// Alignment isn't a thing in Season 1 — its bar retires with S0.
-	const s1 = useFeatureFlag("world_boss") || __DEV__;
+	const s1 = useSeason1Active();
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
@@ -224,12 +225,7 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// to pre-disable the Visit button instead of opening the modal to a dead-end
 	// pop-up: locked to a different barn (one friend / 3h), out of tickles, or the
 	// pig already at its hourly tap ceiling.
-	const [visitGate, setVisitGate] = useState<{
-		locked?: boolean;
-		resting?: boolean;
-		next_at?: string | null;
-		balance?: number;
-	} | null>(null);
+	const [visitGate, setVisitGate] = useState<BarnVisitStatus | null>(null);
 	const [feedback, setFeedback] = useState<string | null>(null);
 	// Block + Report dialogs. Apple Guideline 1.2 requires both for
 	// any app with user-to-user interactions; they appear as small
@@ -322,12 +318,7 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			setBond(d?.ok ? d : null);
 		});
 		// Can a visit to this person succeed right now? (gates the Visit button)
-		rpcAction<{
-			locked?: boolean;
-			resting?: boolean;
-			next_at?: string | null;
-			balance?: number;
-		}>("barn_visit_status", { p_target: targetUserId }).then((d) => {
+		fetchBarnVisitStatus(targetUserId).then((d) => {
 			if (isCurrent() && d.ok) setVisitGate(d);
 		});
 		rpc<UserStats[]>("public_user_stats", {
@@ -361,18 +352,8 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			.select("tickles_earned, wallow_count")
 			.eq("id", targetUserId)
 			.maybeSingle()
-			.then(async ({ data, error }) => {
-				// Projection spanning BOTH selects below: the fallback drops
-				// wallow_count, so it stays optional here.
-				let row: { tickles_earned: number; wallow_count?: number } | null = data;
-				if (error) {
-					const fallback = await supabase
-						.from("profiles")
-						.select("tickles_earned")
-						.eq("id", targetUserId)
-						.maybeSingle();
-					row = fallback.data;
-				}
+			.then(({ data, error }) => {
+				const row = error ? null : data;
 				if (!isCurrent()) return;
 				setTargetTickles(row ? (row.tickles_earned ?? 0) : null);
 				setTargetWallowCount(row?.wallow_count ?? 0);
@@ -754,9 +735,9 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 								{formatRemaining(curseStatus.expires_at)}
 							</T>
 						)}
-					{(actionTab === "bless" || actionTab === "curse") && (
+					{actionTab !== "ask" && (
 						<RitualPicker
-							mode={actionTab as RitualMode}
+							mode={actionTab}
 							targetUserId={stats.user_id}
 							targetName={stats.username ?? "friend"}
 						/>

@@ -154,14 +154,14 @@ describe("ConfirmDialog", () => {
 		act(() => renderer.unmount());
 	});
 
-	test("destructive maps to the destructive tone", () => {
+	test("forwards tone=\"destructive\" to the button row", () => {
 		let renderer!: TestRenderer.ReactTestRenderer;
 		act(() => {
 			renderer = TestRenderer.create(
 				inSafeArea(
 					<ConfirmDialog
 						open
-						destructive
+						tone="destructive"
 						title="Leave the sounder?"
 						confirmLabel="Leave"
 						onConfirm={() => {}}

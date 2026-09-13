@@ -98,6 +98,7 @@ jest.mock("@/components/mudwar/DigPostcardComposer", () => ({
 import { Text } from "react-native";
 import { TrufflePatch } from "@/components/mudwar/TrufflePatch";
 import { generateBoard } from "@/utils/rooting";
+import { applyFeedingClock, feedingClockRequest, resetFeedingClockSession } from "@/utils/feedingClock";
 import type { RootingSession } from "@/hooks/useRooting";
 
 const session = (overrides: Partial<RootingSession> = {}): RootingSession => ({
@@ -124,7 +125,8 @@ const textOf = (tree: TestRenderer.ReactTestRenderer) =>
 async function mount(
   props: Partial<React.ComponentProps<typeof TrufflePatch>> = {},
 ) {
-  const onSubmit = jest.fn(async () => ({
+  type Submit = React.ComponentProps<typeof TrufflePatch>["onSubmit"];
+  const onSubmit = jest.fn<ReturnType<Submit>, Parameters<Submit>>(async () => ({
     outcome: null,
     failReason: "uncertain",
   }));
@@ -190,6 +192,32 @@ describe("TrufflePatch living progress", () => {
     });
     expect(onClose).not.toHaveBeenCalled();
     expect(textOf(tree)).toContain("couldn't be saved");
+  });
+
+  test("a skewed phone cannot expire a live dig before its server window ends", async () => {
+    resetFeedingClockSession("pig-a");
+    const serverNow = Date.now() - 2 * 3600_000;
+    applyFeedingClock("pig-a", {
+      server_now: new Date(serverNow).toISOString(),
+      window_index: 123,
+      phase_open: true,
+      phase_ends_at: new Date(serverNow + 1000).toISOString(),
+      window_ends_at: new Date(serverNow + 60_000).toISOString(),
+      opens_at: new Date(serverNow + 60_000).toISOString(),
+    }, feedingClockRequest());
+    const { tree } = await mount({ session: session({ windowEndsAtMs: serverNow + 60_000 }) });
+    try {
+      const surface = tree.root.findByType("MudSurface" as any);
+      expect(surface.props.disabled).toBe(false);
+      act(() => { jest.advanceTimersByTime(1000); });
+      // Phase close blocks new digs; this already-open board keeps its window.
+      expect(surface.props.disabled).toBe(false);
+      act(() => { jest.advanceTimersByTime(59_000); });
+      expect(surface.props.disabled).toBe(true);
+    } finally {
+      act(() => tree.unmount());
+      resetFeedingClockSession(null);
+    }
   });
 
   test("an expired restored board blocks brush actions and submits no new action", async () => {

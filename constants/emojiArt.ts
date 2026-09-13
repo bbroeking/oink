@@ -2,7 +2,7 @@
 // art under assets/images/emoji/. Static require()s so Metro bundles
 // them. See docs/openai-emoji-replacement-art.md.
 
-export const TROPHY = require("../assets/images/emoji/trophy.png");
+const TROPHY = require("../assets/images/emoji/trophy.png");
 
 // Cosmetic-category → art. `aura` and `necklace` have no dedicated
 // icon yet; categoryIcon() returns null for them (caller falls back
@@ -26,7 +26,7 @@ export function categoryIcon(
 
 // Achievement id → medallion. achievementIcon() falls back to the
 // generic trophy for any id without dedicated art (e.g. future tiers).
-export const ACHIEVEMENT_ICON: Record<string, number> = {
+const ACHIEVEMENT_ICON: Record<string, number> = {
 	generous_t1: require("../assets/images/emoji/achv/open-hoof.png"),
 	generous_t2: require("../assets/images/emoji/achv/snout-saint.png"),
 	generous_t3: require("../assets/images/emoji/achv/bacon-bountiful.png"),

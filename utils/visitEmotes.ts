@@ -55,5 +55,4 @@ const emoteCell = createConfigCell<VisitEmoteId[]>({
 
 export const visitEmoteIds = emoteCell.read;
 export const refreshVisitEmotes = emoteCell.refresh;
-export const resetVisitEmotesForTests = emoteCell.resetForTests;
 export { sanitizeVisitEmotes };

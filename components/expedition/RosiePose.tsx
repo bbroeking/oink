@@ -24,7 +24,7 @@ const POSES: Record<RosieMood, number> = {
 
 // Zoomies as sprite energy: her pose escalates with charge — idle at rest, happy
 // once she's building, a full-tilt jump when the burst is ready. (Task 7a.)
-export function poseForCharge(zoomies: number, max: number): RosieMood {
+function poseForCharge(zoomies: number, max: number): RosieMood {
 	if (zoomies >= max) return "jump";
 	if (zoomies >= Math.ceil(max / 2)) return "happy";
 	return "idle";

@@ -175,7 +175,8 @@ export function HabitatGiftReveal({
             : "You already own these designs. This milestone is recorded, and everything stays yours."}
         </Body>
         {gifts.map((gift, index) => {
-          const item = catalog.find((entry) => entry.id === gift.itemId)!;
+          const item = catalog.find((entry) => entry.id === gift.itemId);
+          if (!item) return null;
           return (
             <Sticker
               key={gift.id}

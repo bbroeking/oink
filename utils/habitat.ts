@@ -432,7 +432,7 @@ export async function buyHabitatItem(
   };
 }
 
-export function snapshotPayload(
+function snapshotPayload(
   snapshot: HabitatSnapshot,
 ): HabitatPositions<string | null> {
   const p = emptyPositions<string | null>(null);
@@ -498,10 +498,10 @@ export function draftSnapshot(
 ): HabitatSnapshot {
   const byId = new Map(items.map((i) => [i.id, i]));
   const positions = emptyPositions<HabitatPlacedItem | null>(null);
-  for (const key of HABITAT_POSITION_KEYS)
-    positions[key] = draft.positions[key]
-      ? (byId.get(draft.positions[key]!) ?? base.positions[key])
-      : null;
+  for (const key of HABITAT_POSITION_KEYS) {
+    const itemId = draft.positions[key];
+    positions[key] = itemId ? (byId.get(itemId) ?? base.positions[key]) : null;
+  }
   return { ...base, positions };
 }
 export function createHabitatRequestId() {

@@ -20,10 +20,9 @@ import {
 	View,
 	StyleSheet,
 	ScrollView,
-	SafeAreaView,
 	Image,
 } from "react-native";
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
@@ -39,6 +38,7 @@ import {
 	ProgressTrack,
 	Sticker,
 	T,
+	StackPage,
 } from "../components/ui";
 import {
 	ART_SIZE,
@@ -159,113 +159,110 @@ export default function AchievementsScreen() {
 
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={styles.safe}>
-					<PageHeader
-						kicker="achievements"
-						title="Achievements"
-						onBack={() => router.back()}
-						below={
-							<T role="kickerPillSm">
-								{claimedCount} / {rows.length} unlocked
-								{readyCount > 0 && (
-									<>
-										<T role="kickerPillSm" tone="secondary"> · </T>
-										<T role="kickerPillSm" tone="accent">
-											{readyCount} ready to claim
-										</T>
-									</>
-								)}
-							</T>
-						}
-					/>
+			<StackPage>
+				<PageHeader
+					kicker="achievements"
+					title="Achievements"
+					onBack={() => router.back()}
+					below={
+						<T role="kickerPillSm">
+							{claimedCount} / {rows.length} unlocked
+							{readyCount > 0 && (
+								<>
+									<T role="kickerPillSm" tone="secondary"> · </T>
+									<T role="kickerPillSm" tone="accent">
+										{readyCount} ready to claim
+									</T>
+								</>
+							)}
+						</T>
+					}
+				/>
 
-					{/* Filter chip row — flexGrow:0 on the ScrollView so it
-					    doesn't claim leftover vertical space (otherwise
-					    each chip stretches to the ScrollView's cross-
-					    axis size, ending up as a tall pill instead of
-					    a pill-shaped chip). */}
-					<ScrollView
-						horizontal
-						showsHorizontalScrollIndicator={false}
-						style={styles.chipsScroll}
-						contentContainerStyle={styles.chipsRow}
-					>
-						{FILTERS.map((c) => {
-							const active = filter === c.key;
-							const showBadge = c.key === "ready" && readyCount > 0;
-							return (
-								<Chip
-									key={c.key}
-									label={c.label}
-									tone={active ? "lilac" : "paper"}
-									selected={active}
-									onPress={() => setFilter(c.key)}
-									badge={
-										showBadge ? (
-											<View style={styles.chipBadge}>
-												<T role="kickerPillSm" tone="onDark">
-													{readyCount}
-												</T>
-											</View>
-										) : undefined
-									}
-									accessibilityLabel={
-										showBadge
-											? `${c.label}, ${readyCount} ready`
-											: c.label
-									}
-									accessibilityHint="Filters the trophy list"
-								/>
-							);
-						})}
-					</ScrollView>
+				{/* Filter chip row — flexGrow:0 on the ScrollView so it
+				    doesn't claim leftover vertical space (otherwise
+				    each chip stretches to the ScrollView's cross-
+				    axis size, ending up as a tall pill instead of
+				    a pill-shaped chip). */}
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					style={styles.chipsScroll}
+					contentContainerStyle={styles.chipsRow}
+				>
+					{FILTERS.map((c) => {
+						const active = filter === c.key;
+						const showBadge = c.key === "ready" && readyCount > 0;
+						return (
+							<Chip
+								key={c.key}
+								label={c.label}
+								tone={active ? "lilac" : "paper"}
+								selected={active}
+								onPress={() => setFilter(c.key)}
+								badge={
+									showBadge ? (
+										<View style={styles.chipBadge}>
+											<T role="kickerPillSm" tone="onDark">
+												{readyCount}
+											</T>
+										</View>
+									) : undefined
+								}
+								accessibilityLabel={
+									showBadge
+										? `${c.label}, ${readyCount} ready`
+										: c.label
+								}
+								accessibilityHint="Filters the trophy list"
+							/>
+						);
+					})}
+				</ScrollView>
 
-					<ScrollView
-						style={styles.list}
-						contentContainerStyle={styles.grid}
-						showsVerticalScrollIndicator={false}
-					>
-						{loading && <LoadingBeat label="counting trophies" />}
-						{!loading && filtered.length === 0 && (
-							<EmptyState
-								glyph="trophy"
-								title={
-									filter === "ready"
-										? "Nothing to claim yet"
-										: "No trophies in this category yet"
-								}
-								sub={
-									filter === "ready"
-										? "Earn one and it'll wait here for you."
-										: "Keep playing — they'll fill in."
-								}
-								action={
-									filter === "all" ? undefined : (
-										<Button
-											variant="handLink"
-											size="sm"
-											onPress={() => setFilter("all")}
-											accessibilityLabel="Show every trophy"
-											accessibilityHint="Clears the category filter"
-										>
-											Show every trophy ›
-										</Button>
-									)
-								}
-							/>
-						)}
-						{filtered.map((row) => (
-							<AchievementCard
-								key={row.id}
-								row={row}
-								onAck={() => ackClaim(row.id)}
-							/>
-						))}
-					</ScrollView>
-				</SafeAreaView>
-			</View>
+				<ScrollView
+					style={styles.list}
+					contentContainerStyle={styles.grid}
+					showsVerticalScrollIndicator={false}
+				>
+					{loading && <LoadingBeat label="counting trophies" />}
+					{!loading && filtered.length === 0 && (
+						<EmptyState
+							glyph="trophy"
+							title={
+								filter === "ready"
+									? "Nothing to claim yet"
+									: "No trophies in this category yet"
+							}
+							sub={
+								filter === "ready"
+									? "Earn one and it'll wait here for you."
+									: "Keep playing — they'll fill in."
+							}
+							action={
+								filter === "all" ? undefined : (
+									<Button
+										variant="handLink"
+										size="sm"
+										onPress={() => setFilter("all")}
+										accessibilityLabel="Show every trophy"
+										accessibilityHint="Clears the category filter"
+									>
+										Show every trophy ›
+									</Button>
+								)
+							}
+						/>
+					)}
+					{filtered.map((row) => (
+						<AchievementCard
+							key={row.id}
+							row={row}
+							onAck={() => ackClaim(row.id)}
+						/>
+					))}
+				</ScrollView>
+			</StackPage>
 		</>
 	);
 }
@@ -411,8 +408,6 @@ function AchievementCard({
 
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1 },
 	chipsScroll: { flexGrow: 0 },
 	chipsRow: {
 		paddingHorizontal: PAGE_PAD,

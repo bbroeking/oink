@@ -217,7 +217,7 @@ export function WhileAwayModal({
 									}
 									// The parent persists the batch marker, releases the
 									// popup, then routes after native teardown.
-									onPress={tappable ? () => onNavigate!(route!) : undefined}
+									onPress={route && onNavigate ? () => onNavigate(route) : undefined}
 									accessibilityLabel={`${e.title}. ${e.body}`}
 									accessibilityHint={
 										tappable ? "Opens this note from the barn" : undefined

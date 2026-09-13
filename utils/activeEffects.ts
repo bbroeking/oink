@@ -8,6 +8,7 @@
 
 import type { EffectCardEffect } from "@/components/ui/EffectCard";
 import { rpc } from "./rpc";
+import { formatExpiry, remainingMs } from "./duration";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -88,12 +89,7 @@ export function partitionBySource(effects: Effect[]): Partitioned {
 // the Inbox panel ("5m left"); the chip + sheet use the bare form
 // ("5m"). Returns "expiring" once the timestamp's in the past.
 export function formatLeft(iso: string, withSuffix = false): string {
-	const ms = new Date(iso).getTime() - Date.now();
-	if (ms <= 0) return "expiring";
-	const mins = Math.round(ms / 60000);
-	const tail = withSuffix ? " left" : "";
-	if (mins < 60) return `${mins}m${tail}`;
-	const h = Math.floor(mins / 60);
-	const m = mins % 60;
-	return m ? `${h}h ${m}m${tail}` : `${h}h${tail}`;
+	const label = formatExpiry(remainingMs(iso));
+	if (label === "expiring" || !withSuffix) return label;
+	return `${label} left`;
 }

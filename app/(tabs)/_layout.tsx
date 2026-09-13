@@ -55,13 +55,13 @@ export default function TabLayout() {
 	useEffect(() => {
 		supabase.auth.getSession().then(({ data: { session } }) => {
 			setSession(session);
-			if (session) initIAP(session.user.id).catch(() => {});
+			if (session) void initIAP(session.user.id);
 		});
 
 		supabase.auth.onAuthStateChange((_event, session) => {
 			setSession(session);
 			if (!session) setUsername(undefined);
-			if (session) initIAP(session.user.id).catch(() => {});
+			if (session) void initIAP(session.user.id);
 		});
 	}, []);
 

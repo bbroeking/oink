@@ -4,8 +4,9 @@
 // ladder (3 → 1000) with earned / next / locked states. Data: my_referral_summary.
 import React, { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
-import { View, StyleSheet, ScrollView, SafeAreaView } from "react-native";
-import { Stack, router } from "expo-router";
+import { StackPage } from "../components/ui/StackPage";
+import { View, StyleSheet, ScrollView } from "react-native";
+import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { Sticker } from "../components/ui/Sticker";
 import { Icon } from "../components/ui/Icon";
@@ -102,151 +103,146 @@ export default function SounderProgressScreen() {
 
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
-			<View style={styles.bg}>
-				<SafeAreaView style={styles.safe}>
-					<PageHeader
-						kicker="referrals"
-						title="Referral Rewards"
-						onBack={() => router.back()}
-						below={
-							status === "ready" ? (
-								<View style={styles.statsLine}>
-									<Label>{completed} brought in</Label>
-									{pending.length > 0 && (
-										<Hand tone="secondary">
-											{"  ·  "}
-											{pending.length} on the way
-										</Hand>
-									)}
-								</View>
-							) : undefined
-						}
-					/>
+			<StackPage>
+				<PageHeader
+					kicker="referrals"
+					title="Referral Rewards"
+					onBack={() => router.back()}
+					below={
+						status === "ready" ? (
+							<View style={styles.statsLine}>
+								<Label>{completed} brought in</Label>
+								{pending.length > 0 && (
+									<Hand tone="secondary">
+										{"  ·  "}
+										{pending.length} on the way
+									</Hand>
+								)}
+							</View>
+						) : undefined
+					}
+				/>
 
-					<ScrollView
-						contentContainerStyle={styles.content}
-						showsVerticalScrollIndicator={false}
-					>
-						{status === "loading" && <LoadingBeat label="counting your recruits" />}
+				<ScrollView
+					contentContainerStyle={styles.content}
+					showsVerticalScrollIndicator={false}
+				>
+					{status === "loading" && <LoadingBeat label="counting your recruits" />}
 
-						{status === "error" && (
-							<EmptyState
-								kind="error"
-								sub="We couldn't read your referrals just now."
-								action={
-									<Button
-										variant="ghost"
-										size="sm"
-										onPress={load}
-										accessibilityHint="Asks for your referral summary again"
-									>
-										Try again
-									</Button>
-								}
-							/>
-						)}
+					{status === "error" && (
+						<EmptyState
+							kind="error"
+							sub="We couldn't read your referrals just now."
+							action={
+								<Button
+									variant="ghost"
+									size="sm"
+									onPress={load}
+									accessibilityHint="Asks for your referral summary again"
+								>
+									Try again
+								</Button>
+							}
+						/>
+					)}
 
-						{status === "ready" && pending.length > 0 && (
-							<Sticker color="rose" rotate={-0.5} radius={RADII.xl} style={styles.card}>
-								<KickerPill tone="secondary" style={styles.cardKicker}>
-									on the way
-								</KickerPill>
-								<Hand tone="secondary" style={styles.cardSub}>
-									A referral counts as soon as the new player reaches {TICKLE_TARGET} tickles.
-								</Hand>
-								<View style={styles.friendList}>
-									{pending.map((f, i) => (
-										<FriendProgress key={(f.username ?? "p") + i} friend={f} />
-									))}
-								</View>
-							</Sticker>
-						)}
+					{status === "ready" && pending.length > 0 && (
+						<Sticker color="rose" rotate={-0.5} radius={RADII.xl} style={styles.card}>
+							<KickerPill tone="secondary" style={styles.cardKicker}>
+								on the way
+							</KickerPill>
+							<Hand tone="secondary" style={styles.cardSub}>
+								A referral counts as soon as the new player reaches {TICKLE_TARGET} tickles.
+							</Hand>
+							<View style={styles.friendList}>
+								{pending.map((f, i) => (
+									<FriendProgress key={(f.username ?? "p") + i} friend={f} />
+								))}
+							</View>
+						</Sticker>
+					)}
 
-						{status === "ready" && (
-							<Sticker color="cream" rotate={0.4} radius={RADII.xl} style={styles.card}>
-								<KickerPill tone="secondary" style={styles.cardKicker}>
-									reward ladder
-								</KickerPill>
-								<Hand tone="secondary" style={styles.cardSub}>
-									Every completed referral also pays {TICKLE_TARGET} tickles.
-								</Hand>
-								<View style={styles.ladder}>
-									{REFERRAL_LADDER.map((rung) => {
-										const earned = completed >= rung.count;
-										const isNext =
-											!earned && summary?.next_milestone_at === rung.count;
-										const meta = earned
-											? "earned"
-											: isNext
-												? `${rung.count - completed} more to go`
-												: `at ${rung.count} referrals`;
-										return (
+					{status === "ready" && (
+						<Sticker color="cream" rotate={0.4} radius={RADII.xl} style={styles.card}>
+							<KickerPill tone="secondary" style={styles.cardKicker}>
+								reward ladder
+							</KickerPill>
+							<Hand tone="secondary" style={styles.cardSub}>
+								Every completed referral also pays {TICKLE_TARGET} tickles.
+							</Hand>
+							<View style={styles.ladder}>
+								{REFERRAL_LADDER.map((rung) => {
+									const earned = completed >= rung.count;
+									const isNext =
+										!earned && summary?.next_milestone_at === rung.count;
+									const meta = earned
+										? "earned"
+										: isNext
+											? `${rung.count - completed} more to go`
+											: `at ${rung.count} referrals`;
+									return (
+										<View
+											key={rung.count}
+											accessible
+											accessibilityRole="text"
+											accessibilityLabel={`${rung.reward} — ${meta}`}
+											style={[
+												styles.rung,
+												// A locked rung keeps its outline and mutes its fill;
+												// the old blanket opacity crushed the reward line
+												// below AA until it was earned. [B-08]
+												!earned && !isNext && styles.rungLocked,
+												isNext && styles.rungNext,
+											]}
+										>
 											<View
-												key={rung.count}
-												accessible
-												accessibilityRole="text"
-												accessibilityLabel={`${rung.reward} — ${meta}`}
 												style={[
-													styles.rung,
-													// A locked rung keeps its outline and mutes its fill;
-													// the old blanket opacity crushed the reward line
-													// below AA until it was earned. [B-08]
-													!earned && !isNext && styles.rungLocked,
-													isNext && styles.rungNext,
+													styles.rungBadge,
+													earned && styles.rungBadgeEarned,
 												]}
 											>
-												<View
-													style={[
-														styles.rungBadge,
-														earned && styles.rungBadgeEarned,
-													]}
-												>
-													{earned ? (
-														<Icon
-															name="check"
-															size={ART_SIZE.mark}
-															color={WHIMSY.ink}
-															strokeWidth={2.4}
-														/>
-													) : (
-														<T role="bodySm" tone={isNext ? "primary" : "disabled"}>
-															{rung.count}
-														</T>
-													)}
-												</View>
-												<View style={styles.rungBody}>
-													<Label tone={earned || isNext ? "primary" : "disabled"}>
-														{rung.reward}
-													</Label>
-													<T role="kicker" tone="secondary" style={styles.rungMeta}>
-														{meta}
+												{earned ? (
+													<Icon
+														name="check"
+														size={ART_SIZE.mark}
+														color={WHIMSY.ink}
+														strokeWidth={2.4}
+													/>
+												) : (
+													<T role="bodySm" tone={isNext ? "primary" : "disabled"}>
+														{rung.count}
 													</T>
-												</View>
+												)}
 											</View>
-										);
-									})}
-								</View>
-							</Sticker>
-						)}
+											<View style={styles.rungBody}>
+												<Label tone={earned || isNext ? "primary" : "disabled"}>
+													{rung.reward}
+												</Label>
+												<T role="kicker" tone="secondary" style={styles.rungMeta}>
+													{meta}
+												</T>
+											</View>
+										</View>
+									);
+								})}
+							</View>
+						</Sticker>
+					)}
 
-						{status === "ready" && pending.length === 0 && completed === 0 && (
-							<EmptyState
-								glyph="friends"
-								title="No referrals yet"
-								sub="Share your code from the Me tab to invite a new player."
-							/>
-						)}
-					</ScrollView>
-				</SafeAreaView>
-			</View>
+					{status === "ready" && pending.length === 0 && completed === 0 && (
+						<EmptyState
+							glyph="friends"
+							title="No referrals yet"
+							sub="Share your code from the Me tab to invite a new player."
+						/>
+					)}
+				</ScrollView>
+			</StackPage>
 		</>
 	);
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1 },
 	statsLine: { flexDirection: "row", alignItems: "baseline" },
 	content: {
 		paddingHorizontal: PAGE_PAD,

@@ -53,7 +53,7 @@ export interface HungerMeter {
 // "4,000 reclaimed", which undercut the meter's credibility). The scale
 // constant survives at 1 so every display keeps deriving from what the
 // server reports — retuning stays a server-side act.
-export const HUNGER_CREDIT_SCALE = 1;
+const HUNGER_CREDIT_SCALE = 1;
 
 export const HUNGER_LEVEL_NAME: Record<HungerStage, string> = {
 	gorged: "Gorged",

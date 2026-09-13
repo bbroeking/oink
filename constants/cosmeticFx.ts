@@ -38,7 +38,7 @@ export interface CosmeticFx {
 // Registry. An item with NO entry renders as a plain static Image — only
 // the items listed here animate, so non-members / ordinary cosmetics are
 // untouched and there's zero per-frame cost for them.
-export const COSMETIC_FX: Record<string, CosmeticFx> = {
+const COSMETIC_FX: Record<string, CosmeticFx> = {
 	// ── Hero prototype: Slop Club Signet Crown (legendary) ──────────────
 	// Regal, unhurried bob; warm gold halo; a slow shine sweep; sparkles
 	// pinned to the centre snout-emblem, the two side rubies, and the peak.

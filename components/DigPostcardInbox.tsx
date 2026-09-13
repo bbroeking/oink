@@ -29,7 +29,7 @@ import {
   UI_COLORS,
   WHIMSY,
 } from "@/constants/theme";
-import { Button, Ribbon, SectionHeader, Sticker, T, Tag } from "@/components/ui";
+import { Button, SectionHeader, Sticker, T, Tag } from "@/components/ui";
 
 // Drawing geometry for the mini-patch, not spacing: a 5-wide board of 16pt
 // tiles, and the little hoof mark that rides the cheer control.

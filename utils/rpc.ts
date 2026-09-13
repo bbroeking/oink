@@ -2,6 +2,13 @@
 // that every call site was hand-rolling. Returns the data cast to
 // T, or null when the RPC errored or returned no rows.
 //
+// CONTRACT: `rpc()` and `rpcAction()` NEVER reject. supabase-js turns transport
+// failures into `{ error }`, and both wrappers fold that into their return
+// value (null / `{ ok:false, reason:"network" }`). Callers must branch on the
+// result; a try/catch or `.catch()` around a bare call is dead code (a 2026-09
+// deslop removed the ones that had accumulated). If this ever changes, grep
+// callers — nothing downstream expects a throw.
+//
 // Errors flow through log.error() so they reach Sentry instead of
 // vanishing into a destructured-but-ignored `error` field — the
 // silent-on-error semantics callers already rely on stays intact;

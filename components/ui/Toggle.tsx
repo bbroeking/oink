@@ -27,7 +27,6 @@ const TRACK = { false: UI_COLORS.surfaceStrong, true: WHIMSY.sage };
 const THUMB = UI_COLORS.surface;
 
 export interface ToggleProps {
-	/** Current state. */
 	value: boolean;
 	/** Flipped state; the row is the only writer. */
 	onValueChange: (next: boolean) => void;

@@ -25,7 +25,7 @@ const PLAQUE_MARK = 12;
 const LEAVE_MARK = 14;
 // The header is a fixed-height row, so its text stops growing where the friend
 // row's does — one step of Dynamic Type, then it truncates instead of clipping.
-export const HEADER_TYPE_CAP = VISIT_TYPE_CAP;
+const HEADER_TYPE_CAP = VISIT_TYPE_CAP;
 
 export function VisitHeader({
 	hostName,

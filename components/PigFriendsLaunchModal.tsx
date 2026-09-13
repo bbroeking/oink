@@ -40,7 +40,6 @@ const TAPE_LIFT = -5;
 /** The nameplate across a card's foot. */
 const NAMEPLATE_MIN_W = 74;
 const NAMEPLATE_DROP = 5;
-/** The kicker's mark. */
 const KICKER_MARK = 20;
 
 interface Props {

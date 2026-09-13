@@ -369,9 +369,8 @@ function CrewedHome({
 }
 
 // ── CREWLESS — the join-first door (invites → open Sounders → found your own) ──
-// Ported wholesale from the retired SounderSteps' join step; the season's first
-// verb is joining, so invites + the open-Sounder list lead and founding is the
-// demoted fallback.
+// The season's first verb is joining, so invites + the open-Sounder list lead
+// and founding is the demoted fallback.
 // The three concrete Sounder benefits, in the ladder-of-value order: dig deeper
 // → milestones pay everyone → the weekly dig-off pays truffles. Every number is
 // derived, never typed inline.

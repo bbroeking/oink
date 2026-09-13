@@ -96,7 +96,7 @@ export default function SwipeElement({
 		setSixSevenActive(false);
 		setReaction(null);
 	};
-	// Mirror /item-anchor screen rel-placement overrides (dev-only).
+	// Mirror the placement studio's live rel-placement overrides (dev-only).
 	const [relOverrides, setRelOverrides] = useState<
 		Record<string, RelSpec>
 	>({});

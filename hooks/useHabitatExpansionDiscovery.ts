@@ -27,7 +27,7 @@ export type HabitatExpansionDiscoveryBackend = {
   ) => Promise<AcknowledgeResult>;
 };
 
-export const habitatExpansionDiscoveryBackend: HabitatExpansionDiscoveryBackend =
+const habitatExpansionDiscoveryBackend: HabitatExpansionDiscoveryBackend =
   {
     fetch: fetchHabitatExpansionDiscovery,
     acknowledge: acknowledgeHabitatExpansion,
