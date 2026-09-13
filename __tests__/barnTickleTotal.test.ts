@@ -1,9 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-	barnTickleTicketFontSize,
-	formatBarnTickleTotal,
-} from "../utils/tickleDisplay";
+import { formatBarnTickleTotal } from "../utils/tickleDisplay";
 
 describe("Barn Tickle total", () => {
 	it.each([
@@ -18,19 +15,20 @@ describe("Barn Tickle total", () => {
 		expect(formatBarnTickleTotal(value, "en-US")).toBe(expected);
 	});
 
-	it("keeps the Barn numeral on one line with a readable shrink floor", () => {
-		const source = fs.readFileSync(
+	it("keeps the earned stamp's numeral on one line in one role", () => {
+		const stamp = fs.readFileSync(
+			path.join(__dirname, "..", "components", "EarnedStamp.tsx"),
+			"utf8",
+		);
+		expect(stamp).toContain("numberOfLines={1}");
+		expect(stamp).not.toContain("adjustsFontSizeToFit");
+		expect(stamp).not.toContain("minimumFontScale");
+		expect(stamp).toContain("formatBarnTickleTotal(total)");
+		const barn = fs.readFileSync(
 			path.join(__dirname, "..", "components", "Barn.tsx"),
 			"utf8",
 		);
-		expect(source).toContain("numberOfLines={1}");
-		expect(source).not.toContain("adjustsFontSizeToFit");
-		expect(source).not.toContain("minimumFontScale");
-		expect(source).toContain("value={formatBarnTickleTotal(stats.ticklesEarned)}");
-		expect(barnTickleTicketFontSize("9,999")).toBe(30);
-		expect(barnTickleTicketFontSize("10,000")).toBe(24);
-		expect(barnTickleTicketFontSize("999,999")).toBe(20);
-		expect(barnTickleTicketFontSize("1.3M")).toBe(30);
+		expect(barn).toContain("<EarnedStamp total={stats.ticklesEarned} />");
 	});
 
 	it("leaves the exact lifetime value on the Me surface", () => {

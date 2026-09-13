@@ -5,9 +5,11 @@ const COMPACT_UNITS = [
 ] as const;
 
 /**
- * The Barn tickets are intentionally compact. Preserve the exact localized
- * total through six digits, then use a deterministic abbreviation from 1M.
- * The Me surfaces continue to render the unabridged lifetime value.
+ * The Barn's earned stamp is intentionally compact. Preserve the exact
+ * localized total through six digits, then use a deterministic abbreviation
+ * from 1M so the numeral never outgrows its one role (`numeralLg`) — the
+ * repository's layout contract forbids platform shrink-to-fit text. The Me
+ * surfaces continue to render the unabridged lifetime value.
  */
 export function formatBarnTickleTotal(
 	total: number,
@@ -26,14 +28,4 @@ export function formatBarnTickleTotal(
 		maximumFractionDigits: precision,
 	});
 	return `${compact}${unit.suffix}`;
-}
-
-/**
- * Keep the ticket deterministic on Android as well as iOS; the repository's
- * layout contract deliberately forbids platform-only shrink-to-fit text.
- */
-export function barnTickleTicketFontSize(formattedTotal: string): number {
-	if (formattedTotal.length >= 7) return 20;
-	if (formattedTotal.length === 6) return 24;
-	return 30;
 }

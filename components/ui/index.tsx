@@ -175,6 +175,7 @@ export { Icon, type IconName } from "./Icon";
 export { SnoutCoin } from "./SnoutCoin";
 export { TickleIcon } from "./TickleIcon";
 export { Shovel } from "./Shovel";
+export { BarnDoor } from "./BarnDoor";
 export { RitualIconWell } from "./RitualIconWell";
 export {
 	AnimatedCosmetic,
