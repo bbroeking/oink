@@ -1,0 +1,378 @@
+<title>Friend Row Actions Menu Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@600;700;800&family=Patrick+Hand&display=swap">
+<style>
+  :root {
+    --paper: #fffaf0; --cream: #fbeee2; --cream2: #f6e6d4; --ink: #2a1f15; --mute: #605449; --mute-soft: #8c7e71;
+    --rule: #cdbfae; --accent: #a03e2f; --sun: #ffd87a; --sky: #c8e3f0; --sage: #c9dec1; --rose-deep: #f8a8b3;
+    --tape: #EAD59E; --tape-edge: #C8AD77; --log-bg: #f6e6d4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #2a1f15; --cream: #1f1710; --cream2: #3a2c1e; --ink: #fff3e2; --mute: #e8d9c6; --mute-soft: #a8988a;
+      --rule: #5a4a3a; --accent: #f2a38f; --sun: #C99B23; --sky: #3d687f; --sage: #526f40; --rose-deep: #c96f7c;
+      --tape: #7a6a3a; --tape-edge: #a8925a; --log-bg: #2a1f15;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #2a1f15; --cream: #1f1710; --cream2: #3a2c1e; --ink: #fff3e2; --mute: #e8d9c6; --mute-soft: #a8988a;
+    --rule: #5a4a3a; --accent: #f2a38f; --sun: #C99B23; --sky: #3d687f; --sage: #526f40; --rose-deep: #c96f7c;
+    --tape: #7a6a3a; --tape-edge: #a8925a; --log-bg: #2a1f15;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--cream); color: var(--ink); font-family: 'Nunito', system-ui, sans-serif; font-weight: 700;
+         font-size: 15px; line-height: 1.4; padding-block: 28px 60px; padding-inline: 18px; }
+  .wrap { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  .kicker { font-family: 'Patrick Hand', 'Segoe Print', cursive; font-size: 14px; letter-spacing: .4px; color: var(--accent); }
+  h1 { font-family: 'Caprasimo', 'Cooper Black', Georgia, serif; font-weight: 400; font-size: 28px; line-height: 1.1; margin: 2px 0 6px; }
+  .rulebar { width: 64px; height: 2px; background: var(--ink); opacity: .3; border-radius: 1px; }
+  .lede { margin: 10px 0 0; max-width: 62ch; color: var(--mute); }
+  .stage { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .stage { grid-template-columns: 1fr; } }
+  .phone { width: 390px; max-width: 100%; }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .listhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .pill { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--mute); }
+  /* the row — a paper sticker; height is set by the identity, never by the panel */
+  .row { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--paper);
+         border: 2px solid var(--ink); border-radius: 12px; box-shadow: 2px 2px 0 var(--ink); min-height: 76px; overflow: hidden; }
+  .row.pinned { border-width: 3px; }
+  .avatar { width: 40px; height: 40px; border-radius: 999px; border: 2px solid var(--ink); background: var(--cream); flex: none;
+            display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .avatar img { width: 36px; height: 36px; object-fit: contain; display: block; }
+  .identity { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer;
+              display: flex; flex-direction: column; gap: 2px; border-radius: 6px; }
+  .name { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .name b { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .code { font-weight: 800; font-size: 12px; letter-spacing: .3px; color: var(--mute); flex: none; }
+  .meta { font-family: 'Patrick Hand', cursive; font-size: 13px; color: var(--mute); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta .herd { color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
+  .heart { width: 12px; height: 12px; flex: none; }
+  .renders { font-family: 'Patrick Hand', cursive; font-size: 11px; color: var(--mute-soft); }
+  .trailing { display: flex; align-items: center; flex: none; }
+  .trigger { width: 44px; height: 44px; border-radius: 999px; border: 2px solid transparent; background: none; color: var(--ink); cursor: pointer;
+             display: flex; align-items: center; justify-content: center; padding: 0; }
+  .trigger[aria-expanded="true"] { border-color: var(--ink); background: var(--cream2); }
+  .trigger:focus-visible, .identity:focus-visible, .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* the panel — absolute inside the row, covering only the text column */
+  .panel { position: absolute; top: 6px; bottom: 6px; left: 66px; right: 62px; background: var(--cream2); border: 2px solid var(--ink);
+           border-radius: 10px; display: flex; align-items: stretch; gap: 6px; padding: 5px; transform: translateX(calc(100% + 8px));
+           transition: transform 260ms cubic-bezier(.34, 1.3, .64, 1); will-change: transform; }
+  .panel.in { transform: translateX(0); }
+  @media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+  .cell { flex: 1; min-width: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--ink); cursor: pointer;
+          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 2px; font: inherit; }
+  .cell[data-armed="true"] { border-width: 3px; }
+  .cell:disabled { background: var(--cream2); color: var(--mute-soft); cursor: default; }
+  .cell:disabled svg { opacity: .5; }
+  .cell .lbl { font-weight: 800; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; line-height: 12px; }
+  .cell .sub { font-family: 'Patrick Hand', cursive; font-size: 10px; line-height: 11px; color: var(--mute); white-space: nowrap; }
+  .cell svg { width: 18px; height: 18px; display: block; }
+  .tapeTag { position: absolute; top: -3px; left: 54px; transform: rotate(-8deg); background: var(--tape); border: 1.5px solid var(--tape-edge);
+             border-radius: 4px; padding: 0 6px; font-weight: 800; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink); }
+  /* side panel */
+  .side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .card { background: var(--paper); border: 2px solid var(--ink); border-radius: 12px; padding: 12px 14px; }
+  .card h2 { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; font-size: 17px; margin: 0 0 6px; }
+  .state { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .log { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow: auto; font-family: ui-monospace, Menlo, monospace; font-size: 12px; display: flex; flex-direction: column; gap: 3px; }
+  .log li { padding: 3px 6px; background: var(--log-bg); border-radius: 4px; }
+  .log li:first-child { outline: 1.5px solid var(--sun); }
+  .keys { font-size: 13px; color: var(--mute); margin: 0; padding-left: 18px; }
+  .keys li { margin-bottom: 3px; }
+  kbd { font-family: ui-monospace, Menlo, monospace; font-size: 11px; background: var(--cream2); border: 1px solid var(--rule); border-radius: 4px; padding: 0 4px; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: var(--cream); padding: 8px 14px;
+           border-radius: 999px; font-size: 13px; pointer-events: none; }
+  .toast[hidden] { display: none !important; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">★ Tickle the Pig · Friends tab · demo of docs/design/2026-09-14-friend-row-actions-menu-spec.md</div>
+    <h1>Friend Row Actions Menu</h1>
+    <div class="rulebar"></div>
+    <p class="lede">Four friend rows, one actions panel. The page opens with MudPuddleMae’s panel out so the anatomy is visible at rest. Tap the dots on another row, click outside, scroll the list, or use the keyboard.</p>
+  </header>
+  <div id="root"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script>
+(function () {
+  const { useState, useCallback, useEffect, useRef, useMemo, memo, createElement: h, Fragment } = React;
+
+  // ── constants lifted from the app ─────────────────────────────────
+  const CURSE_ARM_MS = 800 * 3;           // MOTION.beat * 3 (hooks/useRitualDoor.ts)
+  const EXIT_MS = 260;                    // the panel's slide-out before unmount
+  const RITUAL = { bless: "Glimmer Truffle", curse: "Phantom Itch" };
+  const VISITS_LEFT = 3;
+
+  // Sample friends. The spec's rows carry a friend id; everything below binds to it.
+  const FRIENDS = [
+    { id: "f1", username: "FunnelWalker",   discriminator: "1089", tickles: 20,   wears: null,          crew: "The Thundering Wallowers", pairSpent: false },
+    { id: "f2", username: "MudPuddleMae",   discriminator: "0412", tickles: 1340, wears: "Acorn Cap",   crew: "The Acorn Scoundrels",     pairSpent: false },
+    { id: "f3", username: "SirOinksALot",   discriminator: "2207", tickles: 88,   wears: null,          crew: null,                       pairSpent: true  },
+    { id: "f4", username: "TruffleShuffle", discriminator: "7731", tickles: 512,  wears: "Party Crown", crew: "The Acorn Scoundrels",     pairSpent: false },
+  ];
+
+  // ── icons (stroke-based, the app's friend-action set simplified) ──
+  const svg = (inner, extra) => h("svg", Object.assign({ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true }, extra || {}), inner);
+  const ICON = {
+    more:    () => svg([h("circle", { key: 1, cx: 5, cy: 12, r: 1.7, fill: "currentColor", stroke: "none" }), h("circle", { key: 2, cx: 12, cy: 12, r: 1.7, fill: "currentColor", stroke: "none" }), h("circle", { key: 3, cx: 19, cy: 12, r: 1.7, fill: "currentColor", stroke: "none" })], { width: 20, height: 20 }),
+    visit:   () => svg([h("path", { key: 1, d: "M3 11 12 4l9 7v9H3z" }), h("path", { key: 2, d: "M9 20v-6h6v6" })]),
+    bless:   () => svg([h("path", { key: 1, d: "M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z" }), h("path", { key: 2, d: "M5 17l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" })]),
+    curse:   () => svg([h("path", { key: 1, d: "M7 15a4 4 0 0 1 .5-8 5 5 0 0 1 9.5 1 3.5 3.5 0 0 1 0 7z" }), h("path", { key: 2, d: "M12 15l-2 4h3l-1 3 3-5h-3z" })]),
+    pin:     () => svg([h("path", { key: 1, d: "M14 3l7 7-4 1-3 3 1 4-3-3-5 5-1-1 5-5-3-3 4 1 3-3z" })]),
+    profile: () => svg([h("circle", { key: 1, cx: 12, cy: 8, r: 4 }), h("path", { key: 2, d: "M4 21c0-4 3.6-7 8-7s8 3 8 7" })]),
+    heart:   () => h("svg", { className: "heart", viewBox: "0 0 24 24", "aria-hidden": true }, h("path", { d: "M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.4-7 10-7 10z", fill: "var(--rose-deep)", stroke: "var(--ink)", strokeWidth: 2 })),
+  };
+
+  // ── toast ─────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function toast(text) {
+    const el = document.getElementById("toast");
+    el.textContent = text; el.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 1800);
+  }
+
+  // ── RowActionsPanel ───────────────────────────────────────────────
+  // Mounted only while open; slides in from the trigger side; unmounts after
+  // the exit transition. Renders AFTER the trigger so DOM/focus order is
+  // identity → trigger → cells (requirement 4).
+  function RowActionsPanel({ friendId, actions, open, onRequestClose, triggerRef, panelRef }) {
+    const [mounted, setMounted] = useState(open);
+    const [inView, setInView] = useState(false);
+    const reduced = useMemo(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+
+    useEffect(() => {
+      let t;
+      if (open) {
+        setMounted(true);
+        // next frame so the entrance transition runs from the off-screen state
+        t = requestAnimationFrame(() => setInView(true));
+      } else {
+        setInView(false);
+        t = setTimeout(() => setMounted(false), reduced ? 0 : EXIT_MS);
+      }
+      return () => { cancelAnimationFrame(t); clearTimeout(t); };
+    }, [open, reduced]);
+
+    // Focus management: first cell on open.
+    useEffect(() => {
+      if (open && panelRef.current) {
+        const first = panelRef.current.querySelector("[role=menuitem]:not(:disabled)");
+        if (first) first.focus();
+      }
+    }, [open, panelRef]);
+
+    if (!mounted) return null;
+
+    const onKeyDown = (e) => {
+      const items = Array.from(panelRef.current.querySelectorAll("[role=menuitem]:not(:disabled)"));
+      const i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { e.preventDefault(); onRequestClose("escape"); triggerRef.current && triggerRef.current.focus(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+      else if (e.key === "Home") { e.preventDefault(); items[0].focus(); }
+      else if (e.key === "End") { e.preventDefault(); items[items.length - 1].focus(); }
+    };
+
+    return h("div", {
+      ref: panelRef,
+      id: `friend-menu-${friendId}`,
+      role: "menu",
+      "aria-label": "Friend actions",
+      "data-testid": `friend-menu-${friendId}`,
+      "data-state": open ? "open" : "closing",
+      className: "panel" + (inView ? " in" : ""),
+      onKeyDown,
+    }, actions.map((a) => h("button", {
+      key: a.key,
+      type: "button",
+      role: "menuitem",
+      className: "cell",
+      style: { background: a.disabled ? undefined : a.fill },
+      disabled: !!a.disabled,
+      "data-armed": a.armed ? "true" : "false",
+      "aria-label": a.accessibilityLabel,
+      "data-testid": a.testID,
+      onClick: () => { a.onPress(); if (a.closesOnPress) { onRequestClose("action:" + a.key); triggerRef.current && triggerRef.current.focus(); } },
+    }, [h(ICON[a.icon], { key: "i" }), h("span", { key: "l", className: "lbl" }, a.label), a.sub ? h("span", { key: "s", className: "sub" }, a.sub) : null])));
+  }
+
+  // ── RowMenuTrigger ────────────────────────────────────────────────
+  function RowMenuTrigger({ friendId, name, expanded, onPress, triggerRef }) {
+    return h("button", {
+      ref: triggerRef,
+      type: "button",
+      className: "trigger",
+      "aria-haspopup": "menu",
+      "aria-expanded": expanded ? "true" : "false",
+      "aria-controls": `friend-menu-${friendId}`,
+      "aria-label": expanded ? `Hide actions for ${name}` : `Actions for ${name}`,
+      "data-testid": `friend-menu-trigger-${friendId}`,
+      onClick: onPress,
+    }, h(ICON.more));
+  }
+
+  // ── FriendRow (memo) ──────────────────────────────────────────────
+  // Builds its own RowAction[] from its own props; every handler is bound to
+  // friend.id here (requirement 5). Re-renders only when its own props change.
+  const FriendRow = memo(function FriendRow({ friend, menuOpen, isFav, blessed, cursed, onToggleMenu, onCloseMenu, onVisit, onPick, onToggleFavorite, onCast }) {
+    const renders = useRef(0); renders.current += 1;
+    const triggerRef = useRef(null);
+    const panelRef = useRef(null);
+    const [armed, setArmed] = useState(false);
+    const armTimer = useRef(null);
+
+    // The arm drops on its own timer, and with the panel (an arm you cannot
+    // see is an arm that fires by surprise).
+    useEffect(() => { if (!menuOpen) { clearTimeout(armTimer.current); setArmed(false); } }, [menuOpen]);
+    useEffect(() => () => clearTimeout(armTimer.current), []);
+
+    const id = friend.id, name = friend.username;
+    const actions = useMemo(() => [
+      { key: "visit", icon: "visit", label: "Visit", fill: "var(--sky)",
+        sub: friend.pairSpent ? "Tickled today" : `${VISITS_LEFT} left`, disabled: friend.pairSpent, closesOnPress: true,
+        accessibilityLabel: friend.pairSpent ? `You've tickled ${name}'s barn today — come back tomorrow.` : `Visit ${name}'s barn`,
+        onPress: () => onVisit(id), testID: `friend-menu-visit-${id}` },
+      { key: "bless", icon: "bless", label: "Bless", fill: "var(--sun)",
+        sub: blessed ? "Sent today" : "3 left", disabled: blessed, closesOnPress: true,
+        accessibilityLabel: blessed ? `Blessed ${name} with ${RITUAL.bless} today` : `Bless ${name} with ${RITUAL.bless}`,
+        onPress: () => onCast("bless", id), testID: `friend-menu-bless-${id}` },
+      { key: "curse", icon: "curse", label: "Curse", fill: "var(--sage)",
+        sub: cursed ? "Sent today" : armed ? "Tap again" : "Tap twice", disabled: cursed, armed, closesOnPress: armed,
+        accessibilityLabel: cursed ? `Cursed ${name} with ${RITUAL.curse} today` : armed ? `Tap again to curse ${name}` : `Curse ${name} with ${RITUAL.curse}`,
+        onPress: () => {
+          if (armed) { clearTimeout(armTimer.current); setArmed(false); onCast("curse", id); return; }
+          setArmed(true);
+          clearTimeout(armTimer.current);
+          armTimer.current = setTimeout(() => setArmed(false), CURSE_ARM_MS);
+        }, testID: `friend-menu-curse-${id}` },
+      { key: "pin", icon: "pin", label: isFav ? "Unpin" : "Pin", fill: "var(--paper)", sub: "", closesOnPress: true,
+        accessibilityLabel: isFav ? `Unpin ${name} from the top` : `Pin ${name} to the top`,
+        onPress: () => onToggleFavorite(id), testID: `friend-menu-pin-${id}` },
+      { key: "profile", icon: "profile", label: "Profile", fill: "var(--paper)", sub: "", closesOnPress: true,
+        accessibilityLabel: `Open ${name}'s profile`, onPress: () => onPick(id), testID: `friend-menu-profile-${id}` },
+    ], [id, name, friend.pairSpent, blessed, cursed, armed, isFav, onVisit, onPick, onToggleFavorite, onCast]);
+
+    const meta = [
+      h("span", { key: "t", style: { display: "inline-flex", alignItems: "center", gap: 4 } }, [h(ICON.heart, { key: "h" }), h("span", { key: "n" }, friend.tickles.toLocaleString())]),
+      friend.wears ? h("span", { key: "w" }, `· wears ${friend.wears}`) : null,
+      friend.crew ? h("span", { key: "c", className: "herd" }, `· in ${friend.crew}`) : null,
+    ];
+
+    return h("div", {
+      className: "row" + (isFav ? " pinned" : ""),
+      "data-testid": `friend-row-card-${id}`,
+      "data-menu-open": menuOpen ? "true" : "false",
+    }, [
+      isFav ? h("span", { key: "tape", className: "tapeTag", "aria-hidden": true }, "pinned") : null,
+      h("div", { key: "av", className: "avatar", "aria-hidden": true }, h("img", { src: "pig.png", alt: "" })),
+      h("button", {
+        key: "id", type: "button", className: "identity",
+        "data-testid": `friend-row-${id}`,
+        "aria-label": `${name} #${friend.discriminator}${isFav ? ", pinned" : ""}`,
+        title: "Opens their profile",
+        onClick: () => onPick(id),
+      }, [
+        h("span", { key: "n", className: "name" }, [h("b", { key: 1 }, name), h("span", { key: 2, className: "code" }, `#${friend.discriminator}`)]),
+        h("span", { key: "m", className: "meta" }, meta),
+        h("span", { key: "r", className: "renders", "data-testid": `friend-row-renders-${id}` }, `renders: ${renders.current}`),
+      ]),
+      h("div", { key: "tr", className: "trailing" }, [
+        h(RowMenuTrigger, { key: "trig", friendId: id, name, expanded: menuOpen, onPress: () => onToggleMenu(id), triggerRef }),
+        h(RowActionsPanel, { key: "panel", friendId: id, actions, open: menuOpen, onRequestClose: onCloseMenu, triggerRef, panelRef }),
+      ]),
+    ]);
+  });
+
+  // ── FriendsList (owns openMenuFor) ────────────────────────────────
+  function FriendsList() {
+    const [openMenuFor, setOpenMenuFor] = useState("f2");   // open at rest so the anatomy shows
+    const [favorites, setFavorites] = useState(() => new Set(["f1"]));
+    const [rituals, setRituals] = useState({ bless: new Set(), curse: new Set() });
+    const [log, setLog] = useState([]);
+    const listRef = useRef(null);
+    const push = useCallback((line) => setLog((l) => [`${new Date().toLocaleTimeString([], { hour12: false })} · ${line}`, ...l].slice(0, 40)), []);
+
+    const toggleMenu = useCallback((id) => setOpenMenuFor((cur) => {
+      const next = cur === id ? null : id;
+      push(cur === id ? `close ${id} (trigger)` : cur ? `switch ${cur} → ${id}` : `open ${id}`);
+      return next;
+    }), [push]);
+    const closeMenu = useCallback((reason) => setOpenMenuFor((cur) => { if (cur) push(`close ${cur} (${reason || "close"})`); return null; }), [push]);
+
+    // Sorted list: pinned first, then alphabetical. A re-sort is a "reload" —
+    // whatever was open closes (the spec's [friends] effect).
+    const sorted = useMemo(() => [...FRIENDS].sort((a, b) => {
+      const fa = favorites.has(a.id) ? 0 : 1, fb = favorites.has(b.id) ? 0 : 1;
+      return fa !== fb ? fa - fb : a.username.localeCompare(b.username);
+    }), [favorites]);
+    const firstSort = useRef(true);
+    useEffect(() => { if (firstSort.current) { firstSort.current = false; return; } closeMenu("reload"); }, [sorted, closeMenu]);
+
+    // Outside click (requirement 3): capture-phase pointerdown on the document,
+    // hit-tested against the open panel and its trigger. The event still
+    // propagates, so a tap on another row's trigger closes A and opens B.
+    useEffect(() => {
+      if (!openMenuFor) return;
+      const onDown = (e) => {
+        const panel = document.getElementById(`friend-menu-${openMenuFor}`);
+        const trigger = document.querySelector(`[data-testid="friend-menu-trigger-${openMenuFor}"]`);
+        if ((panel && panel.contains(e.target)) || (trigger && trigger.contains(e.target))) return;
+        closeMenu("outside");
+      };
+      document.addEventListener("pointerdown", onDown, true);
+      return () => document.removeEventListener("pointerdown", onDown, true);
+    }, [openMenuFor, closeMenu]);
+
+    // Scroll begins → close. Escape outside the panel → close.
+    useEffect(() => {
+      if (!openMenuFor) return;
+      const onScroll = () => closeMenu("scroll");
+      const onKey = (e) => { if (e.key === "Escape") closeMenu("escape"); };
+      const el = listRef.current;
+      el.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("scroll", onScroll, { passive: true });
+      document.addEventListener("keydown", onKey);
+      return () => { el.removeEventListener("scroll", onScroll); window.removeEventListener("scroll", onScroll); document.removeEventListener("keydown", onKey); };
+    }, [openMenuFor, closeMenu]);
+
+    const nameOf = (id) => FRIENDS.find((f) => f.id === id).username;
+    const onVisit = useCallback((id) => { toast(`Visiting ${nameOf(id)}'s barn`); push(`visit ${id}`); }, [push]);
+    const onPick = useCallback((id) => { toast(`Opening ${nameOf(id)}'s profile`); push(`profile ${id}`); }, [push]);
+    const onToggleFavorite = useCallback((id) => { setFavorites((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }); push(`pin toggle ${id}`); }, [push]);
+    const onCast = useCallback((mode, id) => {
+      setRituals((r) => { const n = { bless: new Set(r.bless), curse: new Set(r.curse) }; n[mode].add(id); return n; });
+      toast(`${mode === "bless" ? "Blessed" : "Cursed"} ${nameOf(id)} with ${RITUAL[mode]}`); push(`${mode} ${id}`);
+    }, [push]);
+
+    return h("div", { className: "stage" }, [
+      h("div", { key: "phone", className: "phone" }, [
+        h("div", { key: "head", className: "listhead" }, [h("span", { key: 1, className: "pill" }, `Friends · ${FRIENDS.length}`), h("span", { key: 2, className: "kicker" }, "tap the dots")]),
+        h("div", { key: "list", ref: listRef, className: "list", "data-testid": "friends-list", "data-open-menu": openMenuFor || "" },
+          sorted.map((f) => h(FriendRow, {
+            key: f.id, friend: f, menuOpen: openMenuFor === f.id, isFav: favorites.has(f.id),
+            blessed: rituals.bless.has(f.id), cursed: rituals.curse.has(f.id),
+            onToggleMenu: toggleMenu, onCloseMenu: closeMenu, onVisit, onPick, onToggleFavorite, onCast,
+          }))),
+      ]),
+      h("aside", { key: "side", className: "side" }, [
+        h("div", { key: "state", className: "card" }, [h("h2", { key: 1 }, "State"), h("div", { key: 2, className: "state", "data-testid": "state-readout" }, `openMenuFor = ${openMenuFor ? JSON.stringify(openMenuFor) : "null"}   pinned = [${[...favorites].join(", ")}]`),
+          h("p", { key: 3, style: { margin: "6px 0 0", fontSize: 13, color: "var(--mute)" } }, "The renders counter on each row shows requirement 6: opening or switching re-renders only the rows whose flag flipped.")]),
+        h("div", { key: "keys", className: "card" }, [h("h2", { key: 1 }, "Keyboard"), h("ul", { key: 2, className: "keys" }, [
+          h("li", { key: 1 }, [h("kbd", { key: 1 }, "Tab"), " / ", h("kbd", { key: 2 }, "Shift+Tab"), " — identity → dots → cells, per row"]),
+          h("li", { key: 2 }, [h("kbd", { key: 1 }, "Enter"), " on the dots opens; focus lands on the first cell"]),
+          h("li", { key: 3 }, [h("kbd", { key: 1 }, "←"), " ", h("kbd", { key: 2 }, "→"), " ", h("kbd", { key: 3 }, "Home"), " ", h("kbd", { key: 4 }, "End"), " move between cells"]),
+          h("li", { key: 4 }, [h("kbd", { key: 1 }, "Esc"), " closes and returns focus to the dots"]),
+        ])]),
+        h("div", { key: "log", className: "card" }, [h("h2", { key: 1 }, "Event log"), h("ul", { key: 2, className: "log", "data-testid": "event-log" }, log.map((l, i) => h("li", { key: log.length - i }, l)))]),
+      ]),
+    ]);
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(h(FriendsList));
+})();
+</script>
