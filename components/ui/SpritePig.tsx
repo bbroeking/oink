@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { PIG_SKIN_WASH } from "@/utils/pigSkin";
+import { PIG_FRAMES_EXTRA } from "@/constants/pigFramesExtra";
 import { PIG_FRAMES } from "@/constants/pigFrames.generated";
 import type { PigId } from "@/utils/pigs";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { usePigActive } from "@/hooks/usePigActive";
 import {
 	PIG_ANIMATION_SPECS,
+	PIG_REST_FPS,
 	type PigAnimation,
 } from "./pigRendererContract";
 
@@ -77,12 +79,13 @@ export function SpritePig({
 		const overrideFrames = customFrames?.[animation];
 		return {
 			frames: overrideFrames ?? baseCfg.frames,
-			// Pre-baked appearances keep their authored sequence. Only the base
-			// idle art needs the stance-continuity correction.
+			// Pre-baked appearances keep their authored sequence and were drawn
+			// against the four-frame rig, so they play at the rest tempo, not the
+			// twelve-frame idle's.
 			playback: overrideFrames
 				? overrideFrames.map((_, index) => index)
 				: baseCfg.playback ?? baseCfg.frames.map((_, index) => index),
-			fps: baseCfg.fps,
+			fps: overrideFrames ? PIG_REST_FPS : baseCfg.fps,
 			loop: baseCfg.loop,
 		};
 	}, [animation, customFrames]);
@@ -132,7 +135,7 @@ export function SpritePig({
 	// The retired gold-Rosie experiment survives only as an explicit preview
 	// override. No persisted setting can alter production character art.
 	const prototypeSkinTint = skinTintOverride ?? null;
-	const frames = PIG_FRAMES[pigId] ?? PIG_FRAMES.rosie;
+	const frames = { ...(PIG_FRAMES[pigId] ?? PIG_FRAMES.rosie), ...PIG_FRAMES_EXTRA[pigId] };
 	// The old optional gold-wash prototype only applies to Rosie. Recruitable
 	// pigs already have authored coats and must never be flattened by a tint.
 	const skinTint = pigId === "rosie" ? prototypeSkinTint : null;

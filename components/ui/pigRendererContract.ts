@@ -36,6 +36,9 @@ export function pigAnchorAnimation(animation: PigAnimation): PigAnimationKey {
 // so a pig reads the same "alive" whether she stands on the Exterior or sits in
 // her room. Reactions keep their own faster fps.
 export const PIG_REST_FPS = 2.5;
+// The standing idle carries three times the rig's frames in the same 1.6 s.
+export const PIG_IDLE_FPS = 7.5;
+const IDLE_12 = Array.from({ length: 12 }, (_, i) => `idle_${i + 1}`);
 
 export interface PigAnimationSpec {
 	frames: readonly string[];
@@ -48,10 +51,12 @@ export interface PigAnimationSpec {
 export const PIG_ANIMATION_SPECS: Readonly<
 	Record<PigAnimation, PigAnimationSpec>
 > = Object.freeze({
-	// The original idle art alternates standing and splayed-leg poses. That
-	// exposes/hides the far rear hoof on every tick. Hold the two matching
-	// standing poses for 800 ms each, preserving the 1600 ms idle cycle.
-	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], playback: [1, 1, 3, 3], fps: PIG_REST_FPS, loop: true },
+	// The standing rest (2026-09-13): one twelve-frame ImageGen sheet per pig —
+	// breathe in, weight shift with a hoof lift, blink, breathe out, shift back
+	// with a tail flick — at 7.5 fps, a 1.6 s loop. Sliced onto the canvas by
+	// scripts/pig-tweens/slice_sheet.py; sheets and prompts in
+	// docs/reviews/pig-animations-2026-09-13/.
+	idle: { frames: IDLE_12, fps: PIG_IDLE_FPS, loop: true },
 	// The seated rest — the pose a pig takes inside a room. Rides the happy
 	// family: four legs planted, one stable silhouette, eyes open (1, 4) and a
 	// smiling squint (2, 3). At the rest tempo with a long open hold it reads

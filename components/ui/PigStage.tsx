@@ -56,6 +56,7 @@ import {
 } from "./rivePigContract";
 import type { PigId } from "@/utils/pigs";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { breathe, BREATH_SQUASH, BREATH_STRETCH } from "@/utils/motionRecipes";
 import { useRivePigRolloutEnabled } from "@/utils/rivePigRollout";
 
 // Auras that ROTATE — radial rays / rings / sunbursts read well spinning. Every
@@ -538,8 +539,39 @@ export function PigStage({
 	});
 	const auraSpins = !!auraSlot?.itemId && AURA_SPIN.has(auraSlot.itemId);
 
+	// Rosie's breath — the rest loops are still drawings (see `breathe`), so a
+	// pig at rest moves by this. Only at rest: a reaction or a mood carries its
+	// own motion, Rive breathes for itself, and a frozen pose (list avatars,
+	// item previews) is a still by contract. Native-driven; stops with the
+	// stage when the screen blurs.
+	const atRest = pigAnimation === "idle" || pigAnimation === "sit";
+	const breathing = atRest && visible && !pigFrozen && !riveOwnsEquipment;
+	const breathRaw = React.useRef(new Animated.Value(0)).current;
+	React.useEffect(() => {
+		if (!breathing) {
+			breathRaw.setValue(0);
+			return;
+		}
+		const breath = breathe(breathRaw, motionPolicy);
+		breath.start();
+		return () => breath.stop();
+	}, [breathing, breathRaw, motionPolicy]);
+	// A chest that rises and hooves that stay put: scaling is about the stage's
+	// centre, so the same value lifts her by half the stretch to hold the floor.
+	const breathScaleY = breathRaw.interpolate({ inputRange: [0, 1], outputRange: [1, BREATH_STRETCH] });
+	const breathScaleX = breathRaw.interpolate({ inputRange: [0, 1], outputRange: [1, BREATH_SQUASH] });
+	const breathLift = breathRaw.interpolate({
+		inputRange: [0, 1],
+		outputRange: [0, -(PIG_CANVAS * (BREATH_STRETCH - 1)) / 2],
+	});
+
 	return (
-		<View style={styles.stage}>
+		<Animated.View
+			style={[
+				styles.stage,
+				{ transform: [{ translateY: breathLift }, { scaleY: breathScaleY }, { scaleX: breathScaleX }] },
+			]}
+		>
 			{prestigeVisualStage > 0 && (
 				<View style={styles.prestigeAuraLayer} pointerEvents="none">
 					<Animated.Image
@@ -699,7 +731,7 @@ export function PigStage({
 					tint={tintFor(heldSlot.itemId)}
 				/>
 			)}
-		</View>
+		</Animated.View>
 	);
 }
 

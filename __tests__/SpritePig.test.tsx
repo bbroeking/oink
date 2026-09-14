@@ -5,6 +5,7 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import { SpritePig } from "../components/ui/SpritePig";
+import { PIG_FRAMES_EXTRA } from "../constants/pigFramesExtra";
 import { PIG_FRAMES } from "../constants/pigFrames.generated";
 import { PIG_IDS } from "../utils/pigs";
 
@@ -53,20 +54,21 @@ describe("SpritePig — flip-book frames", () => {
 
 	test("mounts every frame of the animation, exactly one visible", async () => {
 		const r = await renderAct(<SpritePig animation="idle" />);
-		expect(distinctSources(r).size).toBe(4); // all 4 idle frames pre-mounted
+		expect(distinctSources(r).size).toBe(12); // all 12 idle frames pre-mounted
 		expect(visibleSources(r).size).toBe(1); // exactly one frame shown
 		act(() => r.unmount());
 	});
 
-	test.each(PIG_IDS)("%s idle keeps a consistent rear hoof and reports the displayed anchor frame", async (pigId) => {
+	test.each(PIG_IDS)("%s idle plays all twelve sheet frames and reports the displayed anchor frame", async (pigId) => {
 		const onFrame = jest.fn();
 		const r = await renderAct(<SpritePig animation="idle" pigId={pigId} onFrame={onFrame} />);
-		expect(visibleSource(r)).toBe(PIG_FRAMES[pigId].idle_2);
-		expect(onFrame).toHaveBeenLastCalledWith(1);
-		for (const frame of [3, 1, 3, 1]) {
-			await act(async () => { jest.advanceTimersByTime(800); });
+		const frames = { ...PIG_FRAMES[pigId], ...PIG_FRAMES_EXTRA[pigId] };
+		expect(visibleSource(r)).toBe(frames.idle_1);
+		expect(onFrame).toHaveBeenLastCalledWith(0);
+		for (const frame of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0]) {
+			await act(async () => { jest.advanceTimersByTime(1000 / 7.5); });
 			expect(visibleSources(r).size).toBe(1);
-			expect(visibleSource(r)).toBe(PIG_FRAMES[pigId][`idle_${frame + 1}`]);
+			expect(visibleSource(r)).toBe(frames[`idle_${frame + 1}`]);
 			expect(onFrame).toHaveBeenLastCalledWith(frame);
 		}
 		act(() => r.unmount());

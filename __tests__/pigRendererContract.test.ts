@@ -1,6 +1,7 @@
 import {
 	PIG_ANIMATION_SPECS,
 	PIG_REST_FPS,
+	PIG_IDLE_FPS,
 	pigAnchorAnimation,
 	pigAnimationDurationMs,
 	resolveRestingAnimation,
@@ -22,16 +23,16 @@ describe("pig renderer contract", () => {
 		]);
 	});
 
-	test("every renderer receives the same four-frame animation keys", () => {
+	test("every renderer receives the same authored animation keys", () => {
 		for (const [animation, spec] of Object.entries(PIG_ANIMATION_SPECS)) {
-			expect(spec.frames).toHaveLength(4);
+			// The standing idle is the twelve-frame sheet; every other family is
+			// the four-frame rig.
+			const count = animation === "idle" ? 12 : 4;
+			expect(spec.frames).toHaveLength(count);
 			const authoredName = pigAnchorAnimation(animation as keyof typeof PIG_ANIMATION_SPECS);
-			expect(spec.frames).toEqual([
-				`${authoredName}_1`,
-				`${authoredName}_2`,
-				`${authoredName}_3`,
-				`${authoredName}_4`,
-			]);
+			expect(spec.frames).toEqual(
+				Array.from({ length: count }, (_, i) => `${authoredName}_${i + 1}`)
+			);
 		}
 	});
 
@@ -46,7 +47,9 @@ describe("pig renderer contract", () => {
 		expect(pigAnchorAnimation("bounce")).toBe("jump");
 		expect(pigAnchorAnimation("wave")).toBe("wave");
 		expect(PIG_ANIMATION_SPECS.sit.fps).toBe(PIG_REST_FPS);
-		expect(PIG_ANIMATION_SPECS.idle.fps).toBe(PIG_REST_FPS);
+		// The standing idle keeps the rig's 1.6 s cycle at three times the frames.
+		expect(PIG_ANIMATION_SPECS.idle.fps).toBe(PIG_IDLE_FPS);
+		expect(pigAnimationDurationMs("idle")).toBe(1600);
 		expect(PIG_ANIMATION_SPECS.sit.loop).toBe(true);
 		// At least two distinct drawings in the loop, and the eyes-open pose
 		// (frame 0) is where Reduce Motion rests.

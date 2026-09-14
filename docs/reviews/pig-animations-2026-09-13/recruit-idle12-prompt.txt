@@ -1,0 +1,17 @@
+Generate ONE image with the image generation tool and save it in this directory as idle12_sheet.png. Use the widest landscape size available.
+
+The attached images: (1) THE CHARACTER — a pig from the game "Tickle the Pig", one existing game sprite frame that defines her/his exact coat colours, markings, face, proportions, rendering style (soft watercolor fill, warm dark-brown ink outline, sticker-like, no shading) and camera (straight-on front view, standing on four planted hooves, facing the viewer); (2) THE MOTION REFERENCE — a finished 12-frame idle animation sheet of a DIFFERENT pig (Rosie, pink). Reproduce reference (2)'s poses frame-for-frame, but drawn as the pig in reference (1). Do NOT copy Rosie's pink coat or her face — every frame must be the character in (1).
+
+Create a 12-FRAME IDLE ANIMATION SHEET: a grid of 4 columns x 3 rows, frames in reading order (left to right, top to bottom), every cell the same size, wide clear gutters between cells, on a solid flat MAGENTA (#FF00FF) background. No magenta anywhere on the pig.
+
+The SAME pig in all 12 frames: identical size, proportions, coat, markings, line weight and camera as reference (1). Four hooves on the same invisible baseline in every frame. ONE SMOOTH LOOP; consecutive frames differ only slightly (7.5 frames per second).
+
+The motion, exactly as in reference (2):
+- frames 1-3: breathe in — body rises a little, ears lift a touch;
+- frames 3-5: weight shifts to the left side — the RIGHT front hoof lifts slightly on frame 4 and sets back down on frame 5;
+- frames 5-6: blink (eyes closed on 5, half open on 6);
+- frames 7-9: breathe out — body settles, ears relax, head tilts slightly the other way;
+- frames 9-11: weight shifts back — the LEFT front hoof lifts slightly on frame 10 and sets down on frame 11; small tail flick on 10-11;
+- frame 12: back to the frame-1 pose.
+
+RULES: rendering matches reference (1) exactly — NO 3D shading, NO gradients, NO glossy highlights, NO drop shadow, NO ground shadow. The tail must NEVER appear on top of the head. No text, no labels, no frame numbers, no borders, no gridlines.

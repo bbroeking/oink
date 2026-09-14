@@ -1,0 +1,18 @@
+Generate ONE image with the image generation tool and save it in this directory as idle12_sheet.png. Use the widest landscape size available.
+
+The attached images are your ONLY character reference: (1) "Rosie" the pink pig — big round head, round body, blush cheeks, dark brown hooves, small curled tail — the canonical character; (2) an existing game sprite frame that defines BOTH the rendering style to match (soft watercolor fill, warm dark-brown ink outline, sticker-like, no shading) AND the camera: straight-on front view, standing on four planted hooves, face toward the viewer; (3) a four-view anatomy turnaround of her quadruped body.
+
+Create a 12-FRAME IDLE ANIMATION SHEET of Rosie: a grid of 4 columns x 3 rows, frames in reading order (left to right, top to bottom), every cell the same size, wide clear gutters between cells, on a solid flat MAGENTA (#FF00FF) background. No magenta anywhere on the pig.
+
+The SAME pig in all 12 frames: identical size, proportions, colors, line weight, and camera angle as reference (2). She stands facing the camera on the same invisible baseline in every frame. The 12 frames are ONE SMOOTH LOOP (frame 12 leads back into frame 1), and consecutive frames differ only slightly — this plays at 7.5 frames per second.
+
+The motion, a cozy standing idle with a weight shift:
+- frames 1-3: she breathes in — body rises a little, ears lift a touch;
+- frames 3-5: she shifts her weight to her left side — her RIGHT front hoof lifts slightly off the ground on frame 4 and sets back down on frame 5, a hair to the side;
+- frames 5-6: blink (eyes closed on frame 5, half open on frame 6);
+- frames 7-9: she breathes out — body settles, ears relax, head tilts slightly the other way;
+- frames 9-11: weight shifts back to her right — her LEFT front hoof lifts slightly on frame 10 and sets down on frame 11; tail gives a small flick on frames 10-11;
+- frame 12: back to the frame-1 pose.
+Only the body, head, ears, eyes, tail, and the one lifted hoof change between frames; everything else stays put.
+
+RULES: rendering matches reference (2) exactly — soft watercolor fill, warm ink outline, NO 3D shading, NO gradients, NO glossy highlights, NO drop shadow, NO ground shadow. The tail must NEVER appear on top of her head. No text, no labels, no frame numbers, no borders, no gridlines.

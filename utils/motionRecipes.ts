@@ -134,6 +134,46 @@ export function popIn(
 	]);
 }
 
+// --- ROSIE'S BREATH ---------------------------------------------------------
+// The rest loops are, visually, still drawings: the standing idle holds one
+// pose (`idle_2`/`idle_4` are the same drawing, see PIG_ANIMATION_SPECS) and
+// the seated rest blinks once every four seconds. So a pig at rest is alive by
+// this instead — a slow out→in→out breath on the whole stage, so a worn hat
+// rises with her. One breath is 3.2 s: nothing on MOTION_DURATION is within an
+// order of magnitude of a breath, so the half-cycle keeps its own name. The
+// depth is a 3% stretch with a 1.5% counter-squash — enough to see across the
+// room, not enough to read as a bounce. (2026-09-13)
+export const BREATH_HALF_MS = 1600;
+export const BREATH_STRETCH = 1.03;
+export const BREATH_SQUASH = 0.985;
+
+/**
+ * Loop `value` 0 → 1 → 0 forever at the breathing tempo. Under Reduce Motion
+ * the value rests at 0 (no stretch) and the loop never starts.
+ */
+export function breathe(
+	value: Animated.Value,
+	policy: MotionPolicy
+): Animated.CompositeAnimation {
+	if (!policy.allowDecorativeMotion) return restPose(value, 0);
+	return Animated.loop(
+		Animated.sequence([
+			Animated.timing(value, {
+				toValue: 1,
+				duration: BREATH_HALF_MS,
+				easing: Easing.inOut(Easing.sin),
+				useNativeDriver: true,
+			}),
+			Animated.timing(value, {
+				toValue: 0,
+				duration: BREATH_HALF_MS,
+				easing: Easing.inOut(Easing.sin),
+				useNativeDriver: true,
+			}),
+		])
+	);
+}
+
 /**
  * The Reduce Motion answer to any recipe: put the value where the motion would
  * have left it and report finished, without animating. Shaped as a

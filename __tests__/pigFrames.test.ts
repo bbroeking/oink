@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { PIG_FRAMES, PIG_LOUNGE_FRAMES } from "../constants/pigFrames.generated";
+import { PIG_FRAMES_EXTRA } from "../constants/pigFramesExtra";
 import { PIG_IDS } from "../utils/pigs";
 
 const ROOT = path.join(__dirname, "..", "assets", "images", "sprites");
@@ -30,8 +31,9 @@ describe("baked pig animation packs", () => {
 	const rosieFiles = pngFiles(path.join(ROOT, "rosie"));
 	const relative = rosieFiles.map((file) => path.relative(path.join(ROOT, "rosie"), file));
 
-	test("Rosie's production pack has the expected 54 frames", () => {
-		expect(relative).toHaveLength(54);
+	// 32 main frames (eight families × 4) + 8 more idle frames + 22 lounge frames.
+	test("Rosie's production pack has the expected 62 frames", () => {
+		expect(relative).toHaveLength(62);
 	});
 
 	test.each(PIG_IDS)("%s has every frame with Rosie's canvas dimensions", (pigId) => {
@@ -54,7 +56,10 @@ describe("baked pig animation packs", () => {
 			.filter((frame) => frame.startsWith(`lounge${path.sep}`))
 			.map((frame) => path.basename(frame, ".png"));
 
-		expect(Object.keys(PIG_FRAMES[pigId]).sort()).toEqual(mainKeys.sort());
+		// The generated map carries the four-frame rig; the twelve-frame idle's
+		// extra frames are registered beside it in pigFramesExtra.
+		const registered = { ...PIG_FRAMES[pigId], ...PIG_FRAMES_EXTRA[pigId] };
+		expect(Object.keys(registered).sort()).toEqual(mainKeys.sort());
 		expect(Object.keys(PIG_LOUNGE_FRAMES[pigId]).sort()).toEqual(loungeKeys.sort());
 	});
 });
