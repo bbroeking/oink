@@ -127,8 +127,14 @@ export function useFeedingCta(
   const registerLeave = useCallback((leave: (() => Promise<void>) | null) => {
     leaveRef.current = leave;
   }, []);
+  // Snout Deep never locks the door: every action is snapshotted and a
+  // submission is durable with its own retry lane (useRooting), so leaving
+  // mid-restore or mid-submit loses nothing. The classic patch keeps the
+  // gate — its submit is the only copy of the finds. (2026-09-14: a slow
+  // submit_rooting_deep left the X and "Back to the Barn" dead.)
+  const leaveIsFree = session?.mode === "snout_deep";
   const close = useCallback(() => {
-    if (busy || serverBusy) return;
+    if ((busy || serverBusy) && !leaveIsFree) return;
     if (recoveredOutcome) dismissedReceipts.add(recoveredOutcome);
     if (recoveredWindowIndex != null)
       dismissedWindows.add(`${recoveredUserId}:${recoveredWindowIndex}`);
@@ -138,16 +144,17 @@ export function useFeedingCta(
   }, [
     busy,
     serverBusy,
+    leaveIsFree,
     recoveredOutcome,
     recoveredWindowIndex,
     recoveredUserId,
     clear,
   ]);
   const requestClose = useCallback(() => {
-    if (busy || serverBusy) return;
+    if ((busy || serverBusy) && !leaveIsFree) return;
     if (leaveRef.current) leaveRef.current();
     else close();
-  }, [busy, serverBusy, close]);
+  }, [busy, serverBusy, leaveIsFree, close]);
   const retry = useCallback(async () => {
     const result = await retryPendingSubmission();
     setRecoveryReason(result.ok ? undefined : result.reason);
