@@ -9,15 +9,19 @@ import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-
 import { LanternleafReflectionsRive } from "../../../components/prototypes/homegrown-adventures/LanternleafReflectionsRive.web";
 import {
 	ACTIONS,
+	adventureBaseReturn,
 	adventureHomewardAt,
 	adventureJourneyPhase,
 	adventureOpportunity,
+	adventureReturnLedger,
 	adventureStory,
+	adventureToolReturnBonus,
 	BAG_ITEMS,
 	BAG_SLOT_ORDER,
 	bagItem,
 	bagPackingCost,
 	bagReturnReward,
+	canChooseKnownAdventureRoute,
 	cropHarvestPattern,
 	CROP_RULES,
 	createInitialState,
@@ -28,11 +32,11 @@ import {
 	homegrownReducer,
 	nearDiscoveryGuide,
 	playerPresentation,
+	primaryAdventureReturnAmount,
 	PROTOTYPE_POSITIONS,
 	serializeState,
 	SECOND_ADVENTURE_OPPORTUNITY,
 	STAGES,
-	toolReturnBonus,
 	WORLD_TARGETS,
 } from "./game.mjs";
 import {
@@ -94,7 +98,21 @@ const STAGE_COPY = {
 function stageCopy(state) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const crop = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	if (
+		state.stage === STAGES.DEVELOPED &&
+		state.cycleComplete &&
+		revisitingKnownRoute
+	) {
+		return {
+			eyebrow: "Today’s outing",
+			title: lanternleaf
+				? "Rosie followed Lanternleaf Path again"
+				: "Rosie revisited the hedge glow",
+			body: "The trail was already known. This outing deepened Rosie’s knowledge and brought useful supplies back to Farm stock.",
+		};
+	}
 	if (
 		state.stage === STAGES.DEVELOPED &&
 		state.cycleComplete &&
@@ -137,6 +155,13 @@ function stageCopy(state) {
 		if (copy) return { eyebrow: "Near-Discovery · never failure", ...copy };
 	}
 	if (state.stage === STAGES.STARTING && state.hasTickled && !state.purpose) {
+		if (canChooseKnownAdventureRoute(state) && !state.selectedAdventureOpportunityId) {
+			return {
+				eyebrow: "Rosie’s map",
+				title: "Two familiar trails are waiting",
+				body: "Choose where Rosie explores today. Both routes are safe, and preparation changes what she notices and carries Home.",
+			};
+		}
 		return {
 			eyebrow: "A named Request",
 			title: opportunity.name,
@@ -198,6 +223,15 @@ function stageCopy(state) {
 		};
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && state.glowrootPlanted) {
+		if (revisitingKnownRoute) {
+			return {
+				eyebrow: "A familiar route",
+				title: lanternleaf
+					? "Rosie followed Lanternleaf Path again"
+					: "Rosie revisited the hedge glow",
+				body: "The route was already mapped. This outing deepened Rosie’s knowledge and brought useful supplies back to Farm stock.",
+			};
+		}
 		return {
 			eyebrow: "A new route",
 			title: "Rosie mapped the Lanternleaf Path",
@@ -254,6 +288,7 @@ function useVariant() {
 		const onKey = (event) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			if (document.activeElement?.closest?.(".bag-guided-tabs")) return;
 			const keys = Object.keys(VARIANTS);
 			const current = keys.indexOf(variant);
 			const delta = event.key === "ArrowRight" ? 1 : -1;
@@ -324,11 +359,14 @@ const BAG_SLOT_LABELS = {
 
 
 function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false }) {
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const promise = twoCrops
 		? "Both harvests help Rosie explore"
 		: "Clover becomes a Provision";
 	const detail = twoCrops
-		? "Clover: stay longer · Moonberries: reveal reflections"
+		? lanternleaf
+			? "Clover: stay until nightfall · Moonberries: reveal reflected leaves"
+			: "Clover: stay until dusk · Moonberries: notice hidden reflections"
 		: opportunity.detail;
 	return (
 		<div
@@ -336,9 +374,22 @@ function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false })
 			role="note"
 			aria-label={`For ${opportunity.name}: ${promise}. ${detail}.`}
 		>
-			<span><small>{twoCrops ? "Glowroot opened this route" : "Grow for Rosie"}</small><strong>{promise}</strong></span>
+			<span><small>{twoCrops ? "Known route" : "Grow for Rosie"}</small><strong>{promise}</strong></span>
 			<em>{detail}</em>
 		</div>
+	);
+}
+
+const CROP_CHOICE_ART = {
+	clover: "./assets/homegrown-adventures/harvest-basket.webp",
+	moonberries: "./assets/homegrown-adventures/harvest-basket-moonberries.png",
+};
+
+function CropChoiceArt({ crop }) {
+	return (
+		<span className={`crop-choice-art crop-choice-art-${crop}`} aria-hidden="true">
+			<img src={CROP_CHOICE_ART[crop]} alt="" />
+		</span>
 	);
 }
 
@@ -346,26 +397,57 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const compost = farmStock.compost ?? 0;
+	const cloverLunches = farmStock[CROP_RULES.clover.outputId] ?? 0;
+	const moonberries = farmStock[CROP_RULES.moonberries.outputId] ?? 0;
 	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
 	const moonberriesAvailable = state.nextPlanting === "moonberries";
 
 	if (rememberedMorning) {
+		const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+		const choices = [
+			{
+				id: "clover",
+				crop: "Clover",
+				output: "Clover Lunch",
+				duration: "4 hours",
+				yield: "3 guaranteed",
+				use: lanternleaf ? "Stay until nightfall" : "Stay until dusk",
+				stock: cloverLunches,
+				action: cloverSeeds > 0 ? "Grow Clover" : "Need a Seed",
+				disabled: cloverSeeds < 1,
+			},
+			{
+				id: "moonberries",
+				crop: "Moonberries",
+				output: "Moonberries",
+				duration: "8 hours",
+				yield: "4 guaranteed",
+				use: lanternleaf ? "Reveal reflected leaves" : "Notice hidden reflections",
+				stock: moonberries,
+				action: moonberriesAvailable ? "Tend Moonberries" : "Still taking root",
+				disabled: !moonberriesAvailable,
+			},
+		];
 		return (
-			<section className="seed-choice-panel crop-choice-study" aria-label="Choose one useful crop for Rosie's next Adventure">
-				<div className="crop-choice-question"><strong>What should Rosie grow for the lights?</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
-				<div className="crop-choice-options">
-					<button className="crop-path crop-path-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
-						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-						<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · stay until nightfall</b></span>
-						<em>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</em>
-					</button>
-					<button className="crop-path crop-path-moonberry" type="button" onClick={() => onChoose("moonberries")} disabled={!moonberriesAvailable}>
-						<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
-						<span><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · reveal reflected leaves</b></span>
-						<em>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</em>
-					</button>
+			<section className="seed-choice-panel crop-choice-study crop-choice-physical" aria-label="Choose one useful crop for Rosie's next Adventure">
+				<div className="crop-choice-question"><strong>{lanternleaf ? "What should Rosie grow for the lights?" : "What should Rosie grow for the hedge glow?"}</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
+				<div className="crop-choice-options crop-choice-tray" aria-label="Farm crop tray">
+					{choices.map((choice) => (
+						<button
+							key={choice.id}
+							className={`crop-choice-card crop-choice-card-${choice.id}`}
+							type="button"
+							onClick={() => onChoose(choice.id)}
+							disabled={choice.disabled}
+							aria-label={`${choice.output}, ${choice.duration}, ${choice.yield}, ${choice.use}, ${choice.stock} at Home. ${choice.action}.`}
+						>
+							<CropChoiceArt crop={choice.id} />
+							<span className="crop-choice-identity"><small>{choice.crop} · {choice.duration}</small><strong>{choice.output}</strong></span>
+							<span className="crop-choice-facts"><b>{choice.yield}</b><span>{choice.use}</span></span>
+							<em className="crop-choice-action"><span>{choice.action}</span><b>{choice.stock} at Home</b></em>
+						</button>
+					))}
 				</div>
-				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" twoCrops />
 			</section>
 		);
 	}
@@ -403,14 +485,44 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	);
 }
 
-function PurposeHandoff({ opportunity }) {
+function PurposeHandoff({ opportunity, choosingRoute = false }) {
 	return (
 		<div className="purpose-handoff" role="status" aria-live="polite">
-			<small>Rosie's curiosity</small>
-			<strong>{opportunity.name}</strong>
-			<span>{opportunity.detail}</span>
+			<small>{choosingRoute ? "Rosie’s map" : "Rosie's curiosity"}</small>
+			<strong>{choosingRoute ? "Two familiar trails are waiting" : opportunity.name}</strong>
+			<span>{choosingRoute ? "Choose where she explores today" : opportunity.detail}</span>
 		</div>
 	);
+}
+
+function KnownRouteMap({ onChoose, farmStock }) {
+	const compost = farmStock?.compost ?? 0;
+	const willowFiber = farmStock?.["willow-fiber"] ?? 0;
+	return (
+		<section className="known-route-map has-route-use" aria-label="Choose one of Rosie's known Adventure routes">
+			<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
+			<div className="known-route-map-list">
+				<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Brings Compost Home. ${compost} held. Compost boosts crops.`}>
+					<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><span className="route-use-sentence"><b>Compost · {compost} held</b><em>Boosts crops</em></span></span><em>Choose</em>
+				</button>
+				<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Gathers Willow Fiber. ${willowFiber} held. Willow Fiber prepares the Cloth Wrap.`}>
+					<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><span className="route-use-sentence"><b>Willow Fiber · {willowFiber} held</b><em>Prepares Cloth Wrap</em></span></span><em>Choose</em>
+				</button>
+			</div>
+			<footer>Both routes are safe. Preparation changes what Rosie notices and carries Home.</footer>
+		</section>
+	);
+}
+
+function PlantingCropProp({ isMoonberries }) {
+	if (isMoonberries) {
+		return <span className="planting-crop-prop planting-crop-prop-moonberries" aria-hidden="true"><img src="./assets/homegrown-adventures/harvest-basket-moonberries.png" alt="" /></span>;
+	}
+	return <span className="planting-crop-prop planting-crop-prop-clover" aria-hidden="true"><span><img src="./assets/homegrown-adventures/clover-seed-mark.png" alt="" /></span><i /><i /></span>;
+}
+
+function PlantingCompostProp() {
+	return <span className="planting-compost-prop" aria-hidden="true"><i /><i /><i /></span>;
 }
 
 function PlantingPanel({ state, onToggleCompost, onPlant }) {
@@ -422,45 +534,45 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 	const promisedYield = rule.baseYield + (boosted ? rule.compostYieldBonus : 0);
 	const normalHours = rule.baseDurationMs / (60 * 60 * 1000);
 	const boostedHours = rule.compostDurationMs / (60 * 60 * 1000);
+	const verb = isMoonberries ? "Tend" : "Plant";
+	const cropFact = isMoonberries ? "Rooted in Bed 2 · No Seed spent" : `Clover Seed · ${seeds} → ${Math.max(0, seeds - 1)}`;
+	const compostFact = boosted ? `${compost} → ${compost - 1}` : `${compost} at Home`;
+	const readyHours = boosted ? boostedHours : normalHours;
+	const confirmLabel = boosted ? `${verb} with Compost` : `${verb} ${rule.name}`;
+	const outcome = `${promisedYield} ${rule.outputName} · ready in ${readyHours} hours`;
 	return (
-		<section className="planting-panel" aria-label={`${isMoonberries ? "Tend Moonberries" : "Plant Clover"} and choose whether to add Compost`}>
-			<div className="planting-costs">
-				<div className="planting-cost is-required">
-					<span className={`seed-art ${isMoonberries ? "seed-art-moonberry" : "seed-art-clover"}`} aria-hidden="true">{isMoonberries ? "●" : "☘"}</span>
-					<span><small>{isMoonberries ? "Rooted in Bed 2" : "Required Seed"}</small><strong>{rule.name}</strong><b>{isMoonberries ? "No Seed spent" : `${seeds} → ${Math.max(0, seeds - 1)}`}</b></span>
-				</div>
-				<button
-					type="button"
-					className={`planting-cost compost-toggle ${boosted ? "is-selected" : ""}`}
-					onClick={onToggleCompost}
-					disabled={compost < 1 && !boosted}
-					aria-pressed={boosted}
-				>
-					<span className="seed-art seed-art-compost" aria-hidden="true">♣</span>
-					<span><small>Optional boost</small><strong>{boosted ? "Compost added" : "Add Compost"}</strong><b>{boosted ? `${compost} → ${compost - 1}` : `${compost} owned`}</b></span>
-					<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
-				</button>
+		<section className={`planting-panel planting-bedside ${isMoonberries ? "is-moonberries" : "is-clover"}`} aria-label={`${verb} ${rule.name} and choose whether to add Compost`}>
+			<div className="planting-bed-focus">
+				<PlantingCropProp isMoonberries={isMoonberries} />
+				<span className="planting-bed-label"><strong>{rule.name}</strong><small>{cropFact}</small></span>
 			</div>
-			<div className="planting-effect" role="status">
-				<strong>{promisedYield} {rule.outputName} · ready in {boosted ? boostedHours : normalHours} hours</strong>
-				<small>{boosted ? `Compost saves ${normalHours - boostedHours} hours and adds 1.` : `Add Compost: 1 more, ${normalHours - boostedHours} hours sooner.`}</small>
-			</div>
-			<button type="button" className="plant-confirm" onClick={onPlant} disabled={!isMoonberries && seeds < 1}>
-				{boosted ? `${isMoonberries ? "Tend" : "Plant"} with Compost` : `${isMoonberries ? "Tend" : "Plant"} ${rule.name}`}
+			<button type="button" className={`planting-bed-compost ${boosted ? "is-selected" : ""}`} onClick={onToggleCompost} disabled={compost < 1 && !boosted} aria-pressed={boosted} aria-label={`Optional Compost. ${boosted ? "Remove Compost" : "Add Compost"}. ${compostFact}.`}>
+				<PlantingCompostProp />
+				<span><small>Optional boost</small><strong>{boosted ? "Compost added" : "Add Compost"}</strong><b>{compostFact}</b></span>
+				<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
 			</button>
+			<div className="planting-action-ribbon">
+				<div className="planting-ribbon-promise" role="status"><strong>{outcome}</strong>
+				<small>{boosted ? `Compost saves ${normalHours - boostedHours} hours and adds 1.` : `Add Compost: 1 more, ${normalHours - boostedHours} hours sooner.`}</small>
+				</div>
+				<button type="button" className="planting-world-confirm" onClick={onPlant} disabled={!isMoonberries && seeds < 1}>{confirmLabel}</button>
+			</div>
 		</section>
 	);
 }
 
-function GrowthStatusPanel({ state, onPreview }) {
+function GrowthStatusPanel({ state }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	const hours = (state.compostApplied ? rule.compostDurationMs : rule.baseDurationMs) / (60 * 60 * 1000);
+	const isMoonberries = state.selectedCrop === "moonberries";
 	return (
-		<section className={`growth-status-panel ${state.compostApplied ? "is-composted" : ""}`} aria-label={`${rule.name} growth status`}>
-			<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : state.selectedCrop === "moonberries" ? "●" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
-			<strong>Ready in {hours} hours</strong>
-			<small>Once ready, this crop waits safely until you harvest it.</small>
-			<button type="button" onClick={onPreview}>Preview it ready</button>
+		<section className={`growth-status-panel growth-bed-status ${state.compostApplied ? "is-composted" : ""} ${isMoonberries ? "is-moonberries" : "is-clover"}`} aria-label={`${rule.name} growth status`}>
+			<span className="growth-bed-outline" aria-hidden="true" />
+			<div className="growth-bed-sign">
+				<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : isMoonberries ? "●" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
+				<strong>{rule.name} · {hours} hours</strong>
+				<small>Waits safely when ready</small>
+			</div>
 		</section>
 	);
 }
@@ -474,6 +586,7 @@ const HARVEST_DIRECTION_LABELS = {
 
 function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	const isMoonberries = state.selectedCrop === "moonberries";
 	const rhythmName = state.selectedCrop === "moonberries" ? "Moonberry" : rule.name;
 	const harvestPattern = cropHarvestPattern(state);
 	const gestureStart = useRef(null);
@@ -498,18 +611,18 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	};
 
 	const pattern = (
-		<div className="harvest-pattern" aria-label={harvestPattern.map((direction) => HARVEST_DIRECTION_LABELS[direction].name).join(", then ")}>
+		<div className={`harvest-pattern beats-${harvestPattern.length}`} aria-label={harvestPattern.map((direction) => HARVEST_DIRECTION_LABELS[direction].name).join(", then ")}>
 			{harvestPattern.map((direction, index) => (
 				index === beatIndex
 					? <button
-						key={direction}
+						key={`${direction}-${index}`}
 						type="button"
 						className="is-next"
 						onClick={() => onBeat(direction, "button")}
 						aria-label={`Tap ${HARVEST_DIRECTION_LABELS[direction].name} instead`}
 					>{HARVEST_DIRECTION_LABELS[direction].arrow}</button>
 					: <span
-						key={direction}
+						key={`${direction}-${index}`}
 						className={index < beatIndex ? "is-complete" : ""}
 					>{HARVEST_DIRECTION_LABELS[direction].arrow}</span>
 			))}
@@ -520,7 +633,7 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 		(state.compostApplied ? rule.compostYieldBonus : 0);
 
 	return (
-		<div className="harvest-experiment">
+		<div className={`harvest-experiment harvest-bed-sequence ${isMoonberries ? "is-moonberries" : "is-clover"}`}>
 			<div
 				className="harvest-gesture-zone"
 				onPointerDown={startGesture}
@@ -531,15 +644,15 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 			>
 				<span aria-hidden="true">{nextLabel?.arrow}</span>
 			</div>
-			<section className="harvest-bed-ribbon is-unified" aria-label={`Follow the ${rhythmName} harvest rhythm`}>
-				<strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
+			<section className="harvest-rhythm-scene" aria-label={`Follow the ${rhythmName} harvest rhythm`}>
+				<div className="harvest-next-cue"><small>{rhythmName} rhythm</small><strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong></div>
 				{pattern}
-				<small>Swipe bed · or tap arrow</small>
+				<div className="harvest-reward-ribbon">
+					<span><i aria-hidden="true">✓</i><b>{guaranteedYield} {rule.outputName}</b><small>Guaranteed</small></span>
+					<em>+1<small>clean</small></em>
+					<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
+				</div>
 			</section>
-			<div className="harvest-bed-assist is-unified">
-				<span><i aria-hidden="true">✓</i> {guaranteedYield} {rule.outputName} guaranteed · clean rhythm +1</span>
-				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
-			</div>
 		</div>
 	);
 }
@@ -627,7 +740,7 @@ function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }
 	);
 }
 
-function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", clueGuide = null, clueSlot = null, onSelect, onConfirm }) {
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, handoffActive = false, initialFocus = "provision", clueGuide = null, clueSlot = null, onSelect, onConfirm }) {
 	const [focus, setFocus] = useState(initialFocus);
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
@@ -641,7 +754,6 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	const flightItemId = activeSelection?.item ?? activeSelection?.previousItem ?? null;
 	const flightIsRemoval = activeSelection?.item === null && activeSelection?.previousItem !== null;
 	const selectedCount = BAG_SLOT_ORDER.filter((slot) => bag[slot] !== null).length;
-	const focusIndex = BAG_SLOT_ORDER.indexOf(focus);
 	const question = {
 		provision: "What should help Rosie keep going?",
 		tool: "What should Rosie try?",
@@ -694,7 +806,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		? needsProvision ? `Need ${chosenProvision?.name ?? "Provision"}` : "Need Willow Fiber"
 		: selectedCount === 0
 			? "Set out with an empty Bag"
-			: `Pack ${selectedCount} ${selectedCount === 1 ? "choice" : "choices"}`;
+			: "Pack Rosie's Bag";
 	const moveFocus = (event, currentIndex) => {
 		const keyDirection = {
 			ArrowRight: 1,
@@ -714,25 +826,25 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	};
 
 	return (
-		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries">
+		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries" aria-busy={handoffActive}>
+			<span className="sr-only">The Bag begins empty. Every slot is optional.</span>
+			{handoffActive && <span className="sr-only" role="status">Rosie's packed Bag closes and lifts onto her shoulder.</span>}
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
-					className={`bag-flight-item bag-flight-${activeSelection.slot} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
+					className={`bag-flight-item bag-flight-${activeSelection.slot} bag-flight-item-${flightItemId} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
 					aria-hidden="true"
 				>
 					<BagItemArt itemId={flightItemId} />
 				</span>
 			)}
-			<div className="bag-guided-title">
-				<strong>Pack for {opportunity.name}</strong>
-				<small>{showingClue
-					? clueIsApplied
-						? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
-						: clueGuide.next
-					: "The Bag begins empty. Every slot is optional."}</small>
-			</div>
-			<div className="bag-stage bag-guided-stage" aria-hidden="true">
+			{showingClue && <div className="bag-guided-title">
+				<strong>{opportunity.clueName}</strong>
+				<small>{clueIsApplied
+					? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
+					: clueGuide.next}</small>
+			</div>}
+			<div key={`bag-stage-${activeSelection?.at ?? "idle"}`} className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
 				<div className="bag-packed-preview">
 					{BAG_SLOT_ORDER.map((slot) => {
@@ -740,6 +852,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 						return <span className={`bag-preview-${slot} ${selected ? "is-filled" : "is-empty"}`} key={slot}><BagItemArt itemId={selected?.id} /></span>;
 					})}
 				</div>
+				<span className="bag-handoff-lid" />
 			</div>
 			<div className="bag-guided-tabs" role="tablist" aria-label="Bag slots">
 				{BAG_SLOT_ORDER.map((slot, index) => {
@@ -767,18 +880,12 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 				role="tabpanel"
 				id={`bag-panel-${focus}`}
 				aria-labelledby={`bag-tab-${focus}`}
-			>
-				<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
-				<div className="bag-guided-options">{focusChoices}</div>
-				<button
-					type="button"
-					className="bag-guided-next"
-					disabled={focusIndex === BAG_SLOT_ORDER.length - 1}
-					onClick={() => setFocus(BAG_SLOT_ORDER[Math.min(BAG_SLOT_ORDER.length - 1, focusIndex + 1)])}
-				>{focusIndex === BAG_SLOT_ORDER.length - 1 ? "All choices visible" : `Next: ${BAG_SLOT_LABELS[BAG_SLOT_ORDER[focusIndex + 1]]}`}</button>
-			</div>
-		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack}>
-			{packLabel}
+				>
+					<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
+					<div className="bag-guided-options">{focusChoices}</div>
+				</div>
+		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack || handoffActive}>
+			{handoffActive ? "Closing Rosie's Bag…" : packLabel}
 		</button>
 		<p>{canPack
 			? selectedCount === 0
@@ -811,6 +918,29 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 				</span>
 			);
 		})}
+		</div>
+	);
+}
+
+function DepartureLoadoutReceipt({ bag, farmStock }) {
+	return (
+		<div className="departure-loadout-receipt" role="group" aria-label="Rosie's packed items">
+			{BAG_SLOT_ORDER.map((slot) => {
+				const selected = bagItem(slot, bag[slot]);
+				const packingCost = slot === "pack" ? bagPackingCost(selected?.id ?? null) : null;
+				const remainingPackingMaterial = packingCost === null
+					? null
+					: farmStock?.[packingCost.itemId] ?? 0;
+				const slotLabel = packingCost === null
+					? BAG_SLOT_LABELS[slot]
+					: `Carrier · Fiber ${remainingPackingMaterial}`;
+				return (
+					<span key={slot} className={`departure-loadout-item ${selected ? "" : "is-empty"}`} aria-label={`${slotLabel}: ${selected?.name ?? "Empty"}`}>
+						<span aria-hidden="true"><BagItemArt itemId={selected?.id} /></span>
+						<span><small>{slotLabel}</small><strong>{selected?.name ?? "Empty"}</strong></span>
+					</span>
+				);
+			})}
 		</div>
 	);
 }
@@ -879,35 +1009,36 @@ function adventurePackPresentation(state) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
 	const pack = state.bag?.pack ?? null;
-	const detail = story.journeyTags[2].detail;
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const clue = story.kind === "near-discovery";
 
 	if (pack === "wicker-basket") {
 		return {
 			objective: clue
-				? "Wicker Basket keeps the trail clue safe"
+				? "The trail clue is safe"
 				: lanternleaf
-					? "Wicker Basket gathers the trail supplies"
-					: "Wicker Basket makes the Glowroot find safe",
-			detail,
+					? "Trail supplies are coming Home"
+					: "Glowroot is coming Home",
+			detail: "Carried by the Wicker Basket",
 		};
 	}
 	if (pack === "cloth-wrap") {
 		return {
 			objective: clue
-				? "Cloth Wrap protects the trail clue"
+				? "The trail clue is safe"
 				: lanternleaf
-					? "Cloth Wrap protects the Lanternleaf"
-					: "Cloth Wrap protects the delicate find",
-			detail,
+					? "Lanternleaf is coming Home"
+					: "Glowroot is coming Home",
+			detail: "Protected by the Cloth Wrap",
 		};
 	}
 	return {
 		objective: lanternleaf
-			? "Rosie maps the route for another visit"
-			: "Rosie records where the find rests",
-		detail,
+			? "The route is saved for later"
+			: "The find stays here safely",
+		detail: lanternleaf
+			? "Rosie maps the way Home"
+			: "Rosie remembers the way",
 	};
 }
 
@@ -974,7 +1105,7 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
+function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null, revisitingKnownRoute = false) {
 	if (missingSlot) {
 		if (journeyPhase === "homeward") {
 			return {
@@ -1042,12 +1173,16 @@ function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
 		? {
 			eyebrow: "Beyond the open gate",
 			title: "Rosie follows reflected leaves",
-			body: "Her Bag keeps the silver route within reach while Home waits beyond the hedge.",
+			body: revisitingKnownRoute
+				? "The reflected leaves gather Willow Fiber. Her Bag keeps the silver route within reach while Home waits."
+				: "Her Bag keeps the silver route within reach while Home waits beyond the hedge.",
 		}
 		: {
 			eyebrow: "Beyond the hedge",
 			title: "Rosie follows warm moths",
-			body: "Her Bag keeps the golden trail within reach while Home waits beyond the hedge.",
+			body: revisitingKnownRoute
+				? "The warm soil gives Rosie Compost. Her Bag keeps the golden trail within reach while Home waits."
+				: "Her Bag keeps the golden trail within reach while Home waits beyond the hedge.",
 		};
 }
 
@@ -1066,6 +1201,7 @@ function JourneyPackedStamp({ bag }) {
 function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, entering = false }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const homecomingReady = state.adventureComplete;
 	const missingSlot = state.underprepared ? state.nearDiscoveryReason : null;
 	const trailLabels = lanternleaf
@@ -1074,7 +1210,7 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 	const trailLabel = missingSlot
 		? trailLabels[missingSlot]
 		: lanternleaf ? "Reflected leaves" : "Warm moth trail";
-	const copy = journeyWatchCopy(lanternleaf, journeyPhase, missingSlot);
+	const copy = journeyWatchCopy(lanternleaf, journeyPhase, missingSlot, revisitingKnownRoute);
 	const homeward = journeyPhase === "homeward";
 	const returnPromise = homecomingReady
 		? null
@@ -1132,16 +1268,18 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const guide = nearDiscovery ? nearDiscoveryGuide(state) : null;
+	const baseReturn = nearDiscovery ? null : adventureBaseReturn(state);
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
-	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
-	const glowrootAmount = 1 + (toolBonus?.itemId === "glowroot-seed" ? toolBonus.amount : 0);
-	const willowFiberAmount = 2 + (toolBonus?.itemId === "willow-fiber" ? toolBonus.amount : 0);
-	const practicalReward = nearDiscovery
-		? { name: "Compost", amount: 1 }
-		: packReward ?? { name: "Carrier supply", amount: 0 };
+	const toolBonus = nearDiscovery ? null : adventureToolReturnBonus(state, state.bag?.tool ?? null);
+	const primaryReturnAmount = primaryAdventureReturnAmount(baseReturn, toolBonus);
+	const returnLedger = nearDiscovery ? [] : adventureReturnLedger(state);
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} data-tool-bonus={toolBonus?.itemId ?? "none"} aria-label="Rosie's return rewards">
+			{revisitingKnownRoute && !nearDiscovery && (
+				<span className="return-pack-supply-seed return-familiar-seed" aria-hidden="true" />
+			)}
 			{!nearDiscovery && packReward?.itemId === "clover-seed" && (
 				<span className="return-pack-supply return-pack-supply-seed" aria-hidden="true" />
 			)}
@@ -1152,36 +1290,33 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
 			)}
 			<div className={`return-discovery-plaque ${nearDiscovery ? "is-near-discovery" : ""}`}>
-				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
-				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong>
+				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : revisitingKnownRoute ? "Route revisited" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
+				<strong>{nearDiscovery ? opportunity.clueName : revisitingKnownRoute ? opportunity.name : lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong>
 				<small>{nearDiscovery
 					? guide.story
+						: revisitingKnownRoute
+							? `${opportunity.name} is familiar · Clover Seed can begin the next Adventure`
 						: lanternleafDiscovery
-							? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
+							? `Glowroot revealed a repeatable path · ${primaryReturnAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
 							: "A new living Crop for Home"}</small>
 				{nearDiscovery && <div className="return-guide-next">
 					<span>Try next time</span>
 					<b>{guide.next}</b>
 				</div>}
 			</div>
-			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
+			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} style={{ "--return-stock-columns": nearDiscovery ? 2 : Math.max(1, returnLedger.length) }} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
 				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
-					{!nearDiscovery && <span>
-						<b>Glowroot Seed</b>
-						<strong>+{glowrootAmount}</strong>
-						{toolBonus?.itemId === "glowroot-seed" && (
-							<small className="return-stock-cause">Find +1 · Trowel +1</small>
-						)}
-					</span>}
-					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-					<span>
-						<b>Willow Fiber</b>
-						<strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong>
-						{!nearDiscovery && toolBonus?.itemId === "willow-fiber" && (
-							<small className="return-stock-cause">Find +2 · Lantern +1</small>
-						)}
-					</span>
+					{nearDiscovery ? <>
+						<span><b>Compost</b><strong>+1</strong></span>
+						<span><b>Willow Fiber</b><strong>+1</strong></span>
+					</> : returnLedger.map((row) => (
+						<span key={row.itemId}>
+							<b>{row.name}</b>
+							<strong>+{row.amount}</strong>
+							<small className="return-stock-cause">{row.causes.join(" · ")}</small>
+						</span>
+					))}
 				</div>
 			</div>
 			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{nearDiscovery ? guide.action : actionLabel}</button>
@@ -1205,6 +1340,28 @@ function SeedHandoff({ origin, phase }) {
 }
 
 function homeMemoryContent(state) {
+	const revisitingOpportunity = state.selectedAdventureOpportunityId
+		? adventureOpportunity(state)
+		: null;
+	if (revisitingOpportunity) {
+		const lanternleaf = revisitingOpportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+		return {
+			ariaLabel: `Today's familiar ${lanternleaf ? "Lanternleaf" : "hedge-glow"} outing and Farm stock`,
+			pocketTitle: lanternleaf
+				? "Lanternleaf Path · visited today"
+				: "Hedge glow · visited today",
+			pocketDetail: "Known trail · Supplies stocked",
+			plaqueEyebrow: "Today’s outing",
+			plaqueTitle: "A familiar trail brought Rosie Home",
+			plaqueLabel: `Rosie returned from the familiar ${lanternleaf ? "Lanternleaf Path" : "hedge glow"}`,
+			plaqueDetail: lanternleaf
+				? "Rosie followed the silver leaves Home again."
+				: "Rosie followed the warm moth lights Home again.",
+			positionName: lanternleaf
+				? "Lanternleaf Path revisited"
+				: "Hedge glow revisited",
+		};
+	}
 	if (state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName)) {
 		return {
 			ariaLabel: "Lanternleaf Path's lasting Home memory and Farm stock",
@@ -1227,7 +1384,11 @@ function homeMemoryContent(state) {
 
 function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = true, expanded, onToggle }) {
 	const stock = state.farmStock ?? {};
-	const stockItems = [
+	const provisionItems = [
+		["☘", "Clover Lunch", stock["clover-lunch"] ?? 0, "Explore until dusk"],
+		["●", "Moonberries", stock.moonberries ?? 0, "Reveal reflections"],
+	];
+	const supplyItems = [
 		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
 		["✦", "Glowroot Seed", stock["glowroot-seed"] ?? 0],
 		["♣", "Compost", stock.compost ?? 0],
@@ -1235,10 +1396,13 @@ function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = tr
 	];
 	return (
 		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label={memory.ariaLabel}>
-			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
-				<strong>Farm stock stays useful</strong>
-				<div aria-label="Current Farm stock">
-					{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+			<div className="home-memory-pocket-detail home-stock-pantry" id="farm-memory-detail" hidden={!expanded}>
+				<strong>Rosie’s pantry and Farm supplies</strong>
+				<div className="home-stock-provision-shelf" aria-label="Provisions ready for Rosie’s Bag">
+					{provisionItems.map(([icon, name, amount, use]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b><em>{use}</em></span>)}
+				</div>
+				<div className="home-stock-supply-shelf" aria-label="Seeds and Materials">
+					{supplyItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
 				</div>
 			</div>
 			<button
@@ -1261,8 +1425,8 @@ function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = tr
 function HomeMemoryDayPlaque({ memory }) {
 	return (
 		<div className="home-memory-day-plaque" aria-label={memory.plaqueLabel}>
-			<small>Home remembers</small>
-			<strong>The Barn remembers</strong>
+			<small>{memory.plaqueEyebrow ?? "Home remembers"}</small>
+			<strong>{memory.plaqueTitle ?? "The Barn remembers"}</strong>
 			<span>{memory.plaqueDetail}</span>
 		</div>
 	);
@@ -1322,8 +1486,12 @@ const SEED_HANDOFF_ARRIVE_MS = 460;
 const GLOWROOT_HOME_REVEAL_MS = 900;
 const PURPOSE_HANDOFF_MS = 1200;
 const REDUCED_PURPOSE_HANDOFF_MS = 900;
+const BAG_HANDOFF_ATTACH_MS = 640;
+const BAG_HANDOFF_MS = 920;
+const REDUCED_BAG_HANDOFF_MS = 260;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
+	ACTIONS.CHOOSE_ADVENTURE_ROUTE,
 	ACTIONS.SELECT_CROP,
 	ACTIONS.TOGGLE_COMPOST,
 	ACTIONS.PLANT_CLOVER,
@@ -1563,8 +1731,9 @@ function PositionRail({ position, onChange, positionName }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
 	const atEnd = position === PROTOTYPE_POSITIONS.length;
+	const fastForwardingGrowth = position === 4;
 	return (
-		<nav className="position-rail" aria-label="Prototype progression positions">
+		<nav className={`position-rail ${fastForwardingGrowth ? "is-growth-fast-forward" : ""}`} aria-label="Prototype progression positions">
 			<button
 				type="button"
 				disabled={atStart}
@@ -1580,9 +1749,9 @@ function PositionRail({ position, onChange, positionName }) {
 			<button
 				type="button"
 				onClick={() => onChange(atEnd ? 1 : position + 1)}
-				aria-label={atEnd ? "Loop to first position" : "Next position"}
+				aria-label={atEnd ? "Loop to first position" : fastForwardingGrowth ? "Fast-forward to ready crop" : "Next position"}
 			>
-				<strong>{atEnd ? "Loop" : "Next"}</strong><span aria-hidden="true">{atEnd ? "↻" : "→"}</span>
+				<strong>{atEnd ? "Loop" : fastForwardingGrowth ? "Fast-forward" : "Next"}</strong><span aria-hidden="true">{atEnd ? "↻" : fastForwardingGrowth ? "↠" : "→"}</span>
 			</button>
 		</nav>
 	);
@@ -1616,6 +1785,15 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {
 		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;
 	}
+	if (
+		state.stage === STAGES.STARTING &&
+		state.hasTickled &&
+		!state.selectedCrop &&
+		!state.selectedAdventureOpportunityId &&
+		canChooseKnownAdventureRoute(state)
+	) {
+		return "Rosie is choosing between two familiar routes. The warm paper-craft Barn, open hedge, Glowroot bed, rooted Moonberry bed, pond frog, and mapped gate remain visible behind her storybook map.";
+	}
 	const rememberedHome = state.glowrootPlanted
 		? state.nextPlanting === "moonberries"
 			? " The open hedge, earned bell, Glowroot bed, and rooted Moonberry bed remain from the last Adventure. Harvested Bed 1 rests empty."
@@ -1632,7 +1810,9 @@ function App() {
 	const requestedPosition = Number(initialSearch.get("position"));
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
+	const hasRequestedAdventureRoute = initialSearch.has("route");
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const repeatAdventure = initialSearch.get("repeat") === "1";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1642,12 +1822,14 @@ function App() {
 			if (
 				persistedReview.prototypePosition === requestedPosition &&
 				requestedJourneyPhase === "trail" &&
-				requestedAdventureRoute === "glowroot"
+				!hasRequestedAdventureRoute &&
+				!repeatAdventure
 			) return persistedReview;
 			return createPrototypeState(requestedPosition, {
 				reduceMotion: persistedReview.reduceMotion,
 				journeyPhase: requestedJourneyPhase,
 				adventureRoute: requestedAdventureRoute,
+				repeatAdventure,
 			});
 		}
 		if (loopMode) return createInitialState({ reduceMotion: prefersReduced });
@@ -1677,14 +1859,24 @@ function App() {
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
 	const [purposeHandoff, setPurposeHandoff] = useState(false);
 	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
+	const [bagHandoff, setBagHandoff] = useState(null);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const glowrootHomeRevealTimer = useRef(null);
 	const purposeHandoffTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
+	const bagHandoffAttachTimer = useRef(null);
+	const bagHandoffTimer = useRef(null);
+	const bagHandoffPlayed = useRef(false);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
-	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
+	const choosingRoute =
+		position === 2 &&
+		state.stage === STAGES.STARTING &&
+		!state.selectedCrop &&
+		canChooseKnownAdventureRoute(state) &&
+		!state.selectedAdventureOpportunityId;
+	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop && !choosingRoute;
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && Boolean(CROP_RULES[state.selectedCrop]);
 	const showingGrowth = position === 4 && state.stage === STAGES.CLOVER_GROWING;
 	const showingHarvestRhythm =
@@ -1700,7 +1892,7 @@ function App() {
 		!state.reduceMotion &&
 		visualNow < harvestCelebrationEndsAt;
 	const showingHarvestResult = position === 6 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested && !showingHarvestCelebration;
-	const showingFarmingPanel = choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestCelebration || showingHarvestResult;
+	const showingFarmingPanel = choosingRoute || choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestCelebration || showingHarvestResult;
 	const choosingBag = position === 7 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
@@ -1716,12 +1908,18 @@ function App() {
 		adventureComplete: state.adventureComplete,
 	});
 	const currentPositionName =
-		position === 11 && state.stage === STAGES.DEVELOPED && state.cycleComplete
+		choosingRoute
+			? "Choose today’s route"
+			: position === 11 && state.stage === STAGES.DEVELOPED && state.cycleComplete
 			? homeMemory.positionName
 			: defaultPositionName;
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
-	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
+	const returnKind = state.stage === STAGES.NEAR_DISCOVERY
+		? "near-discovery"
+		: state.selectedAdventureOpportunityId
+			? "revisit"
+			: "discovery";
 	const homeMemoryEarned = state.glowrootPlanted;
 	const showingGlowrootPlanting =
 		position === 11 &&
@@ -1743,8 +1941,9 @@ function App() {
 		state.stage === STAGES.DEVELOPED &&
 		state.cycleComplete;
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
-	const holdingPurposeHandoff = purposeHandoff && choosingSeed;
+	const holdingPurposeHandoff = purposeHandoff && (choosingRoute || choosingSeed);
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
+	const showDepartureLoadout = showPackedLoadout && position === 8;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
 			!showingAdventureVignette ||
@@ -1762,17 +1961,28 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	const renderedRiveViewModel = bagHandoff?.phase === "attaching"
+		? { ...sceneRiveViewModel, rosieAction: "pack", satchelEquipped: true }
+		: sceneRiveViewModel;
 	const adventureProvisionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "provision"
 		? "adventure-provision"
 		: null;
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
-	const sceneRiveTrigger = adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const sceneRiveTrigger = bagHandoff?.phase === "attaching" && !state.reduceMotion
+		? "pack"
+		: state.lastAction === "pack" && bagHandoffPlayed.current
+			? null
+			: adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
 	const sceneRiveTriggerNonce = adventureProvisionTrigger
 		? `${riveModel.triggerNonce}:adventure-provision:${opportunity.id}`
 		: adventureAttentionTrigger
 			? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
+		: bagHandoff?.phase === "attaching"
+			? `${riveModel.triggerNonce}:bag-handoff:${bagHandoff.startedAt}`
+		: state.lastAction === "pack" && bagHandoffPlayed.current
+			? `${riveModel.triggerNonce}:bag-handoff-settled`
 		: gateHomecomingReady
 		? `${riveModel.triggerNonce}:gate-homecoming`
 		: riveModel.triggerNonce;
@@ -1973,6 +2183,8 @@ function App() {
 		window.clearTimeout(newDayTimer.current);
 		window.clearTimeout(glowrootHomeRevealTimer.current);
 		window.clearTimeout(purposeHandoffTimer.current);
+		window.clearTimeout(bagHandoffAttachTimer.current);
+		window.clearTimeout(bagHandoffTimer.current);
 		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
 	}, []);
 
@@ -2038,17 +2250,38 @@ function App() {
 	}, [position, signalFeedback, startingNewDay, state.reduceMotion]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
-		if (seedHandoff || holdingGlowrootHomeReveal || holdingPurposeHandoff) return;
+		if (bagHandoff || seedHandoff || holdingGlowrootHomeReveal || holdingPurposeHandoff) return;
 		setHomeMemoryExpanded(false);
 		const now = performance.now();
 		if (now < transitionLockUntil.current) return;
 		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
-	}, [holdingGlowrootHomeReveal, holdingPurposeHandoff, seedHandoff]);
+	}, [bagHandoff, holdingGlowrootHomeReveal, holdingPurposeHandoff, seedHandoff]);
 
 	const selectBagItem = useCallback((slot, item) => {
 		dispatch({ type: ACTIONS.SET_BAG_SLOT, slot, item });
 	}, []);
+
+	const confirmBag = useCallback(() => {
+		if (bagHandoff) return;
+		const nextHandoff = { startedAt: Date.now(), phase: "closing" };
+		bagHandoffPlayed.current = false;
+		setBagHandoff(nextHandoff);
+		signalFeedback(ACTIONS.PACK_ADVENTURE);
+		window.clearTimeout(bagHandoffAttachTimer.current);
+		window.clearTimeout(bagHandoffTimer.current);
+		if (!state.reduceMotion) {
+			bagHandoffAttachTimer.current = window.setTimeout(
+				() => setBagHandoff({ ...nextHandoff, phase: "attaching" }),
+				BAG_HANDOFF_ATTACH_MS,
+			);
+		}
+		bagHandoffTimer.current = window.setTimeout(() => {
+			bagHandoffPlayed.current = true;
+			dispatch(visiblePresentation.action);
+			setBagHandoff(null);
+		}, state.reduceMotion ? REDUCED_BAG_HANDOFF_MS : BAG_HANDOFF_MS);
+	}, [bagHandoff, signalFeedback, state.reduceMotion, visiblePresentation.action]);
 
 	const acknowledgeReturn = useCallback(() => {
 		const needsSeedHandoff =
@@ -2077,8 +2310,10 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${showDepartureLoadout ? "departure-ready" : ""} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
+			data-bag-handoff-active={bagHandoff ? "true" : undefined}
+			data-bag-handoff-phase={bagHandoff?.phase}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
@@ -2100,13 +2335,13 @@ function App() {
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
-				model={sceneRiveViewModel}
+				model={renderedRiveViewModel}
 				playInitialTrigger={gateHomecomingReady}
 				showPondResident={homeMemoryEarned && sceneRiveViewModel.frogVisible}
 				showHomePose={showingHomeMemory}
 				trigger={sceneRiveTrigger}
 				triggerNonce={sceneRiveTriggerNonce}
-				bagReceiveSlot={riveModel.bagReceive?.slot ?? null}
+				bagReceiveSlot={bagHandoff ? null : riveModel.bagReceive?.slot ?? null}
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
@@ -2142,22 +2377,25 @@ function App() {
 			>
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
-			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{showDepartureLoadout
+				? <DepartureLoadoutReceipt bag={state.bag} farmStock={state.farmStock} />
+				: showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{choosingRoute && !holdingPurposeHandoff && <KnownRouteMap
+				farmStock={state.farmStock}
+				onChoose={(opportunityId) => act({ type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId })}
+			/>}
 			{choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
 				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
 			/>}
-			{holdingPurposeHandoff && <PurposeHandoff opportunity={opportunity} />}
+			{holdingPurposeHandoff && <PurposeHandoff opportunity={opportunity} choosingRoute={choosingRoute} />}
 			{plantingCrop && <PlantingPanel
 				state={state}
 				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}
 				onPlant={() => act(visiblePresentation.action)}
 			/>}
-			{showingGrowth && <GrowthStatusPanel
-				state={state}
-				onPreview={() => act(visiblePresentation.action)}
-			/>}
+			{showingGrowth && <GrowthStatusPanel state={state} />}
 			{showingHarvestRhythm && <HarvestRhythmPanel
 				state={state}
 				onBeat={(direction, input) => act({
@@ -2213,11 +2451,12 @@ function App() {
 				farmStock={state.farmStock}
 				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
+				handoffActive={Boolean(bagHandoff)}
 				initialFocus={state.nearDiscoveryReason ?? "provision"}
 				clueGuide={bagClueGuide}
 				clueSlot={bagClueSlot}
 				onSelect={selectBagItem}
-				onConfirm={() => act(visiblePresentation.action)}
+				onConfirm={confirmBag}
 			/>}
 			{!showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward && !showingHomeMemory && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}

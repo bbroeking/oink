@@ -16,11 +16,24 @@ now uses a bed-anchored rhythm cue and gives the authored Rive Harvest a clean,
 persisted 560 ms performance before Farm stock appears; Position 6 now turns
 the result into a world-anchored four-compartment Farm Stock shelf and full
 Clover basket while React preserves exact quantities and causes; Position 7
-now centers preparation on a physical open Bag with live visible item choices;
+now centers preparation on Rosie and a physical open Bag, with one horizontal
+pocket rail and only the active pocket's question and choices visible at a
+time; every chosen item now lands in its matching physical pocket, then the
+same open Bag closes from accurately cropped approved artwork, arcs toward
+Rosie, and becomes her fitted Rive satchel before Position 8 commits. The Pack
+one-shot fires once at attachment, rapid input cannot spend twice, and reduced
+motion reaches the identical loadout without travel;
 Position 8 now holds the native Rive satchel on Rosie through packing, reload,
-reduced motion, departure, and the causal Adventure handoff; Position 9 now
+reduced motion, departure, and the causal Adventure handoff; the settled
+departure now keeps only one narrow, exact packed-items receipt beneath the named opportunity
+so Rosie, her fitted Bag, the open hedge path, and the existing world action
+lead the settled departure instead of four surfaces repeating preparation;
+Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
-Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
+Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; a
+bounded inner Rive viewport now scales and places the same canonical character
+on the root crossing, behind the physical causes, while preserving her complete
+Provision hop, Tool response, settled pose, and reduced-motion silhouette; the
 first Provision cause now happens in that clearing instead of inside a large
 receipt: packed food moves into Rosie and remains consumed, one delighted
 authored Rosie response plays without firing the Tickle game action, dusk or
@@ -33,7 +46,11 @@ names every equipped or empty outcome; the final Pack cause now finishes the
 same card-free sequence: the existing find enters the Wicker Basket or Cloth
 Wrap, a restrained Pack-aware response completes the transfer, empty Pack
 remains a kind remembered clue, and the HUD names every complete or
-Near-Discovery result; the resolved handoff now stays in that same world-led
+Near-Discovery result; that Carrier HUD now uses its existing two-line
+hierarchy as one complete causal sentence—the named result on top and the
+exact Wicker Basket, Cloth Wrap, or Rosie memory action beneath—so all complete
+and clue outcomes fit at 390 px without ellipsis, a larger HUD, or another
+card; the resolved handoff now stays in that same world-led
 grammar: the centered **The journey continues…** sign is gone, five
 route-colored lights open the path, the existing HUD names where Rosie is
 going, and one hidden live status preserves the same fact before the unchanged
@@ -93,18 +110,40 @@ Position 3 now names the exact resulting Provision throughout the optional
 Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
 Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
 the HUD and one plain statement of the boost instead of anonymous Harvest
-numbers;
-Position 5 now keeps **Harvest for Rosie's journey** in the HUD, makes the
-flowered bed the unmistakable swipe surface, folds the accessible tap fallback
-into the one active rhythm arrow, and names the exact guaranteed Lunch count
-beside **Gather normally** instead of presenting three competing harvest
-actions;
+numbers. The crop selected from the physical Farm tray now remains a separable
+object on its highlighted bed: a Clover Seed packet on Bed 1 or the existing
+Moonberry basket on rooted Bed 2. Optional Compost stays one physical choice,
+and one bed-level ribbon owns the exact outcome and Plant / Tend action while
+Rosie and all three beds remain visible;
+Position 4 now removes the large growth card and in-world preview control. One
+small staked sign sits on the selected Bed 1 or rooted Bed 2, names the crop,
+predictable duration, Compost state, and safe no-spoil wait, while the staged
+authored Rive crop remains primary. Prototype fast-forward lives only in the
+external review rail and settles the crop actually planted, preserving
+Moonberry identity, Compost, and stock into its personal Harvest Rhythm;
+Position 5 now keeps **Harvest for Rosie's journey** in the HUD and lets the
+Farm itself carry the rhythm: Clover's Left → Right → Up medallions occupy the
+three beds, while Moonberries begin and end their Down → Left → Right → Up
+diamond on rooted Bed 2. Only the current beat glows and acts as the accessible
+tap fallback; completed beats turn green; and one compact row joins guaranteed
+yield, the +1 clean bonus, and **Gather normally**. React preserves exact beat
+order, stock, persistence, and the existing authored Harvest response;
 Position 7 now enters with an explicitly empty Bag, preserves the physical open
 satchel, and asks one preparation question at a time while keeping Provision,
-Tool, and Pack summaries visible. Every owned alternative and **Leave empty**
-choice is direct, the primary action names the number of choices, an empty Bag
-still promises a safe useful clue, and untouched version-one prescribed Bags
-migrate to empty without rewriting progressed journeys;
+Tool, and Pack summaries in one horizontal pocket rail. Every owned alternative
+and **Leave empty** choice is direct, the redundant step control is gone, the
+primary action says **Pack Rosie's Bag** or **Set out with an empty Bag**, an
+empty Bag still promises a safe useful clue, and untouched version-one
+prescribed Bags migrate to empty without rewriting progressed journeys. Its
+Near-Discovery Homecoming now computes a zero primary return safely when no
+Discovery object exists, preserving the established Compost, Willow Fiber,
+and Field Guide clue instead of blanking the rendered game. Each selected item
+now visibly leaves its real choice and lands in the matching physical pocket;
+the destination appears only on impact, the Bag catches once, and Rosie's
+authored Notice replaces the duplicate oversized receive satchel without
+changing reducer-owned stock, free choice, or departure state. Rapid changes,
+keyboard pocket navigation, removals, and reduced motion preserve the final
+truthful loadout;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
@@ -114,6 +153,34 @@ clips with one brief bed-level response, while normal planting and all
 React-owned resource rules remain unchanged; the first outing is now named **A
 Glow Beneath the Hedge** before farming begins, and its duration and clues stay
 visible through Bag preparation and departure.
+
+**Crop-to-bed handoff checkpoint (August 9, 2026):** Position 3 no longer
+collapses the selected crop and Compost into `☘`, `●`, and `♣` marks inside
+three floating panels. Clover remains a physical paper Seed packet on
+highlighted Bed 1, Moonberries remain the existing basket on highlighted
+rooted Bed 2, and Compost becomes one separable sack whose selected state still
+shows the exact spend. One bottom ribbon names the promised yield and duration
+beside the Plant / Tend action. Three rendered structures were compared against
+the approved `rosie-v3/03-plant-and-compost.png` composition: a two-card bedside
+kit, a literal concept split, and this bed-first ribbon. Bed-first won because
+it preserved Rosie and all three beds while the concept split divided one
+decision across five bordered surfaces. React state, Seed/root costs, the
+optional two-hour/+1 Compost rule, crop timers, yields, saves, Rive source, and
+authored planting motions are unchanged.
+
+**Physical crop-choice checkpoint (August 9, 2026):** The returning Farm
+decision now borrows the approved `rosie-v3/02-farm-stock-seed-choice.png`
+composition instead of asking the player to decode abstract crop marks and
+6–7px supporting copy. One cream question sign leads into a wooden crop tray;
+large separable Clover and Moonberry harvest baskets make identity physical,
+while every card keeps duration, guaranteed yield, route-specific Adventure
+use, current Home stock, and its one-tap action. The repeated route receipt is
+gone because those facts already live on each crop. Three rendered structures
+were compared: illustrated tiles, this physical tray, and full-width field
+labels. The tray won because the rows felt like settings and the plain tiles
+kept the redundant summary. Reducer state, crop timings, yields, stock,
+Compost, Bag rules, rewards, saves, Rive source, and authored inputs are
+unchanged.
 
 **One-field-folio checkpoint (August 8, 2026):** Position 9 no longer stacks a
 large story note over two detached paper tickets. The exact existing story,
@@ -241,6 +308,128 @@ completed-day plaque, compact Home pocket, and Position 11 label on
 **Lanternleaf Path**. First-day Glowroot and clue-only returns remain unchanged;
 no new save field, reward, crop, destination, Rive input, or gameplay rule was
 added.
+
+**Rosie's known-route map checkpoint (August 9, 2026):** Once Glowroot Seed and
+Lanternleaf Path are both mapped, the next morning no longer silently repeats
+yesterday's route. Rosie's Tickle now hands into one compact storybook map that
+offers the two earned destinations together, names their dusk or nightfall
+conditions, and keeps Rosie visible below the parchment. The player's route is
+stored as one validated reducer fact, survives reload and prototype position
+review, determines the route-aware crop promise and every later Adventure
+beat, then clears at the next new day. First and second mornings remain guided;
+a Lanternleaf Near-Discovery does not unlock the map. A return to an already
+known route grants the same deterministic practical supplies but is presented
+as **Route revisited**, never as another New Discovery. A three-treatment
+runnable study compared automatic repetition, the compact map, and route
+labels attached directly to the Farm; the map won because it preserved free
+choice and kept both routes comparable without covering the Barn's remembered
+details. No new destination, crop, equipment slot, currency, random reward,
+Rive input, or parallel activity was added.
+
+**Familiar Homecoming checkpoint (August 9, 2026):** A repeated known-route
+Adventure no longer falls back to **New route** or claims Lanternleaf Path just
+joined Rosie's map. Position 11 derives one familiar-return presentation from
+the already persisted route choice: its storybook plaque says **Today's outing
+· A familiar trail brought Rosie Home**, its compact pocket names the route as
+visited today and reports that supplies were stocked, and its review rail says
+either **Lanternleaf Path revisited** or **Hedge glow revisited**. First-time
+Glowroot and Lanternleaf memories retain their established permanence
+ceremonies. A rendered three-treatment study compared the contradictory
+baseline, this familiar Homecoming, and a split place-plus-supplies ledger; the
+familiar treatment won because the ledger turned the emotional close into an
+inventory report and took emphasis away from Rosie. A deterministic
+`repeat=1` Position 11 review path now covers either route, while explicit
+route URLs cannot inherit a stale saved review. No reward, stock quantity,
+route rule, save fact, Rive source, Rive input, or authored motion changed.
+
+**Complete-stock checkpoint (August 9, 2026):** Position 11's existing calm
+Home-memory pocket now tells the complete Farm-stock truth. It stays collapsed
+by default, then opens into one primary Provision shelf for **Clover Lunch**
+and **Moonberries**, including the Adventure capability each provides, above a
+quieter supply shelf for Clover Seed, Glowroot Seed, Compost, and Willow Fiber.
+A real rendered Moonberry repeat harvested six, consumed one in Rosie's Bag,
+and showed the five remaining berries after Homecoming. The same structure
+renders for first-time Glowroot, first-time Lanternleaf, and familiar-route
+Home screens without changing any ceremony. A three-treatment runnable study
+compared the old materials-only strip, this pantry-plus-supplies hierarchy,
+and a dense six-item tally; the pantry won because it preserves the reason to
+farm while keeping Rosie and the remembered world primary. No stock rule,
+reward quantity, save fact, Rive source, Rive input, destination, currency, or
+parallel inventory screen changed.
+
+**Next-Seed checkpoint (August 9, 2026):** A successful familiar-route return
+now feeds the next farm → Bag → Adventure cycle instead of accumulating a
+resolved Discovery item. Once Glowroot is planted and the player deliberately
+chooses a known route, its base return is one Clover Seed; Hand Trowel finds a
+second Clover Seed, while Lantern, Wicker Basket, Cloth Wrap, Near-Discovery,
+and first-time rewards keep their established jobs. Position 10 names **Clover
+Seed can begin the next Adventure**, separates **Route +1 · Trowel +1**, and
+places one physical Clover Seed pouch on the worktable. First-time Glowroot and
+Lanternleaf returns still grant Glowroot Seed and preserve the planting
+ceremony. A driven three-policy logic prototype showed that the old rule made
+four unusable Glowroot Seeds and exhausted Clover after two repeats; a Compost
+base return also exhausted Clover while overlapping Wicker Basket; the chosen
+Seed return kept the starting two Clover Seeds stable across three complete
+Lantern / Wicker repeats. No new item, crafting tree, currency, reward roll,
+save field, Rive source, Rive input, destination, or prescribed loadout was
+added.
+
+**Familiar-route-material checkpoint (August 9, 2026):** Rosie's known-route
+map now tells the player what each familiar place predictably brings Home, and
+the reducer makes that promise real. Every successful repeat still returns one
+Clover Seed; the warm soil beneath the hedge adds one Compost, while the
+reflected leaves beyond the open gate add two Willow Fiber. Tool and Carrier
+returns remain separate and freely chosen, and the Homecoming ledger aggregates
+matching rewards with exact causes—for example **Compost +2 · Warm roots +1 ·
+Wicker +1**. The chosen place's material is repeated in the settled journey
+watch before Rosie returns, keeping the map → Adventure → Homecoming cause
+continuous. A three-policy logic prototype compared the identical baseline, an
+additive route bonus, and one distinct existing material per route; the last
+won because it creates a reason to alternate without inflation or a new
+economy. First-time Discoveries, Near-Discoveries, Bag rules, Field Guide
+entries, crop rules, saves, Rive source, and Rive inputs are unchanged.
+
+**Map-stock checkpoint (August 9, 2026):** Each familiar place now carries one
+quiet live Farm fact beneath its established environmental promise. The warm
+hedge says how much Compost the Farm holds; the reflected open gate says how
+much Willow Fiber it holds. Both counts come from the same reducer-owned
+`farmStock` used by planting, Bag packing, and Homecoming, and the direct third-
+morning review matches the real two-day path at **2 Compost** and **4 Willow
+Fiber**. A rendered three-treatment study compared route-attached counts, a
+shared pantry strip, and destination-side material tickets. Attached counts
+won because they keep the place name and fantasy ahead of inventory while
+maintaining 54px route buttons; the pantry became a dashboard and the tickets
+made the map read like a supply order. No route is recommended, and no reward,
+cost, save field, item, Rive source, Rive input, or parallel inventory screen
+changed.
+
+**Material-use checkpoint (August 9, 2026):** Rosie's map now explains what
+each established route material is for at the moment the player chooses a
+place. The former environmental-promise line and separate stock badge have
+been replaced—not stacked—with one compact sentence: **Compost · _n_ held ·
+Boosts crops** or **Willow Fiber · _n_ held · Prepares Cloth Wrap**. Place name
+and time-of-day identity remain first, and the complete reward / quantity / use
+fact remains in each route's accessible name. A rendered three-treatment study
+compared this replacement sentence, a shared two-material key, and right-side
+use tickets. The sentence won because it removes a reading layer; the key
+became a reference panel and the tickets made the map read like a supply order.
+No route recommendation, material rule, Bag cost, reward, save field, Rive
+source, Rive input, destination, or parallel inventory screen changed.
+
+**Provision-stock checkpoint (August 9, 2026):** The returning crop decision
+now shows how many harvested Provisions the Farm already holds at the same
+moment the player chooses what to grow. Each existing crop action keeps its
+verb and adds one quiet second line—**Grow Clover · 4 at Home** or **Tend
+Moonberries · 0 at Home** in the representative third-morning review—while
+duration, guaranteed yield, and route-specific Adventure use remain attached
+to the crop above. The counts come directly from reducer-owned `farmStock`, and
+the direct review now preserves the first complete loop's four remaining
+Clover Lunches instead of resetting both crop outputs to zero. A rendered
+three-treatment study compared crop-corner stamps, a shared pantry shelf, and
+action-attached counts. Action-attached counts won because they preserve crop
+art and the decision hierarchy; the shelf became inventory UI and compressed
+both choices. No crop, yield, timer, reward, route recommendation, Bag rule,
+save field, Rive source, Rive input, or parallel inventory screen changed.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -1221,6 +1410,60 @@ alternative loadout still earns the named Discovery. React remains authoritative
 for stock, costs, choices, persistence, migration, and outcomes, while the
 existing Rive Bag response visualizes the selected item and honors reduced
 motion. No route, item, reward, timer, currency, or Rive contract changed.
+
+**Bag-to-shoulder checkpoint (August 9, 2026):** the approved Position 7 Bag
+composition and Position 8 departure composition were compared directly after
+public v0.137. The individual items reached their pockets, but **Pack Rosie's
+Bag** still cut from an open physical Bag to an already-equipped Rive satchel.
+Three rendered handoffs were tested on throwaway branch
+`codex/homegrown-v138-bag-handoff-prototypes` at `9cdc4e9`: a direct Shoulder
+Handoff, a longer Rosie-led pickup, and a storybook page fold. The direct
+handoff won because the same object visibly closes and travels toward Rosie;
+the pickup prolonged a two-Bag overlap, while the page fold hid the cause.
+Production uses the existing `open-adventure-bag.webp` twice with complementary
+clip paths so its real lid closes instead of drawing replacement artwork. At
+the shoulder threshold, React exposes the already-authored Rive Pack response
+and fitted satchel, suppresses the stale per-pocket receive prop, then commits
+the original `PACK_ADVENTURE` action once. Provision, Tool, Carrier, stock,
+costs, safe empty-Bag Near-Discovery, persistence, route, and reward rules are
+unchanged. Reduced motion skips the travel and reaches the same reducer state.
+
+**Departure-hierarchy checkpoint (August 9, 2026):** replaying public v0.138
+against the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`
+showed four surfaces repeating the same prepared fact: HUD detail, a second
+three-cell loadout ribbon, Rosie's fitted Bag, and the large path action. Three
+real Position 8 compositions were rendered on throwaway branch
+`codex/homegrown-v139-departure-hierarchy-prototypes` at `fb1452e`: One Gate
+Sign combined the loadout and action into a large sign over the hedge; Packed
+on Rosie placed three physical item tags beside the character; Quiet Receipt
+kept one slim truthful reminder under the HUD. Quiet Receipt won because the
+gate sign became another inventory panel and the tags resembled new choices on
+the crop beds, while the receipt preserved exact preparation without outranking
+Rosie or the path. Production hides duplicated HUD detail only at Position 8,
+shows the exact Provision, Tool, Carrier, empty states, and remaining Cloth Wrap
+Fiber once, and keeps the established **Follow the glow** world action. The
+authored Rive satchel, departure motion, reducer timing, Bag choices, costs,
+routes, Near-Discovery rules, rewards, persistence, and later packed reminders
+are unchanged. No study switcher or losing composition ships.
+
+**Grounded-Rosie checkpoint (August 9, 2026):** replaying public v0.139 into
+the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png`
+showed the live canonical Rosie suspended against the sky while Provision,
+Tool, Carrier, and find acted on the trail below. Three real placements were
+rendered on `codex/homegrown-v140-grounded-rosie-prototypes` at `228b911` and
+refined at `014dcf8`: Hero Float preserved the mismatch, Close Witness crowded
+the find, and Trail Companion placed a smaller Rosie behind the prepared items
+with her feet at the root crossing. Trail Companion won. Production wraps the
+existing Rive component in a bounded 550 px viewport, lets the runtime size its
+own inner canvas, scales that complete view to 78%, and uses one route-matched
+background patch below Rosie's feet to cover an unrelated offstage artboard
+group without clipping any pose. Both Glowroot and Lanternleaf clearings,
+Provision hop, Tool response, Carrier transfer, resolved beat, empty Bag, and
+reduced motion use the same placement. The Rive binary, canonical rig, authored
+timelines, Bag and route facts, cause order, rewards, persistence, and React
+authority are unchanged. No study switcher or alternate placement ships.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

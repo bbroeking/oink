@@ -65,7 +65,7 @@ function riveTrigger(state) {
 	if (state.lastAction === "tickle") return "tickle";
 	if (state.lastAction === "harvest") return "harvest";
 	if (state.lastAction === "pack") return "pack";
-	if (state.lastAction === "choose-bag-item") return "bag-receive";
+	if (state.lastAction === "choose-bag-item") return "adventure-attention";
 	if (state.lastAction === "adventure") return "departure";
 	if (["return", "near-discovery"].includes(state.lastAction)) return "return";
 	if (state.lastAction === "plant") {

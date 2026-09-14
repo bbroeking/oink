@@ -407,11 +407,1315 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 124. **v0.123 — Home Remembers Lanternleaf (shipped):** let the successful
     second Adventure replace the stale Glowroot ceremony with one accurate,
     persisted Lanternleaf Path memory.
+125. **v0.124 — Rosie Chooses the Trail (shipped):** after both routes are
+    mapped, let Rosie's Tickle open one compact map where the player freely
+    chooses either familiar Adventure before growing and packing for it.
+126. **v0.125 — A Familiar Trail Brings Rosie Home (shipped):** let a repeat
+    outing close as a familiar Homecoming instead of replaying **New route**,
+    while preserving both first-time Discovery memories and the exact returned
+    Farm stock.
+127. **v0.126 — The Pantry Remembers (shipped):** show harvested Clover Lunches
+    and Moonberries with their Adventure uses in the existing Home stock
+    pocket, above the quieter Seed and Material supply row.
+128. **v0.127 — Rosie Brings the Next Seed (shipped):** replace a familiar
+    route's dead Glowroot Seed return with Clover Seed that can begin the next
+    Provision crop, while preserving every first-time Discovery.
+129. **v0.128 — Familiar Places, Useful Supplies (shipped):** give the warm
+    hedge and reflected open-gate route distinct predictable existing
+    materials from map promise through journey and Homecoming.
+130. **v0.129 — The Map Knows the Farm (shipped):** attach each familiar
+    route's live Compost or Willow Fiber stock to its existing place clue, so
+    the player can choose with current Farm context without opening inventory.
+131. **v0.130 — Every Material Has a Job (shipped):** replace each route's
+    stacked promise and stock badge with one place-first sentence that names
+    the material, live quantity, and established use.
+132. **v0.131 — The Crop Choice Knows the Pantry (shipped):** keep each crop's
+    existing action verb and attach its live harvested Provision count, so the
+    player can build Clover Lunch and Moonberry stockpiles deliberately without
+    opening inventory.
+133. **v0.132 — Crops You Can See (shipped):** replace the returning crop
+    choice's abstract marks and repeated receipt with one physical wooden tray,
+    recognizable Clover and Moonberry harvests, and a larger crop-first reading
+    order grounded in the approved Farm concept.
+134. **v0.133 — The Crop Reaches Its Bed (shipped):** keep the chosen Clover
+    packet or Moonberry basket physically attached to its highlighted bed,
+    separate optional Compost as one object, and consolidate the exact planting
+    promise and action into one ribbon without covering the Farm.
+135. **v0.134 — The Crop Owns the Wait (shipped):** replace Position 4's large
+    status card with one compact sign attached to the selected bed, keep the
+    growing Rive crop and full Farm visible, and move review fast-forward into
+    the external rail without losing the selected crop.
+136. **v0.135 — The Rhythm Lives in the Beds (shipped):** place each crop's
+    personal harvest beats directly on the Farm, keep one active tap fallback,
+    and consolidate guaranteed yield, clean bonus, and normal gather into one
+    calm promise row.
+137. **v0.136 — Rosie's Bag Has One Question (shipped):** keep Rosie and the
+    open satchel primary, turn the three optional slots into one horizontal
+    pocket rail, and let only the active pocket ask for a choice before one
+    clear pack-or-empty departure action.
+138. **v0.137 — Each Item Finds Its Pocket (shipped):** send every chosen
+    Provision, Tool, and Carrier from its real choice into the matching pocket
+    of the one open Bag, with one restrained Rive Rosie response and no second
+    receive satchel covering her.
+139. **v0.138 — One Bag, Onto Rosie (shipped):** close the one physical packed
+    Bag, carry it toward Rosie's shoulder, and let the existing authored Rive
+    Pack response complete the attachment before the exact Position 8 loadout
+    appears.
+140. **v0.139 — Rosie and the Path Lead (shipped):** remove Position 8's
+    repeated preparation hierarchy, keep one narrow exact loadout receipt, and
+    let Rosie, her fitted Bag, the open hedge, and the existing route action
+    carry departure.
+141. **v0.140 — Rosie Finds Her Footing (shipped):** place the same canonical
+    Rive Rosie on the Position 9 root crossing behind the prepared-item causes,
+    preserving every authored response and both Adventure routes.
+142. **v0.141 — The Carrier Explains the Find (shipped):** use the quiet HUD's
+    existing two lines to name what comes Home first and the exact Carrier
+    cause second, preserving the physical handoff and every route outcome.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.141 — The Carrier Explains the Find — 2026-08-09
+
+- Played public v0.140 through the Carrier beat after grounding Rosie. The
+  physical Glowroot entered the Wicker Basket correctly, but the quiet HUD
+  rendered the 265 px title **Wicker Basket makes the Glowroot find safe**
+  inside a 224 px line. The visible consequence stopped at **Wicker Basket
+  makes the Glowroot…**, precisely where preparation needed to become
+  understandable.
+- Built and rendered three treatments against the same approved Position 9
+  concept and live clearing: Current Sentence, Short Cause, and Outcome Then
+  Exact Cause. The short cause fit but reduced **Wicker Basket** and **Cloth
+  Wrap** to generic nouns while retaining a stale readiness detail. Outcome
+  Then Exact Cause won because **Glowroot is coming Home** / **Carried by the
+  Wicker Basket** states the result before the exact reason, matches the
+  physical handoff, and uses only the HUD hierarchy already present. The
+  runnable study remains on
+  `codex/homegrown-v141-carrier-copy-prototypes` at `9e874b8`; its
+  `carrierCopy` parameter and losing treatments were not merged.
+- Production commit `56f1d7b` applies the same grammar to Glowroot,
+  Lanternleaf, trail-supply, clue, and no-Carrier outcomes. The HUD size,
+  canonical Rive rig, route art, physical cause animation, timers, reducer,
+  Bag choices, reward ledger, persistence, and accessibility behavior are
+  unchanged.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` passes 101/101, including the full
+  outcome/cause copy set and explicit absence of the study parameter. The
+  production player and animation lab build, the first complete `npm run
+  quality:loop` pass, `npm run verify:rive-homegrown`, `npm run
+  verify:rive-web`, final `npm run quality:check`, and `git diff --check` pass.
+- Rendered 390×844 replay covered Glowroot with Wicker Basket, Cloth Wrap, and
+  no Carrier; Lanternleaf with Wicker Basket, Cloth Wrap, and no Carrier; and
+  reduced motion. Every visible title and detail fit, the widest title used
+  188 px, document width remained 390/390, and no runtime error appeared.
+  Reduced motion still reached the same stable journey state without replaying
+  the causal animation.
+
+### Public verification evidence
+
+- Feature commit `56f1d7b` deployed successfully through GitHub Pages run
+  `31334930293`.
+- The public 390×844 route reproduced all six complete/clue Carrier branches
+  with the same fitting copy, physical handoffs, routes, and zero runtime
+  errors. Exact checked-in and publicly fetched checkpoint bytes match:
+  - player HTML: `9906f3046e65bd622c6f373c327ebcf976a7f298eb36065af329d929426cb465`
+  - player JavaScript: `40a78d145f7206fbde02ca41e9b47de25630450d3747a77e1af6e7fbbb0d5d05`
+  - player CSS: `2b2df91985a80ac4d550ced4a9dd474ac45ab29d9eafc052ec5133da2f4d4831`
+  - authored Rosie Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - Lanternleaf Rive: `039413337d40ba5f376d4d1495605780c644d0e12f2cabac45ca1070e452882b`
+  - animation-lab HTML: `ffc135f83da0ef31a6af812b6faed8342366a6e8a3c5027eb350cd452b61bf75`
+  - animation-lab JavaScript: `a3a0d87cdae227c63ee7406eab1483906396e6289e3e0db9986a9c6bd294e3a4`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=56f1d7b`
+
+### Next highest-leverage weakness
+
+The causal copy is now complete, but a small yellow-and-purple Rive fragment
+floats unexplained above Rosie in every clearing beat and both routes. It is
+absent from the approved Position 9 concept and reads like a broken crop or
+accessory remnant in the sky. The next cycle should isolate its authored
+source and compare the smallest safe viewport, artboard-visibility, or
+route-matched masking treatments that remove only the fragment while
+preserving Rosie's full Provision hop, Tool response, Bag, silhouette, and
+reduced-motion state.
+
+### v0.140 — Rosie Finds Her Footing — 2026-08-09
+
+- Played public v0.139 through departure and compared the live clearing with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png`.
+  The environmental place and deterministic causes were present, but the
+  full-size Rive Rosie floated against the upper sky while her Provision,
+  Tool, Carrier, and find acted on the trail below. The Adventure read as a
+  composited report rather than a place Rosie had entered.
+- Built and drove three real placements: Hero Float, Trail Companion, and
+  Close Witness. Hero Float preserved the mismatch. Close Witness reached the
+  ground but crowded the find. Trail Companion won because a smaller Rosie
+  stands behind the physical causes with her feet at the root crossing while
+  the dusk opening remains visible. The runnable study remains on
+  `codex/homegrown-v140-grounded-rosie-prototypes` at `228b911`, with its final
+  viewport refinement at `014dcf8`; neither the switcher nor losing treatments
+  were merged.
+- Production commit `9daea43` places the existing Rive component inside a
+  bounded 550 px Adventure viewport and scales the complete runtime view to
+  78%. Rive sizes its own canvas, so the existing delighted Provision hop,
+  Notice response, breathing settle, fitted Bag, and reduced pose remain
+  intact. One small route-matched backdrop patch below Rosie's feet covers an
+  unrelated offstage artboard group without masking the character.
+- The same placement holds in the Glowroot and Lanternleaf clearings, across
+  Provision, Tool, Carrier, resolved, empty-Bag, and reduced-motion branches.
+  The checked Rive binary, canonical rig, animation names, timing, reducer,
+  Bag, route, cause, reward, persistence, and accessibility facts are
+  unchanged.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` passes 101/101, including the production
+  viewport, cause-layer order, route-aware mask, and no-study-switcher checks.
+  The production player and animation lab build, `npm run
+  verify:rive-homegrown`, `npm run verify:rive-web`, the first complete `npm run
+  quality:loop` pass, final `npm run quality:check`, and `git diff --check`
+  pass.
+- Rendered 390×844 replay captured the Provision, Tool, Carrier, and resolved
+  beats separately. Rosie's full silhouette remained visible at every authored
+  extreme, her feet settled at the root crossing, and the actual cause props
+  stayed in front. A second-route Moonberries / Lantern / Cloth Wrap replay
+  retained the Lanternleaf path and a reduced-motion empty Bag settled to the
+  same grounded route position. No horizontal overflow or runtime error
+  appeared; rapid departure still advanced once.
+
+### Public verification evidence
+
+- Feature commit `9daea43` deployed successfully through GitHub Pages run
+  `31334221580`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `054cda45dd8390adf519b4bf6258158a3b6572394fd250d4cd28d714230beb14`
+  - player JavaScript: `6bc4e36e296ca51bbc5ae3306f707afe6de0b78ba7744a5a056acee19a5eda86`
+  - player CSS: `2b2df91985a80ac4d550ced4a9dd474ac45ab29d9eafc052ec5133da2f4d4831`
+  - animation-lab HTML: `ffc135f83da0ef31a6af812b6faed8342366a6e8a3c5027eb350cd452b61bf75`
+  - animation-lab JavaScript: `a3a0d87cdae227c63ee7406eab1483906396e6289e3e0db9986a9c6bd294e3a4`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=9daea43`
+- The public route reproduced the grounded Glowroot and Lanternleaf branches,
+  all four causal beats, alternate and empty Bags, normal and reduced Rive
+  states, single departure transition, 390 px fit, and zero runtime errors.
+
+### Next highest-leverage weakness
+
+Rosie now inhabits the clearing, but the Carrier beat truncates the consequence
+in the quiet HUD—**Wicker Basket makes the Glowroot…**—at the exact moment the
+player should understand why packing mattered. The next cycle should compare
+short, route-aware causal titles that fit the established HUD without enlarging
+it, restoring cause cards, or weakening the physical find-to-Carrier handoff.
+
+### v0.139 — Rosie and the Path Lead — 2026-08-09
+
+- Played public v0.138 at Position 8 against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`.
+  The chosen items were accurate, but the quiet HUD detail, three-cell packed
+  ribbon, fitted satchel, and large **Follow the glow** action all repeated the
+  same preparation fact before Rosie moved. The path had no room to lead.
+- Built and drove three real compositions: One Gate Sign, Packed on Rosie, and
+  Quiet Receipt. One Gate Sign became a large inventory panel over the hedge.
+  Packed on Rosie made three item tags resemble new choices on the crop beds.
+  Quiet Receipt won because it keeps exact preparation readable once while
+  preserving the character, route, and action hierarchy. The study and losing
+  treatments remain at prototype commit `fb1452e` on
+  `codex/homegrown-v139-departure-hierarchy-prototypes` and were not merged.
+- Production commit `24cfc79` hides the duplicated HUD detail only on settled
+  Position 8 and replaces the second large ribbon with one 334 px physical
+  receipt. It renders the existing item art plus exact Provision, Tool, and
+  Carrier names; Cloth Wrap reports its live Fiber balance; and every empty
+  slot remains explicit. The later packed ribbon is preserved wherever it
+  still carries a distinct return or journey fact.
+- The authored Rive satchel remains visibly equipped. The existing world action
+  still performs the same reducer-owned departure once, the hedge crossing
+  still answers it, and Position 9 receives the unchanged deterministic causal
+  vignette. No Bag choice, stock cost, route, reward, Near-Discovery,
+  persistence field, Rive contract, or animation timing changed.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` passes 100/100, including the production
+  hierarchy and an explicit no-study-switcher assertion. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`, the first complete
+  `npm run quality:loop` pass, final `npm run quality:check`, and
+  `git diff --check` pass.
+- At 1440×1100 and 390×844, the receipt stayed inside the 390 px game frame
+  without document overflow. Clover Lunch, Hand Trowel, and Wicker Basket each
+  measured `clientWidth=scrollWidth=76`; none clipped. The alternative
+  Moonberries / Lantern / Cloth Wrap loadout showed **Carrier · Fiber 3** with
+  the same fit, and the entirely empty Bag named all three empty slots.
+- A real rapid double activation held Position 8 while Rive reported
+  `motion=departure`, `lastPerformedMotion=departure`, and
+  `satchelEquipped=true`, then advanced exactly once to Position 9. The reduced
+  empty-Bag path reached the same Position 9 state with `motion=reduced`, no
+  performed one-shot, and the satchel fact preserved. Rendered passes logged no
+  runtime errors.
+
+### Public verification evidence
+
+- Feature commit `24cfc79` deployed successfully through GitHub Pages run
+  `31333124026`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `23b21dbd7d03d8af2ca102376d18b189b0ed89eda709252db4d17c78bbfecef6`
+  - player JavaScript: `ce74f48ecf2b3542747508bbd1efc41eff338bd585bfa3a957e49f2c972ff0c8`
+  - player CSS: `f3845a3c1df911568b48bca8d90b7d4743d3084bc4784171c69438f081705e66`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=24cfc79`
+- The public route reproduced the exact default, alternative, and empty
+  receipts, the authored departure midpoint, single Position 9 transition,
+  reduced-motion result, 390 px fit, and zero runtime errors.
+
+### Next highest-leverage weakness
+
+The public continuation now enters the right cozy clearing, but the live Rive
+Rosie is suspended high above the trail while the Provision, Tool, and Carrier
+act on the ground beneath her. Compared with
+`09-adventure-vignette.png`, this makes the causal story feel composited rather
+than explored. The next cycle should compare bounded ways to ground the same
+canonical Rosie at the find during Position 9—without changing her rig, adding
+direct navigation, restoring dense cause cards, or moving any Adventure fact
+out of React.
+
+### v0.138 — One Bag, Onto Rosie — 2026-08-09
+
+- Played public v0.137 from all three physical pockets into departure and
+  compared the cut with both approved references:
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`
+  and
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`.
+  The item landings were clear, but the open Bag disappeared on confirmation
+  and Position 8 began with Rosie's fitted satchel already present. The player
+  never saw the three pocket choices become equipment.
+- Built and drove three real transition treatments: Shoulder Handoff, Rosie
+  Collects It, and Storybook Fold. Rosie Collects It left a large physical Bag
+  beside the attached satchel for too long. Storybook Fold made the transition
+  deliberate but hid the cause behind a page turn. Shoulder Handoff won because
+  it preserves one Bag from open packing object to shoulder-bound equipment.
+  The study and losing treatments remain at prototype commit `9cdc4e9` on
+  `codex/homegrown-v138-bag-handoff-prototypes` and were not merged.
+- Production commit `d9f4e16` keeps only Shoulder Handoff. It crops the actual
+  `open-adventure-bag.webp` into complementary body and lid regions, closes the
+  real illustrated lid, and carries the resulting Bag toward Rosie. At the
+  overlap threshold it performs the existing authored Rive Pack one-shot with
+  the fitted satchel already bound to reducer truth. The prior per-pocket Rive
+  receive prop is suppressed for this handoff, and the Pack trigger is
+  suppressed after the reducer action commits, so neither transient plays
+  twice.
+- React still owns all Bag choices, ownership, costs, the one-use Provision,
+  reusable Tool and Carrier, deterministic Adventure branch, persistence, and
+  Position 8 loadout. The gameplay action remains delayed until the 920 ms
+  presentation ends. Rapid double activation schedules one result; reduced
+  motion skips travel and reaches the same state after a short 260 ms handoff.
+
+### Local validation evidence
+
+- Desktop rendered play showed the cropped Bag close, travel, and crossfade at
+  the authored attachment threshold. Rive reported `status=ready`, performed
+  `pack` once, held `satchelEquipped=true`, cleared `bagReceiveSlot`, and
+  settled to breathing at Position 8 with Clover Lunch, Hand Trowel, and Wicker
+  Basket unchanged.
+- At 390×844, the full motion remained exactly 390×844 with no overflow. A
+  synchronous double click spent Clover Lunch only once (`5 → 4`) and produced
+  one Pack trace. The empty-Bag reduced-motion path used no CSS animation,
+  advanced once to Position 8, preserved five Clover Lunches, and retained its
+  useful Provision Near-Discovery.
+- `npm run prototype:homegrown:test` passes 99/99. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`, the first complete
+  `npm run quality:loop` pass, final `npm run quality:check`, and
+  `git diff --check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `d9f4e16` deployed successfully through GitHub Pages run
+  `31332196657`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `05d154c432e1340841becbf8e5e317a60b78d33ea91cf6eeef254568cc01d52b`
+  - player JavaScript: `45c6e5c179f25792919e40c6cafd12a1401237386edb0b660fc27d0505f2b858`
+  - player CSS: `071460ae32ccb3ad128dc16cac06cffa187ab9741e60631e2f8e410c0a540a84`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&route=lanternleaf&repeat=1&v=d9f4e16`
+- The public route performed the authored Pack once, settled with
+  `satchelEquipped=true`, retained the exact three-item Position 8 loadout,
+  spent one Provision once, emitted no browser errors, and fit the 1440×1100
+  rendered frame without overflow.
+
+### Next highest-leverage weakness
+
+The physical packing sentence now reaches Rosie cleanly. The next crowded
+moment is the settled Position 8 departure: the quiet HUD, a second three-cell
+loadout ribbon, the fitted satchel, and the large **Follow the glow** action all
+repeat the same preparation fact before the path becomes primary. The next
+cycle should replay Position 8 against `08-departure.png` and compare bounded
+ways to let Rosie plus the hedge path lead while keeping one concise, truthful
+loadout reminder and the existing authored departure timing. No Bag rule,
+Adventure cause, route, reward, or new navigation surface is needed.
+
+### v0.137 — Each Item Finds Its Pocket — 2026-08-09
+
+- Played public v0.136 through all three pockets and compared the transient
+  receive motion with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`.
+  The settled layout matched the approved single-Bag composition, but every
+  selection briefly enlarged a second authored satchel over Rosie while the
+  real open Bag stayed beneath her. The item also appeared at its destination
+  before the flight arrived, weakening the preparation cause.
+- Built and drove three real motion treatments: Pocket Landing, a quiet Bag
+  tug, and a larger Rosie celebration. The tug did not explain where the item
+  went; the celebration made Rosie outrank the packing decision. Pocket Landing
+  won because the exact item leaves its real source, arcs into its matching
+  pocket, appears there only on impact, and gives the Bag one small catch while
+  the existing authored Rosie Notice keeps her emotionally present. The study
+  and losing treatments remain at prototype commit `fbb7b27` on
+  `codex/homegrown-v137-bag-receive-prototypes` and were not merged.
+- Production commit `254e8ad` contains only Pocket Landing. React still owns
+  the selected item, stock, free and optional choices, costs, persistence, and
+  departure loadout. Rive owns Rosie's restrained Notice response but no longer
+  renders its separate receive satchel for this action. Second-column items use
+  their real source coordinates, removals travel back out, rapid choices replay
+  from the final reducer action, and reduced motion keeps the same truthful
+  destination without transient movement.
+- The same rendered mobile pass found stale compact-height rules that had
+  reverted Position 7 to a dense vertical control stack. The shipped
+  breakpoint restores the approved horizontal pocket rail, a 104px item
+  picker, readable safety line, and 48px departure action within a 390×800
+  frame without altering any Bag rule.
+
+### Local validation evidence
+
+- At the desktop 1280×720 frame, Clover Lunch, Lantern, Hand Trowel, and Wicker
+  Basket each replayed from the correct source and settled into one open Bag.
+  Rapid Lantern → Hand Trowel replacement preserved Hand Trowel; keyboard
+  Provision → Tool → Carrier arrows kept Variant A stable; and the exact
+  Clover Lunch / Hand Trowel / Wicker Basket loadout entered Position 8.
+- At a real 390×800 embedded viewport, the page remained exactly 390×800: the
+  three 48px pocket tabs stayed on one row, the picker remained below them,
+  the safety promise and 48px CTA stayed above the review rail, and a touch
+  choice updated the selected pocket. Reduced motion suppressed the flight,
+  catch, destination settle, and authored loop while preserving the choice.
+- `npm run prototype:homegrown:test` passes 98/98. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`,
+  `npm run quality:loop`, final `npm run quality:check`, and `git diff --check`
+  pass. Manual mobile Safari motion, reduced-motion, silhouette, and attachment
+  checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `254e8ad` deployed successfully through GitHub Pages run
+  `31330904016`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `02ec2a125c6234d46bc6ac575fa6160ddf1f5a7eb054ccfb137d401f4c4925c3`
+  - player JavaScript: `75fb2bcdcfb9a47bd14794a5597a2d0798788486959fcb8b6dad0dc56adca305`
+  - player CSS: `8cf0d2164a020baf40b3417e322b0587dbcb03242632f6107c064a6e3c23aed5`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&v=254e8ad`
+- The public route reported `bag-pocket-flight`, `bag-pocket-catch`, and the
+  authored `adventure-attention` response with zero `bag-receive` canvases.
+  It packed Clover Lunch, Hand Trowel, and Wicker Basket into the exact
+  Position 8 departure loadout with no viewport overflow or browser logs.
+
+### Next highest-leverage weakness
+
+The three items now reach their physical pockets clearly, but **Pack Rosie's
+Bag** cuts directly from the open packing composition to Rosie already wearing
+the departure satchel. The player never sees that one Bag close and transfer
+onto Rosie, so the individual pocket causes do not yet culminate in one physical
+departure action. The next cycle should compare Position 7 with
+`07-free-bag-selection.png` and Position 8 with `08-departure.png`, then prototype
+one bounded close → lift → attach handoff without changing Bag choices,
+consumption, route, timing, or Adventure resolution.
+
+### v0.136 — Rosie's Bag Has One Question — 2026-08-09
+
+- Played public v0.135 from Farm Stock into Position 7 and compared the result
+  with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`.
+  The Bag rules were correct, but a title card, vertical three-row ledger,
+  large picker, redundant step control, safety note, departure action, HUD,
+  and review rail made the screen read like a form and obscured Rosie.
+- Built and drove three real compositions: Pocket Rail, a two-column Packing
+  Bench, and a catalog-like Item Shelf. The bench split attention and covered
+  Rosie's face; the shelf made stock browsing more important than preparing
+  Rosie. Pocket Rail won because Rosie, the open Bag, all three optional
+  pockets, and one current question remain visible in one reading order. The
+  comparison and losing treatments remain at prototype commit `88095a5` on
+  `codex/homegrown-v136-bag-focus-prototypes` and were not merged.
+- Production commit `5b94ced` contains only Pocket Rail. React still owns
+  stock, free item choice, optional empty slots, one-use Provision and lining
+  costs, reusable Tool and Carrier, deterministic outcomes, persistence, and
+  the established Rive handoff. During real empty-Bag play, Homecoming exposed
+  a null return-object crash; the same commit makes that amount null-safe and
+  locks the useful Field Guide, Compost, and Willow Fiber result in a focused
+  regression test.
+
+### Local validation evidence
+
+- At the 720px browser viewport, Rosie and the satchel remain unobstructed,
+  body width and height do not overflow, the three source pocket controls keep
+  a 48px minimum height, item choices keep a 70px minimum height, and one CTA
+  replaces the old step-plus-departure pair.
+- Provision → Tool → Carrier keyboard arrows move selection and focus together.
+  Packing Clover Lunch, Hand Trowel, and Wicker Basket carries those exact
+  objects into Position 8. Reduced motion records the item choice while
+  suppressing the transient receive-motion layer.
+- The empty-Bag path was played through Departure, the causal vignette, the
+  six-hour prototype fast-forward, the gate welcome, Near-Discovery, and back
+  into the Provision pocket. It returns exactly +1 Compost, +1 Willow Fiber,
+  and the Glowroot Trail Field Guide clue without a blank render.
+- `npm run prototype:homegrown:test` passes 98/98. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`,
+  `npm run quality:loop`, and final `npm run quality:check` pass. Manual mobile
+  Safari motion, reduced-motion, silhouette, and attachment checks remain
+  warnings.
+
+### Public verification evidence
+
+- Feature commit `5b94ced` deployed successfully through GitHub Pages run
+  `31329481659`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `550aecaf1f44242f0ec37af929a72c92e6eaead80e5c5932867269852298285e`
+  - player JavaScript: `fdf877103fc2eeddc0369889ecbde1021969d695fd299149330f42da78695f4f`
+  - player CSS: `05b2672b7b71cc4563cd5cace249ed38ef6a481afec805915abd64c80d206c93`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&v=5b94ced`
+- The public route reproduced the focused pocket rail and freely packed path.
+  A separate public empty-Bag run reached the same useful Near-Discovery and
+  returned to its earned Provision clue without a render failure.
+
+### Next highest-leverage weakness
+
+The settled Bag now matches the approved composition, but selecting an item
+briefly lets the authored Rive receive satchel enlarge over Rosie while the
+physical open Bag is already present. For the first fraction of a second this
+reads as two Bags and weakens the otherwise clear item-to-pocket handoff. The
+next cycle should compare that exact motion with the same approved Position 7
+concept and refine the Rive receive choreography—scale, crop, or attachment—
+without changing stock, slot, or Adventure rules.
+
+### v0.135 — The Rhythm Lives in the Beds — 2026-08-09
+
+- Played the public v0.134 crop-first wait into Position 5 and compared it with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/05-harvest-rhythm.png`.
+  The crop-specific rules and Rive Harvest remained correct, but one three-beat
+  gesture was split across a large instruction slab, a separate guaranteed-
+  yield strip, **Gather normally**, an active bed arrow, and repeated HUD copy.
+- Built and drove three real compositions: direction medallions placed on the
+  beds, one soil-colored rhythm furrow, and a Rosie-led speech cue. The furrow
+  read as another toolbar and covered the crop row; the speech cue covered
+  Rosie and repeated the HUD. Bed Sequence won because the ripe bed remains the
+  interaction, only the current beat glows, and one row owns guarantee, +1
+  clean bonus, and fallback. The full comparison and losing treatments remain
+  at prototype commit `078d201` on
+  `codex/homegrown-v135-rhythm-bed-prototypes` and were not merged.
+- Production commit `ab0b608` contains only the bed sequence. Clover uses one
+  medallion per bed. Moonberries use a four-beat diamond whose first Down and
+  final Up align with rooted Bed 2. React remains authoritative for beat order,
+  correctness, performance timing, exact yield, settlement, and persistence;
+  the existing 560ms authored Rive Harvest response remains the only crop
+  animation. No score, combo meter, miss punishment, countdown, currency, or
+  Rive input was added.
+
+### Local validation evidence
+
+- The player-facing render has one authored Rive canvas, zero horizontal
+  overflow, no `harvest-prototype` or `harvest-layout-*` class, and no losing
+  composition. The active beat renders approximately 45 × 45px and **Gather
+  normally** approximately 87 × 45px at the 720px browser height.
+- The complete Moonberry route renders **↓ ← → ↑**, centers Down within roughly
+  4px of selected Bed 2's gesture zone, accepts the four active fallback taps
+  in order, and reaches **Moonberries +6**: four base, one Compost, and one
+  clean-rhythm bonus. Root persistence and Farm stock remain exact.
+- Reduced motion preserves the gold current beat, muted future beats, current
+  direction, guaranteed quantity, +1 clean bonus, and normal-gather fallback.
+- `npm run prototype:homegrown:test` passes 97/97. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `ab0b608` deployed successfully through GitHub Pages run
+  `31328184941`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `a7193b835b26c260e84b71d5ed988eda3346760d9550c89715554176c72c3a00`
+  - player JavaScript: `33af8188aac98d191126edd9e1051d460eaddd36d9dd1a82dceefa448ace4815`
+  - player CSS: `0a8ae75cfe81dcbb991b235573fdafd1ea6cfaaff7bd88b3aba4f98056e95e8d`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=5&route=lanternleaf&repeat=1&v=ab0b608`
+- The public route reproduced the bed medallions, one active fallback, combined
+  reward promise, 45px+ controls, one canvas, zero overflow, and no experiment
+  classes. Completing Clover reached exact Position 6 Farm stock.
+
+### Next highest-leverage weakness
+
+The harvest result remains legible, but continuing into Position 7 abruptly
+returns to a dense form: a title card, three-row pocket summary, large satchel,
+three tiny choice cards, step button, safety note, departure button, HUD, and
+review rail cover most of Rosie and the Farm at once. The next cycle should
+compare the real screen with approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`
+and make one physical Bag pocket the unmistakable current choice while keeping
+all alternatives, **Leave empty**, exact stock, safety, and free authorship.
+
+### v0.134 — The Crop Owns the Wait — 2026-08-09
+
+- Played the shipped v0.133 Clover and rooted-Moonberry planting paths into
+  Position 4 and compared the rendered wait with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/04-growing-fast-forward.png`.
+  The React and Rive growth rules were correct, but a 202 × 149 status card
+  covered neighboring beds, repeated the HUD, and added an in-world preview
+  action beside the external review rail.
+- Built and drove three real compositions: a compact staked bed sign, a
+  scene-wide growth ribbon, and an ambient watering-can care scene. The ribbon
+  repeated one passive fact across two surfaces. The care scene duplicated the
+  existing watering can and implied a new chore. The bed sign won because crop,
+  Rosie, and all three beds remain visible while Compost, duration, and the
+  no-spoil promise stay attached to the correct soil. The full comparison and
+  losing treatments remain at prototype commit `f06ffa1` on
+  `codex/homegrown-v134-growth-focus-prototypes` and were not merged.
+- Production commit `f69296b` includes only the selected-bed outline, compact
+  sign, and truthful external **Fast-forward** label. It also fixes Position 4
+  → 5 review settlement to preserve the planted crop, Compost, and stock; a
+  Moonberry wait now reaches its own Down → Left → Right → Up rhythm instead of
+  resetting to Clover. React remains the sole timer and resource authority, and
+  no new Rive input, crop rule, watering action, progress bar, countdown, or
+  inventory surface was added.
+
+### Local validation evidence
+
+- The player-facing 720px browser render keeps the sign fully above the review
+  rail with approximately 80px clearance, one authored Rive canvas, zero
+  horizontal overflow, and no growth experiment class or preview copy. Clover
+  uses Bed 1 and reads **Composted · Clover · 2 hours · Waits safely when
+  ready**. Moonberries use rooted Bed 2 and read the equivalent six-hour wait.
+- The complete alternate route was driven through **Lights Past the Open
+  Gate** → Moonberries → Compost → Tend. Fast-forward reached **Moonberries
+  rhythm: ↓ ← → ↑** and **5 Moonberries guaranteed · clean rhythm +1** while
+  preserving planted stock. Reduced motion reports `animation-name: none` for
+  both sign and outline without removing any status.
+- `npm run prototype:homegrown:test` passes 97/97. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `f69296b` deployed successfully through GitHub Pages run
+  `31327399079`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `d6ba5e2102029379d2dc653c5b457bac8148331408387e33f57e0f2297d20089`
+  - player JavaScript: `c0b86b949449b02917d16097ecb75d38d1a45042bc5241a453dbb484d0248a78`
+  - player CSS: `23cb15bc1d8484cd7e9644bbbce5849ba5e57c26841729124bfd18c965a68349`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=4&route=lanternleaf&repeat=1&v=f69296b`
+- The public route rendered **Clover · 2 hours**, **Waits safely when ready**,
+  one authored canvas, zero overflow, no experiment classes, no in-world
+  preview, and the external **Fast-forward to ready crop** control.
+
+### Next highest-leverage weakness
+
+Position 5 now receives a clean crop-first wait, but the Harvest Rhythm still
+splits one short gesture across a large instruction slab, a separate guaranteed
+yield strip, **Gather normally**, and repeated HUD copy. The next cycle should
+compare it with approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/05-harvest-rhythm.png`
+and make the ripe bed itself carry more of the rhythm and feedback without
+changing guaranteed yield, crop-specific patterns, tap accessibility, or the
+authored Harvest performance.
+
+### v0.133 — The Crop Reaches Its Bed — 2026-08-09
+
+- Played the shipped v0.132 crop tray through Clover and Moonberry selection,
+  then compared Position 3 with the approved
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`
+  composition. The rules remained correct, but the physical crop immediately
+  collapsed into `☘` or `●`, Compost became `♣`, and three floating slabs hid
+  the planting beds before confirmation.
+- Built and drove three real phone compositions: a paired bedside supply kit, a
+  literal resource/bed/action split, and a bed-first ribbon. The split matched
+  the concept most literally but used five bordered surfaces; the bedside kit
+  still made cards the subject. Bed-first won because the Clover packet or
+  Moonberry basket sits on the selected soil, Compost remains one separate
+  choice, one ribbon owns the deterministic result and action, and Rosie plus
+  all three beds remain visible. The complete switcher, visual-translation
+  brief, and losing treatments remain at prototype commit `df1c3b9` on
+  `codex/homegrown-v133-planting-handoff-prototypes` and were not merged.
+- Production commit `185cdce` rewrites only the winner. React still owns Seed
+  spending, rooted-Moonberry behavior, Compost, duration, yield, persistence,
+  and transition. The existing authored Rive planting and growth motions remain
+  the response; no new Rive input, gameplay rule, modal, drag interaction, or
+  inventory surface was added.
+
+### Local validation evidence
+
+- The rendered phone content remains exactly 384 × 838 with one authored Rive
+  canvas and zero horizontal overflow. Compost is 176 × 76px; Plant / Tend is
+  150 × 86px at 17px; both exceed the 44px touch minimum. No prototype planting
+  class, experiment label, or A/B/C-specific markup remains on the player route.
+- Clover stays a physical Seed packet on highlighted Bed 1 and shows **3 → 2**.
+  Moonberries stay the existing basket on highlighted rooted Bed 2 and show
+  **No Seed spent**. Toggling Compost changes Moonberries from **4 · 8 hours**
+  to **5 · 6 hours**, shows **2 → 1**, and confirming reaches the existing
+  Composted growth state. The equivalent Clover branch reaches **4 · 2 hours**.
+- Reduced motion sets the bed-focus animation to `none` while keeping the
+  outline, crop prop, labels, and controls readable.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `185cdce` deployed through GitHub Pages run `31326197853`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `df2086f1e7f3ef37bbf105e84ceec70eeb22530835c55ab9efb9ae85b7adb264`
+  - player JavaScript: `dd5ef4ad1ece3b7b9b9f5098043f1c39631f9b1ae2130dc906d4fee44dda3367`
+  - player CSS: `06c08daa41c3b98292ec0c39241b4f963a2b07b6fa3a2e159886eb38c75e452d`
+  - Clover Seed mark: `d86a932ca6e5b8c6143d883c9af72e94468d79f3c45c874232ebf16246464b64`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=3&route=lanternleaf&repeat=1&v=185cdce`
+- The public route reproduced the selected Bed 1 crop prop, physical Compost,
+  exact quantities, 384 × 838 layout, one authored canvas, zero overflow, and
+  no experiment language. Publicly toggling Compost produced **4 Clover Lunch
+  · ready in 2 hours**, spent **2 → 1**, and confirmed into the two-hour
+  Composted growth state.
+
+### Next highest-leverage weakness
+
+Position 4 now receives a clear physical planting handoff, but its large growth
+status card immediately covers the neighboring beds and repeats the same
+Composted/time facts already in the HUD. The next cycle should compare the
+rendered growth state with approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/04-growing-fast-forward.png`,
+anchor growth status to the selected bed, and keep the staged Rive crop as the
+subject. Prototype fast-forward should move out of the Farm composition or
+become secondary without changing React-owned timers, no-spoil behavior,
+growth poses, or the authored sway.
+
+### v0.132 — Crops You Can See — 2026-08-09
+
+- Played the shipped v0.131 third morning, chose **Lights Past the Open Gate**,
+  and compared the resulting crop choice with the approved
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/02-farm-stock-seed-choice.png`
+  Farm composition. The decision contained the correct stock and Adventure
+  facts, but recognizable crops had collapsed into `☘` and `●` marks while
+  duration, yield, use, and Home stock depended on 6–7px copy.
+- Built and drove three real phone compositions: larger illustrated crop tiles,
+  one wooden physical crop tray, and two full-width field labels. The field
+  labels were fastest to scan but read like a settings list; the plain tiles
+  retained a repeated route receipt. The wooden tray won because it translated
+  the approved physical stock language, preserved Rosie and the Farm behind the
+  choice, and let the duplicated receipt disappear. The complete switcher,
+  visual-translation brief, and losing treatments remain at prototype commit
+  `ba7a8d3` on `codex/homegrown-v132-crop-legibility-prototypes` and were not
+  merged.
+- Production now uses the separable Clover and Moonberry harvest-basket assets.
+  Each crop remains one tap and keeps its identity, four- or eight-hour wait,
+  guaranteed yield, route-specific Adventure use, live Home stock, and action
+  in one card. Crop rules, stock quantities, route choice, rewards, saves, and
+  Rive inputs are unchanged.
+
+### Local validation evidence
+
+- In the rendered 384 × 838 phone layout, the tray measured 368 × 278px with
+  `clientWidth === scrollWidth` and `clientHeight === scrollHeight`. Both crop
+  cards measured 162 × 192px with no clipped content. Crop names render at
+  15px; duration, guaranteed yield, Adventure use, and action at 10px; stock at
+  9px. The screen contains one authored Rive canvas, zero experiment controls,
+  and zero horizontal or vertical overflow.
+- Choosing **Moonberries** advances to the established rooted Bed 2 tending
+  state and its optional predictable Compost decision. Clover retains its Seed-
+  paid planting path.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `c15c4ab` deployed through GitHub Pages run `31325083321`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `4a7ad1a90e1502c3837ec2cd79c22041ebe948322da1058f8499b95393234fcb`
+  - player JavaScript: `676cf47afc54801093602d4ef357090ffb1dd1ccc6473a4e489dbc3208b92f76`
+  - player CSS: `0e9bbfab409aaacd84980f6afeb04afa515bd832d73232de2c95f91e16bae310`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=c15c4ab`
+- The public route reproduced the physical crop tray, the same stock-aware
+  accessible names and dimensions, one authored canvas, zero overflow, no
+  experiment labels, and the correct rooted-Moonberry continuation.
+
+### Next highest-leverage weakness
+
+The physical crop tray now makes the choice legible, but the selected crop
+immediately collapses back to an abstract `☘` or `●` mark in the planting and
+optional-Compost step. The next cycle should compare that rendered handoff with
+the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`
+composition and keep the chosen physical crop visibly connected to its bed and
+Compost decision—without adding a modal, changing the predictable boost, or
+letting UI cover the Farm.
+
+### v0.131 — The Crop Choice Knows the Pantry — 2026-08-09
+
+- Played the shipped v0.130 third-morning map, chose **Lights Past the Open
+  Gate**, and followed Rosie's purpose handoff into the returning crop choice.
+  Duration, guaranteed yield, and Adventure effect were all present, but the
+  screen hid the accumulated Clover Lunch and Moonberry stock the player was
+  being asked to build.
+- Built and drove three rendered treatments on that exact state: paper stock
+  stamps attached to the crop art, a shared pantry shelf between purpose and
+  crops, and the existing crop action with a quiet stock line. The action-plus-
+  stock treatment won because it placed the count at commitment without adding
+  a panel or competing with the crop art. The shared shelf compressed both crop
+  choices from about 129px to 101px and read like inventory. The complete
+  switcher and losing treatments remain at prototype commit `2abd88d` on
+  `codex/homegrown-v131-provision-stock-prototypes` and were not merged.
+- Production now reads both counts from `farmStock` and says **Grow Clover · 4
+  at Home** and **Tend Moonberries · 0 at Home** in the representative returning
+  state. The direct third-morning review now carries those real harvested crop
+  quantities alongside its established 2 Compost and 4 Willow Fiber.
+
+### Local validation evidence
+
+- Both crop choices measured 129.36px high in the scaled desktop review
+  viewport. Their action bands measured 23.52px, and both 158px bands fit their
+  content exactly with no clipping. The page had no horizontal or vertical
+  overflow, contained one authored Rive canvas, and contained no Provision-
+  stock prototype switcher.
+- Choosing **Moonberries · Tend Moonberries · 0 at Home** advanced into the
+  route-aware rooted-Moonberry planting and optional Compost decision.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `c47bb97` deployed through GitHub Pages run `31324103049`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `1343e8394c56a848edb92d78c5b775c47c9650baf8b06ac097a23f800cdcc17a`
+  - player JavaScript: `579a61b5c0e9dc64fb31ac652752b156549af7dbc3c482607fb90f7c7fc394b4`
+  - player CSS: `fd2e31def060e3fb02e3ece14dfc0dfb5d2fe09951e3825fb7a71f9cabe7c46c`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=c47bb97`
+- The public route reproduced both exact stock-aware action labels, the same
+  dimensions and text fit, one authored canvas, zero overflow, and no
+  prototype controls.
+
+### Next highest-leverage weakness
+
+The returning crop choice now contains the right decision facts, but its two
+critical choices still depend on tiny 6–7px supporting copy and abstract crop
+marks. The next cycle should compare the current rendered screen with the
+approved farming concepts and test one more legible, physical crop-choice
+composition—larger crop identity and clearer reading order—without adding
+another panel, removing any current fact, or turning the Farm into a menu.
+
+### v0.130 — Every Material Has a Job — 2026-08-09
+
+- Played the shipped v0.129 map and its open-gate continuation. The live stock
+  quantities made the routes comparable, but **Compost** and **Willow Fiber**
+  still assumed the player remembered their established farming and Bag uses
+  from other screens.
+- Built and drove three isolated rendered structures: one replacement sentence
+  inside each route, a shared two-material use key, and right-side use tickets.
+  The replacement sentence won because it removed a reading layer while
+  keeping the destination name strongest. The shared key became a miniature
+  reference panel; tickets made supplies outrank the place. The complete
+  switcher and losing treatments remain at prototype commit `8fce2f7` on
+  `codex/homegrown-v130-material-use-prototypes` and were not merged.
+- Production now says **Compost · 2 held · Boosts crops** and **Willow Fiber ·
+  4 held · Prepares Cloth Wrap** in the real third-morning state. Accessible
+  route names retain the place, promised return, quantity, and full use. No
+  route recommendation or economy rule changed.
+
+### Local validation evidence
+
+- Both production route actions measured 47.04px in the scaled desktop review
+  viewport, both 223px use sentences fit with no clipping, and the page had no
+  horizontal or vertical overflow. The screen contained exactly one authored
+  Rive canvas and no prototype switcher.
+- Choosing **Lights Past the Open Gate** advanced through Rosie's purpose beat
+  into the correct route-aware Clover / Moonberry decision.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `38ac239` deployed through GitHub Pages run `31323347906`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `51f65dad98f77984e4de774186e30e1eafea12c8470364d07b5c240371786386`
+  - player JavaScript: `cf267c09843d84441dc63ab9ac41415be2df3bd98a90bcc0a3dae35c37afefde`
+  - player CSS: `305ccd3df221d86eb2badf6222f83bb479c8c7645a55b5f3537a1f1923f63411`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=38ac239`
+- The public route reproduced both exact material-use sentences, 47.04px
+  actions, full text fit, one authored canvas, zero overflow, and no prototype
+  controls.
+
+### Next highest-leverage weakness
+
+The route decision now explains both material stockpiles, but the next crop
+choice does not show the harvested Provision stockpile it is asking the player
+to grow. A returning player sees duration, guaranteed yield, and Adventure use
+for Clover Lunch and Moonberries, but not how many of either the Farm already
+holds. The next cycle should test one quiet, route-aware stock cue inside the
+existing crop decision—without turning farming into an inventory grid or
+prescribing which crop to choose.
+
+### v0.129 — The Map Knows the Farm — 2026-08-09
+
+- Played the shipped v0.128 third-morning map after both routes were known. It
+  truthfully promised Compost or Willow Fiber, but the actual Farm quantities
+  remained inside the previous Home screen's collapsed pantry. Choosing a
+  useful place still required memory outside the decision.
+- Built and drove three isolated rendered treatments: counts attached beneath
+  each route clue, one shared pantry strip, and destination-side material
+  tickets. Attached counts won. Its route buttons measured 54.18px; the pantry
+  treatment fell to about 41px and read like a dashboard, while tickets made
+  supplies outrank place. The switcher, fake low-stock cases, and losing
+  treatments remain isolated at prototype commit `326fcb0` on
+  `codex/homegrown-v129-map-stock-prototypes` and were not merged.
+- The production map now reads Compost and Willow Fiber directly from
+  reducer-owned `farmStock`. Its accessible button names carry the same route,
+  reward, and stock facts shown visually. No route is recommended. The direct
+  third-morning review was also corrected to the real accumulated two-day
+  state: **2 Compost** and **4 Willow Fiber**.
+
+### Local validation evidence
+
+- The rendered third-morning map showed **Farm holds 2 Compost** and **Farm
+  holds 4 Willow Fiber** in both visible copy and accessible names. Both route
+  buttons measured 54.18px, the page had zero horizontal or vertical overflow,
+  and the scene contained exactly one authored Rive canvas.
+- Choosing **Lights Past the Open Gate** advanced through Rosie's purpose beat
+  into its correct route-aware Clover / Moonberry crop choice.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `b2e3d84` deployed through GitHub Pages run `31322676915`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `4eee8640ac5ae1bb63ebf5c3031ef5f5aa5c397047d6e85610e18eb6b4019fdf`
+  - player JavaScript: `90dd475b719170d39a20ddb43a16883a9b267fe48223e6f0f5154f2f1eca8a81`
+  - player CSS: `2f23fc168ba22bf2bd0b9a89e922b092b1b8ae3b567f7b710ce04b92a96a0387`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=b2e3d84`
+- The public route reproduced the two exact stock facts, 54.18px buttons, one
+  authored canvas, zero overflow, and the correct route-choice transition.
+
+### Next highest-leverage weakness
+
+The map now shows the promised material and its live quantity, but a returning
+player must still remember what that material does. **Compost** has an
+established crop-boost use and **Willow Fiber** has an established Cloth Wrap
+use, yet neither use is visible at the moment of route choice. The next cycle
+should test whether one short use phrase can replace—not stack onto—secondary
+route copy, keeping the map place-first and the buttons comfortably touch-safe.
+
+### v0.128 — Familiar Places, Useful Supplies — 2026-08-09
+
+- Played both familiar-route choices and their exact Returns on the shipped
+  v0.127 build. **A Glow Beneath the Hedge** and **Lights Past the Open Gate**
+  had different names and environmental clues but produced the same Clover
+  Seed +2, Compost +1, and Willow Fiber +2 ledger with the review Bag. The map
+  therefore asked for player authorship without giving the places different
+  practical consequences.
+- Built and drove an isolated reward-loop simulator across three policies:
+  keep shared Willow Fiber, add one route bonus to the shared package, or give
+  each place one distinct existing material. Two boosted Clover / Trowel /
+  Wicker visits proved the shared policy remained identical, the additive
+  policy inflated both packages, and distinct materials preserved the next
+  Seed while making Compost and Willow Fiber stockpiles route-addressable. The
+  model, terminal shell, four tests, and verdict remain at prototype commit
+  `75d4325` on `codex/homegrown-v128-route-reward-prototype`.
+- Every successful familiar route still returns one Clover Seed. The warm
+  hedge now adds Compost +1; the reflected open-gate route adds Willow Fiber
+  +2. Hand Trowel, Lantern, Wicker Basket, and Cloth Wrap keep their established
+  independently chosen returns. First-time Discoveries and Near-Discoveries
+  retain their original rewards.
+- Rosie's map previews **Soft soil · brings Compost Home** and **Reflected
+  leaves · gathers Willow Fiber**. The settled journey watch repeats the chosen
+  environmental cause after the Provision / Tool / Carrier sequence, and the
+  Return ledger aggregates exact quantities with exact causes instead of
+  presenting a fourth reward surface.
+
+### Local validation evidence
+
+- A real rendered hedge route moved from Rosie's map through Clover farming,
+  the full Clover Lunch / Hand Trowel / Wicker Basket preparation, authored
+  departure, the three causal Adventure beats, and the settled idle watch. The
+  watch said **The warm soil gives Rosie Compost** before Homecoming.
+- Direct familiar Returns rendered:
+  - hedge: Clover Seed +2 (**Route +1 · Trowel +1**) and Compost +2 (**Warm
+    roots +1 · Wicker +1**);
+  - open gate: Clover Seed +2, Willow Fiber +2 (**Reflected leaves +2**), and
+    Compost +1 (**Wicker +1**).
+- The first-time Glowroot Return remained Glowroot Seed +2, Compost +1, and
+  Willow Fiber +2. Reviewed map, journey, and Return states had one authored
+  Rive scene, zero horizontal or vertical page overflow, and readable two- or
+  three-column ledgers.
+- `npm run prototype:homegrown:test` passes 96/96. The four isolated policy
+  tests, `npm run verify:rive-homegrown`, `npm run prototype:homegrown:build`,
+  `npm run quality:loop`, and the final `npm run quality:check` pass. Manual
+  mobile Safari motion, reduced-motion, silhouette, and attachment checks
+  remain warnings.
+
+### Public verification evidence
+
+- Route-material commit `2a9edb0` and journey-continuity commit `b24b785`
+  deployed through GitHub Pages runs `31321509986` and `31321832839`.
+- Exact checked-in final checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `2a81c3e6cbb08d82d74a9e75526533ead55e4aff4abab491ccb38b9e0fef897b`
+  - player JavaScript: `3e40354da1004be2bd384f35e34bcb6c4cf2272300d9d5b5ddcc87b9cfa475d2`
+  - player CSS: `63d347ea516799e6f375fc8abd344bdb5fcc4ae8f8ed9af730788d0643749319`
+- Exact checkpoint routes:
+  - map: `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=b24b785`
+  - hedge Return: `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&route=glowroot&repeat=1&v=b24b785`
+  - open-gate Return: `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&route=lanternleaf&repeat=1&v=b24b785`
+
+### Next highest-leverage weakness
+
+The map now tells the truth about what each route supplies, but it does not
+show how much Compost or Willow Fiber the Farm currently holds. Choosing the
+useful place still depends on remembering a collapsed pantry from the previous
+Home screen. The next cycle should attach one quiet live stock fact to each
+existing map row—without adding an inventory screen, prescribing a route, or
+covering Rosie and the Farm.
+
+### v0.127 — Rosie Brings the Next Seed — 2026-08-09
+
+- Replayed the v0.126 familiar Lanternleaf loop through Moonberry farming,
+  freely chosen Bag preparation, Return, and the complete pantry. A repeat
+  Adventure still added Glowroot Seed after Glowroot was planted; the new
+  drawer made that unresolved economy problem visible because the Seed had no
+  action, crop, or future preparation use.
+- Built and drove a throwaway reward-loop simulator across three deterministic
+  policies. Keeping the Discovery exhausted two Clover Seeds after two repeat
+  cycles and accumulated four unusable Glowroot Seeds. Returning Compost also
+  exhausted Clover while accumulating eight boosts and overlapping Wicker
+  Basket. Returning one Clover Seed kept the starting two Seeds stable through
+  three Clover / Lantern / Wicker cycles. The isolated model, terminal shell,
+  and verdict remain at prototype commit `7666ff6` on
+  `codex/homegrown-v127-repeat-reward-prototype`.
+- A successful familiar outing now returns one Clover Seed instead of another
+  Glowroot Seed. Hand Trowel's familiar-route bonus becomes a second Clover
+  Seed; Lantern still returns extra Willow Fiber, Wicker Basket still returns
+  Compost, Cloth Wrap still protects a Clover Seed, and every choice remains
+  free. Near-Discoveries retain their clue supplies.
+- Position 10 says **Clover Seed can begin the next Adventure**, lists **Route
+  +1 · Trowel +1**, and places one physical Clover Seed pouch over the obsolete
+  Glowroot prop. First-time Glowroot and Lanternleaf Discoveries still return
+  Glowroot Seed and preserve their established planting and Home-memory
+  ceremonies. No save migration or Rive change was required.
+- Added a deterministic `repeat=1` Position 10 review for either familiar route
+  so the actual useful return—not only its final pantry total—is directly
+  shareable and reload-stable.
+
+### Local validation evidence
+
+- Played a real rendered familiar Lanternleaf route: tended Moonberries with
+  Compost, completed Down → Left → Right → Up for six berries, packed
+  Moonberries / Hand Trowel / Wicker Basket, finished the journey, and welcomed
+  Rosie. The Return showed a physical Clover Seed pouch, **Clover Seed +2 ·
+  Route +1 · Trowel +1**, Compost +1, and Willow Fiber +2. The final pantry
+  showed five Clover Seeds, five remaining Moonberries, zero Glowroot Seed,
+  two Compost, and two Willow Fiber.
+- A direct first-time Glowroot Return still rendered **New Discovery ·
+  Glowroot**, Glowroot Seed +2, no familiar Clover pouch, and **Take Seed to Bed
+  3**. Direct familiar Return and Home reviews cover both route identities.
+  Reviewed frames had one authored Rive canvas, zero horizontal or vertical
+  page overflow, and the authored runtime ready.
+- `npm run prototype:homegrown:test` passes 95/95, including first-time reward
+  compatibility, both direct familiar returns, exact repeat quantities, route
+  persistence, and next-day reset. `npm run verify:rive-homegrown`,
+  `npm run prototype:homegrown:build`, `npm run quality:loop`, and
+  `npm run quality:check` pass. The quality gate covers 155 layout files, 324
+  sprites, TypeScript, 78 layout assertions, and 202 security assertions.
+  Manual mobile Safari motion, reduced-motion, silhouette, and attachment
+  checks remain warnings.
+
+### Public verification evidence
+
+- Gameplay commit `fe12701` and direct-review commit `10a0a29` deployed through
+  GitHub Pages runs `31320571734` and `31320711381`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `f11ad53195a51d1700abe59089a0a24106d6acf04e8ab1868bb7e451553ad77a`
+  - player JavaScript: `367b32eb33829b9b3bfed91a2616698734239fa75fd35e77baeaad3d43c0686e`
+  - player CSS: `d5fd605eb8e040cf764276ee0074af07ae4c48ba346efefc6d06c41f3b850d2e`
+- A fresh public familiar-Lanternleaf Return rendered the physical Clover Seed
+  pouch, exact +2 ledger and causes, original familiar-route story, one ready
+  authored Rive canvas, and zero page overflow. It loaded the content-hashed
+  CSS `d5fd605eb8` and JavaScript `367b32eb33` bundles.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&route=lanternleaf&repeat=1&v=10a0a29`
+
+### Next highest-leverage weakness
+
+Both familiar routes now return a useful next Seed, but their repeat reward
+packages are otherwise mechanically identical. Rosie's map asks the player to
+choose between two places whose consequences differ mostly in prose. The next
+cycle should give each known route one small, predictable material identity
+using the existing stock and Bag vocabulary—without breaking the guaranteed
+next Seed, adding random loot, or creating route-specific currencies.
+
+### v0.126 — The Pantry Remembers — 2026-08-09
+
+- Replayed the exact v0.125 familiar Lanternleaf route and opened the final
+  stock drawer. The journey had harvested six Moonberries and packed one, but
+  the surface calling itself current Farm stock omitted all five remaining
+  Moonberries and every Clover Lunch. The Farm therefore hid the crops that
+  give Adventures their purpose at the moment the loop was meant to close.
+- Compared three runnable Position 11 structures: the existing four-material
+  strip, a pantry-first hierarchy, and a complete two-column tally. The
+  pantry-first structure won. The baseline was incomplete; the tally was
+  accurate but made Homecoming read as bookkeeping and covered more of Rosie.
+  The isolated study and verdict remain at prototype commit `c72452e` on
+  `codex/homegrown-v126-stockpile-prototypes`; no switcher or losing treatment
+  shipped.
+- The same expandable Home-memory pocket remains collapsed by default. When
+  opened, **Rosie’s pantry and Farm supplies** now gives Clover Lunch and
+  Moonberries a primary two-item Provision shelf, names **Explore until dusk**
+  and **Reveal reflections**, and keeps Clover Seed, Glowroot Seed, Compost,
+  and Willow Fiber in a quieter four-item **Seeds and Materials** shelf.
+- The interface reads directly from the existing `farmStock` quantities. It
+  adds no item, inventory mutation, reward rule, save field, route rule, Rive
+  input, or new screen. First-time Glowroot, first-time Lanternleaf, and both
+  familiar-route ceremonies retain their established story and actions.
+
+### Local validation evidence
+
+- Played a real rendered third-day Lanternleaf loop: chose **Lights Past the
+  Open Gate**, tended Moonberries with Compost, completed Down → Left → Right →
+  Up for six berries, packed Moonberries / Lantern / Wicker Basket, watched the
+  causal journey, fast-forwarded the six-hour wait, welcomed Rosie, and kept
+  the returned supplies. Position 11 began with the pocket collapsed; opening
+  it showed exactly five Moonberries, zero Clover Lunches, three Clover Seeds,
+  one Glowroot Seed, two Compost, and three Willow Fiber.
+- Direct first-time Glowroot and Lanternleaf Home reviews both rendered the new
+  complete drawer while retaining their original **The Barn remembers**
+  ceremonies. **Begin another day** returned to Position 1. Each reviewed
+  frame had one authored Rive canvas, zero horizontal or vertical page
+  overflow, and the authored runtime ready.
+- `npm run prototype:homegrown:test` passes 94/94, including a reducer proof
+  that packed Moonberries remain in Farm stock through acknowledged Return.
+  `npm run verify:rive-homegrown`, `npm run prototype:homegrown:build`,
+  `npm run quality:loop`, and `npm run quality:check` pass. The quality gate
+  covers 155 layout files, 324 sprites, TypeScript, 78 layout assertions, and
+  202 security assertions. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `981a838` deployed through GitHub Pages run `31319726257`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `68454bf9c0d625624092e07de225509373fe3d7fd0aaaea9f618fb376a11a9f1`
+  - player JavaScript: `c50b1fce3d153736c9232db09ec4b95776a319a402c850b3a1f194a608d9161d`
+  - player CSS: `f970fc7571ceacd6062fca0eeb939bffb3e2abed5737b6a11d0987e6420bbc61`
+- A fresh public familiar-Lanternleaf review rendered the Provision and supply
+  shelves, exact quantities, original familiar Homecoming, one ready authored
+  Rive canvas, and zero page overflow. It loaded the content-hashed CSS
+  `f970fc7571` and JavaScript `c50b1fce3d` bundles.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&route=lanternleaf&repeat=1&v=981a838`
+
+### Next highest-leverage weakness
+
+The complete pantry now exposes that repeat Adventures keep adding Glowroot
+Seed after Glowroot is already planted, even though that Seed has no visible
+ongoing use. The next cycle should make a familiar route's primary return
+useful to the next preparation decision—without adding a new currency,
+crafting tree, random reward table, or parallel upgrade system.
+
+### v0.125 — A Familiar Trail Brings Rosie Home — 2026-08-09
+
+- Replayed the exact v0.124 third-day Lanternleaf route through Moonberry
+  farming, Compost, Harvest Rhythm, freely chosen Bag preparation, Adventure,
+  Homecoming, and returned supplies. Position 10 correctly said **Route
+  revisited**, but accepting those supplies landed on **Home remembers · The
+  Barn remembers**, **Lanternleaf Path is mapped**, and **New route**. The same
+  outing therefore became new again at the final screen.
+- Compared three runnable Position 11 treatments against one reducer-owned
+  repeat state: the contradictory new-route baseline, a calm familiar
+  Homecoming in the existing storybook hierarchy, and a split ledger for the
+  permanent place and today's supplies. The familiar Homecoming won. The
+  baseline was false; the ledger was accurate but made the emotional close
+  read like inventory bookkeeping. The isolated study and verdict remain at
+  prototype commit `67307c3` on
+  `codex/homegrown-v125-repeat-home-prototypes`; no switcher or losing treatment
+  shipped.
+- A completed repeat now says **Today's outing · A familiar trail brought Rosie
+  Home**. It names either silver Lanternleaf leaves or the warm moth lights,
+  marks the chosen route **visited today**, reports **Known trail · Supplies
+  stocked**, and gives Position 11 the matching **revisited** label. Exact
+  quantities remain in the existing expandable Farm-stock drawer.
+- The presentation derives from the already persisted
+  `selectedAdventureOpportunityId`, which still clears at the next day. It adds
+  no history flag or save migration. First-time Glowroot and Lanternleaf
+  Discovery memories remain byte-for-byte in the production source and render
+  with their established **The Barn remembers** promise.
+- Added a deterministic `repeat=1` direct Position 11 review for both route
+  identities. Rendered QA exposed that an explicit `route=glowroot` URL could
+  otherwise inherit the prior saved Lanternleaf review because Glowroot was the
+  default; explicit route URLs now always create the requested review state.
+
+### Local validation evidence
+
+- Played a real rendered third-day Lanternleaf loop from Rosie's two-route map:
+  selected **Lights Past the Open Gate**, tended Moonberries with Compost,
+  completed Down → Left → Right → Up for six berries, packed Moonberries /
+  Lantern / Wicker Basket, watched all three causal beats, fast-forwarded the
+  six-hour wait, welcomed Rosie, and kept the returned Seed, Compost, and three
+  Willow Fiber. The completed Home then showed **Lanternleaf Path · visited
+  today** and the familiar storybook plaque; its drawer exposed the exact
+  returned supply totals. **Begin another day** cleared the chosen route and
+  Rosie's next Tickle opened both familiar routes again.
+- Rendered direct reviews proved both **Lanternleaf Path revisited** and **Hedge
+  glow revisited**. Separate first-time reviews retained **Glowroot changed
+  Home** and **Lanternleaf Path is mapped** without repeat language or stale
+  persisted-route leakage.
+- `npm run prototype:homegrown:test` passes 94/94, including both direct repeat
+  routes, first-time compatibility, route persistence, and next-day reset.
+  `npm run verify:rive-homegrown` passes for the unchanged Home and Lanternleaf
+  binaries.
+- `npm run quality:loop` and `npm run quality:check` pass from the clean feature
+  worktree: 155 layout files, 324 sprites, TypeScript, 78 layout assertions,
+  and 202 security assertions. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `0797c4b` deployed through GitHub Pages run `31318728967`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `e1b457a155b429e6c528cc0c2a9ad8316911531dcdacc6bfeaf7e6fbb20451aa`
+  - player JavaScript: `a841fdb95bb9aa25b1b70d331ca80449f14bd252d9d3a5b536b76a252b59d08b`
+  - player CSS: `f8f56bc9f344edbf264183a391812af89934946551199e6244e9a41763e70a9b`
+- A fresh public familiar-Lanternleaf review rendered the new plaque, compact
+  stock pocket, route-specific scene description, and **revisited** rail. The
+  authored Rive runtime reported `ready` with one live canvas at the 390×844
+  reference frame and zero horizontal overflow.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&route=lanternleaf&repeat=1&v=0797c4b`
+
+### Next highest-leverage weakness
+
+The complete repeat replay built a real Moonberry stockpile—six harvested and
+one packed—but Position 11's drawer omitted the five remaining Moonberries and
+all Clover Lunches while calling itself current Farm stock. The next cycle
+should make accumulated crop Provisions visible in that existing Home stock
+surface without turning the calm close into a dense inventory grid or adding a
+new economy screen.
+
+### v0.124 — Rosie Chooses the Trail — 2026-08-09
+
+- Continued the exact v0.123 endpoint through **Begin another day** and the
+  third morning. The new Lanternleaf memory persisted, but Rosie's Tickle
+  immediately repeated **Lights Past the Open Gate** and its crop chooser as
+  though the player had learned a route without gaining any authorship over
+  it. That made the second Discovery feel like a scripted second level rather
+  than a lasting addition to Rosie's world.
+- Compared three runnable treatments on the real third-morning Position 2:
+  automatic repetition, a compact **Rosie's map** with both routes together,
+  and route labels attached directly to the Farm. The map won. The baseline
+  offered no choice; the world labels covered the Barn door, open hedge, frog,
+  and Glowroot bed while separating clues the player needed to compare. The
+  isolated study and verdict remain at prototype commit `8d09791` on
+  `codex/homegrown-v124-known-route-choice-prototypes`; no comparison switcher
+  or losing treatment shipped.
+- Once both **Glowroot Seed** and **Lanternleaf Path** are in the Field Guide,
+  Rosie's morning Tickle now introduces two familiar trails and opens one
+  storybook map above Rosie. The player freely chooses **A Glow Beneath the
+  Hedge** or **Lights Past the Open Gate** before selecting Clover or
+  Moonberries. First and second mornings retain their guided route, and a
+  clue-only Lanternleaf return does not unlock the map.
+- Added one validated, optional `selectedAdventureOpportunityId` save fact.
+  The reducer blocks crop selection until the earned route choice is made,
+  persists that choice through reload and the complete farming / Bag /
+  Adventure / Homecoming sequence, preserves it in prototype position review,
+  and clears it only on the next day. Existing version-two saves remain
+  compatible and malformed route IDs are discarded.
+- Repeat outings keep the established deterministic Farm supplies but now say
+  **Route revisited** and name the familiar destination instead of presenting
+  Glowroot or Lanternleaf as another New Discovery. Route-aware crop promises
+  also remain truthful: Clover stays until dusk or nightfall, while
+  Moonberries notice hidden reflections or reveal Lanternleaf's reflected
+  leaves.
+- Rendered play found one problem after the prototype verdict: the first map
+  placement covered nearly all of Rosie. The production parchment moved into
+  the upper scene and its route type was enlarged, leaving canonical Rive
+  Rosie, the three beds, frog, and remembered Farm readable beneath it.
+
+### Local validation evidence
+
+- Opened a fresh local third-morning review and confirmed one semantic map,
+  both enabled route buttons, route-neutral HUD and scene description, the
+  **Choose today's route** rail label, and Rosie visible below the parchment.
+  Both choices opened route-specific crop promises; switching to the normal
+  review URL proved the selected Lanternleaf route survived reload.
+- Played the rendered Lanternleaf repeat from map choice through composted
+  Moonberries, its Down → Left → Right → Up rhythm, Farm stock, a freely chosen
+  Moonberries / Lantern / Wicker Basket loadout, departure, causal vignette,
+  idle fast-forward, Homecoming, reward storage, **Begin another day**, and
+  Rosie's next Tickle. The return said **Route revisited**, awarded the exact
+  expected supplies, and the following morning offered both routes again.
+  Browser logs contained no warnings or errors.
+- `npm run prototype:homegrown:test` passes 93/93, including first- and
+  second-morning compatibility, the third-morning gate, invalid route
+  rejection, reload, both route IDs, repeat rewards, direct review state, and
+  next-day reset. `npm run verify:rive-homegrown` passes for the unchanged Home
+  and Lanternleaf binaries.
+- `npm run quality:loop` and `npm run quality:check` pass from the clean feature
+  worktree: 155 layout files, 324 sprites, TypeScript, 78 layout assertions,
+  and 202 security assertions. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `387e3b5` deployed through GitHub Pages run `31317780005`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `db243a1283fb71a1190ad499dbe49cd8a8fcb4d594a66b51f0c07ace698e069a`
+  - player JavaScript: `c734731c094bfe92d7cf89b4bc5d986fb7f961cb283945486d8f90f952a7bb78`
+  - player CSS: `f8f56bc9f344edbf264183a391812af89934946551199e6244e9a41763e70a9b`
+- A fresh public Position 2 review rendered both enabled routes, the
+  route-neutral HUD and rail, canonical Rosie below the parchment, and every
+  remembered Farm detail with no browser warnings or errors.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&v=387e3b5`
+
+### Next highest-leverage weakness
+
+The repeat Homecoming is now truthful, but accepting its supplies still lands
+on a completed-Home memory that says **New route** and **Lanternleaf Path joined
+Rosie's map**. The next cycle should make Position 11 acknowledge a familiar
+outing without erasing the already-earned Lanternleaf memory or inventing a
+new reward, destination, or progression layer.
 
 ### v0.123 — Home Remembers Lanternleaf — 2026-08-09
 

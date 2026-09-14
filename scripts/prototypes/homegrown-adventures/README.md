@@ -6,6 +6,281 @@
 > Adventure-only click-through. This lab remains useful for reviewing the old
 > farm-to-Adventure handoff, but it no longer defines the Adventure boundary.
 
+The v0.141 Carrier-consequence pass makes the final prepared-item cause fully
+readable inside the existing quiet HUD. The primary line now states what comes
+Home—**Glowroot is coming Home**, **Lanternleaf is coming Home**, or **Trail
+supplies are coming Home**—while the existing detail line names the exact
+cause: **Carried by the Wicker Basket** or **Protected by the Cloth Wrap**.
+Empty-Carrier branches remain kind and equally explicit. The physical
+find-to-Carrier handoff, canonical Rive Rosie, routes, timing, reducer state,
+HUD dimensions, and rewards are unchanged. A rendered three-treatment study
+on `codex/homegrown-v141-carrier-copy-prototypes` at `9e874b8` compared the
+truncated current sentence, a shortened generic Carrier, and the winning
+outcome-then-exact-cause hierarchy. Production contains no `carrierCopy`
+parameter, switcher, or losing treatment.
+
+The v0.140 grounded-Rosie pass makes Position 9 feel explored instead of
+composited. The same canonical Rive component now sits inside a bounded 550 px
+Adventure viewport, scales to 78%, and stands at the root crossing behind the
+real Provision, Tool, Carrier, and find. Rive still performs the existing
+delighted Provision hop, Notice response, breathing, and reduced pose; React
+still owns every cause and transition. A small route-matched backdrop patch
+below Rosie's feet covers one unrelated offstage artboard group without
+cropping any authored motion. A rendered three-placement study on
+`codex/homegrown-v140-grounded-rosie-prototypes` at `228b911`, refined at
+`014dcf8`, compared Hero Float, Trail Companion, and Close Witness against
+`09-adventure-vignette.png`. Trail Companion won because it grounds Rosie,
+keeps the prepared items in front, and leaves the dusk opening readable.
+Production contains no placement switcher or alternate treatment.
+
+The v0.139 departure-hierarchy pass lets Rosie and the open hedge path lead
+Position 8. The settled screen now keeps the named opportunity in the quiet
+HUD, shows the freely chosen Provision, Tool, and Carrier once in a narrow
+physical receipt, and leaves the existing **Follow the glow** world action
+attached to the route. The former three-cell ribbon and duplicated HUD detail
+are absent only at departure; later packed reminders remain unchanged. Every
+item name, empty slot, and Cloth Wrap Fiber balance is still exact and
+accessible. The existing authored Rive satchel stays equipped, the same
+reducer-owned departure timing performs once, and React still owns every Bag,
+stock, route, and outcome fact. A rendered three-composition study at prototype
+commit `fb1452e` on
+`codex/homegrown-v139-departure-hierarchy-prototypes` compared One Gate Sign,
+Packed on Rosie, and Quiet Receipt. Quiet Receipt won because the gate sign
+became another inventory panel and the physical tags resembled new choices on
+the Farm. Production contains no experiment switcher or losing treatment.
+
+The v0.138 Bag-to-shoulder pass completes the physical preparation sentence.
+After the player packs any freely chosen loadout—including an entirely empty
+Bag—the real open-Bag artwork separates into a body and accurately cropped lid,
+closes, travels toward Rosie, and yields to the fitted authored Rive satchel.
+Rive's Pack one-shot begins only at attachment, its earlier per-pocket receive
+prop is suppressed during the handoff, and the reducer commits the same
+Provision spend and Position 8 loadout only after the bounded motion ends.
+Rapid input schedules one result; reduced motion skips travel and reaches the
+same state in 260 ms. A rendered three-treatment study at prototype commit
+`9cdc4e9` on `codex/homegrown-v138-bag-handoff-prototypes` compared Shoulder
+Handoff, Rosie Collects It, and Storybook Fold. Shoulder Handoff won because it
+alone preserved the identity of the approved single Bag without prolonging a
+two-Bag overlap or covering the cause with a page transition. Production keeps
+no experiment switcher, alternate transition, or Rive-owned inventory fact.
+
+The v0.137 pocket-landing pass makes every freely chosen Provision, Tool, or
+Carrier travel from its real choice into the matching pocket of the one open
+Bag. The destination token stays hidden until impact, the Bag gives one small
+physical catch, and Rosie's authored Rive Notice answers the choice without
+summoning the oversized second satchel that previously covered her. Alternate
+items use their own source positions, removals travel back out, rapid changes
+settle on the final reducer-owned choice, and reduced motion preserves the
+same exact Bag state without the flight. A rendered three-motion study at
+prototype commit `fbb7b27` on
+`codex/homegrown-v137-bag-receive-prototypes` compared Pocket Landing, a quiet
+Bag tug, and a larger Rosie celebration. Pocket Landing won because it alone
+showed unambiguous item-to-pocket cause while keeping Rosie and the approved
+single-Bag composition clear. Production contains no study switcher, alternate
+motion, or Rive-owned inventory state.
+
+The v0.136 Bag-focus pass replaces Position 7's title card, vertical slot
+ledger, three-row picker, and redundant **Next** control with one physical
+packing composition. Rosie and the open satchel remain visible; Provision,
+Tool, and Carrier form one horizontal pocket rail; and the current pocket owns
+one short question with every available item and **Leave empty** beside it.
+The primary action now says **Pack Rosie's Bag** or **Set out with an empty
+Bag**, while stock, optional pockets, safe Near-Discovery, keyboard tabs, and
+the physical packed preview remain truthful. A rendered three-composition
+study at prototype commit `88095a5` on
+`codex/homegrown-v136-bag-focus-prototypes` compared Pocket Rail, Packing
+Bench, and Item Shelf. Pocket Rail won because the other two covered Rosie and
+made inventory UI more prominent than the Bag. Production contains no layout
+variant or losing treatment. The same playthrough also exposed and fixed an
+empty-Bag Homecoming crash without changing its useful clue or material return.
+
+The v0.135 bed-first rhythm pass removes Position 5's large instruction slab
+and separate yield strip. Clover's Left → Right → Up beats now sit directly on
+the three beds; rooted Moonberries use a four-beat diamond that begins and ends
+on selected Bed 2. The current beat is the only gold tap fallback, completed
+beats turn green, and one compact row combines guaranteed yield, the +1 clean
+bonus, and **Gather normally**. A rendered three-composition study at prototype
+commit `078d201` on `codex/homegrown-v135-rhythm-bed-prototypes` compared this
+Bed Sequence with a soil-colored toolbar and a Rosie speech cue. Bed Sequence
+won because the toolbar covered the crops and the speech cue covered Rosie.
+Production contains no prototype variant class or losing treatment; React still
+owns beat order, timing, exact stock settlement, persistence, and the existing
+560ms authored Rive Harvest response.
+
+The v0.134 growth-focus pass makes the growing crop—not a status card—the
+subject of Position 4. One compact staked sign now belongs to the selected bed,
+names the crop, predictable duration, Compost state, and no-spoil promise, and
+leaves Rosie plus all three beds visible. Prototype fast-forward moved to the
+external review rail. A rendered three-composition study at prototype commit
+`f06ffa1` on `codex/homegrown-v134-growth-focus-prototypes` compared the chosen
+bed sign, a scene-wide ribbon, and an ambient watering-can treatment. The sign
+won because the ribbon repeated the HUD and the watering can implied a new
+chore. Production contains only the bed sign and selected-bed outline; no
+growth experiment class, alternate composition, extra watering prop, timer,
+resource rule, or Rive input remains. Position 4 → 5 review fast-forward also
+now settles the crop actually planted, so a rooted Moonberry wait reaches the
+Moonberry rhythm without resetting to Clover.
+
+The v0.133 crop-to-bed handoff pass keeps the physical crop selected from the
+Farm tray attached to its actual planting decision. Clover now remains a paper
+Seed packet on highlighted Bed 1; Moonberries remain the harvested basket on
+highlighted rooted Bed 2; optional Compost is a separate physical sack; and one
+bottom ribbon owns the deterministic yield, duration, and Plant / Tend action.
+This translates the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`
+composition without importing a full-screen bitmap or covering all three beds.
+A rendered three-structure study at prototype commit `df1c3b9` on
+`codex/homegrown-v133-planting-handoff-prototypes` compared a two-card bedside
+kit, a literal concept split, and the selected bed-first ribbon. Bed-first won
+because it left Rosie and every bed visible with one fewer information layer;
+the split treatment required five bordered surfaces. Production preserves the
+existing React-owned Seed/root cost, optional two-hour/+1 Compost rule, crop
+timers, yields, persistence, and Rive planting response. No experiment class,
+variant-specific planting markup, new Rive input, drag-and-drop rule, modal, or
+parallel inventory screen remains on main.
+
+The v0.132 physical crop-choice pass makes the returning Farm decision read as
+two things Rosie can actually grow instead of two dense text cards with `☘`
+and `●` marks. The approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/02-farm-stock-seed-choice.png`
+screen remains the composition reference: one cream question sign, one wooden
+crop tray, and recognizable physical crop art while Rosie and the Farm remain
+visible. Production reuses the separable Clover and Moonberry harvest-basket
+assets, raises crop names to 15px and the critical duration, yield, route use,
+and action copy to 10px, and keeps each entire crop card as the tap target. The
+duplicated route receipt is gone because the same facts now live directly on
+the crops. A rendered three-composition study at prototype commit `ba7a8d3` on
+`codex/homegrown-v132-crop-legibility-prototypes` compared illustrated tiles,
+this physical seed tray, and full-width field labels. The tray won because the
+rows read like a settings menu and the plain tiles retained a repeated summary
+layer. No crop rule, reward, stock quantity, choice recommendation, Bag rule,
+save field, Rive input, or parallel inventory screen changed.
+
+The v0.131 Provision-stock pass lets returning crop choice answer **what do I
+already have?** without adding a pantry panel. The existing action band now
+keeps its verb and adds the reducer-owned count directly beneath it: **Grow
+Clover · 4 at Home** or **Tend Moonberries · 0 at Home** in the representative
+returning state. Duration, guaranteed yield, and route-specific Adventure use
+stay in their established hierarchy. The direct third-morning review now
+carries the truthful harvested Provision stock from the completed Glowroot
+loop instead of resetting both crop outputs to zero. A rendered three-treatment
+study at prototype commit `2abd88d` on
+`codex/homegrown-v131-provision-stock-prototypes` compared crop-corner stamps,
+a shared pantry shelf, and this action-plus-stock treatment. The action band
+won because the shelf became inventory UI and the stamps competed with crop
+art. No crop rule, reward, choice recommendation, Bag rule, save field, Rive
+input, or parallel inventory screen changed.
+
+The v0.130 material-use pass lets Rosie's map answer both halves of a useful
+route decision without becoming an inventory screen. Each place still leads
+with its name and time-of-day identity, followed by one replacement sentence:
+**Compost · _n_ held · Boosts crops** or **Willow Fiber · _n_ held · Prepares
+Cloth Wrap**. The same reducer-owned stock counts and established uses remain;
+the earlier environmental-promise line and separate stock badge have been
+distilled into one layer. A rendered three-treatment study at prototype commit
+`8fce2f7` on `codex/homegrown-v130-material-use-prototypes` compared that
+replacement sentence, a shared use key, and use-led material tickets. The
+replacement won because it reduced hierarchy while the key became a reference
+panel and the tickets made supplies outrank the place. No route recommendation,
+reward, cost, save fact, item, Rive input, or parallel system changed.
+
+The v0.129 map-stock pass lets Rosie's familiar-route choice use the Farm's
+real accumulated state. Each existing place keeps its name and environmental
+promise first, then attaches one quiet fact: **Farm holds _n_ Compost** or
+**Farm holds _n_ Willow Fiber**. The count comes directly from `farmStock`, so
+spending or returning a material changes the next map without a second
+inventory model. The direct third-morning review now matches the real two-day
+reducer path at **2 Compost** and **4 Willow Fiber**. A rendered three-treatment
+study at prototype commit `326fcb0` on
+`codex/homegrown-v129-map-stock-prototypes` compared attached counts, a shared
+pantry strip, and material tickets. Attached counts won because they preserve
+place and fantasy first, keep both route buttons above the 44px touch floor,
+and avoid turning the map into a dashboard or supply-order screen. The route
+choice remains free: no route recommendation, reward change, save field, Rive
+input, new item, or parallel inventory screen was added.
+
+The v0.128 familiar-route-material pass makes Rosie's two-route map a practical
+stockpile decision instead of a choice between different prose and identical
+supplies. Every successful familiar outing still returns one **Clover Seed**
+for the next Provision crop. **A Glow Beneath the Hedge** now finds one
+**Compost** from its warm soil, while **Lights Past the Open Gate** gathers two
+**Willow Fiber** from its reflected leaves; Tool and Carrier returns remain
+freely chosen and aggregate with the route cause in the Homecoming ledger. The
+map previews both material identities and the idle journey repeats the chosen
+environmental cause before Rosie comes Home. A driven three-policy simulator
+at prototype commit `75d4325` on
+`codex/homegrown-v128-route-reward-prototype` compared shared materials,
+additive bonuses, and distinct existing materials. Distinct materials won
+because it gives each place one legible job without inflating the package or
+adding an item. First-time Discoveries and Near-Discoveries are unchanged. No
+random reward, route currency, crafting rule, save fact, Rive input, or
+parallel system remains on main.
+
+The v0.127 familiar-reward pass turns a repeat outing's primary return back
+into the beginning of the farming loop. Once Glowroot is planted and a route is
+known, a successful Adventure now brings **Clover Seed** instead of another
+unusable Glowroot Seed; Hand Trowel finds one additional Clover Seed on that
+familiar route. The return plaque says the Seed can begin the next Adventure,
+the ledger separates **Route +1 · Trowel +1**, and one physical Clover Seed
+pouch covers the obsolete Glowroot prop. First-time Glowroot and Lanternleaf
+Discoveries retain Glowroot Seed, their planting ceremony, and their original
+art. A driven three-policy logic study at prototype commit `7666ff6` on
+`codex/homegrown-v127-repeat-reward-prototype` compared keeping the Discovery,
+returning the next Seed, and returning Compost. The next Seed won because it
+kept Clover plantable across three repeats without overlapping the Carrier or
+creating dead stock. No new item, currency, crafting rule, random reward, save
+fact, Rive input, or parallel system remains on main.
+
+The v0.126 complete-stock pass lets the final Home screen remember the crops
+the player actually grew instead of calling a four-item supply strip the
+current Farm stock. The existing calm Home-memory pocket remains collapsed by
+default; opening it now gives **Clover Lunch** and **Moonberries** one readable
+Provision shelf with their Adventure uses, followed by the quieter Clover
+Seed, Glowroot Seed, Compost, and Willow Fiber supply shelf. A real boosted
+Moonberry repeat harvested six, packed one, and rendered the five remaining
+berries at Position 11. Three complete Position 11 treatments were compared at
+prototype commit `c72452e` on
+`codex/homegrown-v126-stockpile-prototypes`: the incomplete material-only strip,
+this pantry-plus-supplies hierarchy, and a six-item tally. The pantry won
+because it keeps the farming-to-Bag purpose legible without turning Rosie's
+Homecoming into bookkeeping. No experiment switcher, inventory rule, reward,
+save fact, Rive input, or parallel economy remains on main.
+
+The v0.125 familiar-homecoming pass lets a repeated Adventure end as a
+truthful new day in Rosie's relationship with a known place instead of replaying
+the route's first Discovery ceremony. The completed Position 11 plaque now says
+**Today's outing · A familiar trail brought Rosie Home**, names either the
+silver Lanternleaf route or the warm hedge glow, and keeps exact quantities in
+the existing Farm-stock drawer. Its compact pocket says the chosen route was
+visited today and that supplies were stocked; first-time Glowroot and
+Lanternleaf memories remain unchanged. Three real Position 11 structures were
+compared at prototype commit `67307c3` on
+`codex/homegrown-v125-repeat-home-prototypes`: the contradictory new-route
+baseline, this familiar Homecoming, and a split place-plus-supplies ledger. The
+familiar Homecoming won because it preserved the calm storybook hierarchy and
+kept Rosie and the living Farm primary. The direct `repeat=1` review path
+supports both routes and explicit route URLs no longer inherit a stale saved
+review. No experiment switcher, new reward, progression fact, Rive input, or
+parallel system remains on main.
+
+The v0.124 known-route pass turns Lanternleaf Path from a one-time ending into
+a real player choice on the third morning. After both existing routes are in
+the Field Guide, Rosie's Tickle now opens one compact **Rosie's map** parchment
+with **A Glow Beneath the Hedge** and **Lights Past the Open Gate** together.
+The selected route is reducer-owned, persisted across reload, carried through
+crop choice, Bag preparation, Adventure, and Homecoming, and cleared only when
+the next day begins. Revisited routes keep the established deterministic
+materials but return as **Route revisited** rather than pretending their named
+Discovery is new. Three real Position 2 structures were compared at prototype
+commit `8d09791` on
+`codex/homegrown-v124-known-route-choice-prototypes`: automatic repetition,
+this compact map, and labels attached to the Farm. The map won because the
+baseline removed player authorship and the world labels covered the Barn,
+frog, Glowroot bed, and open hedge. The production map was moved above Rosie
+after rendered play exposed that its first placement hid her. No experiment
+switcher, new crop, destination, currency, reward roll, Rive input, or parallel
+system remains on main.
+
 The v0.105 Discovery-purpose pass makes yesterday's lasting world change the
 cause of today's preparation instead of leaving the new opportunity to feel
 scheduled. Three real Position 2 treatments were rendered at commit `f1fa423`
