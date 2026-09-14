@@ -48,6 +48,8 @@ export interface SnoutDeepDigProps {
   /** A real (non-practice) dig landed on the server. */
   onDug?: () => void;
   onBusyChange?: (busy: boolean) => void;
+  /** The open phase's live countdown from the feeding clock, for the sign. */
+  phaseCountdown?: string;
 }
 
 export function SnoutDeepDig({
@@ -57,6 +59,7 @@ export function SnoutDeepDig({
   onClose,
   onDug,
   onBusyChange,
+  phaseCountdown,
 }: SnoutDeepDigProps) {
   const board = useMemo(
     () => generateLayeredBoard(session.seed, session.uniqueId),
@@ -214,6 +217,7 @@ export function SnoutDeepDig({
         state={state}
         dispatch={dispatch}
         secondsLeft={secondsLeft}
+        phaseCountdown={phaseCountdown}
         onExit={onClose}
         onDone={onDone}
       />

@@ -56,7 +56,8 @@ const SCENT_DISC = 20;
 const SCENT_OFFSET = -6;
 const TILE_MARK = 22;
 const POUCH_MARK = ART_SIZE.glyphSm;
-const HUNGERER_FACE = ART_SIZE.thumb;
+// His face at the badge step: the header is one row of 84pt, not a portrait.
+const HUNGERER_FACE = ART_SIZE.badge;
 // How long a reveal sticker stays up: two "read one line" beats.
 const REVEAL_DWELL_MS = 1600;
 // The reveal's lean — a sticker slapped on in a hurry.
@@ -78,6 +79,8 @@ export interface SnoutDeepPatchProps {
   dispatch: (event: SnoutDeepEvent) => void;
   /** Seconds until the patch closes, for the sign; omit to hide the line. */
   secondsLeft?: number;
+  /** The open phase's live countdown ("3h 58m") — the same string the Barn's fan row shows. Wins over `secondsLeft`. */
+  phaseCountdown?: string;
   /** The close chip: leave the dig without ending it. */
   onExit: () => void;
   /** Fires once when the dig ends, with what the payoff sheet renders. */
@@ -90,6 +93,7 @@ export function SnoutDeepPatch({
   state,
   dispatch,
   secondsLeft,
+  phaseCountdown,
   onExit,
   onDone,
   boomTickles,
@@ -150,7 +154,11 @@ export function SnoutDeepPatch({
   const tileH = Math.round(tileW * TILE_RATIO);
 
   const layerFinds = state.board.layers[state.layer].finds;
-  const closesIn = secondsLeft != null ? `closes in ${formatCountdownHM(secondsLeft)}` : null;
+  const closesIn = phaseCountdown
+    ? `closes in ${phaseCountdown}`
+    : secondsLeft != null
+      ? `closes in ${formatCountdownHM(secondsLeft)}`
+      : null;
 
   return (
     <View style={styles.page}>
@@ -158,9 +166,14 @@ export function SnoutDeepPatch({
         {/* HEADER: the close chip and the sign on the left, his face on the right. */}
         <View style={styles.header}>
           <IconButton name="x" label="Leave the patch" onPress={onExit} variant="paper" />
-          <Sticker color="paper" shadow="sm" rotate={TILT.card} pad style={styles.sign}>
-            <T role="cardTitle">the truffle patch · Feeding</T>
-            {closesIn ? <Hand tone="secondary">{closesIn}</Hand> : null}
+          {/* One line each: the sign must not wrap, or the header eats the patch. */}
+          <Sticker color="paper" shadow="sm" rotate={TILT.card} style={styles.sign}>
+            <Label numberOfLines={1}>the truffle patch · Feeding</Label>
+            {closesIn ? (
+              <Hand tone="secondary" numberOfLines={1}>
+                {closesIn}
+              </Hand>
+            ) : null}
           </Sticker>
           <View style={styles.hungerer}>
             <Hungerer state={face} size={HUNGERER_FACE} />
@@ -211,8 +224,8 @@ export function SnoutDeepPatch({
         </View>
 
         {/* THE WHISPER. */}
-        <Sticker color="cream" shadow="sm" rotate={-TILT.card} pad style={styles.whisper}>
-          <Hand>{whisperFor(state)}</Hand>
+        <Sticker color="cream" shadow="sm" rotate={-TILT.card} style={styles.whisper}>
+          <Hand numberOfLines={2}>{whisperFor(state)}</Hand>
         </Sticker>
 
         {/* THE POUCH: loose · his if he wakes / tied · yours for keeps. */}
@@ -252,7 +265,7 @@ export function SnoutDeepPatch({
               <View style={styles.footerHalf}>
                 <Button
                   variant="ghost"
-                  size="md"
+                  size="sm"
                   full
                   disabled={!!state.ended}
                   onPress={() => dispatch({ type: "tie" })}
@@ -265,7 +278,7 @@ export function SnoutDeepPatch({
               <View style={styles.footerHalf}>
                 <Button
                   variant="ghost"
-                  size="md"
+                  size="sm"
                   full
                   disabled={!!state.ended}
                   onPress={() => dispatch({ type: "descend" })}
@@ -450,15 +463,16 @@ function PouchWell({
       shadow="sm"
       rotate={0}
       borderStyle={finds.length === 0 ? "dashed" : "solid"}
-      pad
       accessibilityRole="text"
       accessibilityLabel={`${kicker}, ${sub}: ${finds.length === 0 ? empty : finds.map((f) => findCopy(f).title).join(", ")}`}
       style={styles.well}
     >
-      <Label>{kicker}</Label>
-      <Hand tone="secondary" numberOfLines={1}>
-        {sub}
-      </Hand>
+      <View style={styles.wellHead}>
+        <Label>{kicker}</Label>
+        <Hand tone="secondary" numberOfLines={1} style={styles.wellSub}>
+          {sub}
+        </Hand>
+      </View>
       <View style={styles.wellMarks}>
         {finds.length === 0 ? (
           <Hand tone="disabled" numberOfLines={1}>
@@ -474,17 +488,27 @@ function PouchWell({
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: WHIMSY.cream },
+  // Tight on purpose: the whole dig fits a 17 Pro's modal without a scroll
+  // (header 84 · strip 28 · patch ≈ 270 · whisper 56 · pouch 56 · footer 40 ·
+  // verbs 48, plus these gaps). The ScrollView is the safety net for small
+  // phones and large type, not the design.
   scroll: {
     paddingHorizontal: PAGE_PAD,
-    paddingVertical: SPACE.md,
-    gap: SPACE.md,
+    paddingVertical: SPACE.sm,
+    gap: SPACE.sm,
   },
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: SPACE.sm,
   },
-  sign: { flex: 1, minWidth: 0, gap: SPACE.xxs },
+  sign: {
+    flex: 1,
+    minWidth: 0,
+    gap: SPACE.xxs,
+    paddingHorizontal: SPACE.md,
+    paddingVertical: SPACE.sm,
+  },
   hungerer: { alignItems: "center", gap: SPACE.xs },
   layerStrip: {
     flexDirection: "row",
@@ -531,15 +555,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...SHADOW_SM,
   },
-  whisper: { gap: SPACE.xxs },
+  whisper: { paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
   pouch: { flexDirection: "row", gap: SPACE.md },
-  well: { flex: 1, minWidth: 0, gap: SPACE.xxs },
+  well: { flex: 1, minWidth: 0, gap: SPACE.xxs, paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
+  wellHead: { flexDirection: "row", alignItems: "baseline", gap: SPACE.xs, minWidth: 0 },
+  wellSub: { flex: 1, minWidth: 0 },
   wellMarks: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     gap: SPACE.xs,
-    marginTop: SPACE.xs,
     minHeight: POUCH_MARK,
   },
   footer: { flexDirection: "row", gap: SPACE.md },

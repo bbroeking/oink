@@ -232,6 +232,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
           onClose={close}
           onDug={onDug}
           onBusyChange={setBusy}
+          phaseCountdown={phaseOpen ? countdown : undefined}
         />
       ) : session ? (
         <TrufflePatch

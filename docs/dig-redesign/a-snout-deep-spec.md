@@ -258,9 +258,8 @@ dialogs on the reveal family's Ledger sheet.
    the Barn*; *a Clockwork Acorn · a day of the Auto-Tickler*) and lands in
    the *tied* well; a truffle lands in *loose*.
 4. **Whispers** teach rules and say *that* something is near, never what:
-   *topsoil. press your snout to the mud to sniff — the mark is how many
-   finds touch that tile. a rub moves a little, a shove a lot. a sniff never
-   wakes him here; a rub almost never.* · *a 3 beside a 1 — the truffle runs
+   *topsoil. a sniff counts the finds touching a tile. a rub moves a little,
+   a shove a lot. nothing quiet wakes him here.* · *a 3 beside a 1 — the truffle runs
    one way. follow the bigger number.* · *the mud. fatter down here — and he
    sleeps lighter. a sniff is the quiet way to know: one in forty stirs him.
    a rub, one in twenty.* · *one rub in twenty stirs him here. one sniff in

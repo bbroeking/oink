@@ -695,7 +695,7 @@ export function whisperFor(state: SnoutDeepState): string {
   const hasLow = state.scent.some((s) => s === 1);
   if (state.layer === 0) {
     if (sniffed === 0)
-      return "topsoil. press your snout to the mud to sniff — the mark is how many finds touch that tile. a rub moves a little, a shove a lot. a sniff never wakes him here; a rub almost never.";
+      return "topsoil. a sniff counts the finds touching a tile. a rub moves a little, a shove a lot. nothing quiet wakes him here.";
     if (hasHigh && hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
     return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";

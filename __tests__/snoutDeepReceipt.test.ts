@@ -227,7 +227,7 @@ describe("copy", () => {
 
   test("whispers say that something is near, never what (§5.4)", () => {
     let s = initialState(board(QUIET), { coop: false, uncrewed: false });
-    expect(whisperFor(s)).toMatch(/^topsoil\. press your snout/);
+    expect(whisperFor(s)).toMatch(/^topsoil\. a sniff counts/);
     s = act(s, "sniff", t(1, 1)); // 3
     s = act(s, "sniff", t(3, 3)); // 1 (the Boom)
     expect(whisperFor(s)).toBe("a 3 beside a 1 — the truffle runs one way. follow the bigger number.");

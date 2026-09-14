@@ -91,7 +91,7 @@ describe("SnoutDeepPatch", () => {
     expect(all).toContain("the truffle patch · Feeding");
     expect(all).toContain("closes in 2h 10m");
     expect(all).toContain("snoring");
-    expect(all).toMatch(/topsoil\. press your snout/);
+    expect(all).toMatch(/topsoil\. a sniff counts/);
     expect(all).toContain("his if he wakes");
     expect(all).toContain("yours for keeps");
     expect(all).toContain("Tie it off");
