@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	AccessibilityInfo,
 	Animated,
-	LayoutAnimation,
+	BackHandler,
+	InteractionManager,
 	Platform,
 	StyleSheet,
-	UIManager,
 	View,
 	Image,
 	ScrollView,
 	FlatList,
-	type ImageSourcePropType
+	findNodeHandle,
+	useWindowDimensions,
+	type GestureResponderEvent
 } from "react-native";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { supabase } from "../utils/supabase";
@@ -57,6 +60,7 @@ import { BarnVisitModal } from "./BarnVisitModal";
 import {
 	AVATAR_SIZE,
 	BORDER,
+	BUTTON_SIZE,
 	FONTS,
 	MOTION,
 	MOTION_SPRING,
@@ -69,11 +73,14 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 import {
-	MOTION_DURATION,
-	useMotionPolicy,
-	type MotionPolicy,
-} from "@/hooks/useMotionPolicy";
-import { PorchRoundLaunchCard } from "./PorchRoundLaunchCard";
+	ACTION_PANEL_INSETS,
+	ROW_MIN_H,
+	actionCellTier,
+	actionPanelGeometry,
+	actionPanelSlideFrom,
+	type ActionCellTier,
+} from "@/constants/layoutBreakpoints";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { showToast } from "@/components/ui/Toast";
 import {
 	useRitualCaster,
@@ -90,15 +97,6 @@ import {
 	fetchFriendVisitStreaks,
 	type FriendVisitStreak,
 } from "@/utils/visitStreaks";
-
-// Android's old architecture keeps LayoutAnimation behind an opt-in flag (the
-// same guard `BarnUpdatesTray` carried). Harmless everywhere else.
-if (
-	Platform.OS === "android" &&
-	typeof UIManager.setLayoutAnimationEnabledExperimental === "function"
-) {
-	UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 // PostgREST returns 1:1 joins either as an object or a length-1
 // array. Flatten so consumers can read .name directly.
@@ -126,20 +124,23 @@ const TAB_OPTIONS = (friendCount: number): SegmentOption<Tab>[] => [
 	},
 ];
 
-// Drawing geometry for the row's pig tile and its one small round control.
-// Diameters, not spacing steps: the tile is a frame the sprite is drawn inside
-// (the `Avatar` precedent), and the control restores the 44pt frame with
-// hitSlop rather than by inflating the circle.
+// Drawing geometry for the row's pig tile. Diameters, not spacing steps: the
+// tile is a frame the sprite is drawn inside (the `Avatar` precedent). The
+// actions live in a panel the trigger opens now, not in a bar under the
+// identity, so the tile returns to the mid avatar frame — the pig sits level
+// with the name and the one meta line. (2026-09-14)
 const PIG_TILE = AVATAR_SIZE[1];
 const PIG_SPRITE = 36;
 const PIG_SPRITE_PRESTIGE = 48;
-const ROW_CONTROL = SPACE.xxl;
-// The chevron that opens the tray. `Icon`'s box, not a spacing step.
-const ROW_CHEVRON = SPACE.lg;
+// The Add tab's letter disc is not a portrait — it keeps the smaller frame.
+const INITIAL_TILE = AVATAR_SIZE[1];
 
-const RAIL_GAP = SPACE.sm; // between the blessing door and the chevron
-// The identity stays compact; the expanded actions can wrap at large text sizes.
+// The identity stays compact; the panel's cells are fixed-height, so their type
+// shrinks a step rather than wrapping out of the row. (2026-09-12 chrome cap)
 const ROW_TYPE_CAP = 1.3;
+// A cell's label may shrink this far before it would truncate — the cell is one
+// fifth of the name column and the words are one verb each.
+const CELL_LABEL_MIN_SCALE = 0.8;
 
 export default function Friends({
 	userId,
@@ -180,7 +181,6 @@ export default function Friends({
 	// button. null until fetched → treat as available (don't gate on unknown).
 	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
 	const noVisitsLeft = visitsLeft === 0;
-	const [porchRefreshKey, setPorchRefreshKey] = useState(0);
 
 	// The caller's pinned friends (friend_favorites). Direct table read under
 	// RLS — fail-soft to empty if the migration is dark (pre-push) so the list
@@ -365,7 +365,6 @@ export default function Friends({
 					onVisit={(f) => setVisiting({ id: f.id, name: f.username ?? "friend" })}
 					header={
 						<>
-							<PorchRoundLaunchCard refreshKey={porchRefreshKey} />
 							{crewHook?.crew.crew ? (
 								<ListRow
 									fill="sun"
@@ -437,7 +436,6 @@ export default function Friends({
 							// friend out — reload so the row's pair-lock (and the
 							// window-global budget) reflects the fresh state.
 							load();
-							setPorchRefreshKey((key) => key + 1);
 						}}
 					/>
 				) : null}
@@ -447,7 +445,7 @@ export default function Friends({
 }
 
 // ── Friends list ──────────────────────────────────────────────────
-// Each row reveals its quick actions below the friend's identity.
+// Each row shows its identity and every action it can take, at rest.
 // Avatar circle palette — picks a deterministic tint per name so the
 // list reads as a colorful sounder rather than a wall of cream.
 const AVATAR_TINTS: AvatarFill[] = [
@@ -474,7 +472,7 @@ function InitialAvatar({ name }: { name: string | null | undefined }) {
 	const initial = (name ?? "?")[0]?.toUpperCase() ?? "?";
 	return (
 		<Avatar
-			size={PIG_TILE}
+			size={INITIAL_TILE}
 			fill={tintFor(name)}
 			label={name ?? "Unknown pig"}
 		>
@@ -483,178 +481,393 @@ function InitialAvatar({ name }: { name: string | null | undefined }) {
 	);
 }
 
-// ── The one ritual door that stays out ────────────────────────────
-// There is exactly ONE blessing and ONE curse a day, so the picker never picked
-// anything — the only decision is WHO. Today's blessing keeps a round door on
-// the rail (one tap, always reachable); the curse moved into the tray, where it
-// has room to say what it is before it fires. Both are `useRitualDoor`.
-function RitualDoor({
-	mode,
-	targetUserId,
-	door,
-}: {
-	mode: RitualMode;
-	targetUserId: string;
-	door: RitualDoorView;
-}) {
-	return (
-		<Sticker
-			color={door.copy.fill}
-			rotate={0}
-			radius={RADII.pill}
-			// Armed is the row's "selected" chrome — a heavier outline, never a
-			// color change alone (design-system spec §3.3).
-			border={door.armed ? BORDER.heavy : BORDER.ink}
-			shadow="none"
-			disabled={door.disabled}
-			onPress={door.press}
-			hitSlop={SPACE.sm}
-			accessibilityLabel={door.label}
-			accessibilityHint={door.hint}
-			accessibilityState={{ disabled: door.disabled, expanded: door.armed || undefined }}
-			testID={`ritual-door-${mode}-${targetUserId}`}
-			style={styles.rowVisitBtn}
-		>
-			{door.icon ? (
-				<Image source={door.icon} style={styles.rowRitualIcon} />
-			) : (
-				<GameIcon name={mode} size={SPACE.xl} muted={door.disabled} />
-			)}
-		</Sticker>
-	);
+// ── The row's actions menu ────────────────────────────────────────
+// A kebab on every friend row opens ONE anchored panel that slides over that
+// row's text column. Nothing navigates, nothing changes height, and only one
+// panel is ever open — a single id at the list level. The cells are the same
+// equal-width `Sticker` cells the action bar drew, now behind the trigger that
+// names them. (2026-09-14)
+
+/**
+ * The open panel's two boxes, handed up to the list. An outside touch is a hit
+ * test against these — never a full-screen scrim, which on the new
+ * architecture swallows every tap in the tab (the build-99 dead Barn).
+ */
+export interface OpenMenuRefs {
+	panel: React.MutableRefObject<View | null>;
+	trigger: React.MutableRefObject<View | null>;
 }
 
-// The chevron that opens the tray — the row's one "there is more here" mark.
-// It flips 180° rather than swapping art, so open and closed are the same
-// object seen from two sides. Instant under Reduce Motion.
-function RowChevron({ expanded, policy, name, onPress }: {
-	expanded: boolean;
-	policy: MotionPolicy;
-	name: string;
+/** The panel's id — `aria-controls` on the trigger points at it on web. */
+const menuNativeId = (friendId: string) => `friend-menu-${friendId}`;
+
+/**
+ * react-native-web forwards every `aria-*` attribute to the DOM node; React
+ * Native has no prop mirror for `haspopup` / `controls`, and neither means
+ * anything to VoiceOver (which reads `accessibilityRole` + `expanded`).
+ */
+function webMenuAria(
+	friendId: string
+): Record<`aria-${string}`, string> | undefined {
+	if (Platform.OS !== "web") return undefined;
+	return { "aria-haspopup": "menu", "aria-controls": menuNativeId(friendId) };
+}
+
+/** Web-only key handling — react-native-web's DOM props, inert on native. */
+type WebKeyProps = { onKeyDown?: (event: KeyboardEvent) => void };
+
+/**
+ * Send accessibility focus to a host view — VoiceOver on native, DOM focus on
+ * web. Guarded: a host that has already unmounted gets nothing.
+ */
+function focusHost(host: View | null | undefined) {
+	if (!host) return;
+	if (Platform.OS === "web") {
+		(host as unknown as { focus?: () => void }).focus?.();
+		return;
+	}
+	const tag = findNodeHandle(host);
+	if (tag != null) AccessibilityInfo.setAccessibilityFocus(tag);
+}
+
+/**
+ * One action in a row's menu. The row builds its own list from its own props,
+ * and every handler here closes over that row's friend id — nothing reads a
+ * list-level "current friend". (spec §1)
+ */
+interface RowAction {
+	key: "visit" | "bless" | "curse" | "pin" | "profile";
+	label: string;
+	/** The one-line state, shown on regular phones and spoken on narrow ones. */
+	sub?: string;
+	/** The cell's drawing — the cast ritual's own art, a GameIcon or an Icon. */
+	art: React.ReactNode;
+	fill: string;
+	disabled?: boolean;
+	/** Curse only — the armed cell takes the heavy outline. */
+	armed?: boolean;
+	/** The curse's FIRST tap keeps the panel open; everything else closes it. */
+	closesOnPress: boolean;
 	onPress: () => void;
-}) {
-	const spin = useRef(new Animated.Value(expanded ? 1 : 0)).current;
-	useEffect(() => {
-		const to = expanded ? 1 : 0;
-		if (!policy.allowDecorativeMotion) {
-			spin.setValue(to);
-			return;
-		}
-		const anim = Animated.spring(spin, {
-			toValue: to,
-			...MOTION_SPRING.settle,
-			useNativeDriver: true,
-		});
-		anim.start();
-		return () => anim.stop();
-	}, [expanded, policy.allowDecorativeMotion, spin]);
-	return (
-		<Animated.View
-			style={{
-				transform: [
-					{
-						rotate: spin.interpolate({
-							inputRange: [0, 1],
-							outputRange: ["0deg", "180deg"],
-						}),
-					},
-				],
-			}}
-		>
-			<IconButton
-				name="chevronDown"
-				iconSize={ROW_CHEVRON}
-				visualSize={ROW_CONTROL}
-				variant="none"
-				color={UI_COLORS.textSecondary}
-				label={`${expanded ? "Hide" : "Show"} quick actions for ${name}`}
-				onPress={onPress}
-			/>
-		</Animated.View>
-	);
+	accessibilityLabel: string;
+	accessibilityHint?: string;
+	testID: string;
 }
 
-// The two main actions share a full-width row. Their status stays readable at
-// every phone width, and the text can grow with Dynamic Type.
-function TrayCell({
+function ActionCell({
 	fill,
-	action,
 	art,
 	label,
 	sub,
+	tier,
 	onPress,
 	disabled,
 	armed,
 	accessibilityLabel,
 	accessibilityHint,
 	testID,
+	cellRef,
 }: {
 	fill: string;
-	action: "visit" | "curse";
-	art?: ImageSourcePropType | null;
+	art: React.ReactNode;
 	label: string;
-	sub: string;
+	sub?: string;
+	tier: ActionCellTier;
 	onPress: () => void;
 	disabled?: boolean;
 	armed?: boolean;
 	accessibilityLabel: string;
 	accessibilityHint?: string;
 	testID?: string;
+	cellRef?: (host: View | null) => void;
 }) {
+	// A narrow cell drops the state line, never the state: the copy moves into
+	// the hint so a screen reader hears it either way.
+	const hint =
+		tier.sub || !sub
+			? accessibilityHint
+			: accessibilityHint
+				? `${sub}. ${accessibilityHint}`
+				: sub;
 	return (
 		<Sticker
+			ref={cellRef}
 			color={fill}
 			rotate={0}
 			radius={RADII.md}
+			// Armed is the cell's "selected" chrome — a heavier outline, never a
+			// color change alone (design-system spec §3.3).
 			border={armed ? BORDER.heavy : BORDER.ink}
 			shadow="none"
 			disabled={disabled}
 			onPress={onPress}
+			accessibilityRole="menuitem"
 			accessibilityLabel={accessibilityLabel}
-			accessibilityHint={accessibilityHint}
+			accessibilityHint={hint}
 			accessibilityState={{ disabled: !!disabled, expanded: armed || undefined }}
 			testID={testID}
-			style={styles.trayCell}
+			style={styles.actionCell}
 		>
-			{art ? (
-				<Image source={art} style={styles.trayArt} />
-			) : (
-				<GameIcon name={action} size={SPACE.xl} muted={disabled} />
-			)}
-			<View style={styles.trayCopy}>
-				<T role="body" tone={disabled ? "secondary" : "primary"}>{label}</T>
-				{sub ? <T role="bodySm" tone="secondary">{sub}</T> : null}
-			</View>
+			{art}
+			{/* The cells are fixed-height now, so a long word shrinks a step
+			    rather than wrapping past the panel's floor. */}
+			<T
+				role={tier.labelRole}
+				tone={disabled ? "secondary" : "primary"}
+				align="center"
+				numberOfLines={1}
+				adjustsFontSizeToFit
+				minimumFontScale={CELL_LABEL_MIN_SCALE}
+				maxFontSizeMultiplier={ROW_TYPE_CAP}
+			>
+				{label}
+			</T>
+			{tier.sub && sub ? (
+				<T
+					role="kicker"
+					tone="secondary"
+					align="center"
+					numberOfLines={1}
+					adjustsFontSizeToFit
+					minimumFontScale={CELL_LABEL_MIN_SCALE}
+					maxFontSizeMultiplier={ROW_TYPE_CAP}
+				>
+					{sub}
+				</T>
+			) : null}
 		</Sticker>
 	);
 }
 
-function RowTray({ open, testID, children }: {
-	open: boolean;
-	testID: string;
-	children: React.ReactNode;
-}) {
-	if (!open) return null;
-	return <View testID={testID} style={styles.tray}>{children}</View>;
+// A ritual cell's drawing: the cast ritual's own art once this friend has
+// today's ritual from you, the glyph-only door until then.
+function ritualArt(
+	mode: RitualMode,
+	door: RitualDoorView,
+	tier: ActionCellTier
+): React.ReactNode {
+	const box = { width: tier.glyph, height: tier.glyph };
+	return door.icon ? (
+		<Image source={door.icon} style={[styles.actionArt, box]} />
+	) : (
+		<GameIcon name={mode} size={tier.glyph} muted={door.disabled} />
+	);
 }
 
-// The friend's identity and blessing stay visible while the actions unfold.
-function FriendRow({
+/**
+ * The trigger. The same icon whether the panel is out or not — "open" is the
+ * panel beside it, never a glyph swap — with a 44pt frame around the sanctioned
+ * small visual and `expanded` on its accessibility state.
+ */
+const RowMenuTrigger = React.forwardRef<
+	View,
+	{ friendId: string; name: string; expanded: boolean; onPress: () => void }
+>(function RowMenuTrigger({ friendId, name, expanded, onPress }, ref) {
+	return (
+		<IconButton
+			ref={ref}
+			name="more"
+			visualSize={BUTTON_SIZE.xs.minH}
+			label={expanded ? `Hide actions for ${name}` : `Actions for ${name}`}
+			accessibilityHint={
+				expanded
+					? "Closes this friend's actions"
+					: "Opens visit, bless, curse, pin and profile for this friend"
+			}
+			expanded={expanded}
+			onPress={onPress}
+			webAria={webMenuAria(friendId)}
+			testID={`friend-menu-trigger-${friendId}`}
+		/>
+	);
+});
+
+/**
+ * The panel. Absolutely positioned inside the row, so the row's height is set
+ * by its identity and the list never reflows; mounted only while open, and
+ * unmounted after the exit so the accessibility tree never holds a hidden menu.
+ */
+function RowActionsPanel({
+	friendId,
+	name,
+	actions,
+	open,
+	tier,
+	panelRef,
+	onRequestClose,
+	onReturnFocus,
+}: {
+	friendId: string;
+	name: string;
+	actions: RowAction[];
+	open: boolean;
+	tier: ActionCellTier;
+	panelRef: React.MutableRefObject<View | null>;
+	onRequestClose: () => void;
+	onReturnFocus: () => void;
+}) {
+	// The geometry the panel's own styles imply, for the slide's start offset
+	// before the first layout lands. Flex does the laying out.
+	const { width } = useWindowDimensions();
+	const restingTravel = actionPanelSlideFrom(
+		actionPanelGeometry(width).panelWidth
+	);
+	const motion = useMotionPolicy();
+	// `useState`'s initializer, not a ref: the value is created once and is
+	// never read during render, which is what the panel's driver needs.
+	const [slide] = useState(() => new Animated.Value(restingTravel));
+	const travel = useRef(restingTravel);
+	const [mounted, setMounted] = useState(open);
+	const cellHosts = useRef<(View | null)[]>([]);
+
+	useEffect(() => {
+		if (open) setMounted(true);
+	}, [open]);
+
+	// In from the trigger side on a spring, out the same way, then unmount.
+	// Reduce Motion takes the rest pose immediately — no travel, no spring.
+	useEffect(() => {
+		if (!mounted) return;
+		const to = open ? 0 : travel.current;
+		if (!motion.allowDecorativeMotion) {
+			slide.setValue(to);
+			if (!open) setMounted(false);
+			return;
+		}
+		const anim = Animated.spring(slide, {
+			toValue: to,
+			useNativeDriver: true,
+			...MOTION_SPRING.settle,
+		});
+		anim.start(({ finished }) => {
+			if (finished && !open) setMounted(false);
+		});
+		return () => anim.stop();
+	}, [motion.allowDecorativeMotion, mounted, open, slide]);
+
+	const firstEnabled = actions.findIndex((a) => !a.disabled);
+
+	// Focus the first cell you can actually press, once the entrance is on its
+	// way (an immediate call lands before the node exists).
+	useEffect(() => {
+		if (!open || !mounted) return;
+		const task = InteractionManager.runAfterInteractions(() => {
+			focusHost(cellHosts.current[firstEnabled < 0 ? 0 : firstEnabled]);
+		});
+		return () => task.cancel();
+	}, [firstEnabled, mounted, open]);
+
+	if (!mounted) return null;
+
+	// Web keyboard: Escape closes and hands focus back, the arrows walk the
+	// cells, Home/End jump. iOS needs none of it (VoiceOver swipes).
+	const webKeys: WebKeyProps =
+		Platform.OS === "web"
+			? {
+					onKeyDown: (event) => {
+						const hosts = actions
+							.map((a, i) => (a.disabled ? null : cellHosts.current[i]))
+							.filter((h): h is View => !!h);
+						if (event.key === "Escape") {
+							event.preventDefault();
+							onRequestClose();
+							onReturnFocus();
+							return;
+						}
+						if (hosts.length === 0) return;
+						const at = hosts.indexOf(
+							document.activeElement as unknown as View
+						);
+						const step =
+							event.key === "ArrowRight"
+								? at + 1
+								: event.key === "ArrowLeft"
+									? at - 1
+									: event.key === "Home"
+										? 0
+										: event.key === "End"
+											? hosts.length - 1
+											: null;
+						if (step === null) return;
+						event.preventDefault();
+						focusHost(hosts[(step + hosts.length) % hosts.length]);
+					},
+				}
+			: {};
+
+	return (
+		<Animated.View
+			ref={panelRef}
+			nativeID={menuNativeId(friendId)}
+			accessibilityRole="menu"
+			accessibilityLabel={`Actions for ${name}`}
+			testID={menuNativeId(friendId)}
+			onLayout={(event) => {
+				travel.current = actionPanelSlideFrom(event.nativeEvent.layout.width);
+			}}
+			// The panel sits ON the identity, so it owns every touch inside its
+			// outline: the cells claim theirs first (responder negotiation runs
+			// child-first), and the paper between them stops here rather than
+			// falling through to "open their profile" underneath.
+			onStartShouldSetResponder={() => true}
+			style={[styles.actionPanelLayer, { transform: [{ translateX: slide }] }]}
+			{...webKeys}
+		>
+			<Sticker
+				color="cream2"
+				rotate={0}
+				radius={RADII.md}
+				border={BORDER.ink}
+				shadow="none"
+				style={styles.actionPanel}
+			>
+				{actions.map((action, i) => (
+					<ActionCell
+						key={action.key}
+						fill={action.fill}
+						art={action.art}
+						label={action.label}
+						sub={action.sub}
+						tier={tier}
+						disabled={action.disabled}
+						armed={action.armed}
+						onPress={() => {
+							action.onPress();
+							if (action.closesOnPress) {
+								onRequestClose();
+								onReturnFocus();
+							}
+						}}
+						accessibilityLabel={action.accessibilityLabel}
+						accessibilityHint={action.accessibilityHint}
+						testID={action.testID}
+						cellRef={(host) => {
+							cellHosts.current[i] = host;
+						}}
+					/>
+				))}
+			</Sticker>
+		</Animated.View>
+	);
+}
+
+// The friend's identity, and behind the kebab every action it can take.
+const FriendRow = React.memo(function FriendRow({
 	friend,
 	index,
 	crewName,
 	s1,
 	caster,
 	onRitualOutcome,
-	expanded,
-	onToggle,
-	onClose,
-	policy,
 	visitsSpent,
 	visitsLeft,
 	pairSpent,
 	visitStreak,
 	isFav,
+	menuOpen,
+	onToggleMenu,
+	onCloseMenu,
+	onOpenRefs,
 	onToggleFavorite,
 	onPick,
 	onVisit,
@@ -665,63 +878,74 @@ function FriendRow({
 	s1: boolean;
 	caster: UseRitualCaster;
 	onRitualOutcome: (mode: RitualMode, name: string, outcome: CastOutcome) => void;
-	expanded: boolean;
-	onToggle: () => void;
-	onClose: () => void;
-	policy: MotionPolicy;
 	visitsSpent: boolean;
 	visitsLeft: number | null | undefined;
 	pairSpent: boolean;
 	visitStreak: FriendVisitStreak | undefined;
 	isFav: boolean;
+	/** This row's panel is the one panel that's out. */
+	menuOpen: boolean;
+	onToggleMenu: (friendId: string) => void;
+	onCloseMenu: () => void;
+	/** Hands the open panel + trigger to the list, for the outside-tap test. */
+	onOpenRefs: (friendId: string, refs: OpenMenuRefs | null) => void;
 	onToggleFavorite: (friendId: string) => void;
 	onPick: (id: string) => void;
 	onVisit: (friend: Profile) => void;
 }) {
 	const f = friend;
+	const id = f.id;
 	const name = f.username ?? "friend";
 	const wears = hatName(f);
+	// The cells' type tier follows the window, never a stored breakpoint.
+	const { width } = useWindowDimensions();
+	const tier = actionCellTier(width);
 	// This pair is tickled today (per-pair 24h lock). Compose with the global
 	// gate: the visit cell disables if EITHER is spent.
 	const rowSpent = visitsSpent || pairSpent;
-	// Show the compact per-row "tickled today" tag only when it's THIS pair's
-	// lock and the global gate is NOT spent — when the global hint is up it
-	// speaks for the whole list, so tags down every row would just be spam.
-	const showPairHint = pairSpent && !visitsSpent;
+
+	const triggerRef = useRef<View | null>(null);
+	const panelRef = useRef<View | null>(null);
 
 	const bless = useRitualDoor({
 		mode: "bless",
 		name,
-		targetUserId: f.id,
+		targetUserId: id,
 		caster,
 		onOutcome: onRitualOutcome,
 	});
 	const curse = useRitualDoor({
 		mode: "curse",
 		name,
-		targetUserId: f.id,
+		targetUserId: id,
 		caster,
 		onOutcome: onRitualOutcome,
 	});
 
-	// Closing the tray drops an armed curse. An arm you can no longer see is an
-	// arm that fires by surprise.
+	// An arm you cannot see is an arm that fires by surprise: the curse drops
+	// its arm with the panel, as well as on the hook's own timer.
 	const { disarm } = curse;
 	useEffect(() => {
-		if (!expanded) disarm();
-	}, [expanded, disarm]);
+		if (!menuOpen) disarm();
+	}, [disarm, menuOpen]);
 
-	// A tray action closes the row once it has fired — except the curse's FIRST
-	// tap, which only arms and has to stay on screen to be tapped again.
-	const runAndClose = (action: () => void) => {
-		action();
-		onClose();
-	};
-	const pressCurse = () => {
-		const casts = curse.armed;
-		curse.press();
-		if (casts) onClose();
-	};
+	// While this row's panel is out, the list holds its two boxes so a touch
+	// anywhere else can close it without a full-screen scrim.
+	useEffect(() => {
+		if (!menuOpen) return;
+		onOpenRefs(id, { panel: panelRef, trigger: triggerRef });
+		return () => onOpenRefs(id, null);
+	}, [id, menuOpen, onOpenRefs]);
+
+	const focusTrigger = useCallback(() => focusHost(triggerRef.current), []);
+	const toggleMenu = useCallback(() => onToggleMenu(id), [id, onToggleMenu]);
+	const pickProfile = useCallback(() => onPick(id), [id, onPick]);
+	const visitBarn = useCallback(() => onVisit(f), [f, onVisit]);
+	const togglePin = useCallback(
+		() => onToggleFavorite(id),
+		[id, onToggleFavorite]
+	);
+	const pressCurse = curse.press;
 
 	const visitSub = visitsSpent
 		? "None left"
@@ -731,16 +955,127 @@ function FriendRow({
 				? `${visitsLeft} left`
 				: "";
 
+	const actions = useMemo<RowAction[]>(
+		() => [
+			{
+				key: "visit",
+				label: "Visit",
+				sub: visitSub,
+				art: <GameIcon name="visit" size={tier.glyph} muted={rowSpent} />,
+				fill: WHIMSY.sky,
+				disabled: rowSpent,
+				closesOnPress: true,
+				onPress: visitBarn,
+				accessibilityLabel: visitsSpent
+					? "All tickled out — your snout needs a rest"
+					: pairSpent
+						? `You've tickled ${name}'s barn today — come back tomorrow.`
+						: `Visit ${name}'s barn`,
+				accessibilityHint: rowSpent
+					? "Your barn visits come back later today"
+					: "Opens their barn so you can tickle their pig",
+				testID: `friend-menu-visit-${id}`,
+			},
+			// Today's blessing and today's curse — the same machine, at the same
+			// scale as everything else the row can do.
+			{
+				key: "bless",
+				label: bless.copy.action,
+				sub: bless.sub,
+				art: ritualArt("bless", bless, tier),
+				fill: bless.copy.fill,
+				disabled: bless.disabled,
+				closesOnPress: true,
+				onPress: bless.press,
+				accessibilityLabel: bless.label,
+				accessibilityHint: bless.hint,
+				testID: `friend-menu-bless-${id}`,
+			},
+			{
+				key: "curse",
+				// The arm has to be visible without a state line: the label flips
+				// with the heavy border, so "tap twice" reads as Curse → Again.
+				label: curse.armed ? "Again" : curse.copy.action,
+				sub: curse.sub,
+				art: ritualArt("curse", curse, tier),
+				fill: curse.copy.fill,
+				disabled: curse.disabled,
+				armed: curse.armed,
+				// The first tap arms and the panel stays out; the second casts
+				// and closes.
+				closesOnPress: curse.armed,
+				onPress: pressCurse,
+				accessibilityLabel: curse.label,
+				accessibilityHint: curse.hint,
+				testID: `friend-menu-curse-${id}`,
+			},
+			{
+				key: "pin",
+				label: isFav ? "Unpin" : "Pin",
+				art: <GameIcon name="pin" size={tier.glyph} />,
+				fill: "paper",
+				closesOnPress: true,
+				onPress: togglePin,
+				accessibilityLabel: isFav
+					? `Unpin ${name} from the top`
+					: `Pin ${name} to the top`,
+				accessibilityHint: isFav
+					? "Returns them to alphabetical order"
+					: "Floats them to the top of your list",
+				testID: `friend-menu-pin-${id}`,
+			},
+			{
+				key: "profile",
+				label: "Profile",
+				art: (
+					<Icon
+						name="user"
+						size={tier.glyph}
+						color={UI_COLORS.textPrimary}
+						strokeWidth={BORDER.ink}
+					/>
+				),
+				fill: "paper",
+				closesOnPress: true,
+				onPress: pickProfile,
+				accessibilityLabel: `Open ${name}'s profile`,
+				accessibilityHint: "Ask for tickles or block them",
+				testID: `friend-menu-profile-${id}`,
+			},
+		],
+		[
+			bless,
+			curse,
+			id,
+			isFav,
+			name,
+			pairSpent,
+			pickProfile,
+			pressCurse,
+			rowSpent,
+			tier,
+			togglePin,
+			visitBarn,
+			visitSub,
+			visitsSpent,
+		]
+	);
+
 	return (
 		<ListRow
 			index={index}
-			onPress={onToggle}
-			expanded={expanded}
-			testID={`friend-row-${f.id}`}
+			// The identity IS the profile door — the same place the menu's Profile
+			// cell goes. A name you can read is a name you can tap.
+			onPress={pickProfile}
+			// A pinned row straightens and takes the heavy outline (ListRow's own
+			// selected chrome).
+			selected={isFav}
+			testID={`friend-row-${id}`}
 			accessibilityLabel={`${name}${f.discriminator ? ` #${f.discriminator}` : ""}${
 				isFav ? ", pinned" : ""
 			}`}
-			accessibilityHint={expanded ? "Hides quick actions" : "Shows quick actions"}
+			accessibilityHint="Opens their profile"
+			style={styles.friendRow}
 			leading={
 				/* PigAvatar instead of the initial circle — the equipped hat shows
 				   up as an inline icon on the pig sprite, so the sounder reads what
@@ -763,45 +1098,30 @@ function FriendRow({
 					>
 						{f.username ?? "—"}
 					</T>
-					{/* The same pushpin marks a friend kept at the top of the list. */}
-					{isFav ? (
-						<GameIcon name="pin" size={SPACE.lg} />
-					) : null}
-				</View>
-			}
-			sub={expanded ? (
-				f.discriminator ? (
-					<Label tone="secondary" maxFontSizeMultiplier={ROW_TYPE_CAP}>
-						#{f.discriminator}
-					</Label>
-				) : undefined
-			) : (
-				<View style={styles.rowSub}>
-					{/* The friend code rides the sub line, not the name line: the
-					    name is the identity, the code is a lookup. (2026-09-12) */}
+					{/* The friend code rides the name line as a lookup, one tier
+					    down in secondary ink: the name is the identity. */}
 					{!!f.discriminator && (
 						<Label
 							tone="secondary"
 							numberOfLines={1}
 							maxFontSizeMultiplier={ROW_TYPE_CAP}
-							style={styles.rowSubItem}
 						>
 							#{f.discriminator}
 						</Label>
 					)}
-					{/* Second line — "wears X" when a hat is equipped. Falls back to
-					    the ♥ + alignment meta so naked pigs aren't blank rows. */}
-					{wears ? (
-						<Label
-							tone="secondary"
-							numberOfLines={1}
-							maxFontSizeMultiplier={ROW_TYPE_CAP}
-							style={styles.rowSubItem}
-						>
-							wears {wears}
-						</Label>
-					) : (
-						<View style={[styles.rowMetaLine, styles.rowSubItem]}>
+					{/* Pinned is visible without opening anything — the pushpin the
+					    menu's Pin cell drives, sitting on the name it kept. */}
+					{isFav && <GameIcon name="pin" size={SPACE.lg} />}
+				</View>
+			}
+			sub={
+				<View style={styles.rowSub}>
+					{/* ONE meta line — the tickle count, the visit streak, and what
+					    they're wearing, dotted apart and free to wrap. The pig sits
+					    level with the name because this is the only line under it.
+					    (2026-09-14) */}
+					<View style={styles.rowMeta}>
+						<View style={styles.rowMetaLine}>
 							<Glyph name="heart" size={SPACE.md} />
 							<T
 								role="kicker"
@@ -812,13 +1132,45 @@ function FriendRow({
 								{(f.tickles_earned ?? 0).toLocaleString()}
 							</T>
 							{!s1 && typeof f.alignment_score === "number" && (
-								<>
-									<View style={styles.rowMetaDot} />
-									<AlignmentBadge score={f.alignment_score} size="sm" compact />
-								</>
+								<AlignmentBadge score={f.alignment_score} size="sm" compact />
 							)}
 						</View>
-					)}
+						{visitStreak && visitStreak.longest_streak > 0 ? (
+							<>
+								<View style={styles.rowMetaDot} />
+								<Tag
+									tone={visitStreak.active ? "sun" : "muted"}
+									glyph="flame"
+									label={
+										visitStreak.active
+											? `${visitStreak.current_streak} day${visitStreak.current_streak === 1 ? "" : "s"}`
+											: `resting · best ${visitStreak.longest_streak}`
+									}
+									accessibilityLabel={
+										visitStreak.active
+											? `Visit streak with ${name}, ${visitStreak.current_streak} days; longest ${visitStreak.longest_streak} days.`
+											: `Visit streak with ${name} is resting; longest ${visitStreak.longest_streak} days.`
+									}
+									maxFontSizeMultiplier={ROW_TYPE_CAP}
+									style={styles.rowSubItem}
+								/>
+							</>
+						) : null}
+						{!!wears && (
+							<>
+								<View style={styles.rowMetaDot} />
+								<T
+									role="kicker"
+									tone="secondary"
+									numberOfLines={1}
+									maxFontSizeMultiplier={ROW_TYPE_CAP}
+									style={styles.rowSubItem}
+								>
+									wears {wears}
+								</T>
+							</>
+						)}
+					</View>
 					{/* Which herd they ride with — the Sounder is part of a pig's
 					    identity now, so it reads at a glance. */}
 					{!!crewName && (
@@ -832,121 +1184,34 @@ function FriendRow({
 							in {crewName}
 						</T>
 					)}
-					{/* Per-pair "tickled today" — you've already visited this
-					    friend's barn today. Suppressed when the global hint is up. */}
-					{showPairHint && (
-						<T
-							role="kicker"
-							tone="secondary"
-							numberOfLines={1}
-							maxFontSizeMultiplier={ROW_TYPE_CAP}
-							style={styles.rowSubItem}
-						>
-							tickled today
-						</T>
-					)}
-					{visitStreak && visitStreak.longest_streak > 0 ? (
-						<Tag
-							tone={visitStreak.active ? "sun" : "muted"}
-							glyph="flame"
-							label={
-								visitStreak.active
-									? `${visitStreak.current_streak} day${visitStreak.current_streak === 1 ? "" : "s"}`
-									: `resting · best ${visitStreak.longest_streak}`
-							}
-							accessibilityLabel={
-								visitStreak.active
-									? `Visit streak with ${name}, ${visitStreak.current_streak} days; longest ${visitStreak.longest_streak} days.`
-									: `Visit streak with ${name} is resting; longest ${visitStreak.longest_streak} days.`
-							}
-							style={styles.visitStreak}
-						/>
-					) : null}
 				</View>
-			)}
-			footer={
-				<RowTray open={expanded} testID={`friend-tray-${f.id}`}>
-					<View style={styles.trayPrimary}>
-						<TrayCell
-							fill={WHIMSY.sky}
-							action="visit"
-							label="Visit"
-							sub={visitSub}
-							disabled={rowSpent}
-							onPress={() => runAndClose(() => onVisit(f))}
-							accessibilityLabel={
-								visitsSpent
-									? "All tickled out — your snout needs a rest"
-									: pairSpent
-										? `You've tickled ${name}'s barn today — come back tomorrow.`
-										: `Visit ${name}'s barn`
-							}
-							accessibilityHint={
-								rowSpent
-									? "Your barn visits come back later today"
-									: "Opens their barn so you can tickle their pig"
-							}
-							testID={`friend-visit-${f.id}`}
-						/>
-						<TrayCell
-							fill={curse.copy.fill}
-							action="curse"
-							art={curse.icon}
-							label={curse.copy.action}
-							sub={
-								curse.state === "capped" ? "None left"
-									: curse.state === "settled" ? "Sent today"
-										: curse.state === "busy" ? "Sending…"
-											: curse.armed ? "Tap again" : "Tap twice"
-							}
-							disabled={curse.disabled}
-							armed={curse.armed}
-							onPress={pressCurse}
-							accessibilityLabel={curse.label}
-							accessibilityHint={curse.hint}
-							testID={`ritual-door-curse-${f.id}`}
-						/>
-					</View>
-					<View style={styles.traySecondary}>
-						<Button
-							variant="link"
-							size="sm"
-							icon={<GameIcon name="pin" size={SPACE.lg} />}
-							style={styles.trayLink}
-							onPress={() => runAndClose(() => onToggleFavorite(f.id))}
-							accessibilityLabel={isFav ? `Unpin ${name} from the top` : `Pin ${name} to the top`}
-							accessibilityHint={isFav ? "Returns them to alphabetical order" : "Floats them to the top of your list"}
-							testID={`friend-pin-${f.id}`}
-						>
-							{isFav ? "Unpin" : "Pin"}
-						</Button>
-						<Button
-							variant="link"
-							size="sm"
-							style={styles.trayLink}
-							onPress={() => runAndClose(() => onPick(f.id))}
-							accessibilityLabel={`Open ${name}'s profile`}
-							accessibilityHint="Ask for tickles, visit their barn, or block them"
-							testID={`friend-profile-${f.id}`}
-						>
-							Profile
-						</Button>
-					</View>
-				</RowTray>
 			}
 			trailing={
-				<View style={styles.rowActions}>
-					{/* Today's blessing is the one option that stays out: one tap,
-					    no arming, the thing you came to do. */}
-					<View style={styles.rowBlessTarget}>
-						<RitualDoor mode="bless" targetUserId={f.id} door={bless} />
-					</View>
-					<RowChevron expanded={expanded} policy={policy} name={name} onPress={onToggle} />
-				</View>
+				<RowMenuTrigger
+					ref={triggerRef}
+					friendId={id}
+					name={name}
+					expanded={menuOpen}
+					onPress={toggleMenu}
+				/>
+			}
+			// After the rail, never before it: focus order is tree order, so a
+			// screen reader reaches the trigger and then what it opened. (req 4)
+			after={
+				<RowActionsPanel
+					friendId={id}
+					name={name}
+					actions={actions}
+					open={menuOpen}
+					tier={tier}
+					panelRef={panelRef}
+					onRequestClose={onCloseMenu}
+					onReturnFocus={focusTrigger}
+				/>
 			}
 		/>
 	);
-}
+});
 
 // Exported for the friend-row ritual-door tests, which drive the list directly
 // rather than through the whole Friends hub.
@@ -999,31 +1264,6 @@ export function FriendsList({
 	// every door and the strip agree on, one memory of who's already had today's
 	// ritual from you.
 	const caster = useRitualCaster();
-	// Exactly one row's tray is open at a time — opening another closes the
-	// first, so the list never carries two sets of live actions.
-	const [expandedId, setExpandedId] = useState<string | null>(null);
-	const policy = useMotionPolicy();
-	// A reload is a new list: whatever was open is about to be re-sorted or
-	// re-stated under the thumb, so it closes.
-	useEffect(() => {
-		setExpandedId(null);
-	}, [friends]);
-	const toggleExpanded = useCallback(
-		(id: string) => {
-			// Ease the rows below into place as this friend's actions unfold.
-			if (policy.allowDecorativeMotion) {
-				LayoutAnimation.configureNext(
-					LayoutAnimation.create(
-						MOTION_DURATION.state,
-						LayoutAnimation.Types.easeInEaseOut,
-						LayoutAnimation.Properties.opacity
-					)
-				);
-			}
-			setExpandedId((current) => (current === id ? null : id));
-		},
-		[policy.allowDecorativeMotion]
-	);
 	// Every cast answers out loud in the one transient surface the app has.
 	const onRitualOutcome = useCallback(
 		(mode: RitualMode, name: string, outcome: CastOutcome) => {
@@ -1058,6 +1298,96 @@ export function FriendsList({
 			}),
 		[favorites, friends]
 	);
+
+	// ── The one open menu ─────────────────────────────────────────
+	// One value for the whole list, never one per row: "only one open" and
+	// "switching rows switches the panel" both fall out of the type.
+	const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+	const toggleMenu = useCallback(
+		(friendId: string) =>
+			setOpenMenuFor((cur) => (cur === friendId ? null : friendId)),
+		[]
+	);
+	const closeMenu = useCallback(() => setOpenMenuFor(null), []);
+
+	// A reload or a re-sort under the thumb must not carry an open panel.
+	useEffect(() => setOpenMenuFor(null), [friends]);
+	// Leaving the tab closes it too — nothing stays out behind your back.
+	useFocusEffect(useCallback(() => () => setOpenMenuFor(null), []));
+
+	// Android's back button closes the panel before it leaves the screen.
+	useEffect(() => {
+		if (!openMenuFor) return;
+		const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+			closeMenu();
+			return true;
+		});
+		return () => sub.remove();
+	}, [closeMenu, openMenuFor]);
+
+	// The open row hands up its panel + trigger; a touch outside both closes.
+	const openRefs = useRef<(OpenMenuRefs & { id: string }) | null>(null);
+	const onOpenRefs = useCallback(
+		(friendId: string, refs: OpenMenuRefs | null) => {
+			if (!refs) {
+				// A switch registers B before A tears down, so only the row that
+				// still owns the slot may clear it.
+				if (openRefs.current?.id === friendId) openRefs.current = null;
+				return;
+			}
+			openRefs.current = { id: friendId, ...refs };
+		},
+		[]
+	);
+
+	// Native: a capture-phase hit test on the list's own root. The touch is
+	// never claimed and never prevented, so a tap on ANOTHER row's trigger
+	// closes this one and opens that one in the same gesture.
+	const onListTouchStart = useCallback(
+		(event: GestureResponderEvent) => {
+			const open = openRefs.current;
+			if (!open) return;
+			const { pageX, pageY } = event.nativeEvent;
+			const hosts = [open.panel.current, open.trigger.current].filter(
+				(h): h is View => !!h
+			);
+			if (hosts.length === 0) {
+				closeMenu();
+				return;
+			}
+			let pending = hosts.length;
+			let inside = false;
+			for (const host of hosts) {
+				host.measureInWindow((x, y, w, h) => {
+					if (pageX >= x && pageX <= x + w && pageY >= y && pageY <= y + h) {
+						inside = true;
+					}
+					pending -= 1;
+					if (pending === 0 && !inside) closeMenu();
+				});
+			}
+		},
+		[closeMenu]
+	);
+
+	// Web has no touch responder to ride, so the same hit test runs as a
+	// capture-phase `pointerdown` with `contains`.
+	useEffect(() => {
+		if (Platform.OS !== "web" || !openMenuFor) return;
+		const onDown = (event: Event) => {
+			const open = openRefs.current;
+			if (!open) return;
+			const target = event.target as Node | null;
+			const boxes = [open.panel.current, open.trigger.current].map(
+				(h) => h as unknown as HTMLElement | null
+			);
+			if (target && boxes.some((b) => b?.contains(target))) return;
+			closeMenu();
+		};
+		document.addEventListener("pointerdown", onDown, true);
+		return () => document.removeEventListener("pointerdown", onDown, true);
+	}, [closeMenu, openMenuFor]);
+
 	if (friends.length === 0) {
 		return (
 			<View style={styles.scroll}>
@@ -1094,91 +1424,100 @@ export function FriendsList({
 	// Favorites first (alphabetical within), then everyone else alphabetically —
 	// the existing predictable order, just with pinned friends floated up.
 	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
+	// The list's own root carries the outside-touch hit test: a capture-phase
+	// read of every touch in the list, never a scrim over it.
 	return (
-		<FlatList
-			style={styles.scroll}
-			contentContainerStyle={styles.listContent}
-			data={sorted}
-			keyExtractor={(friend) => friend.id}
-			initialNumToRender={10}
-			maxToRenderPerBatch={8}
-			windowSize={7}
-			removeClippedSubviews
-			showsVerticalScrollIndicator={false}
-			ListHeaderComponent={
-				<>
-					{header}
-					{/* Today's two rituals, named once. The row doors are
-					    glyph-only — this strip is where the glyphs learn their
-					    names, and where the day's allowance counts down. */}
-					<View style={styles.ritualStrip}>
-						{(["bless", "curse"] as const).map((mode) => {
-							const ritual = caster.today(mode);
-							const left = caster.usage(mode)?.remaining;
-							const door = RITUAL_DOOR[mode];
-							return (
-								<Tag
-									key={mode}
-									tone={mode === "bless" ? "sun" : "sage"}
-									art={ritual.icon}
-									label={
-										left === undefined
-											? ritual.name
-											: `${ritual.name} · ${left} left`
-									}
-									accessibilityLabel={
-										left === undefined
-											? `Today's ${door.word} is ${ritual.name}`
-											: `Today's ${door.word} is ${ritual.name}; ${left} left`
-									}
-									testID={`ritual-strip-${mode}`}
-								/>
-							);
-						})}
-					</View>
-					{visitsSpent && (
-						<Sticker
-							color={WHIMSY.slopBand}
-							rotate={0}
-							shadow="sm"
-							style={styles.visitsSpentHint}
-						>
-							<GameIcon name="visit" size={SPACE.card} muted />
-							<T role="kicker">all tickled out — your snout needs a rest</T>
-						</Sticker>
-					)}
-				</>
-			}
-			ListFooterComponent={
-				atCap ? (
-					<T role="kicker" tone="accent" align="center" style={styles.footerNote}>
-						★ you're at the {FRIEND_CAP_LIMIT}-friend cap · remove someone to add new friends
-					</T>
-				) : null
-			}
-			renderItem={({ item: f, index: i }) => (
-				<FriendRow
-					friend={f}
-					index={i}
-					crewName={crewNames.get(f.id)}
-					s1={s1}
-					caster={caster}
-					onRitualOutcome={onRitualOutcome}
-					expanded={expandedId === f.id}
-					onToggle={() => toggleExpanded(f.id)}
-					onClose={() => toggleExpanded(f.id)}
-					policy={policy}
-					visitsSpent={visitsSpent}
-					visitsLeft={visitsLeft}
-					pairSpent={pairLocked.has(f.id)}
-					visitStreak={visitStreaks.get(f.id)}
-					isFav={favorites.has(f.id)}
-					onToggleFavorite={onToggleFavorite}
-					onPick={onPick}
-					onVisit={onVisit}
-				/>
-			)}
-		/>
+		<View style={styles.listWrap} onTouchStart={onListTouchStart}>
+			<FlatList
+				style={styles.scroll}
+				contentContainerStyle={styles.listContent}
+				data={sorted}
+				keyExtractor={(friend) => friend.id}
+				initialNumToRender={10}
+				maxToRenderPerBatch={8}
+				windowSize={7}
+				removeClippedSubviews
+				showsVerticalScrollIndicator={false}
+				// An anchored panel must not float off its row.
+				onScrollBeginDrag={closeMenu}
+				// The one thing that changes on the list when a menu opens; `memo`
+				// prunes every row whose own `menuOpen` did not flip. (req 6)
+				extraData={openMenuFor}
+				ListHeaderComponent={
+					<>
+						{header}
+						{/* Today's two rituals, named once. The menu's ritual cells
+						    carry the glyphs — this strip is where they learn their
+						    names, and where the day's allowance counts down. */}
+						<View style={styles.ritualStrip}>
+							{(["bless", "curse"] as const).map((mode) => {
+								const ritual = caster.today(mode);
+								const left = caster.usage(mode)?.remaining;
+								const door = RITUAL_DOOR[mode];
+								return (
+									<Tag
+										key={mode}
+										tone={mode === "bless" ? "sun" : "sage"}
+										art={ritual.icon}
+										label={
+											left === undefined
+												? ritual.name
+												: `${ritual.name} · ${left} left`
+										}
+										accessibilityLabel={
+											left === undefined
+												? `Today's ${door.word} is ${ritual.name}`
+												: `Today's ${door.word} is ${ritual.name}; ${left} left`
+										}
+										testID={`ritual-strip-${mode}`}
+									/>
+								);
+							})}
+						</View>
+						{visitsSpent && (
+							<Sticker
+								color={WHIMSY.slopBand}
+								rotate={0}
+								shadow="sm"
+								style={styles.visitsSpentHint}
+							>
+								<GameIcon name="visit" size={SPACE.card} muted />
+								<T role="kicker">all tickled out — your snout needs a rest</T>
+							</Sticker>
+						)}
+					</>
+				}
+				ListFooterComponent={
+					atCap ? (
+						<T role="kicker" tone="accent" align="center" style={styles.footerNote}>
+							★ you're at the {FRIEND_CAP_LIMIT}-friend cap · remove someone to add new friends
+						</T>
+					) : null
+				}
+				renderItem={({ item: f, index: i }) => (
+					<FriendRow
+						friend={f}
+						index={i}
+						crewName={crewNames.get(f.id)}
+						s1={s1}
+						caster={caster}
+						onRitualOutcome={onRitualOutcome}
+						visitsSpent={visitsSpent}
+						visitsLeft={visitsLeft}
+						pairSpent={pairLocked.has(f.id)}
+						visitStreak={visitStreaks.get(f.id)}
+						isFav={favorites.has(f.id)}
+						menuOpen={openMenuFor === f.id}
+						onToggleMenu={toggleMenu}
+						onCloseMenu={closeMenu}
+						onOpenRefs={onOpenRefs}
+						onToggleFavorite={onToggleFavorite}
+						onPick={onPick}
+						onVisit={onVisit}
+					/>
+				)}
+			/>
+		</View>
 	);
 }
 
@@ -1377,6 +1716,8 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	wrap: { flex: 1, marginTop: SPACE.lg, paddingHorizontal: PAGE_PAD },
+	// The list's own root, and the surface the outside-tap hit test listens on.
+	listWrap: { flex: 1 },
 	scroll: { flex: 1 },
 	scrollContent: { paddingBottom: TAB_SAFE },
 	// Each row is its own tilted sticker now, so the stack needs a gutter
@@ -1390,6 +1731,9 @@ const styles = StyleSheet.create({
 		gap: SPACE.sm
 	},
 	rowName: { flexShrink: 1 },
+	// The row's floor, so the open panel's cells always fit inside the height
+	// the identity sets. Derived in `constants/layoutBreakpoints.ts`.
+	friendRow: { minHeight: ROW_MIN_H },
 	rowSub: { gap: SPACE.xs, alignItems: "flex-start" },
 	// Every sub-line child yields before the card edge does. Without this the
 	// widest of them (the streak Tag, the ♥ meta line) sets the name column's
@@ -1409,7 +1753,14 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		overflow: "hidden"
 	},
-	visitStreak: { alignSelf: "flex-start" },
+	// The one meta line: count · streak · wears. It wraps rather than clips,
+	// and every child yields before the card edge does.
+	rowMeta: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: SPACE.sm
+	},
 	rowMetaLine: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -1420,11 +1771,6 @@ const styles = StyleSheet.create({
 		height: BORDER.heavy,
 		borderRadius: RADII.pill,
 		backgroundColor: UI_COLORS.uiMuted
-	},
-	rowActions: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: RAIL_GAP
 	},
 	// Today's two rituals, named above the list so the glyph-only doors are
 	// explained once rather than on every row.
@@ -1437,45 +1783,42 @@ const styles = StyleSheet.create({
 		gap: SPACE.xs,
 		marginBottom: SPACE.md
 	},
-	// The cast ritual's own art, riding the door once it's been sent — the
-	// same size as the glyph it replaces.
-	rowRitualIcon: {
-		width: SPACE.xl,
-		height: SPACE.xl,
-		resizeMode: "contain"
+	// The sliding layer the panel rides. Absolute inside the row, so the row's
+	// height is the identity's and the list never reflows. Yoga measures an
+	// inset-positioned child against the parent's PADDING BOX (its border, not
+	// its padding), which is what `ACTION_PANEL_INSETS.right` clears: the row's
+	// own side pad plus the 44pt trigger plus a gap. It may cover the avatar;
+	// it may never cover the trigger.
+	actionPanelLayer: {
+		position: "absolute",
+		top: ACTION_PANEL_INSETS.top,
+		bottom: ACTION_PANEL_INSETS.bottom,
+		left: ACTION_PANEL_INSETS.left,
+		right: ACTION_PANEL_INSETS.right
 	},
-	tray: {
+	// The panel itself — five equal cells on cream paper, and a hard clip so a
+	// cell can never paint past the outline.
+	actionPanel: {
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "stretch",
 		gap: SPACE.xs,
-		paddingTop: SPACE.md,
-		borderTopWidth: BORDER.hair,
-		borderTopColor: UI_COLORS.separator,
+		padding: SPACE.xs,
+		overflow: "hidden"
 	},
-	trayPrimary: { flexDirection: "row", alignItems: "stretch", gap: SPACE.sm },
-	traySecondary: { flexDirection: "row", gap: SPACE.sm },
-	trayCell: {
+	actionCell: {
 		flex: 1,
 		minWidth: 0,
 		minHeight: TAP_MIN,
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		padding: SPACE.sm,
-	},
-	trayArt: { width: SPACE.xl, height: SPACE.xl, resizeMode: "contain" },
-	trayCopy: { flex: 1, minWidth: 0 },
-	trayLink: { flex: 1, minWidth: 0, minHeight: TAP_MIN },
-	rowBlessTarget: {
-		width: TAP_MIN,
-		height: TAP_MIN,
+		flexDirection: "column",
 		alignItems: "center",
 		justifyContent: "center",
+		gap: SPACE.xxs,
+		padding: SPACE.xxs
 	},
-	rowVisitBtn: {
-		width: ROW_CONTROL,
-		height: ROW_CONTROL,
-		alignItems: "center",
-		justifyContent: "center"
-	},
+	// The cast ritual's own art, riding the cell once it's been sent — sized by
+	// the cell's tier, so only the fit lives here.
+	actionArt: { resizeMode: "contain" },
 	// One-time "out of visits" hint above the list.
 	visitsSpentHint: {
 		flexDirection: "row",

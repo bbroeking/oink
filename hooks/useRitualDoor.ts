@@ -4,10 +4,11 @@
 // left, what a cast came back as). THIS hook owns one *door*: busy / armed /
 // settled / capped, the sentence that door says, and the press that moves it.
 //
-// It exists because the friend row now draws the same door at two scales — the
-// round 32pt blessing door that stays on the rail at rest, and the labelled
-// cell in the quick-option tray that carries the curse. Both are the same
-// machine; only the drawing differs. (2026-09-12)
+// It exists because the friend row draws the same door twice — the blessing
+// and the curse, side by side in the panel the row's "…" opens. Both are the
+// same machine; only the vocabulary differs, and the curse's two-tap arm is the
+// one asymmetry (a hostile, irreversible send does not happen by accident).
+// (2026-09-12; the tray it was extracted for became an actions menu 2026-09-14)
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
@@ -22,7 +23,7 @@ export interface RitualDoorCopy {
 	verb: string;
 	done: string;
 	word: string;
-	/** The tray cell's short label — a verb, one word. */
+	/** The action cell's short label — a verb, one word. */
 	action: string;
 }
 
@@ -48,7 +49,8 @@ export const RITUAL_DOOR: Record<RitualMode, RitualDoorCopy> = {
 };
 
 // How long an armed curse stays armed. Three beats: long enough to move a thumb
-// across the tray, short enough that a forgotten arm doesn't fire tomorrow.
+// across the panel, short enough that a forgotten arm doesn't fire tomorrow.
+// `disarm` is the other half: the arm dies with the panel that showed it.
 const CURSE_ARM_MS = MOTION.beat * 3;
 
 export type RitualDoorState = "ready" | "armed" | "busy" | "settled" | "capped";
@@ -61,7 +63,7 @@ export interface RitualDoorView {
 	label: string;
 	/** What happens on press, or undefined when the door is resting. */
 	hint: string | undefined;
-	/** The same state in three or four words, for a labelled cell's second line. */
+	/** The same state in two or three words, for an action cell's state line. */
 	sub: string;
 	/** The cast ritual's own art, once this friend has today's ritual from you. */
 	icon: ImageSourcePropType | null;
@@ -69,7 +71,7 @@ export interface RitualDoorView {
 	glyph: RitualDoorCopy["glyph"];
 	copy: RitualDoorCopy;
 	press: () => void;
-	/** Drop an armed curse without casting it — the tray closing, say. */
+	/** Drop an armed curse without casting it. */
 	disarm: () => void;
 }
 
@@ -154,18 +156,26 @@ export function useRitualDoor({
 				? "Casts today's curse right away — it can't be taken back"
 				: `Arms today's curse. Tap again to cast it on ${name}.`;
 
-	// The labelled-cell line. ONE word: a quarter-width tray cell on a 375pt
-	// phone is ~44pt of ink, which is five or six letters at the cell's type
-	// tier. The full sentence above is what a screen reader gets.
+	// The action cell's state line — the same register as the Visit cell's
+	// ("3 left" / "Tickled today"), short enough to sit on one line inside a
+	// fifth-width cell rather than clip. The full sentence above is what a
+	// screen reader gets, and a narrow phone drops this line, never the sentence.
 	const sub = capped
-		? "none"
+		? "None left"
 		: settled
-			? "done"
-			: armed
-				? "again"
-				: isBless
-					? "once"
-					: "twice";
+			? "Sent today"
+			: busy
+				? "Sending…"
+				: armed
+					? "Tap again"
+					: isBless
+						// The blessing reads like the Visit cell beside it — how many
+						// are left today — because that is the only state it has.
+						// The curse's line is the one place the arm gets explained.
+						? usage
+							? `${usage.remaining} left`
+							: "Ready"
+						: "Tap twice";
 
 	const state: RitualDoorState = capped
 		? "capped"

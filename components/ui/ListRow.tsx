@@ -33,6 +33,15 @@ export interface ListRowProps {
 	 * on the clip so a sliding overlay is cut at the card edge. (2026-09-12)
 	 */
 	overlay?: React.ReactNode;
+	/**
+	 * An absolutely positioned layer drawn AFTER the rail, for a panel that must
+	 * follow the rail in accessibility order. Focus order is tree order, so a
+	 * row whose trigger opens a panel of actions puts the trigger in `trailing`
+	 * and the panel here: identity → trigger → cells. Same clip as `overlay`
+	 * (the slide is cut at the card edge); the caller owns its insets and must
+	 * leave the rail's own controls uncovered. (2026-09-14)
+	 */
+	after?: React.ReactNode;
 	/** In-flow details below the identity; action controls remain separate accessibility targets. */
 	footer?: React.ReactNode;
 	onPress?: () => void;
@@ -72,6 +81,7 @@ export function ListRow({
 	sub,
 	trailing,
 	overlay,
+	after,
 	footer,
 	onPress,
 	selected,
@@ -155,7 +165,11 @@ export function ListRow({
 			}
 			accessibilityHint={accessibilityHint}
 			testID={testID}
-			style={[styles.row, overlay !== undefined && styles.clipped, style]}
+			style={[
+				styles.row,
+				(overlay !== undefined || after !== undefined) && styles.clipped,
+				style,
+			]}
 		>
 			{identity}
 			{/* Paint order IS the design: after the text (so it covers the name),
@@ -163,6 +177,9 @@ export function ListRow({
 			    its taps). */}
 			{overlay}
 			{trailing !== undefined ? <View>{trailing}</View> : null}
+			{/* …and `after` is the other choice: a layer that FOLLOWS the rail, so
+			    a screen reader reaches the trigger before what it opened. */}
+			{after}
 		</Sticker>
 	);
 }
@@ -263,8 +280,11 @@ const styles = StyleSheet.create({
 		paddingVertical: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 	},
-	// Only rows carrying an `overlay` clip: a sliding layer has to be cut at the
-	// card edge, and every other row keeps the (unclipped) default.
+	// Only rows carrying an `overlay` or an `after` layer clip: a sliding layer
+	// has to be cut at the card edge, and every other row keeps the (unclipped)
+	// default. The rail's own controls sit inside this box — the 2026-09-12
+	// cut-off doors were the text column pushing them OUT of it, which
+	// `text.minWidth: 0` below is what fixed.
 	clipped: {
 		overflow: "hidden",
 	},

@@ -11,8 +11,12 @@
 //
 // `allowFontScaling` is left at its React Native default on purpose: spec §1.2
 // requires every role to scale with Dynamic Type to 200%, so we never pass
-// `false`, and we never reach for `adjustsFontSizeToFit` / `minimumFontScale`
-// (the Button test guards the same rule) — long strings wrap, they don't shrink.
+// `false`, and this component never REACHES for `adjustsFontSizeToFit` /
+// `minimumFontScale` (the Button test guards the same rule) — long strings wrap,
+// they don't shrink. Both still pass through for the one caller shape that has
+// no room to wrap into: a fixed-height cell whose height is derived rather than
+// measured (the friend row's actions panel, 2026-09-14). A caller that CAN grow
+// must wrap instead.
 //
 // Accent tone is restricted by rule: spec §5 decision 2 allows WHIMSY.accent
 // text only on ACCENT_SAFE_FILLS. On lilac / peach / roseDeep / lilacDeep /

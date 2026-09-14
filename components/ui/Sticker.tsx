@@ -77,6 +77,12 @@ interface Props
 	// pill, a corner tag). Pressable-only. (2026-09-11)
 	hitSlop?: PressableProps["hitSlop"];
 	disabled?: boolean;
+	/**
+	 * Web-only ARIA attributes react-native-web forwards straight to the DOM
+	 * node and React Native has no prop mirror for. Inert on native.
+	 * (2026-09-14)
+	 */
+	webAria?: Record<`aria-${string}`, string>;
 	style?: StyleProp<ViewStyle>;
 }
 
@@ -102,7 +108,12 @@ const COLOR_MAP: Record<StickerColor, string> = {
 	slopBand: WHIMSY.slopBand,
 };
 
-export function Sticker({
+/**
+ * Forwards its ref to the host surface, so a caller can measure it or send
+ * accessibility focus to it (the friend row's action cells). (2026-09-14)
+ */
+export const Sticker = React.forwardRef<View, Props>(function Sticker(
+	{
 	children,
 	color = "paper",
 	rotate = TILT.card,
@@ -124,8 +135,11 @@ export function Sticker({
 	accessibilityLabel,
 	accessibilityRole,
 	testID,
+	webAria,
 	style,
-}: Props) {
+	},
+	ref
+) {
 	const bg =
 		color in COLOR_MAP ? COLOR_MAP[color as StickerColor] : color;
 	const tier =
@@ -187,6 +201,8 @@ export function Sticker({
 	if (!interactive) {
 		return (
 			<View
+				ref={ref}
+				{...webAria}
 				accessibilityHint={accessibilityHint}
 				accessibilityLabel={accessibilityLabel}
 				accessibilityRole={accessibilityRole}
@@ -207,6 +223,8 @@ export function Sticker({
 
 	return (
 		<Pressable
+			ref={ref}
+			{...webAria}
 			onPress={onPress}
 			onLongPress={onLongPress}
 			hitSlop={hitSlop}
@@ -230,7 +248,7 @@ export function Sticker({
 			{body}
 		</Pressable>
 	);
-}
+});
 
 // Strip of "tape" — narrow translucent rect, used to pin stickers.
 export function Tape({

@@ -195,5 +195,12 @@ export function useRitualCaster(): UseRitualCaster {
 		[rituals]
 	);
 
-	return { usage, today, cast, outcomeFor, refresh };
+	// One stable object for the whole list. The friend rows are `React.memo`,
+	// and a fresh caster literal every render would re-render all of them on a
+	// menu open — the layout-stability requirement the actions menu is held to.
+	// (2026-09-14)
+	return useMemo(
+		() => ({ usage, today, cast, outcomeFor, refresh }),
+		[cast, outcomeFor, refresh, today, usage]
+	);
 }

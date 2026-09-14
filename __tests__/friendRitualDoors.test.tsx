@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- mock factories load render primitives after Jest hoisting */
-// The friend row's doors. Today's BLESSING stays out on the rail — one tap from
-// rest. Everything else (visit · curse · pin · profile) appears below the
-// identity when the row is tapped. One row is open at a time, and the friend's
-// name remains visible above its actions.
+// The friend row's actions menu. Every verb the row owns lives in ONE anchored
+// panel the row's "…" opens: visit · bless · curse · pin · profile, five equal
+// cells sliding over the name column. Exactly one panel is out at a time — a
+// single id at the list level — and the identity itself stays a second door to
+// the profile.
 //
-// A curse therefore costs expand → arm → tap. A spent allowance rests every
-// door of that mode, and a friend who already has today's ritual says so.
+// A curse still costs two taps inside the panel — arm, then cast — because it
+// is hostile and irreversible, and an arm you cannot see is an arm that fires
+// by surprise, so it dies with the panel as well as on its own timer. A spent
+// allowance rests every cell of that mode, and a friend who already has today's
+// ritual says so.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -24,11 +28,27 @@ jest.mock("expo-haptics", () => ({
 jest.mock("@/hooks/useFeatureFlags", () => ({ useFeatureFlag: () => false }));
 jest.mock("expo-router/react-navigation", () => ({ useFocusEffect: jest.fn() }));
 jest.mock("@/components/ui/PrestigeAvatar", () => ({ PrestigeAvatar: () => null }));
-jest.mock("@/components/PorchRoundLaunchCard", () => ({
-	PorchRoundLaunchCard: () => null,
-}));
 jest.mock("@/components/BarnVisitModal", () => ({ BarnVisitModal: () => null }));
 jest.mock("@/components/UserSheet", () => ({ UserSheet: () => null }));
+// The panel's entrance is a spring; under Reduce Motion it takes the rest pose
+// and unmounts immediately, which is the mount/unmount contract these tests are
+// about. (The spring itself is covered by the motion policy's own tests.)
+jest.mock("@/hooks/useMotionPolicy", () => ({
+	MOTION_DURATION: {
+		feedback: 120,
+		state: 220,
+		modal: 300,
+		celebration: 450,
+		crossfade: 150,
+	},
+	MotionPolicyProvider: ({ children }: { children: React.ReactNode }) => children,
+	useMotionPolicy: () => ({
+		reduceMotion: true,
+		allowDecorativeMotion: false,
+		largeTransition: "crossfade" as const,
+		duration: (standardMs: number) => standardMs,
+	}),
+}));
 const mockToast = jest.fn();
 jest.mock("@/components/ui/Toast", () => ({
 	showToast: (...args: unknown[]) => mockToast(...args),
@@ -65,10 +85,10 @@ const HANDLERS = {
 	onVisit: jest.fn(),
 };
 
-function renderList() {
-	return TestRenderer.create(
+function renderList(friends: Profile[] = FRIENDS) {
+	return (
 		<FriendsList
-			friends={FRIENDS}
+			friends={friends}
 			crewNames={new Map()}
 			loaded
 			loadFailed={false}
@@ -87,7 +107,7 @@ function renderList() {
 async function mountList() {
 	let r!: TestRenderer.ReactTestRenderer;
 	await act(async () => {
-		r = renderList();
+		r = TestRenderer.create(renderList());
 	});
 	return r;
 }
@@ -99,23 +119,45 @@ function pressableFor(r: TestRenderer.ReactTestRenderer, testID: string) {
 	)[0];
 }
 
-function doorFor(
+/** The panel is mounted only while it is out — never hidden in the tree. */
+function panelMounted(r: TestRenderer.ReactTestRenderer, id: string) {
+	return (
+		r.root.findAll(
+			(n) =>
+				n.props.testID === `friend-menu-${id}` &&
+				n.props.accessibilityRole === "menu"
+		).length > 0
+	);
+}
+
+function triggerFor(r: TestRenderer.ReactTestRenderer, id: string) {
+	return pressableFor(r, `friend-menu-trigger-${id}`);
+}
+
+function cellFor(
 	r: TestRenderer.ReactTestRenderer,
-	mode: "bless" | "curse",
+	key: "visit" | "bless" | "curse" | "pin" | "profile",
 	id: string
 ) {
-	return pressableFor(r, `ritual-door-${mode}-${id}`);
+	return pressableFor(r, `friend-menu-${key}-${id}`);
 }
 
 function rowFor(r: TestRenderer.ReactTestRenderer, id: string) {
 	return pressableFor(r, `friend-row-${id}`);
 }
 
-/** Are this friend's inline actions mounted? */
-function actionsOpen(r: TestRenderer.ReactTestRenderer, id: string) {
-	return (
-		r.root.findAll((n) => n.props.testID === `friend-profile-${id}`).length > 0
-	);
+/** A touch anywhere on the list's root — the outside-tap hit test's own entry point. */
+async function touchList(
+	r: TestRenderer.ReactTestRenderer,
+	pageX: number,
+	pageY: number
+) {
+	const wrap = r.root.findAll(
+		(n) => typeof n.props.onTouchStart === "function"
+	)[0];
+	await act(async () => {
+		wrap.props.onTouchStart({ nativeEvent: { pageX, pageY } });
+	});
 }
 
 async function tap(node: TestRenderer.ReactTestInstance) {
@@ -125,12 +167,36 @@ async function tap(node: TestRenderer.ReactTestInstance) {
 	});
 }
 
-/** Open a row's inline actions — the only way to reach curse / visit / pin. */
-async function expand(r: TestRenderer.ReactTestRenderer, id: string) {
-	await tap(rowFor(r, id));
+/**
+ * The React Native jest mock gives every host instance a `measureInWindow`
+ * that never answers, so the panel's outside-touch hit test would never
+ * complete. Hand every measurable node the same frame, and the hit test
+ * becomes a real assertion about the touch point. (The rects only have to say
+ * "the open boxes are here"; there is one panel and one trigger.)
+ */
+function frameEverythingAt(
+	r: TestRenderer.ReactTestRenderer,
+	box: { x: number; y: number; w: number; h: number }
+) {
+	for (const node of r.root.findAll(
+		(n) => typeof (n.instance as { measureInWindow?: unknown } | null)
+			?.measureInWindow === "function"
+	)) {
+		const instance = node.instance as unknown as {
+			measureInWindow: (
+				cb: (x: number, y: number, w: number, h: number) => void
+			) => void;
+		};
+		instance.measureInWindow = (cb) => cb(box.x, box.y, box.w, box.h);
+	}
 }
 
-describe("friend-row ritual doors", () => {
+/** Open a row's menu, the way a thumb does: one tap on its "…". */
+async function openMenu(r: TestRenderer.ReactTestRenderer, id: string) {
+	await tap(triggerFor(r, id));
+}
+
+describe("the friend row's actions menu", () => {
 	beforeEach(() => {
 		mockRpcAction.mockReset();
 		mockToast.mockClear();
@@ -140,53 +206,270 @@ describe("friend-row ritual doors", () => {
 		serve({ ok: true });
 	});
 
-	test("the bless door casts on ONE tap, on the right friend", async () => {
+	test("at rest nothing is out and every trigger says so", async () => {
 		const r = await mountList();
-		await tap(doorFor(r, "bless", "f2"));
-		expect(mockRpcAction).toHaveBeenCalledWith("send_blessing", {
-			target_user_id: "f2",
-		});
-		// alice's door was not touched.
-		expect(mockRpcAction).not.toHaveBeenCalledWith("send_blessing", {
-			target_user_id: "f1",
-		});
+		expect(panelMounted(r, "f1")).toBe(false);
+		expect(panelMounted(r, "f2")).toBe(false);
+		for (const id of ["f1", "f2"]) {
+			const trigger = triggerFor(r, id);
+			expect(trigger.props.accessibilityState.expanded).toBe(false);
+			expect(trigger.props.accessibilityLabel).toBe(
+				`Actions for ${id === "f1" ? "alice" : "bob"}`
+			);
+		}
+		// The identity is still the profile door, and it is not a disclosure.
+		expect(rowFor(r, "f1").props.accessibilityHint).toBe("Opens their profile");
+		expect(rowFor(r, "f1").props.accessibilityState.expanded).toBeUndefined();
 		act(() => r.unmount());
 	});
 
-	test("the bless door names its target, its ritual and its consequence", async () => {
+	test("opening one row's menu mounts that row's panel and no other", async () => {
 		const r = await mountList();
-		const door = doorFor(r, "bless", "f1");
-		expect(door.props.accessibilityLabel).toBe(
+		await openMenu(r, "f2");
+		expect(panelMounted(r, "f2")).toBe(true);
+		expect(panelMounted(r, "f1")).toBe(false);
+		expect(triggerFor(r, "f2").props.accessibilityState.expanded).toBe(true);
+		expect(triggerFor(r, "f2").props.accessibilityLabel).toBe(
+			"Hide actions for bob"
+		);
+		expect(triggerFor(r, "f1").props.accessibilityState.expanded).toBe(false);
+		// All five cells, in the order the spec lays them out.
+		for (const key of ["visit", "bless", "curse", "pin", "profile"] as const) {
+			expect(cellFor(r, key, "f2")).toBeDefined();
+			expect(cellFor(r, key, "f2").props.accessibilityRole).toBe("menuitem");
+		}
+		act(() => r.unmount());
+	});
+
+	test("the panel's cells follow the trigger in the rendered tree", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		const order = r.root
+			.findAll((n) => typeof n.props.testID === "string")
+			.map((n) => n.props.testID as string)
+			.filter(
+				(id) =>
+					id === "friend-row-f1" ||
+					id === "friend-menu-trigger-f1" ||
+					id === "friend-menu-visit-f1"
+			);
+		expect(order.indexOf("friend-row-f1")).toBeLessThan(
+			order.indexOf("friend-menu-trigger-f1")
+		);
+		expect(order.indexOf("friend-menu-trigger-f1")).toBeLessThan(
+			order.indexOf("friend-menu-visit-f1")
+		);
+		act(() => r.unmount());
+	});
+
+	test("the trigger closes its own panel", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		await tap(triggerFor(r, "f1"));
+		expect(panelMounted(r, "f1")).toBe(false);
+		expect(triggerFor(r, "f1").props.accessibilityState.expanded).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("opening one while another is out switches, never stacks", async () => {
+		const r = await mountList();
+		await openMenu(r, "f2");
+		await openMenu(r, "f1");
+		expect(panelMounted(r, "f1")).toBe(true);
+		expect(panelMounted(r, "f2")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("Visit calls its handler for that friend and closes", async () => {
+		const r = await mountList();
+		await openMenu(r, "f2");
+		await tap(cellFor(r, "visit", "f2"));
+		expect(HANDLERS.onVisit).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "f2" })
+		);
+		expect(HANDLERS.onVisit).toHaveBeenCalledTimes(1);
+		expect(panelMounted(r, "f2")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("Profile and the identity both open the profile", async () => {
+		const r = await mountList();
+		await openMenu(r, "f2");
+		await tap(cellFor(r, "profile", "f2"));
+		expect(HANDLERS.onPick).toHaveBeenCalledWith("f2");
+		expect(panelMounted(r, "f2")).toBe(false);
+
+		HANDLERS.onPick.mockClear();
+		await tap(rowFor(r, "f1"));
+		expect(HANDLERS.onPick).toHaveBeenCalledWith("f1");
+		act(() => r.unmount());
+	});
+
+	test("Pin toggles and closes; the pushpin is visible without opening", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		const pin = cellFor(r, "pin", "f1");
+		expect(pin.props.accessibilityLabel).toBe("Pin alice to the top");
+		await tap(pin);
+		expect(HANDLERS.onToggleFavorite).toHaveBeenCalledWith("f1");
+		expect(HANDLERS.onToggleFavorite).toHaveBeenCalledTimes(1);
+		expect(panelMounted(r, "f1")).toBe(false);
+		// A pinned row wears the label and the selected chrome at rest.
+		let pinned!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			pinned = TestRenderer.create(
+				<FriendsList
+					friends={FRIENDS}
+					crewNames={new Map()}
+					loaded
+					loadFailed={false}
+					onRetry={jest.fn()}
+					visitsSpent={false}
+					pairLocked={new Set()}
+					visitStreaks={new Map()}
+					favorites={new Set(["f1"])}
+					onToggleFavorite={HANDLERS.onToggleFavorite}
+					onPick={HANDLERS.onPick}
+					onVisit={HANDLERS.onVisit}
+				/>
+			);
+		});
+		expect(rowFor(pinned, "f1").props.accessibilityLabel).toBe(
+			"alice #0001, pinned"
+		);
+		expect(rowFor(pinned, "f1").props.accessibilityState.selected).toBe(true);
+		await openMenu(pinned, "f1");
+		expect(cellFor(pinned, "pin", "f1").props.accessibilityLabel).toBe(
+			"Unpin alice from the top"
+		);
+		act(() => pinned.unmount());
+		act(() => r.unmount());
+	});
+
+	test("a reload closes whatever was out", async () => {
+		const r = await mountList();
+		await openMenu(r, "f2");
+		expect(panelMounted(r, "f2")).toBe(true);
+		// A re-sort under the thumb is a new `friends` array.
+		await act(async () => {
+			r.update(renderList([...FRIENDS]));
+		});
+		expect(panelMounted(r, "f2")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("a touch outside the panel closes it", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		// The open boxes sit well away from the corner the touch lands in.
+		frameEverythingAt(r, { x: 100, y: 100, w: 200, h: 80 });
+		await touchList(r, 4, 4);
+		expect(panelMounted(r, "f1")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("a touch inside the panel leaves it out", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		frameEverythingAt(r, { x: 0, y: 0, w: 400, h: 120 });
+		await touchList(r, 40, 40);
+		expect(panelMounted(r, "f1")).toBe(true);
+		act(() => r.unmount());
+	});
+
+	test("one gesture on another row's trigger lands on that row", async () => {
+		// The outside-touch hit test never claims the responder, so the touch
+		// continues into the trigger it landed on: close A, then open B, and the
+		// net state is B out.
+		const r = await mountList();
+		await openMenu(r, "f2");
+		frameEverythingAt(r, { x: 100, y: 100, w: 200, h: 80 });
+		await touchList(r, 4, 4);
+		await openMenu(r, "f1");
+		expect(panelMounted(r, "f1")).toBe(true);
+		expect(panelMounted(r, "f2")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("dragging the list closes the panel", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		const list = r.root.findAll(
+			(n) => typeof n.props.onScrollBeginDrag === "function"
+		)[0];
+		await act(async () => {
+			list.props.onScrollBeginDrag();
+		});
+		expect(panelMounted(r, "f1")).toBe(false);
+		act(() => r.unmount());
+	});
+});
+
+describe("the menu's rituals", () => {
+	beforeEach(() => {
+		mockRpcAction.mockReset();
+		mockToast.mockClear();
+		HANDLERS.onToggleFavorite.mockClear();
+		HANDLERS.onPick.mockClear();
+		HANDLERS.onVisit.mockClear();
+		serve({ ok: true });
+	});
+
+	test("the bless cell casts on one tap, on the right friend, and closes", async () => {
+		const r = await mountList();
+		await openMenu(r, "f2");
+		await tap(cellFor(r, "bless", "f2"));
+		expect(mockRpcAction).toHaveBeenCalledWith("send_blessing", {
+			target_user_id: "f2",
+		});
+		// alice's cell was not touched.
+		expect(mockRpcAction).not.toHaveBeenCalledWith("send_blessing", {
+			target_user_id: "f1",
+		});
+		expect(panelMounted(r, "f2")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("the bless cell names its target, its ritual and its consequence", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		const cell = cellFor(r, "bless", "f1");
+		expect(cell.props.accessibilityLabel).toBe(
 			`Bless alice with ${dailyRitual("bless").name}`
 		);
-		expect(door.props.accessibilityHint).toContain("can't be taken back");
-		expect(door.props.accessibilityState).toEqual(
+		expect(cell.props.accessibilityHint).toContain("can't be taken back");
+		expect(cell.props.accessibilityState).toEqual(
 			expect.objectContaining({ disabled: false })
 		);
 		act(() => r.unmount());
 	});
 
-	test("a sent blessing rests that friend's door and says so", async () => {
+	test("a sent blessing rests that friend's cell and says so", async () => {
 		const r = await mountList();
-		await tap(doorFor(r, "bless", "f1"));
-		const door = doorFor(r, "bless", "f1");
-		expect(door.props.accessibilityLabel).toBe(
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "bless", "f1"));
+		await openMenu(r, "f1");
+		const cell = cellFor(r, "bless", "f1");
+		expect(cell.props.accessibilityLabel).toBe(
 			`Blessed alice with ${dailyRitual("bless").name} today`
 		);
-		expect(door.props.accessibilityState.disabled).toBe(true);
-		// bob's door is untouched — the memory is per friend.
-		expect(doorFor(r, "bless", "f2").props.accessibilityState.disabled).toBe(false);
+		expect(cell.props.accessibilityState.disabled).toBe(true);
+		// bob's cell is untouched — the memory is per friend.
+		await openMenu(r, "f2");
+		expect(cellFor(r, "bless", "f2").props.accessibilityState.disabled).toBe(
+			false
+		);
 		act(() => r.unmount());
 	});
 
-	test("the curse door arms on the first tap and casts on the second", async () => {
+	test("the curse arms on the first tap, keeping the panel out, and casts on the second", async () => {
 		const r = await mountList();
-		// The curse is not on the rail — it costs an expand to reach.
-		expect(doorFor(r, "curse", "f1")).toBeUndefined();
-		await expand(r, "f1");
-		await tap(doorFor(r, "curse", "f1"));
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "curse", "f1"));
 		expect(mockRpcAction).not.toHaveBeenCalledWith("send_curse", expect.anything());
-		const armed = doorFor(r, "curse", "f1");
+		// The panel stays out so the armed cell can be seen.
+		expect(panelMounted(r, "f1")).toBe(true);
+		const armed = cellFor(r, "curse", "f1");
 		expect(armed.props.accessibilityLabel).toBe("Tap again to curse alice");
 		expect(armed.props.accessibilityState).toEqual(
 			expect.objectContaining({ expanded: true })
@@ -196,6 +479,25 @@ describe("friend-row ritual doors", () => {
 		expect(mockRpcAction).toHaveBeenCalledWith("send_curse", {
 			target_user_id: "f1",
 		});
+		expect(panelMounted(r, "f1")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("an armed curse is dropped when the panel closes", async () => {
+		const r = await mountList();
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "curse", "f1"));
+		expect(cellFor(r, "curse", "f1").props.accessibilityLabel).toBe(
+			"Tap again to curse alice"
+		);
+		// Close it and come back: the arm is gone, so the next tap re-arms.
+		await tap(triggerFor(r, "f1"));
+		await openMenu(r, "f1");
+		expect(cellFor(r, "curse", "f1").props.accessibilityLabel).toBe(
+			`Curse alice with ${dailyRitual("curse").name}`
+		);
+		await tap(cellFor(r, "curse", "f1"));
+		expect(mockRpcAction).not.toHaveBeenCalledWith("send_curse", expect.anything());
 		act(() => r.unmount());
 	});
 
@@ -204,62 +506,70 @@ describe("friend-row ritual doors", () => {
 		try {
 			let r!: TestRenderer.ReactTestRenderer;
 			await act(async () => {
-				r = renderList();
+				r = TestRenderer.create(renderList());
 			});
-			await expand(r, "f1");
-			await tap(doorFor(r, "curse", "f1"));
-			expect(doorFor(r, "curse", "f1").props.accessibilityLabel).toBe(
+			await openMenu(r, "f1");
+			await tap(cellFor(r, "curse", "f1"));
+			expect(cellFor(r, "curse", "f1").props.accessibilityLabel).toBe(
 				"Tap again to curse alice"
 			);
 
 			await act(async () => {
 				jest.advanceTimersByTime(MOTION.beat * 3 + 1);
 			});
-			expect(doorFor(r, "curse", "f1").props.accessibilityLabel).toBe(
+			expect(cellFor(r, "curse", "f1").props.accessibilityLabel).toBe(
 				`Curse alice with ${dailyRitual("curse").name}`
 			);
-
-			// The next tap re-arms rather than casting.
-			await tap(doorFor(r, "curse", "f1"));
-			expect(mockRpcAction).not.toHaveBeenCalledWith("send_curse", expect.anything());
 			act(() => r.unmount());
 		} finally {
 			jest.useRealTimers();
 		}
 	});
 
-	test("daily_cap rests every door of that mode, not just the one tapped", async () => {
+	test("daily_cap rests every cell of that mode, not just the one tapped", async () => {
 		serve({ ok: false, reason: "daily_cap" });
 		const r = await mountList();
-		await tap(doorFor(r, "bless", "f1"));
-		expect(doorFor(r, "bless", "f1").props.accessibilityLabel).toBe(
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "bless", "f1"));
+		await openMenu(r, "f1");
+		expect(cellFor(r, "bless", "f1").props.accessibilityLabel).toBe(
 			"All 3 blessings used today"
 		);
-		expect(doorFor(r, "bless", "f2").props.accessibilityState.disabled).toBe(true);
 		// The curse side keeps its own allowance.
-		await expand(r, "f1");
-		expect(doorFor(r, "curse", "f1").props.accessibilityState.disabled).toBe(false);
+		expect(cellFor(r, "curse", "f1").props.accessibilityState.disabled).toBe(
+			false
+		);
+		await openMenu(r, "f2");
+		expect(cellFor(r, "bless", "f2").props.accessibilityState.disabled).toBe(
+			true
+		);
 		act(() => r.unmount());
 	});
 
-	test("a spent allowance rests the doors before any tap", async () => {
+	test("a spent allowance rests the cells before any tap", async () => {
 		serve({ ok: true }, { ...STATUS, bless_used: 3 });
 		const r = await mountList();
-		expect(doorFor(r, "bless", "f1").props.accessibilityState.disabled).toBe(true);
-		await expand(r, "f1");
-		expect(doorFor(r, "curse", "f1").props.accessibilityState.disabled).toBe(false);
+		await openMenu(r, "f1");
+		expect(cellFor(r, "bless", "f1").props.accessibilityState.disabled).toBe(
+			true
+		);
+		expect(cellFor(r, "curse", "f1").props.accessibilityState.disabled).toBe(
+			false
+		);
 		act(() => r.unmount());
 	});
 
 	test("already_blessed_today reads as done, with the reset on the label", async () => {
 		serve({ ok: false, reason: "already_blessed_today" });
 		const r = await mountList();
-		await tap(doorFor(r, "bless", "f1"));
-		const door = doorFor(r, "bless", "f1");
-		expect(door.props.accessibilityLabel).toMatch(
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "bless", "f1"));
+		await openMenu(r, "f1");
+		const cell = cellFor(r, "bless", "f1");
+		expect(cell.props.accessibilityLabel).toMatch(
 			/^Already blessed alice today; next in /
 		);
-		expect(door.props.accessibilityState.disabled).toBe(true);
+		expect(cell.props.accessibilityState.disabled).toBe(true);
 		expect(mockToast).toHaveBeenCalledWith(
 			expect.objectContaining({ tone: "fail" })
 		);
@@ -277,7 +587,8 @@ describe("friend-row ritual doors", () => {
 
 	test("the strip counts down as rituals are cast", async () => {
 		const r = await mountList();
-		await tap(doorFor(r, "bless", "f1"));
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "bless", "f1"));
 		expect(r.root.findByProps({ testID: "ritual-strip-bless" }).props.label).toBe(
 			`${dailyRitual("bless").name} · 2 left`
 		);
@@ -285,96 +596,11 @@ describe("friend-row ritual doors", () => {
 	});
 });
 
-describe("friend-row inline actions", () => {
-	beforeEach(() => {
-		mockRpcAction.mockReset();
-		mockToast.mockClear();
-		HANDLERS.onToggleFavorite.mockClear();
-		HANDLERS.onPick.mockClear();
-		HANDLERS.onVisit.mockClear();
-		serve({ ok: true });
-	});
-
-	test("at rest the row carries ONE option: today's blessing", async () => {
-		const r = await mountList();
-		expect(doorFor(r, "bless", "f1")).toBeDefined();
-		expect(actionsOpen(r, "f1")).toBe(false);
-		expect(rowFor(r, "f1").props.accessibilityState.expanded).toBe(false);
-		expect(rowFor(r, "f1").props.accessibilityHint).toBe("Shows quick actions");
-		act(() => r.unmount());
-	});
-
-	test("tapping a row opens its actions; tapping it again closes and unmounts them", async () => {
-		const r = await mountList();
-		await expand(r, "f1");
-		expect(actionsOpen(r, "f1")).toBe(true);
-		expect(rowFor(r, "f1").props.accessibilityState.expanded).toBe(true);
-		expect(rowFor(r, "f1").props.accessibilityHint).toBe("Hides quick actions");
-
-		await tap(rowFor(r, "f1"));
-		expect(rowFor(r, "f1").props.accessibilityState.expanded).toBe(false);
-		expect(actionsOpen(r, "f1")).toBe(false);
-		act(() => r.unmount());
-	});
-
-	test("only one row is expanded at a time", async () => {
-		const r = await mountList();
-		await expand(r, "f1");
-		await expand(r, "f2");
-		expect(rowFor(r, "f1").props.accessibilityState.expanded).toBe(false);
-		expect(rowFor(r, "f2").props.accessibilityState.expanded).toBe(true);
-		act(() => r.unmount());
-	});
-
-	test("Visit and Profile call their handlers, then close and unmount the actions", async () => {
-		const r = await mountList();
-		await expand(r, "f2");
-		await tap(pressableFor(r, "friend-visit-f2"));
-		expect(HANDLERS.onVisit).toHaveBeenCalledWith(
-			expect.objectContaining({ id: "f2" })
-		);
-		expect(rowFor(r, "f2").props.accessibilityState.expanded).toBe(false);
-		expect(actionsOpen(r, "f2")).toBe(false);
-
-		await expand(r, "f2");
-		await tap(pressableFor(r, "friend-profile-f2"));
-		expect(HANDLERS.onPick).toHaveBeenCalledWith("f2");
-		expect(rowFor(r, "f2").props.accessibilityState.expanded).toBe(false);
-		expect(actionsOpen(r, "f2")).toBe(false);
-		act(() => r.unmount());
-	});
-
-	test("Pin appears with the inline actions, not at rest", async () => {
-		const r = await mountList();
-		expect(r.root.findAll((n) => n.props.testID === "friend-pin-f1")).toHaveLength(0);
-		await expand(r, "f1");
-		await tap(pressableFor(r, "friend-pin-f1"));
-		expect(HANDLERS.onToggleFavorite).toHaveBeenCalledWith("f1");
-		act(() => r.unmount());
-	});
-
-	test("closing the row disarms an armed curse", async () => {
-		const r = await mountList();
-		await expand(r, "f1");
-		await tap(doorFor(r, "curse", "f1"));
-		expect(doorFor(r, "curse", "f1").props.accessibilityLabel).toBe(
-			"Tap again to curse alice"
-		);
-		// Open another row — the first closes, and its arm drops with it.
-		await expand(r, "f2");
-		await expand(r, "f1");
-		expect(doorFor(r, "curse", "f1").props.accessibilityLabel).toBe(
-			`Curse alice with ${dailyRitual("curse").name}`
-		);
-		expect(mockRpcAction).not.toHaveBeenCalledWith("send_curse", expect.anything());
-		act(() => r.unmount());
-	});
-});
-
 describe("the ListRow primitive's text column", () => {
 	// The root cause of the cut-off action icons: Yoga's automatic minimum size
 	// is CONTENT size, so a `flex: 1` column without `minWidth: 0` cannot shrink
-	// below its widest child and pushes the trailing rail off the card.
+	// below its widest child and pushes the trailing rail off the card — out of
+	// the clip box the panel's slide needs.
 	test("can shrink below its content width", () => {
 		const source = fs.readFileSync(
 			path.join(process.cwd(), "components/ui/ListRow.tsx"),
@@ -382,5 +608,14 @@ describe("the ListRow primitive's text column", () => {
 		);
 		const text = source.slice(source.indexOf("\ttext: {"));
 		expect(text.slice(0, text.indexOf("},"))).toContain("minWidth: 0");
+	});
+
+	test("the panel slot is drawn after the rail, so focus order follows it", () => {
+		const source = fs.readFileSync(
+			path.join(process.cwd(), "components/ui/ListRow.tsx"),
+			"utf8"
+		);
+		const body = source.slice(source.lastIndexOf("{identity}"));
+		expect(body.indexOf("{trailing")).toBeLessThan(body.indexOf("{after}"));
 	});
 });
