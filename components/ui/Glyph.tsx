@@ -60,6 +60,25 @@ const GLYPHS = {
 	flame: require("../../assets/images/glyphs/flame.png"),
 	globe: require("../../assets/images/glyphs/globe.png"),
 	ghost: require("../../assets/images/glyphs/ghost.png"),
+	// Snout Deep's painted find marks (ImageGen lane, the truffle glyph as the
+	// style anchor) — what a find wears on a cleared tile, in the pouch, on the
+	// reveal sticker and on the tally's disc. Truffles keep `truffle`; a stone
+	// is FindMark's hand-cut pebble. (2026-09-13)
+	digBoom: require("../../assets/images/glyphs/dig/boom.png"),
+	digPouch: require("../../assets/images/glyphs/dig/pouch.png"),
+	digApple: require("../../assets/images/glyphs/dig/apple.png"),
+	digBoot: require("../../assets/images/glyphs/dig/boot.png"),
+	digHorseshoe: require("../../assets/images/glyphs/dig/horseshoe.png"),
+	digCap: require("../../assets/images/glyphs/dig/cap.png"),
+	digShimmer: require("../../assets/images/glyphs/dig/shimmer.png"),
+	digAcorn: require("../../assets/images/glyphs/dig/acorn.png"),
+	digTea: require("../../assets/images/glyphs/dig/tea.png"),
+	digScroll: require("../../assets/images/glyphs/dig/scroll.png"),
+	digRelic: require("../../assets/images/glyphs/dig/relic.png"),
+	digFurnishing: require("../../assets/images/glyphs/dig/furnishing.png"),
+	digBow: require("../../assets/images/glyphs/dig/bow.png"),
+	digCharm: require("../../assets/images/glyphs/dig/charm.png"),
+	digBag: require("../../assets/images/glyphs/dig/bag.png"),
 } as const;
 
 type RasterGlyphName = keyof typeof GLYPHS;

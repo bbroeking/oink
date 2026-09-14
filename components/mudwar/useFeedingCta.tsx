@@ -72,7 +72,12 @@ const dismissedReceipts = new WeakSet<object>();
 const dismissedWindows = new Set<string>();
 const receiptListeners = new Set<() => void>();
 
-export function useFeedingCta(onDug?: () => void): FeedingCta {
+export function useFeedingCta(
+  onDug?: () => void,
+  /** The player's tickle count (the Barn's earned stamp) for the Snout Deep
+   *  tally's before → now; null/omitted when the surface can't know it. */
+  tickledBefore: number | null = null,
+): FeedingCta {
   const {
     session,
     dugThisWindow,
@@ -268,6 +273,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
           phaseCountdown={phaseOpen ? countdown : undefined}
           helpOnMount={helpSeen === false}
           onHelpSeen={markHelpSeen}
+          tickledBefore={tickledBefore}
         />
       ) : session ? (
         <TrufflePatch

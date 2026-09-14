@@ -13,6 +13,13 @@
 #   those (e.g. 20260913060000_snout_deep, which needs rooting_receipts +
 #   _patch_clock_for_user) is chained explicitly at the tail instead — run
 #   with no args.
+#   The globbed [1234]*/5x/6x smokes expect their own migrations as args (each
+#   file's header names it). The arg list that ran the whole chain green on
+#   2026-09-13 (through 88_dig_find_tickles_smoke), in order:
+#     20260746 20260747 20260749 20260750 20260751 20260752 20260753 20260755
+#     20260774 20260775 20260776 scripts/db-harness/00i_pig_roster_prep.sql
+#     20260781 20260785 20260791 20260795
+#   (each as supabase/migrations/<id>_*.sql).
 #
 # Requires: colima started + docker CLI (both installed via Homebrew).
 set -euo pipefail
@@ -280,6 +287,8 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/00t_snout_deep_prep.sql \
 		supabase/migrations/20260913060000_snout_deep.sql \
 		scripts/db-harness/87_snout_deep_smoke.sql \
+		supabase/migrations/20260913120000_dig_find_tickles.sql \
+		scripts/db-harness/88_dig_find_tickles_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

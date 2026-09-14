@@ -19,6 +19,7 @@ import {
   type SnoutDeepLayer,
   type SnoutDeepVerb,
 } from "@/constants/dig";
+import { DIG_FIND_TICKLES, type DigFindKind } from "@/constants/dig";
 import { WAKE_SEED_MULT, WakeStream, wakeSeed, wakeThreshold } from "@/utils/rooting";
 
 const ROOT = path.resolve(__dirname, "..");
@@ -26,12 +27,18 @@ const sql = fs.readFileSync(
   path.join(ROOT, "supabase/migrations/20260913060000_snout_deep.sql"),
   "utf8",
 );
+// The tally (every find pays tickles) carries _submit_rooting_deep_core's
+// latest def; the log contract is pinned against THAT body.
+const tallySql = fs.readFileSync(
+  path.join(ROOT, "supabase/migrations/20260913120000_dig_find_tickles.sql"),
+  "utf8",
+);
 
-function fnBody(name: string): string {
-  const start = sql.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`);
+function fnBody(name: string, source = sql): string {
+  const start = source.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`);
   expect(start).toBeGreaterThan(-1);
-  const end = sql.indexOf("$function$;", start);
-  return sql.slice(start, end);
+  const end = source.indexOf("$function$;", start);
+  return source.slice(start, end);
 }
 
 const VERB_LETTER: Record<SnoutDeepVerb, string> = { sniff: "s", rub: "r", shove: "h" };
@@ -101,7 +108,7 @@ describe("Snout Deep server parity", () => {
   });
 
   test("the log contract the server enforces is the client's encoding", () => {
-    const body = fnBody("_submit_rooting_deep_core");
+    const body = fnBody("_submit_rooting_deep_core", tallySql);
     expect(body).toContain("'^[srh][0-2]:([0-9]|[12][0-9])$'");
     expect(body).toContain("n > 45");
     // The waking action stays IN the log; nothing after it survives.
@@ -111,6 +118,44 @@ describe("Snout Deep server parity", () => {
     expect(body).toContain("'dig_deep', NULL");
     expect(body).toContain("AND tied_layer = 2 AND NOT v_woke");
     expect(body).toContain("'dig_root', NULL");
+  });
+
+  test("the migration's tickle table equals DIG_FIND_TICKLES (spec §2)", () => {
+    const start = tallySql.indexOf("UPDATE public.app_settings SET");
+    const end = tallySql.indexOf("WHERE key = 'dig_finds';", start);
+    const block = tallySql.slice(start, end);
+    const table: Partial<Record<DigFindKind, number>> = {};
+    for (const m of block.matchAll(/"([a-z_]+)":\s*\{[^}]*"tickles":\s*(\d+)/g)) {
+      table[m[1] as DigFindKind] = Number(m[2]);
+    }
+    expect(table).toEqual(DIG_FIND_TICKLES);
+    // Every find kind is named, so a server-side lookup never falls to 0 by
+    // accident (only the stone is 0).
+    expect(Object.keys(table).sort()).toEqual(Object.keys(DIG_FIND_TICKLES).sort());
+  });
+
+  test("the tally lands through the applied-tickles rule and rides the receipt", () => {
+    const apply = fnBody("apply_tickles", tallySql);
+    // The 20260812010000 auto-apply rule: the count + the snouts, never the bank.
+    expect(apply).toContain("tickles_earned = COALESCE(tickles_earned, 0) + p_n");
+    expect(apply).toContain("counter = COALESCE(counter, 0) + p_n");
+    expect(apply).not.toContain("user_items");
+    expect(apply).not.toContain("grant_tickles");
+    const core = fnBody("_submit_rooting_deep_core", tallySql);
+    expect(core).toContain("tickled_now := public.apply_tickles(p_user_id, tickle_total);");
+    expect(core).not.toContain("grant_tickles");
+    // A truffle he took pays 0, listed first as lost.
+    expect(core).toContain("'id', COALESCE(lost_id, lost), 'kind', lost, 'tickles', 0, 'lost', true");
+    // The tally sits OUTSIDE the crewed branch (uncrewed digs pay too).
+    expect(core.indexOf("THE TALLY")).toBeGreaterThan(core.lastIndexOf("IF crewed THEN"));
+    for (const key of ["'tickles',", "'tickles_total',", "'tickled_before',", "'tickled_now',"]) {
+      expect(core).toContain(key);
+    }
+    // The client reads the same keys.
+    const hook = fs.readFileSync(path.join(ROOT, "hooks/useRooting.ts"), "utf8");
+    for (const key of ["r.tickles ??", "r.tickles_total", "r.tickled_before", "r.tickled_now"]) {
+      expect(hook).toContain(key);
+    }
   });
 
   test("the client sends the log the server expects", () => {

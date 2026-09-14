@@ -1,59 +1,75 @@
 // One drawing per find kind — the mark a Snout Deep find wears on a cleared
-// tile, in the pouch, on the reveal sticker and on the receipt's 26pt disc.
-// Everything routes through Glyph / Icon (never an emoji); a stone is the one
-// hand-cut shape, an ink pebble. `silhouette` is the same mark ink-tinted at
-// ghost opacity: what a half-cleared tile shows of what is under it.
+// tile, in the pouch, on the reveal sticker and on the tally's 26pt disc. The
+// painted marks (assets/images/glyphs/dig, registered in Glyph) are the
+// finds' own art since 2026-09-13; the truffles keep the receipt's truffle
+// glyph, Pass XP the sparkle, and a stone is the one hand-cut shape, an ink
+// pebble. Never an emoji. `silhouette` is the same mark ink-tinted at ghost
+// opacity: what a half-cleared tile shows of what is under it. The junk
+// keepsake wears its variant (boot · horseshoe · cap); with no variant it
+// wears the boot.
 import { StyleSheet, View } from "react-native";
 import Svg, { Ellipse } from "react-native-svg";
-import type { DigFindKind } from "@/constants/dig";
+import type { DigFindKind, DigJunkVariant } from "@/constants/dig";
 import { ART_SIZE, OPACITY, WHIMSY } from "@/constants/theme";
-import { Glyph, Icon, type GlyphName, type IconName } from "../ui";
+import { Glyph, type GlyphName } from "../ui";
 
-type Mark = { glyph: GlyphName } | { icon: IconName } | { stone: true };
+type Mark = { glyph: GlyphName } | { stone: true };
 
-const MARKS: Readonly<Record<DigFindKind | "truffles" | "xp", Mark>> = {
+const MARKS: Readonly<Record<Exclude<DigFindKind, "junk"> | "truffles" | "xp", Mark>> = {
   truffle_d: { glyph: "truffle" },
   truffle_l: { glyph: "truffle" },
   truffles: { glyph: "truffle" },
-  boom: { icon: "tickle" },
-  pouch: { glyph: "gift" },
-  apple: { glyph: "heart" },
-  junk: { icon: "furnishings" },
-  shimmer: { glyph: "gem" },
-  acorn: { icon: "gear" },
-  tea: { glyph: "coffee" },
-  scroll: { icon: "scroll" },
-  relic: { glyph: "trophy" },
-  furnishing: { icon: "furnishings" },
-  bow: { glyph: "bow" },
-  charm: { glyph: "bless" },
+  boom: { glyph: "digBoom" },
+  pouch: { glyph: "digPouch" },
+  apple: { glyph: "digApple" },
+  shimmer: { glyph: "digShimmer" },
+  acorn: { glyph: "digAcorn" },
+  tea: { glyph: "digTea" },
+  scroll: { glyph: "digScroll" },
+  relic: { glyph: "digRelic" },
+  furnishing: { glyph: "digFurnishing" },
+  bow: { glyph: "digBow" },
+  charm: { glyph: "digCharm" },
   xp: { glyph: "sparkle" },
   stone: { stone: true },
 };
 
+const JUNK_MARKS: Readonly<Record<DigJunkVariant, GlyphName>> = {
+  boot: "digBoot",
+  horseshoe: "digHorseshoe",
+  cap: "digCap",
+};
+
+/** The glyph a find kind (and, for junk, its variant) draws; null for a stone. */
+export function findMarkGlyph(kind: DigFindKind | "truffles" | "xp", variant?: string): GlyphName | null {
+  if (kind === "junk") {
+    return JUNK_MARKS[(variant ?? "boot") as DigJunkVariant] ?? JUNK_MARKS.boot;
+  }
+  const mark = MARKS[kind];
+  return "stone" in mark ? null : mark.glyph;
+}
+
 export function FindMark({
   kind,
+  variant,
   size = ART_SIZE.glyphSm,
   silhouette = false,
 }: {
   kind: DigFindKind | "truffles" | "xp";
+  /** The junk keepsake's variant (boot · horseshoe · cap). */
+  variant?: string;
   size?: number;
   silhouette?: boolean;
 }) {
-  const mark = MARKS[kind];
   const ink = WHIMSY.ink;
-  let node;
-  if ("stone" in mark) {
-    node = (
-      <Svg width={size} height={size} viewBox="0 0 24 24">
-        <Ellipse cx={12} cy={13} rx={9} ry={7} fill={WHIMSY.muteSoft} stroke={ink} strokeWidth={2} />
-      </Svg>
-    );
-  } else if ("icon" in mark) {
-    node = <Icon name={mark.icon} size={size} color={ink} />;
-  } else {
-    node = <Glyph name={mark.glyph} size={size} style={silhouette ? { tintColor: ink } : undefined} />;
-  }
+  const glyph = findMarkGlyph(kind, variant);
+  const node = glyph ? (
+    <Glyph name={glyph} size={size} style={silhouette ? { tintColor: ink } : undefined} />
+  ) : (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Ellipse cx={12} cy={13} rx={9} ry={7} fill={WHIMSY.muteSoft} stroke={ink} strokeWidth={2} />
+    </Svg>
+  );
   return <View style={silhouette ? styles.silhouette : undefined}>{node}</View>;
 }
 

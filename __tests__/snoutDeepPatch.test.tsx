@@ -16,7 +16,7 @@ import { DigReceiptSheet } from "../components/mudwar/SnoutDeepSheets";
 import { Hungerer, hungererStateFor } from "../components/mudwar/Hungerer";
 import { MotionPolicyProvider } from "../hooks/useMotionPolicy";
 import { generateLayeredBoard } from "../utils/rooting";
-import { initialState, receipt, reduce, type DigReceipt, type SnoutDeepState } from "../utils/snoutDeep";
+import { initialState, receipt, reconcileReceipt, reduce, type DigReceipt, type SnoutDeepState } from "../utils/snoutDeep";
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -144,7 +144,8 @@ describe("SnoutDeepPatch", () => {
     pressLabelled(renderer, /^Tie it off, plus 0 Golden Truffles/);
     expect(seen.latest!.ended).toEqual({ reason: "tie", layer: 2 });
     expect(seen.done?.kind).toBe("tied");
-    expect(seen.done?.title).toBe("Tied off at the root");
+    expect(seen.done?.title).toBe("What the dig was worth");
+    expect(seen.done?.kicker).toBe("the truffle patch · tied at the root");
     act(() => renderer.unmount());
   });
 
@@ -162,13 +163,32 @@ describe("SnoutDeepPatch", () => {
   });
 });
 
-describe("the sheets", () => {
-  test("the receipt sheet lays the rows on the ledger with the primary and the secondary", () => {
-    let s = initialState(generateLayeredBoard(SEED), { coop: false, uncrewed: false });
+describe("the sheets — the tally", () => {
+  function tiedDomino(uncrewed = false) {
+    let s = initialState(generateLayeredBoard(SEED), { coop: false, uncrewed });
     const domino = s.board.layers[0].finds.find((f) => f.kind === "truffle_d")!;
     for (const t of domino.tiles) s = reduce(s, { type: "act", verb: "shove", tile: t });
-    s = reduce(s, { type: "tie" });
-    const r = receipt(s);
+    return reduce(s, { type: "tie" });
+  }
+  /** Advance the clock a tick at a time so each re-armed timeout gets its render. */
+  function ticks(ms: number, times: number) {
+    for (let i = 0; i < times; i++) {
+      act(() => {
+        jest.advanceTimersByTime(ms);
+      });
+    }
+  }
+  const hosts = (renderer: TestRenderer.ReactTestRenderer, label: string) =>
+    renderer.root.findAll((n) => typeof n.type === "string" && n.props.accessibilityLabel === label);
+  /** The tally rows' landed state, top to bottom (hidden = not landed yet). */
+  function landedFlags(renderer: TestRenderer.ReactTestRenderer): boolean[] {
+    return renderer.root
+      .findAll((n) => typeof n.type === "string" && typeof n.props.testID === "string" && n.props.testID.startsWith("tally-row-"))
+      .map((n) => !n.props.accessibilityElementsHidden);
+  }
+
+  test("under Reduce Motion every row is present at once, the count is settled, the foot and the doors read", () => {
+    const r = receipt(tiedDomino(), { tickledBefore: 38 });
     let renderer!: TestRenderer.ReactTestRenderer;
     act(() => {
       renderer = TestRenderer.create(
@@ -176,12 +196,135 @@ describe("the sheets", () => {
       );
     });
     const all = texts(renderer).join("\n");
-    expect(all).toContain("Tied off in topsoil");
-    expect(all).toContain("a Golden Truffle");
-    expect(all).toContain("+1 GT");
+    expect(all).toContain("the truffle patch · tied at topsoil");
+    expect(all).toContain("What the dig was worth");
+    expect(all).toContain("each thing lands, the count ticks. 2 actions · he slept through it.");
+    expect(all).toContain("38"); // before
+    expect(all).toContain("48"); // tickled now — settled
+    expect(all).toContain("before");
+    expect(all).toContain("tickled now");
+    expect(all).toContain("a truffle");
+    expect(all).toContain("the herd's too — +1 Golden Truffle");
+    expect(all).toContain("+10");
     expect(all).toContain("+20 XP");
-    expect(all).toContain("Back to Barn");
+    expect(all).toContain("the dig");
+    expect(all).toContain("Back to the Barn");
     expect(all).toContain("share the dig ›");
+    expect(all).not.toContain("GT");
+    expect(landedFlags(renderer)).toEqual([true, true]);
+    // Settled: the hurry target is disabled.
+    const hurry = hosts(renderer, "The tally")[0];
+    expect(hurry.props.accessibilityState).toEqual({ disabled: true });
+    act(() => renderer.unmount());
+  });
+
+  test("rows land one by one ~350 ms apart and the count rolls up by each row's tickles", () => {
+    jest.useFakeTimers();
+    const r = receipt(tiedDomino(), { tickledBefore: 38 });
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    // Nothing landed yet: the count reads before.
+    expect(landedFlags(renderer)).toEqual([false, false]);
+    expect(texts(renderer)).toContain("38");
+    expect(texts(renderer)).not.toContain("48");
+    // The first row lands after its beat; the count starts rolling toward 48.
+    ticks(450, 1);
+    expect(landedFlags(renderer)).toEqual([true, false]);
+    ticks(40, 8);
+    expect(texts(renderer)).toContain("48");
+    // The second (XP) row lands a stagger later.
+    ticks(350, 1);
+    expect(landedFlags(renderer)).toEqual([true, true]);
+    act(() => renderer.unmount());
+    jest.useRealTimers();
+  });
+
+  test("a tap anywhere hurries: every row lands and the count settles", () => {
+    jest.useFakeTimers();
+    const r = receipt(tiedDomino(), { tickledBefore: 38 });
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    const hurry = renderer.root.findAll((n) => n.props.accessibilityLabel === "Hurry the tally")[0];
+    expect(hurry).toBeDefined();
+    act(() => {
+      hurry.props.onPress();
+    });
+    expect(landedFlags(renderer)).toEqual([true, true]);
+    expect(texts(renderer)).toContain("48");
+    expect(hosts(renderer, "The tally")).toHaveLength(1);
+    expect(hosts(renderer, "Hurry the tally")).toHaveLength(0);
+    act(() => renderer.unmount());
+    jest.useRealTimers();
+  });
+
+  test("the server's receipt re-aims the count without restarting the landing", () => {
+    jest.useFakeTimers();
+    const r = receipt(tiedDomino(), { tickledBefore: 38 });
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    ticks(450, 1);
+    ticks(40, 8);
+    expect(landedFlags(renderer)).toEqual([true, false]);
+    expect(texts(renderer)).toContain("48");
+    // The server says the truffle was worth 12 on a count of 40.
+    const fixed = reconcileReceipt(r, {
+      tickles: [{ id: "l0:truffle_d", kind: "truffle_d", tickles: 12 }],
+      ticklesTotal: 12,
+      tickledBefore: 40,
+      tickledNow: 52,
+    });
+    act(() => {
+      renderer.update(
+        wrap(<DigReceiptSheet visible receipt={fixed} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    expect(landedFlags(renderer)).toEqual([true, false]); // still the first row only
+    ticks(40, 8);
+    expect(texts(renderer)).toContain("40");
+    expect(texts(renderer)).toContain("52");
+    expect(texts(renderer)).toContain("+12");
+    act(() => renderer.unmount());
+    jest.useRealTimers();
+  });
+
+  test("the woke tally: the taken truffle first at 'his', the count on cream, the next-time line", () => {
+    // Wake in the mud with the fat one loose: descend at once, shove the L
+    // until a draw under 20 wakes him (the mud shove threshold).
+    let s = initialState(generateLayeredBoard(SEED), { coop: false, uncrewed: false });
+    s = reduce(s, { type: "descend" });
+    const fat = s.board.layers[1].finds.find((f) => f.kind === "truffle_l")!;
+    for (const t of fat.tiles) s = reduce(s, { type: "act", verb: "shove", tile: t });
+    let guard = 0;
+    while (!s.ended && guard++ < 40) {
+      const buried = s.depths.findIndex((d) => d > 0);
+      s = reduce(s, { type: "act", verb: "shove", tile: buried });
+    }
+    if (s.ended?.reason !== "wake" || s.missed.length === 0) return; // the seed stayed quiet — nothing to assert
+    const r = receipt(s, { tickledBefore: 38 });
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onClose={() => {}} />),
+      );
+    });
+    const all = texts(renderer);
+    expect(all.join("\n")).toContain("He woke. Still worth it.");
+    expect(all.join("\n")).toContain("the truffle patch · he woke at the mud");
+    expect(all).toContain("his");
+    expect(all.join("\n")).toContain("comes back gilded next Feeding");
+    expect(all.join("\n")).toContain("next time — tie it in topsoil?");
     act(() => renderer.unmount());
   });
 
@@ -197,6 +340,29 @@ describe("the sheets", () => {
     const all = texts(renderer).join("\n");
     expect(all).toContain("truffles are for herds — find yours ›");
     expect(all).not.toContain("GT");
+    // Before unknown: the count reads the dig's own total.
+    expect(all).toContain("this dig");
+    act(() => renderer.unmount());
+  });
+
+  test("uncrewed with a banked truffle: its row is the join door, and it pays", () => {
+    const r = receipt(tiedDomino(true), { tickledBefore: 0 });
+    const onJoin = jest.fn();
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onJoin={onJoin} onClose={() => {}} />),
+      );
+    });
+    const door = renderer.root.findAll((n) => n.props.accessibilityRole === "link")[0];
+    expect(door).toBeDefined();
+    act(() => {
+      door.props.onPress();
+    });
+    expect(onJoin).toHaveBeenCalledTimes(1);
+    const all = texts(renderer).join("\n");
+    expect(all).toContain("truffles are for herds — find yours ›");
+    expect(all).toContain("+10");
     act(() => renderer.unmount());
   });
 });

@@ -404,7 +404,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// did, not what its "try a dig ›" line did: `useDigEntry` opens the patch IN
 	// PLACE for a crewed player and only falls back to the Season tab door for
 	// someone who still needs a herd. One decision, one place.
-	const dig = useDigEntry();
+	const dig = useDigEntry(fetchStats, statsLoaded ? stats.ticklesEarned : null);
 	// Coming back out of the room: the panels are still shut over the Exterior, so
 	// focus is what opens them again.
 	const reopenThreshold = threshold.onFocusRegained;

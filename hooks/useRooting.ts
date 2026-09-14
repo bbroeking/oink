@@ -92,6 +92,14 @@ export interface RootingOutcome {
   wokeOn?: string | null;
   reason?: "tie" | "wake" | "close";
   uncrewed?: boolean;
+  // The tally (20260913120000): every find's tickles in the order of the
+  // finds (a truffle he took at 0, `lost`), their sum, and the player's
+  // count before and after — profiles.tickles_earned, what the Barn's earned
+  // stamp reads. Absent on a classic receipt or an un-migrated server.
+  tickles?: { id: string; kind: string; tickles: number; lost?: boolean }[] | null;
+  ticklesTotal?: number | null;
+  tickledBefore?: number | null;
+  tickledNow?: number | null;
   // "Beginner's snout": the one-time real Golden Truffle granted on the FIRST
   // practice dig (claim_beginners_snout). >0 → show the gift line; null/0 →
   // already claimed, migration unpushed, or not the first practice dig — the
@@ -145,6 +153,11 @@ type SubmitPayload = {
   woke_on?: string | null;
   end_reason?: "tie" | "wake" | "close";
   uncrewed?: boolean;
+  // The tally (20260913120000) — absent before that migration.
+  tickles?: { id: string; kind: string; tickles: number; lost?: boolean }[] | null;
+  tickles_total?: number | null;
+  tickled_before?: number | null;
+  tickled_now?: number | null;
 };
 
 function toRootingOutcome(
@@ -171,6 +184,10 @@ function toRootingOutcome(
     outcome.wokeOn = r.woke_on ?? null;
     outcome.reason = r.end_reason;
     outcome.uncrewed = r.uncrewed ?? false;
+    outcome.tickles = r.tickles ?? null;
+    outcome.ticklesTotal = r.tickles_total ?? null;
+    outcome.tickledBefore = r.tickled_before ?? null;
+    outcome.tickledNow = r.tickled_now ?? null;
   }
   return outcome;
 }

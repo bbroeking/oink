@@ -37,7 +37,9 @@ describe("Barn Truffle Patch entry", () => {
     // is visible, armed by default while the patch is open (until the player
     // has picked their own), the hint riding along, and the single mounted
     // patch — instead of jumping to the Season tab.
-    expect(barn).toContain("const dig = useDigEntry();");
+    // The Barn refetches its stats when a dig lands (the earned stamp reads
+    // the tally's "tickled now") and hands the tally its "before".
+    expect(barn).toContain("const dig = useDigEntry(fetchStats, statsLoaded ? stats.ticklesEarned : null);");
     expect(barn).toContain("if (dig.visible) {");
     expect(barn).toContain('accessibilityLabel: "Truffle Patch",');
     expect(barn).toContain("accessibilityHint: dig.hint,");

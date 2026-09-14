@@ -32,6 +32,7 @@
 //     woke him (the roll happens before the cap check); `close` ends as tie.
 
 import {
+  DIG_FIND_TICKLES,
   DIG_FOOD_KINDS,
   PATCH_COLS,
   PATCH_ROWS,
@@ -85,6 +86,7 @@ export interface SnoutDeepState {
   loose: string | null; // the current layer's truffle id, if uncovered and unbanked
   banked: string[]; // find ids banked (truffles) — across layers
   things: string[]; // find ids revealed (things) — across layers
+  found: string[]; // every find id (truffle or thing) in the order it surfaced — the tally's order
   missed: string[]; // touched-but-uncollected cluster ids left behind
   layersTied: Layer[]; // layers whose truffle banked (for GT reasons)
   coop: boolean;
@@ -128,6 +130,7 @@ export function initialState(
     loose: null,
     banked: [],
     things: [],
+    found: [],
     missed: [],
     layersTied: [],
     coop: opts.coop,
@@ -247,6 +250,7 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
   let scent = state.scent;
   let loose = state.loose;
   let things = state.things;
+  let found = state.found;
   if (verb === "sniff") {
     scent = state.scent.slice();
     scent[tile] = scentAt(currentLayer(state), tile);
@@ -262,6 +266,7 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
       if (clusterRevealed(f.tiles, state.depths)) continue; // already up
       if (f.food) loose = f.id;
       else if (!things.includes(f.id)) things = [...things, f.id];
+      if (!found.includes(f.id)) found = [...found, f.id];
     }
   }
 
@@ -280,6 +285,7 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
     wakeIndex,
     loose,
     things,
+    found,
   };
 
   if (woke) {
@@ -383,16 +389,18 @@ export function wakeDrawAt(seed: number, k: number): number {
 }
 
 // ── Copy — the finds as the player reads them ───────────────────────────────
-// One table for the reveal sticker, the pouch marks and the receipt rows, so a
+// One table for the reveal sticker, the pouch marks and the tally rows, so a
 // find is named the same way everywhere. `title` is the sticker/row title,
-// `tail` the reveal's second clause, `value` the ledger's right column, `sub`
-// the row's hand line. The Boom's tickles are the catch-up's `boom(H)` (§4) —
-// the client can't know H, so the reveal takes the amount as an argument
-// (3 when H = 0).
+// `tail` the reveal's second clause, `value` the reveal's short read, `sub`
+// the tally row's hand line — what the find ALSO does beside its tickles
+// (§5.7: "the herd's too — +1 Golden Truffle" / "on the shelf as well" / "+1
+// Mote as well"). The Boom's tickles are the catch-up's `boom(H)` (§4) — the
+// client can't know H, so the reveal takes the amount as an argument (3 when
+// H = 0) and the row reads "the catch-up: 3 + N for the gap".
 
-export const BOOM_BASE_TICKLES = 3;
+export const BOOM_BASE_TICKLES = DIG_FIND_TICKLES.boom;
 
-export type FindTone = "sun" | "sage" | "rose" | "lilac" | "paper";
+export type FindTone = "sun" | "sage" | "rose" | "lilac" | "paper" | "roseDeep";
 
 interface FindCopy {
   title: string;
@@ -408,6 +416,12 @@ const JUNK_TITLES: Readonly<Record<string, string>> = {
   cap: "a bottle cap",
 };
 
+/** The Boom row's hand line: the base plus the catch-up's gap, when there is one. */
+export function boomSubLine(boomTickles: number): string {
+  const gap = boomTickles - BOOM_BASE_TICKLES;
+  return gap > 0 ? `the catch-up: ${BOOM_BASE_TICKLES} + ${gap} for the gap` : "the catch-up";
+}
+
 export function findCopy(find: Find, boomTickles = BOOM_BASE_TICKLES): FindCopy {
   switch (find.kind) {
     case "truffle_d":
@@ -415,29 +429,29 @@ export function findCopy(find: Find, boomTickles = BOOM_BASE_TICKLES): FindCopy 
     case "truffle_l":
       return { title: "the fat one", tail: "loose, until you tie it", value: "loose", sub: "the mud's", tone: "sun" };
     case "boom":
-      return { title: "a Tickle Boom", tail: `+${boomTickles} tickles, yours`, value: `+${boomTickles} tickles`, sub: "applied on the spot", tone: "rose" };
+      return { title: "a Tickle Boom", tail: `+${boomTickles} tickles, yours`, value: `+${boomTickles} tickles`, sub: boomSubLine(boomTickles), tone: "rose" };
     case "pouch":
-      return { title: "a snout pouch", tail: "+15 snouts", value: "+15 snouts", sub: "into your purse", tone: "sun" };
+      return { title: "a snout pouch", tail: "+15 snouts", value: "+15 snouts", sub: "+15 snouts as well", tone: "sun" };
     case "apple":
-      return { title: "a windfall apple", tail: "Rosie is +8 happier", value: "+8 happy", sub: "Rosie ate it already", tone: "rose" };
+      return { title: "a windfall apple", tail: "Rosie is +8 happier", value: "+8 happy", sub: "Rosie ate it — +8 happy as well", tone: "rose" };
     case "junk":
-      return { title: JUNK_TITLES[find.variant ?? ""] ?? "a keepsake", tail: "new for the Barn", value: "new", sub: "a shelf keepsake", tone: "paper" };
+      return { title: JUNK_TITLES[find.variant ?? ""] ?? "a keepsake", tail: "new for the Barn", value: "new", sub: "on the shelf as well", tone: "paper" };
     case "shimmer":
-      return { title: "a shimmer pocket", tail: "+1 Mote", value: "+1 Mote", sub: "for the machine", tone: "lilac" };
+      return { title: "a shimmer pocket", tail: "+1 Mote", value: "+1 Mote", sub: "+1 Mote as well", tone: "lilac" };
     case "acorn":
-      return { title: "a Clockwork Acorn", tail: "a day of the Auto-Tickler", value: "1 day", sub: "wound into the Auto-Tickler", tone: "sage" };
+      return { title: "a Clockwork Acorn", tail: "a day of the Auto-Tickler", value: "1 day", sub: "a day of Auto-Tickler as well", tone: "sage" };
     case "tea":
-      return { title: "a flask of warm tea", tail: "warm tea, 8 h, on you", value: "8 h", sub: "warm tea on yourself", tone: "sage" };
+      return { title: "a flask of warm tea", tail: "warm tea, 8 h, on you", value: "8 h", sub: "warm tea on you, 8 h, as well", tone: "sage" };
     case "scroll":
-      return { title: "a Pass XP scroll", tail: "+40 Pass XP", value: "+40 XP", sub: "read on the spot", tone: "lilac" };
+      return { title: "a Pass XP scroll", tail: "+40 Pass XP", value: "+40 XP", sub: "+40 Pass XP as well", tone: "lilac" };
     case "relic":
-      return { title: "a relic", tail: "new in the Burrow Book", value: "new", sub: "for the Burrow Book", tone: "lilac" };
+      return { title: "a relic", tail: "new in the Burrow Book", value: "new", sub: "in the Burrow Book as well", tone: "lilac" };
     case "furnishing":
-      return { title: "an Unearthed furnishing", tail: "new for the Barn", value: "new", sub: "a dig-only Barn piece", tone: "paper" };
+      return { title: "an Unearthed furnishing", tail: "new for the Barn", value: "new", sub: "a Barn piece as well", tone: "paper" };
     case "bow":
-      return { title: "a buried bow", tail: "new for the Closet", value: "new", sub: "a dig-only cosmetic", tone: "rose" };
+      return { title: "a buried bow", tail: "new for the Closet", value: "new", sub: "in the Closet as well", tone: "rose" };
     case "charm":
-      return { title: "a bless charm", tail: "one free blessing to send", value: "1 to send", sub: "a blessing, on the house", tone: "sage" };
+      return { title: "a bless charm", tail: "one free blessing to send", value: "1 to send", sub: "a blessing to send as well", tone: "sage" };
     case "stone":
     default:
       return { title: "a stone", tail: "just a stone", value: "", sub: "", tone: "paper" };
@@ -450,26 +464,61 @@ export function findRevealLine(find: Find, boomTickles = BOOM_BASE_TICKLES): str
   return `${c.title} · ${c.tail}`;
 }
 
-// ── The receipt — what the payoff sheets render ─────────────────────────────
+// ── The find tickle table — the server's, over the compiled fallback ────────
+// `app_settings.dig_finds` rides on open_rooting as {kind: {odds, tickles}}
+// (20260913120000); a kind the server does not name keeps DIG_FIND_TICKLES's
+// value, and an older server's {kind: [n, d]} shape names no tickles at all.
+
+export type DigFindTickles = Readonly<Record<FindKind, number>>;
+
+export function resolveDigFindTickles(server: unknown): DigFindTickles {
+  const out: Record<FindKind, number> = { ...DIG_FIND_TICKLES };
+  if (!server || typeof server !== "object" || Array.isArray(server)) return out;
+  for (const kind of Object.keys(out) as FindKind[]) {
+    const entry = (server as Record<string, unknown>)[kind];
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const t = (entry as { tickles?: unknown }).tickles;
+    if (typeof t === "number" && Number.isFinite(t) && t >= 0) out[kind] = Math.trunc(t);
+  }
+  return out;
+}
+
+// ── The receipt — the tally the payoff sheets render (§5.7 / §5.8) ──────────
+// One row per find in the order it surfaced, each worth its tickles; the
+// truffle he took first, at "his"; Pass XP last, paying none. `tickledBefore`
+// is the Barn's count as the dig ended (null when the caller can't know it —
+// the sheet then rolls the dig's own total) and `tickledNow` is that plus the
+// tally. The server's receipt corrects both and every row's tickles through
+// `reconcileReceipt` when it lands.
 
 export type GtReason = "dig" | "dig_deep" | "dig_root";
 
 export interface DigReceiptRow {
   id: string;
-  /** Which mark the ledger draws: a find kind, the truffles line, or XP. */
-  mark: FindKind | "truffles" | "xp";
+  /** Which mark the ledger draws: a find kind, or XP. */
+  mark: FindKind | "xp";
+  /** The junk keepsake's variant (boot · horseshoe · cap) — which mark it wears. */
+  variant?: string;
   tone: FindTone;
   title: string;
   sub?: string;
+  /** The value column's text when the row pays no tickles ("his", "+20 XP"). */
   value: string;
+  /** The tickles this row rolls into the count; absent = the row pays none. */
+  tickles?: number;
+  /** The truffle he took: the value column reads "his" in mute, no number. */
+  lost?: boolean;
+  /** Uncrewed: the row is the join door (its sub is the join line). */
+  join?: boolean;
 }
 
 export interface DigReceipt {
   kind: "tied" | "woke";
   kicker: string;
   title: string;
+  /** The hand line under the title. */
   countLine: string;
-  /** The woke sheet's hand line naming the action; absent on a tie. */
+  /** The woke sheet's line naming the action and its odds; absent on a tie. */
   wokeLine?: string;
   /** The woke sheet's closing hand line ("next time — tie it at the mud?"). */
   nextTimeLine?: string;
@@ -477,7 +526,13 @@ export interface DigReceipt {
   /** The GT reasons this dig mints, in order — empty when uncrewed. */
   gt: GtReason[];
   xp: number;
-  /** Uncrewed only: the secondary that routes to the join path. */
+  /** The sum of every row's tickles — the foot's "the dig · +N". */
+  ticklesTotal: number;
+  /** The count before the dig, or null when unknown until the server answers. */
+  tickledBefore: number | null;
+  /** The count after: before + total; null while before is unknown. */
+  tickledNow: number | null;
+  /** Uncrewed only, when no truffle row carries the join line: the foot's join door. */
   joinLine?: string;
   primary: string;
   secondary?: string;
@@ -485,8 +540,7 @@ export interface DigReceipt {
 
 export const DIG_PASS_XP = 20;
 const SCROLL_XP = 40;
-
-const LAYER_WORDS: Readonly<Record<Layer, string>> = { 0: "one layer", 1: "two layers", 2: "three layers" };
+export const JOIN_LINE = "truffles are for herds — find yours ›";
 
 // "one in six" — the odds a wake line names. The wake table's reciprocals,
 // rounded, with a numeric fallback for a server-tuned threshold.
@@ -537,60 +591,102 @@ export function gtReasons(state: SnoutDeepState): GtReason[] {
   return out;
 }
 
-export function receipt(state: SnoutDeepState, boomTickles = BOOM_BASE_TICKLES): DigReceipt {
+export interface ReceiptOptions {
+  /** Tickles per find kind — the server's table when known, else DIG_FIND_TICKLES. */
+  tickles?: DigFindTickles;
+  /** The player's count as the dig ended (the Barn's stamp); null when unknown. */
+  tickledBefore?: number | null;
+}
+
+/** The banked truffle's hand line: the herd's GT for it (and the root's, when
+ *  the tie at the root pays 'dig_root' for the mud's truffle). */
+function truffleSub(kind: FindKind, gt: GtReason[]): string {
+  const root = kind === "truffle_l" && gt.includes("dig_root");
+  return root
+    ? "the herd's too — +1 Golden Truffle, +1 for the root"
+    : "the herd's too — +1 Golden Truffle";
+}
+
+export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigReceipt {
+  const table = opts.tickles ?? DIG_FIND_TICKLES;
+  const before = opts.tickledBefore ?? null;
   const ended = state.ended ?? { reason: "tie" as const, layer: state.layer };
   const woke = ended.reason === "wake";
   const layerName = LAYER_NAMES[ended.layer];
   const rows: DigReceiptRow[] = [];
   const gt = gtReasons(state);
+  let total = 0;
 
-  // The truffle he took (a wake): the loose one, moved to missed on the roll.
+  // The truffle he took (a wake): the loose one, moved to missed on the roll —
+  // the first row, at "his".
+  let lost: Find | null = null;
   if (woke) {
-    const lost = state.missed
-      .map((id) => findById(state.board, id))
-      .find((f) => f && f.food && f.tiles.length > 0 && layerOf(state.board, f.id) === ended.layer);
+    lost =
+      state.missed
+        .map((id) => findById(state.board, id))
+        .find((f) => f && f.food && f.tiles.length > 0 && layerOf(state.board, f.id) === ended.layer) ??
+      null;
     if (lost) {
-      const c = findCopy(lost);
       rows.push({
         id: lost.id,
         mark: lost.kind,
-        tone: "sun",
-        title: c.title,
-        sub: "his — gilded next Feeding",
+        tone: "roseDeep",
+        title: findCopy(lost).title,
+        sub: "his — comes back gilded next Feeding",
         value: "his",
+        lost: true,
       });
     }
   }
 
-  // One row per thing, in the order they surfaced.
+  // One row per find, in the order they surfaced: the banked truffles and
+  // every thing. A truffle left in the ground (missed, never banked) is not
+  // a row.
   let xp = DIG_PASS_XP;
-  for (const id of state.things) {
+  let truffleRows = 0;
+  for (const id of state.found) {
     const f = findById(state.board, id);
     if (!f) continue;
-    const c = findCopy(f, boomTickles);
+    if (f.food && !state.banked.includes(id)) continue;
+    const n = Math.max(0, table[f.kind] ?? 0);
+    total += n;
+    if (f.food) {
+      truffleRows++;
+      rows.push({
+        id,
+        mark: f.kind,
+        tone: "sun",
+        title: findCopy(f).title,
+        sub: state.uncrewed ? JOIN_LINE : truffleSub(f.kind, gt),
+        value: `+${n}`,
+        tickles: n,
+        ...(state.uncrewed ? { join: true } : {}),
+      });
+      continue;
+    }
+    const c = findCopy(f, table.boom);
     if (f.kind === "scroll") xp += SCROLL_XP;
-    rows.push({ id, mark: f.kind, tone: c.tone, title: c.title, sub: c.sub, value: c.value });
-  }
-
-  // The truffles row: the GT this dig mints, by layer. Uncrewed digs mint none
-  // and carry the join line instead.
-  if (!state.uncrewed && gt.length > 0) {
-    const where = gt
-      .map((r) => (r === "dig" ? "topsoil" : r === "dig_deep" ? "the mud" : "the root"))
-      .join(" · ");
     rows.push({
-      id: "truffles",
-      mark: "truffles",
-      tone: "sun",
-      title: gt.length === 1 ? "a Golden Truffle" : `${gt.length} Golden Truffles`,
-      sub: where,
-      value: `+${gt.length} GT`,
+      id,
+      mark: f.kind,
+      ...(f.variant ? { variant: f.variant } : {}),
+      tone: c.tone,
+      title: c.title,
+      sub: c.sub,
+      value: `+${n}`,
+      tickles: n,
     });
   }
 
   rows.push({ id: "xp", mark: "xp", tone: "lilac", title: "Pass XP", sub: "the dig counts", value: `+${xp} XP` });
 
   const actionsLine = `${state.actions.length} ${state.actions.length === 1 ? "action" : "actions"}`;
+  const join = state.uncrewed && truffleRows === 0 ? { joinLine: JOIN_LINE } : {};
+  const counts = {
+    ticklesTotal: total,
+    tickledBefore: before,
+    tickledNow: before == null ? null : before + total,
+  };
 
   if (woke) {
     const a = ended.wokeOn ? decodeAction(ended.wokeOn) : null;
@@ -601,16 +697,19 @@ export function receipt(state: SnoutDeepState, boomTickles = BOOM_BASE_TICKLES):
       : "he woke on the last one.";
     return {
       kind: "woke",
-      kicker: `woke in ${layerName}`,
-      title: "He woke.",
-      countLine: `${LAYER_WORDS[ended.layer]} · ${actionsLine} · he took the loose one`,
+      kicker: `the truffle patch · he woke at ${layerName}`,
+      title: "He woke. Still worth it.",
+      countLine: lost
+        ? "the things are yours. the loose truffle was his."
+        : "the things are yours. nothing was loose for him to take.",
       wokeLine,
       nextTimeLine: NEXT_TIME[ended.layer],
       rows,
       gt,
       xp,
-      ...(state.uncrewed ? { joinLine: "truffles are for herds — find yours ›" } : {}),
-      primary: "Back to Barn",
+      ...counts,
+      ...join,
+      primary: "Back to the Barn",
     };
   }
 
@@ -620,20 +719,53 @@ export function receipt(state: SnoutDeepState, boomTickles = BOOM_BASE_TICKLES):
       : ended.reason === "close"
         ? "the patch closed on you"
         : "he slept through it";
-  const tiedTitle =
-    ended.layer === 0 ? "Tied off in topsoil" : ended.layer === 1 ? "Tied off in the mud" : "Tied off at the root";
   return {
     kind: "tied",
-    kicker: "the truffle patch",
-    title: tiedTitle,
-    countLine: `${LAYER_WORDS[ended.layer]} · ${actionsLine} · ${how}`,
+    kicker: `the truffle patch · tied at ${layerName}`,
+    title: "What the dig was worth",
+    countLine: `each thing lands, the count ticks. ${actionsLine} · ${how}.`,
     rows,
     gt,
     xp,
-    ...(state.uncrewed ? { joinLine: "truffles are for herds — find yours ›" } : {}),
-    primary: "Back to Barn",
+    ...counts,
+    ...join,
+    primary: "Back to the Barn",
     secondary: state.uncrewed ? undefined : "share the dig ›",
   };
+}
+
+/** What the server's receipt says about the tally (submit_rooting_deep,
+ *  20260913120000). Every field is optional: an older server names none. */
+export interface ServerTally {
+  tickles?: readonly { id: string; kind: string; tickles: number; lost?: boolean }[] | null;
+  ticklesTotal?: number | null;
+  tickledBefore?: number | null;
+  tickledNow?: number | null;
+}
+
+/** Correct a client-built receipt with the server's numbers: every row's
+ *  tickles by id (then by kind — the server names truffles by their bare
+ *  kind), the total, and the count before / after. Rows keep their order, so
+ *  a roll-up already running only re-aims; it never restarts. */
+export function reconcileReceipt(r: DigReceipt, server: ServerTally): DigReceipt {
+  const byId = new Map<string, number>();
+  const byKind = new Map<string, number>();
+  for (const t of server.tickles ?? []) {
+    if (t.lost) continue;
+    byId.set(t.id, t.tickles);
+    if (!byKind.has(t.kind)) byKind.set(t.kind, t.tickles);
+  }
+  let total = 0;
+  const rows = r.rows.map((row) => {
+    if (row.tickles == null) return row;
+    const n = byId.get(row.id) ?? byKind.get(row.mark) ?? row.tickles;
+    total += n;
+    return n === row.tickles ? row : { ...row, tickles: n, value: `+${n}` };
+  });
+  const ticklesTotal = server.ticklesTotal ?? total;
+  const before = server.tickledBefore ?? r.tickledBefore;
+  const now = server.tickledNow ?? (before == null ? null : before + ticklesTotal);
+  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now };
 }
 
 function layerOf(board: SnoutDeepBoard, id: string): Layer | null {

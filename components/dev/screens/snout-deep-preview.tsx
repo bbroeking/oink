@@ -2,7 +2,9 @@
 // The founder's try-out on the web target (spec §11 step 2): the reducer runs
 // under useReducer, the three sheets mount from the screen, and a dev strip
 // at the very top shows the rolls. `?seed=` (default 20260913) · `?coop=1` ·
-// `?uncrewed=1` · `?motion=reduced`.
+// `?uncrewed=1` · `?motion=reduced` · `?before=` (the tally's count before the
+// dig; default 0 — offline, the tally counts from DIG_FIND_TICKLES and no
+// server corrects it).
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
@@ -43,6 +45,7 @@ function SnoutDeepPreview() {
     uncrewed?: string | string[];
     motion?: string | string[];
     help?: string | string[];
+    before?: string | string[];
   }>();
   const seedParam = Number(one(params.seed));
   const [seed, setSeed] = useState(
@@ -52,6 +55,8 @@ function SnoutDeepPreview() {
   const uncrewed = one(params.uncrewed) === "1";
   const reduceMotion = one(params.motion) === "reduced";
   const helpOnMount = one(params.help) === "1";
+  const beforeParam = Number(one(params.before));
+  const tickledBefore = Number.isFinite(beforeParam) && beforeParam >= 0 ? Math.trunc(beforeParam) : 0;
 
   // A new seed from the old one, deterministic: the next board is always the
   // same next board, so a report can say "seed N, then Dig again".
@@ -61,7 +66,7 @@ function SnoutDeepPreview() {
     <MotionPolicyProvider reduceMotion={reduceMotion}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Keyed on the seed: a new seed is a new dig, reducer and all. */}
-      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} onDigAgain={digAgain} />
+      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} tickledBefore={tickledBefore} onDigAgain={digAgain} />
     </MotionPolicyProvider>
   );
 }
@@ -72,6 +77,7 @@ function LocalDig({
   uncrewed,
   reduceMotion,
   helpOnMount,
+  tickledBefore,
   onDigAgain,
 }: {
   seed: number;
@@ -79,6 +85,7 @@ function LocalDig({
   uncrewed: boolean;
   reduceMotion: boolean;
   helpOnMount: boolean;
+  tickledBefore: number;
   onDigAgain: () => void;
 }) {
   const board = useMemo(() => generateLayeredBoard(seed), [seed]);
@@ -127,6 +134,7 @@ function LocalDig({
         onExit={onDigAgain}
         onDone={onDone}
         helpOnMount={helpOnMount}
+        tickledBefore={tickledBefore}
       />
       {state.ended && !sheetOpen ? (
         <View style={styles.again} pointerEvents="box-none">

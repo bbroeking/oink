@@ -8,7 +8,11 @@
 //   · a snapshot after every action, a sync_rooting every 5th action and on
 //     background (the close cron ties an abandoned dig at that log);
 //   · the window closing under an open dig → the reducer's `close` (a tie);
-//   · the end → useRooting.submitDeep, then the receipt sheet.
+//   · the end → the tally sheet at once, from the client's tickle table
+//     (the server's dig_finds when open_rooting named it), then
+//     useRooting.submitDeep; the server's receipt corrects the per-find
+//     tickles and the count before / after when it lands — the sheet's
+//     roll-up re-aims, it never restarts.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { router } from "expo-router";
@@ -23,8 +27,10 @@ import {
 } from "@/utils/digSubmission";
 import {
   initialState,
+  reconcileReceipt,
   reduce,
   replay,
+  resolveDigFindTickles,
   type DigReceipt,
   type SnoutDeepEvent,
   type SnoutDeepState,
@@ -54,6 +60,9 @@ export interface SnoutDeepDigProps {
   helpOnMount?: boolean;
   /** The player closed that sheet — stamp it seen for this account. */
   onHelpSeen?: () => void;
+  /** The player's tickle count as the dig opened (the Barn's stamp), for the
+   *  tally's before → now; null when the caller can't know it. */
+  tickledBefore?: number | null;
 }
 
 export function SnoutDeepDig({
@@ -66,6 +75,7 @@ export function SnoutDeepDig({
   phaseCountdown,
   helpOnMount,
   onHelpSeen,
+  tickledBefore = null,
 }: SnoutDeepDigProps) {
   const board = useMemo(
     () => generateLayeredBoard(session.seed, session.uniqueId),
@@ -75,6 +85,9 @@ export function SnoutDeepDig({
     () => ({ coop: session.coop, uncrewed: session.uncrewed ?? false }),
     [session.coop, session.uncrewed],
   );
+  // The find tickle table: the server's (open_rooting's dig_finds) over the
+  // compiled fallback — what the tally counts with until the receipt lands.
+  const tickles = useMemo(() => resolveDigFindTickles(session.digFinds), [session.digFinds]);
   const [state, setState] = useState<SnoutDeepState>(() => initialState(board, opts));
   const dispatch = useCallback(
     (event: SnoutDeepEvent) => setState((s) => reduce(s, event)),
@@ -206,6 +219,19 @@ export function SnoutDeepDig({
       })
         .then(async (result) => {
           if (result.ok) {
+            // The server's tally corrects the client's: per-find tickles by
+            // id, the total, the count before / after.
+            const o = result.outcome;
+            setReceipt((cur) =>
+              cur
+                ? reconcileReceipt(cur, {
+                    tickles: o.tickles,
+                    ticklesTotal: o.ticklesTotal,
+                    tickledBefore: o.tickledBefore,
+                    tickledNow: o.tickledNow,
+                  })
+                : cur,
+            );
             onDug?.();
             if (session.userId) {
               await clearSnoutDeepProgress(session.userId, session.windowIndex).catch(() => {});
@@ -234,6 +260,8 @@ export function SnoutDeepDig({
         onHelpSeen={onHelpSeen}
         onExit={onClose}
         onDone={onDone}
+        tickles={tickles}
+        tickledBefore={tickledBefore}
       />
       {receipt ? (
         <DigReceiptSheet

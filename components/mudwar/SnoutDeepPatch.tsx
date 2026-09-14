@@ -33,6 +33,7 @@ import {
   LAYER_NAMES,
   receipt as buildReceipt,
   whisperFor,
+  type DigFindTickles,
   type DigReceipt,
   type Find,
   type Layer,
@@ -104,8 +105,13 @@ export interface SnoutDeepPatchProps {
   onExit: () => void;
   /** Fires once when the dig ends, with what the payoff sheet renders. */
   onDone: (receipt: DigReceipt) => void;
-  /** The Boom's tickles — the catch-up's boom(H); 3 when unknown. */
-  boomTickles?: number;
+  /** Tickles per find kind — the server's table (open_rooting's dig_finds)
+   *  when known; the compiled DIG_FIND_TICKLES otherwise. The Boom's entry is
+   *  the catch-up's boom(H) once the server names it (3 when unknown). */
+  tickles?: DigFindTickles;
+  /** The player's tickle count as the dig opened (the Barn's stamp), for the
+   *  tally's before → now; null when the caller can't know it. */
+  tickledBefore?: number | null;
 }
 
 export function SnoutDeepPatch({
@@ -117,8 +123,10 @@ export function SnoutDeepPatch({
   onHelpSeen,
   onExit,
   onDone,
-  boomTickles,
+  tickles,
+  tickledBefore,
 }: SnoutDeepPatchProps) {
+  const boomTickles = tickles?.boom;
   const [verb, setVerb] = useState<Verb>("rub");
   const [reveal, setReveal] = useState<Find | null>(null);
   const { width } = useWindowDimensions();
@@ -150,8 +158,8 @@ export function SnoutDeepPatch({
   useEffect(() => {
     if (!state.ended || doneFor.current === state.ended) return;
     doneFor.current = state.ended;
-    onDone(buildReceipt(state, boomTickles));
-  }, [state, onDone, boomTickles]);
+    onDone(buildReceipt(state, { tickles, tickledBefore }));
+  }, [state, onDone, tickles, tickledBefore]);
 
   // The explanation: from the sign, and once by itself on a first dig. The
   // first-dig read lands after mount (the seen stamp is async), so the prop
@@ -423,9 +431,9 @@ function TilePressable({
         pressed && !cleared && styles.tilePressed,
       ]}
     >
-      {cleared && shown ? <FindMark kind={shown.kind} size={TILE_MARK} /> : null}
+      {cleared && shown ? <FindMark kind={shown.kind} variant={shown.variant} size={TILE_MARK} /> : null}
       {cleared && find && !shown ? <FindMark kind="stone" size={TILE_MARK} /> : null}
-      {half && find ? <FindMark kind={find.kind} size={TILE_MARK} silhouette /> : null}
+      {half && find ? <FindMark kind={find.kind} variant={find.variant} size={TILE_MARK} silhouette /> : null}
       {scent != null ? (
         <View style={styles.scent} pointerEvents="none">
           <Hand numberOfLines={1}>{scent}</Hand>
@@ -460,7 +468,7 @@ function FindReveal({ find, boomTickles }: { find: Find; boomTickles?: number })
         style={styles.revealSticker}
       >
         <View style={styles.revealRow}>
-          <FindMark kind={find.kind} size={POUCH_MARK} />
+          <FindMark kind={find.kind} variant={find.variant} size={POUCH_MARK} />
           <T role="cardTitle" numberOfLines={2} style={styles.revealText}>
             {findRevealLine(find, boomTickles)}
           </T>
@@ -507,7 +515,7 @@ function PouchWell({
             {empty}
           </Hand>
         ) : (
-          finds.map((f) => <FindMark key={f.id} kind={f.kind} size={POUCH_MARK} />)
+          finds.map((f) => <FindMark key={f.id} kind={f.kind} variant={f.variant} size={POUCH_MARK} />)
         )}
       </View>
     </Sticker>

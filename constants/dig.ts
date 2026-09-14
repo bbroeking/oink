@@ -255,6 +255,32 @@ export const DIG_FINDS: Readonly<
   bow: [1, 12],
   charm: [1, 3],
 };
+// Every find pays tickles (spec §2, decision 2026-09-13): applied to the
+// player's count on the receipt, on top of whatever the find also does. The
+// live values are server config (`app_settings.dig_finds[kind].tickles`,
+// echoed by open_rooting and applied by submit_rooting_deep); these are the
+// compiled fallbacks the tally counts with until the server's receipt lands.
+// MUST match supabase/migrations/20260913120000_dig_find_tickles.sql. The
+// Boom's 3 is its base — the catch-up's gap (§4 boom(H)) is added server-side.
+// A truffle he took pays 0 (it reads "his" on the tally); a stone is never a
+// find.
+export const DIG_FIND_TICKLES: Readonly<Record<DigFindKind, number>> = {
+  truffle_d: 10,
+  boom: 3,
+  pouch: 5,
+  apple: 4,
+  junk: 3,
+  truffle_l: 15,
+  shimmer: 8,
+  acorn: 12,
+  tea: 8,
+  scroll: 10,
+  relic: 15,
+  furnishing: 20,
+  bow: 25,
+  charm: 12,
+  stone: 0,
+};
 // Stones per layer: 3 in topsoil, 2 in the mud, 1 at the root.
 export const DIG_LAYER_STONES: Readonly<Record<SnoutDeepLayer, number>> = {
   0: 3,

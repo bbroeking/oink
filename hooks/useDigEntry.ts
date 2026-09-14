@@ -71,7 +71,13 @@ export const DIG_HINT_CREWED = "Opens the dig";
 /** The hint an uncrewed control carries: it is a door, and it says so. */
 export const DIG_HINT_UNCREWED = "Opens the Season tab to start digging";
 
-export function useDigEntry(): DigEntry {
+export function useDigEntry(
+  /** A real dig landed on the server — the Barn refetches its stats so the
+   *  earned stamp reads the tally's "tickled now". */
+  onDug?: () => void,
+  /** The Barn's earned total, for the tally's before → now; null until loaded. */
+  tickledBefore: number | null = null,
+): DigEntry {
   // The same Season-1 switch the Season tab + Sounder segment + launch nudge
   // use. Loading/failure reads false, so no surface flashes pre-confirm.
   const coopDig = useSeason1Active();
@@ -80,7 +86,12 @@ export function useDigEntry(): DigEntry {
   // onboarding doors from the normal, crewed digging loop.
   const sounderPath = useSounderPath(coopDig);
   const { step } = sounderPath;
-  const cta = useFeedingCta(sounderPath.refresh);
+  const refreshPath = sounderPath.refresh;
+  const dug = useCallback(() => {
+    refreshPath();
+    onDug?.();
+  }, [refreshPath, onDug]);
+  const cta = useFeedingCta(dug, tickledBefore);
 
   const crewed = coopDig && (step === "first_dig" || step === "done");
   // Snout Deep: the uncrewed player digs too (the server decides at open —

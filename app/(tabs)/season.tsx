@@ -1038,7 +1038,7 @@ export default function SeasonScreen() {
 	// held their own dugThisWindow, so digging via one left the other's button
 	// lying until window rollover (the stale-dig-button class, fixed twice on
 	// 2026-07-12) — one instance makes disagreement impossible.
-	const feedingCta = useFeedingCta(handleDug);
+	const feedingCta = useFeedingCta(handleDug, ticklesEarned);
 	// Leaving your Sounder now lives in the season-guide dialog's footer.
 	const handleLeave = useCallback(() => {
 		crewHook.leave().catch(() => {});
