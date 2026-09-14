@@ -176,6 +176,8 @@ export { SnoutCoin } from "./SnoutCoin";
 export { TickleIcon } from "./TickleIcon";
 export { Shovel } from "./Shovel";
 export { BarnDoor } from "./BarnDoor";
+export { Snout } from "./Snout";
+export { Trotter } from "./Trotter";
 export { RitualIconWell } from "./RitualIconWell";
 export {
 	AnimatedCosmetic,

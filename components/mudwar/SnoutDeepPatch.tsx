@@ -13,6 +13,7 @@ import {
   DIG_TILE,
   OPACITY,
   PAGE_PAD,
+  PRESSED,
   RADII,
   SHADOW_SM,
   SPACE,
@@ -39,7 +40,7 @@ import {
   type SnoutDeepState,
   type Verb,
 } from "@/utils/snoutDeep";
-import { Button, Chip, Hand, IconButton, Label, Sticker, T, Tag } from "../ui";
+import { Button, Hand, IconButton, Label, Shovel, Snout, Sticker, T, Tag, Trotter } from "../ui";
 import { FindMark } from "./FindMark";
 import { Hungerer, HUNGERER_STATE_LABEL, hungererStateFor } from "./Hungerer";
 import { DecisionSheet } from "./SnoutDeepSheets";
@@ -64,6 +65,20 @@ const REVEAL_DWELL_MS = 1600;
 const REVEAL_TILT = 1.2;
 
 const VERBS: readonly Verb[] = ["sniff", "rub", "shove"];
+// What each verb does, spoken — the picture says it, the hint says it too.
+const VERB_HINT: Readonly<Record<Verb, string>> = {
+  sniff: "A tap marks a tile with how many finds touch it. Moves no mud.",
+  rub: "A tap clears a little mud on a tile and half-clears its neighbours.",
+  shove: "A tap clears a tile and half-clears the four around it. Loud. Holding any tile shoves too.",
+};
+// The verb's picture, at the glyph step — art, so it takes a picture size.
+const VERB_ART = ART_SIZE.glyph;
+
+function VerbMark({ verb: v, size }: { verb: Verb; size: number }) {
+  if (v === "sniff") return <Snout size={size} />;
+  if (v === "rub") return <Trotter size={size} />;
+  return <Shovel size={size} />;
+}
 const VERB_LABEL: Readonly<Record<Verb, string>> = { sniff: "Sniff", rub: "Rub", shove: "Shove" };
 // The price under each verb, per layer. Topsoil's sniff is the only free
 // action in the dig; from the mud down a sniff is the quietest, never free.
@@ -184,6 +199,37 @@ export function SnoutDeepPatch({
         {/* THE REVEAL: full width, above the layer strip, for a beat. */}
         {reveal ? <FindReveal find={reveal} boomTickles={boomTickles} /> : null}
 
+        {/* THE VERB BAR — at the top, where the hand reads it before the mud.
+            Three picture buttons: the snout sniffs, the trotter rubs, the
+            shovel shoves. The selected one wears sun and the full sticker
+            shadow; hold-to-shove works whichever is selected. */}
+        <View style={styles.verbBar} accessibilityRole="radiogroup" accessibilityLabel="Verb">
+          {VERBS.map((v) => {
+            const selected = verb === v;
+            return (
+              <Pressable
+                key={v}
+                onPress={() => setVerb(v)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected, checked: selected }}
+                accessibilityLabel={`${VERB_LABEL[v]}, ${VERB_SUB[state.layer][v]}`}
+                accessibilityHint={VERB_HINT[v]}
+                style={({ pressed }) => [
+                  styles.verbButton,
+                  selected && styles.verbButtonSelected,
+                  pressed && styles.verbButtonPressed,
+                ]}
+              >
+                <VerbMark verb={v} size={VERB_ART} />
+                <Label>{VERB_LABEL[v]}</Label>
+                <Hand tone={selected ? "primary" : "secondary"} numberOfLines={1}>
+                  {VERB_SUB[state.layer][v]}
+                </Hand>
+              </Pressable>
+            );
+          })}
+        </View>
+
         {/* THE LAYER STRIP: done = sage · now = sun · below = cream. */}
         <View style={styles.layerStrip} accessibilityRole="text" accessibilityLabel={`layer ${state.layer + 1} of 3, ${LAYER_NAMES[state.layer]}`}>
           {([0, 1, 2] as const).map((l) => (
@@ -292,26 +338,6 @@ export function SnoutDeepPatch({
           )}
         </View>
 
-        {/* THE VERB BAR: the selected verb on sun; hold-to-shove works regardless. */}
-        <View style={styles.verbBar} accessibilityRole="radiogroup" accessibilityLabel="Verb">
-          {VERBS.map((v) => (
-            <Chip
-              key={v}
-              role="radio"
-              label={VERB_LABEL[v]}
-              sub={VERB_SUB[state.layer][v]}
-              selected={verb === v}
-              tone={verb === v ? "sun" : "paper"}
-              onPress={() => setVerb(v)}
-              accessibilityLabel={`${VERB_LABEL[v]}, ${VERB_SUB[state.layer][v]}`}
-              accessibilityHint="Selects what a tap on the patch does"
-              style={styles.verbChip}
-            />
-          ))}
-        </View>
-        <Label tone="secondary" style={styles.verbNote}>
-          hold a tile to shove
-        </Label>
       </ScrollView>
 
       {decisionFor != null ? (
@@ -569,9 +595,30 @@ const styles = StyleSheet.create({
   },
   footer: { flexDirection: "row", gap: SPACE.md },
   footerHalf: { flex: 1, minWidth: 0 },
-  verbBar: { flexDirection: "row", gap: SPACE.sm, justifyContent: "center" },
-  verbChip: { flex: 1 },
-  verbNote: { textAlign: "center" },
+  verbBar: { flexDirection: "row", gap: SPACE.sm },
+  // A picture button: the art on top, the verb, its price. Paper at rest;
+  // sun with the full sticker shadow when selected.
+  verbButton: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: SPACE.xxs,
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.xs,
+    borderRadius: RADII.lg,
+    borderWidth: BORDER.ink,
+    borderColor: WHIMSY.ink,
+    backgroundColor: WHIMSY.paper,
+    ...SHADOW_SM,
+  },
+  verbButtonSelected: {
+    backgroundColor: WHIMSY.sun,
+    ...STICKER_SHADOW,
+  },
+  verbButtonPressed: {
+    ...PRESSED,
+    elevation: 0,
+  },
   reveal: { alignSelf: "stretch" },
   revealSticker: { alignSelf: "stretch" },
   revealRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
