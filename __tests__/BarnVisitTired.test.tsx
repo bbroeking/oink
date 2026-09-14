@@ -92,6 +92,9 @@ describe("tickling a barn out", () => {
     rpc.mockImplementation(async (name) => {
       if (name === "barn_visit_status")
         return { ok: true, visits_left: 3, visit_budget: 3 } as never;
+      // A server without the Satchel: the bag and the bubble stay absent.
+      if (name === "my_satchel" || name === "friend_wishes")
+        return { ok: false, reason: "network" } as never;
       const reply = replies[Math.min(tap, replies.length - 1)];
       tap += 1;
       return reply as never;

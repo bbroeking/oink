@@ -1,0 +1,26 @@
+Generated using the built-in imagegen tool, using the supplied acorn and apple icons as style references.
+
+Create ONE final PNG image, a sprite sheet of twelve small pocketable countryside finds for a cozy pig game. Use the two input icons ONLY as visual style references. Match their painted storybook game-icon look exactly: thick warm dark-brown ink outlines, rounded chunky shapes, warm painterly highlight patches, soft cel shading, tactile painted surfaces, rich cheerful colors and a couple of tiny four-point golden sparkle stars near EACH object. The acorn and apple themselves must not appear.
+
+Layout: landscape 4:3 canvas, preferably 2048 x 1536. STRICT invisible grid of 4 columns by 3 rows, all 12 cells exactly the same size, with every object visually centered in its cell, same apparent scale and outline weight throughout. Each object together with its two tiny sparkle stars fits comfortably inside its own cell, with generous even margins and nothing crossing into or touching a neighboring cell. No visible grid, frames or separators.
+
+The twelve objects, in exact reading order left to right, top to bottom:
+ROW 1:
+Cell 1 — a smooth grey-blue river pebble.
+Cell 2 — a single blue feather.
+Cell 3 — a four-leaf clover, exactly four rounded heart-shaped leaves and a short stem.
+Cell 4 — a spiral snail shell, empty shell only.
+ROW 2:
+Cell 1 — a round brass coat button.
+Cell 2 — a tuft of white sheep wool.
+Cell 3 — a cluster of exactly three red berries on a twig.
+Cell 4 — a small brown pinecone.
+ROW 3:
+Cell 1 — an old iron key.
+Cell 2 — a broken chip of golden honeycomb.
+Cell 3 — a glass marble with a swirl inside.
+Cell 4 — a small tin whistle, a short slender tin wind instrument with finger holes.
+
+CRITICAL BACKGROUND: The background of the WHOLE image, edge to edge, including every margin and gutter and all empty space around icons and stars, must be perfectly uniform, flat solid pure magenta #FF00FF (RGB 255,0,255). Magenta is a chroma key. No background gradient, vignette, texture, illumination or color variation. No ground, no ground shadows, no drop shadows, no cast shadows or halos. The objects have internal painted shading only. No text, no labels, no numbers, no letters, no watermark. Exactly twelve objects, each appearing once. Produce just ONE complete sprite sheet.
+
+Follow-up edit: preserve all twelve icons and the grid; replace the entire background with uniform pure #FF00FF. Pixel verification still found small background color variations in the generated output.

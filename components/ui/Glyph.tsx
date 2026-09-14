@@ -79,6 +79,22 @@ const GLYPHS = {
 	digBow: require("../../assets/images/glyphs/dig/bow.png"),
 	digCharm: require("../../assets/images/glyphs/dig/charm.png"),
 	digBag: require("../../assets/images/glyphs/dig/bag.png"),
+	// The Satchel's twelve finds (ImageGen lane, one keyed sheet sliced by
+	// tools — the dig acorn + apple as the style anchors). What a find wears
+	// in the bag strip, the wish bubble, the catalog and the tally's satchel
+	// line. Ids mirror constants/satchel SATCHEL_FIND_IDS. (2026-09-14)
+	findRiverPebble: require("../../assets/images/glyphs/finds/river_pebble.png"),
+	findBlueFeather: require("../../assets/images/glyphs/finds/blue_feather.png"),
+	findClover: require("../../assets/images/glyphs/finds/clover.png"),
+	findSnailShell: require("../../assets/images/glyphs/finds/snail_shell.png"),
+	findBrassButton: require("../../assets/images/glyphs/finds/brass_button.png"),
+	findWoolTuft: require("../../assets/images/glyphs/finds/wool_tuft.png"),
+	findRedBerries: require("../../assets/images/glyphs/finds/red_berries.png"),
+	findPinecone: require("../../assets/images/glyphs/finds/pinecone.png"),
+	findOldKey: require("../../assets/images/glyphs/finds/old_key.png"),
+	findHoneycomb: require("../../assets/images/glyphs/finds/honeycomb.png"),
+	findMarble: require("../../assets/images/glyphs/finds/marble.png"),
+	findTinWhistle: require("../../assets/images/glyphs/finds/tin_whistle.png"),
 } as const;
 
 type RasterGlyphName = keyof typeof GLYPHS;

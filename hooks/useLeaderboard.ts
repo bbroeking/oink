@@ -66,6 +66,11 @@ export interface LeaderboardEntry {
 	// Permanent prestige standing. Each Wallow deepens the mud ring around the
 	// pig; absent on pre-migration servers and treated as zero.
 	wallow_count?: number | null;
+	// Satchel deliveries (finds handed to friends' pigs) — the Contend slice
+	// beside tickles. Decorated after the row load through a fail-soft batched
+	// RPC (satchel_deliveries_for), so a server without the Satchel simply
+	// leaves it undefined. A number, never a payout (docs/satchel-spec.md).
+	deliveries?: number;
 	// Alignment-scope only: which half of the leaderboard this row
 	// belongs to (Generous top vs Greedy top) + the within-side rank.
 	// alignment_leaderboard RPC returns both; we used to throw them
@@ -125,6 +130,18 @@ export interface UseLeaderboard {
 // the placement-aware title, wallow_count drives the prestige frame.
 const RANKED_PROFILE_SELECT =
 	"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
+
+// Merge each row's delivery count in. Fail-soft: no RPC, no rows, no change.
+async function withDeliveries(rows: LeaderboardEntry[]): Promise<LeaderboardEntry[]> {
+	if (rows.length === 0) return rows;
+	const counts = await rpc<{ ok?: boolean; counts?: Record<string, number> }>(
+		"satchel_deliveries_for",
+		{ p_targets: rows.map((r) => r.id) },
+	);
+	if (!counts?.ok || !counts.counts) return rows;
+	const by = counts.counts;
+	return rows.map((r) => (typeof by[r.id] === "number" ? { ...r, deliveries: by[r.id] } : r));
+}
 
 export function useLeaderboard(scope: Scope): UseLeaderboard {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -264,14 +281,14 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					// (matches the global path) instead of casting .data.
 					.returns<RawRow[]>();
 				if (result.error) throw result.error;
-				setLeaderboard(normalize(result.data));
+				setLeaderboard(await withDeliveries(normalize(result.data)));
 				return;
 			}
 
 			// Global scope — paginated. Pull the first page (PAGE_SIZE +
 			// 1 so the champion poster doesn't eat a slot from the rest
 			// list) and seed hasMore on whether the page came back full.
-			const firstPage = await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE);
+			const firstPage = await withDeliveries(await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE));
 			setLeaderboard(firstPage);
 			setHasMore(
 				firstPage.length === LEADERBOARD_PAGE_SIZE &&

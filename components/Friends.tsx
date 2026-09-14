@@ -99,6 +99,9 @@ import {
 	fetchFriendVisitStreaks,
 	type FriendVisitStreak,
 } from "@/utils/visitStreaks";
+import { bagHasWishFor, fetchFriendWishes, fetchMySatchel, type FriendWish, type SatchelItem } from "@/utils/satchel";
+import { satchelFind } from "@/constants/satchel";
+import { FindArt } from "./satchel/FindArt";
 
 // PostgREST returns 1:1 joins either as an object or a length-1
 // array. Flatten so consumers can read .name directly.
@@ -245,6 +248,11 @@ export default function Friends({ userId }: { userId: string }) {
 	// fail soft to today's behavior (no per-row gating).
 	const [pairLocked, setPairLocked] = useState<Set<string>>(new Set());
 	const [visitStreaks, setVisitStreaks] = useState<Map<string, FriendVisitStreak>>(new Map());
+	// The Satchel's wish marks (docs/satchel-spec.md step 2): each friend's
+	// pig's wish, and my bag, so a row can say "you have what they want".
+	// Both fail soft — a server without the bag leaves every row unmarked.
+	const [friendWishes, setFriendWishes] = useState<Map<string, FriendWish>>(new Map());
+	const [myBag, setMyBag] = useState<SatchelItem[]>([]);
 
 	const load = useCallback(async () => {
 		// Friends — via friend_ids RPC (returns the accepted set).
@@ -308,13 +316,19 @@ export default function Friends({ userId }: { userId: string }) {
 				// gate) and the per-pair locks for every visible friend (the
 				// per-row gate). Both fail soft — a dark migration leaves the
 				// state at its permissive default (null budget / empty lock set).
-				const [st, locks, streaks] = await Promise.all([
+				const [st, locks, streaks, wishes, bag] = await Promise.all([
 					fetchBarnVisitStatus(probe.id),
 					rpcAction<{
 						pairs?: { target_id: string; locked: boolean }[];
 					}>("barn_pair_locks", { p_targets: list.map((p) => p.id) }),
 					fetchFriendVisitStreaks(list.map((p) => p.id)),
+					fetchFriendWishes(list.map((p) => p.id)),
+					fetchMySatchel(),
 				]);
+				setFriendWishes(
+					wishes.ok ? new Map(wishes.wishes.map((w) => [w.target_id, w])) : new Map(),
+				);
+				setMyBag(bag.ok ? bag.state.items : []);
 				if (st.ok) {
 					setVisitsLeft(st.visits_left ?? null);
 				}
@@ -332,6 +346,8 @@ export default function Friends({ userId }: { userId: string }) {
 				setVisitsLeft(null);
 				setPairLocked(new Set());
 				setVisitStreaks(new Map());
+				setFriendWishes(new Map());
+				setMyBag([]);
 			}
 		} else {
 			setFriends([]);
@@ -340,6 +356,8 @@ export default function Friends({ userId }: { userId: string }) {
 			setPairLocked(new Set());
 			setFavorites(new Set());
 			setVisitStreaks(new Map());
+			setFriendWishes(new Map());
+			setMyBag([]);
 		}
 	}, [userId]);
 
@@ -377,6 +395,8 @@ export default function Friends({ userId }: { userId: string }) {
 					visitsLeft={visitsLeft}
 					pairLocked={pairLocked}
 					visitStreaks={visitStreaks}
+					friendWishes={friendWishes}
+					myBag={myBag}
 					favorites={favorites}
 					onToggleFavorite={toggleFavorite}
 					onPick={setSelectedUserId}
@@ -895,6 +915,8 @@ const FriendRow = React.memo(function FriendRow({
 	visitsLeft,
 	pairSpent,
 	visitStreak,
+	wish,
+	haveWish,
 	isFav,
 	menuOpen,
 	onToggleMenu,
@@ -914,6 +936,9 @@ const FriendRow = React.memo(function FriendRow({
 	visitsLeft: number | null | undefined;
 	pairSpent: boolean;
 	visitStreak: FriendVisitStreak | undefined;
+	/** Their pig's wish, and whether my Satchel holds it (the wish mark). */
+	wish: FriendWish | undefined;
+	haveWish: boolean;
 	isFav: boolean;
 	/** This row's panel is the one panel that's out. */
 	menuOpen: boolean;
@@ -1188,6 +1213,30 @@ const FriendRow = React.memo(function FriendRow({
 							</View>
 						</>
 					) : null}
+					{/* The wish mark: their pig wants a thing you are carrying. The
+					    entire discovery surface for the Satchel — no list of who
+					    wants what, just the rows where you can act. */}
+					{haveWish && wish ? (
+						<>
+							<View style={styles.rowMetaDot} />
+							<View
+								style={styles.rowMetaLine}
+								accessible
+								accessibilityLabel={`Their pig is hoping for ${satchelFind(wish.find_id)?.withArticle ?? "a find"} — you have one.`}
+								testID="friend-wish-mark"
+							>
+								<FindArt id={wish.find_id} size={SPACE.lg} />
+								<T
+									role="kicker"
+									tone="accent"
+									numberOfLines={1}
+									maxFontSizeMultiplier={ROW_TYPE_CAP}
+								>
+									you have it
+								</T>
+							</View>
+						</>
+					) : null}
 					{!!wears && (
 						<>
 							<View style={styles.rowMetaDot} />
@@ -1348,6 +1397,8 @@ export function FriendsList({
 	visitsLeft,
 	pairLocked,
 	visitStreaks,
+	friendWishes,
+	myBag,
 	favorites,
 	onToggleFavorite,
 	onPick,
@@ -1373,6 +1424,8 @@ export function FriendsList({
 	// (uniform dim + header hint, no per-row tags — avoid tag spam).
 	pairLocked: Set<string>;
 	visitStreaks: Map<string, FriendVisitStreak>;
+	friendWishes: Map<string, FriendWish>;
+	myBag: SatchelItem[];
 	// The caller's pinned friends — sorted to the top, star lit sun-gold.
 	favorites: Set<string>;
 	onToggleFavorite: (friendId: string) => void;
@@ -1606,6 +1659,8 @@ export function FriendsList({
 						visitsLeft={visitsLeft}
 						pairSpent={pairLocked.has(f.id)}
 						visitStreak={visitStreaks.get(f.id)}
+						wish={friendWishes.get(f.id)}
+						haveWish={bagHasWishFor(myBag, friendWishes.get(f.id))}
 						isFav={favorites.has(f.id)}
 						menuOpen={openMenuFor === f.id}
 						onToggleMenu={toggleMenu}

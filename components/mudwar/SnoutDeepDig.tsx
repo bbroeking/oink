@@ -232,6 +232,7 @@ export function SnoutDeepDig({
                     ticklesTotal: o.ticklesTotal,
                     tickledBefore: o.tickledBefore,
                     tickledNow: o.tickledNow,
+                    satchel: o.satchel ?? null,
                   })
                 : cur,
             );

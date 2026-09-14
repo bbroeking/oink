@@ -78,7 +78,7 @@ const FAB_TILT = "-3deg";
 const LABEL_TILT = "-2deg";
 
 /** The marks the button can wear — on its face and in the fan. */
-export type BarnMark = "door" | "shovel" | "truffle";
+export type BarnMark = "door" | "shovel" | "truffle" | "bag";
 
 export interface BarnFanOption {
 	key: string;
@@ -122,6 +122,7 @@ interface Props {
 function Mark({ mark, size }: { mark: BarnMark; size: number }) {
 	if (mark === "shovel") return <Shovel size={size} />;
 	if (mark === "truffle") return <Glyph name="truffle" size={size} />;
+	if (mark === "bag") return <Glyph name="digBag" size={size} />;
 	return <BarnDoor size={size} />;
 }
 

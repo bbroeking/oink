@@ -40,6 +40,7 @@
 //     mud's and the root's together — into `missed`; `banked` and `things`
 //     are untouched.
 
+import { satchelReceiptLine } from "@/utils/satchel";
 import {
   DIG_FIND_TICKLES,
   DIG_FOOD_KINDS,
@@ -575,6 +576,9 @@ export interface DigReceipt {
   tickledBefore: number | null;
   /** The count after: before + total; null while before is unknown. */
   tickledNow: number | null;
+  /** The Satchel line — what the dig rolled into the bag (or what stayed in
+   *  the mud because it was full). Filled by the server's receipt. */
+  satchelLine?: string | null;
   /** Uncrewed only, when no truffle row carries the join line: the foot's join door. */
   joinLine?: string;
   primary: string;
@@ -826,6 +830,7 @@ export interface ServerTally {
   ticklesTotal?: number | null;
   tickledBefore?: number | null;
   tickledNow?: number | null;
+  satchel?: { found?: unknown; lost?: unknown; count?: unknown; cap?: unknown } | null;
 }
 
 /** Correct a client-built receipt with the server's numbers: every row's
@@ -850,7 +855,8 @@ export function reconcileReceipt(r: DigReceipt, server: ServerTally): DigReceipt
   const ticklesTotal = server.ticklesTotal ?? total;
   const before = server.tickledBefore ?? r.tickledBefore;
   const now = server.tickledNow ?? (before == null ? null : before + ticklesTotal);
-  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now };
+  const satchelLine = satchelReceiptLine(server.satchel) ?? r.satchelLine ?? null;
+  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now, satchelLine };
 }
 
 function layerOf(board: SnoutDeepBoard, id: string): Layer | null {

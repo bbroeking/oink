@@ -352,6 +352,11 @@ function TallyBody({
     >
       <Hand tone="secondary">{receipt.countLine}</Hand>
       {receipt.wokeLine ? <Hand tone="secondary">{receipt.wokeLine}</Hand> : null}
+      {receipt.satchelLine ? (
+        <Hand tone="secondary" testID="dig-satchel-line">
+          {receipt.satchelLine}
+        </Hand>
+      ) : null}
       <Sticker
         color={woke ? "cream2" : "sun"}
         pad

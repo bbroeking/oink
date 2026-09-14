@@ -71,6 +71,8 @@ import { useBarnThreshold } from "@/hooks/useBarnThreshold";
 import { useHabitatAccount } from "@/hooks/useHabitatAccount";
 import { useHabitatJournal } from "@/hooks/useHabitatJournal";
 import { BuryTruffleSheet } from "./BuryTruffleSheet";
+import { SatchelSheet } from "./satchel/SatchelSheet";
+import { useSatchel } from "@/hooks/useSatchel";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { useDigEntry } from "@/hooks/useDigEntry";
@@ -757,9 +759,15 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		}).catch((error) => log.error("Error sharing Streak:", error));
 	}, [stats.currentStreak]);
 
-	// THE FAN, in its fixed order: Dig · Barn · the truffle. Burying rides along
-	// whenever the truffle status has loaded — as the act (nothing down) or as
-	// the check-in (one buried).
+	// THE SATCHEL (docs/satchel-spec.md) — the bag hanging by the button. Its
+	// row joins the fan only once the server has answered my_satchel (a
+	// server without the bag never shows one).
+	const satchel = useSatchel();
+	const [satchelOpen, setSatchelOpen] = useState(false);
+
+	// THE FAN, in its fixed order: Dig · Barn · the truffle · the Satchel.
+	// Burying rides along whenever the truffle status has loaded — as the act
+	// (nothing down) or as the check-in (one buried).
 	const fanOptions: BarnFanOption[] = [];
 	if (dig.visible) {
 		fanOptions.push({
@@ -815,6 +823,23 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						accessibilityHint: "Opens the bury sheet, where you choose how many snouts to stake",
 					},
 		);
+	}
+
+	if (satchel.available) {
+		const n = satchel.state.items.length;
+		fanOptions.push({
+			key: "satchel",
+			title: "Satchel",
+			sub:
+				n === 0
+					? "empty — dig to fill it"
+					: `${n} of ${satchel.state.cap} finds`,
+			label: "satchel",
+			mark: "bag",
+			onPress: () => setSatchelOpen(true),
+			accessibilityLabel: "Your Satchel",
+			accessibilityHint: "Opens the bag: what you carry, what your pig is hoping for, and the shelf",
+		});
 	}
 
 	// WHICH ONE THE FACE WEARS. The player's pick sticks — across taps, tabs
@@ -1116,6 +1141,15 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			    `useDigEntry` owns the session, so this is the whole of the
 			    in-place Truffle Patch on the Exterior. */}
 			{dig.modal}
+
+			<SatchelSheet
+				open={satchelOpen}
+				onClose={() => setSatchelOpen(false)}
+				state={satchel.state}
+				loading={satchel.loading}
+				onToss={(id) => void satchel.toss(id)}
+				onNotThisOne={() => void satchel.notThisOne()}
+			/>
 
 			<BuryTruffleSheet
 				open={buryOpen}

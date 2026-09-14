@@ -185,6 +185,14 @@ export interface PigStageProps {
 	// the cosmetic anchors keep working. Lists and sheets pass only the static
 	// channels (`staticPigFx`) — no loops outside the Barn.
 	ritual?: PigFx;
+	// Which way the pig looks. The sprites are drawn front-facing with the
+	// tail on the viewer's left, which reads as "left"; "right" mirrors the
+	// whole stage (art AND every anchored cosmetic, so nothing needs re-placing)
+	// so two pigs can face each other — the visit's diorama (2026-09-14).
+	// Composed on the stage wrapper next to the ritual flip, so raster and Rive
+	// look identical. The nametag, the floats and the ground shadow live
+	// outside the stage and never mirror.
+	facing?: "left" | "right";
 
 	// Rive remains asset/rollout gated. Frozen or unsupported appearances use
 	// the complete raster stage, including its existing attachment tables.
@@ -438,6 +446,7 @@ export function PigStage({
 	prestigeLevel = 0,
 	skinTintOverride,
 	ritual,
+	facing = "left",
 	renderer = "rive",
 	riveSource = RIVE_PIG_SOURCE,
 	riveRolloutEnabled,
@@ -739,6 +748,7 @@ export function PigStage({
 						{ translateY: stageLift },
 						...(ritualScale !== undefined ? [{ scale: ritualScale }] : []),
 						...(ritualFlip ? [{ rotate: "180deg" }] : []),
+						...(facing === "right" ? [{ scaleX: -1 }] : []),
 						{ scaleY: breathScaleY },
 						{ scaleX: breathScaleX },
 					],

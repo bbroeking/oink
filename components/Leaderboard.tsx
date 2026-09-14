@@ -299,15 +299,28 @@ const ClippingRow = memo(function ClippingRow({
 			// title when nothing is equipped. PigAvatar already shows the hat as
 			// a sprite; the text labels the item so the row reads at a glance.
 			sub={
-				(player.wallow_count ?? 0) > 0 ? (
-					<T role="label" tone="secondary" numberOfLines={1}>
-						{wallowStanding(player.wallow_count)}
-					</T>
-				) : player.active_hat?.name ? (
-					<T role="label" tone="secondary" numberOfLines={1}>
-						wears {player.active_hat.name}
-					</T>
-				) : null
+				<View style={styles.rowSub}>
+					{(player.wallow_count ?? 0) > 0 ? (
+						<T role="label" tone="secondary" numberOfLines={1} style={styles.rowSubItem}>
+							{wallowStanding(player.wallow_count)}
+						</T>
+					) : player.active_hat?.name ? (
+						<T role="label" tone="secondary" numberOfLines={1} style={styles.rowSubItem}>
+							wears {player.active_hat.name}
+						</T>
+					) : null}
+					{/* The Satchel's Contend slice: finds handed to friends' pigs.
+					    A count beside the tickles, never a payout. Absent at zero
+					    and on a server without the bag. */}
+					{!showAlignment && (player.deliveries ?? 0) > 0 ? (
+						<View style={styles.rowDeliveries} accessibilityLabel={`${player.deliveries} deliveries`}>
+							<Glyph name="digBag" size={ROW_MARK} />
+							<T role="label" tone="secondary" numberOfLines={1}>
+								{player.deliveries === 1 ? "1 delivered" : `${player.deliveries} delivered`}
+							</T>
+						</View>
+					) : null}
+				</View>
 			}
 			// Score column. In the tickles scopes the count is a nested Pressable
 			// → the breakdown receipt (spec 17): generous hit-slop, no layout
@@ -981,6 +994,11 @@ const styles = StyleSheet.create({
 	// Score column — number above a tiny ♥ suffix, right-aligned. Sizes to its
 	// content so a 5-digit score keeps its own column and the name yields width
 	// instead of the number wrapping.
+	// The row's second line: the wears/standing text and the deliveries count,
+	// dotted apart by the gap, free to wrap.
+	rowSub: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: SPACE.sm },
+	rowSubItem: { flexShrink: 1 },
+	rowDeliveries: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
 	rowScoreCol: {
 		alignItems: "flex-end",
 		minWidth: SCORE_COL,

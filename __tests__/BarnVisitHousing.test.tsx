@@ -4,6 +4,10 @@ import { BarnVisitModal } from "@/components/BarnVisitModal";
 import { HabitatFriendRoom } from "@/components/habitat/HabitatFriendRoom";
 import { StyleSheet } from "react-native";
 import { rpc, rpcAction } from "@/utils/rpc";
+
+// The Satchel's read RPCs answer "no such feature" here — the visit under test
+// is the tickle visit, on a server without the bag.
+const SATCHEL_RPCS = new Set(["my_satchel", "friend_wishes"]);
 import { PigStage } from "@/components/ui/PigStage";
 import { RITUAL_FX, fxWash, hasPigFx } from "@/constants/ritualFx";
 import { recordPorchStop } from "@/utils/porchRound";
@@ -69,7 +73,9 @@ describe("existing Visit with a saved Barn Interior", () => {
     authListener = undefined;
     rpc.mockImplementation(async (name) => name === "barn_visit_status"
       ? { ok: true, visits_left: 3, visit_budget: 3 }
-      : { ok: true, taps_left: 3, tap_cap: 5, visits_left: 2 });
+      : SATCHEL_RPCS.has(name)
+        ? { ok: false, reason: "network" }
+        : { ok: true, taps_left: 3, tap_cap: 5, visits_left: 2 });
   });
   afterEach(() => act(() => tree?.unmount()));
   const renderVisit = async (targetUserId = "friend", targetName = "Maple") => {
@@ -111,8 +117,9 @@ describe("existing Visit with a saved Barn Interior", () => {
     expect(room.props.ownerId).toBe("friend");
     expect(room.props.hostPig).toBeTruthy();
     expect(room.props.visitorPig).toBeTruthy();
-    expect(room.props.hostPig.props.onPress).toBe(room.props.visitorPig.props.onPress);
-    expect(rpc.mock.calls.map(([name]) => name)).toEqual(["barn_visit_status"]);
+    // The host's pig is the only tickle target; yours waves (2026-09-14).
+    expect(room.props.hostPig.props.onPress).not.toBe(room.props.visitorPig.props.onPress);
+    expect(rpc.mock.calls.map(([name]) => name).filter((n) => !SATCHEL_RPCS.has(n))).toEqual(["barn_visit_status"]);
     expect(recordPorchStop).not.toHaveBeenCalled();
   });
 
@@ -137,6 +144,7 @@ describe("existing Visit with a saved Barn Interior", () => {
     rpc.mockImplementation(async (name) => {
       if (name === "barn_visit_status")
         return { ok: true, visits_left: 3, visit_budget: 3 };
+      if (SATCHEL_RPCS.has(name)) return { ok: false, reason: "network" };
       return new Promise((resolve) => {
         resolveTickle = resolve;
       });
@@ -204,16 +212,19 @@ describe("existing Visit with a saved Barn Interior", () => {
     expect(firstTickle).not.toBe(nextRoom.props.hostPig.props.onPress);
   });
 
-  it("both Interior pigs retain the same tickle action", async () => {
+  it("only the host's Interior pig tickles; yours waves without reaching the server", async () => {
     await open();
     let room = tree.root.findByType(HabitatFriendRoom);
-    expect(room.props.hostPig.props.onPress).toBe(room.props.visitorPig.props.onPress);
+    expect(room.props.hostPig.props.onPress).not.toBe(room.props.visitorPig.props.onPress);
     await act(async () => { await room.props.hostPig.props.onPress(); });
     expect(rpc).toHaveBeenLastCalledWith("tickle_at_barn", { p_target: "friend" });
     room = tree.root.findByType(HabitatFriendRoom);
     await act(async () => { await room.props.visitorPig.props.onPress(); });
-    expect(rpc.mock.calls.filter(([name]) => name === "tickle_at_barn")).toHaveLength(2);
+    expect(rpc.mock.calls.filter(([name]) => name === "tickle_at_barn")).toHaveLength(1);
     expect(recordPorchStop).toHaveBeenCalledTimes(1);
+    // The host faces its guest; the guest stays as drawn.
+    expect(room.props.hostPig.props.facing).toBe("right");
+    expect(room.props.visitorPig.props.facing).toBeUndefined();
   });
 
   it("falls back outside when the saved room is unavailable", async () => {
@@ -244,7 +255,9 @@ describe("a visit wears the host's rituals", () => {
     jest.clearAllMocks();
     action.mockImplementation(async (name) => name === "barn_visit_status"
       ? { ok: true, visits_left: 3, visit_budget: 3 }
-      : { ok: true, taps_left: 3, tap_cap: 5, visits_left: 2 });
+      : SATCHEL_RPCS.has(name)
+        ? { ok: false, reason: "network" }
+        : { ok: true, taps_left: 3, tap_cap: 5, visits_left: 2 });
     // It is Friday in the host's Barn: they are carrying the day's blessing AND
     // the day's curse, which the weekday pairing guarantees never collide.
     read.mockImplementation(async (name: string) =>

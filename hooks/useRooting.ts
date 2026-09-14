@@ -53,6 +53,14 @@ import type { RootingSession, RootingCarry } from "@/utils/digSession";
 
 export type { CrewDug, RootingSession, RootingCarry };
 
+/** The receipt's `satchel` object — catalog ids the dig rolled. */
+export interface SatchelRoll {
+  found?: string[];
+  lost?: string[];
+  count?: number;
+  cap?: number;
+}
+
 export interface RootingOutcome {
   // Meter drain this dig banked (finds-denominated). Was: `mud`.
   // NOTE: the server reports drain_total as the GLOBAL running meter, not this
@@ -102,6 +110,9 @@ export interface RootingOutcome {
   ticklesTotal?: number | null;
   tickledBefore?: number | null;
   tickledNow?: number | null;
+  // The Satchel (20260915010000): what the dig rolled into the bag, and what
+  // stayed in the mud because the bag was full. Absent before that migration.
+  satchel?: SatchelRoll | null;
   // "Beginner's snout": the one-time real Golden Truffle granted on the FIRST
   // practice dig (claim_beginners_snout). >0 → show the gift line; null/0 →
   // already claimed, migration unpushed, or not the first practice dig — the
@@ -160,6 +171,7 @@ type SubmitPayload = {
   tickles_total?: number | null;
   tickled_before?: number | null;
   tickled_now?: number | null;
+  satchel?: SatchelRoll | null;
 };
 
 function toRootingOutcome(
@@ -191,6 +203,7 @@ function toRootingOutcome(
     outcome.tickledBefore = r.tickled_before ?? null;
     outcome.tickledNow = r.tickled_now ?? null;
   }
+  if (r.satchel && typeof r.satchel === "object") outcome.satchel = r.satchel;
   return outcome;
 }
 

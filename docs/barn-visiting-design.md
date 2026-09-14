@@ -4,6 +4,13 @@ Status: **design / building.** Branch `social-barn-visiting`. The MVP (visit a
 profile → see their pig → tickle it for them, `tickle_at_barn` RPC) is built;
 this doc works out the full mechanic so we build toward something with legs.
 
+> 2026-09-14: §3a's "visit gift" shipped as the **Satchel** (`satchel-spec.md`)
+> on the generosity model — a find from your own Dig, handed to a friend's pig
+> that is wishing for it; tickles to both, a count and a keepsake to the
+> giver, no currency. §2's guestbook line is stale: the guestbook was retired
+> 2026-09-12 (`SKILL.md`). The host-only tickle rule and the facing pigs are
+> in `barn-visit-facing-spec.md`.
+
 ## The spine (the one decision everything hangs off)
 
 **Visiting is GIVING, not earning.** A visitor *spends* a little (their

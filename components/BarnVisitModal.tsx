@@ -15,11 +15,29 @@
 //   3. ACTION BAR — `VisitActionBar`: one gold pill that is "Head home" once
 //      you are tickled out, and nothing before that.
 //
-// Tapping EITHER pig calls `tickle_at_barn`: it gives the host a heart, gives
-// you one, and makes both pigs happier. When the visit is spent the pigs nap —
-// that is a toast, not a screen; the nap CARD is only for arriving at a barn
-// that is already asleep. The nap card and the Slop Club parting note are the
-// two dialogs, both inline `AdaptiveModalScaffold`s.
+// THE HOST'S PIG IS THE ONLY TICKLE TARGET (2026-09-14). Tapping it calls
+// `tickle_at_barn`: it gives the host a heart, gives you one, and makes both
+// pigs happier — the counts move optimistically and reconcile to the server.
+// Your own pig is the guest: a tap on it waves at the host and, once, says so.
+// The two pigs FACE EACH OTHER — you on the left as drawn, the host on the
+// right mirrored (`PigStage facing="right"`), one ground line.
+//
+// When the visit's 3–7 tap cap is spent the HOST pig naps — the tired
+// sprite, a zzz, and the count chip under it turns into a "tickled out" tag.
+// That tag is the durable signal; the toast is only the moment. A tap on the
+// napping pig wobbles the tag rather than dying silently. The nap CARD is
+// only for arriving at a barn that is already asleep.
+//
+// THE SATCHEL (docs/satchel-spec.md): the host pig's wish floats over it as a
+// thought bubble; your bag sits above the action bar. The find that matches
+// is lifted; tapping it hands it over (`fulfil_pig_wish`) — both pigs get the
+// same flat tickles, the receipt sheet names the HOST's gain first. A wrong
+// find bounces (the pig sniffs it; nothing leaves the bag). Fulfilment is
+// allowed after the tickles are spent and from the nap card, so a sleeping
+// barn is never a dead end. Tap, not drag — the strip's own note says why.
+//
+// The nap card, the delivery receipt and the Slop Club parting note are the
+// three dialogs, all inline `AdaptiveModalScaffold`s.
 //
 // Full-screen overlay (NOT a nested Modal — iOS won't stack one over UserSheet's
 // Modal); it sits on top within the sheet's modal layer.
@@ -63,6 +81,7 @@ import {
 	SnoutCoin,
 	Sticker,
 	T,
+	Tag,
 	glyphSource,
 	showToast,
 	type EquippedItem,
@@ -70,6 +89,19 @@ import {
 } from "./ui";
 import { VISIT_TYPE_CAP } from "./visit/chrome";
 import { VisitActionBar } from "./visit/VisitActionBar";
+import { SatchelStrip } from "./visit/SatchelStrip";
+import { WishBubble } from "./visit/WishBubble";
+import { FindArt } from "./satchel/FindArt";
+import { useSatchel } from "@/hooks/useSatchel";
+import { satchelFind } from "@/constants/satchel";
+import {
+	deliveryLine,
+	fetchFriendWishes,
+	fulfilPigWish,
+	type FriendWish,
+	type FulfilResult,
+	type SatchelItem,
+} from "@/utils/satchel";
 import { VisitHeader } from "./visit/VisitHeader";
 import { VisitStatusRow } from "./visit/VisitStatusRow";
 import { TruffleButton } from "./TruffleButton";
@@ -130,6 +162,16 @@ const EMOTE_CHOICE_MIN_W = 82;
 const NAMETAG_MAX_W = 130;
 // The square the Inside room hands each pig to stand in — the sprite canvas.
 const ROOM_PIG_BOX = 300;
+// The diorama's two pigs: the host is the subject (a shade larger), the
+// visitor its guest, on ONE ground line, each shifted off centre toward its
+// own side so they face each other across the middle.
+const HOST_SCALE = 0.62;
+const HOST_BOX = 200;
+const VISITOR_SCALE = 0.54;
+const VISITOR_BOX = 172;
+const PIG_SIDE_SHIFT = 74;
+// The delivery receipt's find art.
+const DELIVERY_ART = 64;
 // The stage toggle's resting width, and how far the forage banner drops to clear
 // it. Both are geometry against a floating control, not spacing steps.
 const TOGGLE_MIN_W = 200;
@@ -410,6 +452,37 @@ function BarnVisitSession({
 	// once per UTC day). Cozy one-time reveal for the rest of the visit.
 	const [foragedTruffle, setForagedTruffle] = useState(false);
 
+	// The Satchel (2026-09-14): your bag, the host pig's wish, and this visit's
+	// delivery. `given` is the find the server accepted this visit — the strip
+	// goes quiet and the bubble shows the pig's NEXT wish with a "next time"
+	// kicker (one delivery per wish per visitor; the new wish is for later).
+	const satchel = useSatchel(!previewingTickledOut);
+	const [hostWish, setHostWish] = useState<FriendWish | null>(null);
+	const [given, setGiven] = useState<SatchelItem["find_id"] | null>(null);
+	const [giving, setGiving] = useState(false);
+	const [delivery, setDelivery] = useState<FulfilResult | null>(null);
+	// Arrived at a napping barn, chose "Leave a find": the nap card folds and
+	// the visit shows with the host asleep and the bag live.
+	const [napFoldedForFind, setNapFoldedForFind] = useState(false);
+	// The guest hint under the stage — said once, the first time you tap your
+	// own pig. `greeted` keeps it from nagging.
+	const [greeted, setGreeted] = useState(false);
+	// Each pig's reaction is the SESSION's to set (a tickle, a wave, a sniff at
+	// a wrong find, the delivery's surprise), not the pig's own.
+	const [hostReaction, setHostReaction] = useState<PigReaction | null>(null);
+	const [myReaction, setMyReaction] = useState<PigReaction | null>(null);
+	const reactionSeq = useRef(0);
+	const react = (who: "host" | "me", kind: PigReaction["kind"]) => {
+		const next = { id: ++reactionSeq.current, kind };
+		if (who === "host") setHostReaction(next);
+		else setMyReaction(next);
+	};
+	// One tickle in flight at a time, one more queued — fast taps never drop,
+	// and the count never waits on the round trip.
+	const queuedTap = useRef(false);
+	// The chip under the host pig wobbles when a spent pig is tapped.
+	const chipWobble = useRef(new Animated.Value(0)).current;
+
 	// Both pigs' full worn outfits so the diorama shows what each is wearing.
 	// (Flags are intentionally not shown in the visit diorama for now.)
 	const [hostEquip, setHostEquip] = useState<EquipSet>(EMPTY_EQUIP);
@@ -582,6 +655,12 @@ function BarnVisitSession({
 				if (st.visit_budget != null) setVisitBudget(st.visit_budget);
 			}
 			if (!cancelled && mounted.current) setLoading(false);
+
+			// The host pig's wish — fail-soft: no answer, no bubble.
+			const fw = await fetchFriendWishes([targetUserId]);
+			if (!cancelled && fw.ok) {
+				setHostWish(fw.wishes.find((w) => w.target_id === targetUserId) ?? null);
+			}
 		})();
 		return () => {
 			cancelled = true;
@@ -621,10 +700,47 @@ function BarnVisitSession({
 		});
 	};
 
+	// The host pig is spent: napping after the cap, or the barn was asleep
+	// when you knocked. Tapping it then wobbles the tag — it never dies silently.
+	const hostSpent = tired || restingOnArrival || !!lockedUntil;
+	const nudgeSpent = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+		if (motionPolicy.reduceMotion) return;
+		chipWobble.setValue(0);
+		Animated.sequence([
+			Animated.timing(chipWobble, { toValue: 1, duration: 60, useNativeDriver: true }),
+			Animated.timing(chipWobble, { toValue: -1, duration: 90, useNativeDriver: true }),
+			Animated.timing(chipWobble, { toValue: 0.5, duration: 80, useNativeDriver: true }),
+			Animated.timing(chipWobble, { toValue: 0, duration: 70, useNativeDriver: true }),
+		]).start();
+	};
+
+	// Your own pig is the guest. A tap waves at the host and says so, once.
+	const greet = () => {
+		Haptics.selectionAsync().catch(() => {});
+		react("me", "wave");
+		if (!greeted) setGreeted(true);
+	};
+
 	const tickle = async () => {
-		if (tired || restingOnArrival || lockedUntil || busy) return;
+		if (hostSpent) {
+			nudgeSpent();
+			return;
+		}
+		if (busy) {
+			queuedTap.current = true;
+			return;
+		}
 		const token = sessionToken();
 		setBusy(true);
+		// Optimistic: the hearts move on the tap, not on the round trip. A
+		// refusal takes the one back.
+		react("host", "happy");
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+		playTap();
+		setYouHearts((n) => n + 1);
+		setFriendHearts((n) => n + 1);
+		setGained((g) => g + 1);
 		const r = await rpcAction<{
 			taps_left?: number;
 			tap_cap?: number;
@@ -636,9 +752,14 @@ function BarnVisitSession({
 		}>("tickle_at_barn", { p_target: targetUserId });
 		if (!sessionIsCurrent(token)) return;
 		setBusy(false);
+		if (!r.ok) {
+			// Take the optimistic heart back before reading the refusal.
+			setYouHearts((n) => n - 1);
+			setFriendHearts((n) => n - 1);
+			setGained((g) => Math.max(0, g - 1));
+			queuedTap.current = false;
+		}
 		if (r.ok) {
-			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-			playTap();
 			if (hostPresentation.tap.burst === "confetti") hostConfettiRef.current?.fire();
 			// A Golden Truffle surfaced while rooting around the Barn — a warmer
 			// success beat than the tickle itself, so pop the reveal + a heavier
@@ -650,9 +771,11 @@ function BarnVisitSession({
         ).catch(() => {});
 			}
 			tickledThisVisit.current = true;
-			setYouHearts((n) => n + 1);
-			setFriendHearts((n) => n + 1);
-			setGained((g) => g + 1);
+			// Reconcile this visit's count to the server's: cap − left.
+			if (typeof r.tap_cap === "number" && typeof r.taps_left === "number") {
+				const served = r.tap_cap - r.taps_left;
+				setGained((g) => (served > g ? served : g));
+			}
 			if (!porchRecorded.current) {
 				porchRecorded.current = true;
 				void recordPorchStop(targetUserId).then((porch) => {
@@ -686,7 +809,11 @@ function BarnVisitSession({
 			// immediately (re-entry would only show the same lock anyway).
 			if ((r.taps_left ?? 99) <= 0) {
 				if (r.next_at) setLockedUntil(r.next_at);
+				queuedTap.current = false;
 				schedule(tireOut, 520, token);
+			} else if (queuedTap.current) {
+				queuedTap.current = false;
+				schedule(() => void tickle(), 0, token);
 			}
 		} else if (r.reason === "tired" || r.reason === "no_tickles") {
 			// Neither reason is spoken by today's server (tickle_at_barn has no
@@ -714,6 +841,62 @@ function BarnVisitSession({
 				setRestingOnArrival(true);
 			}
 		}
+	};
+
+	// The hand-off. The strip only calls this for the lifted (matching) find;
+	// the server re-checks everything and answers {ok:false, reason} otherwise.
+	const give = async (item: SatchelItem) => {
+		if (giving || given) return;
+		const token = sessionToken();
+		setGiving(true);
+		react("host", "surprise");
+		const r = await fulfilPigWish(targetUserId, item.id);
+		if (!sessionIsCurrent(token)) return;
+		setGiving(false);
+		if (!r.ok) {
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+			if (r.reason === "already_fulfilled") {
+				setHostWish((w) => (w ? { ...w, fulfilled_by_me: true } : w));
+				showToast({ tone: "info", title: "You already brought this one." });
+			} else if (r.reason === "wrong_find" && r.next_wish) {
+				// A stale bubble: the wish moved on. Show the real one.
+				const nw = r.next_wish;
+				setHostWish((w) => (w ? { ...w, ...nw, fulfilled_by_me: false } : w));
+				showToast({ tone: "info", title: "Their pig is hoping for something else now." });
+			} else if (r.reason === "not_in_bag") {
+				void satchel.refresh();
+				showToast({ tone: "info", title: "That find isn't in your Satchel." });
+			} else {
+				showToast({ tone: "info", title: "That didn't land — try again in a moment." });
+			}
+			return;
+		}
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+		playTap();
+		schedule(() => react("host", "happy"), 420, token);
+		react("me", "happy");
+		setGiven(r.find_id);
+		setDelivery(r);
+		// Both tallies move by the same flat tickles; the visit's own count
+		// (the chip) is taps only, so it stays.
+		setYouHearts((n) => n + r.tickles);
+		setFriendHearts((n) => n + r.tickles);
+		satchel.applyBagCount(r.bag_count);
+		void satchel.refresh();
+		setHostWish((w) =>
+			r.next_wish ? { ...(w ?? { target_id: targetUserId }), ...r.next_wish, fulfilled_by_me: false } : w,
+		);
+	};
+
+	// A wrong find: the pig sniffs it, it stays in the bag. No server call.
+	const bounce = (item: SatchelItem) => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+		react("host", "surprise");
+		const f = satchelFind(item.find_id);
+		showToast({
+			tone: "info",
+			title: f ? `Not the ${f.name} — see the bubble for what they're hoping for.` : "Not that one.",
+		});
 	};
 
 	const dig = async () => {
@@ -965,26 +1148,29 @@ function BarnVisitSession({
 										</View>
 									</View>
 								)}
-								{/* you — set back: smaller, higher, shifted left. The only
-									  nametag left on the screen: a newcomer cannot otherwise tell
-									  which pig is theirs. The host's pig wears none — the header
-									  already says whose barn this is. */}
+								{/* you — the guest, on the left, as drawn (tail out, face in).
+									  The only nametag left on the screen: a newcomer cannot
+									  otherwise tell which pig is theirs. Not a tickle target:
+									  a tap waves. */}
 								<TapPig
 									me
-									slotStyle={[styles.pigSlot, styles.pigSlotBack]}
+									slotStyle={[styles.pigSlot, styles.pigSlotVisitor]}
 									squishTransform={squishTransform}
-									onPress={tickle}
+									onPress={greet}
 									label="you"
 									tag="you"
 									pigId={myPigId}
 									equip={myEquip}
-									tired={tired}
-                  disabled={tired || restingOnArrival || !!lockedUntil || busy}
+									mood={gained > 0 ? "happy" : "content"}
+									reaction={myReaction}
+									onReactionDone={() => setMyReaction(null)}
 									floats={floats}
 								/>
-								{/* host — up front: bigger, lower, shifted right (the pig you tickle) */}
+								{/* host — the subject, on the right, MIRRORED so the two face
+									  each other. The one pig you tickle; its chip counts the
+									  visit and becomes the "tickled out" tag. */}
 								<TapPig
-									slotStyle={[styles.pigSlot, styles.pigSlotFront]}
+									slotStyle={[styles.pigSlot, styles.pigSlotHost]}
 									squishTransform={squishTransform}
 									onPress={tickle}
 									label={hostName}
@@ -992,10 +1178,25 @@ function BarnVisitSession({
 									pigId={hostPigId}
 									equip={hostEquip}
 									ritual={hostPresentation.pig}
-									tired={tired}
-                  disabled={tired || restingOnArrival || !!lockedUntil || busy}
+									facing="right"
+									mood={hostSpent ? "tired" : "content"}
+									spent={hostSpent}
+									chip={hostSpent ? { kind: "spent" } : { kind: "count", n: gained }}
+									chipWobble={chipWobble}
+									bubble={
+										<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!given} />
+									}
+									reaction={hostReaction}
+									onReactionDone={() => setHostReaction(null)}
 									floats={floats}
 								/>
+								{greeted && !hostSpent && (
+									<View pointerEvents="none" style={styles.guestHint}>
+										<T role="hand" tone="secondary" align="center" maxFontSizeMultiplier={VISIT_TYPE_CAP}>
+											{`You're the guest — tickle ${hostName}'s pig.`}
+										</T>
+									</View>
+								)}
 
 								{/* Barn truffle — reuse Home's compact upper-left shovel
 									  control so burying and digging share one visual language. */}
@@ -1069,16 +1270,30 @@ function BarnVisitSession({
 							/>
 						</View>
 
+						{/* The bag, above the one secondary action. Unavailable (an
+							  un-pushed server) draws nothing; the nap card owns the screen
+							  until "Leave a find" folds it. */}
+						{satchel.available && (!restingOnArrival || napFoldedForFind) && (
+							<SatchelStrip
+								items={satchel.state.items}
+								cap={satchel.state.cap}
+								wish={hostWish}
+								delivered={given}
+								busy={giving}
+								onGive={give}
+								onBounce={bounce}
+							/>
+						)}
 						{/* One secondary action, at the bottom. */}
 						<VisitActionBar
-							tired={tired}
-							hidden={restingOnArrival}
+							tired={tired || napFoldedForFind}
+							hidden={restingOnArrival && !napFoldedForFind}
 							onHeadHome={requestExit}
 						/>
 
 						{/* The nap card is for ARRIVING at a sleeping barn only. Tiring out
 							  mid-visit is a toast; it never takes the screen. */}
-						{restingOnArrival && (
+						{restingOnArrival && !napFoldedForFind && (
 							/* A-08: the nap summary is a centred dialog, so it is an
 								 AdaptiveModalScaffold — presented INLINE because this whole
 								 overlay already sits inside another modal layer on iOS and a
@@ -1127,12 +1342,72 @@ function BarnVisitSession({
 									>
 										Head home
 									</Button>
+									{/* A sleeping barn is never a dead end: the bag is still
+										  yours to open. Only offered when there is something to
+										  give — an empty bag would make this a second Head home. */}
+									{satchel.available && satchel.state.items.length > 0 && hostWish && !hostWish.fulfilled_by_me && (
+										<Button
+											variant="link"
+											full
+											onPress={() => setNapFoldedForFind(true)}
+											accessibilityLabel="Leave a find"
+											accessibilityHint="Keeps you here to hand their pig something from your Satchel"
+											style={styles.cardAction}
+										>
+											Leave a find
+										</Button>
+									)}
 								</Sticker>
 							</AdaptiveModalScaffold>
 						)}
 					</>
 				)}
 			</View>
+			{delivery && (
+				/* The delivery receipt. The HOST's gain is the title; the tickles
+				   are the second line; the giver is never "earning". A keepsake,
+				   when one lands, is the third. */
+				<AdaptiveModalScaffold
+					visible
+					presentation="inline"
+					onRequestClose={() => setDelivery(null)}
+					maxWidth={NAP_MAX_W}
+					bare
+					contentContainerStyle={styles.dialogFrame}
+				>
+					<Sticker
+						color="paper"
+						radius={RADII.xl}
+						rotate={TILT.dialog}
+						style={styles.napCard}
+						testID="visit-delivery-sheet"
+					>
+						<DialogCloseRow
+							onPress={() => setDelivery(null)}
+							label="Back to the visit"
+							style={styles.dialogClose}
+						/>
+						<FindArt id={delivery.find_id} size={DELIVERY_ART} />
+						<T role="pageTitle" align="center" style={styles.napTitle}>
+							{`${hostName}'s pig is beaming`}
+						</T>
+						<T role="body" tone="secondary" align="center" style={styles.napBody}>
+							{deliveryLine(hostName, delivery.find_id, delivery.tickles) +
+								(delivery.keepsake != null
+									? ` That's ${delivery.deliveries} deliveries — a keepsake for your shelf.`
+									: "")}
+						</T>
+						<Button
+							variant="gold"
+							full
+							onPress={() => setDelivery(null)}
+							accessibilityLabel="Back to the visit"
+						>
+							Back to the visit
+						</Button>
+					</Sticker>
+				</AdaptiveModalScaffold>
+			)}
       {partingOpen && (
         /* A-08: the members' parting note, on the shared dialog scaffold. Its
            only exit used to vanish the moment the note was sent, leaving the
@@ -1285,15 +1560,14 @@ function BarnVisitSession({
 							me
 							slotStyle={styles.roomPigSlot}
 							squishTransform={squishTransform}
-							onPress={tickle}
+							onPress={greet}
 							label="you"
 							tag="you"
 							pigId={myPigId}
 							equip={myEquip}
-							tired={tired}
-							disabled={
-								loading || tired || restingOnArrival || !!lockedUntil || busy
-							}
+							mood={gained > 0 ? "happy" : "content"}
+							reaction={myReaction}
+							onReactionDone={() => setMyReaction(null)}
 							floats={floats}
 						/>
 					}
@@ -1308,10 +1582,16 @@ function BarnVisitSession({
 							equip={hostEquip}
 							ritual={hostPresentation.pig}
 							burstRef={hostConfettiRef}
-							tired={tired}
-							disabled={
-								loading || tired || restingOnArrival || !!lockedUntil || busy
+							facing="right"
+							mood={hostSpent ? "tired" : "content"}
+							spent={hostSpent}
+							chip={hostSpent ? { kind: "spent" } : { kind: "count", n: gained }}
+							chipWobble={chipWobble}
+							bubble={
+								<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!given} />
 							}
+							reaction={hostReaction}
+							onReactionDone={() => setHostReaction(null)}
 							floats={floats}
 						/>
 					}
@@ -1345,9 +1625,12 @@ function BarnVisitSession({
 	);
 }
 
-// A tappable pig, placed by its parent `slotStyle`. The host (`!me`) sits up
-// front — bigger; "you" sits back — smaller, for a sense of depth. Floating
-// hearts + an optional energy bar (host only).
+// A tappable pig, placed by its parent `slotStyle`. The host (`!me`) is the
+// subject — a shade larger, mirrored to face its guest, wearing the wish
+// bubble over its head and the visit's chip under its feet. "You" is the
+// guest: as drawn, a nametag, a wave on tap. Reactions belong to the session
+// (`reaction` / `onReactionDone`), so a tickle, a wave, a sniff and the
+// delivery's surprise all come from one place.
 function TapPig({
 	me = false,
 	slotStyle,
@@ -1357,8 +1640,14 @@ function TapPig({
 	tag,
 	pigId,
 	equip,
-	tired,
-  disabled,
+	mood,
+	facing = "left",
+	spent = false,
+	chip = null,
+	chipWobble,
+	bubble,
+	reaction,
+	onReactionDone,
 	floats,
 	ritual,
 	burstRef,
@@ -1378,8 +1667,21 @@ function TapPig({
 	tag: "you" | null;
 	pigId: PigId;
 	equip: EquipSet;
-	tired: boolean;
-  disabled: boolean;
+	/** The resting mood — tired once the host is spent, happy once you've
+	 *  shared a heart. */
+	mood: "content" | "happy" | "tired";
+	/** Which way the pig looks; the host faces "right" to meet its guest. */
+	facing?: "left" | "right";
+	/** The host's tickles are spent: the press still lands (it wobbles the tag)
+	 *  but the screen reader hears it as disabled. */
+	spent?: boolean;
+	/** The chip under the host: the visit's count, or the "tickled out" tag. */
+	chip?: { kind: "count"; n: number } | { kind: "spent" } | null;
+	chipWobble?: Animated.Value;
+	/** The wish bubble over the host's head. */
+	bubble?: React.ReactNode;
+	reaction: PigReaction | null;
+	onReactionDone: () => void;
 	floats: { id: number; anim: Animated.Value; rx: number; star: boolean }[];
 	/** The merged ritual pig recipe worn by THIS pig. Only the host has one in a
 	 *  visit: phase 4 is "go and admire the curse you cast", so the visitor's own
@@ -1388,38 +1690,46 @@ function TapPig({
 	/** The tap burst the caller fires on a successful tickle (Confetti Snout). */
 	burstRef?: Ref<ConfettiBurstHandle>;
 }) {
-	const [reaction, setReaction] = useState<PigReaction | null>(null);
-	const reactionId = useRef(0);
 	const [riveActive, setRiveActive] = useState(false);
-	const front = !me; // the host pig you're visiting reads as nearer/larger
-	const scale = front ? 0.66 : 0.44;
-	const box = front ? 212 : 146;
+	const host = !me;
+	const scale = host ? HOST_SCALE : VISITOR_SCALE;
+	const box = host ? HOST_BOX : VISITOR_BOX;
 	const shadowW = box * 0.5;
 	// Living mood surface: track the live sprite frame so equipped items ride
 	// along with the breathing pig (same wiring as SwipeElement).
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
+	const chipStyle = chipWobble
+		? {
+				transform: [
+					{
+						rotate: chipWobble.interpolate({
+							inputRange: [-1, 1],
+							outputRange: ["-6deg", "6deg"],
+						}),
+					},
+				],
+			}
+		: undefined;
 	return (
     <Pressable
-      onPress={() => {
-        if (!me && !disabled) setReaction({ id: ++reactionId.current, kind: "happy" });
-        onPress();
-      }}
-      disabled={disabled}
+      onPress={onPress}
       style={slotStyle}
-      accessible={!me}
-      accessibilityElementsHidden={me}
-      importantForAccessibility={me ? "no-hide-descendants" : "auto"}
-      accessibilityRole={!me ? "button" : undefined}
-      accessibilityLabel={!me ? `Tickle ${label}'s pig` : undefined}
+      accessibilityRole="button"
+      accessibilityLabel={host ? `Tickle ${label}'s pig` : "Your pig"}
       accessibilityHint={
-        !me && !disabled ? "Shares a heart with your friend." : undefined
+        host
+          ? spent
+            ? "Tickled out for now."
+            : "Shares a heart with your friend."
+          : "You're the guest here. Waves at their pig."
       }
-      accessibilityState={!me ? { disabled } : undefined}
+      accessibilityState={host ? { disabled: spent } : undefined}
+      testID={host ? "visit-host-pig" : "visit-your-pig"}
     >
 			{/* flying hearts */}
 			<View pointerEvents="none" style={styles.floatLayer}>
 				{floats.map((f) => {
-					const fs = front ? 26 : 20;
+					const fs = host ? 26 : 20;
 					return (
 						<Animated.Image
 							key={f.id}
@@ -1435,7 +1745,7 @@ function TapPig({
                     outputRange: [0, 1, 1, 0],
                   }),
 									transform: [
-										{ translateX: f.rx * (front ? 1 : 0.6) },
+										{ translateX: f.rx * (host ? 1 : 0.6) },
                     {
                       translateY: f.anim.interpolate({
                         inputRange: [0, 1],
@@ -1455,6 +1765,7 @@ function TapPig({
 					);
 				})}
 			</View>
+			{bubble}
 			<View style={[styles.pigBox, { width: box, height: box }]}>
 				{burstRef ? <ConfettiBurst ref={burstRef} size={box} /> : null}
         <View
@@ -1464,15 +1775,21 @@ function TapPig({
             { width: shadowW, left: (box - shadowW) / 2 },
           ]}
         />
+				{spent && (
+					<View pointerEvents="none" style={styles.napMark}>
+						<Glyph name="zzz" size={PILL_MARK * 2} />
+					</View>
+				)}
 				<Animated.View style={{ transform: [{ scale }, ...(riveActive ? [] : squishTransform)] }}>
 					<PigStage
 						pigReaction={reaction}
-						onPigComplete={() => setReaction(null)}
+						onPigComplete={onReactionDone}
 						onRendererChange={(kind) => setRiveActive(kind === "rive")}
 						pigId={pigId}
 						pigFrameIdx={pigFrameIdx}
 						onPigFrame={setPigFrameIdx}
 						ritual={ritual}
+						facing={facing}
 						equipped={equip.hat}
 						equippedBow={equip.bow}
 						equippedGlasses={equip.glasses}
@@ -1480,13 +1797,12 @@ function TapPig({
 						equippedNeck={equip.neck}
 						equippedAura={equip.aura}
 						equippedHeld={equip.held}
-						// A just-tickled pig is HAPPY, not tired — the visit is "spent"
-						// after one tickle (1-tickle model, 20260682), but that's a
-						// success, so it should beam, not slump. (The old 3–7 tap model
-						// tired the pig out after many taps; a cap of 1 made that fire
-						// instantly and read as "tired after one tickle".)
+						// The resting idle follows the mood: the host slumps into the
+						// tired set once its 3–7 taps are spent (the durable "you
+						// can't tickle this one" signal); you beam once a heart has
+						// been shared.
 						pigAnimation="idle"
-						pigMood={tired ? "happy" : "content"}
+						pigMood={mood}
 					/>
 				</Animated.View>
 			</View>
@@ -1502,6 +1818,20 @@ function TapPig({
           </T>
         </View>
       ) : null}
+			{chip ? (
+				<Animated.View style={[styles.chip, chipStyle]} testID="visit-host-chip">
+					{chip.kind === "spent" ? (
+						<Tag tone="sun" glyph="zzz" label="tickled out" maxFontSizeMultiplier={VISIT_TYPE_CAP} />
+					) : (
+						<Tag
+							tone="paper"
+							glyph="heart"
+							label={chip.n === 1 ? "1 tickle" : `${chip.n} tickles`}
+							maxFontSizeMultiplier={VISIT_TYPE_CAP}
+						/>
+					)}
+				</Animated.View>
+			) : null}
 		</Pressable>
 	);
 }
@@ -1568,8 +1898,21 @@ const styles = StyleSheet.create({
 	// one ground row (was a stacked top-4%/38% diorama); the host keeps a
 	// slight size + depth edge but they read side-by-side now.
 	pigSlot: { position: "absolute", left: 0, right: 0, alignItems: "center" },
-	pigSlotBack: { bottom: "14%", transform: [{ translateX: -78 }] },
-	pigSlotFront: { bottom: "9%", transform: [{ translateX: 72 }] },
+	pigSlotVisitor: { bottom: "9%", transform: [{ translateX: -PIG_SIDE_SHIFT }] },
+	pigSlotHost: { bottom: "9%", transform: [{ translateX: PIG_SIDE_SHIFT }] },
+	// The guest hint, once, under the pair.
+	guestHint: {
+		position: "absolute",
+		left: PAGE_PAD,
+		right: PAGE_PAD,
+		bottom: SPACE.sm,
+		alignItems: "center",
+	},
+	// The zzz over a napping host — the pig's own mark, outside the mirrored
+	// stage so it reads the right way round.
+	napMark: { position: "absolute", top: 0, right: SPACE.lg, zIndex: 6 },
+	// The chip under the host: hugs the nametag's rhythm.
+	chip: { marginTop: -SPACE.sm, alignItems: "center" },
 	floatLayer: {
 		position: "absolute",
 		left: 0,
