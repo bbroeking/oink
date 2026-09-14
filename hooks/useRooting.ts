@@ -84,6 +84,14 @@ export interface RootingOutcome {
   carryCaught?: { kind: string; gild: number } | null;
   carryNext?: { kind: string; gild: number } | null;
   practice: boolean;
+  // ── Snout Deep (20260913060000) — absent on a classic receipt ────────────
+  mode?: "classic" | "snout_deep";
+  // The layer the dig ended on (0 topsoil · 1 mud · 2 root) and how.
+  layerTied?: number | null;
+  woke?: boolean;
+  wokeOn?: string | null;
+  reason?: "tie" | "wake" | "close";
+  uncrewed?: boolean;
   // "Beginner's snout": the one-time real Golden Truffle granted on the FIRST
   // practice dig (claim_beginners_snout). >0 → show the gift line; null/0 →
   // already claimed, migration unpushed, or not the first practice dig — the
@@ -104,6 +112,17 @@ type OpenPayload = {
   unique_id?: string | null;
   // The caller's carry slot re-buried on this board, or null/absent (feature-dark).
   carry?: { kind: string; unique_id: string | null; gild: number } | null;
+  // ── Snout Deep (20260913060000) — absent on an un-migrated server ────────
+  // The SERVER's decision: 'snout_deep' when the flag is on for this caller.
+  mode?: "classic" | "snout_deep";
+  // No Sounder — the same dig, things + XP only. Server-derived.
+  uncrewed?: boolean;
+  // app_settings.dig_finds — the per-layer find odds.
+  dig_finds?: unknown;
+  // The log the server holds for a still-open snout_deep row (sync_rooting).
+  synced_layer?: number | null;
+  synced_actions?: string[] | null;
+  synced_finds?: string[] | null;
 };
 type SubmitPayload = {
   credited: string[];
@@ -119,13 +138,20 @@ type SubmitPayload = {
   unique_found?: { id: string; new: boolean; found_count: number } | null;
   carry_caught?: { kind: string; gild: number } | null;
   carry_next?: { kind: string; gild: number } | null;
+  // Snout Deep receipt fields (submit_rooting_deep) — absent on a classic one.
+  mode?: "classic" | "snout_deep";
+  layer_tied?: number | null;
+  woke?: boolean;
+  woke_on?: string | null;
+  end_reason?: "tie" | "wake" | "close";
+  uncrewed?: boolean;
 };
 
 function toRootingOutcome(
   r: SubmitPayload,
   fallbackBlessed: boolean,
 ): RootingOutcome {
-  return {
+  const outcome: RootingOutcome = {
     drain: r.drain_total,
     credited: r.credited?.length ?? 0,
     truffles: r.truffles,
@@ -138,6 +164,26 @@ function toRootingOutcome(
     carryNext: r.carry_next ?? null,
     practice: false,
   };
+  if (r.mode === "snout_deep") {
+    outcome.mode = "snout_deep";
+    outcome.layerTied = r.layer_tied ?? null;
+    outcome.woke = r.woke ?? false;
+    outcome.wokeOn = r.woke_on ?? null;
+    outcome.reason = r.end_reason;
+    outcome.uncrewed = r.uncrewed ?? false;
+  }
+  return outcome;
+}
+
+// What a Snout Deep dig hands the hook when it ends — read off the reducer
+// state (utils/snoutDeep): the action log, the layer it ended on, the banked
+// truffle ids, the carry-eligible misses and the revealed thing ids.
+export interface DeepSubmission {
+  actions: string[];
+  layer: number;
+  banked: string[];
+  missed: string[];
+  things: string[];
 }
 
 async function fetchRootingReceipt(
@@ -332,6 +378,19 @@ export function useRooting() {
         // Absent (server not migrated) → null → the board carries no unique.
         uniqueId: r.unique_id ?? null,
         carry: toCarry(r.carry),
+        // Snout Deep: the server's mode decision + the uncrewed lane + the
+        // synced log for a restore (absent on an un-migrated server).
+        mode: r.mode === "snout_deep" ? "snout_deep" : "classic",
+        uncrewed: r.uncrewed ?? false,
+        digFinds: r.dig_finds ?? null,
+        synced:
+          r.mode === "snout_deep" && Array.isArray(r.synced_actions)
+            ? {
+                layer: r.synced_layer ?? 0,
+                actions: r.synced_actions,
+                finds: r.synced_finds ?? [],
+              }
+            : null,
       };
       // A real server success clears the crewless flag; alreadyDug captures the
       // SERVER's window index (not the client clock) for the one-dig-per-feeding
@@ -422,6 +481,18 @@ export function useRooting() {
             return { ok: false, reason: "expired" } as const;
           if ((await mirrorUid()) !== pending.uid)
             return { ok: false, reason: "account_changed" } as const;
+          // Snout Deep payloads carry their log; the classic call is untouched.
+          if (pending.deep) {
+            return rpcAction<SubmitPayload>("submit_rooting_deep", {
+              p_user_id: pending.uid,
+              p_window_index: pending.windowIndex,
+              p_actions: pending.deep.actions,
+              p_layer: pending.deep.layer,
+              p_finds: pending.finds,
+              p_missed: pending.missed,
+              p_things: pending.deep.things,
+            });
+          }
           return rpcAction<SubmitPayload>("submit_rooting_checked", {
             p_user_id: pending.uid,
             p_window_index: pending.windowIndex,
@@ -600,6 +671,81 @@ export function useRooting() {
     [session, executePending],
   );
 
+  // ── Snout Deep: submit / sync ─────────────────────────────────────────────
+  // The press-your-luck dig ends (tie · wake · cap · close) with the reducer
+  // state in hand; this persists the same durable pending payload the classic
+  // path uses (so a kill mid-submit recovers through executePending) and calls
+  // submit_rooting_deep. Never a practice branch: an uncrewed dig is a REAL
+  // server dig (things + XP), so the dug flag records like any other.
+  const submitDeep = useCallback(
+    async (
+      deep: DeepSubmission,
+    ): Promise<RpcResult<{ outcome: RootingOutcome }>> => {
+      if (!session) return { ok: false, reason: "no_session" };
+      if (session.mode !== "snout_deep") return { ok: false, reason: "wrong_mode" };
+      const uid = await mirrorUid();
+      if (!uid) return { ok: false, reason: "unauthenticated" };
+      if (session.userId && session.userId !== uid) {
+        return { ok: false, reason: "account_changed" };
+      }
+      const banked = new Set(deep.banked);
+      const pending: PendingDigSubmission = {
+        uid,
+        windowIndex: session.windowIndex,
+        windowEndsAtMs: session.windowEndsAtMs,
+        finds: deep.banked,
+        actions: deep.actions.length,
+        missed: deep.missed.filter((id) => !banked.has(id)),
+        savedAt: new Date().toISOString(),
+        deep: {
+          actions: deep.actions,
+          layer: deep.layer,
+          things: deep.things,
+        },
+      };
+      try {
+        await savePendingDig(pending);
+      } catch {
+        dispatch({ type: "submission_settled" });
+        return { ok: false, reason: "storage_failed" };
+      }
+      let recovered: RpcResult<{ outcome: RootingOutcome }>;
+      try {
+        recovered = await executePending(pending);
+      } catch {
+        dispatch({ type: "submission_uncertain" });
+        return { ok: false, reason: "uncertain" };
+      }
+      if (!recovered.ok && recovered.reason === "already_rooted") {
+        dispatch({ type: "submit_landed", practice: false });
+        await AsyncStorage.setItem(dugMirrorKey(uid, session.windowIndex), "1");
+        await cancelOpenReminder();
+      }
+      return recovered;
+    },
+    [session, executePending],
+  );
+
+  // The mid-dig log sync (every 5th action and on background): the server
+  // ties an abandoned dig at this log when the window closes. Fire-and-forget
+  // and fail-soft — a missed sync only means the close cron ties an older log.
+  const syncRooting = useCallback(
+    async (layer: number, actions: string[], finds: string[]): Promise<void> => {
+      if (!session || session.mode !== "snout_deep" || session.practice) return;
+      try {
+        await rpcAction("sync_rooting", {
+          p_window_index: session.windowIndex,
+          p_layer: layer,
+          p_actions: actions,
+          p_finds: finds,
+        });
+      } catch {
+        // best-effort
+      }
+    },
+    [session],
+  );
+
   const recoverSubmission = useCallback(async () => {
     const uid = await mirrorUid();
     if (!uid) return { ok: false, reason: "unauthenticated" } as const;
@@ -668,6 +814,8 @@ export function useRooting() {
     open,
     openPractice,
     submit,
+    submitDeep,
+    syncRooting,
     clear,
     reconcile,
     submitting: state.submissionStatus === "submitting",

@@ -8,6 +8,30 @@ export interface PendingDigSubmission {
   actions: number;
   missed: string[];
   savedAt: string;
+  // Snout Deep (20260913060000): present → submit_rooting_deep with the
+  // action log, the layer the dig ended on and the revealed thing ids;
+  // absent → the classic submit_rooting_checked. `actions` above stays the
+  // count so an older reader of the payload still validates it.
+  deep?: PendingSnoutDeep;
+}
+
+export interface PendingSnoutDeep {
+  actions: string[];
+  layer: number;
+  things: string[];
+}
+
+// The Snout Deep mid-dig snapshot (spec §10): `{ layer, actions }` replayed
+// through utils/snoutDeep.replay on restore, plus the banked truffle ids the
+// server's close cron ties with. Keyed like the classic progress snapshot.
+export interface SnoutDeepProgressSnapshot {
+  uid: string;
+  windowIndex: number;
+  seed: number;
+  layer: number;
+  actions: string[];
+  finds: string[];
+  savedAt: string;
 }
 
 export interface DigProgressSnapshot {
@@ -26,6 +50,8 @@ export interface DigProgressSnapshot {
 const pendingKey = (uid: string) => `rooting_pending_submission_v1:${uid}`;
 const progressKey = (uid: string, win: number) =>
   `rooting_progress_v1:${uid}:${win}`;
+const deepProgressKey = (uid: string, win: number) =>
+  `snout_deep_progress_v1:${uid}:${win}`;
 const pendingOperations = new Map<string, Promise<unknown>>();
 
 function withPendingLock<T>(
@@ -46,6 +72,29 @@ function withPendingLock<T>(
 function stringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
+}
+
+// The Snout Deep log contract the server enforces (submit_rooting_deep):
+// ≤ 45 entries of "s2:14" / "r2:14" / "h2:14"; the layer 0–2.
+const DEEP_ACTION = /^[srh][0-2]:([0-9]|[12][0-9])$/;
+const DEEP_ACTION_CAP = 45;
+function validDeepActions(value: unknown): value is string[] {
+  return (
+    stringArray(value) &&
+    value.length <= DEEP_ACTION_CAP &&
+    value.every((entry) => DEEP_ACTION.test(entry))
+  );
+}
+function validDeep(value: unknown): value is PendingSnoutDeep {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Partial<PendingSnoutDeep>;
+  return (
+    validDeepActions(v.actions) &&
+    Number.isInteger(v.layer) &&
+    (v.layer as number) >= 0 &&
+    (v.layer as number) <= 2 &&
+    stringArray(v.things)
   );
 }
 
@@ -71,7 +120,8 @@ async function loadPendingDigUnlocked(
       !Number.isInteger(value.actions) ||
       !stringArray(value.finds) ||
       !stringArray(value.missed) ||
-      typeof value.savedAt !== "string"
+      typeof value.savedAt !== "string" ||
+      (value.deep !== undefined && !validDeep(value.deep))
     )
       return null;
     return value as PendingDigSubmission;
@@ -174,4 +224,49 @@ export async function clearDigProgress(
   windowIndex: number,
 ): Promise<void> {
   await AsyncStorage.removeItem(progressKey(uid, windowIndex));
+}
+
+// ── Snout Deep progress (spec §10: the snapshot is `{ layer, actions }`) ──────
+
+export async function saveSnoutDeepProgress(
+  value: SnoutDeepProgressSnapshot,
+): Promise<void> {
+  await AsyncStorage.setItem(
+    deepProgressKey(value.uid, value.windowIndex),
+    JSON.stringify(value),
+  );
+}
+
+export async function loadSnoutDeepProgress(
+  uid: string,
+  windowIndex: number,
+  seed: number,
+): Promise<SnoutDeepProgressSnapshot | null> {
+  const raw = await AsyncStorage.getItem(deepProgressKey(uid, windowIndex));
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as Partial<SnoutDeepProgressSnapshot>;
+    if (
+      value.uid !== uid ||
+      value.windowIndex !== windowIndex ||
+      value.seed !== seed ||
+      !Number.isInteger(value.layer) ||
+      (value.layer as number) < 0 ||
+      (value.layer as number) > 2 ||
+      !validDeepActions(value.actions) ||
+      !stringArray(value.finds) ||
+      typeof value.savedAt !== "string"
+    )
+      return null;
+    return value as SnoutDeepProgressSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearSnoutDeepProgress(
+  uid: string,
+  windowIndex: number,
+): Promise<void> {
+  await AsyncStorage.removeItem(deepProgressKey(uid, windowIndex));
 }

@@ -19,7 +19,13 @@ jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 jest.mock("expo-haptics", () => ({
   selectionAsync: jest.fn(() => Promise.resolve()),
 }));
-jest.mock("@/hooks/useFeatureFlags", () => ({ useFeatureFlag: () => true }));
+// world_boss (Season 1) is on; snout_deep is a per-test switch — off by
+// default so the uncrewed lane below is the door it has always been.
+let mockSnoutDeepOn = false;
+jest.mock("@/hooks/useFeatureFlags", () => ({
+  useFeatureFlag: (key: string) =>
+    key === "snout_deep" ? mockSnoutDeepOn : true,
+}));
 // The crew read the retired chip used — the only thing separating the lanes.
 jest.mock("@/hooks/useSounderPath", () => ({ useSounderPath: jest.fn() }));
 jest.mock("@/components/mudwar/useFeedingCta", () => ({
@@ -77,6 +83,7 @@ describe("useDigEntry", () => {
     push.mockClear();
     feedingCta.mockReset();
     sounderPath.mockReset();
+    mockSnoutDeepOn = false;
   });
 
   describe("crewed — the dig opens in place", () => {
@@ -134,6 +141,44 @@ describe("useDigEntry", () => {
       expect(probe.get().note).toBe(
         "You rooted this feeding — he gorges again soon.",
       );
+      probe.unmount();
+    });
+  });
+
+  describe("uncrewed with Snout Deep on — the dig opens in place", () => {
+    it.each(["taste", "join", "hook"])(
+      "starts the same dig for %s instead of navigating",
+      (step) => {
+        mockSnoutDeepOn = true;
+        const start = mockCta();
+        const probe = mount(step);
+        expect(probe.get().crewed).toBe(false);
+        expect(probe.get().hint).toBe(DIG_HINT_CREWED);
+        expect(probe.get().open).toBe(true);
+        expect(probe.get().title).toBe("Dig the Truffle Patch");
+        act(() => probe.get().openDig());
+        expect(start).toHaveBeenCalledTimes(1);
+        expect(push).not.toHaveBeenCalled();
+        probe.unmount();
+      },
+    );
+
+    it("retires the control once the uncrewed dig has landed", () => {
+      mockSnoutDeepOn = true;
+      mockCta({ dugThisWindow: true });
+      const probe = mount("join");
+      expect(probe.get().open).toBe(false);
+      expect(probe.get().visible).toBe(false);
+      expect(probe.get().title).toBe("Dug this feeding");
+      probe.unmount();
+    });
+
+    it("names the shut patch honestly for an uncrewed digger", () => {
+      mockSnoutDeepOn = true;
+      mockCta({ phaseOpen: false, countdown: "3h 1m" });
+      const probe = mount("join");
+      expect(probe.get().title).toBe("Dig opens in 3h 1m");
+      expect(probe.get().detail).toBe("finds + 20 Pass XP · truffles are for herds");
       probe.unmount();
     });
   });

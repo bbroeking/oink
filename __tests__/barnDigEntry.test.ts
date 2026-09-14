@@ -30,7 +30,7 @@ describe("Barn Truffle Patch entry", () => {
     expect(digEntry).toContain(
       'const crewed = coopDig && (step === "first_dig" || step === "done")',
     );
-    expect(digEntry).toContain('? "Dig for Golden Truffles"');
+    expect(digEntry).toContain(': "Dig for Golden Truffles"');
     expect(digEntry).toContain("void start();");
     expect(digEntry).toContain("modal: cta.modal,");
     // The Barn button consumes the hook — Dig on its fan whenever the patch
@@ -50,11 +50,28 @@ describe("Barn Truffle Patch entry", () => {
     expect(digEntry).toContain('"Dug this feeding"');
     expect(digEntry).toContain("`Dig opens in ${cta.countdown}`");
     expect(digEntry).toContain(
-      "const open = crewed && cta.phaseOpen && !cta.dugThisWindow",
+      "const open = inPlace && cta.phaseOpen && !cta.dugThisWindow",
     );
-    expect(digEntry).toContain("const visible = !crewed || !cta.dugThisWindow");
+    expect(digEntry).toContain("const visible = !inPlace || !cta.dugThisWindow");
     // A refused dig surfaces its reason rather than doing nothing.
     expect(barn).toContain('showToast("Truffle Patch", digNote)');
+  });
+
+  test("Snout Deep rides the same entry and the same modal behind the flag", () => {
+    // The uncrewed lane opens in place only when the server-side flag says
+    // the dig is Snout Deep; the crewed lane is unchanged.
+    expect(digEntry).toContain('const snoutDeep = useFeatureFlag("snout_deep");');
+    expect(digEntry).toContain("const inPlace = crewed || (coopDig && snoutDeep);");
+    expect(digEntry).toContain("hint: inPlace ? DIG_HINT_CREWED : DIG_HINT_UNCREWED,");
+    // The modal branches on the SERVER's mode decision, not the client flag,
+    // and the classic TrufflePatch branch survives verbatim beside it.
+    expect(feedingCta).toContain('session && session.mode === "snout_deep" ? (');
+    expect(feedingCta).toContain("<SnoutDeepDig");
+    expect(feedingCta).toContain("onSubmit={submitDeep}");
+    expect(feedingCta).toContain("onSync={syncRooting}");
+    expect(feedingCta).toContain(") : session ? (");
+    expect(feedingCta).toContain("<TrufflePatch");
+    expect(feedingCta).toContain("useUnmanagedModalHold(visible);");
   });
 
   test("Home and Season delegate focus synchronization to the feeding clock", () => {

@@ -65,6 +65,16 @@ export const LAYER_NAMES: Readonly<Record<Layer, string>> = {
   2: "the root",
 };
 
+/** The Feeding card's per-member line (spec §3 / §5.10): "tied at the mud" ·
+ *  "woke at the root"; null when the row carries no layer (a classic dig). */
+export function digLayerLine(
+  layerTied: number | null | undefined,
+  woke: boolean | null | undefined,
+): string | null {
+  if (layerTied !== 0 && layerTied !== 1 && layerTied !== 2) return null;
+  return `${woke ? "woke" : "tied"} at ${LAYER_NAMES[layerTied]}`;
+}
+
 export interface SnoutDeepState {
   board: SnoutDeepBoard;
   layer: Layer;

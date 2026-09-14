@@ -23,6 +23,7 @@ import {
   refreshFeedingSchedule,
 } from "@/utils/feedingConfig";
 import { TrufflePatch } from "./TrufflePatch";
+import { SnoutDeepDig } from "./SnoutDeepDig";
 import { LivingMudReceipt, LivingMudRecovery } from "./LivingMudReceipt";
 import { AdaptiveModalScaffold } from "@/components/ui";
 import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
@@ -74,6 +75,8 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
     open,
     openPractice,
     submit,
+    submitDeep,
+    syncRooting,
     clear,
     reconcile,
     submitting: serverBusy,
@@ -217,7 +220,20 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
       contentContainerStyle={styles.modalBody}
       scrollViewProps={{ scrollEnabled: !brushing }}
     >
-      {session ? (
+      {session && session.mode === "snout_deep" ? (
+        // Snout Deep (the server's mode decision at open): the three-layer
+        // press-your-luck dig. Same modal, same open/close contract — only
+        // the patch inside it differs.
+        <SnoutDeepDig
+          key={`deep:${session.userId ?? "practice"}:${session.windowIndex}:${session.seed}`}
+          session={session}
+          onSubmit={submitDeep}
+          onSync={syncRooting}
+          onClose={close}
+          onDug={onDug}
+          onBusyChange={setBusy}
+        />
+      ) : session ? (
         <TrufflePatch
           key={`${session.userId ?? "practice"}:${session.windowIndex}:${session.seed}`}
           session={session}

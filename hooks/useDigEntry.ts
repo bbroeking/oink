@@ -6,7 +6,11 @@
 //              the already-dug state and the TrufflePatch modal, so a crewed
 //              player never navigates to a tab to reach their own dig.
 //   UNCREWED — digging is crew-gated, so the control is a door: the Season tab,
-//              where the practice dig and the join path live.
+//              where the practice dig and the join path live. With the
+//              `snout_deep` flag on, the server opens the same dig for an
+//              uncrewed player (things + XP, no Golden Truffles — spec §1.7),
+//              so the uncrewed lane opens IN PLACE too, through the same
+//              `start()`; the receipt carries the join line.
 //
 // This is the decision the retired Barn chip made inline. It moved here when the
 // Barn's own dig control needed the same behaviour: one source of truth for
@@ -16,6 +20,7 @@ import { useCallback, type ReactNode } from "react";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { useSounderPath } from "@/hooks/useSounderPath";
 import { useFeedingCta } from "@/components/mudwar/useFeedingCta";
 import type { SounderStep } from "@/hooks/useSounderPath";
@@ -67,26 +72,37 @@ export function useDigEntry(): DigEntry {
   const cta = useFeedingCta(sounderPath.refresh);
 
   const crewed = coopDig && (step === "first_dig" || step === "done");
-  const open = crewed && cta.phaseOpen && !cta.dugThisWindow;
+  // Snout Deep: the uncrewed player digs too (the server decides at open —
+  // the flag here only routes the press). Loading reads false → the door.
+  const snoutDeep = useFeatureFlag("snout_deep");
+  const inPlace = crewed || (coopDig && snoutDeep);
+  const open = inPlace && cta.phaseOpen && !cta.dugThisWindow;
   // Completion retires the primary action for the rest of this feeding. The
   // collection/history surfaces remain independent, and useRooting's
   // reconciliation clears dugThisWindow when the next window becomes current.
-  const visible = !crewed || !cta.dugThisWindow;
+  const visible = !inPlace || !cta.dugThisWindow;
 
+  // An uncrewed Snout Deep dig pays things and XP, never Golden Truffles —
+  // the control says so rather than promising the herd's prize.
+  const uncrewedDig = inPlace && !crewed;
   const title = cta.dugThisWindow
     ? "Dug this feeding"
     : cta.phaseOpen
-      ? "Dig for Golden Truffles"
+      ? uncrewedDig
+        ? "Dig the Truffle Patch"
+        : "Dig for Golden Truffles"
       : `Dig opens in ${cta.countdown}`;
   const detail = cta.dugThisWindow
     ? "20 Pass XP banked · back next feeding"
     : cta.phaseOpen
       ? `+20 Pass XP · closes in ${cta.countdown}`
-      : "Golden Truffles · +20 Pass XP · Sounder spoils";
+      : uncrewedDig
+        ? "finds + 20 Pass XP · truffles are for herds"
+        : "Golden Truffles · +20 Pass XP · Sounder spoils";
 
   const start = cta.start;
   const openDig = useCallback(() => {
-    if (crewed) {
+    if (inPlace) {
       // `start` carries its own haptic and its own honest refusal: a shut
       // patch or an already-dug feeding comes back as `note`, never as a
       // silent no-op.
@@ -95,7 +111,7 @@ export function useDigEntry(): DigEntry {
     }
     Haptics.selectionAsync().catch(() => {});
     router.push(SEASON_TAB);
-  }, [crewed, start]);
+  }, [inPlace, start]);
 
   return {
     step,
@@ -105,7 +121,7 @@ export function useDigEntry(): DigEntry {
     title,
     detail,
     note: cta.note,
-    hint: crewed ? DIG_HINT_CREWED : DIG_HINT_UNCREWED,
+    hint: inPlace ? DIG_HINT_CREWED : DIG_HINT_UNCREWED,
     openDig,
     modal: cta.modal,
   };

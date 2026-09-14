@@ -26,6 +26,11 @@ import {
 export interface CrewDug {
   user_id: string;
   display_name: string;
+  // Snout Deep (20260913060000): the layer the crewmate's dig ended on
+  // (0 topsoil · 1 mud · 2 root) and whether he woke — null/absent on a
+  // classic dig or an un-migrated server.
+  layer_tied?: number | null;
+  woke?: boolean;
 }
 
 export interface FeedingState extends FeedingClockPayload {
@@ -33,6 +38,9 @@ export interface FeedingState extends FeedingClockPayload {
   window_ends_at: string;
   dug: boolean;
   crew_dug: CrewDug[];
+  // The caller's own Snout Deep outcome this feeding (see CrewDug).
+  layer_tied?: number | null;
+  woke?: boolean;
   feeding_time_zone?: string;
   pending_feeding_time_zone?: string | null;
   pending_effective_at?: string | null;

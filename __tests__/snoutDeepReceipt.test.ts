@@ -5,6 +5,7 @@ import { PATCH_COLS, TILE_DEPTH } from "../constants/dig";
 import { WakeStream } from "../utils/rooting";
 import {
   decisionCopy,
+  digLayerLine,
   findRevealLine,
   gtReasons,
   initialState,
@@ -239,5 +240,23 @@ describe("copy", () => {
     for (const line of [whisperFor(s)]) {
       for (const name of ["Boom", "acorn", "relic", "scroll", "tea"]) expect(line).not.toContain(name);
     }
+  });
+});
+
+// The Feeding card's per-member line (spec §3 / §5.10) — read off the row's
+// layer_tied / woke; a classic dig (no layer) renders the existing line.
+describe("digLayerLine", () => {
+  test("names the layer tied or woken at", () => {
+    expect(digLayerLine(0, false)).toBe("tied at topsoil");
+    expect(digLayerLine(1, false)).toBe("tied at the mud");
+    expect(digLayerLine(2, false)).toBe("tied at the root");
+    expect(digLayerLine(2, true)).toBe("woke at the root");
+    expect(digLayerLine(1, true)).toBe("woke at the mud");
+  });
+
+  test("is null for a classic row or a bad layer", () => {
+    expect(digLayerLine(null, false)).toBeNull();
+    expect(digLayerLine(undefined, undefined)).toBeNull();
+    expect(digLayerLine(3, false)).toBeNull();
   });
 });

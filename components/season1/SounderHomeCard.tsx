@@ -45,6 +45,7 @@ import {
 	type FeedingState,
 } from "@/utils/dig";
 import { patchCtaLabel } from "@/utils/rooting";
+import { digLayerLine } from "@/utils/snoutDeep";
 import { fetchRaceCrewDetail, type RaceCrewDetail } from "@/utils/race";
 import { CREW_CAP_WORD } from "@/constants/crews";
 import { RACE_TRUFFLE_TABLE } from "@/constants/dig";
@@ -277,6 +278,17 @@ function CrewedHome({
 
 	const lit = new Set((feeding?.crew_dug ?? []).map((c) => c.user_id));
 	if (feeding?.dug && uid) lit.add(uid);
+	// Snout Deep: the layer each dug member ended on, when the row carries it
+	// ("tied at the mud" / "woke at the root"); a classic dig carries none.
+	const layerLines = new Map<string, string>();
+	for (const c of feeding?.crew_dug ?? []) {
+		const line = digLayerLine(c.layer_tied, c.woke);
+		if (line) layerLines.set(c.user_id, line);
+	}
+	if (feeding?.dug && uid) {
+		const line = digLayerLine(feeding.layer_tied, feeding.woke);
+		if (line) layerLines.set(uid, line);
+	}
 
 	// Per-member contribution counts — dark (null) until the RPC is pushed, in
 	// which case the roster renders exactly as before (no count lines).
@@ -330,12 +342,16 @@ function CrewedHome({
 								align="center"
 								nameStyle={styles.memberName}
 							/>
-							{detail != null && (
+							{layerLines.has(mem.user_id) ? (
+								<Kicker star={false} tone="secondary" numberOfLines={1} style={styles.memberFinds}>
+									{layerLines.get(mem.user_id)}
+								</Kicker>
+							) : detail != null ? (
 								<Kicker star={false} tone="secondary" numberOfLines={1} style={styles.memberFinds}>
 									{finds.get(mem.user_id) ?? 0}
 									{(finds.get(mem.user_id) ?? 0) === 1 ? " find" : " finds"}
 								</Kicker>
-							)}
+							) : null}
 						</View>
 					);
 				})}

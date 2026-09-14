@@ -49,6 +49,19 @@ export interface RootingSession {
   // null (empty slot / server not migrated → feature-dark). kind is the missed
   // find (truffle_l/truffle_d/unique); a unique carry pins THIS board's relic.
   carry: RootingCarry | null;
+  // ── Snout Deep (20260913060000) ────────────────────────────────────────
+  // The dig's mode, decided by the SERVER at open (the snout_deep flag).
+  // Absent/"classic" → the stir-budget TrufflePatch; "snout_deep" → the
+  // three-layer press-your-luck dig (components/mudwar/SnoutDeepDig).
+  mode?: "classic" | "snout_deep";
+  // The caller has no Sounder: the same board, things + XP, no Golden
+  // Truffles / Sounder Bonus / race find. Server-derived, never client-sent.
+  uncrewed?: boolean;
+  // The server's per-layer find odds (app_settings.dig_finds), or null.
+  digFinds?: unknown;
+  // The log the server holds for an OPEN snout_deep row (sync_rooting) — the
+  // restore source when the device has no local snapshot.
+  synced?: { layer: number; actions: string[]; finds: string[] } | null;
 }
 
 // The carried miss the server re-buries next feeding (gilded).

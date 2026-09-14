@@ -35,8 +35,12 @@ import { rpc } from "@/utils/rpc";
 //                     2026-07-06 renumber (greedy/generous era = Season 0,
 //                     The Great Hunger = Season 1). Shipped build 103 reads
 //                     this exact string — never rename it.
+//   snout_deep      — the three-layer press-your-luck Truffle Patch
+//                     (20260913060000). The SERVER decides the dig's mode at
+//                     open_rooting (the same per-user merge); the client reads
+//                     this only to route the uncrewed lane in useDigEntry.
 export type FeatureFlagKey =
-  "world_boss" | "season1_finale" | "rewarded_ads";
+  "world_boss" | "season1_finale" | "rewarded_ads" | "snout_deep";
 
 type FlagMap = Partial<Record<FeatureFlagKey, boolean>>;
 

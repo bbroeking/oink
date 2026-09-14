@@ -8,6 +8,11 @@
 #   Applies: 00_stub.sql → the war/league migration chain (20260707/08/09/10)
 #   → any extra migrations passed as args → the numbered *_smoke.sql suites.
 #   Exit 0 = every statement + assertion ran clean.
+#   NOTE: an extra migration passed as an arg lands BEFORE the later chained
+#   migrations below (20260799 → 20260913...). A migration that depends on
+#   those (e.g. 20260913060000_snout_deep, which needs rooting_receipts +
+#   _patch_clock_for_user) is chained explicitly at the tail instead — run
+#   with no args.
 #
 # Requires: colima started + docker CLI (both installed via Homebrew).
 set -euo pipefail
@@ -272,6 +277,9 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/84_durable_rooting_receipt_concurrency_smoke.sql \
 		supabase/migrations/20260913030000_feeding_state_server_clock.sql \
 		scripts/db-harness/86_feeding_state_server_clock_smoke.sql \
+		scripts/db-harness/00t_snout_deep_prep.sql \
+		supabase/migrations/20260913060000_snout_deep.sql \
+		scripts/db-harness/87_snout_deep_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 
