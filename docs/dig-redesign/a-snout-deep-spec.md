@@ -266,13 +266,14 @@ dialogs on the reveal family's Ledger sheet.
    forty. nothing here is free.* · *the root. a 1 on its own is usually a
    thing, not a truffle. one rub in eight wakes him now. one sniff in
    seventeen.*
-5. **The decision** (layer-clear sheet, Ledger): kicker *layer one is clear*,
-   title *A truffle, loose in the pouch.*, count *dig deeper banks it — the
-   next layer stakes only its own*; rows *Tie it off · +1 Golden Truffle · +20
-   Pass XP · done | safe* and *Dig deeper · the mud · fatter truffles, acorns,
-   tea · he stirs at one rub in twenty | 1 in 20*; primary *Dig deeper*;
-   secondary *tie it off instead ›*. The sheet is offered when a layer's
-   truffle banks; both controls stay in the footer at all times.
+5. **The decision** is the footer, never a sheet. When a layer's truffle
+   comes loose it lands in the *loose* well and the whisper turns (*the
+   truffle is loose. tie it off, or dig deeper and bank it on the way down.*);
+   the player keeps working the layer for things as long as they like. *Tie
+   it off* and *Dig deeper* stay in the footer at all times. (The layer-clear
+   sheet that used to open here, with *Dig deeper* as its primary, was cut
+   2026-09-13: it pushed the player down a layer the second the truffle
+   surfaced.)
 6. **Pressure.** No sheet: his face, the tag, the whisper; at the root the
    rose rim and *Tie it off* as the primary.
 7. **Payoff, tied** (Ledger receipt): title *Tied off at the root*, count
@@ -377,7 +378,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult;   //
 | `utils/snoutDeep.ts` | the reducer above + `receipt` + `simulateSnoutDeep` | L |
 | `constants/dig.ts` | `PATCH_LAYERS 3`, `TILE_DEPTH 2`, `SNOUT_DEEP_ACTION_CAP 45`, the wake table, `DIG_FINDS` fallback odds | S |
 | `components/mudwar/SnoutDeepPatch.tsx` | the dig screen: header (Hungerer face + tag), `LayerStrip`, the tile grid (`Pressable` tiles for the web try-out; the Skia `LivingMudSurface` follows), whisper, pouch, footer, verb bar; `FindReveal` sticker | L |
-| `components/mudwar/SnoutDeepSheets.tsx` | the decision sheet, the tied and woke receipts, on `RevealSheet`/`LedgerRow` (or the interim ledger markup until the primitive lands) | M |
+| `components/mudwar/SnoutDeepSheets.tsx` | the tied and woke receipts and the how-it-works ledger, on `RevealSheet`/`LedgerRow` (or the interim ledger markup until the primitive lands) | M |
 | `components/mudwar/Hungerer.tsx` | the face (snoring · stirring · one eye open · awake), SVG, motion-policy aware | S |
 | `components/mudwar/useFeedingCta.tsx` | opens `SnoutDeepPatch` when `mode === 'snout_deep'`; uncrewed lane | S |
 | `hooks/useRooting.ts` | `submit_rooting_deep`, `sync_rooting` every 5 actions, restore from `{ layer, actions }` | M |

@@ -1,6 +1,7 @@
 // The Snout Deep dialogs on the reveal family's Ledger (docs/reveal-family-
-// spec.md §1): the decision sheet when a layer's truffle is loose (§5.5), the
-// tied receipt (§5.7) and the woke receipt (§5.8). One left edge, lines not
+// spec.md §1): the tied receipt (§5.7), the woke receipt (§5.8) and the
+// how-it-works ledger. (No layer-clear sheet: a loose truffle is the footer's
+// decision, §5.5.) One left edge, lines not
 // cards, two solid rules bracketing the body, one gold primary, a hand-link
 // secondary. This is the interim ledger markup until `RevealSheet` /
 // `LedgerRow` land as primitives; the grammar is theirs so the swap is a
@@ -12,11 +13,9 @@ import { BORDER, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { popIn } from "@/utils/motionRecipes";
 import {
-  decisionCopy,
   type DigReceipt,
   type DigReceiptRow,
   type FindTone,
-  type Layer,
 } from "@/utils/snoutDeep";
 import { FindMark } from "./FindMark";
 import { Hungerer } from "./Hungerer";
@@ -140,84 +139,6 @@ function LedgerSheet({
     >
       <Animated.View style={{ opacity, transform: [{ scale }] }}>{children}</Animated.View>
     </AdaptiveModalScaffold>
-  );
-}
-
-// ── The decision (§5.5) ─────────────────────────────────────────────────────
-
-export function DecisionSheet({
-  visible,
-  layer,
-  coop,
-  gtSoFar,
-  onDeeper,
-  onTie,
-  onClose,
-}: {
-  visible: boolean;
-  layer: Layer;
-  coop: boolean;
-  /** Golden Truffles a tie would mint right now (uncrewed digs pass 0). */
-  gtSoFar: number;
-  onDeeper: () => void;
-  onTie: () => void;
-  onClose: () => void;
-}) {
-  const copy = decisionCopy(layer, coop, gtSoFar);
-  return (
-    <LedgerSheet
-      visible={visible}
-      onClose={onClose}
-      closeLabel="Keep digging this layer"
-      kicker={copy.kicker}
-      title={copy.title}
-    >
-      <Hand tone="secondary">{copy.countLine}</Hand>
-      <Ledger>
-        <LedgerRow
-          first
-          mark={
-            <MarkDisc tone="sun">
-              <FindMark kind="truffles" size={MARK_ART} />
-            </MarkDisc>
-          }
-          title={copy.tie.title}
-          sub={copy.tie.sub}
-          value={copy.tie.value}
-        />
-        <LedgerRow
-          first={false}
-          mark={
-            <MarkDisc tone="rose">
-              <Icon name="chevronDown" size={MARK_ART} color={WHIMSY.ink} />
-            </MarkDisc>
-          }
-          title={copy.deeper.title}
-          sub={copy.deeper.sub}
-          value={copy.deeper.value}
-        />
-      </Ledger>
-      <Button
-        variant="gold"
-        size="md"
-        full
-        onPress={onDeeper}
-        accessibilityLabel={copy.primary}
-        accessibilityHint="Banks the loose truffle and opens the next layer"
-      >
-        {copy.primary}
-      </Button>
-      <Button
-        variant="handLink"
-        size="sm"
-        onPress={onTie}
-        style={styles.secondary}
-        accessibilityLabel="Tie it off instead"
-        accessibilityHint="Banks the loose truffle and ends the dig"
-      >
-        {copy.secondary}
-      </Button>
-    </LedgerSheet>
   );
 }
 

@@ -4,7 +4,6 @@
 import { PATCH_COLS, TILE_DEPTH } from "../constants/dig";
 import { WakeStream } from "../utils/rooting";
 import {
-  decisionCopy,
   digLayerLine,
   findRevealLine,
   gtReasons,
@@ -206,23 +205,6 @@ describe("copy", () => {
     expect(oddsPhrase(15)).toBe("one in eight");
     expect(oddsPhrase(0)).toBe("never");
     expect(oddsPhrase(11)).toBe("one in 11");
-  });
-
-  test("the decision sheet (§5.5)", () => {
-    const d = decisionCopy(0, false, 1);
-    expect(d.kicker).toBe("layer one is clear");
-    expect(d.title).toBe("A truffle, loose in the pouch.");
-    expect(d.countLine).toBe("dig deeper banks it — the next layer stakes only its own");
-    expect(d.tie.sub).toBe("+1 Golden Truffle · +20 Pass XP · done");
-    expect(d.tie.value).toBe("safe");
-    expect(d.deeper.sub).toBe("the mud · fatter truffles, acorns, tea · he stirs at one rub in twenty");
-    expect(d.deeper.value).toBe("1 in twenty");
-    expect(d.primary).toBe("Dig deeper");
-    expect(d.secondary).toBe("tie it off instead ›");
-    const m = decisionCopy(1, true, 2);
-    expect(m.kicker).toBe("layer two is clear");
-    expect(m.deeper.sub).toBe("the root · relics, furnishings, a bow · a rub wakes him one rub in fifteen");
-    expect(m.tie.sub).toBe("+2 Golden Truffles · +20 Pass XP · done");
   });
 
   test("whispers say that something is near, never what (§5.4)", () => {

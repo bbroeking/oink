@@ -643,49 +643,6 @@ function layerOf(board: SnoutDeepBoard, id: string): Layer | null {
   return null;
 }
 
-// ── The decision sheet's copy (§5.5) ────────────────────────────────────────
-
-export interface DecisionCopy {
-  kicker: string;
-  title: string;
-  countLine: string;
-  tie: { title: string; sub: string; value: string };
-  deeper: { title: string; sub: string; value: string };
-  primary: string;
-  secondary: string;
-}
-
-const LAYER_ORDINAL: Readonly<Record<Layer, string>> = { 0: "layer one", 1: "layer two", 2: "the root" };
-const NEXT_LAYER_PITCH: Readonly<Record<Layer, string>> = {
-  0: "fatter truffles, acorns, tea",
-  1: "relics, furnishings, a bow",
-  2: "",
-};
-
-/** What the layer-clear sheet says when `layer`'s truffle just banked. */
-export function decisionCopy(layer: Layer, coop: boolean, gtSoFar: number): DecisionCopy {
-  const next = Math.min(2, layer + 1) as Layer;
-  const rubOdds = oddsPhrase(wakeThreshold(next, "rub", coop));
-  const nextVerb = next === 2 ? "a rub wakes him" : "he stirs at";
-  return {
-    kicker: `${LAYER_ORDINAL[layer]} is clear`,
-    title: "A truffle, loose in the pouch.",
-    countLine: "dig deeper banks it — the next layer stakes only its own",
-    tie: {
-      title: "Tie it off",
-      sub: `+${gtSoFar} Golden Truffle${gtSoFar === 1 ? "" : "s"} · +${DIG_PASS_XP} Pass XP · done`,
-      value: "safe",
-    },
-    deeper: {
-      title: "Dig deeper",
-      sub: `${LAYER_NAMES[next]} · ${NEXT_LAYER_PITCH[layer]} · ${nextVerb} ${rubOdds.replace("one in", "one rub in")}`,
-      value: rubOdds.replace("one in ", "1 in "),
-    },
-    primary: "Dig deeper",
-    secondary: "tie it off instead ›",
-  };
-}
-
 // ── Whispers (§5.4) — teach rules, say THAT something is near, never what ───
 
 export function whisperFor(state: SnoutDeepState): string {

@@ -12,7 +12,7 @@ import TestRenderer, { act } from "react-test-renderer";
 import { Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SnoutDeepPatch } from "../components/mudwar/SnoutDeepPatch";
-import { DigReceiptSheet, DecisionSheet } from "../components/mudwar/SnoutDeepSheets";
+import { DigReceiptSheet } from "../components/mudwar/SnoutDeepSheets";
 import { Hungerer, hungererStateFor } from "../components/mudwar/Hungerer";
 import { MotionPolicyProvider } from "../hooks/useMotionPolicy";
 import { generateLayeredBoard } from "../utils/rooting";
@@ -197,25 +197,6 @@ describe("the sheets", () => {
     const all = texts(renderer).join("\n");
     expect(all).toContain("truffles are for herds — find yours ›");
     expect(all).not.toContain("GT");
-    act(() => renderer.unmount());
-  });
-
-  test("the decision sheet offers both doors", () => {
-    const deeper = jest.fn();
-    const tie = jest.fn();
-    let renderer!: TestRenderer.ReactTestRenderer;
-    act(() => {
-      renderer = TestRenderer.create(
-        wrap(<DecisionSheet visible layer={0} coop={false} gtSoFar={1} onDeeper={deeper} onTie={tie} onClose={() => {}} />),
-      );
-    });
-    const all = texts(renderer).join("\n");
-    expect(all).toContain("A truffle, loose in the pouch.");
-    expect(all).toContain("layer one is clear");
-    pressLabelled(renderer, "Dig deeper");
-    pressLabelled(renderer, "Tie it off instead");
-    expect(deeper).toHaveBeenCalledTimes(1);
-    expect(tie).toHaveBeenCalledTimes(1);
     act(() => renderer.unmount());
   });
 });

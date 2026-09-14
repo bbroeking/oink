@@ -43,7 +43,7 @@ import {
 import { Button, Hand, IconButton, Label, Shovel, Snout, Sticker, T, Tag, Trotter } from "../ui";
 import { FindMark } from "./FindMark";
 import { Hungerer, HUNGERER_STATE_LABEL, hungererStateFor } from "./Hungerer";
-import { DecisionSheet, SnoutDeepHelpSheet } from "./SnoutDeepSheets";
+import { SnoutDeepHelpSheet } from "./SnoutDeepSheets";
 
 // --- ART -------------------------------------------------------------------
 // The patch's drawing geometry. Tiles are 55 × 52 on the canvas; here the
@@ -121,8 +121,6 @@ export function SnoutDeepPatch({
 }: SnoutDeepPatchProps) {
   const [verb, setVerb] = useState<Verb>("rub");
   const [reveal, setReveal] = useState<Find | null>(null);
-  const [decisionFor, setDecisionFor] = useState<Layer | null>(null);
-  const [decisionSeen, setDecisionSeen] = useState<Layer[]>([]);
   const { width } = useWindowDimensions();
 
   const woke = state.ended?.reason === "wake";
@@ -147,20 +145,11 @@ export function SnoutDeepPatch({
     return () => clearTimeout(t);
   }, [state.things, state.board]);
 
-  // The truffle comes loose → the decision, once per layer (§5.5). Both
-  // controls stay in the footer at all times.
-  useEffect(() => {
-    if (!state.loose || state.ended || decisionSeen.includes(state.layer)) return;
-    setDecisionSeen((seen) => [...seen, state.layer]);
-    setDecisionFor(state.layer);
-  }, [state.loose, state.layer, state.ended, decisionSeen]);
-
   // The end → the receipt, once.
   const doneFor = useRef<SnoutDeepState["ended"]>(null);
   useEffect(() => {
     if (!state.ended || doneFor.current === state.ended) return;
     doneFor.current = state.ended;
-    setDecisionFor(null);
     onDone(buildReceipt(state, boomTickles));
   }, [state, onDone, boomTickles]);
 
@@ -370,23 +359,6 @@ export function SnoutDeepPatch({
       </ScrollView>
 
       <SnoutDeepHelpSheet visible={helpOpen} onClose={closeHelp} />
-      {decisionFor != null ? (
-        <DecisionSheet
-          visible
-          layer={decisionFor}
-          coop={state.coop}
-          gtSoFar={state.uncrewed ? 0 : gt + 1}
-          onDeeper={() => {
-            setDecisionFor(null);
-            dispatch({ type: "descend" });
-          }}
-          onTie={() => {
-            setDecisionFor(null);
-            dispatch({ type: "tie" });
-          }}
-          onClose={() => setDecisionFor(null)}
-        />
-      ) : null}
     </View>
   );
 }
