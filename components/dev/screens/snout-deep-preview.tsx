@@ -7,6 +7,7 @@
 // server corrects it).
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
 import { SnoutDeepPatch } from "@/components/mudwar/SnoutDeepPatch";
 import { DigReceiptSheet } from "@/components/mudwar/SnoutDeepSheets";
@@ -119,8 +120,13 @@ function LocalDig({
     (uncrewed ? " · uncrewed" : "") +
     (reduceMotion ? " · reduced motion" : "");
 
+  // The in-app dig is a full-screen mode padded by the safe areas
+  // (AdaptiveModalScaffold `fullScreen`); the preview sits the same way so a
+  // layout check here is the real layout.
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.page}>
+    <View style={[styles.page, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.devStrip} accessibilityRole="text">
         <Label tone="onDarkAccent">{strip}</Label>
       </View>
