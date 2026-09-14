@@ -3,9 +3,10 @@
 //
 // The friend row's actions live in ONE anchored panel that slides over the name
 // column when the row's "…" trigger is tapped (the 2026-09-14 actions-menu
-// spec). A narrow phone does not get a different grid, it gets a tighter *type*
-// tier. Two tiers, named here so the row's styles and
-// `__tests__/friendRowLayout.test.ts` read the same numbers.
+// spec). A narrow phone does not get a different grid, it gets a tighter *art*
+// tier: the glyph yields a step, the label never does. Two tiers, named here so
+// the row's styles and `__tests__/friendRowLayout.test.ts` read the same
+// numbers.
 //
 // `utils/adaptiveLayout.ts` does not exist — `__tests__/adaptiveLayout.test.ts`
 // is a source-scan guardrail (every geometry reads `useWindowDimensions`), not
@@ -23,7 +24,7 @@ const sum = (parts: readonly number[]) => parts.reduce((a, b) => a + b, 0);
 
 /**
  * Below this the row is "narrow" — iPhone SE / mini / 13 mini territory, where
- * a 12pt `label` under a 20pt glyph in a fifth-width cell starts truncating.
+ * a 20pt glyph over a label in a fifth-width cell starts to crowd.
  */
 export const PHONE_NARROW_MAX = 390;
 
@@ -38,25 +39,25 @@ export function rowDensity(width: number): RowDensity {
 }
 
 export interface ActionCellTier {
-	/** The `TYPE` role the cell's label speaks in. */
+	/**
+	 * The `TYPE` role the cell's label speaks in. `label` on BOTH tiers since
+	 * 2026-09-14: the narrow tier used to drop to `kickerPillSm`, whose 1.6pt
+	 * tracking costs more width on a five-letter word than the smaller glyphs
+	 * save. Measured against the 39.8pt content box a 375pt phone gives a cell
+	 * (Nunito ExtraBold, the shipped face): CURSE 41.7 · AGAIN 41.0 · UNPIN
+	 * 40.1 · PROFILE 53.2 all overflowed, and the cell's `adjustsFontSizeToFit`
+	 * rescued the first three while "Profile" truncated anyway. At `label` the
+	 * same five words measure 27.4 · 32.2 · 34.2 · 35.0 · 35.2 · 40.5 — every
+	 * one inside the box, at full size, with no shrink-to-fit anywhere.
+	 */
 	labelRole: "kickerPillSm" | "label";
 	/** Art size for the cell's glyph — a drawing box, not a spacing step. */
 	glyph: number;
-	/**
-	 * Whether the cell draws its one-line state under the label. OFF on both
-	 * tiers since 2026-09-14: the state line is what pushed the row's floor to
-	 * 98pt, and the row is meant to be build 179's ~78pt ledger row. The copy
-	 * still reaches a screen reader through the cell's hint, the curse's arm
-	 * still shows (heavy border + the label flips to "Again"), and a spent
-	 * visit still wears the disabled chrome. The field stays so a taller row
-	 * can turn the line back on with one token.
-	 */
-	sub: boolean;
 }
 
 export const ACTION_CELL_TIER: Record<RowDensity, ActionCellTier> = {
-	narrow: { labelRole: "kickerPillSm", glyph: 18, sub: false },
-	regular: { labelRole: "label", glyph: 20, sub: false },
+	narrow: { labelRole: "label", glyph: 18 },
+	regular: { labelRole: "label", glyph: 20 },
 };
 
 /** The friend-row action panel's cell type tier for a given window width. */
@@ -93,6 +94,9 @@ export const ACTION_PANEL_CHROME = {
 	panelPad: [SPACE.xs, SPACE.xs],
 	/** The four gaps between five cells. */
 	cellGaps: [SPACE.xs, SPACE.xs, SPACE.xs, SPACE.xs],
+	/** One cell's own outline and inner padding, both sides. */
+	cellBorder: [BORDER.ink, BORDER.ink],
+	cellPad: [SPACE.xxs, SPACE.xxs],
 } as const;
 
 /**
@@ -121,6 +125,13 @@ export interface ActionPanelGeometry {
 	panelWidth: number;
 	/** One cell's outer width. Must never fall under `TAP_MIN`. */
 	cellWidth: number;
+	/**
+	 * What is left of a cell for its label once the cell's own outline and pad
+	 * are spent — the box a one-word label has to fit inside at full size. The
+	 * narrowest supported phone (375pt) leaves 39.8pt, which is the number the
+	 * tier's `labelRole` is chosen against.
+	 */
+	cellContentWidth: number;
 }
 
 /**
@@ -144,7 +155,10 @@ export function actionPanelGeometry(windowWidth: number): ActionPanelGeometry {
 		]);
 	const cellWidth =
 		(inner - sum(ACTION_PANEL_CHROME.cellGaps)) / ACTION_PANEL_CELLS;
-	return { panelWidth, cellWidth };
+	const cellContentWidth =
+		cellWidth -
+		sum([...ACTION_PANEL_CHROME.cellBorder, ...ACTION_PANEL_CHROME.cellPad]);
+	return { panelWidth, cellWidth, cellContentWidth };
 }
 
 /**

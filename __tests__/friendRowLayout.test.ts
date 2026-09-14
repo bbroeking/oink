@@ -49,22 +49,27 @@ describe("friend-row width tiers", () => {
 		expect(PHONE_WIDE_MIN).toBeGreaterThan(PHONE_NARROW_MAX);
 	});
 
-	test("narrow shrinks the glyph and the label role, never the label", () => {
+	test("narrow shrinks the glyph, never the label's role", () => {
 		const narrow = actionCellTier(375);
 		expect(narrow).toEqual(ACTION_CELL_TIER.narrow);
-		expect(narrow.labelRole).toBe("kickerPillSm");
 		expect(narrow.glyph).toBe(18);
-		// The state copy still reaches a screen reader through the cell's hint.
-		expect(narrow.sub).toBe(false);
+		// The tracked-caps role is retired from the cells: on a five-letter word
+		// its 1.6pt tracking costs more width than the smaller glyph saves, and
+		// the cells no longer shrink type to fit. (2026-09-14)
+		expect(narrow.labelRole).toBe("label");
 	});
 
-	test("regular carries the label role and the 20pt glyph", () => {
+	test("regular carries the same label role and the 20pt glyph", () => {
 		const regular = actionCellTier(393);
 		expect(regular).toEqual(ACTION_CELL_TIER.regular);
 		expect(regular.labelRole).toBe("label");
 		expect(regular.glyph).toBe(20);
-		// No tier draws the state line: it is what made the row 98pt tall.
-		expect(regular.sub).toBe(false);
+	});
+
+	test("both tiers speak in one role, so a cell never restyles mid-list", () => {
+		expect(ACTION_CELL_TIER.narrow.labelRole).toBe(
+			ACTION_CELL_TIER.regular.labelRole
+		);
 	});
 
 	test("the tier only ever gets bigger as the window does", () => {
@@ -139,6 +144,32 @@ describe("the actions panel cannot overflow", () => {
 		expect(ACTION_PANEL_TRAVEL).toBeLessThan(ACTION_PANEL_INSETS.right);
 	});
 
+	test("a cell's label box is what the tier's role is chosen against", () => {
+		// 375pt is the narrowest supported iPhone. 39.8pt is the box every cell
+		// label has to fit inside at full size — the number the `label` role was
+		// measured against when the cells stopped shrinking type to fit.
+		expect(actionPanelGeometry(375).cellContentWidth).toBeCloseTo(39.8, 5);
+		// It is the cell less its own outline and pad, never a second number.
+		const { cellWidth, cellContentWidth } = actionPanelGeometry(393);
+		expect(cellWidth - cellContentWidth).toBe(
+			sum([
+				...ACTION_PANEL_CHROME.cellBorder,
+				...ACTION_PANEL_CHROME.cellPad,
+			])
+		);
+	});
+
+	test("nothing in the row shrinks its type to fit", () => {
+		// The repo-wide contract is zero (`scripts/quality/quality.config.mjs`);
+		// this is the same rule at the file that used to hold all four uses.
+		const source = fs.readFileSync(
+			path.join(process.cwd(), "components/Friends.tsx"),
+			"utf8"
+		);
+		expect(source).not.toContain("adjustsFontSizeToFit");
+		expect(source).not.toContain("minimumFontScale");
+	});
+
 	test("the row's floor fits the tallest cell the panel can hold", () => {
 		const parts = Object.values(ACTION_ROW_HEIGHT).flatMap((p) => [...p]);
 		expect(ROW_MIN_H).toBeGreaterThanOrEqual(sum(parts));
@@ -150,6 +181,34 @@ describe("the actions panel cannot overflow", () => {
 		expect(ACTION_ROW_HEIGHT.cellContent).toContain(TYPE.label.lineHeight);
 		expect(ACTION_ROW_HEIGHT.cellContent).not.toContain(TYPE.kicker.lineHeight);
 		expect(ROW_MIN_H).toBeLessThanOrEqual(80);
+	});
+
+	test("the Friends panel spends one step between the crown and the rows", () => {
+		// Between the hub's title rule and the first friend there used to be four
+		// stacked breaths: the nav's margin, the crown's, the panel's own top
+		// margin, the segment's, and then the ritual strip's. What is left is one
+		// SPACE.sm three times over — segment → count line → first row — and the
+		// crown's own breath above them. (2026-09-14)
+		const source = fs.readFileSync(
+			path.join(process.cwd(), "components/Friends.tsx"),
+			"utf8"
+		);
+		const block = (name: string) => {
+			const at = source.indexOf(`\t${name}: {`);
+			expect(at).toBeGreaterThan(-1);
+			return source.slice(at, source.indexOf("},", at));
+		};
+		// The panel starts flush: the PageHeader already breathes.
+		expect(source).toContain("wrap: { flex: 1, paddingHorizontal: PAGE_PAD }");
+		// One step under the segment…
+		expect(source).toContain("tabsRow: { marginBottom: SPACE.sm }");
+		// …the same step under the count line, spent by the list's own gap…
+		expect(block("listContent")).toContain("gap: SPACE.sm");
+		// …and the count line itself spends no vertical margin at all.
+		expect(block("countLine")).not.toContain("margin");
+		// The segment's own count is the length of the very array the list
+		// sorts, so `Friends · N` can never disagree with the rows below it.
+		expect(source).toContain("options={TAB_OPTIONS(friends.length)}");
 	});
 
 	test("the row and the panel read their geometry from this module", () => {

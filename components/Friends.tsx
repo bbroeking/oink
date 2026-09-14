@@ -5,6 +5,7 @@ import {
 	BackHandler,
 	InteractionManager,
 	Platform,
+	Pressable,
 	StyleSheet,
 	View,
 	Image,
@@ -29,7 +30,6 @@ import {
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { fetchFriendsCrews } from "@/utils/crews";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
-import { type UseCrew } from "@/hooks/useCrew";
 import {
 	AlignmentBadge,
 	Avatar,
@@ -40,7 +40,6 @@ import {
 	Glyph,
 	Icon,
 	IconButton,
-	Kicker,
 	KickerPill,
 	Label,
 	ListRow,
@@ -49,7 +48,6 @@ import {
 	SegmentedControl,
 	Sticker,
 	T,
-	Tag,
 	TextField,
 	type AvatarFill,
 	type SegmentOption,
@@ -57,6 +55,7 @@ import {
 import { UserSheet } from "./UserSheet";
 import { GameIcon } from "./ui/GameIcon";
 import { BarnVisitModal } from "./BarnVisitModal";
+import { RitualExplainSheet } from "./RitualExplainSheet";
 import {
 	AVATAR_SIZE,
 	BORDER,
@@ -65,10 +64,12 @@ import {
 	MOTION,
 	MOTION_SPRING,
 	PAGE_PAD,
+	PRESSED_FLAT,
 	RADII,
 	SPACE,
 	TAB_SAFE,
 	TAP_MIN,
+	TYPE,
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
@@ -84,6 +85,7 @@ import { showToast } from "@/components/ui/Toast";
 import {
 	useRitualCaster,
 	type CastOutcome,
+	type RitualUsage,
 	type UseRitualCaster,
 } from "@/hooks/useRitualCaster";
 import {
@@ -92,6 +94,7 @@ import {
 	type RitualDoorView,
 } from "@/hooks/useRitualDoor";
 import { untilDailyReset, type RitualMode } from "@/utils/rituals";
+import { compareFriends } from "@/utils/friendOrder";
 import {
 	fetchFriendVisitStreaks,
 	type FriendVisitStreak,
@@ -135,21 +138,37 @@ const PIG_SPRITE_PRESTIGE = 48;
 const INITIAL_TILE = AVATAR_SIZE[1];
 
 // The identity stays compact; the panel's cells are fixed-height, so their type
-// shrinks a step rather than wrapping out of the row. (2026-09-12 chrome cap)
+// takes the row's ceiling rather than wrapping out of the row. (2026-09-12
+// chrome cap; the cells' shrink-to-fit retired 2026-09-14 — see `ActionCell`)
 const ROW_TYPE_CAP = 1.3;
-// A cell's label may shrink this far before it would truncate — the cell is one
-// fifth of the name column and the words are one verb each.
-const CELL_LABEL_MIN_SCALE = 0.8;
 
-export default function Friends({
-	userId,
-	crewHook,
-	onViewSounder
-}: {
-	userId: string;
-	crewHook?: UseCrew;
-	onViewSounder?: () => void;
-}) {
+// The count line is one quiet kicker, so its 44pt target comes from `hitSlop`
+// rather than from inflating the line — the IconButton visual/frame split, in
+// text. Half above and half below the line it sits on.
+const COUNT_HIT = (TAP_MIN - TYPE.kicker.lineHeight) / 2;
+
+// Zero to ten in words; past ten the numeral is the shorter read. The counts
+// are single digits in practice (today's cap is 3) — the numeral tail is there
+// so a raised cap can never render "Thirteen".
+const COUNT_WORDS = [
+	"No",
+	"One",
+	"Two",
+	"Three",
+	"Four",
+	"Five",
+	"Six",
+	"Seven",
+	"Eight",
+	"Nine",
+	"Ten",
+] as const;
+
+function countWord(n: number): string {
+	return COUNT_WORDS[n] ?? String(n);
+}
+
+export default function Friends({ userId }: { userId: string }) {
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
 	// A null `friend_ids` is "we don't know", not "you have none" — spec §3.4.
@@ -362,46 +381,6 @@ export default function Friends({
 					onToggleFavorite={toggleFavorite}
 					onPick={setSelectedUserId}
 					onVisit={(f) => setVisiting({ id: f.id, name: f.username ?? "friend" })}
-					header={
-						<>
-							{crewHook?.crew.crew ? (
-								<ListRow
-									fill="sun"
-									tilt={false}
-									onPress={onViewSounder}
-									accessibilityLabel={`Your Sounder, ${crewHook.crew.crew.name}`}
-									accessibilityHint="Opens your Sounder"
-									leading={
-										<Icon
-											name="crown"
-											size={SPACE.xl}
-											color={UI_COLORS.textPrimary}
-											strokeWidth={BORDER.ink}
-										/>
-									}
-									title={
-										/* One line, one 44pt target: the herd's name with its
-										   kicker beside it — a strip, not a two-storey button.
-										   (2026-09-14) */
-										<View style={styles.sounderLine}>
-											<Kicker>your Sounder</Kicker>
-											<T role="numeral" numberOfLines={1} style={styles.sounderName}>
-												{crewHook.crew.crew.name}
-											</T>
-										</View>
-									}
-									style={styles.sounderBanner}
-									trailing={
-										<Icon
-											name="chevronRight"
-											size={SPACE.lg}
-											color={UI_COLORS.textSecondary}
-										/>
-									}
-								/>
-							) : null}
-						</>
-					}
 				/>
 			) : (
 				<ScrollView
@@ -584,14 +563,14 @@ function ActionCell({
 	testID?: string;
 	cellRef?: (host: View | null) => void;
 }) {
-	// A narrow cell drops the state line, never the state: the copy moves into
-	// the hint so a screen reader hears it either way.
-	const hint =
-		tier.sub || !sub
-			? accessibilityHint
-			: accessibilityHint
-				? `${sub}. ${accessibilityHint}`
-				: sub;
+	// No tier draws the state line — it is what pushed the row's floor to 98pt.
+	// The copy is not dropped, it moves into the hint, so a screen reader hears
+	// it either way. (2026-09-14)
+	const hint = !sub
+		? accessibilityHint
+		: accessibilityHint
+			? `${sub}. ${accessibilityHint}`
+			: sub;
 	return (
 		<Sticker
 			ref={cellRef}
@@ -612,32 +591,20 @@ function ActionCell({
 			style={styles.actionCell}
 		>
 			{art}
-			{/* The cells are fixed-height now, so a long word shrinks a step
-			    rather than wrapping past the panel's floor. */}
+			{/* One word, one line, at the tier's own size. The cells used to
+			    shrink their type to fit; measured against the 39.8pt content box
+			    a 375pt phone gives a cell, the shrink rescued three labels and
+			    still truncated "Profile" — so the tier drops the tracked caps
+			    instead, and every label fits at full size. (2026-09-14) */}
 			<T
 				role={tier.labelRole}
 				tone={disabled ? "secondary" : "primary"}
 				align="center"
 				numberOfLines={1}
-				adjustsFontSizeToFit
-				minimumFontScale={CELL_LABEL_MIN_SCALE}
 				maxFontSizeMultiplier={ROW_TYPE_CAP}
 			>
 				{label}
 			</T>
-			{tier.sub && sub ? (
-				<T
-					role="kicker"
-					tone="secondary"
-					align="center"
-					numberOfLines={1}
-					adjustsFontSizeToFit
-					minimumFontScale={CELL_LABEL_MIN_SCALE}
-					maxFontSizeMultiplier={ROW_TYPE_CAP}
-				>
-					{sub}
-				</T>
-			) : null}
 		</Sticker>
 	);
 }
@@ -867,6 +834,56 @@ function RowActionsPanel({
 }
 
 // The friend's identity, and behind the kebab every action it can take.
+// The row's answer to a cast: "blessed · Cloud Nine" on the friend's meta line,
+// arriving on a short fade so the eye finds the row that changed. It reads from
+// the caster's memory, not from the outcome event, so a friend who already had
+// today's ritual before this session says the same thing as one you just cast
+// on — both mean the same. Under Reduce Motion it is simply there.
+function RitualCastNotice({
+	mode,
+	name,
+	caster,
+}: {
+	mode: RitualMode;
+	name: string;
+	caster: UseRitualCaster;
+}) {
+	const door = RITUAL_DOOR[mode];
+	const ritual = caster.today(mode);
+	const { reduceMotion } = useMotionPolicy();
+	const [opacity] = useState(() => new Animated.Value(reduceMotion ? 1 : 0));
+	useEffect(() => {
+		if (reduceMotion) return;
+		Animated.timing(opacity, {
+			toValue: 1,
+			duration: MOTION.fade,
+			useNativeDriver: true,
+		}).start();
+	}, [opacity, reduceMotion]);
+	return (
+		<>
+			<View style={styles.rowMetaDot} />
+			<Animated.View
+				style={[styles.rowMetaLine, { opacity }]}
+				accessible
+				accessibilityLabel={`${door.done} ${name} with ${ritual.name} today`}
+				testID={`ritual-notice-${mode}`}
+			>
+				<Glyph name={door.glyph} size={SPACE.md} />
+				<T
+					role="kicker"
+					tone="accent"
+					numberOfLines={1}
+					maxFontSizeMultiplier={ROW_TYPE_CAP}
+					style={styles.rowSubItem}
+				>
+					{door.done.toLowerCase()} · {ritual.name}
+				</T>
+			</Animated.View>
+		</>
+	);
+}
+
 const FriendRow = React.memo(function FriendRow({
 	friend,
 	index,
@@ -1199,6 +1216,15 @@ const FriendRow = React.memo(function FriendRow({
 							</T>
 						</>
 					)}
+					{/* The cast's answer, on the row it landed on: once this friend
+					    has today's ritual from you the line says so, and keeps
+					    saying so until the day resets. (2026-09-14) */}
+					{bless.state === "settled" && (
+						<RitualCastNotice mode="bless" name={name} caster={caster} />
+					)}
+					{curse.state === "settled" && (
+						<RitualCastNotice mode="curse" name={name} caster={caster} />
+					)}
 				</View>
 			}
 			trailing={
@@ -1228,6 +1254,88 @@ const FriendRow = React.memo(function FriendRow({
 	);
 });
 
+// ── Today's two allowances, in one line ───────────────────────────
+// "Three glimmer left · three truffle left" — the whole of what the list needs
+// to say about today's rituals. The names of the day's blessing and curse, their
+// art and what they do to a friend live where a player has asked for them: the
+// explain sheet each half opens, the row's action panel, and the row's own cast
+// notice. Above the list they were two chips and two captions of copy nobody
+// asked for. (2026-09-14)
+//
+// "glimmer" is the day's blessing and "truffle" the day's curse — the founder's
+// words, and the only place in the app that abbreviates a ritual to its feel.
+function CountHalf({
+	mode,
+	text,
+	onPress,
+}: {
+	mode: RitualMode;
+	text: string;
+	onPress: () => void;
+}) {
+	return (
+		<Pressable
+			onPress={onPress}
+			// The line stays a line; the frame reaches TAP_MIN around it.
+			hitSlop={{ top: COUNT_HIT, bottom: COUNT_HIT }}
+			accessibilityRole="button"
+			accessibilityLabel={text}
+			accessibilityHint={`Opens what today's ${RITUAL_DOOR[mode].word} does`}
+			testID={`ritual-strip-${mode}`}
+			style={({ pressed }) => (pressed ? PRESSED_FLAT : undefined)}
+		>
+			<T role="kicker" tone="secondary">
+				{text}
+			</T>
+		</Pressable>
+	);
+}
+
+// The one-time "out of visits" hint. The global gate, said once above the list
+// rather than on every row.
+function VisitsSpentHint() {
+	return (
+		<Sticker
+			color={WHIMSY.slopBand}
+			rotate={0}
+			shadow="sm"
+			style={styles.visitsSpentHint}
+		>
+			<GameIcon name="visit" size={SPACE.card} muted />
+			<T role="kicker">all tickled out — your snout needs a rest</T>
+		</Sticker>
+	);
+}
+
+function RitualCountLine({
+	bless,
+	curse,
+	onExplain,
+}: {
+	bless: RitualUsage;
+	curse: RitualUsage;
+	onExplain: (mode: RitualMode) => void;
+}) {
+	return (
+		<View style={styles.countLine}>
+			<CountHalf
+				mode="bless"
+				text={`${countWord(bless.remaining)} glimmer left`}
+				onPress={() => onExplain("bless")}
+			/>
+			{/* `·` is typography, not an icon (the 2026-07-13 dingbat ruling). */}
+			<T role="kicker" tone="secondary">
+				·
+			</T>
+			<CountHalf
+				mode="curse"
+				text={`${countWord(curse.remaining).toLowerCase()} truffle left`}
+				onPress={() => onExplain("curse")}
+			/>
+		</View>
+	);
+}
+
 // Exported for the friend-row ritual-door tests, which drive the list directly
 // rather than through the whole Friends hub.
 export function FriendsList({
@@ -1243,8 +1351,7 @@ export function FriendsList({
 	favorites,
 	onToggleFavorite,
 	onPick,
-	onVisit,
-	header
+	onVisit
 }: {
 	friends: Profile[];
 	crewNames: Map<string, string>;
@@ -1271,7 +1378,6 @@ export function FriendsList({
 	onToggleFavorite: (friendId: string) => void;
 	onPick: (id: string) => void;
 	onVisit: (friend: Profile) => void;
-	header?: React.ReactNode;
 }) {
 	// Alignment isn't a thing in Season 1 — the badge retires with S0.
 	const s1 = useSeason1Active();
@@ -1279,13 +1385,16 @@ export function FriendsList({
 	// every door and the strip agree on, one memory of who's already had today's
 	// ritual from you.
 	const caster = useRitualCaster();
-	// Every cast answers out loud in the one transient surface the app has.
+	// A cast that LANDS is answered on the row itself — the friend's line grows
+	// a "blessed · Cloud Nine" notice (see `RitualCastNotice`), so the toast
+	// would only say the same thing somewhere else. Only a refusal still needs
+	// the transient surface, because the row has nothing new to show for it.
+	// (2026-09-14)
 	const onRitualOutcome = useCallback(
 		(mode: RitualMode, name: string, outcome: CastOutcome) => {
 			const door = RITUAL_DOOR[mode];
-			if (outcome.kind === "sent") {
-				showToast({ tone: "success", title: outcome.text });
-			} else if (outcome.kind === "done") {
+			if (outcome.kind === "sent") return;
+			if (outcome.kind === "done") {
 				showToast({
 					tone: "fail",
 					title: `${name} already has today's ${door.word}`,
@@ -1303,14 +1412,11 @@ export function FriendsList({
 		},
 		[]
 	);
+	// Pins first, then names the way a person reads them, then two tie-breakers
+	// so no two rows can ever swap places between renders. The rules live in
+	// `utils/friendOrder` where they can be tested without a list.
 	const sorted = useMemo(
-		() =>
-			[...friends].sort((a, b) => {
-				const fa = favorites.has(a.id) ? 0 : 1;
-				const fb = favorites.has(b.id) ? 0 : 1;
-				if (fa !== fb) return fa - fb;
-				return (a.username ?? "").localeCompare(b.username ?? "");
-			}),
+		() => [...friends].sort((a, b) => compareFriends(a, b, favorites)),
 		[favorites, friends]
 	);
 
@@ -1324,6 +1430,11 @@ export function FriendsList({
 		[]
 	);
 	const closeMenu = useCallback(() => setOpenMenuFor(null), []);
+
+	// Which of today's two rituals has its sheet open — the strip's capsules
+	// are its doors. One value, like the menu: the sheet is one panel.
+	const [explain, setExplain] = useState<RitualMode | null>(null);
+	const closeExplain = useCallback(() => setExplain(null), []);
 
 	// A reload or a re-sort under the thumb must not carry an open panel.
 	useEffect(() => setOpenMenuFor(null), [friends]);
@@ -1406,7 +1517,6 @@ export function FriendsList({
 	if (friends.length === 0) {
 		return (
 			<View style={styles.scroll}>
-				{header}
 				{!loaded ? (
 					<LoadingBeat label="rounding up your pals" />
 				) : loadFailed ? (
@@ -1436,9 +1546,27 @@ export function FriendsList({
 			</View>
 		);
 	}
-	// Favorites first (alphabetical within), then everyone else alphabetically —
-	// the existing predictable order, just with pinned friends floated up.
 	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
+	// Until `ritual_status` answers, today's allowance is UNKNOWN — so the line
+	// is not there at all. A "— left" placeholder that fills in under the thumb
+	// is the same lie as rendering a failed fetch as empty. (spec §3.4)
+	const blessLeft = caster.usage("bless");
+	const curseLeft = caster.usage("curse");
+	// Nothing to say → no header at all, so the list's own gap doesn't open a
+	// step of paper above the first row for an empty box.
+	const listHeader =
+		blessLeft && curseLeft ? (
+			<>
+				<RitualCountLine
+					bless={blessLeft}
+					curse={curseLeft}
+					onExplain={setExplain}
+				/>
+				{visitsSpent && <VisitsSpentHint />}
+			</>
+		) : visitsSpent ? (
+			<VisitsSpentHint />
+		) : null;
 	// The list's own root carries the outside-touch hit test: a capture-phase
 	// read of every touch in the list, never a scrim over it.
 	return (
@@ -1458,50 +1586,7 @@ export function FriendsList({
 				// The one thing that changes on the list when a menu opens; `memo`
 				// prunes every row whose own `menuOpen` did not flip. (req 6)
 				extraData={openMenuFor}
-				ListHeaderComponent={
-					<>
-						{header}
-						{/* Today's two rituals, named once. The menu's ritual cells
-						    carry the glyphs — this strip is where they learn their
-						    names, and where the day's allowance counts down. */}
-						<View style={styles.ritualStrip}>
-							{(["bless", "curse"] as const).map((mode) => {
-								const ritual = caster.today(mode);
-								const left = caster.usage(mode)?.remaining;
-								const door = RITUAL_DOOR[mode];
-								return (
-									<Tag
-										key={mode}
-										tone={mode === "bless" ? "sun" : "sage"}
-										art={ritual.icon}
-										label={
-											left === undefined
-												? ritual.name
-												: `${ritual.name} · ${left} left`
-										}
-										accessibilityLabel={
-											left === undefined
-												? `Today's ${door.word} is ${ritual.name}`
-												: `Today's ${door.word} is ${ritual.name}; ${left} left`
-										}
-										testID={`ritual-strip-${mode}`}
-									/>
-								);
-							})}
-						</View>
-						{visitsSpent && (
-							<Sticker
-								color={WHIMSY.slopBand}
-								rotate={0}
-								shadow="sm"
-								style={styles.visitsSpentHint}
-							>
-								<GameIcon name="visit" size={SPACE.card} muted />
-								<T role="kicker">all tickled out — your snout needs a rest</T>
-							</Sticker>
-						)}
-					</>
-				}
+				ListHeaderComponent={listHeader}
 				ListFooterComponent={
 					atCap ? (
 						<T role="kicker" tone="accent" align="center" style={styles.footerNote}>
@@ -1532,6 +1617,7 @@ export function FriendsList({
 					/>
 				)}
 			/>
+			<RitualExplainSheet mode={explain} caster={caster} onClose={closeExplain} />
 		</View>
 	);
 }
@@ -1730,7 +1816,10 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	wrap: { flex: 1, marginTop: SPACE.lg, paddingHorizontal: PAGE_PAD },
+	// No top margin: the hub's `PageHeader` already breathes under its rule, and
+	// a second breath here is what put four stacked gaps between the crown and
+	// the first friend. (2026-09-14)
+	wrap: { flex: 1, paddingHorizontal: PAGE_PAD },
 	// The list's own root, and the surface the outside-tap hit test listens on.
 	listWrap: { flex: 1 },
 	scroll: { flex: 1 },
@@ -1739,7 +1828,9 @@ const styles = StyleSheet.create({
 	// rather than a shared card edge.
 	listContent: { paddingBottom: TAB_SAFE, gap: SPACE.sm },
 	rowStack: { gap: SPACE.sm },
-	tabsRow: { marginBottom: SPACE.md },
+	// One step under the segment, and the list's own gap is the same step under
+	// the count line: segment → counts → first row, all SPACE.sm. (2026-09-14)
+	tabsRow: { marginBottom: SPACE.sm },
 	rowNameLine: {
 		flexDirection: "row",
 		alignItems: "baseline",
@@ -1786,31 +1877,16 @@ const styles = StyleSheet.create({
 		borderRadius: RADII.pill,
 		backgroundColor: UI_COLORS.uiMuted
 	},
-	// Today's two rituals, named above the list so the glyph-only doors are
-	// explained once rather than on every row.
-	ritualStrip: {
-		// Two named tags; under a large text setting the second one ran off the
-		// edge, so the strip wraps instead of clipping. (2026-09-12)
+	// Today's two allowances, in one line. No margins of its own: the segment's
+	// bottom step sits above it and the list's own gap below, so the rhythm from
+	// the segment to the first row is one SPACE.sm three times over. It wraps
+	// rather than clips when Dynamic Type runs the two halves past the edge.
+	countLine: {
+		flexDirection: "row",
 		flexWrap: "wrap",
-		flexDirection: "row",
 		alignItems: "center",
-		gap: SPACE.xs,
-		// The same breath above (off the Sounder strip) as below (onto the
-		// first row): the list's own `gap` supplies SPACE.sm under the header,
-		// so the strip adds one step to match the SPACE.md it takes above.
-		// It used to sit on the strip's shadow. (2026-09-14)
-		marginTop: SPACE.md,
-		marginBottom: SPACE.xs
+		gap: SPACE.xs
 	},
-	// The Sounder strip — one line tall, the herd's fill.
-	sounderBanner: { paddingVertical: SPACE.sm },
-	sounderLine: {
-		flexDirection: "row",
-		alignItems: "baseline",
-		gap: SPACE.sm,
-		minWidth: 0
-	},
-	sounderName: { flexShrink: 1 },
 	// The sliding layer the panel rides. Absolute inside the row, so the row's
 	// height is the identity's and the list never reflows. Yoga measures an
 	// inset-positioned child against the parent's PADDING BOX (its border, not
@@ -1849,13 +1925,14 @@ const styles = StyleSheet.create({
 	// The cast ritual's own art, riding the cell once it's been sent — sized by
 	// the cell's tier, so only the fit lives here.
 	actionArt: { resizeMode: "contain" },
-	// One-time "out of visits" hint above the list.
+	// One-time "out of visits" hint above the list. Its gap BELOW is the list's
+	// own; only the step off the count line is its own to spend.
 	visitsSpentHint: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
 		gap: SPACE.xs,
-		marginBottom: SPACE.md,
+		marginTop: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.sm
 	},

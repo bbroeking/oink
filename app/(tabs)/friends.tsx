@@ -212,14 +212,10 @@ export default function FriendsHubScreen() {
 				/>
 
 				<View style={styles.body}>
-					{segment === "friends" &&
-						(userId ? (
-							<Friends
-								userId={userId}
-								crewHook={coopDig ? crewHook : undefined}
-								onViewSounder={() => setSegment("sounder")}
-							/>
-						) : null)}
+					{/* The Friends panel carries no Sounder strip — the herd is the
+					    `Sounder` segment in the nav above, so the panel needs
+					    nothing from the crew hook. (2026-09-14) */}
+					{segment === "friends" && (userId ? <Friends userId={userId} /> : null)}
 					{segment === "inbox" &&
 						(userId ? (
 							<Inbox userId={userId} onActionableCount={setInboxCount} />

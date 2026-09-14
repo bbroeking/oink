@@ -16,6 +16,7 @@ import {
 	BLESSING_META,
 	CURSE_META,
 	LEGACY_RITUAL_META,
+	castBlurb,
 } from "../utils/rituals";
 
 // Monday 2026-09-14 through Sunday 2026-09-20.
@@ -168,6 +169,40 @@ describe("LEGACY_RITUAL_META", () => {
 		for (const kind of Object.keys(LEGACY_RITUAL_META)) {
 			expect(BLESSING_ROTATION).not.toContain(kind);
 			expect(CURSE_ROTATION).not.toContain(kind);
+		}
+	});
+});
+
+describe("castBlurb", () => {
+	// A blurb speaks to the wearer; the Friends list speaks to the caster about
+	// a friend. Only the pig's owner changes hands.
+	test("turns the wearer's pig into the friend's, keeping case", () => {
+		expect(castBlurb("Your pig floats an inch off the mud on a tiny cloud.")).toBe(
+			"Their pig floats an inch off the mud on a tiny cloud."
+		);
+		expect(castBlurb("Soap bubbles drift up around your pig.")).toBe(
+			"Soap bubbles drift up around their pig."
+		);
+		expect(castBlurb("A butterfly rides on your pig's head all day.")).toBe(
+			"A butterfly rides on their pig's head all day."
+		);
+	});
+
+	test("leaves a blurb with no owner alone", () => {
+		expect(castBlurb("Every tickle pops confetti.")).toBe("Every tickle pops confetti.");
+		expect(castBlurb("The Barn dims to dusk and fireflies wander.")).toBe(
+			"The Barn dims to dusk and fireflies wander."
+		);
+	});
+
+	test("no weekday blurb still addresses the wearer once turned", () => {
+		// The rotations only: the system-granted glows (Chorus, Winner's) never
+		// pass through a ritual door, so they keep speaking to the wearer.
+		for (const kind of BLESSING_ROTATION) {
+			expect(castBlurb(BLESSING_META[kind].blurb)).not.toMatch(/\byour\b/i);
+		}
+		for (const kind of CURSE_ROTATION) {
+			expect(castBlurb(CURSE_META[kind].blurb)).not.toMatch(/\byour\b/i);
 		}
 	});
 });

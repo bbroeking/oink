@@ -264,6 +264,17 @@ export function dailyRitual(mode: RitualMode, d: Date = new Date()) {
 // What `dailyRitual` hands back: the day's kind plus its display meta.
 export type TodayRitual = { kind: BlessingKind | CurseKind } & RitualMeta;
 
+// A blurb is written to the pig's OWNER ("Your pig floats…") — the Barn, an
+// effect card and the Inbox all speak to the wearer. The Friends list speaks
+// to the CASTER about a friend, so the same sentence turns to point at them:
+// "Their pig floats…". Only the pig's owner changes hands; "The Barn" and
+// "Every tickle" read the same from either side. (2026-09-14)
+export function castBlurb(blurb: string): string {
+	return blurb
+		.replace(/\bYour pig\b/g, "Their pig")
+		.replace(/\byour pig\b/g, "their pig");
+}
+
 // Rituals reset at UTC midnight (the daily cap keys on the UTC date). "7h 23m"
 // until you can bless/curse again — a snapshot taken when the caller renders.
 // Lives here rather than in RitualPicker because the friend-row doors, the

@@ -13,10 +13,11 @@
 // requires every role to scale with Dynamic Type to 200%, so we never pass
 // `false`, and this component never REACHES for `adjustsFontSizeToFit` /
 // `minimumFontScale` (the Button test guards the same rule) — long strings wrap,
-// they don't shrink. Both still pass through for the one caller shape that has
-// no room to wrap into: a fixed-height cell whose height is derived rather than
-// measured (the friend row's actions panel, 2026-09-14). A caller that CAN grow
-// must wrap instead.
+// they don't shrink. Both still pass THROUGH, but nothing in the app uses them
+// any more: the friend row's actions panel was the one caller, and the honest
+// answer there was a label role whose words fit the cell at full size rather
+// than type that shrinks until it doesn't. The repo-wide budget for either prop
+// is zero (`scripts/quality/quality.config.mjs`). (2026-09-14)
 //
 // Accent tone is restricted by rule: spec §5 decision 2 allows WHIMSY.accent
 // text only on ACCENT_SAFE_FILLS. On lilac / peach / roseDeep / lilacDeep /

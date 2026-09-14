@@ -11,7 +11,11 @@
 //     bottom radius would float a sticker that isn't floating;
 //   · no tilt — a sheet is anchored furniture, not a stuck-on sticker;
 //   · PAGE_PAD sides / SPACE.md top / SPACE.xl + home-indicator bottom (the
-//     panel rides a native Modal above the tab bar — no tab clearance).
+//     panel rides a native Modal above the tab bar — no tab clearance), and
+//     that bottom safety is spent by whatever is LAST: the pinned footer when
+//     there is one, the scroll content when there isn't;
+//   · exactly one scroller, and it bounces — a body that stops dead at its end
+//     reads as clipped even when it isn't.
 //
 // It is an UNMANAGED native Modal (through SlideUpSheet), so it takes the
 // `useUnmanagedModalHold` latch: while open the popup queue admits nothing and
@@ -122,9 +126,15 @@ export function Sheet({
 				enabled={keyboardAware}
 				behavior={Platform.OS === "ios" ? "padding" : undefined}
 				pointerEvents="box-none"
+				style={styles.shrinkable}
 			>
 			{/* Swallows taps on the panel so they don't reach the dismissing scrim. */}
-			<Pressable onPress={() => {}} testID={testID} accessibilityViewIsModal>
+			<Pressable
+				onPress={() => {}}
+				testID={testID}
+				accessibilityViewIsModal
+				style={styles.shrinkable}
+			>
 				<Sticker
 					color="paper"
 					rotate={0}
@@ -138,7 +148,14 @@ export function Sheet({
 							// thing under its footer is the home indicator. (The old
 							// `bottomInset="tab"` default padded TAB_SAFE here: ~108pt
 							// of dead paper under every sheet's footer. 2026-09-13)
-							paddingBottom: SPACE.xl + insets.bottom,
+							//
+							// The safety belongs to whatever is LAST in the panel. With a
+							// pinned footer that is the footer, and the pad stays here;
+							// without one the last thing is the scrolling body, and a
+							// fixed band under it is dead paper that shortens the
+							// scrollable viewport — so it moves onto the scroll content
+							// and travels with the last row. (2026-09-14)
+							paddingBottom: footer ? SPACE.xl + insets.bottom : 0,
 						},
 					]}
 				>
@@ -166,13 +183,23 @@ export function Sheet({
 					{/* The body must be allowed to SHRINK inside the height-capped panel,
 					    or a long sheet (a friend's profile on its Bless tab) grows to its
 					    content, the panel clips it, and nothing scrolls — the Cast button
-					    sat below the fold on a 17 Pro. (2026-09-12) */}
+					    sat below the fold on a 17 Pro. (2026-09-12)
+
+					    `flexShrink: 1` alone was not enough: a flex item's automatic
+					    minimum size is its content, so the scroller measured at its full
+					    body height and pushed the footer — Report · Block on a friend's
+					    profile — past the panel's floor and off the bottom of a short
+					    window. `minHeight: 0` is what releases it, and every link between
+					    the height cap and this scroller carries the same pair, so a cap
+					    anywhere in the chain reaches the thing that scrolls. (2026-09-14) */}
 					<ScrollView
 						style={styles.scroll}
-						bounces={false}
 						showsVerticalScrollIndicator={false}
 						keyboardShouldPersistTaps="handled"
-						contentContainerStyle={styles.body}
+						contentContainerStyle={[
+							styles.body,
+							{ paddingBottom: footer ? SPACE.sm : SPACE.xl + insets.bottom },
+						]}
 					>
 						{children}
 					</ScrollView>
@@ -206,10 +233,12 @@ const styles = StyleSheet.create({
 	subtitle: {
 		marginTop: SPACE.xxs,
 	},
-	scroll: { flexGrow: 0, flexShrink: 1 },
+	// Every wrapper between the window and the scrolling body. A link that
+	// cannot shrink turns the panel's height cap into a clip.
+	shrinkable: { flexShrink: 1, minHeight: 0 },
+	scroll: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
 	body: {
 		paddingTop: SPACE.md,
-		paddingBottom: SPACE.sm,
 	},
 	footer: {
 		paddingTop: SPACE.md,

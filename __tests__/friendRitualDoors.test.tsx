@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const mockRpcAction = jest.fn();
 jest.mock("@/utils/rpc", () => ({
@@ -57,8 +58,8 @@ jest.mock("@/components/ui/Toast", () => ({
 jest.mock("@/utils/supabase", () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
 
 import { FriendsList } from "@/components/Friends";
-import { dailyRitual } from "@/utils/rituals";
-import { MOTION } from "@/constants/theme";
+import { castBlurb, dailyRitual } from "@/utils/rituals";
+import { MOTION, TAP_MIN, TYPE } from "@/constants/theme";
 import type { Profile } from "@/utils/friendships";
 
 const FRIENDS = [
@@ -69,7 +70,12 @@ const FRIENDS = [
 // The full allowance, unless a test says otherwise.
 const STATUS = { ok: true, bless_used: 0, bless_cap: 3, curse_used: 0, curse_cap: 3 };
 
-function serve(castReply: Record<string, unknown>, status = STATUS) {
+function serve(
+	castReply: Record<string, unknown>,
+	// A status read can also FAIL — the allowance is then unknown, which is a
+	// state the list has to render (by rendering no count line at all).
+	status: Record<string, unknown> = STATUS
+) {
 	mockRpcAction.mockImplementation(async (name: string) => {
 		if (name === "ritual_status") return status;
 		if (name === "barn_visit_status" || name === "barn_pair_locks") {
@@ -85,22 +91,63 @@ const HANDLERS = {
 	onVisit: jest.fn(),
 };
 
+// The ritual sheet the strip opens is the `Sheet` panel, which reads safe-area
+// insets.
+const METRICS = {
+	frame: { x: 0, y: 0, width: 320, height: 568 },
+	insets: { top: 20, left: 0, right: 0, bottom: 16 },
+};
+
 function renderList(friends: Profile[] = FRIENDS) {
 	return (
-		<FriendsList
-			friends={friends}
-			crewNames={new Map()}
-			loaded
-			loadFailed={false}
-			onRetry={jest.fn()}
-			visitsSpent={false}
-			pairLocked={new Set()}
-			visitStreaks={new Map()}
-			favorites={new Set()}
-			onToggleFavorite={HANDLERS.onToggleFavorite}
-			onPick={HANDLERS.onPick}
-			onVisit={HANDLERS.onVisit}
-		/>
+		<SafeAreaProvider initialMetrics={METRICS}>
+			<FriendsList
+				friends={friends}
+				crewNames={new Map()}
+				loaded
+				loadFailed={false}
+				onRetry={jest.fn()}
+				visitsSpent={false}
+				pairLocked={new Set()}
+				visitStreaks={new Map()}
+				favorites={new Set()}
+				onToggleFavorite={HANDLERS.onToggleFavorite}
+				onPick={HANDLERS.onPick}
+				onVisit={HANDLERS.onVisit}
+			/>
+		</SafeAreaProvider>
+	);
+}
+
+function textOf(node: TestRenderer.ReactTestInstance): string {
+	const out: string[] = [];
+	const walk = (n: TestRenderer.ReactTestInstance | string) => {
+		if (typeof n === "string") out.push(n);
+		else for (const c of n.children ?? []) walk(c);
+	};
+	walk(node);
+	return out.join("");
+}
+
+/** One half of the count line above the list, as a player reads it. */
+function halfText(r: TestRenderer.ReactTestRenderer, mode: "bless" | "curse") {
+	const half = r.root.findAll(
+		(n) => n.props.testID === `ritual-strip-${mode}` && !!n.props.accessibilityRole
+	)[0];
+	// What it says and what a screen reader hears are the same sentence.
+	expect(half.props.accessibilityLabel).toBe(textOf(half));
+	return textOf(half);
+}
+
+/** The cast notice on one row's meta line, or null when the row has none. */
+function noticeFor(
+	r: TestRenderer.ReactTestRenderer,
+	mode: "bless" | "curse",
+	id: string
+) {
+	const row = r.root.findAll((n) => n.props.testID === `friend-row-${id}`)[0];
+	return (
+		row.findAll((n) => n.props.testID === `ritual-notice-${mode}` && !!n.props.accessible)[0] ?? null
 	);
 }
 
@@ -576,23 +623,172 @@ describe("the menu's rituals", () => {
 		act(() => r.unmount());
 	});
 
-	test("today's rituals are named once, above the list", async () => {
-		const r = await mountList();
-		const strip = r.root.findByProps({ testID: "ritual-strip-bless" });
-		expect(strip.props.label).toBe(`${dailyRitual("bless").name} · 3 left`);
-		const curse = r.root.findByProps({ testID: "ritual-strip-curse" });
-		expect(curse.props.label).toBe(`${dailyRitual("curse").name} · 3 left`);
-		act(() => r.unmount());
-	});
-
-	test("the strip counts down as rituals are cast", async () => {
+	test("the count line counts down as rituals are cast", async () => {
 		const r = await mountList();
 		await openMenu(r, "f1");
 		await tap(cellFor(r, "bless", "f1"));
-		expect(r.root.findByProps({ testID: "ritual-strip-bless" }).props.label).toBe(
-			`${dailyRitual("bless").name} · 2 left`
-		);
+		expect(halfText(r, "bless")).toBe("Two glimmer left");
+		// The curse's own allowance is untouched by a blessing.
+		expect(halfText(r, "curse")).toBe("three truffle left");
 		act(() => r.unmount());
+	});
+
+	test("the list says how many of each are left, in words, in one line", async () => {
+		const r = await mountList();
+		expect(halfText(r, "bless")).toBe("Three glimmer left");
+		expect(halfText(r, "curse")).toBe("three truffle left");
+		// Names, art and what a ritual does are NOT on the list — they live in
+		// the sheet the line opens, the row's panel, and the row's cast notice.
+		const header = r.root.findAll(
+			(n) => n.props.testID === "ritual-strip-bless"
+		)[0].parent!;
+		for (const mode of ["bless", "curse"] as const) {
+			expect(textOf(header)).not.toContain(dailyRitual(mode).name);
+			expect(textOf(header)).not.toContain(castBlurb(dailyRitual(mode).blurb));
+		}
+		act(() => r.unmount());
+	});
+
+	test("a spent allowance reads 'No'/'no', never a zero", async () => {
+		serve(
+			{ ok: true },
+			{ ok: true, bless_used: 3, bless_cap: 3, curse_used: 2, curse_cap: 3 }
+		);
+		const r = await mountList();
+		expect(halfText(r, "bless")).toBe("No glimmer left");
+		expect(halfText(r, "curse")).toBe("one truffle left");
+		act(() => r.unmount());
+	});
+
+	test("while the allowance is unknown the line is absent, never a placeholder", async () => {
+		serve({ ok: true }, { ok: false, reason: "unavailable" });
+		const r = await mountList();
+		for (const mode of ["bless", "curse"] as const) {
+			expect(
+				r.root.findAll((n) => n.props.testID === `ritual-strip-${mode}`)
+			).toHaveLength(0);
+		}
+		// The rows are still there — an unknown allowance is not an empty list.
+		expect(r.root.findAll((n) => n.props.testID === "friend-row-f1").length)
+			.toBeGreaterThan(0);
+		act(() => r.unmount());
+	});
+
+	test("each half of the line is its own 44pt door into the ritual's sheet", async () => {
+		const r = await mountList();
+		for (const mode of ["bless", "curse"] as const) {
+			const half = pressableFor(r, `ritual-strip-${mode}`);
+			expect(half.props.accessibilityRole).toBe("button");
+			// The line stays a line; the frame reaches TAP_MIN through hitSlop.
+			const slop = half.props.hitSlop as { top: number; bottom: number };
+			expect(slop.top + slop.bottom + TYPE.kicker.lineHeight).toBe(TAP_MIN);
+		}
+		act(() => r.unmount());
+	});
+
+	test("tapping a capsule opens that ritual's sheet; Done closes it", async () => {
+		const r = await mountList();
+		const sheetOpen = (mode: string) =>
+			r.root.findAll((n) => n.props.testID === `ritual-explain-${mode}`).length > 0;
+		expect(sheetOpen("bless")).toBe(false);
+		await tap(pressableFor(r, "ritual-strip-curse"));
+		expect(sheetOpen("curse")).toBe(true);
+		expect(sheetOpen("bless")).toBe(false);
+		const sheet = r.root.findAll((n) => n.props.testID === "ritual-explain-curse")[0];
+		const blurb = sheet.findAll(
+			(n) => n.props.testID === "ritual-explain-blurb" && typeof n.type === "string"
+		)[0];
+		expect(textOf(blurb)).toBe(castBlurb(dailyRitual("curse").blurb));
+		const allowance = sheet.findAll(
+			(n) => n.props.testID === "ritual-explain-allowance" && typeof n.type === "string"
+		)[0];
+		expect(textOf(allowance)).toMatch(/^3 of 3 left today · resets in /);
+		expect(textOf(sheet)).toContain(dailyRitual("curse").name);
+		const done = sheet.findAll(
+			(n) => n.props.accessibilityLabel === "Done" && !!n.props.accessibilityRole
+		)[0];
+		await tap(done);
+		expect(sheetOpen("curse")).toBe(false);
+		act(() => r.unmount());
+	});
+
+	test("a sent blessing is announced on that friend's row, not in a toast", async () => {
+		const r = await mountList();
+		expect(noticeFor(r, "bless", "f1")).toBeNull();
+		await openMenu(r, "f1");
+		await tap(cellFor(r, "bless", "f1"));
+		const notice = noticeFor(r, "bless", "f1");
+		expect(notice).not.toBeNull();
+		expect(notice!.props.accessibilityLabel).toBe(
+			`Blessed alice with ${dailyRitual("bless").name} today`
+		);
+		expect(textOf(notice!)).toBe(`blessed · ${dailyRitual("bless").name}`);
+		// bob's row says nothing — the memory is per friend — and no curse notice
+		// rides alice's row for a blessing.
+		expect(noticeFor(r, "bless", "f2")).toBeNull();
+		expect(noticeFor(r, "curse", "f1")).toBeNull();
+		expect(mockToast).not.toHaveBeenCalled();
+		act(() => r.unmount());
+	});
+
+	test("a landed curse is announced on the row the same way", async () => {
+		const r = await mountList();
+		await openMenu(r, "f2");
+		await tap(cellFor(r, "curse", "f2"));
+		await tap(cellFor(r, "curse", "f2"));
+		const notice = noticeFor(r, "curse", "f2");
+		expect(notice).not.toBeNull();
+		expect(textOf(notice!)).toBe(`cursed · ${dailyRitual("curse").name}`);
+		expect(mockToast).not.toHaveBeenCalled();
+		act(() => r.unmount());
+	});
+
+	test("every friend gets exactly one row, in the list's one order", async () => {
+		// The order's rules are `__tests__/friendOrder.test.ts`; this is the
+		// wiring — the list sorts with that comparator, keeps everyone, and the
+		// row index it hands down follows the VISIBLE order (the tilt sequence).
+		const roster = [
+			{ id: "f3", username: "pig10" },
+			{ id: "f1", username: "Zara" },
+			{ id: "f4", username: null },
+			{ id: "f2", username: "pig2" },
+		] as unknown as Profile[];
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(renderList(roster));
+		});
+		// One row draws as several nodes; the first of each is the row.
+		const rows = [
+			...new Set(
+				r.root
+					.findAll(
+						(n) =>
+							typeof n.props.testID === "string" &&
+							n.props.testID.startsWith("friend-row-") &&
+							!!n.props.accessibilityRole
+					)
+					.map((row) => row.props.testID as string)
+			),
+		];
+		expect(rows).toEqual([
+			"friend-row-f2",
+			"friend-row-f3",
+			"friend-row-f1",
+			"friend-row-f4",
+		]);
+		// One row per friend — the count the `Friends · N` segment shows is the
+		// length of the very array this list sorts.
+		expect(rows).toHaveLength(roster.length);
+		act(() => r.unmount());
+	});
+
+	test("the list no longer carries a Sounder strip above the rituals", () => {
+		const source = fs.readFileSync(
+			path.join(process.cwd(), "components/Friends.tsx"),
+			"utf8"
+		);
+		expect(source).not.toContain("your Sounder");
+		expect(source).not.toContain("onViewSounder");
 	});
 });
 
