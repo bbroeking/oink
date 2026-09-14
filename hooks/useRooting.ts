@@ -371,6 +371,7 @@ export function useRooting() {
         windowEndsAtMs: r.window_ends_at
           ? new Date(r.window_ends_at).getTime()
           : windowEndsAtMs(r.window_index),
+        openedAtMs: r.opened_at ? new Date(r.opened_at).getTime() : undefined,
         practice: false,
         coop: r.coop ?? false,
         blessed: r.blessed ?? false,

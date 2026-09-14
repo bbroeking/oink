@@ -54,6 +54,9 @@ export interface RootingSession {
   // Absent/"classic" → the stir-budget TrufflePatch; "snout_deep" → the
   // three-layer press-your-luck dig (components/mudwar/SnoutDeepDig).
   mode?: "classic" | "snout_deep";
+  // When the server opened this row. A device snapshot saved BEFORE it is a
+  // ghost of an earlier row (a reset, a re-open) and must not restore.
+  openedAtMs?: number;
   // The caller has no Sounder: the same board, things + XP, no Golden
   // Truffles / Sounder Bonus / race find. Server-derived, never client-sent.
   uncrewed?: boolean;

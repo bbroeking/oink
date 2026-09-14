@@ -43,7 +43,7 @@ import {
 import { Button, Hand, IconButton, Label, Shovel, Snout, Sticker, T, Tag, Trotter } from "../ui";
 import { FindMark } from "./FindMark";
 import { Hungerer, HUNGERER_STATE_LABEL, hungererStateFor } from "./Hungerer";
-import { DecisionSheet } from "./SnoutDeepSheets";
+import { DecisionSheet, SnoutDeepHelpSheet } from "./SnoutDeepSheets";
 
 // --- ART -------------------------------------------------------------------
 // The patch's drawing geometry. Tiles are 55 × 52 on the canvas; here the
@@ -96,6 +96,10 @@ export interface SnoutDeepPatchProps {
   secondsLeft?: number;
   /** The open phase's live countdown ("3h 58m") — the same string the Barn's fan row shows. Wins over `secondsLeft`. */
   phaseCountdown?: string;
+  /** Open the how-it-works sheet as the screen mounts (a player's first dig). */
+  helpOnMount?: boolean;
+  /** The player closed the help sheet — stamp it seen. */
+  onHelpSeen?: () => void;
   /** The close chip: leave the dig without ending it. */
   onExit: () => void;
   /** Fires once when the dig ends, with what the payoff sheet renders. */
@@ -109,6 +113,8 @@ export function SnoutDeepPatch({
   dispatch,
   secondsLeft,
   phaseCountdown,
+  helpOnMount = false,
+  onHelpSeen,
   onExit,
   onDone,
   boomTickles,
@@ -158,6 +164,22 @@ export function SnoutDeepPatch({
     onDone(buildReceipt(state, boomTickles));
   }, [state, onDone, boomTickles]);
 
+  // The explanation: from the sign, and once by itself on a first dig. The
+  // first-dig read lands after mount (the seen stamp is async), so the prop
+  // is watched, not read once; it opens the sheet the first time it turns
+  // true and never again.
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpShown = useRef(false);
+  useEffect(() => {
+    if (!helpOnMount || helpShown.current) return;
+    helpShown.current = true;
+    setHelpOpen(true);
+  }, [helpOnMount]);
+  const closeHelp = useCallback(() => {
+    setHelpOpen(false);
+    onHelpSeen?.();
+  }, [onHelpSeen]);
+
   const act = useCallback(
     (v: Verb, tile: number) => dispatch({ type: "act", verb: v, tile }),
     [dispatch],
@@ -182,13 +204,20 @@ export function SnoutDeepPatch({
         <View style={styles.header}>
           <IconButton name="x" label="Leave the patch" onPress={onExit} variant="paper" />
           {/* One line each: the sign must not wrap, or the header eats the patch. */}
-          <Sticker color="paper" shadow="sm" rotate={TILT.card} style={styles.sign}>
+          <Sticker
+            color="paper"
+            shadow="sm"
+            rotate={TILT.card}
+            onPress={() => setHelpOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`The truffle patch${closesIn ? `, ${closesIn}` : ""}. How it works`}
+            accessibilityHint="Opens the explanation of the dig"
+            style={styles.sign}
+          >
             <Label numberOfLines={1}>the truffle patch · Feeding</Label>
-            {closesIn ? (
-              <Hand tone="secondary" numberOfLines={1}>
-                {closesIn}
-              </Hand>
-            ) : null}
+            <Hand tone="secondary" numberOfLines={1}>
+              {closesIn ? `${closesIn} · ` : ""}how it works ›
+            </Hand>
           </Sticker>
           <View style={styles.hungerer}>
             <Hungerer state={face} size={HUNGERER_FACE} />
@@ -340,6 +369,7 @@ export function SnoutDeepPatch({
 
       </ScrollView>
 
+      <SnoutDeepHelpSheet visible={helpOpen} onClose={closeHelp} />
       {decisionFor != null ? (
         <DecisionSheet
           visible

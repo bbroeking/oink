@@ -50,6 +50,10 @@ export interface SnoutDeepDigProps {
   onBusyChange?: (busy: boolean) => void;
   /** The open phase's live countdown from the feeding clock, for the sign. */
   phaseCountdown?: string;
+  /** Show the how-it-works sheet as the dig opens (the player's first Snout Deep dig). */
+  helpOnMount?: boolean;
+  /** The player closed that sheet — stamp it seen for this account. */
+  onHelpSeen?: () => void;
 }
 
 export function SnoutDeepDig({
@@ -60,6 +64,8 @@ export function SnoutDeepDig({
   onDug,
   onBusyChange,
   phaseCountdown,
+  helpOnMount,
+  onHelpSeen,
 }: SnoutDeepDigProps) {
   const board = useMemo(
     () => generateLayeredBoard(session.seed, session.uniqueId),
@@ -99,7 +105,13 @@ export function SnoutDeepDig({
             session.windowIndex,
             session.seed,
           );
-          if (saved) snapshot = saved;
+          // A snapshot saved before the server opened this row belongs to
+          // an earlier row (the dig was reset) — the server's log wins.
+          const stale =
+            saved != null &&
+            session.openedAtMs != null &&
+            Date.parse(saved.savedAt) < session.openedAtMs;
+          if (saved && !stale) snapshot = saved;
         }
       } catch {
         // a broken snapshot is the same as none — the server's log is next
@@ -218,6 +230,8 @@ export function SnoutDeepDig({
         dispatch={dispatch}
         secondsLeft={secondsLeft}
         phaseCountdown={phaseCountdown}
+        helpOnMount={helpOnMount}
+        onHelpSeen={onHelpSeen}
         onExit={onClose}
         onDone={onDone}
       />

@@ -35,6 +35,13 @@ interface Props {
 	/** A heading that shares the close rail's row (see DialogCloseRow). */
 	closeRowContent?: React.ReactNode;
 	bare?: boolean;
+	/**
+	 * A full-screen MODE, not a dialog: the frame is the whole window (safe
+	 * areas as padding, no gutter, no border, no radius, no shadow) and it
+	 * slides up like a screen. For the things a player steps INTO — the dig —
+	 * rather than a card they answer. (2026-09-13)
+	 */
+	fullScreen?: boolean;
 	frameStyle?: StyleProp<ViewStyle>;
 	contentContainerStyle?: StyleProp<ViewStyle>;
 	scrollViewProps?: Omit<
@@ -68,6 +75,7 @@ export function AdaptiveModalScaffold({
 	closeLabel = "Close",
 	closeRowContent,
 	bare = false,
+	fullScreen = false,
 	frameStyle,
 	contentContainerStyle,
 	scrollViewProps,
@@ -91,11 +99,13 @@ export function AdaptiveModalScaffold({
 			onAccessibilityEscape={onRequestClose}
 			style={[
 				styles.frame,
-				bare ? styles.bareFrame : styles.paperFrame,
-				{
-					width: Math.min(maxWidth, availableWidth),
-					maxHeight: availableHeight,
-				},
+				fullScreen ? styles.fullFrame : bare ? styles.bareFrame : styles.paperFrame,
+				fullScreen
+					? { width, height, paddingTop: insets.top, paddingBottom: insets.bottom }
+					: {
+							width: Math.min(maxWidth, availableWidth),
+							maxHeight: availableHeight,
+						},
 				frameStyle,
 			]}
 		>
@@ -127,11 +137,13 @@ export function AdaptiveModalScaffold({
 			style={[
 				styles.backdrop,
 				presentation === "inline" && styles.inlineBackdrop,
-				{
-					paddingTop: insets.top + gutter,
-					paddingBottom: insets.bottom + gutter,
-					paddingHorizontal: gutter,
-				},
+				fullScreen
+					? styles.fullBackdrop
+					: {
+							paddingTop: insets.top + gutter,
+							paddingBottom: insets.bottom + gutter,
+							paddingHorizontal: gutter,
+						},
 			]}
 		>
 			{presentation === "inline" || dismissOnBackdrop ? (
@@ -188,6 +200,13 @@ const styles = StyleSheet.create({
 	},
 	bareFrame: {
 		overflow: "visible",
+	},
+	// The full-screen mode: the page's own cream, edge to edge.
+	fullFrame: {
+		backgroundColor: UI_COLORS.surfaceMuted,
+	},
+	fullBackdrop: {
+		backgroundColor: UI_COLORS.surfaceMuted,
 	},
 	content: {
 		flexGrow: 1,

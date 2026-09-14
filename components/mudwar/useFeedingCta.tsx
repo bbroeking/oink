@@ -15,6 +15,7 @@ import { useIsFocused } from "expo-router/react-navigation";
 import { router } from "expo-router";
 import { AppState, InteractionManager, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRooting } from "@/hooks/useRooting";
 import { useFeedingClock } from "@/hooks/useFeedingClock";
 import { nextOpenCountdown } from "@/utils/rooting";
@@ -24,6 +25,10 @@ import {
 } from "@/utils/feedingConfig";
 import { TrufflePatch } from "./TrufflePatch";
 import { SnoutDeepDig } from "./SnoutDeepDig";
+
+// The how-it-works sheet opens by itself on a player's FIRST Snout Deep dig,
+// then only from the sign. One stamp per account, on the device.
+const HELP_SEEN_KEY = (uid: string) => `snout_deep_help_seen:${uid}`;
 import { LivingMudReceipt, LivingMudRecovery } from "./LivingMudReceipt";
 import { AdaptiveModalScaffold } from "@/components/ui";
 import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
@@ -212,12 +217,40 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
     }
   };
 
+  // null = not read yet (never flash the sheet before we know), else whether
+  // this account has seen the explanation.
+  const [helpSeen, setHelpSeen] = useState<boolean | null>(null);
+  const helpUid = session?.mode === "snout_deep" ? session.userId : null;
+  useEffect(() => {
+    if (!helpUid) return;
+    let alive = true;
+    setHelpSeen(null);
+    AsyncStorage.getItem(HELP_SEEN_KEY(helpUid))
+      .then((v) => {
+        if (alive) setHelpSeen(v === "1");
+      })
+      .catch(() => {
+        if (alive) setHelpSeen(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [helpUid]);
+  const markHelpSeen = useCallback(() => {
+    setHelpSeen(true);
+    if (helpUid) AsyncStorage.setItem(HELP_SEEN_KEY(helpUid), "1").catch(() => {});
+  }, [helpUid]);
+
   const modal = (
     <AdaptiveModalScaffold
       visible={visible}
       onRequestClose={requestClose}
-      bare
-      contentContainerStyle={styles.modalBody}
+      // Snout Deep is a MODE you step into, not a card: the whole screen,
+      // sliding up. The classic patch keeps its bare card.
+      bare={session?.mode !== "snout_deep"}
+      fullScreen={session?.mode === "snout_deep"}
+      animationType={session?.mode === "snout_deep" ? "slide" : "fade"}
+      contentContainerStyle={session?.mode === "snout_deep" ? styles.fullBody : styles.modalBody}
       scrollViewProps={{ scrollEnabled: !brushing }}
     >
       {session && session.mode === "snout_deep" ? (
@@ -233,6 +266,8 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
           onDug={onDug}
           onBusyChange={setBusy}
           phaseCountdown={phaseOpen ? countdown : undefined}
+          helpOnMount={helpSeen === false}
+          onHelpSeen={markHelpSeen}
         />
       ) : session ? (
         <TrufflePatch
@@ -291,4 +326,6 @@ const styles = StyleSheet.create({
   // The scaffold centres and pads; this only stacks the escape chip above the
   // patch and keeps them from touching.
   modalBody: { justifyContent: "center" },
+  // The full-screen dig: no card inset — the patch screen pads itself.
+  fullBody: { flexGrow: 1 },
 });

@@ -42,6 +42,7 @@ function SnoutDeepPreview() {
     coop?: string | string[];
     uncrewed?: string | string[];
     motion?: string | string[];
+    help?: string | string[];
   }>();
   const seedParam = Number(one(params.seed));
   const [seed, setSeed] = useState(
@@ -50,6 +51,7 @@ function SnoutDeepPreview() {
   const coop = one(params.coop) === "1";
   const uncrewed = one(params.uncrewed) === "1";
   const reduceMotion = one(params.motion) === "reduced";
+  const helpOnMount = one(params.help) === "1";
 
   // A new seed from the old one, deterministic: the next board is always the
   // same next board, so a report can say "seed N, then Dig again".
@@ -59,7 +61,7 @@ function SnoutDeepPreview() {
     <MotionPolicyProvider reduceMotion={reduceMotion}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Keyed on the seed: a new seed is a new dig, reducer and all. */}
-      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} onDigAgain={digAgain} />
+      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} onDigAgain={digAgain} />
     </MotionPolicyProvider>
   );
 }
@@ -69,12 +71,14 @@ function LocalDig({
   coop,
   uncrewed,
   reduceMotion,
+  helpOnMount,
   onDigAgain,
 }: {
   seed: number;
   coop: boolean;
   uncrewed: boolean;
   reduceMotion: boolean;
+  helpOnMount: boolean;
   onDigAgain: () => void;
 }) {
   const board = useMemo(() => generateLayeredBoard(seed), [seed]);
@@ -122,6 +126,7 @@ function LocalDig({
         secondsLeft={secondsLeft}
         onExit={onDigAgain}
         onDone={onDone}
+        helpOnMount={helpOnMount}
       />
       {state.ended && !sheetOpen ? (
         <View style={styles.again} pointerEvents="box-none">

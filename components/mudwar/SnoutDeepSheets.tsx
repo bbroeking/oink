@@ -7,7 +7,7 @@
 // rename.
 import { useEffect, useRef, type ReactNode } from "react";
 import { Animated, StyleSheet, View } from "react-native";
-import { AdaptiveModalScaffold, Button, Hand, Icon, Kicker, PageTitle, T } from "../ui";
+import { AdaptiveModalScaffold, Button, Hand, Icon, Kicker, PageTitle, Shovel, Snout, T, Trotter } from "../ui";
 import { BORDER, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { popIn } from "@/utils/motionRecipes";
@@ -48,12 +48,15 @@ function LedgerRow({
   title,
   sub,
   value,
+  clampSub = true,
 }: {
   first: boolean;
   mark: ReactNode;
   title: string;
   sub?: string;
   value?: string;
+  /** Receipt rows clamp their sub to two lines; an explanation says it all. */
+  clampSub?: boolean;
 }) {
   return (
     <View
@@ -67,7 +70,7 @@ function LedgerRow({
           {title}
         </T>
         {sub ? (
-          <Hand tone="secondary" numberOfLines={2}>
+          <Hand tone="secondary" numberOfLines={clampSub ? 2 : undefined}>
             {sub}
           </Hand>
         ) : null}
@@ -311,6 +314,47 @@ export function DigReceiptSheet({
           {receipt.secondary}
         </Button>
       ) : null}
+    </LedgerSheet>
+  );
+}
+
+// ── How it works ────────────────────────────────────────────────────────────
+// The whole game on one ledger: three verbs, three layers, the tie, the wake,
+// and what he can and cannot eat. Opens from the sign, and once by itself on
+// a player's first Snout Deep dig.
+
+export const HELP_ROWS: readonly { mark: "sniff" | "rub" | "shove" | "layers" | "tie" | "wake" | "things"; title: string; sub: string; value?: string }[] = [
+  { mark: "sniff", title: "Sniff", sub: "marks a tile with how many finds touch it. moves no mud. free in topsoil; a whisper of risk below", value: "quietest" },
+  { mark: "rub", title: "Rub", sub: "clears a little on a tile and half on its neighbours. a half-cleared tile shows the shape underneath", value: "quiet" },
+  { mark: "shove", title: "Shove", sub: "clears a tile and half the four around it. holding any tile shoves. fast, and he hears it", value: "loud" },
+  { mark: "layers", title: "Three layers", sub: "topsoil · the mud · the root. deeper is richer — relics and Barn pieces live at the root — and he sleeps lighter", value: "deeper" },
+  { mark: "tie", title: "Tie it off", sub: "banks this layer's truffle and ends the dig. Dig deeper banks it too, so each layer only ever stakes its own", value: "bank" },
+  { mark: "wake", title: "If he wakes", sub: "he takes the truffle that is still loose on this layer — it comes back gilded next Feeding. nothing banked is ever touched", value: "his" },
+  { mark: "things", title: "Things are yours", sub: "booms, acorns, tea, keepsakes, furnishings, relics — yours the moment they surface. he only ever eats truffles", value: "kept" },
+];
+
+function HelpMark({ mark }: { mark: (typeof HELP_ROWS)[number]["mark"] }) {
+  if (mark === "sniff") return <MarkDisc tone="paper"><Snout size={MARK_ART} /></MarkDisc>;
+  if (mark === "rub") return <MarkDisc tone="paper"><Trotter size={MARK_ART} /></MarkDisc>;
+  if (mark === "shove") return <MarkDisc tone="sun"><Shovel size={MARK_ART} /></MarkDisc>;
+  if (mark === "layers") return <MarkDisc tone="sage"><Icon name="chevronDown" size={MARK_ART} color={WHIMSY.ink} /></MarkDisc>;
+  if (mark === "tie") return <MarkDisc tone="sage"><Icon name="check" size={MARK_ART} color={WHIMSY.ink} /></MarkDisc>;
+  if (mark === "wake") return <MarkDisc tone="rose"><Hungerer state="awake" size={MARK_ART} /></MarkDisc>;
+  return <MarkDisc tone="lilac"><FindMark kind="boom" size={MARK_ART} /></MarkDisc>;
+}
+
+export function SnoutDeepHelpSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  return (
+    <LedgerSheet visible={visible} onClose={onClose} closeLabel="Back to the patch" kicker="how it works" title="Snout Deep">
+      <Hand tone="secondary">sniff to know, rub to take, dig as deep as you dare — tie off before he wakes.</Hand>
+      <Ledger>
+        {HELP_ROWS.map((row, i) => (
+          <LedgerRow key={row.mark} first={i === 0} mark={<HelpMark mark={row.mark} />} title={row.title} sub={row.sub} value={row.value} clampSub={false} />
+        ))}
+      </Ledger>
+      <Button variant="gold" size="md" full onPress={onClose} accessibilityLabel="Got it" accessibilityHint="Closes the explanation and returns to the patch">
+        Got it
+      </Button>
     </LedgerSheet>
   );
 }
