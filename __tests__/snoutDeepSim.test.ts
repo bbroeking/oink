@@ -52,8 +52,44 @@ describe("simulateSnoutDeep over 2,000 seeds", () => {
     expect(mean(nose.map((r) => r.gt))).toBeGreaterThan(ev);
   });
 
-  test("a sniff-first policy beats a blind policy on finds, on GT, and on sleep", () => {
+  test("the loose pouch is at stake: a woke dig keeps fewer finds and pays fewer tickles than a tie at the same depth", () => {
+    // Since 2026-09-14 a consumable banks only on the tie, so `finds` (what
+    // the dig KEEPS) and `tickles` fall on every wake — the whole carried
+    // pouch goes. Bounds from the 2,000-seed run after the change: nose
+    // 2.69 · 3.11 · 2.97 finds and 14.8 · 23.7 · 24.8 tickles at topsoil ·
+    // mud · root (before: 2.73 · 3.57 · 3.89 and 15.1 · 26.4 · 31.5).
+    const byDepth = ([0, 1, 2] as const).map((tieAt) => run({ style: "nose", tieAt }));
+    const tickles = byDepth.map((rs) => mean(rs.map((r) => r.tickles)));
+    const finds = byDepth.map((rs) => mean(rs.map((r) => r.finds)));
+    // Topsoil is nearly safe, so its EV barely moves; the pouch is what the
+    // deeper pushes stake, so the root's EV no longer runs away from the mud's.
+    expect(tickles[0]).toBeGreaterThan(12);
+    expect(tickles[0]).toBeLessThan(18);
+    expect(tickles[1]).toBeGreaterThan(tickles[0]);
+    expect(tickles[2]).toBeGreaterThan(18);
+    expect(tickles[2]).toBeLessThan(tickles[1] + 5);
+    expect(finds[2]).toBeLessThan(finds[1] + 0.2);
+    // Within one depth, the woke digs keep less and pay less than the tied.
+    for (const rs of byDepth.slice(1)) {
+      const woke = rs.filter((r) => r.woke);
+      const tied = rs.filter((r) => !r.woke);
+      expect(woke.length).toBeGreaterThan(50);
+      expect(mean(woke.map((r) => r.tickles))).toBeLessThan(mean(tied.map((r) => r.tickles)));
+      expect(mean(woke.map((r) => r.finds))).toBeLessThan(mean(tied.map((r) => r.finds)));
+    }
+    // A woke dig never counts a consumable among its finds: only the
+    // truffles banked on descent and the collection things it kept.
+    for (const r of byDepth.flat()) {
+      if (r.woke) expect(r.things + r.truffles).toBe(r.finds);
+    }
+  });
+
+  test("a sniff-first policy beats a blind policy on finds, on GT, on tickles and on sleep", () => {
+    // `finds` is what the dig keeps (banked + kept collection): the nose's
+    // lead widened after the loose pouch (2.97 vs 2.26 at the root) because
+    // it wakes less and so loses the pouch less.
     expect(mean(nose.map((r) => r.finds))).toBeGreaterThan(mean(blind.map((r) => r.finds)));
+    expect(mean(nose.map((r) => r.tickles))).toBeGreaterThan(mean(blind.map((r) => r.tickles)));
     expect(mean(nose.map((r) => r.gt))).toBeGreaterThan(mean(blind.map((r) => r.gt)));
     const wokeRate = (rs: SimResult[]) => rs.filter((r) => r.woke).length / rs.length;
     expect(wokeRate(nose)).toBeLessThan(wokeRate(blind));

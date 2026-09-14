@@ -204,17 +204,21 @@ describe("reveals", () => {
     expect(s.loose).toBe("l0:truffle_d");
   });
 
-  test("a thing goes into things on any layer; stones reveal into nothing", () => {
+  test("a consumable thing joins the loose pouch; a collection thing is yours; stones reveal into nothing", () => {
     let s = act(start(), "shove", t(2, 2));
-    expect(s.things).toEqual(["l0:boom"]);
+    expect(s.looseThings).toEqual(["l0:boom"]);
+    expect(s.things).toEqual([]);
+    expect(s.banked).toEqual([]);
     expect(s.loose).toBeNull();
     s = act(s, "shove", t(4, 5));
     expect(s.depths[t(4, 5)]).toBe(0);
-    expect(s.things).toEqual(["l0:boom"]);
+    expect(s.looseThings).toEqual(["l0:boom"]);
     expect(revealed(s).map((f) => f.id)).toEqual(["l0:boom"]);
     s = toLayer(s, 2);
     s = act(s, "shove", t(0, 5));
-    expect(s.things).toEqual(["l0:boom", "l2:relic"]);
+    expect(s.things).toEqual(["l2:relic"]);
+    expect(s.looseThings).toEqual(["l0:boom"]); // still loose — nothing banked it
+    expect(s.found).toEqual(["l0:boom", "l2:relic"]);
   });
 
   test("two clusters on one shove: the truffle is loose, the thing is yours", () => {
@@ -232,10 +236,10 @@ describe("reveals", () => {
     s = act(s, "shove", t(0, 0)); // (0,0) 0 · (0,1) 1 · (1,0) 1
     s = act(s, "rub", t(1, 1)); // Boom 1 · (0,1) ½
     expect(s.loose).toBeNull();
-    expect(s.things).toEqual([]);
-    s = act(s, "shove", t(0, 1)); // (0,1) 0 → loose; Boom 1 − 1 = 0 → yours
+    expect(s.looseThings).toEqual([]);
+    s = act(s, "shove", t(0, 1)); // (0,1) 0 → loose; Boom 1 − 1 = 0 → loose in the pouch
     expect(s.loose).toBe("l0:truffle_d");
-    expect(s.things).toEqual(["l0:boom"]);
+    expect(s.looseThings).toEqual(["l0:boom"]);
   });
 });
 
@@ -264,6 +268,22 @@ describe("descend — bank on descent", () => {
     const untouched = descend(start());
     expect(untouched.missed).toEqual([]);
   });
+
+  test("the loose pouch rides down untouched: descending banks the truffle, never a thing", () => {
+    let s = act(act(start(), "shove", t(0, 0)), "shove", t(0, 1)); // the domino, loose
+    s = act(s, "shove", t(2, 2)); // the Boom, loose in the pouch
+    s = descend(s);
+    expect(s.layer).toBe(1);
+    expect(s.banked).toEqual(["l0:truffle_d"]);
+    expect(s.looseThings).toEqual(["l0:boom"]);
+    expect(s.missed).toEqual([]);
+    s = act(s, "shove", t(4, 4)); // the tea joins the pouch behind the Boom
+    expect(s.looseThings).toEqual(["l0:boom", "l1:tea"]);
+    s = descend(s);
+    expect(s.layer).toBe(2);
+    expect(s.looseThings).toEqual(["l0:boom", "l1:tea"]); // two layers' worth, still at stake
+    expect(s.banked).toEqual(["l0:truffle_d"]);
+  });
 });
 
 describe("tie · cap · close", () => {
@@ -274,6 +294,30 @@ describe("tie · cap · close", () => {
     expect(s.banked).toEqual(["l0:truffle_d"]);
     expect(s.layersTied).toEqual([0]);
     expect(s.loose).toBeNull();
+  });
+
+  test("tie sweeps the whole pouch into banked — the truffle first, then the things in surfacing order", () => {
+    let s = act(start(), "shove", t(2, 2)); // the Boom (topsoil)
+    s = descend(s); // carried
+    s = act(s, "shove", t(4, 4)); // the tea (mud)
+    s = act(act(act(s, "shove", t(1, 1)), "shove", t(2, 1)), "shove", t(2, 2)); // the fat one, loose
+    expect(s.looseThings).toEqual(["l0:boom", "l1:tea"]);
+    s = reduce(s, { type: "tie" });
+    expect(s.ended).toEqual({ reason: "tie", layer: 1 });
+    expect(s.banked).toEqual(["l1:truffle_l", "l0:boom", "l1:tea"]);
+    expect(s.looseThings).toEqual([]);
+    expect(s.things).toEqual([]);
+    expect(s.missed).toEqual([]);
+    expect(s.layersTied).toEqual([1]);
+  });
+
+  test("close banks the pouch like a tie", () => {
+    let s = act(start(), "shove", t(2, 2));
+    s = descend(s);
+    s = reduce(s, { type: "close" });
+    expect(s.ended).toEqual({ reason: "close", layer: 1 });
+    expect(s.banked).toEqual(["l0:boom"]);
+    expect(s.looseThings).toEqual([]);
   });
 
   test("close ends as a tie", () => {
@@ -347,17 +391,46 @@ describe("wake", () => {
     expect(s.ended?.reason).toBe("wake");
     expect(s.ended?.wokeOn).toBe("r1:24");
     expect(s.loose).toBeNull();
-    expect(s.missed).toEqual(["l1:truffle_l"]);
+    // The truffle, then the pouch he took with it — the Boom carried down from topsoil.
+    expect(s.missed).toEqual(["l1:truffle_l", "l0:boom"]);
+    expect(s.looseThings).toEqual([]);
     expect(s.banked).toEqual([]);
-    expect(s.things).toEqual(["l0:boom"]);
+    expect(s.things).toEqual([]);
     expect(s.layersTied).toEqual([]);
   });
 
-  test("a thing revealed on the waking action is still yours", () => {
+  test("a wake loses every layer's loose things together; the tied stay tied", () => {
+    // Quiet through six actions, then the seventh (a mud shove, 20) wakes him.
+    const seed = seedWhere(7, (d, k) => (k === 6 ? d < 20 : d >= 40));
+    let s = initialState(board(seed), opts);
+    s = act(act(s, "shove", t(0, 0)), "shove", t(0, 1)); // the domino, loose (2)
+    s = act(s, "shove", t(2, 2)); // the Boom (3)
+    s = descend(s); // the domino banks; the Boom rides down
+    s = act(act(act(s, "shove", t(1, 1)), "shove", t(2, 1)), "shove", t(2, 2)); // the fat one (6)
+    s = act(s, "shove", t(4, 4)); // the tea (7) — the waking draw
+    expect(s.ended?.reason).toBe("wake");
+    expect(s.ended?.layer).toBe(1);
+    // He took the loose fat one, the Boom from topsoil and the tea revealed on
+    // the waking action — the whole pouch; the domino banked on descent stays.
+    expect(s.missed).toEqual(["l1:truffle_l", "l0:boom", "l1:tea"]);
+    expect(s.banked).toEqual(["l0:truffle_d"]);
+    expect(s.looseThings).toEqual([]);
+    expect(s.layersTied).toEqual([0]);
+  });
+
+  test("a consumable revealed on the waking action is lost with the pouch; a collection thing is still yours", () => {
     let s = toLayer(initialState(board(WAKE_FIRST), opts), 1);
     s = act(s, "shove", t(4, 4)); // the tea clears AND the draw wakes him
     expect(s.ended?.reason).toBe("wake");
-    expect(s.things).toEqual(["l1:tea"]);
+    expect(s.things).toEqual([]);
+    expect(s.looseThings).toEqual([]);
+    expect(s.missed).toEqual(["l1:tea"]);
+    expect(s.found).toEqual(["l1:tea"]);
+    let r = toLayer(initialState(board(WAKE_FIRST), opts), 2);
+    r = act(r, "shove", t(0, 5)); // the relic clears AND the draw wakes him (root shove, 40)
+    expect(r.ended?.reason).toBe("wake");
+    expect(r.things).toEqual(["l2:relic"]);
+    expect(r.missed).toEqual([]);
   });
 });
 

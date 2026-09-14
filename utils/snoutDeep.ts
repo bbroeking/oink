@@ -21,19 +21,29 @@
 //   · rub / shove go through the shared applySplash kernel (rub −1/−½, shove
 //     −2/−1, floor 0);
 //   · a find whose tiles all reach 0 is revealed: a truffle becomes `loose`
-//     (one truffle per layer), a thing goes into `things` and is yours;
-//   · the dig applies first, then the roll: a thing revealed on the waking
-//     action is still yours, a truffle uncovered on it goes straight to
-//     `missed` — the waking action is IN the log, not after it;
-//   · `descend` banks `loose`, moves the layer's touched-but-uncollected
-//     TRUFFLE into `missed` (only truffles carry), clears scent, enters the
-//     next layer; not offered at the root;
-//   · `tie` banks and ends; the 45th action ends as `cap` (= tie) unless it
-//     woke him (the roll happens before the cap check); `close` ends as tie.
+//     (one truffle per layer); a CONSUMABLE thing (Boom, pouch, apple,
+//     shimmer, acorn, tea, scroll, charm) joins `looseThings` — the pouch at
+//     stake; a COLLECTION thing (keepsake, relic, furnishing, bow) goes into
+//     `things` and is yours, tie or wake (the loose pouch, 2026-09-14);
+//   · the dig applies first, then the roll: a collection thing revealed on
+//     the waking action is still yours, a truffle or consumable uncovered on
+//     it goes straight to `missed` — the waking action is IN the log, not
+//     after it;
+//   · `descend` banks the loose TRUFFLE (bank on descent), moves the layer's
+//     touched-but-uncollected truffle into `missed` (only truffles carry),
+//     clears scent, enters the next layer; `looseThings` ride down UNTOUCHED
+//     — descending does not bank a thing; not offered at the root;
+//   · `tie` banks the truffle AND sweeps `looseThings` into `banked`, then
+//     ends; the 45th action ends as `cap` (= tie) unless it woke him (the
+//     roll happens before the cap check); `close` ends as tie;
+//   · a wake takes the loose truffle and EVERY loose thing — topsoil's, the
+//     mud's and the root's together — into `missed`; `banked` and `things`
+//     are untouched.
 
 import {
   DIG_FIND_TICKLES,
   DIG_FOOD_KINDS,
+  isDigCollectionThing,
   PATCH_COLS,
   PATCH_ROWS,
   SNOUT_DEEP_ACTION_CAP,
@@ -84,8 +94,9 @@ export interface SnoutDeepState {
   actions: string[]; // the log: "s2:14" · "r2:14" · "h2:14"
   wakeIndex: number; // draws consumed
   loose: string | null; // the current layer's truffle id, if uncovered and unbanked
-  banked: string[]; // find ids banked (truffles) — across layers
-  things: string[]; // find ids revealed (things) — across layers
+  looseThings: string[]; // consumable thing ids loose in the pouch, surfacing order — across layers, at stake until `tie`
+  banked: string[]; // find ids banked (truffles on descend/tie, consumables on tie) — across layers
+  things: string[]; // collection thing ids revealed (kept on reveal) — across layers
   found: string[]; // every find id (truffle or thing) in the order it surfaced — the tally's order
   missed: string[]; // touched-but-uncollected cluster ids left behind
   layersTied: Layer[]; // layers whose truffle banked (for GT reasons)
@@ -128,6 +139,7 @@ export function initialState(
     actions: [],
     wakeIndex: 0,
     loose: null,
+    looseThings: [],
     banked: [],
     things: [],
     found: [],
@@ -249,6 +261,7 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
   let depths = state.depths;
   let scent = state.scent;
   let loose = state.loose;
+  let looseThings = state.looseThings;
   let things = state.things;
   let found = state.found;
   if (verb === "sniff") {
@@ -258,14 +271,19 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
     depths = state.depths.slice();
     applySplash(depths, tile, verb);
     // Reveals: every cluster whose last tile just cleared. A truffle becomes
-    // loose (a layer holds one); a thing is yours the moment it clears. Stones
-    // reveal into nothing.
+    // loose (a layer holds one); a consumable thing joins the loose pouch; a
+    // collection thing is yours the moment it clears. Stones reveal into
+    // nothing.
     for (const f of currentLayer(state).finds) {
       if (f.kind === "stone") continue;
       if (!clusterRevealed(f.tiles, depths)) continue;
       if (clusterRevealed(f.tiles, state.depths)) continue; // already up
       if (f.food) loose = f.id;
-      else if (!things.includes(f.id)) things = [...things, f.id];
+      else if (isDigCollectionThing(f.kind)) {
+        if (!things.includes(f.id)) things = [...things, f.id];
+      } else if (!looseThings.includes(f.id) && !state.banked.includes(f.id)) {
+        looseThings = [...looseThings, f.id];
+      }
       if (!found.includes(f.id)) found = [...found, f.id];
     }
   }
@@ -284,18 +302,21 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
     actions,
     wakeIndex,
     loose,
+    looseThings,
     things,
     found,
   };
 
   if (woke) {
-    // He takes the loose truffle; everything banked and every thing is
-    // untouched. The layer's touched-but-uncollected truffle is missed too
-    // (it would have been, had the dig gone on).
+    // He takes the loose truffle and the whole loose pouch — every consumable
+    // carried down from topsoil, the mud and the root; everything banked and
+    // every collection thing is untouched. The layer's touched-but-uncollected
+    // truffle is missed too (it would have been, had the dig gone on).
     return {
       ...next,
       loose: null,
-      missed: withMissed(next, loose),
+      looseThings: [],
+      missed: withMissed(next, loose, looseThings),
       ended: { reason: "wake", layer: state.layer, wokeOn: entry },
     };
   }
@@ -303,12 +324,18 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
   return next;
 }
 
-/** `missed` plus the loose truffle (a wake) and/or the current layer's
- *  touched-but-uncollected truffle (a layer left behind). Only truffles
- *  carry — things are never at stake, so they are never missed. */
-function withMissed(state: SnoutDeepState, lostLoose: string | null): string[] {
+/** `missed` plus the loose truffle and the loose pouch (a wake) and/or the
+ *  current layer's touched-but-uncollected truffle (a layer left behind).
+ *  Only truffles carry to the next Feeding; a lost thing is listed so the
+ *  tally can name it, and is gone. */
+function withMissed(
+  state: SnoutDeepState,
+  lostLoose: string | null,
+  lostThings: readonly string[] = [],
+): string[] {
   const out = state.missed.slice();
   if (lostLoose && !out.includes(lostLoose)) out.push(lostLoose);
+  for (const id of lostThings) if (!out.includes(id)) out.push(id);
   const truffle = layerTruffle(currentLayer(state));
   if (
     truffle &&
@@ -338,10 +365,20 @@ function bank(state: SnoutDeepState): Pick<SnoutDeepState, "banked" | "layersTie
   };
 }
 
+/** Tie it off: the truffle banks, then every loose thing, in surfacing order. */
+function bankPouch(state: SnoutDeepState): Pick<SnoutDeepState, "banked" | "layersTied" | "loose" | "looseThings"> {
+  const truffle = bank(state);
+  if (state.looseThings.length === 0) return { ...truffle, looseThings: [] };
+  const banked = truffle.banked.slice();
+  for (const id of state.looseThings) if (!banked.includes(id)) banked.push(id);
+  return { ...truffle, banked, looseThings: [] };
+}
+
 function descend(state: SnoutDeepState): SnoutDeepState {
   if (state.ended) return state;
   if (state.layer >= 2) return state; // no fourth layer — not offered at the root
   const nextLayer = (state.layer + 1) as Layer;
+  // The truffle banks on the way down; the loose pouch rides down with you.
   return {
     ...state,
     ...bank(state),
@@ -356,7 +393,7 @@ function end(state: SnoutDeepState, reason: "tie" | "cap" | "close"): SnoutDeepS
   if (state.ended) return state;
   return {
     ...state,
-    ...bank(state),
+    ...bankPouch(state),
     missed: withMissed(state, null),
     ended: { reason, layer: state.layer },
   };
@@ -485,7 +522,9 @@ export function resolveDigFindTickles(server: unknown): DigFindTickles {
 
 // ── The receipt — the tally the payoff sheets render (§5.7 / §5.8) ──────────
 // One row per find in the order it surfaced, each worth its tickles; the
-// truffle he took first, at "his"; Pass XP last, paying none. `tickledBefore`
+// truffle he took first, at "his"; a consumable lost with the pouch at
+// "lost"; a collection thing kept through a wake at "kept" (its tickles rode
+// the tie he ended); Pass XP last, paying none. `tickledBefore`
 // is the Barn's count as the dig ended (null when the caller can't know it —
 // the sheet then rolls the dig's own total) and `tickledNow` is that plus the
 // tally. The server's receipt corrects both and every row's tickles through
@@ -506,8 +545,12 @@ export interface DigReceiptRow {
   value: string;
   /** The tickles this row rolls into the count; absent = the row pays none. */
   tickles?: number;
-  /** The truffle he took: the value column reads "his" in mute, no number. */
+  /** He took it: the truffle reads "his", a consumable from the pouch reads
+   *  "lost" — the value column in mute, no number. */
   lost?: boolean;
+  /** A collection thing kept through a wake: "kept", no number — its tickles
+   *  would have paid on the tie. */
+  kept?: boolean;
   /** Uncrewed: the row is the join door (its sub is the join line). */
   join?: boolean;
 }
@@ -639,15 +682,51 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
     }
   }
 
-  // One row per find, in the order they surfaced: the banked truffles and
-  // every thing. A truffle left in the ground (missed, never banked) is not
-  // a row.
+  // One row per find, in the order they surfaced: the banked truffles, the
+  // banked consumables (or, on a wake, the ones lost with the pouch) and
+  // every collection thing (kept either way; paid only when the dig tied). A
+  // truffle left in the ground (missed, never banked) is not a row.
   let xp = DIG_PASS_XP;
   let truffleRows = 0;
+  let lostThings = 0;
   for (const id of state.found) {
     const f = findById(state.board, id);
     if (!f) continue;
     if (f.food && !state.banked.includes(id)) continue;
+    const collection = !f.food && isDigCollectionThing(f.kind);
+    if (!f.food && !collection && !state.banked.includes(id)) {
+      // A consumable that never banked: lost with the pouch on the wake.
+      if (!state.missed.includes(id)) continue;
+      const c = findCopy(f, table.boom);
+      lostThings++;
+      rows.push({
+        id,
+        mark: f.kind,
+        ...(f.variant ? { variant: f.variant } : {}),
+        tone: "roseDeep",
+        title: c.title,
+        sub: "lost with the layer",
+        value: "lost",
+        tickles: 0,
+        lost: true,
+      });
+      continue;
+    }
+    if (collection && woke) {
+      // Kept — a Barn piece is a Barn piece — but its tickles rode the tie.
+      const c = findCopy(f, table.boom);
+      rows.push({
+        id,
+        mark: f.kind,
+        ...(f.variant ? { variant: f.variant } : {}),
+        tone: c.tone,
+        title: c.title,
+        sub: "kept — its tickles went with the pouch",
+        value: "kept",
+        kept: true,
+      });
+      continue;
+    }
     const n = Math.max(0, table[f.kind] ?? 0);
     total += n;
     if (f.food) {
@@ -695,13 +774,19 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
           wakeThreshold(a.layer, a.verb, state.coop),
         )} — this was the one.`
       : "he woke on the last one.";
+    const took =
+      lost && lostThings > 0
+        ? "the loose truffle and the pouch were his."
+        : lost
+          ? "the loose truffle was his."
+          : lostThings > 0
+            ? "the loose pouch was his."
+            : "nothing was loose for him to take.";
     return {
       kind: "woke",
       kicker: `the truffle patch · he woke at ${layerName}`,
       title: "He woke. Still worth it.",
-      countLine: lost
-        ? "the things are yours. the loose truffle was his."
-        : "the things are yours. nothing was loose for him to take.",
+      countLine: `what you'd tied is yours. ${took}`,
       wokeLine,
       nextTimeLine: NEXT_TIME[ended.layer],
       rows,
@@ -737,7 +822,7 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
 /** What the server's receipt says about the tally (submit_rooting_deep,
  *  20260913120000). Every field is optional: an older server names none. */
 export interface ServerTally {
-  tickles?: readonly { id: string; kind: string; tickles: number; lost?: boolean }[] | null;
+  tickles?: readonly { id: string; kind: string; tickles: number; lost?: boolean; kept?: boolean }[] | null;
   ticklesTotal?: number | null;
   tickledBefore?: number | null;
   tickledNow?: number | null;
@@ -751,13 +836,13 @@ export function reconcileReceipt(r: DigReceipt, server: ServerTally): DigReceipt
   const byId = new Map<string, number>();
   const byKind = new Map<string, number>();
   for (const t of server.tickles ?? []) {
-    if (t.lost) continue;
+    if (t.lost || t.kept) continue;
     byId.set(t.id, t.tickles);
     if (!byKind.has(t.kind)) byKind.set(t.kind, t.tickles);
   }
   let total = 0;
   const rows = r.rows.map((row) => {
-    if (row.tickles == null) return row;
+    if (row.tickles == null || row.lost || row.kept) return row;
     const n = byId.get(row.id) ?? byKind.get(row.mark) ?? row.tickles;
     total += n;
     return n === row.tickles ? row : { ...row, tickles: n, value: `+${n}` };
@@ -777,21 +862,57 @@ function layerOf(board: SnoutDeepBoard, id: string): Layer | null {
 
 // ── Whispers (§5.4) — teach rules, say THAT something is near, never what ───
 
+// "five things" — the pouch whisper's count, spelled small.
+const COUNT_WORDS: readonly string[] = [
+  "no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+];
+export function countPhrase(n: number, noun: string): string {
+  const word = COUNT_WORDS[n] ?? String(n);
+  return `${word} ${n === 1 ? noun : `${noun}s`}`;
+}
+
+/** The stake, said plainly, when the pouch holds things and no truffle is
+ *  loose to say it first: "five things loose in the pouch. tie it off to
+ *  keep them, or carry them down." — at the root nothing carries deeper. */
+function pouchWhisper(state: SnoutDeepState): string | null {
+  const n = state.looseThings.length;
+  if (n === 0 || state.loose) return null;
+  const them = n === 1 ? "it" : "them";
+  const tail =
+    state.layer === 2
+      ? `tie it off to keep ${them} — nothing carries deeper than the root.`
+      : `tie it off to keep ${them}, or carry ${them} down.`;
+  return `${countPhrase(n, "thing")} loose in the pouch. ${tail}`;
+}
+
 export function whisperFor(state: SnoutDeepState): string {
-  if (state.ended?.reason === "wake") return "he woke. the loose one is his — he buries it gilded, next Feeding.";
+  if (state.ended?.reason === "wake") {
+    const lostTruffle = state.missed.some((id) => findById(state.board, id)?.food);
+    const lostThings = state.missed.some((id) => {
+      const f = findById(state.board, id);
+      return f != null && !f.food;
+    });
+    if (lostTruffle && lostThings)
+      return "he woke. the loose truffle and the pouch are his — the truffle comes back gilded, next Feeding.";
+    if (lostThings) return "he woke. the loose pouch is his. what you'd tied is yours.";
+    return "he woke. the loose one is his — he buries it gilded, next Feeding.";
+  }
   const sniffed = state.scent.filter((s) => s != null).length;
   const hasHigh = state.scent.some((s) => s != null && s >= 3);
   const hasLow = state.scent.some((s) => s === 1);
+  const pouch = pouchWhisper(state);
   if (state.layer === 0) {
     if (sniffed === 0)
       return "topsoil. a sniff counts the finds touching a tile. a rub moves a little, a shove a lot. nothing quiet wakes him here.";
     if (hasHigh && hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
+    if (pouch) return pouch;
     return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";
   }
   if (state.layer === 1) {
     if (sniffed === 0) return "the mud. fatter down here — and he sleeps lighter. a sniff is the quiet way to know: one in forty stirs him. a rub, one in twenty.";
     if (state.loose) return "the fat one is loose. the root has no truffle of its own — it pays for this one, if you tie it there.";
+    if (pouch) return pouch;
     return "one rub in twenty stirs him here. one sniff in forty. nothing here is free.";
   }
   if (sniffed === 0)
@@ -801,7 +922,8 @@ export function whisperFor(state: SnoutDeepState): string {
       "one in",
       "one sniff in",
     )}.`;
-  return "nothing down here is his. every action is a roll — tie it off whenever you like.";
+  if (pouch) return pouch;
+  return "no truffle down here is his to take. every action is a roll — tie it off whenever you like.";
 }
 
 // ── Simulation — for tuning the thresholds ──────────────────────────────────
@@ -810,8 +932,12 @@ export function whisperFor(state: SnoutDeepState): string {
 // early the moment its truffle is loose, then descends until `tieAt` and
 // ties. `blind` rubs in a seeded scan, skipping cleared tiles. `nose` sniffs
 // four lattice tiles whose 3 × 3s tile the board, then rubs outward from the
-// strongest scent — the play the whispers teach. The sim reports finds, GT
-// and survival per layer; the tests pin the §4 figures against it.
+// strongest scent — the play the whispers teach. The sim reports finds (what
+// the dig KEEPS — banked truffles, banked consumables, kept collection
+// things), GT, tickles paid and survival per layer; the tests pin the §4
+// figures against it. Neither bot ties early to save the pouch: the leave-
+// when-loose rule keys on the truffle, so the tickles EV per tie depth reads
+// the pouch's stake honestly.
 
 export type PolicyStyle = "blind" | "nose";
 export type Policy =
@@ -822,10 +948,12 @@ export interface SimResult {
   seed: number;
   policy: PolicyStyle;
   tieAt: Layer;
-  finds: number; // things revealed + truffles banked
-  things: number;
+  finds: number; // what the dig keeps: banked truffles + banked consumables + kept collection things
+  things: number; // banked consumables + kept collection things
   truffles: number;
   gt: number;
+  /** The tickles the dig pays (receipt().ticklesTotal — banked finds only). */
+  tickles: number;
   actions: number;
   woke: boolean;
   wokeLayer: Layer | null;
@@ -1065,9 +1193,10 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
     policy: style,
     tieAt,
     finds: state.things.length + state.banked.length,
-    things: state.things.length,
-    truffles: state.banked.length,
+    things: state.things.length + state.banked.filter((id) => !findById(state.board, id)?.food).length,
+    truffles: state.banked.filter((id) => findById(state.board, id)?.food).length,
     gt: gtReasons(state).length,
+    tickles: receipt(state).ticklesTotal,
     actions: state.actions.length,
     woke: ended.reason === "wake",
     wokeLayer: ended.reason === "wake" ? ended.layer : null,

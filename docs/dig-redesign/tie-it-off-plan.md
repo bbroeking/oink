@@ -22,34 +22,45 @@ So on a layer with its truffle already banked, *Tie it off* and *Dig deeper*
 risk nothing but one truffle, and the tally at the end reads the same either
 way. That is why tying feels pointless: it is.
 
-## 2. The corrected storage strategy
+## 2. The corrected storage strategy — SHIPPED 2026-09-14
 
 **Only the loose pouch is at stake; the tie is the only thing that fills the
-bank.**
+bank.** The founder's rule, verbatim (2026-09-14): *"A thing that is loose
+stays loose until the player presses Tie it off. Descending to the next layer
+does not bank it. The loose pouch rides down with the player and remains at
+stake on every deeper layer; if he wakes at the root, everything loose from
+topsoil, the mud and the root is lost together."* — "thing" means things,
+not truffles: the truffle keeps banking on descent.
 
-| find | on reveal | on tie / descend | if he wakes first |
-| --- | --- | --- | --- |
-| truffle (this layer) | loose | banked, +GT, +tickles | his — gilded next Feeding |
-| Boom · acorn · tea · apple · pouch · shimmer · scroll · charm | **loose** | banked, tickles paid | **lost with the layer** |
-| keepsake · relic · furnishing · bow (collection things) | **kept** — a Barn piece is a Barn piece | tickles paid on tie | kept; their tickles lost |
-| stone | — | — | — |
+| find | on reveal | on descend | on tie | if he wakes first |
+| --- | --- | --- | --- | --- |
+| truffle (this layer) | loose | banked, +GT, +tickles | banked, +GT, +tickles | his — gilded next Feeding |
+| Boom · acorn · tea · apple · pouch · shimmer · scroll · charm | **loose** (`looseThings[]`) | **carried down, still loose** | banked, tickles paid | **lost with the whole pouch — every layer's** |
+| keepsake · relic · furnishing · bow (collection things) | **kept** (`things[]`) — a Barn piece is a Barn piece | kept | kept, tickles paid | kept; their tickles unpaid |
+| stone | — | — | — | — |
 
-- **Loose** = shown in the *loose* well beside the truffle, counted nowhere
-  yet. **Banked** = written to `banked[]` on `tie`/`descend`, paid by
+- **Loose** = shown in the *loose* well beside the truffle (the whole
+  carried pouch, all layers' worth), counted in the footer's *bank N* /
+  *carry N*, counted nowhere else yet. **Banked** = written to `banked[]` —
+  the truffle on `descend`/`tie`, the consumables on `tie` only — paid by
   `submit_rooting_deep` from that list only.
 - Collection things stay kept on reveal because losing a once-in-a-season
   Barn piece to a dice roll is a rage-quit, not a gamble; their **tickles**
   still ride the tie so the tie always matters.
-- A wake therefore costs: the layer's truffle, every consumable found on
-  that layer, and every tickle the layer would have paid. Earlier layers'
-  banks are untouched (bank on descent stays).
+- A wake therefore costs: the layer's truffle, **every consumable found on
+  every layer of the dig — the whole pouch**, and every tickle the pouch and
+  the collection things would have paid. Earlier layers' truffles are untouched (bank on descent
+  stays).
 
-Server: `submit_rooting_deep` pays tickles and grants consumables from
-`p_finds` (the banked list) only; `p_things` becomes the kept collection
-list; a woke dig's `p_missed` gains the lost consumables so the receipt can
-name them. Client: `reduce` moves reveals of consumable kinds into `loose`
-(a list, not the single truffle id), `descend`/`tie` sweep `loose` into
-`banked`, `wake` sweeps it into `missed`.
+Server (`20260914090000_loose_pouch.sql`): `submit_rooting_deep` pays
+tickles and records consumables from `p_finds` (the banked list) only, by
+kind; `p_things` is the kept collection list (paid on a tie, `kept: true` at
+0 on a wake); a woke dig's `p_missed` carries the lost consumables and the
+server forces every consumable claimed on a wake into the lost pouch
+(`lost: true`, 0) regardless of which list it arrived in. Client
+(`utils/snoutDeep.ts`): reveals of consumable kinds go into `looseThings[]`
+(the truffle keeps `loose`), `descend` leaves it alone, `tie`/`close`/`cap`
+sweep it into `banked` after the truffle, a wake sweeps it into `missed`.
 
 ## 3. Hunger awakening over time
 
@@ -80,18 +91,24 @@ pouch; push on a thin meter and risk the layer's whole pouch.
 
 For each step: what to try · what to check · how to confirm.
 
-1. **Loose pouch** — reducer: consumables to `loose[]`, sweep on
-   `tie`/`descend`/`wake`. Check `snoutDeep.test.ts`: a wake after a Boom
-   reveal leaves `banked` without it and `missed` with it; a descend banks
-   it. Confirm in the preview: the Boom sits in the *loose* well until Tie.
-2. **Kept collection things** — `things[]` keeps keepsake · relic ·
-   furnishing · bow only. Check `receipt()` rows read *kept* with no tickles
-   on a wake. Confirm: woke tally shows the keepsake row without a number.
-3. **Server** — migration: `_submit_rooting_deep_core` pays from
-   `p_finds`, grants consumables from `p_finds`, keeps `p_things` as
-   collection grants. Harness `88_*` smoke: a woke mud dig with a loose Boom
-   pays 0 for it. Confirm: `submit_rooting_deep` receipt `tickles[]` lists
-   only banked finds.
+1. **Loose pouch** — DONE 2026-09-14 (`feat(dig): the loose pouch carries
+   down`). Reducer: consumables to `looseThings[]`, carried through
+   `descend`, swept into `banked` on `tie`/`cap`/`close`, into `missed` on a
+   wake. `snoutDeep.test.ts`: a wake after a Boom reveal leaves `banked`
+   without it and `missed` with it; a descend carries it; a wake in the mud
+   loses topsoil's Boom and the mud's tea together. The preview needs no new
+   params: the Boom sits in the *loose* well until Tie.
+2. **Kept collection things** — DONE 2026-09-14. `things[]` keeps keepsake ·
+   relic · furnishing · bow only. `receipt()` rows read *kept* with no
+   tickles on a wake (`snoutDeepReceipt.test.ts`, `snoutDeepPatch.test.tsx`).
+3. **Server** — DONE 2026-09-14, NOT pushed: `20260914090000_loose_pouch.sql`
+   carries `_submit_rooting_deep_core`; pays from `p_finds` by kind, keeps
+   `p_things` as the collection list, forces every consumable on a wake into
+   the lost pouch. Harness `89_loose_pouch_smoke.sql`: a woke mud dig with a
+   topsoil Boom in `p_missed` (or `p_finds`) pays 0 for it; a root tie with
+   the same Boom in `p_finds` pays its topsoil value. Left for a follow-up:
+   `sync_rooting` still syncs the truffles only, so a window-close tie pays
+   no pouch.
 4. **Sleep meter** — `WakeStream` becomes a drain with jitter; state gains
    `sleep` per layer; `descend` refills. Check the sim
    (`simulateSnoutDeep`, 2,000 seeds): wake rate per layer within ±3 pts of
@@ -102,11 +119,14 @@ For each step: what to try · what to check · how to confirm.
 6. **Faces + whisper** — `hungererStateFor(sleep)` on bands; one whisper
    per band change. Check the 4 faces render at each band under Reduce
    Motion. Confirm: preview `?sleep=25` shows one eye open.
-7. **Tie it off / Dig deeper** — the footer reads the stake: *Tie it off ·
-   bank 3 things* / *Dig deeper · the mud, fresh sleep*. Confirm: both
-   labels update live with the pouch.
-8. **The tally** — banked rows pay, lost rows read *his* (truffle) or *lost*
-   (consumables) with no number. Confirm on the woke path.
+7. **Tie it off / Dig deeper** — DONE 2026-09-14: the footer reads the stake
+   live: *Tie it off · bank 3* / *Dig deeper · carry 3* (N = the loose
+   truffle + the loose things; plain labels at 0). Both fit one line on a
+   375pt phone at the sm button size up to N = 9 (measured against
+   Nunito ExtraBold 13pt: 123pt of 129pt). *fresh sleep* waits on step 4.
+8. **The tally** — DONE 2026-09-14: banked rows pay, lost rows read *his*
+   (truffle) or *lost* (consumables) with no number, collection rows read
+   *kept* on a wake; the foot sums only the paid rows.
 
 ## 5. UI instruction
 

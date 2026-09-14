@@ -20,13 +20,14 @@ wakes."**
 - **Three verbs, a ladder of quiet.** **Sniff** (know) · **Rub** (take a
   little) · **Shove** (take a lot, loudly). No stir budget; the cost of an
   action is noise — its chance of waking him.
-- **The one decision.** At any moment: **Tie it off** (bank the layer's loose
-  truffle, dig over) or **Dig deeper** (the next layer: fatter finds, rarer
-  things, a lighter sleeper). Crossing a layer **banks everything loose** —
-  each layer stakes only its own truffle.
+- **The one decision.** At any moment: **Tie it off** (bank the loose truffle
+  and the whole loose pouch, dig over) or **Dig deeper** (the next layer:
+  fatter finds, rarer things, a lighter sleeper). Crossing a layer **banks the
+  truffle only** — the loose pouch of things rides down with you and stays at
+  stake on every deeper layer (the loose pouch, 2026-09-14).
 - **Pressure.** Every action rolls once against the layer's wake odds. His
   face is the meter. He does one thing, once: he wakes and takes the loose
-  truffle.
+  truffle and everything loose in the pouch.
 - **End.** Tie · wake · 45 actions (treated as a tie) · window close (treated
   as a tie, server-side).
 - **Duration.** 12–30 actions, 40–90 s. A layer's truffle costs ≈ 4 rubs with
@@ -71,8 +72,9 @@ The kernel is today's `applySplash`, unchanged, floored at 0:
 - Every non-no-op verb is **one action** (toward the 45 cap) and **one entry
   in the action log** (`s2:14` / `r2:14` / `h2:14` = sniff / rub / shove,
   layer 0–2, tile 0–29).
-- **The waking action lands first, then rolls.** A thing revealed on the
-  waking action is kept; a truffle uncovered on it goes straight to *missed*.
+- **The waking action lands first, then rolls.** A collection thing revealed
+  on the waking action is kept; a truffle or a consumable uncovered on it goes
+  straight to *missed* with the rest of the pouch (§1.5).
 
 ### 1.3 Scent
 
@@ -109,32 +111,53 @@ in 20 · shove 1 in 6 · root sniff ≈ 1 in 17 · rub 1 in 8 · shove 1 in 3.)
   the tutorial layer at the price of actions only. (Amended 2026-09-13 from
   "never in topsoil or the mud".)
 
-### 1.5 Loose, banked, food, things
+### 1.5 Loose, banked, food, things (rewritten 2026-09-14 — the loose pouch)
 
 - **Food is truffles, only.** A layer's truffle cluster, once uncovered, is
-  **loose** — his if he wakes — until it is banked.
-- **Everything else is a thing** (Boom, shimmer, acorn, tea, scroll, apple,
-  pouch, keepsake, furnishing, bow, charm, relic): yours the moment its last
-  tile clears; paid on reveal through its own path; never at stake.
-- **Banking happens three ways:** *Tie it off*; **crossing a layer** (*Dig
-  deeper* banks the loose truffle first — bank on descent); the 45-action
-  cap or a window close (treated as a tie).
+  **loose** — his if he wakes — until it is banked: on *Tie it off* or on
+  *Dig deeper* (bank on descent; each layer stakes only its own truffle).
+  This rule is unchanged.
+- **Everything else is a thing, in two classes.**
+  - A **consumable thing** — Boom, snout pouch, apple, shimmer, acorn, tea,
+    scroll, charm — is **loose** from the moment its last tile clears until
+    the player presses *Tie it off*. It lands in the *loose* well beside the
+    truffle and is counted nowhere yet. **Descending does not bank it**: the
+    loose pouch rides down with the player and remains at stake on every
+    deeper layer. It is **banked** by the tie only (`banked[]`; the server
+    grants and pays tickles from that list alone).
+  - A **collection thing** — keepsake (boot · horseshoe · cap), relic,
+    furnishing, bow — is **kept** the moment it surfaces, tie or wake
+    (`things[]`): losing a once-in-a-season Barn piece to a dice roll is a
+    rage-quit, not a gamble. Its **tickles**, however, are paid only if the
+    dig ties — on a wake it is *kept, unpaid*.
+  - Stones are inert.
+- **Banking happens three ways:** *Tie it off* (the truffle and the whole
+  pouch); **crossing a layer** (*Dig deeper* banks the loose **truffle**
+  only — the pouch carries); the 45-action cap or a window close (treated as
+  a tie: truffle and pouch).
 - **Wake:** the *current layer's* loose truffle is not credited; it goes to
   `user_patch_carry` at gild 1 (or bumps) via the existing `p_missed` path —
-  he re-buries it, gilded, next Feeding. Everything banked in earlier layers
-  and every thing found is untouched. `+20 Pass XP` is paid; the dig counts
-  as submitted.
+  he re-buries it, gilded, next Feeding. **Every loose thing in the pouch —
+  topsoil's, the mud's and the root's together — is lost with it** (listed
+  in `p_missed`, *lost* on the tally, nothing granted or paid; things never
+  carry to the next Feeding). Everything banked in earlier layers (truffles)
+  and everything the tie banked stays banked; every collection thing is kept
+  but pays no tickles. `+20 Pass XP` is paid; the dig counts as submitted.
 - Topsoil cannot wake on a sniff; a topsoil rub is one in a hundred and
   twenty, so a topsoil-only dig is nearly, not perfectly, safe.
 
-### 1.6 Dig deeper, tie, end
+### 1.6 Dig deeper, tie, end (rewritten 2026-09-14)
 
 - **Dig deeper** is available at any time in topsoil and the mud — no gate.
-  It banks the loose truffle, marks the layer's touched-but-uncollected
-  clusters as *missed* (carry-eligible), abandons the untouched ones, and
-  enters the next layer with the layer's scent marks cleared.
-- **Tie it off** is available at any time. It banks the loose truffle and
-  submits.
+  It banks the loose **truffle** (bank on descent), marks the layer's
+  touched-but-uncollected truffle as *missed* (carry-eligible), abandons the
+  untouched clusters, **carries the loose pouch of things down untouched**,
+  and enters the next layer with the layer's scent marks cleared. The footer
+  reads the stake: *Dig deeper · carry N* (N = the loose truffle + the loose
+  things), plain *Dig deeper* when nothing is loose.
+- **Tie it off** is available at any time. It banks the loose truffle, then
+  sweeps every loose thing into `banked` in surfacing order, and submits.
+  The footer reads *Tie it off · bank N*, plain *Tie it off* at N = 0.
 - **End conditions**, exactly: tie · wake · 45th action (= tie) · window
   close with the dig open (= tie, server-side; the client shows the stored
   receipt on reopen). Nothing else. `afterReveal`'s *both truffles → finish()*
@@ -158,7 +181,9 @@ in 20 · shove 1 in 6 · root sniff ≈ 1 in 17 · rub 1 in 8 · shove 1 in 3.)
 ## 2. Finds
 
 Every row is a Field Guide entry (silhouette until met). Stones are inert.
-**Food** = truffles (loose until banked); **things** are kept on reveal.
+**Food** = truffles (loose until banked); **consumable things** are loose
+until the tie; **collection things** (keepsake · relic · furnishing · bow)
+are kept on reveal (§1.5).
 
 | layer | find | kind | pays | odds / board | path |
 | --- | --- | --- | --- | --- | --- |
@@ -201,16 +226,20 @@ Every row is a Field Guide entry (silhouette until met). Stones are inert.
   | root | bless charm | 12 |
   | any | stone | 0 |
 
-  A truffle he took pays nothing (it reads *his* on the tally). A full root
-  tie reads +60 to +90; a topsoil tie +15 to +35. Server: one column,
+  A truffle he took pays nothing (it reads *his* on the tally); a consumable
+  lost with the pouch pays nothing (*lost*); a collection thing kept through a
+  wake pays nothing (*kept*) — only what the tie banked pays (§1.5). A full
+  root tie reads +60 to +90; a topsoil tie +15 to +35. Server: one column,
   `app_settings.dig_finds[kind].tickles`, applied by `submit_rooting_deep`
   through the same tickle ledger as a tap, never bankable or tradeable
   (§4); the per-find values ride back on the receipt so the client can
   count them up. The painted marks for every find (ImageGen lane, the
   truffle glyph as the style anchor) are staged; `FindMark` stops
   borrowing other glyphs.
-- **Why the Boom is in topsoil.** The catch-up is never at stake; pushing
-  deeper is for the herd's race and the Barn, not to protect the handicap.
+- **Why the Boom is in topsoil.** It is found early, so it is the first
+  thing in the pouch — and since 2026-09-14 it rides down loose like every
+  consumable: tie in topsoil and it is yours; carry it to the root and it is
+  at stake with the rest.
 - **The *Unearthed* collection.** A new `habitat_collections` row, ~12
   `habitat_items` across all six slots, `is_for_sale false`, rarity `rare`.
   Ships in two halves (§11).
@@ -286,8 +315,12 @@ dialogs on the reveal family's Ledger sheet.
    the selected verb on sun; hold-to-shove works regardless).
 3. **Reveal.** A thing surfaces with a full-width sticker the moment its tile
    clears (*a Tickle Boom · +19 tickles, yours*; *a Rusty Lantern · new for
-   the Barn*; *a Clockwork Acorn · a day of the Auto-Tickler*) and lands in
-   the *tied* well; a truffle lands in *loose*.
+   the Barn*; *a Clockwork Acorn · a day of the Auto-Tickler*). A consumable
+   thing lands in the *loose* well beside the truffle — the pouch at stake,
+   all layers' worth, until the tie; a collection thing lands in *tied*; a
+   truffle lands in *loose*. The *loose* well shows the whole carried pouch,
+   not the current layer's alone, and the footer's *bank N* / *carry N*
+   count it.
 4. **Whispers** teach rules and say *that* something is near, never what:
    *topsoil. a sniff counts the finds touching a tile. a rub moves a little,
    a shove a lot. nothing quiet wakes him here.* · *a 3 beside a 1 — the truffle runs
@@ -306,7 +339,10 @@ dialogs on the reveal family's Ledger sheet.
    2026-09-13: it pushed the player down a layer the second the truffle
    surfaced.)
 6. **Pressure.** No sheet: his face, the tag, the whisper; at the root the
-   rose rim and *Tie it off* as the primary.
+   rose rim and *Tie it off* as the primary. When the pouch holds things and
+   no truffle is loose the whisper says the stake: *two things loose in the
+   pouch. tie it off to keep them, or carry them down.* (at the root: *—
+   nothing carries deeper than the root.*).
 7. **Payoff, tied — the tally** (Ledger receipt; design
    `docs/design/claude-design/dig/snout-deep-bag.html` · artifact "Snout
    Deep Bag and Finds", page *The tally*, chosen 2026-09-13 over B tumble-out,
@@ -323,13 +359,18 @@ dialogs on the reveal family's Ledger sheet.
    Uncrewed: the truffle rows' sub reads *truffles are for herds — find yours
    ›* (the join door), their tickles still pay.
 8. **Payoff, woke — the same tally**: kicker *the truffle patch · he woke at
-   the mud*, title *He woke. Still worth it.*, hand line *the things are
-   yours. the loose truffle was his.* The before → now sticker is cream2, not
-   sun. The truffle he took is the first row, on a roseDeep disc: *the fat
-   one · his — comes back gilded next Feeding*, and its value column reads
-   *his* in mute, no number. Every other row lands and pays as in 7; the foot
-   reads *the dig · +52* — smaller, never zero. Primary *Back to the Barn*;
-   hand link *next time — tie it at the mud?*
+   the mud*, title *He woke. Still worth it.*, hand line *what you'd tied is
+   yours. the loose truffle and the pouch were his.* (or *… the loose truffle
+   was his.* / *… the loose pouch was his.* / *… nothing was loose for him to
+   take.*). The before → now sticker is cream2, not sun. The truffle he took
+   is the first row, on a roseDeep disc: *the fat one · his — comes back
+   gilded next Feeding*, its value column *his* in mute, no number. Then the
+   rows in surfacing order: a banked truffle pays; a consumable lost with the
+   pouch reads *lost* in mute, no number, sub *lost with the layer*, on a
+   roseDeep disc; a collection thing reads *kept*, no number, sub *kept — its
+   tickles went with the pouch*. The foot sums only the paid rows — *the dig
+   · +10* — smaller, sometimes only the earlier layers' truffles. Primary
+   *Back to the Barn*; hand link *next time — tie it at the mud?*
 9. **Back on the Barn**: the button's face flips to the door; a yard note
    *dug this Feeding · tied at the root · next patch opens in 5h 50m*.
 10. **Season tab.** Feeding card line per member: *tied at the mud* / *woke at
@@ -392,9 +433,11 @@ export interface SnoutDeepState {
   actions: string[];                // the log: "s2:14" · "r2:14" · "h2:14"
   wakeIndex: number;                // draws consumed
   loose: string | null;             // the current layer's truffle id, if uncovered and unbanked
-  banked: string[];                 // find ids banked (truffles) — across layers
-  things: string[];                 // find ids revealed (things) — across layers
-  missed: string[];                 // touched-but-uncollected cluster ids left behind
+  looseThings: string[];            // consumable thing ids loose in the pouch, surfacing order — across layers (2026-09-14)
+  banked: string[];                 // find ids banked (truffles on descend/tie; consumables on tie) — across layers
+  things: string[];                 // collection thing ids, kept on reveal — across layers
+  found: string[];                  // every find id in surfacing order — the tally's order
+  missed: string[];                 // touched-but-uncollected truffles left behind; on a wake, the taken truffle + every lost thing
   layersTied: Layer[];              // layers whose truffle banked (for GT reasons)
   coop: boolean;
   uncrewed: boolean;
@@ -441,11 +484,14 @@ restore replays through `reduce`).
   and never rolls in layers 0–1; root sniff rolls at 7 (4 co-op); no-ops
   change nothing and consume no draw; rub/shove apply the kernel and floor at
   0; a truffle uncovers → `loose`; descend banks `loose`, clears scent, marks
-  missed; tie banks and ends; the 45th action ends as `cap`; a wake ends with
-  `loose` in `missed` and things intact; things reveal into `things` on any
-  layer and survive a wake; `close` ends as tie; scent counts every find and
-  no stone; `wakeThreshold` table; a replay of `actions` from `initialState`
-  reproduces the end state (determinism).
+  missed, and carries `looseThings` down untouched; tie banks and sweeps the
+  pouch into `banked` in surfacing order, then ends; the 45th action ends as
+  `cap`; a wake ends with `loose` and every `looseThings` id (all layers')
+  in `missed` and the collection things intact; a consumable reveals into
+  `looseThings`, a collection thing into `things`; `close` ends as tie (pouch
+  banked); scent counts every find and no stone; `wakeThreshold` table; a
+  replay of `actions` from `initialState` reproduces the end state
+  (determinism).
 - `__tests__/generateLayeredBoard.test.ts` — parity with `rooting_finds(seed)`
   for the first four draws; per-layer placement matches the find table; no
   overlaps; ≤ 8 finds per layer; all three layers from one seed.
@@ -467,7 +513,8 @@ restore replays through `reduce`).
    3/120, root sniff 7/120 (4/120 with `coop`).
 3. Descending banks the loose truffle: a wake in the mud never removes a
    topsoil truffle from `banked`.
-4. Every thing revealed before a wake is in `things` after it.
+4. Every collection thing revealed before a wake is in `things` after it;
+   every consumable revealed before a wake and never tied is in `missed`.
 5. Scent on any tile equals the count of find tiles in its 3 × 3, stones
    excluded; a `0` tile has no find in its 3 × 3.
 6. Two adjacent rubs on buried tiles leave both at depth ½; a third rub on
@@ -494,9 +541,10 @@ restore replays through `reduce`).
   update from the next action; the server replays with the co-op flag as of
   each action's server time — simpler: the client's `coop` at open is what
   the server uses (`coop_at_open` stored on the row). Chosen: at open.
-- **Two clusters reveal on one shove:** both bank/reveal; one is the truffle
-  (loose), the other a thing.
-- **Boom size when `H = 0`:** 3 tickles; still applied on reveal.
+- **Two clusters reveal on one shove:** both reveal; one is the truffle
+  (loose), the other a thing (loose in the pouch, or kept if a collection
+  piece).
+- **Boom size when `H = 0`:** 3 tickles; paid when the tie banks it.
 - **Reduce Motion + a wake:** the face flips in one frame; the receipt
   crossfades.
 
@@ -539,3 +587,21 @@ restore replays through `reduce`).
   is the count ticking up. The receipt becomes the tally (§5.7/5.8): rows
   land one by one and roll the number. The woke tally keeps the same grammar
   with the taken truffle reading *his*.
+- **2026-09-14 — The loose pouch carries down; only Tie it off banks a
+  thing.** Founder's rule, verbatim: *"A thing that is loose stays loose until
+  the player presses Tie it off. Descending to the next layer does not bank
+  it. The loose pouch rides down with the player and remains at stake on
+  every deeper layer; if he wakes at the root, everything loose from topsoil,
+  the mud and the root is lost together."* Scope: "thing" means things, not
+  truffles — a layer's truffle keeps today's rule (loose until `descend` or
+  `tie` banks it; bank on descent stands). Consumable things (Boom · pouch ·
+  apple · shimmer · acorn · tea · scroll · charm) go loose on reveal, carry
+  through every descend, bank only on the tie, and are all lost on a wake.
+  Collection things (keepsake · relic · furnishing · bow) stay kept on
+  reveal; their tickles pay only on a tie. The server pays from the banked
+  list only and forces every consumable claimed on a wake into the lost
+  pouch (`20260914090000_loose_pouch.sql`). Supersedes §1.5's "things are
+  never at stake" and the 2026-09-13 log's "everything else is a thing, kept
+  on reveal". Why: with things safe on reveal, Tie it off risked one truffle
+  and the tally read the same either way — the tie was pointless
+  (`tie-it-off-plan.md` §1).

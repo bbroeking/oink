@@ -19,7 +19,7 @@ import {
   type SnoutDeepLayer,
   type SnoutDeepVerb,
 } from "@/constants/dig";
-import { DIG_FIND_TICKLES, type DigFindKind } from "@/constants/dig";
+import { DIG_COLLECTION_KINDS, DIG_CONSUMABLE_KINDS, DIG_FIND_TICKLES, type DigFindKind } from "@/constants/dig";
 import { WAKE_SEED_MULT, WakeStream, wakeSeed, wakeThreshold } from "@/utils/rooting";
 
 const ROOT = path.resolve(__dirname, "..");
@@ -27,10 +27,15 @@ const sql = fs.readFileSync(
   path.join(ROOT, "supabase/migrations/20260913060000_snout_deep.sql"),
   "utf8",
 );
-// The tally (every find pays tickles) carries _submit_rooting_deep_core's
-// latest def; the log contract is pinned against THAT body.
+// The tally (every find pays tickles) names the table and apply_tickles; the
+// loose pouch (20260914090000) carries _submit_rooting_deep_core's latest
+// def, so the log contract is pinned against THAT body.
 const tallySql = fs.readFileSync(
   path.join(ROOT, "supabase/migrations/20260913120000_dig_find_tickles.sql"),
+  "utf8",
+);
+const pouchSql = fs.readFileSync(
+  path.join(ROOT, "supabase/migrations/20260914090000_loose_pouch.sql"),
   "utf8",
 );
 
@@ -108,7 +113,7 @@ describe("Snout Deep server parity", () => {
   });
 
   test("the log contract the server enforces is the client's encoding", () => {
-    const body = fnBody("_submit_rooting_deep_core", tallySql);
+    const body = fnBody("_submit_rooting_deep_core", pouchSql);
     expect(body).toContain("'^[srh][0-2]:([0-9]|[12][0-9])$'");
     expect(body).toContain("n > 45");
     // The waking action stays IN the log; nothing after it survives.
@@ -141,7 +146,7 @@ describe("Snout Deep server parity", () => {
     expect(apply).toContain("counter = COALESCE(counter, 0) + p_n");
     expect(apply).not.toContain("user_items");
     expect(apply).not.toContain("grant_tickles");
-    const core = fnBody("_submit_rooting_deep_core", tallySql);
+    const core = fnBody("_submit_rooting_deep_core", pouchSql);
     expect(core).toContain("tickled_now := public.apply_tickles(p_user_id, tickle_total);");
     expect(core).not.toContain("grant_tickles");
     // A truffle he took pays 0, listed first as lost.
@@ -156,6 +161,33 @@ describe("Snout Deep server parity", () => {
     for (const key of ["r.tickles ??", "r.tickles_total", "r.tickled_before", "r.tickled_now"]) {
       expect(hook).toContain(key);
     }
+  });
+
+  test("the loose pouch: the server's kind classes are the client's, and a wake forces every consumable out of the bank", () => {
+    const core = fnBody("_submit_rooting_deep_core", pouchSql);
+    const kinds = (name: string) => {
+      const m = new RegExp(`${name} text\\[\\] := ARRAY\\[([^\\]]+)\\]`).exec(core);
+      expect(m).not.toBeNull();
+      return m![1].split(",").map((x) => x.trim().replace(/'/g, ""));
+    };
+    expect(kinds("consumable_kinds")).toEqual([...DIG_CONSUMABLE_KINDS]);
+    expect(kinds("collection_kinds")).toEqual([...DIG_COLLECTION_KINDS]);
+    // Every non-food, non-stone kind is one or the other.
+    const classed = new Set([...DIG_CONSUMABLE_KINDS, ...DIG_COLLECTION_KINDS]);
+    for (const kind of Object.keys(DIG_FIND_TICKLES) as DigFindKind[]) {
+      if (kind === "stone" || kind === "truffle_d" || kind === "truffle_l") continue;
+      expect(classed.has(kind)).toBe(true);
+    }
+    // p_finds: a consumable banks only on a tie — a wake sends it to the lost pouch.
+    expect(core).toContain("ELSIF k = ANY (consumable_kinds) THEN");
+    expect(core).toContain("IF NOT (f = ANY (lost_things)) THEN lost_things := lost_things || f; END IF;");
+    // The lost rows and the kept rows read 0 with their flag.
+    expect(core).toContain("'id', find_id, 'kind', find_kind, 'tickles', 0, 'lost', true");
+    expect(core).toContain("'id', find_id, 'kind', find_kind, 'tickles', 0, 'kept', true");
+    // The receipt names both lists; the client's reconcile skips lost and kept rows.
+    for (const key of ["'banked_things',", "'lost_things',"]) expect(core).toContain(key);
+    const util = fs.readFileSync(path.join(ROOT, "utils/snoutDeep.ts"), "utf8");
+    expect(util).toContain("if (t.lost || t.kept) continue;");
   });
 
   test("the client sends the log the server expects", () => {

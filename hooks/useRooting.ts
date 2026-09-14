@@ -93,10 +93,12 @@ export interface RootingOutcome {
   reason?: "tie" | "wake" | "close";
   uncrewed?: boolean;
   // The tally (20260913120000): every find's tickles in the order of the
-  // finds (a truffle he took at 0, `lost`), their sum, and the player's
-  // count before and after — profiles.tickles_earned, what the Barn's earned
-  // stamp reads. Absent on a classic receipt or an un-migrated server.
-  tickles?: { id: string; kind: string; tickles: number; lost?: boolean }[] | null;
+  // finds (a truffle he took at 0, `lost`; since 20260914090000 a consumable
+  // lost with the pouch at 0, `lost`, and a collection thing kept through a
+  // wake at 0, `kept`), their sum, and the player's count before and after —
+  // profiles.tickles_earned, what the Barn's earned stamp reads. Absent on a
+  // classic receipt or an un-migrated server.
+  tickles?: { id: string; kind: string; tickles: number; lost?: boolean; kept?: boolean }[] | null;
   ticklesTotal?: number | null;
   tickledBefore?: number | null;
   tickledNow?: number | null;
@@ -154,7 +156,7 @@ type SubmitPayload = {
   end_reason?: "tie" | "wake" | "close";
   uncrewed?: boolean;
   // The tally (20260913120000) — absent before that migration.
-  tickles?: { id: string; kind: string; tickles: number; lost?: boolean }[] | null;
+  tickles?: { id: string; kind: string; tickles: number; lost?: boolean; kept?: boolean }[] | null;
   tickles_total?: number | null;
   tickled_before?: number | null;
   tickled_now?: number | null;
@@ -193,8 +195,17 @@ function toRootingOutcome(
 }
 
 // What a Snout Deep dig hands the hook when it ends — read off the reducer
-// state (utils/snoutDeep): the action log, the layer it ended on, the banked
-// truffle ids, the carry-eligible misses and the revealed thing ids.
+// state (utils/snoutDeep). The loose pouch (20260914090000):
+//   · `banked` — what the tie banked: the truffles (on descent or tie) AND the
+//     consumable things (Boom · pouch · apple · shimmer · acorn · tea · scroll
+//     · charm) the tie swept in. The server grants and pays tickles from this
+//     list only (p_finds);
+//   · `missed` — the carry-eligible truffles AND, on a wake, every consumable
+//     lost with the pouch (p_missed) — listed on the receipt at 0, nothing
+//     granted;
+//   · `things` — the kept collection things (keepsake · relic · furnishing ·
+//     bow), granted always, their tickles paid only when the dig tied
+//     (p_things).
 export interface DeepSubmission {
   actions: string[];
   layer: number;

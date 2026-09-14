@@ -149,6 +149,53 @@ describe("SnoutDeepPatch", () => {
     act(() => renderer.unmount());
   });
 
+  test("the footer reads the stake live: · bank N / · carry N with the pouch, plain when nothing is loose", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness />));
+    });
+    let all = texts(renderer).join("\n");
+    expect(all).toContain("Tie it off");
+    expect(all).toContain("Dig deeper");
+    expect(all).not.toContain("· bank");
+    expect(all).not.toContain("· carry");
+    expect(all).toContain("nothing loose yet");
+    // Surface the topsoil Boom (a consumable): one thing loose in the pouch.
+    const boom = seen.latest!.board.layers[0].finds.find((f) => f.kind === "boom")!;
+    for (const tile of boom.tiles) {
+      const node = pressables(renderer).filter((n) =>
+        new RegExp(`^row ${Math.floor(tile / 6) + 1}, column ${(tile % 6) + 1}, `).test(n.props.accessibilityLabel ?? ""),
+      )[0];
+      act(() => node.props.onLongPress());
+    }
+    expect(seen.latest!.looseThings).toEqual([boom.id]);
+    all = texts(renderer).join("\n");
+    expect(all).toContain("Tie it off · bank 1");
+    expect(all).toContain("Dig deeper · carry 1");
+    expect(all).not.toContain("nothing loose yet");
+    // The loose well names the Boom, the tied well nothing yet.
+    const wells = renderer.root.findAll(
+      (n) => typeof n.props.accessibilityLabel === "string" && /^(loose|tied), /.test(n.props.accessibilityLabel),
+    );
+    const labels = wells.map((n) => n.props.accessibilityLabel as string);
+    expect(labels.some((l) => l.startsWith("loose, his if he wakes: a Tickle Boom"))).toBe(true);
+    expect(labels.some((l) => l.startsWith("tied, yours for keeps: nothing tied yet"))).toBe(true);
+    // Descend: the Boom rides down — still loose, still counted in the footer.
+    pressLabelled(renderer, /^Dig deeper, into the mud, carry 1 down/);
+    expect(seen.latest!.layer).toBe(1);
+    expect(seen.latest!.looseThings).toEqual([boom.id]);
+    expect(seen.latest!.banked).toEqual([]);
+    all = texts(renderer).join("\n");
+    expect(all).toContain("Tie it off · bank 1");
+    expect(all).toContain("Dig deeper · carry 1");
+    // Tie: the pouch banks; the receipt pays the Boom.
+    pressLabelled(renderer, /^Tie it off, bank 1/);
+    expect(seen.latest!.banked).toEqual([boom.id]);
+    expect(seen.latest!.looseThings).toEqual([]);
+    expect(seen.done?.rows.find((r) => r.id === boom.id)?.tickles).toBe(3);
+    act(() => renderer.unmount());
+  });
+
   test("the layer strip and the verb bar carry the a11y the taste gate asks for", () => {
     let renderer!: TestRenderer.ReactTestRenderer;
     act(() => {
@@ -325,6 +372,63 @@ describe("the sheets — the tally", () => {
     expect(all).toContain("his");
     expect(all.join("\n")).toContain("comes back gilded next Feeding");
     expect(all.join("\n")).toContain("next time — tie it in topsoil?");
+    act(() => renderer.unmount());
+  });
+
+  test("the woke tally: a thing lost with the pouch reads 'lost', a keepsake reads 'kept', the foot sums only the paid rows", () => {
+    // Topsoil: the domino (banks on descent), the Boom (loose) and the
+    // keepsake (kept); then wake in the mud on the first shove that does.
+    // The first seed from SEED whose stream sleeps through topsoil and wakes
+    // in the mud.
+    const dig = (seed: number) => {
+      let s = initialState(generateLayeredBoard(seed), { coop: false, uncrewed: false });
+      const top = s.board.layers[0].finds;
+      for (const kind of ["truffle_d", "boom", "junk"] as const) {
+        const f = top.find((x) => x.kind === kind)!;
+        for (const t of f.tiles) s = reduce(s, { type: "act", verb: "shove", tile: t });
+      }
+      if (s.ended) return s;
+      s = reduce(s, { type: "descend" });
+      let guard = 0;
+      while (!s.ended && guard++ < 60) {
+        const buried = s.depths.findIndex((d) => d > 0);
+        s = reduce(s, { type: "act", verb: "shove", tile: buried });
+      }
+      return s;
+    };
+    let s = dig(SEED);
+    for (let seed = SEED + 1; (s.ended?.reason !== "wake" || s.ended.layer !== 1) && seed < SEED + 200; seed++) s = dig(seed);
+    expect(s.ended).toEqual(expect.objectContaining({ reason: "wake", layer: 1 }));
+    const top = s.board.layers[0].finds;
+    const boom = top.find((x) => x.kind === "boom")!;
+    const junk = top.find((x) => x.kind === "junk")!;
+    expect(s.missed).toContain(boom.id);
+    expect(s.things).toEqual([junk.id]);
+    const r = receipt(s, { tickledBefore: 38 });
+    const boomRow = r.rows.find((row) => row.id === boom.id)!;
+    expect(boomRow.lost).toBe(true);
+    expect(boomRow.value).toBe("lost");
+    const junkRow = r.rows.find((row) => row.id === junk.id)!;
+    expect(junkRow.kept).toBe(true);
+    expect(junkRow.tickles).toBeUndefined();
+    // Paid: the domino (10) and whatever the mud tied before the wake — never the Boom or the keepsake.
+    const paid = r.rows.filter((row) => row.tickles != null && !row.lost).reduce((n, row) => n + (row.tickles ?? 0), 0);
+    expect(r.ticklesTotal).toBe(paid);
+    expect(paid).toBe(10);
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onClose={() => {}} />),
+      );
+    });
+    const all = texts(renderer);
+    expect(all).toContain("lost");
+    expect(all).toContain("kept");
+    expect(all.join("\n")).toContain("lost with the layer");
+    expect(all.join("\n")).toContain("what you'd tied is yours.");
+    expect(all).toContain("+10"); // the foot: the dig · +10
+    expect(all).toContain("48"); // 38 → 48 tickled now
+    expect(all).not.toContain("+3"); // the Boom's tickles never land
     act(() => renderer.unmount());
   });
 

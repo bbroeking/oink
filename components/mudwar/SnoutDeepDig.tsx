@@ -210,6 +210,9 @@ export function SnoutDeepDig({
       setReceipt(r);
       const cur = stateRef.current;
       setSubmitting(true);
+      // The loose pouch (2026-09-14): `banked` is what the tie swept in
+      // (truffles + consumables), `missed` the carry truffles and every
+      // consumable lost on a wake, `things` the kept collection pieces.
       onSubmit({
         actions: cur.actions,
         layer: cur.layer,

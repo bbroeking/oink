@@ -200,9 +200,9 @@ function receiptRowMark(row: DigReceiptRow) {
   );
 }
 
-/** The tally row's value column: the tickles in accent Caprasimo, "his" in
- *  mute for the truffle he took, the plain hand value for a row that pays
- *  none (Pass XP). */
+/** The tally row's value column: the tickles in accent Caprasimo; "his" /
+ *  "lost" in mute for what he took (the truffle, a thing from the pouch); the
+ *  plain hand value for a row that pays none ("kept", Pass XP). */
 function tallyValue(row: DigReceiptRow): ReactNode {
   if (row.lost) {
     return (
@@ -474,9 +474,9 @@ export const HELP_ROWS: readonly { mark: "sniff" | "rub" | "shove" | "layers" | 
   { mark: "rub", title: "Rub", sub: "clears a little on a tile and half on its neighbours. a half-cleared tile shows the shape underneath", value: "quiet" },
   { mark: "shove", title: "Shove", sub: "clears a tile and half the four around it. holding any tile shoves. fast, and he hears it", value: "loud" },
   { mark: "layers", title: "Three layers", sub: "topsoil · the mud · the root. deeper is richer — relics and Barn pieces live at the root — and he sleeps lighter", value: "deeper" },
-  { mark: "tie", title: "Tie it off", sub: "banks this layer's truffle and ends the dig. Dig deeper banks it too, so each layer only ever stakes its own", value: "bank" },
-  { mark: "wake", title: "If he wakes", sub: "he takes the truffle that is still loose on this layer — it comes back gilded next Feeding. nothing banked is ever touched", value: "his" },
-  { mark: "things", title: "Things are yours", sub: "booms, acorns, tea, keepsakes, furnishings, relics — yours the moment they surface. he only ever eats truffles", value: "kept" },
+  { mark: "tie", title: "Tie it off", sub: "banks the loose truffle and everything loose in the pouch, and ends the dig. Dig deeper banks the truffle only — the pouch rides down with you", value: "bank" },
+  { mark: "wake", title: "If he wakes", sub: "he takes the loose truffle — it comes back gilded next Feeding — and the whole loose pouch, every layer's worth. nothing tied is ever touched", value: "his" },
+  { mark: "things", title: "The pouch", sub: "booms, acorns, tea, charms and the like are loose until you tie it off. keepsakes, furnishings, relics and bows are yours the moment they surface", value: "loose" },
 ];
 
 function HelpMark({ mark }: { mark: (typeof HELP_ROWS)[number]["mark"] }) {

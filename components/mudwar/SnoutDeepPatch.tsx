@@ -136,22 +136,40 @@ export function SnoutDeepPatch({
   const face = hungererStateFor(state.layer, woke);
   const gt = gtReasons(state).length;
   const gtIfTied = state.uncrewed ? 0 : gt + (state.loose ? 1 : 0) + (atRoot && state.layersTied.includes(1) ? 1 : 0);
+  const allFinds = state.board.layers.flatMap((l) => l.finds);
+  const findOf = (id: string) => allFinds.find((f) => f.id === id);
+  // The stake: the loose truffle and every loose thing, all layers' worth.
+  const looseCount = state.looseThings.length + (state.loose ? 1 : 0);
+  // The loose well is the whole carried pouch. After a wake it shows what he
+  // took (the pouch moved to `missed`; a truffle left in the ground on an
+  // earlier layer is not his), in rose, so the last frame says what was lost.
+  const looseIds = woke
+    ? state.missed.filter((id) => {
+        const f = findOf(id);
+        return !!f && (!f.food || state.board.layers[state.layer].finds.some((x) => x.id === id));
+      })
+    : [...(state.loose ? [state.loose] : []), ...state.looseThings];
+  const looseFinds = looseIds.map(findOf).filter((f): f is Find => !!f);
+  const tiedFinds = allFinds.filter((f) => state.banked.includes(f.id) || state.things.includes(f.id));
 
-  // A thing surfaces → the reveal sticker, for a beat. Tracked by the length
-  // of `things` so a re-render never re-announces one.
-  const thingsSeen = useRef(state.things.length);
+  // A thing surfaces → the reveal sticker, for a beat. Tracked by the count of
+  // things surfaced (`found` minus the truffles) so a re-render never
+  // re-announces one, and a consumable and a collection thing announce alike.
+  const thingsFound = state.found.filter((id) => !findOf(id)?.food);
+  const thingsFoundCount = thingsFound.length;
+  const lastThingId = thingsFound[thingsFound.length - 1] ?? null;
+  const thingsSeen = useRef(thingsFoundCount);
   useEffect(() => {
-    if (state.things.length <= thingsSeen.current) {
-      thingsSeen.current = state.things.length;
+    if (thingsFoundCount <= thingsSeen.current) {
+      thingsSeen.current = thingsFoundCount;
       return;
     }
-    thingsSeen.current = state.things.length;
-    const id = state.things[state.things.length - 1];
-    const f = state.board.layers.flatMap((l) => l.finds).find((x) => x.id === id) ?? null;
+    thingsSeen.current = thingsFoundCount;
+    const f = (lastThingId && state.board.layers.flatMap((l) => l.finds).find((x) => x.id === lastThingId)) || null;
     setReveal(f);
     const t = setTimeout(() => setReveal(null), REVEAL_DWELL_MS);
     return () => clearTimeout(t);
-  }, [state.things, state.board]);
+  }, [thingsFoundCount, lastThingId, state.board]);
 
   // The end → the receipt, once.
   const doneFor = useRef<SnoutDeepState["ended"]>(null);
@@ -187,7 +205,6 @@ export function SnoutDeepPatch({
   const tileW = Math.min(TILE_MAX_W, Math.floor((inner - TILE_GAP * (PATCH_COLS - 1)) / PATCH_COLS));
   const tileH = Math.round(tileW * TILE_RATIO);
 
-  const layerFinds = state.board.layers[state.layer].finds;
   const closesIn = phaseCountdown
     ? `closes in ${phaseCountdown}`
     : secondsLeft != null
@@ -300,19 +317,21 @@ export function SnoutDeepPatch({
           <Hand numberOfLines={2}>{whisperFor(state)}</Hand>
         </Sticker>
 
-        {/* THE POUCH: loose · his if he wakes / tied · yours for keeps. */}
+        {/* THE POUCH: loose · his if he wakes / tied · yours for keeps. The
+            loose well is the whole carried pouch — the truffle and every
+            loose thing from every layer — not this layer's alone. */}
         <View style={styles.pouch}>
           <PouchWell
             kicker="loose"
             sub={woke ? "his — he took it" : "his if he wakes"}
-            finds={state.loose ? layerFinds.filter((f) => f.id === state.loose) : []}
-            empty={atRoot ? "nothing to lose down here" : "nothing loose yet"}
+            finds={looseFinds}
+            empty="nothing loose yet"
             tone={woke ? "rose" : "paper"}
           />
           <PouchWell
             kicker="tied"
             sub="yours for keeps"
-            finds={state.board.layers.flatMap((l) => l.finds).filter((f) => state.banked.includes(f.id) || state.things.includes(f.id))}
+            finds={tiedFinds}
             empty="nothing tied yet"
             tone="paper"
           />
@@ -341,10 +360,10 @@ export function SnoutDeepPatch({
                   full
                   disabled={!!state.ended}
                   onPress={() => dispatch({ type: "tie" })}
-                  accessibilityLabel="Tie it off"
-                  accessibilityHint="Banks the loose truffle and ends the dig"
+                  accessibilityLabel={looseCount > 0 ? `Tie it off, bank ${looseCount}` : "Tie it off"}
+                  accessibilityHint="Banks everything loose and ends the dig"
                 >
-                  Tie it off
+                  {looseCount > 0 ? `Tie it off · bank ${looseCount}` : "Tie it off"}
                 </Button>
               </View>
               <View style={styles.footerHalf}>
@@ -354,10 +373,12 @@ export function SnoutDeepPatch({
                   full
                   disabled={!!state.ended}
                   onPress={() => dispatch({ type: "descend" })}
-                  accessibilityLabel={`Dig deeper, into ${LAYER_NAMES[(state.layer + 1) as Layer]}`}
-                  accessibilityHint="Banks the loose truffle and opens the next layer"
+                  accessibilityLabel={`Dig deeper, into ${LAYER_NAMES[(state.layer + 1) as Layer]}${
+                    looseCount > 0 ? `, carry ${looseCount} down` : ""
+                  }`}
+                  accessibilityHint="Banks the loose truffle, carries the loose things down and opens the next layer"
                 >
-                  Dig deeper
+                  {looseCount > 0 ? `Dig deeper · carry ${looseCount}` : "Dig deeper"}
                 </Button>
               </View>
             </>

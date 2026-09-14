@@ -213,9 +213,14 @@ export const WAKE_TABLE: Readonly<
 export const WAKE_COOP_LAYER: SnoutDeepLayer = 2;
 export const WAKE_COOP_VERBS: readonly SnoutDeepVerb[] = ["sniff", "rub"];
 
-// What can be buried. Food is truffles, only — loose until banked, his if he
-// wakes. Everything else is a thing: yours the moment its last tile clears.
-// Stones are inert (never a find, never scent).
+// What can be buried. Food is truffles, only — loose until banked (on descent
+// or tie), his if he wakes. Everything else is a thing, in two classes (the
+// loose pouch, 2026-09-14): a CONSUMABLE thing (Boom, pouch, apple, shimmer,
+// acorn, tea, scroll, charm) is loose from the moment its last tile clears
+// until Tie it off banks it — it rides down through every layer and is lost
+// with the whole pouch if he wakes; a COLLECTION thing (keepsake, relic,
+// furnishing, bow) is kept the moment it surfaces, tie or wake, and only its
+// tickles ride the tie. Stones are inert (never a find, never scent).
 export type DigFindKind =
   | "truffle_d"
   | "truffle_l"
@@ -235,6 +240,21 @@ export type DigFindKind =
 export const DIG_FOOD_KINDS: readonly DigFindKind[] = ["truffle_d", "truffle_l"];
 export function isDigFood(kind: DigFindKind): boolean {
   return DIG_FOOD_KINDS.includes(kind);
+}
+// Kept on reveal — a Barn piece is a Barn piece; losing one to a dice roll is
+// a rage-quit, not a gamble. MUST match `collection_kinds` in
+// supabase/migrations/20260914090000_loose_pouch.sql.
+export const DIG_COLLECTION_KINDS: readonly DigFindKind[] = ["junk", "relic", "furnishing", "bow"];
+export function isDigCollectionThing(kind: DigFindKind): boolean {
+  return DIG_COLLECTION_KINDS.includes(kind);
+}
+// Loose until tied — the pouch at stake. Every thing that is neither food,
+// a collection piece nor a stone.
+export const DIG_CONSUMABLE_KINDS: readonly DigFindKind[] = [
+  "boom", "pouch", "apple", "shimmer", "acorn", "tea", "scroll", "charm",
+];
+export function isDigConsumable(kind: DigFindKind): boolean {
+  return DIG_CONSUMABLE_KINDS.includes(kind);
 }
 
 // Per-layer find odds (spec §2), as [numerator, denominator] "n in d". The
