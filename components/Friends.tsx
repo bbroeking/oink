@@ -796,7 +796,7 @@ function RowActionsPanel({
 			: {};
 
 	return (
-		<Animated.View
+		<View
 			ref={panelRef}
 			nativeID={menuNativeId(friendId)}
 			accessibilityRole="menu"
@@ -810,9 +810,16 @@ function RowActionsPanel({
 			// child-first), and the paper between them stops here rather than
 			// falling through to "open their profile" underneath.
 			onStartShouldSetResponder={() => true}
-			style={[styles.actionPanelLayer, { transform: [{ translateX: slide }] }]}
+			// The layer is the panel's own clip box: the slide happens INSIDE it,
+			// so the paper wipes in from the trigger's side and never crosses the
+			// trigger or the card's outline on its way in or out. (Seen on device
+			// 2026-09-14: the un-clipped slide rode over the "…" and the border.)
+			style={styles.actionPanelLayer}
 			{...webKeys}
 		>
+			<Animated.View
+				style={[styles.actionPanelSlide, { transform: [{ translateX: slide }] }]}
+			>
 			<Sticker
 				color="cream2"
 				rotate={0}
@@ -847,7 +854,8 @@ function RowActionsPanel({
 					/>
 				))}
 			</Sticker>
-		</Animated.View>
+			</Animated.View>
+		</View>
 	);
 }
 
@@ -1794,8 +1802,13 @@ const styles = StyleSheet.create({
 		top: ACTION_PANEL_INSETS.top,
 		bottom: ACTION_PANEL_INSETS.bottom,
 		left: ACTION_PANEL_INSETS.left,
-		right: ACTION_PANEL_INSETS.right
+		right: ACTION_PANEL_INSETS.right,
+		// The clip for the slide (see the render comment) — the panel is cut at
+		// its own box, not the card's.
+		overflow: "hidden"
 	},
+	// The moving part: fills the clip box and carries the translate.
+	actionPanelSlide: { flex: 1 },
 	// The panel itself — five equal cells on cream paper, and a hard clip so a
 	// cell can never paint past the outline.
 	actionPanel: {
