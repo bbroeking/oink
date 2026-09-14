@@ -13,8 +13,9 @@ slides over that row's text column. Nothing navigates; the list never changes he
 The panel spans the row's content box minus the trigger's clearance. Its width, and
 the width of each of the five cells, is a pure function of the tokens:
 `actionPanelGeometry(windowWidth)` in `constants/layoutBreakpoints.ts`. A test asserts
-`cellWidth ≥ TAP_MIN` at 375pt and 393pt, that the row's `minHeight` clears the cells'
-content, and that the panel's insets are the tokens the function assumes. Labels are one
+`cellWidth ≥ TAP_MIN` at 375pt and 393pt, that the row's `minHeight` (70pt) clears the
+cells' content, that the panel's insets are the tokens the function assumes, and that
+the slide's travel is shorter than the trigger clearance. Labels are one
 line and shrink to fit. No tier draws the state line (it pushed the row floor from 78pt
 to 98pt); the copy stays in each cell's accessibility hint, and the armed curse flips its
 label to "Again" beside the heavy border.
@@ -78,7 +79,7 @@ FriendsList (owns openMenuFor)
   `aria-controls={`friend-menu-${id}`}`, testID `friend-menu-trigger-${id}`.
   Pressed: the same icon (no glyph swap); "open" is the panel beside it.
 - **`RowActionsPanel`** — an absolutely positioned `Sticker` (color `cream2`, `RADII.md`,
-  `BORDER.ink`, `shadow="none"`) anchored `top: 0, bottom: 0, right: <trigger width +
+  `BORDER.ink`, `shadow="none"`) anchored `top/bottom: SPACE.xs, right: <trigger width +
   gap>`, width = the row's text column (avatar right edge → trigger left edge), so it
   covers the name/meta and nothing else. Inside: a horizontal row of `ActionCell`s
   (icon over label; `actionCellTier(width)` picks the type tier — narrow phones drop the
@@ -119,10 +120,20 @@ for. No focus trap — Tab past the last cell continues to the next row.
 
 ## 4. Motion
 
-Slide in from the trigger side: `Animated.Value` translateX from panel width → 0,
-`MOTION_SPRING.settle`, `useNativeDriver`. Exit reverses, then unmount. Switching rows
-plays A's exit and B's entrance concurrently. Under Reduce Motion (`useMotionPolicy`),
-`setValue` — no spring. No `LayoutAnimation`, ever: nothing changes size.
+Arrive from the trigger's side: `Animated.Value` translateX from
+`ACTION_PANEL_TRAVEL` (32pt, `SPACE.xxl`) → 0 with opacity interpolated 0 → 1 over the
+same value, on `MOTION_SPRING.settle` with `overshootClamping: true`, `useNativeDriver`.
+Exit reverses, then unmount. Switching rows plays A's exit and B's entrance
+concurrently. Under Reduce Motion (`useMotionPolicy`), `setValue` — no spring.
+No `LayoutAnimation`, ever: nothing changes size.
+
+Why short and clamped (verified on device 2026-09-14): the first cut slid the panel its
+full width on the house spring. The spring's overshoot carried it past its rest and
+back (a visible jiggle), and because a full-width slide crosses the trigger and the
+card edge it needed a clip box, which cut the panel mid-motion. A 32pt travel is
+shorter than the 60pt trigger clearance, so the panel is fully visible from the first
+frame to the last with no clip anywhere; clamping removes the bounce; the fade makes
+the short travel read as arriving rather than as a shutter.
 
 ## 5. Layout stability (req 6)
 
