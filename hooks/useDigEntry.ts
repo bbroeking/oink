@@ -29,6 +29,8 @@ import type { SounderStep } from "@/hooks/useSounderPath";
 // practice dig and the join path. It reads no params, so there are none to pass.
 const SEASON_TAB = "/(tabs)/season";
 
+export type DigBlocked = null | "shut" | "dug" | "no_crew";
+
 export interface DigEntry {
   /**
    * The derived onboarding step, or null until the one-shot crew read lands —
@@ -41,6 +43,15 @@ export interface DigEntry {
   open: boolean;
   /** Whether a primary dig trigger belongs on the current surface. */
   visible: boolean;
+  /**
+   * Why a dig can't happen right now, or null when it can. Drives the Barn
+   * button's disabled face: "shut" = the patch is in its guarded phase,
+   * "dug" = already dug this Feeding, "no_crew" = an uncrewed player before
+   * Snout Deep (the press is a door to the Season tab, not a dig).
+   */
+  blocked: DigBlocked;
+  /** The one hand line that explains `blocked` on a disabled control. */
+  blockedLine: string | null;
   /** What the dig is, right now ("Dig for Golden Truffles" / the cooldown). */
   title: string;
   /** The payoff line under it — what a find is worth, personally and to the herd. */
@@ -81,6 +92,24 @@ export function useDigEntry(): DigEntry {
   // collection/history surfaces remain independent, and useRooting's
   // reconciliation clears dugThisWindow when the next window becomes current.
   const visible = !inPlace || !cta.dugThisWindow;
+  // The one reason the face wears when it can't dig. Order matters: a dug
+  // Feeding beats a shut patch (you dug, that's why it's over), and the door
+  // for the uncrewed is never "shut" — it opens whenever the tab does.
+  const blocked: DigBlocked = !inPlace
+    ? "no_crew"
+    : cta.dugThisWindow
+      ? "dug"
+      : cta.phaseOpen
+        ? null
+        : "shut";
+  const blockedLine =
+    blocked === "shut"
+      ? `the patch opens in ${cta.countdown}`
+      : blocked === "dug"
+        ? "dug this Feeding · back next one"
+        : blocked === "no_crew"
+          ? "truffles are for herds — find yours"
+          : null;
 
   // An uncrewed Snout Deep dig pays things and XP, never Golden Truffles —
   // the control says so rather than promising the herd's prize.
@@ -118,6 +147,8 @@ export function useDigEntry(): DigEntry {
     crewed,
     open,
     visible,
+    blocked,
+    blockedLine,
     title,
     detail,
     note: cta.note,

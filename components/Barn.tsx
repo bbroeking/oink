@@ -812,6 +812,11 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			onPress: dig.openDig,
 			accessibilityLabel: "Truffle Patch",
 			accessibilityHint: dig.hint,
+			// Shut patch or a dug Feeding: the row stays, greyed, with the reason;
+			// the face can't be armed on it (see `armedKey`). The uncrewed door
+			// to the Season tab is a real press, so it is never disabled.
+			disabled: dig.blocked === "shut" || dig.blocked === "dug",
+			disabledLine: dig.blockedLine ?? undefined,
 		});
 	}
 	fanOptions.push({
@@ -873,8 +878,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		AsyncStorage.setItem(ARMED_ACTION_KEY, key).catch(() => {});
 	}, []);
 	const defaultKey = dig.open && dig.visible ? "dig" : "barn";
+	// A sticky pick never arms a disabled action: the face falls back to the
+	// default so it never wears a dead verb.
 	const armedKey =
-		pickedKey && fanOptions.some((option) => option.key === pickedKey) ? pickedKey : defaultKey;
+		pickedKey && fanOptions.some((option) => option.key === pickedKey && !option.disabled)
+			? pickedKey
+			: defaultKey;
 
 	const renderPigContent = (forInterior: boolean) => (
 		<>

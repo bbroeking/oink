@@ -16,6 +16,7 @@ import {
 	Animated,
 	Dimensions,
 	Easing,
+	Platform,
 	Pressable,
 	StyleSheet,
 	View,
@@ -34,6 +35,7 @@ import {
 	SHADOW_SM,
 	SPACE,
 	STICKER_SHADOW,
+	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
 import {
@@ -92,6 +94,15 @@ export interface BarnFanOption {
 	/** The face's name and hint while this action is armed. */
 	accessibilityLabel: string;
 	accessibilityHint?: string;
+	/**
+	 * The action can't happen right now (the patch is shut, already dug). It
+	 * stays in the fan so the player can see it exists and why, but it can't
+	 * be pressed, can't be armed as the face's default, and the face wears
+	 * the reason instead of the verb.
+	 */
+	disabled?: boolean;
+	/** The hand line that explains `disabled` — on the fan row and beside the face. */
+	disabledLine?: string;
 }
 
 interface Props {
@@ -217,10 +228,11 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 		setFanned(true);
 	};
 	const primary = () => {
-		if (!armed) return;
+		if (!armed || armed.disabled) return;
 		Haptics.selectionAsync().catch(() => {});
 		armed.onPress();
 	};
+	const faceDisabled = !!armed?.disabled;
 	// Arming is a light tap, not the action's own haptic — nothing has fired.
 	const arm = (key: string) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -229,7 +241,7 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 	const canFan = options.length > 1;
 	// The sage fill belongs to the open patch and the shovel together; a door
 	// or a truffle on the face stays on sun while the ring does the announcing.
-	const sage = live && armed?.mark === "shovel";
+	const sage = live && armed?.mark === "shovel" && !faceDisabled;
 
 	const fanOpacity = fan.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
@@ -277,17 +289,32 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 								>
 									<Pressable
 										onPress={() => arm(option.key)}
+										disabled={option.disabled}
 										accessibilityRole="button"
 										accessibilityLabel={option.title}
-										accessibilityHint={`Sets the Barn button to ${option.title}`}
-										accessibilityState={{ selected: isDefault }}
-										style={({ pressed }) => [styles.optionRow, pressed && styles.optionPressed]}
+										accessibilityHint={
+											option.disabled ? option.disabledLine : `Sets the Barn button to ${option.title}`
+										}
+										accessibilityState={{ selected: isDefault, disabled: !!option.disabled }}
+										style={({ pressed }) => [
+											styles.optionRow,
+											pressed && !option.disabled && styles.optionPressed,
+											option.disabled && styles.notAllowed,
+										]}
 									>
-										<View style={[styles.optionTitle, isDefault && styles.optionTitleDefault]}>
-											<T role="label">{option.title}</T>
-											{option.sub ? (
-												<Hand tone="secondary" numberOfLines={1}>
-													{option.sub}
+										<View
+											style={[
+												styles.optionTitle,
+												isDefault && !option.disabled && styles.optionTitleDefault,
+												option.disabled && styles.optionTitleDisabled,
+											]}
+										>
+											<T role="label" tone={option.disabled ? "disabled" : "primary"}>
+												{option.title}
+											</T>
+											{(option.disabled ? option.disabledLine : option.sub) ? (
+												<Hand tone={option.disabled ? "disabled" : "secondary"} numberOfLines={1}>
+													{option.disabled ? option.disabledLine : option.sub}
 												</Hand>
 											) : null}
 										</View>
@@ -295,10 +322,13 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 											style={[
 												styles.optionMark,
 												{ width: size, height: size },
-												isDefault && styles.optionMarkDefault,
+												isDefault && !option.disabled && styles.optionMarkDefault,
+												option.disabled && styles.optionMarkDisabled,
 											]}
 										>
-											<Mark mark={option.mark} size={art} />
+											<View style={option.disabled ? styles.dimmed : null}>
+												<Mark mark={option.mark} size={art} />
+											</View>
 										</View>
 									</Pressable>
 								</Animated.View>
@@ -306,7 +336,7 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 						})
 					: null}
 
-				{live && !fanned ? (
+				{live && !fanned && !faceDisabled ? (
 					<Animated.View
 						pointerEvents="none"
 						style={[
@@ -334,14 +364,23 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 						onLongPress={canFan ? open : undefined}
 						accessibilityRole="button"
 						accessibilityLabel={armed?.accessibilityLabel}
-						accessibilityHint={armed?.accessibilityHint}
-						style={({ pressed }) => [
+						accessibilityHint={faceDisabled ? armed?.disabledLine : armed?.accessibilityHint}
+						accessibilityState={{ disabled: faceDisabled }}
+						style={({ pressed, hovered }) => [
 							styles.fab,
 							sage && styles.fabLive,
-							pressed && styles.fabPressed,
+							// A disabled face keeps its place in the yard but loses the
+							// things that say "press me": the sun, the shadow, the ring.
+							faceDisabled && styles.fabDisabled,
+							// Web: the shove at half strength on hover, the full shove on press.
+							hovered && !pressed && !faceDisabled && styles.fabHovered,
+							pressed && !faceDisabled && styles.fabPressed,
+							faceDisabled && styles.notAllowed,
 						]}
 					>
-						<Animated.View style={{ opacity: pop, transform: [{ scale: pop }] }}>
+						<Animated.View
+							style={[{ opacity: pop, transform: [{ scale: pop }] }, faceDisabled && styles.dimmed]}
+						>
 							{armed ? <Mark mark={armed.mark} size={FACE} /> : null}
 						</Animated.View>
 						{canFan ? (
@@ -357,8 +396,10 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 							</Pressable>
 						) : null}
 						{armed ? (
-							<View pointerEvents="none" style={styles.label}>
-								<Hand numberOfLines={1}>{armed.label}</Hand>
+							<View pointerEvents="none" style={[styles.label, faceDisabled && styles.labelDisabled]}>
+								<Hand numberOfLines={1} tone={faceDisabled ? "disabled" : "primary"}>
+									{faceDisabled && armed.disabledLine ? armed.disabledLine : armed.label}
+								</Hand>
 							</View>
 						) : null}
 					</Pressable>
@@ -395,6 +436,24 @@ const styles = StyleSheet.create({
 	fabLive: {
 		backgroundColor: WHIMSY.sage,
 	},
+	// Not now: cream, flat, no shadow — the shove affordance is what says
+	// "tappable", so its absence says "not now". The tilt and the seat stay so
+	// the yard doesn't rearrange.
+	fabDisabled: {
+		backgroundColor: WHIMSY.cream2,
+		borderColor: UI_COLORS.uiMuted,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	// Web hover: half the pressed shove, no shadow change.
+	fabHovered: {
+		transform: [{ rotate: FAB_TILT }, { translateX: 1 }, { translateY: 1 }],
+	},
+	dimmed: {
+		opacity: OPACITY.dim,
+	},
+	// RN Web honours `cursor`; native ignores it.
+	notAllowed: (Platform.OS === "web" ? { cursor: "not-allowed" } : {}) as ViewStyle,
 	fabClosing: {
 		backgroundColor: WHIMSY.paper,
 		transform: [],
@@ -444,6 +503,24 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		transform: [{ rotate: LABEL_TILT }],
 		...SHADOW_SM,
+	},
+	labelDisabled: {
+		backgroundColor: WHIMSY.cream2,
+		borderColor: UI_COLORS.uiMuted,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	optionTitleDisabled: {
+		backgroundColor: WHIMSY.cream2,
+		borderColor: UI_COLORS.uiMuted,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	optionMarkDisabled: {
+		backgroundColor: WHIMSY.cream2,
+		borderColor: UI_COLORS.uiMuted,
+		shadowOpacity: 0,
+		elevation: 0,
 	},
 	// A fanned option: right-anchored on the seat, its mark under the button's
 	// column and its title to the left.
