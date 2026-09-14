@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Flow</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@600;700;800;900&family=Patrick+Hand&family=Fredoka:wght@700&display=swap');
+:root{
+  --ink:#2a1f15; --paper:#fffaf0; --cream:#fbeee2; --cream2:#f6e6d4;
+  --rose:#ffd6dc; --roseDeep:#f8a8b3; --sky:#c8e3f0; --sage:#c9dec1; --sun:#ffd87a;
+  --lilac:#d6c8f0; --accent:#a03e2f; --goldInk:#5A3F00; --sageInk:#7A9B63;
+  --mute:#605449; --muteSoft:#8c7e71; --bark:#3a2c1e;
+  --dirt:#7b5535; --dirt2:#8b6544;
+}
+*{box-sizing:border-box;margin:0}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Nunito',sans-serif;font-weight:700}
+a{color:var(--accent)} a:hover{color:#7d2f23}
+/* type roles (TYPE.*) */
+.pageTitle{font-family:'Caprasimo',serif;font-weight:400;font-size:26px;line-height:28px}
+.sectionTitle{font-family:'Caprasimo',serif;font-weight:400;font-size:22px;line-height:24px;letter-spacing:.2px}
+.cardTitle{font-family:'Caprasimo',serif;font-weight:400;font-size:18px;line-height:22px;letter-spacing:.2px}
+.cardTitleSm{font-family:'Caprasimo',serif;font-weight:400;font-size:15px;line-height:22px;letter-spacing:.2px}
+.numeral{font-family:'Caprasimo',serif;font-weight:400;font-size:16px;line-height:20px}
+.body{font-size:15px;line-height:21px;font-weight:700}
+.bodySm{font-size:13px;line-height:18px;font-weight:700}
+.label{font-size:12px;line-height:16px;font-weight:800;letter-spacing:.3px}
+.kicker{font-family:'Patrick Hand',cursive;font-weight:400;font-size:13px;line-height:18px;letter-spacing:.4px}
+.hand{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14px;line-height:20px}
+.handLg{font-family:'Patrick Hand',cursive;font-weight:400;font-size:17px;line-height:24px}
+.kickerPill{font-size:11px;line-height:14px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase}
+.mute{color:var(--mute)} .accent{color:var(--accent)}
+/* the phone (390x844), safe-area top 59 / bottom 34 */
+.phone{width:390px;height:844px;background:var(--cream);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.page{padding:59px 18px 34px;display:flex;flex-direction:column;gap:12px;height:100%}
+/* sticker = paper, 2px ink border, 4px hard shadow (STICKER_SHADOW) */
+.sticker{background:var(--paper);border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink)}
+.stickerSm{background:var(--paper);border:2px solid var(--ink);border-radius:14px;box-shadow:2px 2px 0 var(--ink)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:6px 12px;box-shadow:2px 2px 0 var(--ink)}
+.tag{display:inline-flex;align-items:center;background:var(--cream2);border:1.5px solid var(--ink);border-radius:999px;padding:2px 8px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:44px;padding:11px 18px;border:2px solid var(--ink);border-radius:22px;background:var(--paper);font-size:15px;font-weight:800;box-shadow:4px 4px 0 var(--ink)}
+.btnGold{background:var(--sun);color:var(--goldInk)}
+.btnLg{min-height:54px;border-radius:999px;font-size:17px}
+.handLink{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;text-align:center}
+.iconBtn{width:44px;height:44px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);display:flex;align-items:center;justify-content:center;box-shadow:2px 2px 0 var(--ink)}
+/* the ledger sheet (reveal-family-spec §1) */
+.sheet{background:var(--paper);border:2px solid var(--ink);border-radius:22px 22px 0 0;box-shadow:0 -4px 0 var(--ink);padding:18px 24px 34px;display:flex;flex-direction:column;gap:12px}
+.rule{height:2px;background:var(--ink);border-radius:2px}
+.ledger{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0}
+.row+.row{border-top:1.5px solid rgba(42,31,21,.3)}
+.disc{width:40px;height:40px;border-radius:999px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
+.words{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.value{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14px;text-align:right;flex:none}
+.scrim{position:absolute;inset:0;background:rgba(42,31,21,.55)}
+.badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--paper);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+/* the dig header (SnoutDeepPatch) */
+.dighead{display:flex;align-items:flex-start;gap:10px}
+.sign{flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+/* canvas notes */
+.note{font-family:'Patrick Hand',cursive;font-weight:400;font-size:15px;line-height:20px;color:var(--mute);width:390px}
+.note b{color:var(--ink);font-weight:400}
+</style>
+</helmet>
+
+<div style="width:1180px;background:var(--cream);padding:32px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <div class="kicker accent">the flow</div>
+    <div class="pageTitle">Dig → bag → use</div>
+    <div class="hand mute">things stop applying themselves the moment they surface. they go into the bag; the player spends them when it suits. currencies (snouts, motes) and homes (shelf, Barn, Burrow Book, wardrobe) still land directly — the bag's kept shelf is the record and the door.</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="sticker" style="width:170px;padding:12px 14px;background:var(--paper);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">Barn button</div><div class="hand mute">fan: dig · barn · bag</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--paper);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">the dig</div><div class="hand mute">full screen, slides up</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--rose);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">a thing surfaces</div><div class="hand mute">reveal sticker: into the bag</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--paper);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">tie / wake / cap</div><div class="hand mute">the receipt, every find with its destination</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--sun);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">Back to the Barn</div><div class="hand mute">bag badge counts the new things</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="sticker" style="width:170px;padding:12px 14px;background:var(--cream2);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">X mid-dig</div><div class="hand mute">0 actions → just closes</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--cream2);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">Leave the patch?</div><div class="hand mute">only with actions: waits · kept · closes-first tie</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--cream2);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">leave for now</div><div class="hand mute">snapshot + sync; Barn button says 'dig waits'</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--cream2);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">press dig again</div><div class="hand mute">restores where you left it</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="sticker" style="width:170px;padding:12px 14px;background:var(--sun);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">bag</div><div class="hand mute">to use · kept</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--paper);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">item detail</div><div class="hand mute">what it does · Fire one / keep it</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--rose);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">used</div><div class="hand mute">the same reveal grammar: +19 tickles, yours</div></div><div style="display:flex;align-items:center;color:var(--ink)"><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h34M30 6l6 6-6 6"/></svg></div><div class="sticker" style="width:170px;padding:12px 14px;background:var(--paper);display:flex;flex-direction:column;gap:2px"><div class="cardTitleSm">kept row</div><div class="hand mute">tap → the shelf / Barn / Burrow Book / wardrobe</div></div>
+  </div>
+  <div class="hand mute" style="max-width:900px">what changes in the game: the Boom's auto-apply rule, the acorn's contraption charge, the tea blessing, the apple's happiness and the scroll's XP all move from <b style="color:var(--ink);font-weight:400">reveal</b> to <b style="color:var(--ink);font-weight:400">use</b>. one new table, `bag_items(uid, kind, count, source)`, one RPC `use_bag_item(kind)` that does what the reveal used to do.</div>
+</div>
+
+</x-dc>
+</body>
+</html>

@@ -178,6 +178,37 @@ Every row is a Field Guide entry (silhouette until met). Stones are inert.
 | the root | bless charm | thing | one free blessing to send | 1 in 3 | `blessings` on send |
 | the root | (no truffle) | — | the root tie pays `'dig_root'` +1 GT when the mud truffle was banked | — | `mint_truffles` |
 
+- **Every find pays tickles** (2026-09-13). On top of whatever a find also
+  does (a shelf piece, a blessing, XP), each one is worth tickles applied to
+  the player's total count — the dig's reward is the count ticking up. A
+  first table, banded by layer, placeholders to tune against §4:
+
+  | layer | find | tickles |
+  | --- | --- | --- |
+  | topsoil | domino truffle | 10 |
+  | topsoil | Tickle Boom | 3 + gap (the catch-up formula, §4) |
+  | topsoil | snout pouch | 5 |
+  | topsoil | windfall apple | 4 |
+  | topsoil | boot · horseshoe · cap | 3 |
+  | mud | L truffle | 15 |
+  | mud | shimmer pocket | 8 |
+  | mud | Clockwork Acorn | 12 |
+  | mud | flask of warm tea | 8 |
+  | mud | Pass XP scroll | 10 |
+  | root | relic | 15 |
+  | root | Unearthed furnishing | 20 |
+  | root | a buried bow | 25 |
+  | root | bless charm | 12 |
+  | any | stone | 0 |
+
+  A truffle he took pays nothing (it reads *his* on the tally). A full root
+  tie reads +60 to +90; a topsoil tie +15 to +35. Server: one column,
+  `app_settings.dig_finds[kind].tickles`, applied by `submit_rooting_deep`
+  through the same tickle ledger as a tap, never bankable or tradeable
+  (§4); the per-find values ride back on the receipt so the client can
+  count them up. The painted marks for every find (ImageGen lane, the
+  truffle glyph as the style anchor) are staged; `FindMark` stops
+  borrowing other glyphs.
 - **Why the Boom is in topsoil.** The catch-up is never at stake; pushing
   deeper is for the herd's race and the Barn, not to protect the handicap.
 - **The *Unearthed* collection.** A new `habitat_collections` row, ~12
@@ -276,15 +307,29 @@ dialogs on the reveal family's Ledger sheet.
    surfaced.)
 6. **Pressure.** No sheet: his face, the tag, the whisper; at the root the
    rose rim and *Tie it off* as the primary.
-7. **Payoff, tied** (Ledger receipt): title *Tied off at the root*, count
-   *three layers · 23 actions · he slept through it*, one row per thing and a
-   truffles row with the GT value, XP row; primary *Back to Barn*; secondary
-   *share the dig ›*. Uncrewed: the truffles row reads *truffles are for herds
-   — find yours ›* and is the secondary.
-8. **Payoff, woke**: title *He woke.*, his face awake, a hand line naming the
-   action (*pushed past the mud on a shove. one in six — this was the one.*),
-   rows *the fat one · his — gilded next Feeding*, the things kept, XP;
-   primary *Back to Barn*; hand line *next time — tie it at the mud?*
+7. **Payoff, tied — the tally** (Ledger receipt; design
+   `docs/design/claude-design/dig/snout-deep-bag.html` · artifact "Snout
+   Deep Bag and Finds", page *The tally*, chosen 2026-09-13 over B tumble-out,
+   C weigh-in, D stamp and five variants of A): kicker *the truffle patch ·
+   tied at the mud*, title *What the dig was worth*, hand line *each thing
+   lands, the count ticks. 23 actions · he slept through it.* A sun sticker
+   reads *38 before → 105 tickled now*. Then one ledger row per find, landing
+   ~350 ms apart top to bottom; each row is the find's mark on its layer's
+   disc, its name, a sub line for what it also does (*the herd's too — +1
+   Golden Truffle* / *on the shelf as well* / *+1 Mote as well* / *the
+   catch-up: 3 + 16 for the gap*), and *+n* in accent Caprasimo on the right;
+   as each lands, the top number rolls up by n. Foot: *the dig · +67*; primary
+   *Back to the Barn*; hand link *share the dig ›*. Tap anywhere to hurry.
+   Uncrewed: the truffle rows' sub reads *truffles are for herds — find yours
+   ›* (the join door), their tickles still pay.
+8. **Payoff, woke — the same tally**: kicker *the truffle patch · he woke at
+   the mud*, title *He woke. Still worth it.*, hand line *the things are
+   yours. the loose truffle was his.* The before → now sticker is cream2, not
+   sun. The truffle he took is the first row, on a roseDeep disc: *the fat
+   one · his — comes back gilded next Feeding*, and its value column reads
+   *his* in mute, no number. Every other row lands and pays as in 7; the foot
+   reads *the dig · +52* — smaller, never zero. Primary *Back to the Barn*;
+   hand link *next time — tie it at the mud?*
 9. **Back on the Barn**: the button's face flips to the door; a yard note
    *dug this Feeding · tied at the root · next patch opens in 5h 50m*.
 10. **Season tab.** Feeding card line per member: *tied at the mud* / *woke at
@@ -490,3 +535,7 @@ restore replays through `reduce`).
 - The uncrewed player digs: things, Booms and wound regen yes; GT, Sounder Bonus, race finds no. The hidden practice dig is gone.
 - Dig deeper is available any time, no gate.
 - Co-op halves the root's sniff and rub odds; that is the one co-op lever.
+- Every find pays tickles into the total count (2026-09-13); the dig's reward
+  is the count ticking up. The receipt becomes the tally (§5.7/5.8): rows
+  land one by one and roll the number. The woke tally keeps the same grammar
+  with the taken truffle reading *his*.

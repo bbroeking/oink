@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>VariantA4</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@600;700;800;900&family=Patrick+Hand&family=Fredoka:wght@700&display=swap');
+:root{
+  --ink:#2a1f15; --paper:#fffaf0; --cream:#fbeee2; --cream2:#f6e6d4;
+  --rose:#ffd6dc; --roseDeep:#f8a8b3; --sky:#c8e3f0; --sage:#c9dec1; --sun:#ffd87a;
+  --lilac:#d6c8f0; --accent:#a03e2f; --goldInk:#5A3F00; --sageInk:#7A9B63;
+  --mute:#605449; --muteSoft:#8c7e71; --bark:#3a2c1e;
+  --dirt:#7b5535; --dirt2:#8b6544;
+}
+*{box-sizing:border-box;margin:0}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Nunito',sans-serif;font-weight:700}
+a{color:var(--accent)} a:hover{color:#7d2f23}
+/* type roles (TYPE.*) */
+.pageTitle{font-family:'Caprasimo',serif;font-weight:400;font-size:26px;line-height:28px}
+.sectionTitle{font-family:'Caprasimo',serif;font-weight:400;font-size:22px;line-height:24px;letter-spacing:.2px}
+.cardTitle{font-family:'Caprasimo',serif;font-weight:400;font-size:18px;line-height:22px;letter-spacing:.2px}
+.cardTitleSm{font-family:'Caprasimo',serif;font-weight:400;font-size:15px;line-height:22px;letter-spacing:.2px}
+.numeral{font-family:'Caprasimo',serif;font-weight:400;font-size:16px;line-height:20px}
+.body{font-size:15px;line-height:21px;font-weight:700}
+.bodySm{font-size:13px;line-height:18px;font-weight:700}
+.label{font-size:12px;line-height:16px;font-weight:800;letter-spacing:.3px}
+.kicker{font-family:'Patrick Hand',cursive;font-weight:400;font-size:13px;line-height:18px;letter-spacing:.4px}
+.hand{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14px;line-height:20px}
+.handLg{font-family:'Patrick Hand',cursive;font-weight:400;font-size:17px;line-height:24px}
+.kickerPill{font-size:11px;line-height:14px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase}
+.mute{color:var(--mute)} .accent{color:var(--accent)}
+/* the phone (390x844), safe-area top 59 / bottom 34 */
+.phone{width:390px;height:844px;background:var(--cream);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.page{padding:59px 18px 34px;display:flex;flex-direction:column;gap:12px;height:100%}
+/* sticker = paper, 2px ink border, 4px hard shadow (STICKER_SHADOW) */
+.sticker{background:var(--paper);border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink)}
+.stickerSm{background:var(--paper);border:2px solid var(--ink);border-radius:14px;box-shadow:2px 2px 0 var(--ink)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:6px 12px;box-shadow:2px 2px 0 var(--ink)}
+.tag{display:inline-flex;align-items:center;background:var(--cream2);border:1.5px solid var(--ink);border-radius:999px;padding:2px 8px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:44px;padding:11px 18px;border:2px solid var(--ink);border-radius:22px;background:var(--paper);font-size:15px;font-weight:800;box-shadow:4px 4px 0 var(--ink)}
+.btnGold{background:var(--sun);color:var(--goldInk)}
+.btnLg{min-height:54px;border-radius:999px;font-size:17px}
+.handLink{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;text-align:center}
+.iconBtn{width:44px;height:44px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);display:flex;align-items:center;justify-content:center;box-shadow:2px 2px 0 var(--ink)}
+/* the ledger sheet (reveal-family-spec §1) */
+.sheet{background:var(--paper);border:2px solid var(--ink);border-radius:22px 22px 0 0;box-shadow:0 -4px 0 var(--ink);padding:18px 24px 34px;display:flex;flex-direction:column;gap:12px}
+.rule{height:2px;background:var(--ink);border-radius:2px}
+.ledger{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0}
+.row+.row{border-top:1.5px solid rgba(42,31,21,.3)}
+.disc{width:40px;height:40px;border-radius:999px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
+.words{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.value{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14px;text-align:right;flex:none}
+.scrim{position:absolute;inset:0;background:rgba(42,31,21,.55)}
+.badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--paper);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+/* the dig header (SnoutDeepPatch) */
+.dighead{display:flex;align-items:flex-start;gap:10px}
+.sign{flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+/* canvas notes */
+.note{font-family:'Patrick Hand',cursive;font-weight:400;font-size:15px;line-height:20px;color:var(--mute);width:390px}
+.note b{color:var(--ink);font-weight:400}
+</style>
+</helmet>
+
+<div class="phone">
+  <div style="position:absolute;inset:0;background:var(--cream)"></div>
+  <div class="scrim"></div>
+  <div class="sheet" style="position:absolute;left:0;right:0;bottom:0;gap:10px;"><div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div class="kicker accent">the truffle patch · tied at the mud</div>
+        <div class="pageTitle">Rosie gets the lot</div>
+        <div class="hand mute">every find is a tickle. she counts them for you.</div>
+      </div></div><div style="display:flex;align-items:center;gap:16px;justify-content:center;padding:4px 0">
+    <div style="position:relative"><div class="disc" style="width:96px;height:96px;background:var(--rose)"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="#f8c9c9"/><ellipse cx="12" cy="14" rx="4" ry="3" fill="#f2a5b0"/><circle cx="10.5" cy="14" r=".7" fill="#2a1f15"/><circle cx="13.5" cy="14" r=".7" fill="#2a1f15"/><path d="M8 10.5l1-1M16 10.5l-1-1"/><path d="M6 6l2 3M18 6l-2 3"/></svg></div><div style="position:absolute;right:-10px;top:-6px;transform:rotate(12deg)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" fill="#ffd6dc"/></svg></div><div style="position:absolute;left:-14px;bottom:4px;transform:rotate(-12deg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" fill="#ffd6dc"/></svg></div></div>
+    <div style="display:flex;flex-direction:column"><div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:44px;line-height:48px">74</div><div class="kickerPill mute">tickled</div><div class="hand accent">+36 from the dig</div></div>
+  </div>
+  <div class="rule"></div>
+  <div class="ledger"><div class="row" style="opacity:1"><div class="disc" style="width:40px;height:40px;background:var(--sun)"><img src="truffle.png" width="24" height="24" style="display:block;width:24px;height:24px"></div><div class="words"><div class="body">a truffle</div><div class="hand mute">the herd's too — +1 Golden Truffle</div></div><div class="numeral" style="color:var(--accent)">+10</div></div><div class="row" style="opacity:1"><div class="disc" style="width:40px;height:40px;background:var(--rose)"><img src="boom.png" width="24" height="24" style="display:block;width:24px;height:24px"></div><div class="words"><div class="body">a Tickle Boom</div><div class="hand mute">the catch-up: 3 + 16 for the gap</div></div><div class="numeral" style="color:var(--accent)">+19</div></div><div class="row" style="opacity:1"><div class="disc" style="width:40px;height:40px;background:var(--cream2)"><img src="boot.png" width="24" height="24" style="display:block;width:24px;height:24px"></div><div class="words"><div class="body">his old boot</div><div class="hand mute">on the shelf as well</div></div><div class="numeral" style="color:var(--accent)">+3</div></div><div class="row" style="opacity:1"><div class="disc" style="width:40px;height:40px;background:var(--lilac)"><img src="shimmer.png" width="24" height="24" style="display:block;width:24px;height:24px"></div><div class="words"><div class="body">a shimmer pocket</div><div class="hand mute">+1 Mote as well</div></div><div class="numeral" style="color:var(--accent)">+8</div></div><div class="row" style="opacity:.35"><div class="disc" style="width:40px;height:40px;background:var(--sun)"><img src="truffle.png" width="24" height="24" style="display:block;width:24px;height:24px"></div><div class="words"><div class="body">the fat one</div><div class="hand mute">+1 Golden Truffle</div></div><div class="numeral" style="color:var(--accent)">+15</div></div><div class="row" style="opacity:.35"><div class="disc" style="width:40px;height:40px;background:var(--sun)"><img src="acorn.png" width="24" height="24" style="display:block;width:24px;height:24px"></div><div class="words"><div class="body">a Clockwork Acorn</div><div class="hand mute">a day of Auto-Tickler as well</div></div><div class="numeral" style="color:var(--accent)">+12</div></div></div>
+  <div class="rule"></div>
+  <div class="hand mute" style="text-align:center">she laughs on the last one.</div>
+  <div class="btn btnGold btnLg" style="opacity:.5">Back to the Barn</div></div>
+</div>
+</x-dc>
+</body>
+</html>

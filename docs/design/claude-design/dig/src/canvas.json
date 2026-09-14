@@ -1,0 +1,254 @@
+{
+  "artboards": [
+    {
+      "file": "Flow.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1180,
+      "h": 600,
+      "title": "The flow",
+      "page": "page-1"
+    },
+    {
+      "file": "BagEntryA.dc.html",
+      "x": 0,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "1 \u00b7 Barn \u2014 bag in the fan (A)",
+      "page": "page-1"
+    },
+    {
+      "file": "DigReveal.dc.html",
+      "x": 470,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "2 \u00b7 a thing surfaces",
+      "page": "page-1"
+    },
+    {
+      "file": "LeaveSheet.dc.html",
+      "x": 940,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "3 \u00b7 X mid-dig \u2014 leave the patch?",
+      "page": "page-1"
+    },
+    {
+      "file": "Receipt.dc.html",
+      "x": 1410,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "4 \u00b7 the receipt",
+      "page": "page-1"
+    },
+    {
+      "file": "BarnAfter.dc.html",
+      "x": 1880,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "5 \u00b7 back on the Barn",
+      "page": "page-1"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 2350,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "6 \u00b7 the bag",
+      "page": "page-1"
+    },
+    {
+      "file": "ItemDetail.dc.html",
+      "x": 2820,
+      "y": 760,
+      "w": 390,
+      "h": 844,
+      "title": "7 \u00b7 item detail \u2014 use it",
+      "page": "page-1"
+    },
+    {
+      "file": "FindIcons.dc.html",
+      "x": 0,
+      "y": 1740,
+      "w": 1180,
+      "h": 1000,
+      "title": "The find icons",
+      "page": "page-1"
+    },
+    {
+      "file": "BagEntryB.dc.html",
+      "x": 1260,
+      "y": 1740,
+      "w": 390,
+      "h": 844,
+      "title": "alt \u00b7 Barn \u2014 satchel in the yard (B)",
+      "page": "page-1"
+    },
+    {
+      "file": "TallyValues.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 560,
+      "h": 1280,
+      "title": "The values",
+      "page": "page-2"
+    },
+    {
+      "file": "TallyA.dc.html",
+      "x": 660,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "The tally \u00b7 tied",
+      "page": "page-2"
+    },
+    {
+      "file": "TallyB.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "B \u00b7 tumble out on the Barn",
+      "page": "page-3"
+    },
+    {
+      "file": "TallyC.dc.html",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "C \u00b7 the weigh-in (low-fi)",
+      "page": "page-3"
+    },
+    {
+      "file": "TallyD.dc.html",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "D \u00b7 the stamp (low-fi)",
+      "page": "page-3"
+    },
+    {
+      "file": "VariantA1.dc.html",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "A1 \u00b7 by layer",
+      "page": "page-3"
+    },
+    {
+      "file": "VariantA2.dc.html",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "A2 \u00b7 the stamp is the counter",
+      "page": "page-3"
+    },
+    {
+      "file": "VariantA3.dc.html",
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "A3 \u00b7 the odometer",
+      "page": "page-3"
+    },
+    {
+      "file": "VariantA4.dc.html",
+      "x": 2820,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "A4 \u00b7 Rosie counts",
+      "page": "page-3"
+    },
+    {
+      "file": "VariantA5.dc.html",
+      "x": 3290,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "A5 \u00b7 two beats",
+      "page": "page-3"
+    },
+    {
+      "file": "VariantAWoke.dc.html",
+      "x": 1130,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "The tally \u00b7 he woke",
+      "page": "page-2"
+    },
+    {
+      "file": "PaintedMarks.dc.html",
+      "x": 0,
+      "y": 2860,
+      "w": 1180,
+      "h": 900,
+      "title": "The painted marks",
+      "page": "page-1"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 1260,
+      "y": 0,
+      "w": 380,
+      "text": "Three asks, one flow.\n\n1. Find icons \u2014 17 marks, one style, three sizes. Sketched here; the ImageGen lane paints them from the brief under each.\n2. The bag \u2014 things stop applying themselves on reveal. They go in the bag; you use them when you like. Currencies and homes still land directly.\n3. Dismiss \u2014 X with no actions just closes. X with actions asks once, says what waits and what's kept, and never loses a dig. The receipt is the only exit after the end.",
+      "page": "page-1"
+    },
+    {
+      "id": "entry-choice",
+      "x": 1260,
+      "y": 2620,
+      "w": 380,
+      "text": "Where the bag lives \u2014 pick one.\n\nA (in the flow above): a third option in the Barn button's fan. Keeps the yard clean; the fan already knows dig / barn. Badge on the closed button. Tradeoff: one tap hidden.\n\nB (left): a satchel sticker hung in the yard, always visible, badge on it. Tradeoff: the yard is already carrying a stamp, a coin, a mound and a button.",
+      "page": "page-1"
+    },
+    {
+      "id": "dismiss-rules",
+      "x": 1260,
+      "y": 330,
+      "w": 390,
+      "text": "Dismiss rules\n\u00b7 0 actions \u2192 X closes, no sheet.\n\u00b7 actions \u2192 this sheet. Keep digging is primary; leave for now is the hand link.\n\u00b7 leaving snapshots + syncs; the Barn button reads 'your dig waits \u00b7 closes in 3h'.\n\u00b7 after tie / wake / cap, the receipt is the only way out; its X = Back to the Barn.\n\u00b7 no swipe-to-dismiss on the full screen.",
+      "page": "page-1"
+    },
+    {
+      "id": "tally-chosen",
+      "x": 660,
+      "y": 900,
+      "w": 860,
+      "page": "page-2",
+      "text": "Chosen 2026-09-13: the tally receipt (A), and this woke treatment.\n\nThe grammar: before \u2192 now on a sun sticker (cream2 when he woke); one ledger row per find, landing ~350 ms apart, each +n rolling the top number; a truffle he took reads 'his' with no number; 'the dig \u00b7 +n' on the foot; Back to the Barn; the hand link (share the dig \u203a / next time \u2014 tie it at the mud?). Things still land where they live (shelf, Barn, Burrow Book, wardrobe) \u2014 that's the row's sub line, never a second reward.\n\nSet aside (page 3): B tumble-out, C weigh-in, D stamp, and A1\u2013A5. Worth borrowing later: B's tickle burst on the Barn stamp when you land back in the yard."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-2"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Bag & finds"
+    },
+    {
+      "id": "page-2",
+      "name": "The tally"
+    },
+    {
+      "id": "page-3",
+      "name": "Set aside"
+    }
+  ]
+}
