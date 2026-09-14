@@ -47,7 +47,7 @@ jest.mock("../utils/rpc", () => ({ rpc: (...a: unknown[]) => mockRpc(...a) }));
 // Initial fetch returns one active curse; cleanse should drop it everywhere.
 const curseRow = {
 	source: "curse",
-	kind: "sluggish_snout",
+	kind: "pickle_brine",
 	expires_at: "2030-01-01T00:00:00Z",
 	sender_id: null,
 	sender_username: null,

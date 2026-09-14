@@ -112,14 +112,59 @@ export function preload(keys: SoundKey[] = Object.keys(SOURCES) as SoundKey[]): 
 	for (const key of keys) getPlayer(key);
 }
 
-/** Fire a one-shot cue. No-ops when muted or when audio is unavailable. */
-export function play(key: SoundKey, opts?: { volume?: number }): void {
+/**
+ * Playback-rate support, probed once per player.
+ *
+ * expo-audio's `AudioPlayer` exposes `setPlaybackRate(rate, pitchCorrection?)`
+ * on iOS/Android. We call it WITHOUT pitch correction on purpose: the caller
+ * asking for a rate is asking for the chipmunk (Pipsqueak's "its oink goes up
+ * an octave"), and correcting the pitch would undo exactly the effect. If the
+ * installed runtime has neither the method nor a writable `playbackRate`
+ * property, the rate is silently UNSUPPORTED and the cue plays at 1× — never a
+ * throw, never a silent cue.
+ *
+ * Returns whether the rate was actually applied, so a caller that cares (and a
+ * test) can tell "played at pitch" from "played flat".
+ */
+export function applyPlaybackRate(player: AudioPlayer, rate: number): boolean {
+	const safe = Math.max(0.5, Math.min(2, rate));
+	const withRate = player as AudioPlayer & {
+		setPlaybackRate?: (rate: number, pitchCorrection?: boolean) => void;
+		playbackRate?: number;
+	};
+	try {
+		if (typeof withRate.setPlaybackRate === "function") {
+			withRate.setPlaybackRate(safe);
+			return true;
+		}
+		if ("playbackRate" in withRate) {
+			withRate.playbackRate = safe;
+			return true;
+		}
+	} catch {}
+	return false;
+}
+
+/**
+ * Fire a one-shot cue. No-ops when muted or when audio is unavailable.
+ *
+ * `rate` is a playback-rate multiplier (1 = normal, clamped to 0.5–2). It is
+ * ALWAYS applied — a cue with no `rate` resets the player to 1×, so a pitched
+ * play never leaves the next one squeaking. Nothing wires it yet: the ritual
+ * that wants it (Pipsqueak) needs an `oink` cue, and this map still only holds
+ * the dig's six. Adding the key is the only step left.
+ */
+export function play(
+	key: SoundKey,
+	opts?: { volume?: number; rate?: number },
+): void {
 	if (muted) return;
 	ensureAudioMode();
 	const p = getPlayer(key);
 	if (!p) return;
 	try {
 		p.volume = opts?.volume ?? VOLUME[key];
+		applyPlaybackRate(p, opts?.rate ?? 1);
 		void p.seekTo(0);
 		p.play();
 	} catch {}

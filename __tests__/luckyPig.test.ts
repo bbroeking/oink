@@ -1,6 +1,6 @@
-// rollLucky math — verifies the three trigger paths (first-time
-// guarantee, sunbeam, boost window, steady-state) at boundary cases
-// with deterministic random + clock.
+// rollLucky math — verifies the trigger paths (first-time guarantee, boost
+// window, steady-state) at boundary cases with deterministic random + clock.
+// No ritual path any more: rituals stopped touching luck on 2026-09-14.
 
 import {
 	rollLucky,
@@ -8,7 +8,6 @@ import {
 	LUCKY_BOOST_UNTIL_ISO,
 	LUCKY_TRIGGER_CHANCE,
 	LUCKY_TRIGGER_CHANCE_BOOST,
-	LUCKY_TRIGGER_CHANCE_SUNBEAM,
 } from "../utils/luckyPig";
 
 const BOOST_END_MS = new Date(LUCKY_BOOST_UNTIL_ISO).getTime();
@@ -23,7 +22,6 @@ describe("rollLucky — first-time guarantee", () => {
 		const r = rollLucky({
 			isFirstTimeUser: true,
 			preFirstTicklesIncludingThis: LUCKY_GUARANTEED_BY_TICKLE_N,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom(0.99), // would otherwise miss
 		});
@@ -35,7 +33,6 @@ describe("rollLucky — first-time guarantee", () => {
 		const r = rollLucky({
 			isFirstTimeUser: true,
 			preFirstTicklesIncludingThis: LUCKY_GUARANTEED_BY_TICKLE_N + 5,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom(0.99),
 		});
@@ -47,7 +44,6 @@ describe("rollLucky — first-time guarantee", () => {
 		const r = rollLucky({
 			isFirstTimeUser: true,
 			preFirstTicklesIncludingThis: LUCKY_GUARANTEED_BY_TICKLE_N - 1,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom(0.99),
 		});
@@ -58,7 +54,6 @@ describe("rollLucky — first-time guarantee", () => {
 		const r = rollLucky({
 			isFirstTimeUser: false,
 			preFirstTicklesIncludingThis: LUCKY_GUARANTEED_BY_TICKLE_N + 100,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom(0.99),
 		});
@@ -67,37 +62,11 @@ describe("rollLucky — first-time guarantee", () => {
 });
 
 describe("rollLucky — chance gates", () => {
-	test("sunbeam takes priority over boost + steady", () => {
-		// Roll just under sunbeam threshold; would miss boost + steady.
-		const r = rollLucky({
-			isFirstTimeUser: false,
-			preFirstTicklesIncludingThis: 0,
-			sunBeamActive: true,
-			now: BEFORE_BOOST,
-			random: fixedRandom(LUCKY_TRIGGER_CHANCE_SUNBEAM - 0.01),
-		});
-		expect(r.triggerNow).toBe(true);
-		expect(r.reason).toBe("sunbeam");
-	});
-
-	test("sunbeam misses when random >= sunbeam chance", () => {
-		const r = rollLucky({
-			isFirstTimeUser: false,
-			preFirstTicklesIncludingThis: 0,
-			sunBeamActive: true,
-			now: BEFORE_BOOST,
-			random: fixedRandom(LUCKY_TRIGGER_CHANCE_SUNBEAM + 0.01),
-		});
-		expect(r.triggerNow).toBe(false);
-		expect(r.reason).toBe("miss");
-	});
-
 	test("boost-window chance is 12% (not 5%)", () => {
 		// Random between steady (5%) and boost (12%) → should hit boost.
 		const r = rollLucky({
 			isFirstTimeUser: false,
 			preFirstTicklesIncludingThis: 0,
-			sunBeamActive: false,
 			now: BEFORE_BOOST,
 			random: fixedRandom((LUCKY_TRIGGER_CHANCE + LUCKY_TRIGGER_CHANCE_BOOST) / 2),
 		});
@@ -110,7 +79,6 @@ describe("rollLucky — chance gates", () => {
 		const r = rollLucky({
 			isFirstTimeUser: false,
 			preFirstTicklesIncludingThis: 0,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom((LUCKY_TRIGGER_CHANCE + LUCKY_TRIGGER_CHANCE_BOOST) / 2),
 		});
@@ -122,7 +90,6 @@ describe("rollLucky — chance gates", () => {
 		const r = rollLucky({
 			isFirstTimeUser: false,
 			preFirstTicklesIncludingThis: 0,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom(LUCKY_TRIGGER_CHANCE - 0.01),
 		});
@@ -134,7 +101,6 @@ describe("rollLucky — chance gates", () => {
 		const r = rollLucky({
 			isFirstTimeUser: false,
 			preFirstTicklesIncludingThis: 0,
-			sunBeamActive: false,
 			now: AFTER_BOOST,
 			random: fixedRandom(LUCKY_TRIGGER_CHANCE + 0.01),
 		});

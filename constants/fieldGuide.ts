@@ -72,12 +72,11 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		placeholder: true, // needs a stone-trough sprite (see art-todo)
 	},
 	{
-		id: "mud_wrap",
-		name: "Mud Wrap & Warm Tea",
-		whimsy: "A warm smear of mud and a cup of tea. Cozy enough to speed a pig's recovery.",
-		value: (cfg) =>
-			`Doubles your regen while it lasts. Fresh wraps extend the time — ${cfg.wrapBaseHours}h a wrap, banked up to a ${cfg.wrapCeilingHours}h ceiling.`,
-		glyph: "coffee",
+		id: "rituals",
+		name: "Rituals",
+		whimsy: "Every day has one blessing and one curse.",
+		value: () => "Friends cast them on you; you wear them for six hours.",
+		glyph: "bless",
 	},
 	{
 		id: "snouts",

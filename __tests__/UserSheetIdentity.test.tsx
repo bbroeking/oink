@@ -6,6 +6,16 @@ import { UserSheet } from "@/components/UserSheet";
 import { rpc, rpcAction } from "@/utils/rpc";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router/react-navigation", () => ({
+  // Keep the real module (NavigationContext, which the pig's focus hook reads)
+  // and swap only the focus effect: a mounted sheet/visit is a focused one, so
+  // it runs as a plain effect and `useVisitorEffects` does its one read
+  // (weekday rituals phase 4).
+  ...jest.requireActual("expo-router/react-navigation"),
+  useFocusEffect: (effect: () => void | (() => void)) =>
+    require("react").useEffect(effect, [effect]),
+}));
+
 jest.mock("@/components/ui/ProfileIdentity", () => ({
   ProfileIdentity: ({ username }: { username: string }) =>
     require("react").createElement(require("react-native").Text, null, username),

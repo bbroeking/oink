@@ -44,6 +44,8 @@ import { GameIcon } from "./ui/GameIcon";
 import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
 import { useCrew } from "@/hooks/useCrew";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
+import { useVisitorEffects } from "@/hooks/useVisitorEffects";
+import { useRitualPresentationFor } from "@/hooks/useRitualPresentation";
 import { MOTE_MACHINE_VISIBLE } from "@/constants/featureFlags";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
@@ -213,6 +215,12 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	useUnmanagedModalHold(!!targetUserId);
 	// Alignment isn't a thing in Season 1 — its bar retires with S0.
 	const s1 = useSeason1Active();
+	// The rituals this pig is wearing (weekday rituals, 2026-09-14). The session
+	// is keyed by `targetUserId`, so this is ONE read per sheet open, and the
+	// portrait takes only the static channels — a profile header is no place for
+	// a bob or a firefly.
+	const { kinds: targetRitualKinds } = useVisitorEffects(targetUserId);
+	const targetPresentation = useRitualPresentationFor(targetRitualKinds);
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
@@ -552,6 +560,7 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 					size={targetWallowCount > 0 ? HEADER_AVATAR_PRESTIGE : HEADER_AVATAR}
 					hatId={stats.active_hat_id}
 					prestigeLevel={targetWallowCount}
+					ritual={targetPresentation.pig}
 				/>
 				<View style={styles.headerCopy}>
 					<ProfileIdentity

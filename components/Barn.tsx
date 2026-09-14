@@ -34,6 +34,11 @@ import {
 	usePopupActive,
 	usePopupSlot,
 } from "./ui";
+import {
+	ConfettiBurst,
+	type ConfettiBurstHandle,
+} from "./ui/ConfettiBurst";
+import { useRitualPresentation } from "@/hooks/useRitualPresentation";
 import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import {
 	AVATAR_SIZE,
@@ -71,7 +76,6 @@ import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { useDigEntry } from "@/hooks/useDigEntry";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
-import { useActiveEffectsContext } from "@/hooks/ActiveEffectsProvider";
 import { usePigRoster } from "@/hooks/usePigRoster";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { AdRefillOffer } from "@/features/rewarded-ads/AdRefillOffer";
@@ -82,9 +86,9 @@ import { runOptimisticHomeTickle } from "@/utils/homeTickleConnection";
 import { useHomeHabitatPigPublisher } from "@/hooks/useHabitatPigBridge";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
-// useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
-// still in Barn — it gates the tickle handler's miss path.
-const PHANTOM_ITCH_MISS_CHANCE = 0.33;
+// useLuckyPig hook). No ritual tunable lives here any more: rituals became
+// cosmetic-only on 2026-09-14, so the tap loop has no ritual branch left —
+// only the confetti burst, which is a picture, not a rule.
 
 // Two pig-laugh variants; one is picked at random on each tickle
 // so the sound feels alive instead of looping the same clip.
@@ -306,29 +310,14 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
   const pigRoster = usePigRoster();
   const popupActive = usePopupActive();
 
-	// Active daily-ritual effects — drive the overlay + the tap loop.
-	// Shared via ActiveEffectsProvider (one instance for the whole tab
-	// subtree), so a cleanse from the Hoofprints sheet or Inbox clears the
-	// overlay + chips here in lockstep. We derive {blessed, cursed, sunBeam,
-	// phantomItch} predicates from the typed effects list for the checks below.
-	const activeEffects = useActiveEffectsContext();
-	const effects = React.useMemo(
-		() => ({
-			blessed:     activeEffects.blessings.length > 0,
-			cursed:      activeEffects.curses.length > 0,
-			// Lucky-pig boost — sun_beam (S0) or glimmer_truffle (S1), same
-			// consume-on-first-lucky mechanic. luckyKind targets the clear.
-			sunBeam:     activeEffects.effects.some(
-        (e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle",
-			),
-      luckyKind:
-        activeEffects.effects.find(
-          (e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle",
-			)?.kind ?? null,
-			phantomItch: activeEffects.effects.some((e) => e.kind === "phantom_itch"),
-		}),
-    [activeEffects.blessings, activeEffects.curses, activeEffects.effects],
-	);
+	// The one merged look the active rituals add up to (weekday rituals,
+	// 2026-09-14): a scene wash for the Barn, a transform / skin / follower
+	// for the pig, a burst for the tap. Cosmetic only — nothing here reaches
+	// the tickle rules. Reads the shared ActiveEffectsProvider (one instance for
+	// the whole tab subtree), so a cleanse from the Hoofprints sheet or Inbox
+	// clears the look here in lockstep; memoized on kind content by the hook.
+	const presentation = useRitualPresentation();
+	const confettiRef = useRef<ConfettiBurstHandle>(null);
 
 	// Echo — a crewmate's Lucky Pig rings for 10 minutes; the first tap
 	// while it rings catches +1 tickle (claim_echo, once per pig per echo).
@@ -589,16 +578,6 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			return;
 		}
 
-		// Phantom itch — a curse: while active, a tap sometimes slips
-		// right off. No bank spent, no score; just a missed beat.
-		if (effects.phantomItch && Math.random() < PHANTOM_ITCH_MISS_CHANCE) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
-        () => {},
-      );
-			showToast("Phantom itch", "Your tap slipped right off.");
-			return;
-		}
-
 		// Reserve and display the base tickle before the network request. The
 		// helper rolls this patch back on transport failure and folds the
 		// authoritative balance/lucky bonus into the response path.
@@ -636,11 +615,14 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		// reward for the tap, before we even round-trip the RPC.
 		heartFloatsRef.current?.spawn();
 
+		// Confetti Snout — every tickle pops confetti while the blessing is
+		// on. A picture, not a payout.
+		if (presentation.tap.burst === "confetti") confettiRef.current?.fire();
+
 		// Lucky Pig roll — hook owns the trigger / window / double
-		// math + the burst-modal lifecycle. Barn handles the side
-		// effects: sun_beam clear on a fresh trigger, and the +1
-		// bonus payout on doubles.
-    const { triggered, doubleEarned } = luckyPig.rollOnTickle(effects.sunBeam);
+		// math + the burst-modal lifecycle. Barn handles the one side
+		// effect left: the +1 bonus payout on doubles.
+		const { triggered, doubleEarned } = luckyPig.rollOnTickle();
 		const bonusEarned = doubleEarned;
 
 		// A Lucky Pig fired (the 5% client roll users actually see). Record it
@@ -664,25 +646,6 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
             Haptics.NotificationFeedbackType.Success,
           ).catch(() => {});
 				}
-			})();
-		}
-
-		if (triggered && effects.sunBeam && effects.luckyKind) {
-			// The lucky boost (sun_beam S0 / glimmer_truffle S1) is
-			// consume-on-first-lucky — clear it as soon as a lucky pig
-			// actually fires so subsequent rolls drop back to the base
-			// chance instead of keeping the boost for the rest of the
-			// timed window. Best-effort: a network failure leaves the
-			// buff in place but the blessing's own 4h expiry caps the
-			// worst case. The hook's realtime channel doesn't watch
-			// UPDATE on blessings, so a manual refresh syncs the
-			// derived predicate.
-			// Best-effort; the 4h expiry caps the worst case.
-			void (async () => {
-				await rpc("clear_blessing", {
-					target_kind: effects.luckyKind,
-				});
-				await activeEffects.refresh();
 			})();
 		}
 
@@ -773,7 +736,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			fetchStats(); // bank grew while we stared — resync quietly
 		}
 		// The TRUE rate, not "every hour": regen_secs_for folds in VIP,
-		// blessings (warm_tea), curses (sluggish_snout), alignment,
+		// blessings (chorus_glow), alignment,
 		// happiness. Pre-20260643 servers omit it — fall back to the hour.
 		const rate = stats.regenSeconds
 			? `+1 every ${formatClockMS(stats.regenSeconds)}`
@@ -903,6 +866,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 								equippedBackground={forInterior ? null : stats.activeBackground}
 							equippedHeld={stats.activeHeld}
 							prestigeLevel={wallowCount}
+							ritual={presentation.pig}
 						/>
 						{/* Floating ♥/✦ particles drift up from above the pig on
 						    every successful tickle. Absolute-fills the swipe
@@ -915,6 +879,10 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 									: null
 							}
 			/>
+						{/* Confetti Snout's burst, fired from the tickle handler. It
+						    draws nothing at rest, so it costs a mounted view and no
+						    more when the blessing is off. */}
+						<ConfettiBurst ref={confettiRef} />
 		</>
 	);
 	const pigContent = renderPigContent(interiorPigOnly);
@@ -1019,10 +987,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			onOpened={threshold.onOpened}
 		>
     <PageBackground bgId={stats.activeBackground?.id ?? null}>
-			<BarnOverlay
-				alignment={alignment}
-				cursed={effects.cursed}
-			/>
+			<BarnOverlay alignment={alignment} scene={presentation.scene} />
 
 			{/* The ghost barn silhouette that used to sit here is gone: the barn is
 			    the player's home, not scenery, so it is a real structure standing on

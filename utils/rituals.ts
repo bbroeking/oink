@@ -1,57 +1,68 @@
 // Client-side metadata + daily-rotation logic for the blessing / curse
-// rituals. The rotation MUST match the SQL daily_blessing_kind /
-// daily_curse_kind functions exactly (EXTRACT(DOY) % 4) or the UI will
-// offer a different kind than the server will accept.
+// rituals.
 //
-// Season 1 swaps in a new blessing set (same mechanics, Hunger fiction):
-// the server rolls the S1 pool when the world_boss GLOBAL flag is on, so
-// callers pass the same flag here (per-user dev overrides can preview the
-// S1 art but the server's cast follows the global — cosmetic-only skew).
+// THE ROTATION IS WEEKDAY-LOCKED (2026-09-14, weekday-rituals plan). The ISO
+// weekday of the UTC date picks the day's pair — Monday is always Cloud Nine
+// and Pickle Brine, Friday is always Golden Hour and Bacon Bits — so days earn
+// reputations. `BLESSING_ROTATION` / `CURSE_ROTATION` MUST match the SQL
+// daily_blessing_kind / daily_curse_kind arrays exactly (both index
+// EXTRACT(ISODOW FROM now() AT TIME ZONE 'UTC')) or the UI would offer a kind
+// the server won't cast. The season flag no longer branches any of this: the
+// old `world_boss` / S1 mirror is gone, because a rotation that branches on a
+// flag has already bitten once.
+//
+// Rituals are COSMETIC ONLY. A blurb here describes what you SEE for six
+// hours; the recipe that draws it lives in `constants/ritualFx.ts`.
+//
+// Plan: docs/design/2026-09-14-weekday-rituals-plan.md
 
 import { formatHM } from "./duration";
 
 export type BlessingKind =
-	| "warm_tea"
-	| "sun_beam"
-	| "halo_kiss"
-	| "bountiful_snouts"
-	| "mud_wrap"
-	| "glimmer_truffle"
-	| "snoot_boop"
-	| "trough_bounty"
+	// The week, Monday first.
+	| "cloud_nine"
+	| "bubble_bath"
+	| "butterfly_crown"
+	| "confetti_snout"
+	| "golden_hour"
+	| "firefly_night"
+	| "sunday_best"
 	// System-granted (never in the daily rotation): the crew-wide Chorus
-	// glow — 3+ crewmates casting within 30 min.
-	| "chorus_glow";
+	// glow — 3+ crewmates casting within 30 min — and the Dig-Off winner's
+	// 72h regen glow, both written by the server as self-rows.
+	| "chorus_glow"
+	| "war_winner_regen";
 
 export type CurseKind =
-	| "sluggish_snout"
-	| "phantom_itch"
-	| "goblin_whisper"
-	| "coin_pinch";
+	// The week, Monday first.
+	| "pickle_brine"
+	| "topsy_turvy"
+	| "pipsqueak"
+	| "little_raincloud"
+	| "bacon_bits"
+	| "hiccups"
+	| "old_timey";
 
 export type RitualMode = "bless" | "curse";
 
-// Rotation order — index 0..3 picked by (dayOfYear % 4).
+// Rotation order — index 0..6 picked by (isoWeekdayUTC - 1), Monday first.
 export const BLESSING_ROTATION: BlessingKind[] = [
-	"warm_tea",
-	"sun_beam",
-	"halo_kiss",
-	"bountiful_snouts",
-];
-// Season-1 set — mechanical analogs in the same rotation slots
-// (regen / lucky / +tickles / +snouts), so the day's MECHANIC is
-// identical across seasons and only the fiction changes.
-const BLESSING_ROTATION_S1: BlessingKind[] = [
-	"mud_wrap",
-	"glimmer_truffle",
-	"snoot_boop",
-	"trough_bounty",
+	"cloud_nine",
+	"bubble_bath",
+	"butterfly_crown",
+	"confetti_snout",
+	"golden_hour",
+	"firefly_night",
+	"sunday_best",
 ];
 export const CURSE_ROTATION: CurseKind[] = [
-	"sluggish_snout",
-	"phantom_itch",
-	"goblin_whisper",
-	"coin_pinch",
+	"pickle_brine",
+	"topsy_turvy",
+	"pipsqueak",
+	"little_raincloud",
+	"bacon_bits",
+	"hiccups",
+	"old_timey",
 ];
 
 export interface RitualMeta {
@@ -61,7 +72,106 @@ export interface RitualMeta {
 	blurb: string;
 }
 
+// Icons: one painted sticker per weekday kind, generated in the Codex ImageGen
+// lane (2026-09-14 art pass) and living beside the S0 set in
+// assets/images/emoji/. The two system-granted kinds below reuse `blessed.png`
+// on purpose — they are not part of the weekday rotation and never appear in a
+// ritual door, only on an effect card.
 export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
+	cloud_nine: {
+		name: "Cloud Nine",
+		icon: require("../assets/images/emoji/cloud-nine.png"),
+		blurb: "Your pig floats an inch off the mud on a tiny cloud.",
+	},
+	bubble_bath: {
+		name: "Bubble Bath",
+		icon: require("../assets/images/emoji/bubble-bath.png"),
+		blurb: "Soap bubbles drift up around your pig.",
+	},
+	butterfly_crown: {
+		name: "Butterfly Crown",
+		icon: require("../assets/images/emoji/butterfly-crown.png"),
+		blurb: "A butterfly rides on your pig's head all day.",
+	},
+	confetti_snout: {
+		name: "Confetti Snout",
+		icon: require("../assets/images/emoji/confetti-snout.png"),
+		blurb: "Every tickle pops confetti.",
+	},
+	golden_hour: {
+		name: "Golden Hour",
+		icon: require("../assets/images/emoji/golden-hour.png"),
+		blurb: "The Barn goes warm amber and your pig glows.",
+	},
+	firefly_night: {
+		name: "Firefly Night",
+		icon: require("../assets/images/emoji/firefly-night.png"),
+		blurb: "The Barn dims to dusk and fireflies wander.",
+	},
+	sunday_best: {
+		name: "Sunday Best",
+		icon: require("../assets/images/emoji/sunday-best.png"),
+		blurb: "Your pig wears a little bow tie over its hat.",
+	},
+	// ── System-granted, never in the rotation ──
+	chorus_glow: {
+		name: "Chorus Glow",
+		icon: require("../assets/images/emoji/blessed.png"),
+		blurb: "The Sounder sang together — regen runs double for the hour.",
+	},
+	war_winner_regen: {
+		name: "Winner's Glow",
+		// System-granted, never in a ritual door — shares chorus_glow's icon.
+		icon: require("../assets/images/emoji/blessed.png"),
+		blurb: "Your crew took the Dig-Off — regen runs double for three days.",
+	},
+};
+
+export const CURSE_META: Record<CurseKind, RitualMeta> = {
+	pickle_brine: {
+		name: "Pickle Brine",
+		icon: require("../assets/images/emoji/pickle-brine.png"),
+		blurb: "The Barn turns briny green, like it fell in a jar.",
+	},
+	topsy_turvy: {
+		name: "Topsy-Turvy",
+		icon: require("../assets/images/emoji/topsy-turvy.png"),
+		blurb: "Your pig stands upside down and carries on.",
+	},
+	pipsqueak: {
+		name: "Pipsqueak",
+		icon: require("../assets/images/emoji/pipsqueak.png"),
+		blurb: "Your pig shrinks to half size; its oink goes up an octave.",
+	},
+	little_raincloud: {
+		name: "Little Raincloud",
+		icon: require("../assets/images/emoji/little-raincloud.png"),
+		blurb: "A small grey cloud follows your pig and drizzles.",
+	},
+	bacon_bits: {
+		name: "Bacon Bits",
+		icon: require("../assets/images/emoji/bacon-bits.png"),
+		blurb: "Your pig is striped like a rasher.",
+	},
+	hiccups: {
+		name: "Hiccups",
+		icon: require("../assets/images/emoji/hiccups.png"),
+		blurb: "Every few seconds your pig hops with a “hic!” bubble.",
+	},
+	old_timey: {
+		name: "Old-Timey Pig",
+		icon: require("../assets/images/emoji/old-timey.png"),
+		blurb: "Sepia, film grain, and a monocle it didn't ask for.",
+	},
+};
+
+// ── Retired kinds ───────────────────────────────────────────────────────
+// The Season 0 + Season 1 sets. Nothing casts these any more, but a row cast
+// in the twelve hours before the weekday rotation shipped is still live, so
+// the Inbox, the effect cards and the Barn strip keep naming it correctly
+// until it expires. `effectMeta` falls back here; NOTHING else should read
+// this table, and no kind here appears in a rotation or a `*Kind` union.
+export const LEGACY_RITUAL_META: Record<string, RitualMeta> = {
 	warm_tea: {
 		name: "Warm Tea",
 		icon: require("../assets/images/emoji/warm-tea.png"),
@@ -82,9 +192,6 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
-	// ── Season 1 set — icons are S0 stand-ins until the icon-gen art
-	//    pass lands (mud-wrap / glimmer-truffle / snoot-boop /
-	//    trough-bounty pngs). ──
 	mud_wrap: {
 		name: "Mud Wrap",
 		icon: require("../assets/images/emoji/warm-tea.png"),
@@ -105,14 +212,6 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
-	chorus_glow: {
-		name: "Chorus Glow",
-		icon: require("../assets/images/emoji/blessed.png"),
-		blurb: "The Sounder sang together — regen runs double for the hour.",
-	},
-};
-
-export const CURSE_META: Record<CurseKind, RitualMeta> = {
 	sluggish_snout: {
 		name: "Sluggish Snout",
 		icon: require("../assets/images/emoji/sluggish-snout.png"),
@@ -135,26 +234,27 @@ export const CURSE_META: Record<CurseKind, RitualMeta> = {
 	},
 };
 
-// Day-of-year, 1-366, in UTC — matches Postgres EXTRACT(DOY FROM ...).
-export function dayOfYearUTC(d: Date = new Date()): number {
-	const start = Date.UTC(d.getUTCFullYear(), 0, 0);
-	const now = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-	return Math.floor((now - start) / 86_400_000);
+// ISO weekday, Mon=1 … Sun=7, on the UTC date — matches Postgres
+// EXTRACT(ISODOW FROM ...). The `getUTCDay() || 7` idiom is the one the
+// Dig-Off race already uses (utils/truffleExchange.ts), so the rotation
+// shares a convention rather than inventing one.
+export function isoWeekdayUTC(d: Date = new Date()): number {
+	return d.getUTCDay() || 7;
 }
 
-export function dailyBlessingKind(d: Date = new Date(), s1 = false): BlessingKind {
-	return (s1 ? BLESSING_ROTATION_S1 : BLESSING_ROTATION)[dayOfYearUTC(d) % 4];
+export function dailyBlessingKind(d: Date = new Date()): BlessingKind {
+	return BLESSING_ROTATION[isoWeekdayUTC(d) - 1];
 }
 
 export function dailyCurseKind(d: Date = new Date()): CurseKind {
-	return CURSE_ROTATION[dayOfYearUTC(d) % 4];
+	return CURSE_ROTATION[isoWeekdayUTC(d) - 1];
 }
 
 // Unified accessor used by RitualPicker so it doesn't branch on mode
-// at every call site. `s1` mirrors the server's world_boss GLOBAL.
-export function dailyRitual(mode: RitualMode, d: Date = new Date(), s1 = false) {
+// at every call site.
+export function dailyRitual(mode: RitualMode, d: Date = new Date()) {
 	if (mode === "bless") {
-		const kind = dailyBlessingKind(d, s1);
+		const kind = dailyBlessingKind(d);
 		return { kind, ...BLESSING_META[kind] };
 	}
 	const kind = dailyCurseKind(d);

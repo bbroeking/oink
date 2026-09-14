@@ -22,8 +22,6 @@ import {
 
 // A full server row (snake_case) with every value moved off its default.
 const row = (over: Record<string, unknown> = {}) => ({
-	wrap_base_hours: 4,
-	wrap_ceiling_hours: 16,
 	lucky_daily_count: 5,
 	lucky_payout: 7,
 	exchange_min_price: 30,
@@ -32,8 +30,6 @@ const row = (over: Record<string, unknown> = {}) => ({
 });
 
 const rowExpect = {
-	wrapBaseHours: 4,
-	wrapCeilingHours: 16,
 	luckyDailyCount: 5,
 	luckyPayout: 7,
 	exchangeMinPrice: 30,
@@ -77,8 +73,10 @@ describe("sanitizeFieldGuideNumbers — per-field default-fill, never null", () 
 		["negative", -3],
 		["string", "8"],
 	])("an out-of-bounds field (%s) keeps its default", (_name, bad) => {
-		const sane = sanitizeFieldGuideNumbers(row({ wrap_base_hours: bad }));
-		expect(sane.wrapBaseHours).toBe(DEFAULT_FIELD_GUIDE_NUMBERS.wrapBaseHours);
+		const sane = sanitizeFieldGuideNumbers(row({ lucky_daily_count: bad }));
+		expect(sane.luckyDailyCount).toBe(
+			DEFAULT_FIELD_GUIDE_NUMBERS.luckyDailyCount
+		);
 		// The other fields still take the row's valid values.
 		expect(sane.luckyPayout).toBe(7);
 	});

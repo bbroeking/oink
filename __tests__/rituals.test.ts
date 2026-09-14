@@ -1,10 +1,13 @@
-// Daily blessing/curse rotation logic. The rotation index is
-// (dayOfYearUTC % 4). These tests pin specific UTC dates so a
-// regression in the day-of-year math is caught — the rotation
-// MUST agree with the SQL EXTRACT(DOY FROM ...) % 4.
+// The weekday ritual rotation (2026-09-14). The index is the ISO weekday of
+// the UTC date — Mon=1 … Sun=7 — so these tests pin real calendar days: the
+// rotation MUST agree with the SQL daily_blessing_kind / daily_curse_kind,
+// which index the same arrays by EXTRACT(ISODOW FROM now() AT TIME ZONE 'UTC').
+//
+// The week of 2026-09-14 is a Monday-to-Sunday run, so it doubles as the
+// seven-distinct-kinds sweep and as the named-day assertions.
 
 import {
-	dayOfYearUTC,
+	isoWeekdayUTC,
 	dailyBlessingKind,
 	dailyCurseKind,
 	dailyRitual,
@@ -12,64 +15,111 @@ import {
 	CURSE_ROTATION,
 	BLESSING_META,
 	CURSE_META,
+	LEGACY_RITUAL_META,
 } from "../utils/rituals";
 
-describe("dayOfYearUTC", () => {
-	test("Jan 1 is day 1", () => {
-		expect(dayOfYearUTC(new Date("2026-01-01T12:00:00Z"))).toBe(1);
+// Monday 2026-09-14 through Sunday 2026-09-20.
+const WEEK = [
+	"2026-09-14",
+	"2026-09-15",
+	"2026-09-16",
+	"2026-09-17",
+	"2026-09-18",
+	"2026-09-19",
+	"2026-09-20",
+] as const;
+
+const at = (day: string, time = "T00:00:00Z") => new Date(`${day}${time}`);
+
+describe("isoWeekdayUTC", () => {
+	test("Monday is 1 and Sunday is 7", () => {
+		expect(isoWeekdayUTC(at("2026-09-14"))).toBe(1);
+		expect(isoWeekdayUTC(at("2026-09-20"))).toBe(7);
 	});
 
-	test("Jan 4 is day 4", () => {
-		expect(dayOfYearUTC(new Date("2026-01-04T00:00:00Z"))).toBe(4);
+	test("runs 1..7 across a Monday-first week", () => {
+		expect(WEEK.map((d) => isoWeekdayUTC(at(d)))).toEqual([1, 2, 3, 4, 5, 6, 7]);
 	});
 
-	test("Feb 1 is day 32", () => {
-		expect(dayOfYearUTC(new Date("2026-02-01T23:59:00Z"))).toBe(32);
+	test("reads the UTC date, not the local one", () => {
+		// 23:59Z on Sunday is still Sunday however the runner's zone leans.
+		expect(isoWeekdayUTC(at("2026-09-20", "T23:59:00Z"))).toBe(7);
+		expect(isoWeekdayUTC(at("2026-09-21", "T00:00:00Z"))).toBe(1);
+	});
+});
+
+describe("rotation tables", () => {
+	test("each is seven long, Monday first", () => {
+		expect(BLESSING_ROTATION).toHaveLength(7);
+		expect(CURSE_ROTATION).toHaveLength(7);
+		expect(BLESSING_ROTATION[0]).toBe("cloud_nine");
+		expect(CURSE_ROTATION[0]).toBe("pickle_brine");
+		expect(BLESSING_ROTATION[6]).toBe("sunday_best");
+		expect(CURSE_ROTATION[6]).toBe("old_timey");
 	});
 
-	test("Dec 31 (non-leap 2026) is day 365", () => {
-		expect(dayOfYearUTC(new Date("2026-12-31T00:00:00Z"))).toBe(365);
+	test("no kind repeats within a rotation", () => {
+		expect(new Set(BLESSING_ROTATION).size).toBe(7);
+		expect(new Set(CURSE_ROTATION).size).toBe(7);
 	});
 });
 
 describe("dailyBlessingKind", () => {
-	test("rotation index is dayOfYear % 4", () => {
-		// Jan 1 → DOY 1 → index 1
-		expect(dailyBlessingKind(new Date("2026-01-01T00:00:00Z"))).toBe(
-			BLESSING_ROTATION[1]
-		);
-		// Jan 4 → DOY 4 → index 0
-		expect(dailyBlessingKind(new Date("2026-01-04T00:00:00Z"))).toBe(
-			BLESSING_ROTATION[0]
-		);
+	test("Monday 2026-09-14 is Cloud Nine", () => {
+		expect(dailyBlessingKind(at("2026-09-14"))).toBe("cloud_nine");
 	});
 
-	test("four consecutive days hit four distinct kinds", () => {
-		const kinds = [3, 4, 5, 6].map((d) =>
-			dailyBlessingKind(new Date(`2026-01-0${d}T00:00:00Z`))
+	test("Sunday 2026-09-20 is Sunday Best (the index-7 wrap)", () => {
+		expect(dailyBlessingKind(at("2026-09-20"))).toBe("sunday_best");
+	});
+
+	test("seven consecutive UTC days hit seven distinct kinds", () => {
+		const kinds = WEEK.map((d) => dailyBlessingKind(at(d)));
+		expect(new Set(kinds).size).toBe(7);
+		expect(kinds).toEqual(BLESSING_ROTATION);
+	});
+
+	test("the same weekday next week is the same kind", () => {
+		expect(dailyBlessingKind(at("2026-09-21"))).toBe(
+			dailyBlessingKind(at("2026-09-14"))
 		);
-		expect(new Set(kinds).size).toBe(4);
 	});
 
 	test("always returns a kind present in BLESSING_META", () => {
 		for (let d = 1; d <= 28; d++) {
-			const k = dailyBlessingKind(new Date(`2026-01-${String(d).padStart(2, "0")}T00:00:00Z`));
+			const k = dailyBlessingKind(
+				at(`2026-01-${String(d).padStart(2, "0")}`)
+			);
 			expect(BLESSING_META[k]).toBeDefined();
 		}
 	});
 });
 
 describe("dailyCurseKind", () => {
-	test("uses the same index as blessings (parallel rotation)", () => {
-		const d = new Date("2026-03-15T00:00:00Z");
-		const idx = dayOfYearUTC(d) % 4;
+	test("Monday 2026-09-14 is Pickle Brine", () => {
+		expect(dailyCurseKind(at("2026-09-14"))).toBe("pickle_brine");
+	});
+
+	test("Sunday 2026-09-20 is Old-Timey Pig", () => {
+		expect(dailyCurseKind(at("2026-09-20"))).toBe("old_timey");
+	});
+
+	test("seven consecutive UTC days hit seven distinct kinds", () => {
+		const kinds = WEEK.map((d) => dailyCurseKind(at(d)));
+		expect(new Set(kinds).size).toBe(7);
+		expect(kinds).toEqual(CURSE_ROTATION);
+	});
+
+	test("uses the same weekday index as blessings (parallel rotation)", () => {
+		const d = at("2026-03-18"); // a Wednesday
+		const idx = isoWeekdayUTC(d) - 1;
 		expect(dailyCurseKind(d)).toBe(CURSE_ROTATION[idx]);
 		expect(dailyBlessingKind(d)).toBe(BLESSING_ROTATION[idx]);
 	});
 
 	test("always returns a kind present in CURSE_META", () => {
 		for (let d = 1; d <= 28; d++) {
-			const k = dailyCurseKind(new Date(`2026-02-${String(d).padStart(2, "0")}T00:00:00Z`));
+			const k = dailyCurseKind(at(`2026-02-${String(d).padStart(2, "0")}`));
 			expect(CURSE_META[k]).toBeDefined();
 		}
 	});
@@ -77,18 +127,47 @@ describe("dailyCurseKind", () => {
 
 describe("dailyRitual", () => {
 	test("bless mode returns blessing kind + its metadata", () => {
-		const d = new Date("2026-01-01T00:00:00Z");
+		const d = at("2026-09-18"); // Friday
 		const r = dailyRitual("bless", d);
-		expect(r.kind).toBe(dailyBlessingKind(d));
-		expect(r.name).toBe(BLESSING_META[r.kind as keyof typeof BLESSING_META].name);
+		expect(r.kind).toBe("golden_hour");
+		expect(r.name).toBe("Golden Hour");
 		expect(r.icon).toBeTruthy();
 		expect(r.blurb).toBeTruthy();
 	});
 
 	test("curse mode returns curse kind + its metadata", () => {
-		const d = new Date("2026-01-01T00:00:00Z");
+		const d = at("2026-09-18"); // Friday — "Bacon Friday"
 		const r = dailyRitual("curse", d);
-		expect(r.kind).toBe(dailyCurseKind(d));
-		expect(r.name).toBe(CURSE_META[r.kind as keyof typeof CURSE_META].name);
+		expect(r.kind).toBe("bacon_bits");
+		expect(r.name).toBe("Bacon Bits");
+	});
+});
+
+describe("LEGACY_RITUAL_META", () => {
+	test("keeps the retired S0 + S1 kinds nameable", () => {
+		for (const kind of [
+			"warm_tea",
+			"sun_beam",
+			"halo_kiss",
+			"bountiful_snouts",
+			"mud_wrap",
+			"glimmer_truffle",
+			"snoot_boop",
+			"trough_bounty",
+			"sluggish_snout",
+			"phantom_itch",
+			"goblin_whisper",
+			"coin_pinch",
+		]) {
+			expect(LEGACY_RITUAL_META[kind]?.name).toBeTruthy();
+			expect(LEGACY_RITUAL_META[kind]?.icon).toBeTruthy();
+		}
+	});
+
+	test("no retired kind leaks back into a rotation", () => {
+		for (const kind of Object.keys(LEGACY_RITUAL_META)) {
+			expect(BLESSING_ROTATION).not.toContain(kind);
+			expect(CURSE_ROTATION).not.toContain(kind);
+		}
 	});
 });

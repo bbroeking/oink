@@ -23,7 +23,7 @@
 //
 // Full-screen overlay (NOT a nested Modal — iOS won't stack one over UserSheet's
 // Modal); it sits on top within the sheet's modal layer.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import {
 	View,
 	Pressable,
@@ -41,16 +41,23 @@ import { StatusBar } from "expo-status-bar";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
 import { fetchBarnVisitStatus } from "@/utils/barnVisit";
+import { useVisitorEffects } from "@/hooks/useVisitorEffects";
+import { useRitualPresentationFor } from "@/hooks/useRitualPresentation";
+import type { PigFx } from "@/constants/ritualFx";
+import { ConfettiBurst, type ConfettiBurstHandle } from "@/components/ui/ConfettiBurst";
+import { PigRestTempoProvider } from "@/components/ui/PigRestingPose";
+import { PIG_BARN_REST_TEMPO } from "@/components/ui/pigRendererContract";
 import { remainingMs } from "@/utils/duration";
 import {
 	AdaptiveModalScaffold,
 	Avatar,
+	BarnOverlay,
 	Button,
 	DialogCloseRow,
 	Glyph,
 	IconText,
 	LoadingBeat,
-	PigPortrait,
+	PigAvatar,
 	PigStage,
 	SegmentedControl,
 	SnoutCoin,
@@ -408,6 +415,18 @@ function BarnVisitSession({
 	const [hostEquip, setHostEquip] = useState<EquipSet>(EMPTY_EQUIP);
 	const [myEquip, setMyEquip] = useState<EquipSet>(EMPTY_EQUIP);
 
+	// The host's weather. A curse is a message from a friend, so it has to be
+	// something the caster can walk over and admire — the visit paints the
+	// host's Barn and the host's pig exactly as the host sees them (weekday
+	// rituals, 2026-09-14). Kinds only: `active_effects_of` names no sender,
+	// and the visit never says who cast what.
+	const { kinds: hostRitualKinds } = useVisitorEffects(targetUserId);
+	const hostPresentation = useRitualPresentationFor(hostRitualKinds);
+	// Confetti Snout is the host's blessing, but the tickle is the visitor's:
+	// a successful tickle on a confetti-snouted host pops the burst in THEIR
+	// Barn, the same beat the host gets at home (the most social of the 14).
+	const hostConfettiRef = useRef<ConfettiBurstHandle>(null);
+
 	// Flying hearts, a pig squish, and the "+1 ♥" that rises off both tallies —
 	// all on each tap.
   const [floats, setFloats] = useState<
@@ -620,6 +639,7 @@ function BarnVisitSession({
 		if (r.ok) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 			playTap();
+			if (hostPresentation.tap.burst === "confetti") hostConfettiRef.current?.fire();
 			// A Golden Truffle surfaced while rooting around the Barn — a warmer
 			// success beat than the tickle itself, so pop the reveal + a heavier
 			// haptic. Server has already minted it (once/day); this is display-only.
@@ -861,13 +881,22 @@ function BarnVisitSession({
 								visitsLeft={vLeft}
 								visitBudget={visitBudget}
 								hostName={hostName}
+								// Each tally wears its pig AS DRESSED — the same hat and bow
+								// the stage below is wearing — so the row reads "these two,
+								// as they are", not two stock portraits.
 								youAvatar={
 									<Avatar
 										size={AVATAR_SIZE[0]}
 										label="Your pig"
 										style={styles.tallyAvatar}
 									>
-										<PigPortrait pigId={myPigId} size={AVATAR_SIZE[0]} />
+										<PigAvatar
+											mode="worn"
+											pigId={myPigId}
+											hatId={myEquip.hat?.id}
+											bowId={myEquip.bow?.id}
+											size={AVATAR_SIZE[0]}
+										/>
 									</Avatar>
 								}
 								hostAvatar={
@@ -876,7 +905,17 @@ function BarnVisitSession({
 										label={`${hostName}'s pig`}
 										style={styles.tallyAvatar}
 									>
-										<PigPortrait pigId={hostPigId} size={AVATAR_SIZE[0]} />
+										<PigAvatar
+											mode="worn"
+											pigId={hostPigId}
+											hatId={hostEquip.hat?.id}
+											bowId={hostEquip.bow?.id}
+											size={AVATAR_SIZE[0]}
+											// The tally wears the host AS DRESSED, and a ritual is
+											// part of being dressed. PigAvatar keeps only the static
+											// channels, so the capsule never runs a loop.
+											ritual={hostPresentation.pig}
+										/>
 									</Avatar>
 								}
 								tickStyle={tickStyle}
@@ -952,6 +991,7 @@ function BarnVisitSession({
 									tag={null}
 									pigId={hostPigId}
 									equip={hostEquip}
+									ritual={hostPresentation.pig}
 									tired={tired}
                   disabled={tired || restingOnArrival || !!lockedUntil || busy}
 									floats={floats}
@@ -1204,8 +1244,18 @@ function BarnVisitSession({
 		</View>
 	);
 	return (
+		<PigRestTempoProvider tempo={PIG_BARN_REST_TEMPO}>
 		<View style={styles.root}>
 			<StatusBar style="dark" />
+			{/* The host's weather, over whichever scene is live — the same layer,
+			    in the same place, that the Barn gives its own owner. BarnOverlay
+			    carries its own absolute fill, explicit zIndex and
+			    `pointerEvents="none"` on every layer it draws, which is the whole
+			    reason the visit reuses it instead of hand-rolling a wash here (the
+			    build-99 dead-Barn footgun). `alignment` is neutral: a visitor
+			    reads the host's RITUALS, not their alignment — that is what the
+			    profile sheet's bar is for. */}
+			<BarnOverlay alignment="neutral" scene={hostPresentation.scene} />
 			{showInterior && !loading ? (
 				<HabitatFriendRoom
 					ownerId={targetUserId}
@@ -1256,6 +1306,8 @@ function BarnVisitSession({
 							tag={null}
 							pigId={hostPigId}
 							equip={hostEquip}
+							ritual={hostPresentation.pig}
+							burstRef={hostConfettiRef}
 							tired={tired}
 							disabled={
 								loading || tired || restingOnArrival || !!lockedUntil || busy
@@ -1289,6 +1341,7 @@ function BarnVisitSession({
 				</>
 			)}
 		</View>
+		</PigRestTempoProvider>
 	);
 }
 
@@ -1307,6 +1360,8 @@ function TapPig({
 	tired,
   disabled,
 	floats,
+	ritual,
+	burstRef,
 }: {
 	me?: boolean;
 	slotStyle?: StyleProp<ViewStyle>;
@@ -1326,6 +1381,12 @@ function TapPig({
 	tired: boolean;
   disabled: boolean;
 	floats: { id: number; anim: Animated.Value; rx: number; star: boolean }[];
+	/** The merged ritual pig recipe worn by THIS pig. Only the host has one in a
+	 *  visit: phase 4 is "go and admire the curse you cast", so the visitor's own
+	 *  pig stays as it is at home. */
+	ritual?: PigFx;
+	/** The tap burst the caller fires on a successful tickle (Confetti Snout). */
+	burstRef?: Ref<ConfettiBurstHandle>;
 }) {
 	const [reaction, setReaction] = useState<PigReaction | null>(null);
 	const reactionId = useRef(0);
@@ -1395,6 +1456,7 @@ function TapPig({
 				})}
 			</View>
 			<View style={[styles.pigBox, { width: box, height: box }]}>
+				{burstRef ? <ConfettiBurst ref={burstRef} size={box} /> : null}
         <View
           pointerEvents="none"
           style={[
@@ -1404,13 +1466,13 @@ function TapPig({
         />
 				<Animated.View style={{ transform: [{ scale }, ...(riveActive ? [] : squishTransform)] }}>
 					<PigStage
-						active={!me}
 						pigReaction={reaction}
 						onPigComplete={() => setReaction(null)}
 						onRendererChange={(kind) => setRiveActive(kind === "rive")}
 						pigId={pigId}
 						pigFrameIdx={pigFrameIdx}
 						onPigFrame={setPigFrameIdx}
+						ritual={ritual}
 						equipped={equip.hat}
 						equippedBow={equip.bow}
 						equippedGlasses={equip.glasses}

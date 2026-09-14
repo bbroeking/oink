@@ -27,6 +27,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import type { CosmeticFx, SparkleSpec } from "@/constants/cosmeticFx";
+import { WHIMSY } from "@/constants/theme";
 import {
 	startDecorativeLoop,
 	useMotionPolicy,
@@ -66,6 +67,58 @@ function usePingPong(period: number, easing = Easing.inOut(Easing.ease)) {
 		});
 	}, [v, period, easing, motionPolicy]);
 	return v;
+}
+
+// The soft pulsing halo. Extracted from AnimatedCosmetic's layer 1 so anything
+// that needs "a warm glow behind this art" — a members cosmetic, a ritual's
+// Golden Hour pig — reaches for the ONE primitive instead of hand-rolling a
+// second radial. Sized/positioned relative to its `size` box; the caller places
+// the box. Purely decorative, so it rests at a steady opacity under Reduce
+// Motion rather than pulsing.
+export function CosmeticGlow({
+	color = WHIMSY.slopGold,
+	period = 2800,
+	size,
+	style,
+	testID,
+}: {
+	color?: string;
+	period?: number;
+	size: number;
+	style?: StyleProp<ViewStyle>;
+	testID?: string;
+}) {
+	const v = usePingPong(period);
+	return (
+		<Animated.View
+			pointerEvents="none"
+			testID={testID}
+			style={[
+				{
+					position: "absolute",
+					width: size * 0.9,
+					height: size * 0.9,
+					left: size * 0.05,
+					top: size * 0.08,
+					borderRadius: size,
+					backgroundColor: color,
+					opacity: v.interpolate({
+						inputRange: [0, 1],
+						outputRange: [0.16, 0.4],
+					}),
+					transform: [
+						{
+							scale: v.interpolate({
+								inputRange: [0, 1],
+								outputRange: [0.86, 1.12],
+							}),
+						},
+					],
+				},
+				style,
+			]}
+		/>
+	);
 }
 
 // One twinkling sparkle. Own Animated.Value so each can stagger via `delay`.
@@ -149,7 +202,6 @@ export function AnimatedCosmetic({
 }: AnimatedCosmeticProps) {
 	const floatAmp = ((fx.float?.amp ?? 0) * size) / 100;
 	const floatV = usePingPong(fx.float?.period ?? 2600);
-	const glowV = usePingPong(fx.glow?.period ?? 2800);
 
 	// Shimmer: long rest, then a brief white bloom. Own value (not ping-pong)
 	// so the hold dominates and the gleam reads as an occasional catch-light.
@@ -202,28 +254,10 @@ export function AnimatedCosmetic({
 		>
 			{/* 1. glow halo */}
 			{fx.glow && (
-				<Animated.View
-					style={{
-						position: "absolute",
-						width: size * 0.9,
-						height: size * 0.9,
-						left: size * 0.05,
-						top: size * 0.08,
-						borderRadius: size,
-						backgroundColor: fx.glow.color ?? "#F5C44A",
-						opacity: glowV.interpolate({
-							inputRange: [0, 1],
-							outputRange: [0.16, 0.4],
-						}),
-						transform: [
-							{
-								scale: glowV.interpolate({
-									inputRange: [0, 1],
-									outputRange: [0.86, 1.12],
-								}),
-							},
-						],
-					}}
+				<CosmeticGlow
+					color={fx.glow.color}
+					period={fx.glow.period}
+					size={size}
 				/>
 			)}
 

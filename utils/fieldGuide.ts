@@ -22,7 +22,12 @@ export const FIELD_GUIDE_PAGE_IDS = [
 	"golden_truffle",
 	"lucky_number",
 	"trough",
-	"mud_wrap",
+	// Was "mud_wrap" (the regen-wrap page) until the weekday rituals landed
+	// and the page became the whole ritual lane. NOTE: the migration's
+	// whitelist (20260752000000_field_guide_pages.sql) still says "mud_wrap",
+	// so the server unlock RPC rejects this id until it is widened — the
+	// local mirror carries the page in the meantime (fail-soft by design).
+	"rituals",
 	"snouts",
 	"exchange",
 	"feeding_windows",

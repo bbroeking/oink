@@ -27,3 +27,27 @@ export function PigRestingPoseProvider({
 export function usePigRestingPose(): PigRestingPose {
 	return useContext(PigRestingPoseContext);
 }
+
+// How fast a pig rests here, as a multiplier on the rest loops' fps and the
+// breath (1 = the Exterior's tempo). A surface declares it once at its root —
+// the Barn declares PIG_BARN_REST_TEMPO — and every pig staged inside, host or
+// visitor, sitting or standing, rests at that pace. Reactions are not scaled.
+const PigRestTempoContext = createContext<number>(1);
+
+export function PigRestTempoProvider({
+	tempo,
+	children,
+}: {
+	tempo: number;
+	children: ReactNode;
+}) {
+	return (
+		<PigRestTempoContext.Provider value={tempo}>
+			{children}
+		</PigRestTempoContext.Provider>
+	);
+}
+
+export function usePigRestTempo(): number {
+	return useContext(PigRestTempoContext);
+}

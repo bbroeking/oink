@@ -65,12 +65,12 @@ export function useActiveEffects(
 		}, [enabled, refresh])
 	);
 
-	// Field Guide: a regen wrap/tea in the active-effects lane meets the
-	// Mud Wrap & Warm Tea page (fail-soft, idempotent after the first).
+	// Field Guide: wearing ANY ritual — a friend's blessing or their curse —
+	// is how you meet the Rituals page (fail-soft, idempotent after the
+	// first). Weekday rituals, 2026-09-14: the page is no longer about one
+	// kind, so neither is the observe.
 	useEffect(() => {
-		if (effects.some((e) => e.kind === "mud_wrap" || e.kind === "warm_tea")) {
-			observeFieldGuide("mud_wrap");
-		}
+		if (effects.length > 0) observeFieldGuide("rituals");
 	}, [effects]);
 
 	// Realtime: INSERT on blessings/curses (effects appearing) + UPDATE on

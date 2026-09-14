@@ -6,6 +6,7 @@ import { PIG_FRAMES } from "@/constants/pigFrames.generated";
 import type { PigId } from "@/utils/pigs";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { usePigActive } from "@/hooks/usePigActive";
+import { usePigRestTempo } from "./PigRestingPose";
 import {
 	PIG_ANIMATION_SPECS,
 	PIG_REST_FPS,
@@ -57,6 +58,10 @@ export function SpritePig({
 }: Props) {
 	const policy = useMotionPolicy();
 	const visible = usePigActive(active);
+	// The surface's rest tempo scales the rest loops only; a reaction or a
+	// mood plays at its authored speed wherever it plays.
+	const restTempo = usePigRestTempo();
+	const tempo = animation === "idle" || animation === "sit" ? restTempo : 1;
 	const reduced = reduceMotion ?? policy.reduceMotion;
 	const [internalIdx, setInternalIdx] = useState(0);
 	const setIdx = setInternalIdx;
@@ -104,7 +109,7 @@ export function SpritePig({
 			return;
 		}
 		if (activePlayback.length <= 1) return;
-		const period = 1000 / activeFps;
+		const period = 1000 / (activeFps * tempo);
 		let frame = 0;
 		const handle = setInterval(() => {
 			frame += 1;
@@ -119,7 +124,7 @@ export function SpritePig({
 			setIdx(frame);
 		}, period);
 		return () => clearInterval(handle);
-	}, [activePlayback, activeFps, activeLoop, frameIdx, visible, reduced, playOnce, playbackKey]);
+	}, [activePlayback, activeFps, activeLoop, frameIdx, visible, reduced, playOnce, playbackKey, tempo]);
 
 	// Fire onFrame after commit — never inside the setIdx updater (React forbids
 	// side effects in state updaters as of React 18).

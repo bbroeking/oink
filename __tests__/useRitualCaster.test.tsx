@@ -187,3 +187,58 @@ describe("useRitualCaster", () => {
 		act(() => r.unmount());
 	});
 });
+
+// The server owns the rotation; the local weekday table is the fallback while
+// `ritual_status` is dark. Both index the same Monday-first arrays, so this is
+// belt-and-braces — but the toast must name what was actually CAST, which is
+// the 00:00-UTC-boundary case the plan calls out.
+describe("useRitualCaster — the server's kinds win", () => {
+	beforeEach(() => {
+		mockRpc.mockReset();
+		mockHaptics.mockClear();
+	});
+
+	function serveKinds(
+		status: Record<string, unknown>,
+		castReply: Record<string, unknown> = { ok: true }
+	) {
+		mockRpc.mockImplementation(async (name: string) => ({
+			data: name === "ritual_status" ? { ...STATUS, ...status } : castReply,
+			error: null,
+		}));
+	}
+
+	test("today() prefers bless_kind / curse_kind over the local table", async () => {
+		// Deliberately NOT the same weekday pair, so the preference is visible.
+		serveKinds({ bless_kind: "firefly_night", curse_kind: "topsy_turvy" });
+		const r = await mountProbe();
+		expect(caster().today("bless").kind).toBe("firefly_night");
+		expect(caster().today("bless").name).toBe("Firefly Night");
+		expect(caster().today("curse").kind).toBe("topsy_turvy");
+		act(() => r.unmount());
+	});
+
+	test("a kind this build has never heard of falls back to the local table", async () => {
+		serveKinds({ bless_kind: "season_three_thing", curse_kind: undefined });
+		const r = await mountProbe();
+		expect(caster().today("bless").name).toBe(dailyRitual("bless").name);
+		expect(caster().today("curse").name).toBe(dailyRitual("curse").name);
+		act(() => r.unmount());
+	});
+
+	test("the toast names the kind the CAST returned, not the local guess", async () => {
+		// The door was armed on Thursday's blessing; the cast crossed 00:00 UTC
+		// and the server sent Friday's. The line says Golden Hour.
+		serveKinds(
+			{ bless_kind: "confetti_snout" },
+			{ ok: true, kind: "golden_hour" }
+		);
+		const r = await mountProbe();
+		let outcome;
+		await act(async () => {
+			outcome = await caster().cast("bless", "u-42", "alice");
+		});
+		expect(outcome).toEqual({ kind: "sent", text: "Golden Hour sent to alice" });
+		act(() => r.unmount());
+	});
+});

@@ -50,10 +50,10 @@ const curse = (kind: string, expires_at: string): Effect => ({
 	sender_username: null,
 });
 
-const oneCurse: Effect[] = [curse("sluggish_snout", "2026-05-21T12:00:00Z")];
+const oneCurse: Effect[] = [curse("pickle_brine", "2026-05-21T12:00:00Z")];
 const twoCurses: Effect[] = [
-	curse("sluggish_snout", "2026-05-21T12:00:00Z"),
-	curse("goblin_whisper", "2026-05-21T15:00:00Z"),
+	curse("pickle_brine", "2026-05-21T12:00:00Z"),
+	curse("hiccups", "2026-05-21T15:00:00Z"),
 ];
 
 const okConfirm = () => Promise.resolve({ ok: true, cleared: 1 });
@@ -80,8 +80,8 @@ describe("CleanseModal", () => {
 			<CleanseModal curses={twoCurses} onDismiss={() => {}} onConfirm={okConfirm} />
 		);
 		const text = textOf(r.root);
-		expect(text).toContain("Sluggish Snout");
-		expect(text).toContain("Goblin Whisper");
+		expect(text).toContain("Pickle Brine");
+		expect(text).toContain("Hiccups");
 		act(() => r.unmount());
 	});
 

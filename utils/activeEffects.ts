@@ -12,6 +12,7 @@ import { formatExpiry, remainingMs } from "./duration";
 import {
 	BLESSING_META,
 	CURSE_META,
+	LEGACY_RITUAL_META,
 	type BlessingKind,
 	type CurseKind,
 	type RitualMeta,
@@ -34,9 +35,13 @@ export function effectMeta(e: Effect) {
 	const blessed = e.source === "blessing";
 	// `kind` arrives as a raw server string, so the lookup can miss — the
 	// annotation keeps that honest and forces the `meta?.` guards below.
-	const meta: RitualMeta | undefined = blessed
-		? BLESSING_META[e.kind as BlessingKind]
-		: CURSE_META[e.kind as CurseKind];
+	// Live kinds first, then the retired S0/S1 table: a row cast before the
+	// weekday rotation shipped keeps its own name and icon until it expires
+	// (weekday rituals, 2026-09-14).
+	const meta: RitualMeta | undefined =
+		(blessed
+			? BLESSING_META[e.kind as BlessingKind]
+			: CURSE_META[e.kind as CurseKind]) ?? LEGACY_RITUAL_META[e.kind];
 	const senderName = e.sender_username ?? (blessed ? "a friend" : "someone");
 	const initial = (e.sender_username ?? "?").slice(0, 1).toUpperCase();
 	return { blessed, meta, senderName, initial };
@@ -67,6 +72,40 @@ export async function fetchActiveEffects(): Promise<Effect[]> {
 	const rows = (await rpc<Effect[]>("my_active_effects")) ?? [];
 	// blessings first, then curses — stable iteration order for the
 	// callers that render a unified list.
+	rows.sort((a, b) => (a.source < b.source ? -1 : 1));
+	return rows;
+}
+
+// ── Somebody else's effects ─────────────────────────────────────────────
+// What a VISITOR may know about their host (weekday rituals, 2026-09-14,
+// plan phase 4): which rituals are on them, and nothing else. Deliberately
+// narrower than `Effect` — `active_effects_of` returns no sender, because who
+// left a mark on you is yours to see. A visitor only needs the kinds so the
+// Barn scene and the host's pig can render the way the host sees them.
+export interface VisitorEffect {
+	source: "blessing" | "curse";
+	kind: string;
+	expires_at: string;
+}
+
+// Fetch the rituals currently on a friend or crewmate (or yourself — the RPC
+// allows it, and `my_active_effects` already tells you strictly more).
+//
+// Fail-soft in the strong sense: the RPC is dark until the weekday-rituals
+// migration is pushed, and a visit must never break because a friend's Barn
+// could not be read. Every failure — unpushed function, non-friend, transport
+// blip — resolves to the rest state, exactly like `fetchActiveEffects`. The
+// shape guard is belt-and-braces for the same dark-RPC reason.
+export async function fetchActiveEffectsOf(
+	targetUserId: string,
+): Promise<VisitorEffect[]> {
+	const data = await rpc<VisitorEffect[]>("active_effects_of", {
+		p_target: targetUserId,
+	});
+	if (!Array.isArray(data)) return [];
+	const rows = [...data];
+	// blessings first, then curses — the same stable order `fetchActiveEffects`
+	// hands the merge, so a visitor folds the recipes in the host's own order.
 	rows.sort((a, b) => (a.source < b.source ? -1 : 1));
 	return rows;
 }

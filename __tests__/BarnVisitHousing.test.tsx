@@ -2,11 +2,25 @@ import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import { BarnVisitModal } from "@/components/BarnVisitModal";
 import { HabitatFriendRoom } from "@/components/habitat/HabitatFriendRoom";
-import { rpcAction } from "@/utils/rpc";
+import { StyleSheet } from "react-native";
+import { rpc, rpcAction } from "@/utils/rpc";
+import { PigStage } from "@/components/ui/PigStage";
+import { RITUAL_FX, fxWash, hasPigFx } from "@/constants/ritualFx";
 import { recordPorchStop } from "@/utils/porchRound";
 import { showToast } from "@/components/ui";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router/react-navigation", () => ({
+  // Keep the real module (NavigationContext, which the pig's focus hook reads)
+  // and swap only the focus effect: a mounted sheet/visit is a focused one, so
+  // it runs as a plain effect and `useVisitorEffects` does its one read
+  // (weekday rituals phase 4).
+  ...jest.requireActual("expo-router/react-navigation"),
+  useFocusEffect: (effect: () => void | (() => void)) =>
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- a mock factory loads React after Jest hoisting
+    require("react").useEffect(effect, [effect]),
+}));
+
 let authListener: ((event: string, session: { user: { id: string } } | null) => void) | undefined;
 
 jest.mock("@sentry/react-native", () => ({ captureException: jest.fn(), captureMessage: jest.fn(), addBreadcrumb: jest.fn() }));
@@ -28,7 +42,7 @@ jest.mock("@/components/ui", () => ({
 }));
 jest.mock("@/components/ui/PigStage", () => ({ PigStage: () => null }));
 jest.mock("@/components/habitat/HabitatFriendRoom", () => ({ HabitatFriendRoom: ({ overlay }: { overlay?: React.ReactNode }) => overlay ?? null }));
-jest.mock("@/utils/rpc", () => ({ rpcAction: jest.fn() }));
+jest.mock("@/utils/rpc", () => ({ rpc: jest.fn(async () => null), rpcAction: jest.fn() }));
 jest.mock("@/utils/porchRound", () => ({ recordPorchStop: jest.fn(async () => ({ ok: true, created: false })) }));
 jest.mock("@/utils/interactionAnalytics", () => ({ trackInteraction: jest.fn() }));
 jest.mock("@/utils/visitEmotes", () => ({ refreshVisitEmotes: jest.fn(async () => {}), visitEmoteIds: () => [], VISIT_EMOTE_META: {}, VISIT_EMOTE_IMAGES: {} }));
@@ -214,5 +228,101 @@ describe("existing Visit with a saved Barn Interior", () => {
     });
     act(() => tree.root.findAll((n) => n.props.accessibilityLabel === "Inside")[0].props.onPress());
     expect(tree.root.findByType(HabitatFriendRoom).props.ownerId).toBe("friend");
+  });
+});
+
+// ── Phase 4: the visitor sees the host's rituals ────────────────────────
+// A curse is a message from a friend, so the caster has to be able to walk over
+// and admire it. `active_effects_of` is the whole authorization; the visit folds
+// whatever it returns through the same presentation the host's own Barn uses.
+describe("a visit wears the host's rituals", () => {
+  let tree: TestRenderer.ReactTestRenderer;
+  const action = jest.mocked(rpcAction);
+  const read = jest.mocked(rpc);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    action.mockImplementation(async (name) => name === "barn_visit_status"
+      ? { ok: true, visits_left: 3, visit_budget: 3 }
+      : { ok: true, taps_left: 3, tap_cap: 5, visits_left: 2 });
+    // It is Friday in the host's Barn: they are carrying the day's blessing AND
+    // the day's curse, which the weekday pairing guarantees never collide.
+    read.mockImplementation(async (name: string) =>
+      name === "active_effects_of"
+        ? ([
+            { source: "blessing", kind: "golden_hour", expires_at: "2099-01-01T00:00:00Z" },
+            { source: "curse", kind: "bacon_bits", expires_at: "2099-01-01T00:00:00Z" },
+          ] as never)
+        : (null as never),
+    );
+  });
+  afterEach(() => act(() => tree?.unmount()));
+
+  const openOutside = async () => {
+    await act(async () => {
+      tree = TestRenderer.create(
+        <BarnVisitModal targetUserId="friend" targetName="Maple" onClose={jest.fn()} />,
+      );
+    });
+    act(() => tree.root.findAll((n) => n.props.accessibilityLabel === "Outside")[0].props.onPress());
+    act(() => tree.root.findByType(HabitatFriendRoom).props.onLeft());
+  };
+
+  it("reads the host's effects once, by id", async () => {
+    await openOutside();
+    const reads = read.mock.calls.filter(([name]) => name === "active_effects_of");
+    expect(reads).toHaveLength(1);
+    expect(reads[0][1]).toEqual({ p_target: "friend" });
+  });
+
+  it("washes the Barn amber and bacon-stripes the host's pig, both at once", async () => {
+    await openOutside();
+
+    // Golden Hour: the scene wash, drawn by the same BarnOverlay the host's own
+    // Barn draws — one layer, its own zIndex, and never in the way of a tap.
+    const wash = tree.root
+      .findAllByProps({ testID: "barn-scene-wash" })
+      .filter((n) => typeof n.type === "string");
+    expect(wash).toHaveLength(1);
+    expect(wash[0].props.pointerEvents).toBe("none");
+    expect(StyleSheet.flatten(wash[0].props.style).backgroundColor).toBe(
+      fxWash(RITUAL_FX.golden_hour.scene!.tint!, RITUAL_FX.golden_hour.scene!.alpha),
+    );
+
+    // Bacon Bits + Golden Hour reach the host's stage as ONE merged recipe:
+    // the curse's skin and tint, the blessing's glow. (Neither Friday recipe
+    // sets `flip`; Topsy-Turvy's channel is asserted in PigStageRitual.)
+    const stages = tree.root.findAllByType(PigStage);
+    expect(stages).toHaveLength(2);
+    const worn = stages.map((s) => s.props.ritual).filter(Boolean);
+    expect(worn).toHaveLength(1);
+    expect(worn[0]).toMatchObject({
+      skin: "bacon",
+      tint: RITUAL_FX.bacon_bits.pig!.tint,
+      glow: RITUAL_FX.golden_hour.pig!.glow,
+    });
+  });
+
+  it("leaves the visitor's own pig alone", async () => {
+    await openOutside();
+    const room = tree.root.findAllByType(HabitatFriendRoom);
+    expect(room).toHaveLength(0);
+    const stages = tree.root.findAllByType(PigStage);
+    // The visitor's pig is the one with no recipe: phase 4 is "admire the
+    // curse you cast", not "wear it too".
+    expect(stages.filter((s) => s.props.ritual === undefined)).toHaveLength(1);
+  });
+
+  it("a dark active_effects_of leaves the Barn plain instead of breaking the visit", async () => {
+    read.mockImplementation(async () => null as never);
+    await openOutside();
+    expect(tree.root.findAllByProps({ testID: "barn-scene-wash" })).toHaveLength(0);
+    // The rest presentation is an empty recipe, not a missing one — nothing on
+    // either stage draws.
+    expect(
+      tree.root.findAllByType(PigStage).every((s) => !hasPigFx(s.props.ritual)),
+    ).toBe(true);
+    // ...and the visit itself is untouched.
+    expect(tree.root.findByProps({ testID: "visit-exterior-background" })).toBeTruthy();
   });
 });

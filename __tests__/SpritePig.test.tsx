@@ -74,6 +74,30 @@ describe("SpritePig — flip-book frames", () => {
 		act(() => r.unmount());
 	});
 
+	test("a surface's rest tempo slows the idle loop but not a reaction", async () => {
+		const { PigRestTempoProvider } = require("../components/ui/PigRestingPose");
+		const onFrame = jest.fn();
+		const r = await renderAct(
+			<PigRestTempoProvider tempo={0.5}>
+				<SpritePig animation="idle" pigId="rosie" onFrame={onFrame} />
+			</PigRestTempoProvider>
+		);
+		// Half tempo: a 7.5 fps loop ticks every 266 ms, so one idle period is not enough.
+		await act(async () => { jest.advanceTimersByTime(1000 / 7.5 + 1); });
+		expect(onFrame).toHaveBeenLastCalledWith(0);
+		await act(async () => { jest.advanceTimersByTime(1000 / 7.5 + 1); });
+		expect(onFrame).toHaveBeenLastCalledWith(1);
+		// A reaction ignores the tempo: jump at 6 fps still ticks every 166 ms.
+		await act(async () => { r.update(
+			<PigRestTempoProvider tempo={0.5}>
+				<SpritePig animation="jump" pigId="rosie" onFrame={onFrame} />
+			</PigRestTempoProvider>
+		); });
+		await act(async () => { jest.advanceTimersByTime(1000 / 6 + 1); });
+		expect(onFrame).toHaveBeenLastCalledWith(1);
+		act(() => r.unmount());
+	});
+
 	test("pre-baked appearances keep their complete authored idle sequence", async () => {
 		const r = await renderAct(<SpritePig animation="idle" customFrames={{ idle: ["happy_1", "happy_2", "happy_3", "happy_4"] }} />);
 		expect(visibleSource(r)).toBe(PIG_FRAMES.rosie.happy_1);

@@ -4,9 +4,11 @@
 
 import {
 	type Effect,
+	effectMeta,
 	fetchActiveEffects,
 	partitionBySource,
 	formatLeft,
+	toEffectCardEffect,
 } from "../utils/activeEffects";
 
 const mockRpc = jest.fn();
@@ -80,20 +82,20 @@ describe("partitionBySource", () => {
 
 	test("splits a mixed list, preserving order within each side", () => {
 		const e: Effect[] = [
-			blessing("halo_kiss", "2026-05-22T00:00:00Z"),
-			curse("sluggish_snout", "2026-05-22T01:00:00Z"),
+			blessing("cloud_nine", "2026-05-22T00:00:00Z"),
+			curse("pickle_brine", "2026-05-22T01:00:00Z"),
 			blessing("golden_hour", "2026-05-22T02:00:00Z"),
 		];
 		const { blessings, curses } = partitionBySource(e);
 		expect(blessings).toHaveLength(2);
 		expect(curses).toHaveLength(1);
-		expect(blessings[0].kind).toBe("halo_kiss");
+		expect(blessings[0].kind).toBe("cloud_nine");
 		expect(blessings[1].kind).toBe("golden_hour");
-		expect(curses[0].kind).toBe("sluggish_snout");
+		expect(curses[0].kind).toBe("pickle_brine");
 	});
 
 	test("all blessings → empty curses", () => {
-		const e = [blessing("halo_kiss", "2026-05-22T00:00:00Z")];
+		const e = [blessing("cloud_nine", "2026-05-22T00:00:00Z")];
 		expect(partitionBySource(e).curses).toEqual([]);
 	});
 });
@@ -116,9 +118,9 @@ describe("fetchActiveEffects", () => {
 	test("sorts blessings before curses", async () => {
 		mockRpc.mockResolvedValue({
 			data: [
-				curse("sluggish_snout", "2026-05-22T01:00:00Z"),
-				blessing("halo_kiss", "2026-05-22T00:00:00Z"),
-				curse("goblin_whisper", "2026-05-22T02:00:00Z"),
+				curse("pickle_brine", "2026-05-22T01:00:00Z"),
+				blessing("cloud_nine", "2026-05-22T00:00:00Z"),
+				curse("hiccups", "2026-05-22T02:00:00Z"),
 				blessing("golden_hour", "2026-05-22T03:00:00Z"),
 			],
 			error: null,
@@ -137,5 +139,50 @@ describe("fetchActiveEffects", () => {
 		await fetchActiveEffects();
 		// Second arg is undefined now that the call routes through rpc<T>().
 		expect(mockRpc).toHaveBeenCalledWith("my_active_effects", undefined);
+	});
+});
+
+describe("effectMeta", () => {
+	test("names a live blessing off BLESSING_META", () => {
+		const { blessed, meta } = effectMeta(
+			blessing("golden_hour", "2026-05-22T00:00:00Z")
+		);
+		expect(blessed).toBe(true);
+		expect(meta?.name).toBe("Golden Hour");
+		expect(meta?.icon).toBeTruthy();
+	});
+
+	test("names a live curse off CURSE_META", () => {
+		const { blessed, meta } = effectMeta(
+			curse("bacon_bits", "2026-05-22T00:00:00Z")
+		);
+		expect(blessed).toBe(false);
+		expect(meta?.name).toBe("Bacon Bits");
+	});
+
+	test("a row cast under a RETIRED kind still has its old name and icon", () => {
+		// The twelve-hour overlap after the weekday rotation shipped: the kind
+		// is gone from the rotation but the effect is still on the pig.
+		const old = effectMeta(blessing("mud_wrap", "2026-05-22T00:00:00Z"));
+		expect(old.meta?.name).toBe("Mud Wrap");
+		expect(old.meta?.icon).toBeTruthy();
+
+		const oldCurse = effectMeta(curse("phantom_itch", "2026-05-22T00:00:00Z"));
+		expect(oldCurse.meta?.name).toBe("Phantom Itch");
+	});
+
+	test("a kind from neither table has no meta, and the card falls back", () => {
+		const e = blessing("something_new", "2026-05-22T00:00:00Z");
+		expect(effectMeta(e).meta).toBeUndefined();
+		expect(toEffectCardEffect(e).name).toBe("something_new");
+	});
+
+	test("the sender label falls back per source", () => {
+		expect(
+			effectMeta(blessing("golden_hour", "2026-05-22T00:00:00Z")).senderName
+		).toBe("a friend");
+		expect(
+			effectMeta(curse("bacon_bits", "2026-05-22T00:00:00Z")).senderName
+		).toBe("someone");
 	});
 });

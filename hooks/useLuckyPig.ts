@@ -117,7 +117,7 @@ export interface UseLuckyPig {
 	luckyTicklesLeft: number;
 	luckyModalOpen: boolean;
 	unlockedTitle: TitleRow | null;
-	rollOnTickle: (sunBeamActive: boolean) => LuckyTickleOutcome;
+	rollOnTickle: () => LuckyTickleOutcome;
 	onBurstDismiss: () => void;
 	// Constants surfaced for UI (LuckyPigModal needs window size +
 	// the double percentage to render its "X tickles, 30% double" copy).
@@ -175,7 +175,7 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 	}, []);
 
 	const rollOnTickle = useCallback(
-		(sunBeamActive: boolean): LuckyTickleOutcome => {
+		(): LuckyTickleOutcome => {
 			// Already in a window — roll the double die instead.
 			if (luckyTicklesLeft > 0) {
 				const doubleEarned = Math.random() < LUCKY_DOUBLE_CHANCE;
@@ -189,7 +189,6 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 			const decision = rollLucky({
 				isFirstTimeUser,
 				preFirstTicklesIncludingThis: preFirstTicklesRef.current,
-				sunBeamActive,
 			});
 			if (!decision.triggerNow) {
 				return { triggered: false, doubleEarned: false };

@@ -14,6 +14,7 @@ import { ANIM_SCALE } from "../constants/animScale.generated";
 import type { RelSpec } from "../constants/hat_overlay_types";
 import type { PigAnimation, PigMood, PigReaction, PigReactionKind } from "./ui/pigRendererContract";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import type { PigFx } from "@/constants/ritualFx";
 import { ART_SIZE, FONTS, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import { squashAndSpring } from "@/utils/motionRecipes";
 
@@ -45,6 +46,11 @@ interface SwipeElementProps {
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
 	prestigeLevel?: number;
+	// The merged ritual pig channels (weekday rituals, 2026-09-14) — flip,
+	// scale, float, hop, skin, forced cosmetics, follower, particles. Passed
+	// straight through to PigStage, which owns every one of them so the
+	// raster and Rive renderers inherit them alike.
+	ritual?: PigFx;
 }
 
 const sixSevenSound = require("../assets/sounds/sixseven.m4a");
@@ -74,6 +80,7 @@ export default function SwipeElement({
 	canTickle = true,
 	playSixSeven,
 	prestigeLevel = 0,
+	ritual,
 }: SwipeElementProps) {
 	const sixSevenPlayer = useAudioPlayer(sixSevenSound);
 	const scale = useRef(new Animated.Value(1)).current;
@@ -309,6 +316,7 @@ export default function SwipeElement({
 						equippedHeld={equippedHeld}
 						relOverrides={relOverrides}
 						prestigeLevel={prestigeLevel}
+						ritual={ritual}
 					/>
 				</Animated.View>
 			</Pressable>

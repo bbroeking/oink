@@ -38,6 +38,12 @@ export function pigAnchorAnimation(animation: PigAnimation): PigAnimationKey {
 export const PIG_REST_FPS = 2.5;
 // The standing idle carries three times the rig's frames in the same 1.6 s.
 export const PIG_IDLE_FPS = 7.5;
+// A Barn is a slower room than the yard. Its surfaces (the interior, a
+// friend's visit — both spots) declare this through PigRestTempoProvider and
+// every rest loop and breath inside runs at four-fifths speed: the 1.6 s idle
+// becomes 2 s, the 4 s seated blink 5 s, the 3.2 s breath 4 s. Reactions keep
+// their own tempo — a tickle answers at the same speed everywhere.
+export const PIG_BARN_REST_TEMPO = 0.8;
 const IDLE_12 = Array.from({ length: 12 }, (_, i) => `idle_${i + 1}`);
 
 export interface PigAnimationSpec {

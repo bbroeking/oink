@@ -48,7 +48,7 @@ import {
 	type PigMood,
 	type PigReaction,
 } from "./pigRendererContract";
-import { usePigRestingPose } from "./PigRestingPose";
+import { usePigRestingPose, usePigRestTempo } from "./PigRestingPose";
 import { usePigActive } from "@/hooks/usePigActive";
 import { RIVE_PIG_SOURCE } from "./rivePigAsset";
 import {
@@ -56,8 +56,17 @@ import {
 } from "./rivePigContract";
 import type { PigId } from "@/utils/pigs";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
-import { breathe, BREATH_SQUASH, BREATH_STRETCH } from "@/utils/motionRecipes";
+import { RITUAL_ITEM_ART, RITUAL_ITEM_REL, type PigFx } from "@/constants/ritualFx";
+import { CosmeticGlow } from "./AnimatedCosmetic";
+import {
+	HIC_BUBBLE_MS,
+	HicBubble,
+	PigBubbles,
+	PigFollower,
+} from "./PigRitualFx";
+import { breathe, BREATH_HALF_MS, BREATH_SQUASH, BREATH_STRETCH } from "@/utils/motionRecipes";
 import { useRivePigRolloutEnabled } from "@/utils/rivePigRollout";
+import { MOTION } from "@/constants/theme";
 
 // Auras that ROTATE — radial rays / rings / sunbursts read well spinning. Every
 // OTHER aura gently pulses (breathes) instead: a spinning flame or mist looks
@@ -108,6 +117,11 @@ export interface EquippedItem {
 	id: string;
 	category: string | null;
 	emoji: string | null;
+	// Art that does NOT live in `HAT_IMAGES` — the escape hatch a forced ritual
+	// cosmetic uses (its art is registered in `RITUAL_ITEM_ART`, not the shop
+	// catalog). Omitted by every ordinary producer, which keeps resolving
+	// through HAT_IMAGES exactly as before.
+	imageSrc?: number;
 }
 
 export interface PigStageProps {
@@ -164,6 +178,13 @@ export interface PigStageProps {
 	// Dev prototype control for previewing the Slop Club Rosie wash in memory.
 	// Ordinary callers omit this and keep the global skin-store behavior.
 	skinTintOverride?: string | null;
+	// The merged ritual pig presentation (weekday rituals, 2026-09-14): skin,
+	// tint, glow, flip/scale/float/hop transforms, forced cosmetics, follower,
+	// particles. Comes from `useRitualPresentation().pig`. The transforms join
+	// the breath on the stage wrapper, so raster and Rive look identical and
+	// the cosmetic anchors keep working. Lists and sheets pass only the static
+	// channels (`staticPigFx`) — no loops outside the Barn.
+	ritual?: PigFx;
 
 	// Rive remains asset/rollout gated. Frozen or unsupported appearances use
 	// the complete raster stage, including its existing attachment tables.
@@ -200,7 +221,7 @@ export function resolveSlot(
 	const category = slot.category ?? null;
 	const emoji = slot.emoji ?? null;
 	const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId] : null;
-	const imageSrc = HAT_IMAGES[itemId] ?? null;
+	const imageSrc = slot.imageSrc ?? HAT_IMAGES[itemId] ?? null;
 
 	// Anchor-RELATIVE placement (the new model). If the item has a
 	// rel spec, size + position it so its pivot point lands on the
@@ -302,6 +323,23 @@ export function resolveSlot(
 	return { itemId, category, emoji, imageSrc, prebaked, overlay };
 }
 
+// A ritual's forced cosmetic as an EquippedItem, or null when it has no art.
+// `RITUAL_ITEM_ART` carries the four ritual stickers (butterfly / bow tie /
+// monocle / bacon mask); a forced id with no entry there is skipped and the
+// player keeps their own item in that slot, so a recipe can name art that has
+// not been drawn yet without ever rendering a broken sticker.
+export function forcedRitualItem(
+	ritual: PigFx | undefined,
+	slot: keyof NonNullable<PigFx["forced"]>,
+	category: string,
+): EquippedItem | null {
+	const id = ritual?.forced?.[slot];
+	if (!id) return null;
+	const art = RITUAL_ITEM_ART[id];
+	if (art === undefined) return null;
+	return { id, category, emoji: null, imageSrc: art };
+}
+
 // One overlay box — item art, then the category art placeholder, then
 // a neutral print glyph. The no-art path never renders a raw emoji.
 function ItemOverlay({
@@ -399,6 +437,7 @@ export function PigStage({
 	tints = {},
 	prestigeLevel = 0,
 	skinTintOverride,
+	ritual,
 	renderer = "rive",
 	riveSource = RIVE_PIG_SOURCE,
 	riveRolloutEnabled,
@@ -414,6 +453,7 @@ export function PigStage({
 	// mood or a reaction plays as it would anywhere. Resolved here, once, so
 	// the sprite frames and the cosmetic anchors below agree on the pose.
 	const restingPose = usePigRestingPose();
+	const restTempo = usePigRestTempo();
 	const baseAnimation = resolveRestingAnimation(restingPose, requestedAnimation, pigMood);
 	const reaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;
 	const pigAnimation = reaction?.kind ?? resolvePigAnimation(baseAnimation, pigMood);
@@ -430,21 +470,42 @@ export function PigStage({
 	// Dye Vat: resolve a worn item's chosen member palette (or undefined). Auras
 	// and backgrounds are intentionally not dyeable.
 	const tintFor = (id: string | undefined) => (id ? tints[id] : undefined);
-	const main = resolveSlot(equipped, pigAnimation, pigFrameIdx, relOverrides);
-	const bowSlot = resolveSlot(equippedBow, pigAnimation, pigFrameIdx, relOverrides);
-	const glassesSlot = resolveSlot(equippedGlasses, pigAnimation, pigFrameIdx, relOverrides);
-	const maskSlot = resolveSlot(equippedMask, pigAnimation, pigFrameIdx, relOverrides);
-	const neckSlot = resolveSlot(equippedNeck, pigAnimation, pigFrameIdx, relOverrides);
-	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, relOverrides);
-	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, relOverrides);
+	// A ritual's forced cosmetic wins its slot over the player's own item (a
+	// butterfly IS the hat while Butterfly Crown is on; a bow tie takes the bow
+	// slot so it sits OVER the hat rather than instead of it). An id with no
+	// entry in RITUAL_ITEM_ART is skipped, so the player's item stays and
+	// nothing renders broken. The category passed here is what picks the
+	// fallback box in CATEGORY_OVERLAYS — none of the four has a RelSpec.
+	const worn = {
+		hat: forcedRitualItem(ritual, "head", "hat") ?? equipped,
+		bow: forcedRitualItem(ritual, "bow", "bow") ?? equippedBow,
+		glasses: forcedRitualItem(ritual, "face", "glasses") ?? equippedGlasses,
+		mask: forcedRitualItem(ritual, "mask", "mask") ?? equippedMask,
+	};
+	// Ritual cosmetics carry their own RelSpecs (they are not shop items, so the
+	// generated table has none); a dev-tool override still wins.
+	const rel = React.useMemo(
+		() => ({ ...RITUAL_ITEM_REL, ...relOverrides }),
+		[relOverrides],
+	);
+	const main = resolveSlot(worn.hat, pigAnimation, pigFrameIdx, rel);
+	const bowSlot = resolveSlot(worn.bow, pigAnimation, pigFrameIdx, rel);
+	const glassesSlot = resolveSlot(worn.glasses, pigAnimation, pigFrameIdx, rel);
+	const maskSlot = resolveSlot(worn.mask, pigAnimation, pigFrameIdx, rel);
+	const neckSlot = resolveSlot(equippedNeck, pigAnimation, pigFrameIdx, rel);
+	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, rel);
+	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, rel);
 	const equipment = {
-		headId: equipped?.id,
-		bowId: equippedBow?.id,
-		faceId: equippedGlasses?.id,
+		headId: worn.hat?.id,
+		bowId: worn.bow?.id,
+		faceId: worn.glasses?.id,
 		heldId: equippedHeld?.id,
-		maskId: equippedMask?.id,
+		maskId: worn.mask?.id,
 		neckId: equippedNeck?.id,
 	};
+	// A ritual tint rides the same channel the Dye Vat preview uses. An explicit
+	// caller override still wins — the dev preview is the operator speaking.
+	const resolvedSkinTint = skinTintOverride ?? ritual?.tint ?? null;
 	const resolvedRiveEquipment = resolveRivePigEquipment(equipment);
 	const riveActive =
 		renderer === "rive" &&
@@ -454,7 +515,7 @@ export function PigStage({
 		resolvedRiveEquipment.supported &&
 		main?.prebaked == null &&
 		!pigFrozen &&
-		skinTintOverride == null &&
+		resolvedSkinTint == null &&
 		Object.keys(tints).length === 0 &&
 		Object.keys(relOverrides).length === 0 &&
 		!riveFailed;
@@ -552,10 +613,10 @@ export function PigStage({
 			breathRaw.setValue(0);
 			return;
 		}
-		const breath = breathe(breathRaw, motionPolicy);
+		const breath = breathe(breathRaw, motionPolicy, BREATH_HALF_MS / restTempo);
 		breath.start();
 		return () => breath.stop();
-	}, [breathing, breathRaw, motionPolicy]);
+	}, [breathing, breathRaw, motionPolicy, restTempo]);
 	// A chest that rises and hooves that stay put: scaling is about the stage's
 	// centre, so the same value lifts her by half the stretch to hold the floor.
 	const breathScaleY = breathRaw.interpolate({ inputRange: [0, 1], outputRange: [1, BREATH_STRETCH] });
@@ -565,13 +626,138 @@ export function PigStage({
 		outputRange: [0, -(PIG_CANVAS * (BREATH_STRETCH - 1)) / 2],
 	});
 
+	// ── Ritual transforms ───────────────────────────────────────────────
+	// Cloud Nine's float and Hiccups' hop ride the SAME wrapper the breath
+	// does, together with Topsy-Turvy's flip and Pipsqueak's scale, so the
+	// raster stack and Rive inherit them identically and every cosmetic anchor
+	// keeps landing where the placement studio put it. Amplitudes are authored
+	// at a 100px stage and scale to PIG_CANVAS.
+	const floatPeriod = ritual?.float?.period;
+	const floatAmp = ((ritual?.float?.amp ?? 0) * PIG_CANVAS) / 100;
+	const floatRaw = React.useRef(new Animated.Value(0)).current;
+	React.useEffect(() => {
+		if (!floatPeriod || !visible || !motionPolicy.allowDecorativeMotion) {
+			floatRaw.setValue(0);
+			return;
+		}
+		const half = Math.max(1, floatPeriod / 2);
+		const loop = Animated.loop(
+			Animated.sequence([
+				Animated.timing(floatRaw, {
+					toValue: 1,
+					duration: half,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: true,
+				}),
+				Animated.timing(floatRaw, {
+					toValue: 0,
+					duration: half,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: true,
+				}),
+			]),
+		);
+		loop.start();
+		return () => {
+			loop.stop();
+			floatRaw.stopAnimation();
+		};
+	}, [floatRaw, floatPeriod, visible, motionPolicy.allowDecorativeMotion]);
+
+	const hopEvery = ritual?.hop?.every;
+	const hopHeight = ((ritual?.hop?.height ?? 0) * PIG_CANVAS) / 100;
+	const hopRaw = React.useRef(new Animated.Value(0)).current;
+	const [hicVisible, setHicVisible] = React.useState(false);
+	React.useEffect(() => {
+		if (!hopEvery || !visible) {
+			hopRaw.setValue(0);
+			setHicVisible(false);
+			return;
+		}
+		if (!motionPolicy.allowDecorativeMotion) {
+			// Reduce Motion: no hop, but the ritual must still be identifiable, so
+			// the "hic!" bubble stays up for as long as the curse does.
+			hopRaw.setValue(0);
+			setHicVisible(true);
+			return () => setHicVisible(false);
+		}
+		let bubbleTimer: ReturnType<typeof setTimeout> | null = null;
+		const hop = () => {
+			setHicVisible(true);
+			if (bubbleTimer) clearTimeout(bubbleTimer);
+			bubbleTimer = setTimeout(() => setHicVisible(false), HIC_BUBBLE_MS);
+			Animated.sequence([
+				Animated.timing(hopRaw, {
+					toValue: 1,
+					duration: 150,
+					easing: Easing.out(Easing.quad),
+					useNativeDriver: true,
+				}),
+				Animated.timing(hopRaw, {
+					toValue: 0,
+					duration: 210,
+					easing: Easing.in(Easing.quad),
+					useNativeDriver: true,
+				}),
+			]).start();
+		};
+		const id = setInterval(hop, Math.max(MOTION.beat, hopEvery));
+		return () => {
+			clearInterval(id);
+			if (bubbleTimer) clearTimeout(bubbleTimer);
+			hopRaw.stopAnimation();
+			hopRaw.setValue(0);
+			setHicVisible(false);
+		};
+	}, [hopRaw, hopEvery, visible, motionPolicy.allowDecorativeMotion]);
+
+	const ritualScale = ritual?.scale;
+	const ritualFlip = ritual?.flip === true;
+	const hasRitualLift = floatAmp > 0 || hopHeight > 0;
+	const stageLift = hasRitualLift
+		? Animated.add(
+				breathLift,
+				Animated.add(
+					floatRaw.interpolate({
+						inputRange: [0, 1],
+						outputRange: [floatAmp, -floatAmp],
+					}),
+					hopRaw.interpolate({
+						inputRange: [0, 1],
+						outputRange: [0, -hopHeight],
+					}),
+				),
+			)
+		: breathLift;
+
 	return (
 		<Animated.View
 			style={[
 				styles.stage,
-				{ transform: [{ translateY: breathLift }, { scaleY: breathScaleY }, { scaleX: breathScaleX }] },
+				{
+					transform: [
+						{ translateY: stageLift },
+						...(ritualScale !== undefined ? [{ scale: ritualScale }] : []),
+						...(ritualFlip ? [{ rotate: "180deg" }] : []),
+						{ scaleY: breathScaleY },
+						{ scaleX: breathScaleX },
+					],
+				},
 			]}
 		>
+			{ritual?.glow !== undefined && (
+				<CosmeticGlow
+					color={ritual.glow}
+					size={PIG_CANVAS}
+					style={styles.ritualGlow}
+					testID="pig-fx-glow"
+				/>
+			)}
+			{ritual?.follower && (
+				<PigFollower kind={ritual.follower} size={PIG_CANVAS} />
+			)}
+			{ritual?.particles === "bubbles" && <PigBubbles size={PIG_CANVAS} />}
+			{hicVisible && <HicBubble size={PIG_CANVAS} />}
 			{prestigeVisualStage > 0 && (
 				<View style={styles.prestigeAuraLayer} pointerEvents="none">
 					<Animated.Image
@@ -660,7 +846,7 @@ export function PigStage({
 					}}
 					customFrames={main?.prebaked ?? undefined}
 					frameIdx={pigFrozen ? pigFrameIdx : undefined}
-					skinTintOverride={skinTintOverride}
+					skinTintOverride={resolvedSkinTint}
 					renderer={riveActive ? "rive" : "raster"}
 					riveSource={riveSource}
 					equipment={hideAccessory ? {} : equipment}
@@ -778,6 +964,9 @@ const styles = StyleSheet.create({
 		width: "100%",
 		height: "100%",
 	},
+	// The ritual halo (Golden Hour) sits behind everything on the stage, level
+	// with the prestige aura.
+	ritualGlow: { zIndex: 1 },
 	overlayBox: {
 		position: "absolute",
 		alignItems: "center",

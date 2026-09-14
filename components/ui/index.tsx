@@ -135,6 +135,7 @@ export { WaitingRosie, ROSIE_LOADING_DELAY_MS } from "./WaitingRosie";
 // ── pig ────────────────────────────────────────────────────────────────────
 export {
 	PigStage,
+	forcedRitualItem,
 	resolveSlot,
 	resolvePigStageAssetAspect,
 	type EquippedItem,
@@ -181,8 +182,15 @@ export { Trotter } from "./Trotter";
 export { RitualIconWell } from "./RitualIconWell";
 export {
 	AnimatedCosmetic,
+	CosmeticGlow,
 	type AnimatedCosmeticProps,
 } from "./AnimatedCosmetic";
+export {
+	ConfettiBurst,
+	type ConfettiBurstHandle,
+	type ConfettiBurstProps,
+} from "./ConfettiBurst";
+export { HicBubble, PigBubbles, PigFollower } from "./PigRitualFx";
 export { AlignmentBadge } from "./AlignmentBadge";
 export { AlignmentBar } from "./AlignmentBar";
 export { AlignmentEmblem, type AlignmentEmblemKind } from "./AlignmentEmblem";

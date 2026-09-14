@@ -18,8 +18,8 @@ const EVENTS: WhileAwayEvent[] = [
   { source: "system", announcementId: 2, title: "Someone visited your Barn!", body: "tegdirB came by and tickled your pig!", route: "/(tabs)/friends" },
   { source: "system", announcementId: 3, title: "Someone visited your Barn!", body: "the piggler came by and tickled your pig!", route: "/(tabs)/friends" },
   { source: "system", announcementId: 4, title: "Someone visited your Barn!", body: "coopatroopa came by and tickled your pig!", route: "/(tabs)/friends" },
-  { source: "blessing", kind: "warm_tea", from: "Jen" },
-  { source: "curse", kind: "sluggish_snout", from: "Marco" },
+  { source: "blessing", kind: "golden_hour", from: "Jen" },
+  { source: "curse", kind: "bacon_bits", from: "Marco" },
   { source: "trade_fulfilled", amount: 3, from: "Pip" },
 ];
 

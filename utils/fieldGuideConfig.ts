@@ -2,9 +2,9 @@
 //
 // WHY (founder rule, standing): the Field Guide's value lines must show REAL
 // numbers, so the guide can never lie after a rebalance. Every tunable a value
-// line prints — wrap base + ceiling, the daily-lucky payout + count, the
-// Exchange floor price, the Trough seed share — reads from server config with a
-// compiled fallback, the exact pattern as utils/feedingConfig.ts. Feeding-window
+// line prints — the daily-lucky payout + count, the Exchange floor price, the
+// Trough seed share — reads from server config with a compiled fallback, the
+// exact pattern as utils/feedingConfig.ts. Feeding-window
 // geometry is NOT duplicated here: entry #8 computes live from feedingSchedule()
 // via feedingWindowsLine() below, so a window shift self-updates the entry.
 //
@@ -28,10 +28,6 @@ import { feedingSchedule } from "@/utils/feedingConfig";
 import { createConfigCell } from "@/utils/configCell";
 
 export interface FieldGuideNumbers {
-	/** Regen-wrap base duration per wrap, hours (mud_wrap / warm_tea). */
-	wrapBaseHours: number;
-	/** Banked-wrap duration ceiling, hours. */
-	wrapCeilingHours: number;
 	/** Lucky numbers hiding in the herd's daily counter. */
 	luckyDailyCount: number;
 	/** Tickles paid on a daily-lucky-number hit. */
@@ -43,14 +39,11 @@ export interface FieldGuideNumbers {
 }
 
 // Compiled fallback — the numbers the server owns today:
-//   • wrap base 3h / ceiling 12h — migration 20260750 (mud-wrap stacking).
 //   • lucky payout +5 / 3 daily numbers — the daily-lucky lane in
 //     20260683 (referral_reward_ladder: counter+5) + roll_lucky_numbers().
 //   • Exchange floor — the cheapest EXCHANGE_PRICES tier (muddy, 25).
 //   • Trough seed 10% — spec 15 (the opener seeds the first tenth, no kickback).
 export const DEFAULT_FIELD_GUIDE_NUMBERS: FieldGuideNumbers = Object.freeze({
-	wrapBaseHours: 3,
-	wrapCeilingHours: 12,
 	luckyDailyCount: 3,
 	luckyPayout: 5,
 	exchangeMinPrice: Math.min(...Object.values(EXCHANGE_PRICES)),
@@ -75,8 +68,6 @@ export function sanitizeFieldGuideNumbers(raw: unknown): FieldGuideNumbers {
 	const r = raw as Record<string, unknown>;
 	const d = DEFAULT_FIELD_GUIDE_NUMBERS;
 	return {
-		wrapBaseHours: posInt(r.wrap_base_hours, d.wrapBaseHours),
-		wrapCeilingHours: posInt(r.wrap_ceiling_hours, d.wrapCeilingHours),
 		luckyDailyCount: posInt(r.lucky_daily_count, d.luckyDailyCount),
 		luckyPayout: posInt(r.lucky_payout, d.luckyPayout),
 		exchangeMinPrice: posInt(r.exchange_min_price, d.exchangeMinPrice),

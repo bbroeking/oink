@@ -31,6 +31,8 @@ import { EmptyState, LoadingBeat } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { Sticker } from "@/components/ui/Sticker";
 import { Body, BodySm, CardTitle } from "@/components/ui/Text";
+import { PigRestTempoProvider } from "@/components/ui/PigRestingPose";
+import { PIG_BARN_REST_TEMPO } from "@/components/ui/pigRendererContract";
 import type { HabitatCatalogItem, HabitatPosition } from "@/utils/habitat";
 import { RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 
@@ -236,6 +238,7 @@ export function BarnInterior({
   const cabinet =
     workshop === undefined ? <HabitatWorkshopCabinet owner /> : workshop;
   return (
+    <PigRestTempoProvider tempo={PIG_BARN_REST_TEMPO}>
     <HabitatDoorTransition
       direction={leaving ? "exit" : "enter"}
       onClosed={finishLeaving}
@@ -551,6 +554,7 @@ export function BarnInterior({
         ) : null}
       </View>
     </HabitatDoorTransition>
+    </PigRestTempoProvider>
   );
 }
 const styles = StyleSheet.create({

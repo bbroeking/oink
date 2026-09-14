@@ -18,8 +18,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
-import { useSeason1Active } from "@/hooks/useSeason1Active";
-import { dailyRitual, type RitualMode, type TodayRitual } from "@/utils/rituals";
+import {
+	BLESSING_META,
+	CURSE_META,
+	dailyRitual,
+	type BlessingKind,
+	type CurseKind,
+	type RitualMode,
+	type TodayRitual,
+} from "@/utils/rituals";
 
 // What a cast came back as. `sent` and `error` carry the line a surface shows;
 // `done` and `capped` are fully described by the target and the mode, so the
@@ -59,9 +66,32 @@ interface RitualStatus {
 	bless_cap?: number;
 	curse_used?: number;
 	curse_cap?: number;
+	// The server's own weekday rotation (added by the weekday-rituals
+	// migration). Optional strings, not `BlessingKind` / `CurseKind`: an
+	// older or newer server may name a kind this build has never heard of,
+	// and an unknown name falls back to the local table rather than
+	// rendering a nameless door.
+	bless_kind?: string;
+	curse_kind?: string;
 }
 
 type Allowance = { used: number; cap: number } | null;
+
+// The server's kind, when `ritual_status` reports one this build knows.
+// The local weekday table is only the fallback while the RPC is dark — both
+// index the same Monday-first arrays, so they can't disagree in practice.
+function serverRitual(
+	mode: RitualMode,
+	kind: string | undefined
+): TodayRitual | null {
+	if (!kind) return null;
+	if (mode === "bless") {
+		const meta = BLESSING_META[kind as BlessingKind];
+		return meta ? { kind: kind as BlessingKind, ...meta } : null;
+	}
+	const meta = CURSE_META[kind as CurseKind];
+	return meta ? { kind: kind as CurseKind, ...meta } : null;
+}
 
 // Only the unexpected cases reach here — `daily_cap` and the already-cast-today
 // reasons are outcomes of their own.
@@ -77,12 +107,15 @@ function ritualReasonText(reason: string | undefined, isBless: boolean): string 
 }
 
 export function useRitualCaster(): UseRitualCaster {
-	// Season-1 blessing set — mirrors the server's daily_blessing_kind so the
-	// previewed kind matches the cast.
-	const s1 = useSeason1Active();
 	const [allowance, setAllowance] = useState<Record<RitualMode, Allowance>>({
 		bless: null,
 		curse: null,
+	});
+	// What `ritual_status` said today's kinds are. Null until it answers (or
+	// forever, on a server without the weekday-rituals migration).
+	const [serverKinds, setServerKinds] = useState<Record<RitualMode, string | undefined>>({
+		bless: undefined,
+		curse: undefined,
 	});
 	const [outcomes, setOutcomes] = useState<Record<string, CastOutcome>>({});
 
@@ -103,19 +136,22 @@ export function useRitualCaster(): UseRitualCaster {
 			bless: { used: r.bless_used ?? 0, cap: r.bless_cap ?? 1 },
 			curse: { used: r.curse_used ?? 0, cap: r.curse_cap ?? 1 },
 		});
+		setServerKinds({ bless: r.bless_kind, curse: r.curse_kind });
 	}, []);
 
 	useEffect(() => {
 		refresh();
 	}, [refresh]);
 
-	const rituals = useMemo(() => {
+	// The server's word first, the local weekday table second. Typed as
+	// `TodayRitual` either way, so every door reads one shape.
+	const rituals = useMemo((): Record<RitualMode, TodayRitual> => {
 		const now = new Date();
 		return {
-			bless: dailyRitual("bless", now, s1),
-			curse: dailyRitual("curse", now, s1),
+			bless: serverRitual("bless", serverKinds.bless) ?? dailyRitual("bless", now),
+			curse: serverRitual("curse", serverKinds.curse) ?? dailyRitual("curse", now),
 		};
-	}, [s1]);
+	}, [serverKinds.bless, serverKinds.curse]);
 
 	const today = useCallback((mode: RitualMode) => rituals[mode], [rituals]);
 
@@ -141,12 +177,18 @@ export function useRitualCaster(): UseRitualCaster {
 		): Promise<CastOutcome> => {
 			const isBless = mode === "bless";
 			const ritual = rituals[mode];
-			const r = await rpcAction(isBless ? "send_blessing" : "send_curse", {
-				target_user_id: targetUserId,
-			});
+			const r = await rpcAction<{ kind?: string }>(
+				isBless ? "send_blessing" : "send_curse",
+				{ target_user_id: targetUserId }
+			);
 
 			let outcome: CastOutcome;
 			if (r.ok) {
+				// The toast names WHAT WAS CAST, which is the server's returned
+				// kind — a door armed before 00:00 UTC and pressed after it sends
+				// the new day's ritual, and the line must say so. The local guess
+				// is only the fallback for a server that doesn't return a kind.
+				const castName = serverRitual(mode, r.kind)?.name ?? ritual.name;
 				// A blessing lands as success, a curse as a warning — the two
 				// sends do not feel the same in the hand.
 				Haptics.notificationAsync(
@@ -157,7 +199,7 @@ export function useRitualCaster(): UseRitualCaster {
 				outcome = {
 					kind: "sent",
 					text: isBless
-						? `${ritual.name} sent to ${targetName}`
+						? `${castName} sent to ${targetName}`
 						: `${targetName} has been cursed`,
 				};
 			} else if (

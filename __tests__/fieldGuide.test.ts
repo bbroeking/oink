@@ -140,11 +140,11 @@ describe("config-fed value numbers", () => {
 
 	it("sanitizer keeps defaults for missing/out-of-bounds fields", () => {
 		const out = sanitizeFieldGuideNumbers({
-			wrap_ceiling_hours: 24,
+			lucky_daily_count: 24,
 			lucky_payout: 0, // rejected → default
 			trough_seed_pct: -5, // rejected → default
 		});
-		expect(out.wrapCeilingHours).toBe(24);
+		expect(out.luckyDailyCount).toBe(24);
 		expect(out.luckyPayout).toBe(DEFAULT_FIELD_GUIDE_NUMBERS.luckyPayout);
 		expect(out.troughSeedPct).toBe(DEFAULT_FIELD_GUIDE_NUMBERS.troughSeedPct);
 	});

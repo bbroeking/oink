@@ -26,6 +26,17 @@ const TIRED_TOAST = {
 const NEXT_AT = "2026-09-13T10:00:00.000Z";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router/react-navigation", () => ({
+  // Keep the real module (NavigationContext, which the pig's focus hook reads)
+  // and swap only the focus effect: a mounted sheet/visit is a focused one, so
+  // it runs as a plain effect and `useVisitorEffects` does its one read
+  // (weekday rituals phase 4).
+  ...jest.requireActual("expo-router/react-navigation"),
+  useFocusEffect: (effect: () => void | (() => void)) =>
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- a mock factory loads React after Jest hoisting
+    require("react").useEffect(effect, [effect]),
+}));
+
 jest.mock("@sentry/react-native", () => ({ captureException: jest.fn(), captureMessage: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock("@/hooks/useFeatureFlags", () => ({ useFeatureFlag: () => true }));
 jest.mock("@/hooks/useMotionPolicy", () => ({
@@ -46,7 +57,7 @@ jest.mock("@/components/ui", () => ({
 }));
 jest.mock("@/components/ui/PigStage", () => ({ PigStage: () => null }));
 jest.mock("@/components/habitat/HabitatFriendRoom", () => ({ HabitatFriendRoom: ({ overlay }: { overlay?: React.ReactNode }) => overlay ?? null }));
-jest.mock("@/utils/rpc", () => ({ rpcAction: jest.fn() }));
+jest.mock("@/utils/rpc", () => ({ rpc: jest.fn(async () => null), rpcAction: jest.fn() }));
 jest.mock("@/utils/porchRound", () => ({ recordPorchStop: jest.fn(async () => ({ ok: true, created: false })) }));
 jest.mock("@/utils/interactionAnalytics", () => ({ trackInteraction: jest.fn() }));
 jest.mock("@/utils/visitEmotes", () => ({ refreshVisitEmotes: jest.fn(async () => {}), visitEmoteIds: () => [], VISIT_EMOTE_META: {}, VISIT_EMOTE_IMAGES: {} }));

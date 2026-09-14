@@ -2,6 +2,7 @@ import React from "react";
 import { Image, StyleSheet, View, type ViewStyle } from "react-native";
 import { BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import { PigAvatar } from "./PigAvatar";
+import { staticPigFx, type PigFx } from "@/constants/ritualFx";
 import { T } from "./Text";
 
 const AURAS = {
@@ -27,6 +28,7 @@ export function PrestigeAvatar({
 	prestigeLevel = 0,
 	showRank = true,
 	style,
+	ritual,
 }: {
 	size?: number;
 	hatId?: string | null;
@@ -34,9 +36,28 @@ export function PrestigeAvatar({
 	prestigeLevel?: number | null;
 	showRank?: boolean;
 	style?: ViewStyle;
+	/** The pig's merged ritual recipe, forwarded straight to `PigAvatar`, which
+	 *  keeps only the static channels (weekday rituals, 2026-09-14). The aura
+	 *  ring is the Wallow rank and is never a ritual. */
+	ritual?: PigFx;
 }) {
 	const rank = Math.max(0, Math.floor(prestigeLevel ?? 0));
-	if (rank === 0) return <PigAvatar size={size} hatId={hatId} bowId={bowId} style={style} />;
+	// A ritual is worn by the PIG. The default `icon` path swaps the pig out for
+	// its hat art, and a hat has nowhere to put a bacon stripe — so a portrait
+	// with a ritual on it draws the pig WEARING the hat instead. No ritual, no
+	// change: the leaderboard's hat-first icon is untouched.
+	const mode = staticPigFx(ritual) ? ("worn" as const) : undefined;
+	if (rank === 0)
+		return (
+			<PigAvatar
+				size={size}
+				hatId={hatId}
+				bowId={bowId}
+				style={style}
+				ritual={ritual}
+				mode={mode}
+			/>
+		);
 
 	const visualStage = Math.min(5, rank) as keyof typeof AURAS;
 	const coreSize = Math.round(size * CORE_FRAC);
@@ -55,7 +76,14 @@ export function PrestigeAvatar({
 				accessible={false}
 			/>
 			<View style={styles.core}>
-				<PigAvatar size={coreSize} hatId={hatId} bowId={bowId} border={WHIMSY.ink} />
+				<PigAvatar
+					size={coreSize}
+					hatId={hatId}
+					bowId={bowId}
+					border={WHIMSY.ink}
+					ritual={ritual}
+					mode={mode}
+				/>
 			</View>
 			{showRank && (
 				<View style={[styles.badge, small && styles.badgeSmall]}>

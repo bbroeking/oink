@@ -153,20 +153,22 @@ export const BREATH_SQUASH = 0.985;
  */
 export function breathe(
 	value: Animated.Value,
-	policy: MotionPolicy
+	policy: MotionPolicy,
+	/** Half a breath, ms. A slower room (the Barn) passes a longer one. */
+	halfMs: number = BREATH_HALF_MS
 ): Animated.CompositeAnimation {
 	if (!policy.allowDecorativeMotion) return restPose(value, 0);
 	return Animated.loop(
 		Animated.sequence([
 			Animated.timing(value, {
 				toValue: 1,
-				duration: BREATH_HALF_MS,
+				duration: halfMs,
 				easing: Easing.inOut(Easing.sin),
 				useNativeDriver: true,
 			}),
 			Animated.timing(value, {
 				toValue: 0,
-				duration: BREATH_HALF_MS,
+				duration: halfMs,
 				easing: Easing.inOut(Easing.sin),
 				useNativeDriver: true,
 			}),
