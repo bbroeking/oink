@@ -32,7 +32,6 @@ import { Hungerer } from "./Hungerer";
 // disc (the detail-card art step) with the painted mark on it (a row glyph —
 // a step under the disc so it reads as a mark, not art), and the value
 // column's ceiling so a long title never crushes it.
-const REVEAL_MAX_W = 390;
 const MARK_DISC = ART_SIZE.glyph;
 const MARK_ART = ART_SIZE.glyphSm;
 const VALUE_MAX_W = 88;
@@ -174,8 +173,8 @@ function LedgerSheet({
     <AdaptiveModalScaffold
       visible={visible}
       onRequestClose={onClose}
-      animationType="fade"
-      maxWidth={REVEAL_MAX_W}
+      animationType="slide"
+      sheet
       showCloseButton
       closeLabel={closeLabel}
       closeRowContent={

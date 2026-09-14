@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+	BORDER,
 	MODAL_BACKDROP_BG,
 	RADII,
 	SHADOW_SM,
@@ -42,6 +43,13 @@ interface Props {
 	 * rather than a card they answer. (2026-09-13)
 	 */
 	fullScreen?: boolean;
+	/**
+	 * A bottom SHEET: full width, hung from the bottom edge, top corners only,
+	 * as tall as its content up to the window minus the top inset. For a
+	 * ledger with an unknown number of rows — the dig's tally — where a
+	 * centred card would clip or scroll a short list. Slides up. (2026-09-14)
+	 */
+	sheet?: boolean;
 	frameStyle?: StyleProp<ViewStyle>;
 	contentContainerStyle?: StyleProp<ViewStyle>;
 	scrollViewProps?: Omit<
@@ -76,6 +84,7 @@ export function AdaptiveModalScaffold({
 	closeRowContent,
 	bare = false,
 	fullScreen = false,
+	sheet = false,
 	frameStyle,
 	contentContainerStyle,
 	scrollViewProps,
@@ -99,13 +108,25 @@ export function AdaptiveModalScaffold({
 			onAccessibilityEscape={onRequestClose}
 			style={[
 				styles.frame,
-				fullScreen ? styles.fullFrame : bare ? styles.bareFrame : styles.paperFrame,
+				fullScreen
+					? styles.fullFrame
+					: sheet
+						? styles.sheetFrame
+						: bare
+							? styles.bareFrame
+							: styles.paperFrame,
 				fullScreen
 					? { width, height, paddingTop: insets.top, paddingBottom: insets.bottom }
-					: {
-							width: Math.min(maxWidth, availableWidth),
-							maxHeight: availableHeight,
-						},
+					: sheet
+						? {
+								width,
+								maxHeight: height - insets.top - gutter,
+								paddingBottom: insets.bottom,
+							}
+						: {
+								width: Math.min(maxWidth, availableWidth),
+								maxHeight: availableHeight,
+							},
 				frameStyle,
 			]}
 		>
@@ -139,7 +160,9 @@ export function AdaptiveModalScaffold({
 				presentation === "inline" && styles.inlineBackdrop,
 				fullScreen
 					? styles.fullBackdrop
-					: {
+					: sheet
+						? styles.sheetBackdrop
+						: {
 							paddingTop: insets.top + gutter,
 							paddingBottom: insets.bottom + gutter,
 							paddingHorizontal: gutter,
@@ -207,6 +230,20 @@ const styles = StyleSheet.create({
 	},
 	fullBackdrop: {
 		backgroundColor: UI_COLORS.surfaceMuted,
+	},
+	// The bottom sheet: hung from the bottom edge, top corners only, the ink
+	// border on three sides (the fourth is the screen's edge).
+	sheetBackdrop: {
+		justifyContent: "flex-end",
+	},
+	sheetFrame: {
+		borderWidth: BORDER.ink,
+		borderBottomWidth: 0,
+		borderColor: UI_COLORS.border,
+		borderTopLeftRadius: RADII.xxl,
+		borderTopRightRadius: RADII.xxl,
+		backgroundColor: UI_COLORS.surface,
+		...SHADOW_SM,
 	},
 	content: {
 		flexGrow: 1,
