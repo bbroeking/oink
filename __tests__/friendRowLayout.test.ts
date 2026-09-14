@@ -23,7 +23,7 @@ import {
 	ROW_MIN_H,
 	actionCellTier,
 	actionPanelGeometry,
-	actionPanelSlideFrom,
+	ACTION_PANEL_TRAVEL,
 	rowDensity,
 } from "@/constants/layoutBreakpoints";
 import { SPACE, TAP_MIN, TYPE } from "@/constants/theme";
@@ -127,13 +127,16 @@ describe("the actions panel cannot overflow", () => {
 		// The right inset has to clear the 44pt trigger, or the panel would
 		// slide over the control that opened it.
 		expect(ACTION_PANEL_INSETS.right).toBeGreaterThan(TAP_MIN);
-		expect(ACTION_PANEL_INSETS.top).toBe(ACTION_PANEL_CHROME.panelInset[0]);
-		expect(ACTION_PANEL_INSETS.bottom).toBe(ACTION_PANEL_CHROME.panelInset[1]);
+		// Top and bottom are one step shallower than the sides: the panel fills
+		// the row it covers, which is what keeps the row at 179's height.
+		expect(ACTION_PANEL_INSETS.top).toBe(SPACE.xs);
+		expect(ACTION_PANEL_INSETS.bottom).toBe(SPACE.xs);
+		expect(ACTION_PANEL_INSETS.top).toBeLessThan(ACTION_PANEL_CHROME.panelInset[0]);
 	});
 
-	test("the slide starts fully off the row, plus a step", () => {
-		expect(actionPanelSlideFrom(200)).toBeGreaterThan(200);
-		expect(actionPanelSlideFrom(200)).toBe(200 + SPACE.sm);
+	test("the slide's travel stops short of the trigger, so nothing is ever clipped", () => {
+		expect(ACTION_PANEL_TRAVEL).toBeGreaterThan(0);
+		expect(ACTION_PANEL_TRAVEL).toBeLessThan(ACTION_PANEL_INSETS.right);
 	});
 
 	test("the row's floor fits the tallest cell the panel can hold", () => {

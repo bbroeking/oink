@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
 	nav: {
 		paddingHorizontal: PAGE_PAD,
 		paddingTop: Platform.OS === "ios" ? SPACE.sm : SPACE.xl,
-		marginBottom: SPACE.lg,
+		marginBottom: SPACE.md,
 	},
 	crown: { paddingTop: 0 },
 	// Inbox count — pinned to the Inbox segment's top-right corner.
@@ -267,5 +267,6 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		paddingHorizontal: SPACE.xs,
 	},
-	body: { flex: 1, marginTop: SPACE.md },
+	// The page header carries its own bottom breath; no second one here.
+	body: { flex: 1 },
 });

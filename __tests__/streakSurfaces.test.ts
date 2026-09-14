@@ -20,7 +20,10 @@ describe("Streak surfaces", () => {
     const friends = read("components/Friends.tsx");
     expect(friends).toContain("fetchFriendVisitStreaks");
     expect(friends).toContain("visitStreak.current_streak");
-    expect(friends).toContain("resting · best");
+    // A resting run says nothing on the row (2026-09-14): the flame is live
+    // or absent, and the longest run belongs to the profile sheet.
+    expect(friends).toContain("visitStreak?.active");
+    expect(friends).not.toContain("resting · best");
     expect(friends).toContain("Visit streak with");
   });
 });

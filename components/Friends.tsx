@@ -76,8 +76,7 @@ import {
 	ACTION_PANEL_INSETS,
 	ROW_MIN_H,
 	actionCellTier,
-	actionPanelGeometry,
-	actionPanelSlideFrom,
+	ACTION_PANEL_TRAVEL,
 	type ActionCellTier,
 } from "@/constants/layoutBreakpoints";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
@@ -381,13 +380,17 @@ export default function Friends({
 										/>
 									}
 									title={
-										<>
+										/* One line, one 44pt target: the herd's name with its
+										   kicker beside it — a strip, not a two-storey button.
+										   (2026-09-14) */
+										<View style={styles.sounderLine}>
 											<Kicker>your Sounder</Kicker>
-											<CardTitle numberOfLines={1}>
+											<T role="numeral" numberOfLines={1} style={styles.sounderName}>
 												{crewHook.crew.crew.name}
-											</CardTitle>
-										</>
+											</T>
+										</View>
 									}
+									style={styles.sounderBanner}
 									trailing={
 										<Icon
 											name="chevronRight"
@@ -706,17 +709,10 @@ function RowActionsPanel({
 	onRequestClose: () => void;
 	onReturnFocus: () => void;
 }) {
-	// The geometry the panel's own styles imply, for the slide's start offset
-	// before the first layout lands. Flex does the laying out.
-	const { width } = useWindowDimensions();
-	const restingTravel = actionPanelSlideFrom(
-		actionPanelGeometry(width).panelWidth
-	);
 	const motion = useMotionPolicy();
 	// `useState`'s initializer, not a ref: the value is created once and is
 	// never read during render, which is what the panel's driver needs.
-	const [slide] = useState(() => new Animated.Value(restingTravel));
-	const travel = useRef(restingTravel);
+	const [slide] = useState(() => new Animated.Value(ACTION_PANEL_TRAVEL));
 	const [mounted, setMounted] = useState(open);
 	const cellHosts = useRef<(View | null)[]>([]);
 
@@ -728,7 +724,7 @@ function RowActionsPanel({
 	// Reduce Motion takes the rest pose immediately — no travel, no spring.
 	useEffect(() => {
 		if (!mounted) return;
-		const to = open ? 0 : travel.current;
+		const to = open ? 0 : ACTION_PANEL_TRAVEL;
 		if (!motion.allowDecorativeMotion) {
 			slide.setValue(to);
 			if (!open) setMounted(false);
@@ -738,6 +734,10 @@ function RowActionsPanel({
 			toValue: to,
 			useNativeDriver: true,
 			...MOTION_SPRING.settle,
+			// The house spring lands with a bounce; a panel that bounces past
+			// its rest and back reads as a jiggle, and past its rest is past
+			// the row's edge. Clamped, it eases in and stops. (2026-09-14)
+			overshootClamping: true,
 		});
 		anim.start(({ finished }) => {
 			if (finished && !open) setMounted(false);
@@ -802,23 +802,30 @@ function RowActionsPanel({
 			accessibilityRole="menu"
 			accessibilityLabel={`Actions for ${name}`}
 			testID={menuNativeId(friendId)}
-			onLayout={(event) => {
-				travel.current = actionPanelSlideFrom(event.nativeEvent.layout.width);
-			}}
 			// The panel sits ON the identity, so it owns every touch inside its
 			// outline: the cells claim theirs first (responder negotiation runs
 			// child-first), and the paper between them stops here rather than
 			// falling through to "open their profile" underneath.
 			onStartShouldSetResponder={() => true}
-			// The layer is the panel's own clip box: the slide happens INSIDE it,
-			// so the paper wipes in from the trigger's side and never crosses the
-			// trigger or the card's outline on its way in or out. (Seen on device
-			// 2026-09-14: the un-clipped slide rode over the "…" and the border.)
+			// No clip here: the slide is `ACTION_PANEL_TRAVEL`, shorter than the
+			// trigger's clearance, so the whole panel stays inside the row and
+			// fully visible from the first frame to the last. (2026-09-14)
 			style={styles.actionPanelLayer}
 			{...webKeys}
 		>
 			<Animated.View
-				style={[styles.actionPanelSlide, { transform: [{ translateX: slide }] }]}
+				style={[
+					styles.actionPanelSlide,
+					{
+						// Fades as it travels, so the short slide reads as arriving
+						// rather than as a shutter.
+						opacity: slide.interpolate({
+							inputRange: [0, ACTION_PANEL_TRAVEL],
+							outputRange: [1, 0],
+						}),
+						transform: [{ translateX: slide }],
+					},
+				]}
 			>
 			<Sticker
 				color="cream2"
@@ -1123,74 +1130,74 @@ const FriendRow = React.memo(function FriendRow({
 				</View>
 			}
 			sub={
-				<View style={styles.rowSub}>
-					{/* ONE meta line — the tickle count, the visit streak, and what
-					    they're wearing, dotted apart and free to wrap. The pig sits
-					    level with the name because this is the only line under it.
-					    (2026-09-14) */}
-					<View style={styles.rowMeta}>
-						<View style={styles.rowMetaLine}>
-							<Glyph name="heart" size={SPACE.md} />
-							<T
-								role="kicker"
-								tone="secondary"
-								numberOfLines={1}
-								maxFontSizeMultiplier={ROW_TYPE_CAP}
+				/* ONE line under the name — tickles · live streak · wears · herd —
+				   dotted apart and free to wrap when a herd name runs long. A
+				   resting streak says nothing here: a flame labelled "resting"
+				   read as nonsense on the row, and the profile sheet keeps the
+				   longest run. The row is two lines, build 179's height.
+				   (2026-09-14) */
+				<View style={styles.rowMeta}>
+					<View style={styles.rowMetaLine}>
+						<Glyph name="heart" size={SPACE.md} />
+						<T
+							role="kicker"
+							tone="secondary"
+							numberOfLines={1}
+							maxFontSizeMultiplier={ROW_TYPE_CAP}
+						>
+							{(f.tickles_earned ?? 0).toLocaleString()}
+						</T>
+						{!s1 && typeof f.alignment_score === "number" && (
+							<AlignmentBadge score={f.alignment_score} size="sm" compact />
+						)}
+					</View>
+					{visitStreak?.active && visitStreak.current_streak > 0 ? (
+						<>
+							<View style={styles.rowMetaDot} />
+							<View
+								style={styles.rowMetaLine}
+								accessible
+								accessibilityLabel={`Visit streak with ${name}, ${visitStreak.current_streak} days; longest ${visitStreak.longest_streak} days.`}
 							>
-								{(f.tickles_earned ?? 0).toLocaleString()}
-							</T>
-							{!s1 && typeof f.alignment_score === "number" && (
-								<AlignmentBadge score={f.alignment_score} size="sm" compact />
-							)}
-						</View>
-						{visitStreak && visitStreak.longest_streak > 0 ? (
-							<>
-								<View style={styles.rowMetaDot} />
-								<Tag
-									tone={visitStreak.active ? "sun" : "muted"}
-									glyph="flame"
-									label={
-										visitStreak.active
-											? `${visitStreak.current_streak} day${visitStreak.current_streak === 1 ? "" : "s"}`
-											: `resting · best ${visitStreak.longest_streak}`
-									}
-									accessibilityLabel={
-										visitStreak.active
-											? `Visit streak with ${name}, ${visitStreak.current_streak} days; longest ${visitStreak.longest_streak} days.`
-											: `Visit streak with ${name} is resting; longest ${visitStreak.longest_streak} days.`
-									}
-									maxFontSizeMultiplier={ROW_TYPE_CAP}
-									style={styles.rowSubItem}
-								/>
-							</>
-						) : null}
-						{!!wears && (
-							<>
-								<View style={styles.rowMetaDot} />
+								<Glyph name="flame" size={SPACE.md} />
 								<T
 									role="kicker"
 									tone="secondary"
 									numberOfLines={1}
 									maxFontSizeMultiplier={ROW_TYPE_CAP}
-									style={styles.rowSubItem}
 								>
-									wears {wears}
+									{`${visitStreak.current_streak} day${visitStreak.current_streak === 1 ? "" : "s"}`}
 								</T>
-							</>
-						)}
-					</View>
-					{/* Which herd they ride with — the Sounder is part of a pig's
-					    identity now, so it reads at a glance. */}
+							</View>
+						</>
+					) : null}
+					{!!wears && (
+						<>
+							<View style={styles.rowMetaDot} />
+							<T
+								role="kicker"
+								tone="secondary"
+								numberOfLines={1}
+								maxFontSizeMultiplier={ROW_TYPE_CAP}
+								style={styles.rowSubItem}
+							>
+								wears {wears}
+							</T>
+						</>
+					)}
 					{!!crewName && (
-						<T
-							role="kicker"
-							tone="accent"
-							numberOfLines={1}
-							maxFontSizeMultiplier={ROW_TYPE_CAP}
-							style={styles.rowSubItem}
-						>
-							in {crewName}
-						</T>
+						<>
+							<View style={styles.rowMetaDot} />
+							<T
+								role="kicker"
+								tone="accent"
+								numberOfLines={1}
+								maxFontSizeMultiplier={ROW_TYPE_CAP}
+								style={styles.rowSubItem}
+							>
+								in {crewName}
+							</T>
+						</>
 					)}
 				</View>
 			}
@@ -1742,7 +1749,6 @@ const styles = StyleSheet.create({
 	// The row's floor, so the open panel's cells always fit inside the height
 	// the identity sets. Derived in `constants/layoutBreakpoints.ts`.
 	friendRow: { minHeight: ROW_MIN_H },
-	rowSub: { gap: SPACE.xs, alignItems: "flex-start" },
 	// Every sub-line child yields before the card edge does. Without this the
 	// widest of them (the streak Tag, the ♥ meta line) sets the name column's
 	// minimum width and shoves the rail off the row — the cut-off doors.
@@ -1789,8 +1795,22 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.xs,
-		marginBottom: SPACE.md
+		// The same breath above (off the Sounder strip) as below (onto the
+		// first row): the list's own `gap` supplies SPACE.sm under the header,
+		// so the strip adds one step to match the SPACE.md it takes above.
+		// It used to sit on the strip's shadow. (2026-09-14)
+		marginTop: SPACE.md,
+		marginBottom: SPACE.xs
 	},
+	// The Sounder strip — one line tall, the herd's fill.
+	sounderBanner: { paddingVertical: SPACE.sm },
+	sounderLine: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: SPACE.sm,
+		minWidth: 0
+	},
+	sounderName: { flexShrink: 1 },
 	// The sliding layer the panel rides. Absolute inside the row, so the row's
 	// height is the identity's and the list never reflows. Yoga measures an
 	// inset-positioned child against the parent's PADDING BOX (its border, not
@@ -1802,10 +1822,7 @@ const styles = StyleSheet.create({
 		top: ACTION_PANEL_INSETS.top,
 		bottom: ACTION_PANEL_INSETS.bottom,
 		left: ACTION_PANEL_INSETS.left,
-		right: ACTION_PANEL_INSETS.right,
-		// The clip for the slide (see the render comment) — the panel is cut at
-		// its own box, not the card's.
-		overflow: "hidden"
+		right: ACTION_PANEL_INSETS.right
 	},
 	// The moving part: fills the clip box and carries the translate.
 	actionPanelSlide: { flex: 1 },

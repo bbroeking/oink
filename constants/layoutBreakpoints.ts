@@ -105,8 +105,10 @@ export const ACTION_PANEL_CHROME = {
  * `triggerClearance`'s gap buys.
  */
 export const ACTION_PANEL_INSETS = {
-	top: SPACE.sm,
-	bottom: SPACE.sm,
+	// One step, not two: the panel fills the row it covers, and the row's
+	// floor drops from 78 to 70 — build 179's ledger density. (2026-09-14)
+	top: SPACE.xs,
+	bottom: SPACE.xs,
 	left: ACTION_PANEL_CHROME.panelInset[0],
 	right: sum([
 		ACTION_PANEL_CHROME.panelInset[1],
@@ -146,12 +148,14 @@ export function actionPanelGeometry(windowWidth: number): ActionPanelGeometry {
 }
 
 /**
- * Where the panel starts its slide: its own width plus one step, so no sliver
- * of it sits on the row's edge before the spring runs.
+ * How far the panel travels on its way in and out — from the trigger's side,
+ * fading as it goes. Deliberately SHORTER than the right inset: the panel then
+ * never reaches the trigger or the card's edge mid-motion, so nothing needs a
+ * clip and nothing is ever cut off. A full-width slide (the first cut) had to
+ * be clipped, and the clip is what the eye read as the panel "jiggling".
+ * (2026-09-14)
  */
-export function actionPanelSlideFrom(panelWidth: number): number {
-	return sum([panelWidth, SPACE.sm]);
-}
+export const ACTION_PANEL_TRAVEL = SPACE.xxl;
 
 /**
  * The row's floor height, stacked from the inside out so the panel's cells can
