@@ -2,11 +2,12 @@
 // (spec §1.6). He sleeps at the edge of the patch: snoring in topsoil,
 // stirring in the mud, one eye open at the root, and awake the frame he wakes.
 //
-// HE IS THE REAL ART: `great_hungerer_hero.png`, the same file the Hunger
-// meter and the season-end sheet draw, never a drawn stand-in (mock notes v2,
-// 2026-09-13). The art has one pose, so his STATE is carried by the tag the
-// screen sets under him plus a small overlay here — "z z" while snoring, a
-// rose ring when awake. Per-state expressions are an art request.
+// HE IS THE REAL ART: one painting per state (`great_hungerer_{state}.png`,
+// the ImageGen lane off the hero, 2026-09-14) — eyes shut and slack, brows
+// knit with a sweat drop, one eye cracked at you, roaring with the crown
+// askew — same pose, camera and size so the swap is a frame. The tag under
+// him and the small overlays here ("z z" while snoring, a rose ring when
+// awake) stay as accents.
 //
 // Motion: a slow breath (a 3 % swell) runs as a decorative loop under
 // `startDecorativeLoop`, so Reduce Motion gets a still pig; the flip to
@@ -17,9 +18,14 @@ import { Hand } from "@/components/ui";
 import { BORDER, RADII, WHIMSY } from "@/constants/theme";
 import { startDecorativeLoop, useMotionPolicy } from "@/hooks/useMotionPolicy";
 
-const HUNGERER_ART = require("../../assets/images/hunger/great_hungerer_hero.png");
-
 export type HungererState = "snoring" | "stirring" | "oneeye" | "awake";
+
+const HUNGERER_ART: Readonly<Record<HungererState, number>> = {
+  snoring: require("../../assets/images/hunger/great_hungerer_snoring.png"),
+  stirring: require("../../assets/images/hunger/great_hungerer_stirring.png"),
+  oneeye: require("../../assets/images/hunger/great_hungerer_oneeye.png"),
+  awake: require("../../assets/images/hunger/great_hungerer_awake.png"),
+};
 
 // --- ART -------------------------------------------------------------------
 // Drawing geometry for one object, in points: the default box the art fills,
@@ -80,7 +86,7 @@ export function Hungerer({ state, size = FACE_BOX }: { state: HungererState; siz
     >
       <Animated.View style={{ transform: [{ scale: breath }] }}>
         <Image
-          source={HUNGERER_ART}
+          source={HUNGERER_ART[state]}
           resizeMode="contain"
           accessible={false}
           style={{ width: size, height: size }}
