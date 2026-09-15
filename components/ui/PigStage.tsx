@@ -32,6 +32,7 @@ import {
 	resolveAnchor,
 	resolveWearablePose,
 } from "../../constants/hats";
+import { HAT_SIDE_IMAGES } from "../../constants/hat_side.generated";
 import type {
 	PigAnimationKey,
 	HatOverlay,
@@ -236,7 +237,17 @@ export function resolveSlot(
 	const category = slot.category ?? null;
 	const emoji = slot.emoji ?? null;
 	const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId] : null;
-	const imageSrc = slot.imageSrc ?? HAT_IMAGES[itemId] ?? null;
+	// A turned pig (the three-quarter `face` families) wears the item's SIDE
+	// sprite when one exists (tools/gen_side_items.py); a front sprite on a
+	// turned head read as a cut-out pasted on a photo. An item without side
+	// art keeps its front sprite, as before. A forced ritual image (imageSrc)
+	// always wins. (2026-09-15)
+	const turned = pigDrawnFacing(pigAnim) === "right";
+	const imageSrc =
+		slot.imageSrc ??
+		(turned ? HAT_SIDE_IMAGES[itemId] : undefined) ??
+		HAT_IMAGES[itemId] ??
+		null;
 
 	// Anchor-RELATIVE placement (the new model). If the item has a
 	// rel spec, size + position it so its pivot point lands on the
