@@ -39,9 +39,9 @@ describe("pig renderer contract", () => {
 	});
 
 	test("keeps reaction completion timing renderer-neutral", () => {
-		expect(pigAnimationDurationMs("jump")).toBe(667);
-		expect(pigAnimationDurationMs("surprise")).toBe(667);
-		expect(pigAnimationDurationMs("idle")).toBe(1600);
+		expect(pigAnimationDurationMs("jump")).toBe(800);
+		expect(pigAnimationDurationMs("surprise")).toBe(800);
+		expect(pigAnimationDurationMs("idle")).toBe(2000);
 	});
 
 	test("the seated rest rides the happy family at the rest tempo", () => {
@@ -49,9 +49,9 @@ describe("pig renderer contract", () => {
 		expect(pigAnchorAnimation("bounce")).toBe("jump");
 		expect(pigAnchorAnimation("wave")).toBe("wave");
 		expect(PIG_ANIMATION_SPECS.sit.fps).toBe(PIG_REST_FPS);
-		// The standing idle keeps the rig's 1.6 s cycle at three times the frames.
+		// The standing idle is a 2 s cycle at three times the rig's frames.
 		expect(PIG_ANIMATION_SPECS.idle.fps).toBe(PIG_IDLE_FPS);
-		expect(pigAnimationDurationMs("idle")).toBe(1600);
+		expect(pigAnimationDurationMs("idle")).toBe(2000);
 		expect(PIG_ANIMATION_SPECS.sit.loop).toBe(true);
 		// At least two distinct drawings in the loop, and the eyes-open pose
 		// (frame 0) is where Reduce Motion rests.

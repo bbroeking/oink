@@ -66,7 +66,7 @@ describe("SpritePig — flip-book frames", () => {
 		expect(visibleSource(r)).toBe(frames.idle_1);
 		expect(onFrame).toHaveBeenLastCalledWith(0);
 		for (const frame of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0]) {
-			await act(async () => { jest.advanceTimersByTime(1000 / 7.5); });
+			await act(async () => { jest.advanceTimersByTime(1000 / 6); });
 			expect(visibleSources(r).size).toBe(1);
 			expect(visibleSource(r)).toBe(frames[`idle_${frame + 1}`]);
 			expect(onFrame).toHaveBeenLastCalledWith(frame);
@@ -82,18 +82,18 @@ describe("SpritePig — flip-book frames", () => {
 				<SpritePig animation="idle" pigId="rosie" onFrame={onFrame} />
 			</PigRestTempoProvider>
 		);
-		// Half tempo: a 7.5 fps loop ticks every 266 ms, so one idle period is not enough.
-		await act(async () => { jest.advanceTimersByTime(1000 / 7.5 + 1); });
+		// Half tempo: a 6 fps loop ticks every 333 ms, so one idle period is not enough.
+		await act(async () => { jest.advanceTimersByTime(1000 / 6 + 1); });
 		expect(onFrame).toHaveBeenLastCalledWith(0);
-		await act(async () => { jest.advanceTimersByTime(1000 / 7.5 + 1); });
+		await act(async () => { jest.advanceTimersByTime(1000 / 6 + 1); });
 		expect(onFrame).toHaveBeenLastCalledWith(1);
-		// A reaction ignores the tempo: jump at 6 fps still ticks every 166 ms.
+		// A reaction ignores the tempo: jump at 5 fps still ticks every 200 ms.
 		await act(async () => { r.update(
 			<PigRestTempoProvider tempo={0.5}>
 				<SpritePig animation="jump" pigId="rosie" onFrame={onFrame} />
 			</PigRestTempoProvider>
 		); });
-		await act(async () => { jest.advanceTimersByTime(1000 / 6 + 1); });
+		await act(async () => { jest.advanceTimersByTime(1000 / 5 + 1); });
 		expect(onFrame).toHaveBeenLastCalledWith(1);
 		act(() => r.unmount());
 	});

@@ -36,12 +36,14 @@ export function pigAnchorAnimation(animation: PigAnimation): PigAnimationKey {
 // so a pig reads the same "alive" whether she stands on the Exterior or sits in
 // her room. Reactions keep their own faster fps.
 export const PIG_REST_FPS = 2.5;
-// The standing idle carries three times the rig's frames in the same 1.6 s.
-export const PIG_IDLE_FPS = 7.5;
+// The standing idle carries three times the rig's frames in a 2 s loop. It
+// was authored for 7.5 fps (1.6 s); slowed a fifth with every reaction and
+// mood on 2026-09-15 — the tickle answers read as over before they landed.
+export const PIG_IDLE_FPS = 6;
 // A Barn is a slower room than the yard. Its surfaces (the interior, a
 // friend's visit — both spots) declare this through PigRestTempoProvider and
-// every rest loop and breath inside runs at four-fifths speed: the 1.6 s idle
-// becomes 2 s, the 4 s seated blink 5 s, the 3.2 s breath 4 s. Reactions keep
+// every rest loop and breath inside runs at four-fifths speed: the 2 s idle
+// becomes 2.5 s, the 4 s seated blink 5 s, the 3.2 s breath 4 s. Reactions keep
 // their own tempo — a tickle answers at the same speed everywhere.
 export const PIG_BARN_REST_TEMPO = 0.8;
 const IDLE_12 = Array.from({ length: 12 }, (_, i) => `idle_${i + 1}`);
@@ -63,14 +65,14 @@ export const PIG_ANIMATION_SPECS: Readonly<
 > = Object.freeze({
 	// The standing rest (2026-09-13): one twelve-frame ImageGen sheet per pig —
 	// breathe in, weight shift with a hoof lift, blink, breathe out, shift back
-	// with a tail flick — at 7.5 fps, a 1.6 s loop. Sliced onto the canvas by
+	// with a tail flick — at 6 fps, a 2 s loop. Sliced onto the canvas by
 	// scripts/pig-tweens/slice_sheet.py; sheets and prompts in
 	// docs/reviews/pig-animations-2026-09-13/.
 	idle: { frames: IDLE_12, fps: PIG_IDLE_FPS, loop: true },
 	// The seated rest — the pose a pig takes inside a room. Rides the happy
 	// family: four legs planted, one stable silhouette, eyes open (1, 4) and a
 	// smiling squint (2, 3). At the rest tempo with a long open hold it reads
-	// as sitting content and blinking, not as the 4 fps happy reaction. Frame
+	// as sitting content and blinking, not as the 3.2 fps happy reaction. Frame
 	// 0 (eyes open) is the Reduce Motion pose. 10 ticks = one 4 s cycle.
 	sit: {
 		frames: ["happy_1", "happy_2", "happy_3", "happy_4"],
@@ -86,18 +88,21 @@ export const PIG_ANIMATION_SPECS: Readonly<
 	// pig is given a `facing`.
 	face: { frames: ["face_1", "face_2", "face_3", "face_4"], playback: FACE_PLAYBACK, fps: PIG_REST_FPS, loop: true },
 	face_sit: { frames: ["face_sit_1", "face_sit_2", "face_sit_3", "face_sit_4"], playback: FACE_PLAYBACK, fps: PIG_REST_FPS, loop: true },
-	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 4, loop: true },
-	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: false },
-	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
-	happy: { frames: ["happy_1", "happy_2", "happy_3", "happy_4"], fps: 4, loop: true },
-	sad: { frames: ["sad_1", "sad_2", "sad_3", "sad_4"], fps: 3, loop: true },
-	tired: { frames: ["tired_1", "tired_2", "tired_3", "tired_4"], fps: 2, loop: true },
+	// Reactions, moods and activity: four-frame families with big pose deltas,
+	// each a fifth slower than authored (2026-09-15) so a tickle's jump lasts
+	// 0.8 s, not two-thirds of one. The rest loops above keep their 2.5 fps.
+	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 3.2, loop: true },
+	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 5, loop: false },
+	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 2.4, loop: true },
+	happy: { frames: ["happy_1", "happy_2", "happy_3", "happy_4"], fps: 3.2, loop: true },
+	sad: { frames: ["sad_1", "sad_2", "sad_3", "sad_4"], fps: 2.4, loop: true },
+	tired: { frames: ["tired_1", "tired_2", "tired_3", "tired_4"], fps: 1.6, loop: true },
 	surprise: {
 		frames: ["surprise_1", "surprise_2", "surprise_3", "surprise_4"],
-		fps: 6,
+		fps: 5,
 		loop: false,
 	},
-	wave: { frames: ["wave_1", "wave_2", "wave_3", "wave_4"], fps: 4, loop: true },
+	wave: { frames: ["wave_1", "wave_2", "wave_3", "wave_4"], fps: 3.2, loop: true },
 });
 
 export interface PigRendererProps {
