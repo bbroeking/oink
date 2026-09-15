@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const mockRpcAction = jest.fn();
@@ -53,13 +54,18 @@ jest.mock("@/hooks/useMotionPolicy", () => ({
 const mockToast = jest.fn();
 jest.mock("@/components/ui/Toast", () => ({
 	showToast: (...args: unknown[]) => mockToast(...args),
+}));
+const mockBubble = jest.fn();
+jest.mock("@/components/ui/RitualBubble", () => ({
+	showRitualBubble: (...args: unknown[]) => mockBubble(...args),
 	ToastHost: () => null,
 }));
 jest.mock("@/utils/supabase", () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
 
 import { FriendsList } from "@/components/Friends";
 import { castBlurb, dailyRitual } from "@/utils/rituals";
-import { MOTION, TAP_MIN, TYPE } from "@/constants/theme";
+import { LIST_BLEED, MOTION, TAP_MIN, TYPE } from "@/constants/theme";
+import { RITUAL_DOOR } from "@/hooks/useRitualDoor";
 import type { Profile } from "@/utils/friendships";
 
 const FRIENDS = [
@@ -142,6 +148,12 @@ function halfText(r: TestRenderer.ReactTestRenderer, mode: "bless" | "curse") {
 }
 
 /** The cast notice on one row's meta line, or null when the row has none. */
+// The image inside a ritual mark — its `source` is the cast ritual's art.
+function markArt(notice: TestRenderer.ReactTestInstance) {
+	return notice.findAll((n) => n.props.resizeMode === "contain" && !!n.props.source)[0]
+		?.props.source;
+}
+
 function noticeFor(
 	r: TestRenderer.ReactTestRenderer,
 	mode: "bless" | "curse",
@@ -249,6 +261,7 @@ describe("the friend row's actions menu", () => {
 	beforeEach(() => {
 		mockRpcAction.mockReset();
 		mockToast.mockClear();
+		mockBubble.mockClear();
 		HANDLERS.onToggleFavorite.mockClear();
 		HANDLERS.onPick.mockClear();
 		HANDLERS.onVisit.mockClear();
@@ -460,6 +473,7 @@ describe("the menu's rituals", () => {
 	beforeEach(() => {
 		mockRpcAction.mockReset();
 		mockToast.mockClear();
+		mockBubble.mockClear();
 		HANDLERS.onToggleFavorite.mockClear();
 		HANDLERS.onPick.mockClear();
 		HANDLERS.onVisit.mockClear();
@@ -624,6 +638,8 @@ describe("the menu's rituals", () => {
 		expect(mockToast).toHaveBeenCalledWith(
 			expect.objectContaining({ tone: "fail" })
 		);
+		// A refusal has nothing to celebrate: no bubble.
+		expect(mockBubble).not.toHaveBeenCalled();
 		act(() => r.unmount());
 	});
 
@@ -716,22 +732,37 @@ describe("the menu's rituals", () => {
 		act(() => r.unmount());
 	});
 
-	test("a sent blessing is announced on that friend's row, not in a toast", async () => {
+	test("a sent blessing is marked on that friend's row, not in a toast", async () => {
 		const r = await mountList();
 		expect(noticeFor(r, "bless", "f1")).toBeNull();
 		await openMenu(r, "f1");
 		await tap(cellFor(r, "bless", "f1"));
 		const notice = noticeFor(r, "bless", "f1");
 		expect(notice).not.toBeNull();
+		// The mark is the cast's own art on the door's tint — no words on the
+		// row; the sentence is the label a screen reader hears.
 		expect(notice!.props.accessibilityLabel).toBe(
 			`Blessed alice with ${dailyRitual("bless").name} today`
 		);
-		expect(textOf(notice!)).toBe(`blessed · ${dailyRitual("bless").name}`);
+		expect(textOf(notice!)).toBe("");
+		expect(markArt(notice!)).toBe(dailyRitual("bless").icon);
+		expect(StyleSheet.flatten(notice!.props.style).backgroundColor).toBe(
+			RITUAL_DOOR.bless.fill
+		);
 		// bob's row says nothing — the memory is per friend — and no curse notice
 		// rides alice's row for a blessing.
 		expect(noticeFor(r, "bless", "f2")).toBeNull();
 		expect(noticeFor(r, "curse", "f1")).toBeNull();
 		expect(mockToast).not.toHaveBeenCalled();
+		// The moment itself is the ritual bubble — once, for alice, carrying the
+		// cast's own art and the sentence a screen reader hears.
+		expect(mockBubble).toHaveBeenCalledTimes(1);
+		expect(mockBubble).toHaveBeenCalledWith({
+			mode: "bless",
+			targetName: "alice",
+			ritual: expect.objectContaining({ name: dailyRitual("bless").name }),
+			announcement: `${dailyRitual("bless").name} sent to alice`,
+		});
 		act(() => r.unmount());
 	});
 
@@ -742,8 +773,15 @@ describe("the menu's rituals", () => {
 		await tap(cellFor(r, "curse", "f2"));
 		const notice = noticeFor(r, "curse", "f2");
 		expect(notice).not.toBeNull();
-		expect(textOf(notice!)).toBe(`cursed · ${dailyRitual("curse").name}`);
+		expect(textOf(notice!)).toBe("");
+		expect(markArt(notice!)).toBe(dailyRitual("curse").icon);
+		expect(StyleSheet.flatten(notice!.props.style).backgroundColor).toBe(
+			RITUAL_DOOR.curse.fill
+		);
 		expect(mockToast).not.toHaveBeenCalled();
+		expect(mockBubble).toHaveBeenCalledWith(
+			expect.objectContaining({ mode: "curse", targetName: "bob" })
+		);
 		act(() => r.unmount());
 	});
 
@@ -817,5 +855,39 @@ describe("the ListRow primitive's text column", () => {
 		);
 		const body = source.slice(source.lastIndexOf("{identity}"));
 		expect(body.indexOf("{trailing")).toBeLessThan(body.indexOf("{after}"));
+	});
+});
+
+describe("the friend list's rows sit straight and its clip edge bleeds", () => {
+	// A row this dense read as clipped when it leaned on ROW_TILTS, and the
+	// tilt's overhang was what the list clipped. Straight rows, and a list
+	// whose clip edge sits LIST_BLEED outside the rows so the 2pt sticker
+	// shadow is whole on both sides. (2026-09-15)
+	test("every row's sticker rotates by exactly 0deg", async () => {
+		const r = await mountList();
+		const rotations = r.root
+			.findAll((n) => {
+				const t = StyleSheet.flatten(n.props.style)?.transform as
+					| { rotate?: string }[]
+					| undefined;
+				return Array.isArray(t) && t.some((x) => typeof x.rotate === "string");
+			})
+			.map((n) => {
+				const t = StyleSheet.flatten(n.props.style).transform as { rotate?: string }[];
+				return t.find((x) => x.rotate)!.rotate;
+			});
+		expect(rotations.length).toBeGreaterThan(0);
+		expect(new Set(rotations)).toEqual(new Set(["0deg"]));
+		act(() => r.unmount());
+	});
+
+	test("the list bleeds LIST_BLEED past its rows and pads its content back", async () => {
+		const r = await mountList();
+		const list = r.root.findAll((n) => n.props.contentContainerStyle && n.props.data)[0];
+		expect(StyleSheet.flatten(list.props.style).marginHorizontal).toBe(-LIST_BLEED);
+		expect(StyleSheet.flatten(list.props.contentContainerStyle).paddingHorizontal).toBe(
+			LIST_BLEED
+		);
+		act(() => r.unmount());
 	});
 });

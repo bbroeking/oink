@@ -57,10 +57,12 @@ import { GameIcon } from "./ui/GameIcon";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { RitualExplainSheet } from "./RitualExplainSheet";
 import {
+	ART_SIZE,
 	AVATAR_SIZE,
 	BORDER,
 	BUTTON_SIZE,
 	FONTS,
+	LIST_BLEED,
 	MOTION,
 	MOTION_SPRING,
 	PAGE_PAD,
@@ -81,6 +83,7 @@ import {
 	type ActionCellTier,
 } from "@/constants/layoutBreakpoints";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { showRitualBubble } from "@/components/ui/RitualBubble";
 import { showToast } from "@/components/ui/Toast";
 import {
 	useRitualCaster,
@@ -854,11 +857,15 @@ function RowActionsPanel({
 }
 
 // The friend's identity, and behind the kebab every action it can take.
-// The row's answer to a cast: "blessed · Cloud Nine" on the friend's meta line,
-// arriving on a short fade so the eye finds the row that changed. It reads from
-// the caster's memory, not from the outcome event, so a friend who already had
-// today's ritual before this session says the same thing as one you just cast
-// on — both mean the same. Under Reduce Motion it is simply there.
+// The row's answer to a cast: the cast ritual's own art on a disc in the
+// door's tint — sun for a blessing, the curse pair's sage for a curse — at the
+// end of the friend's meta line, arriving on a short fade so the eye finds
+// the row that changed. No words: the sentence a screen reader hears is the
+// label. (Was "blessed · Cloud Nine" in text until 2026-09-15; on a friend
+// with both marks the line ran to four rows.) It reads from the caster's
+// memory, not from the outcome event, so a friend who already had today's
+// ritual before this session shows the same mark as one you just cast on —
+// both mean the same. Under Reduce Motion it is simply there.
 function RitualCastNotice({
 	mode,
 	name,
@@ -881,26 +888,14 @@ function RitualCastNotice({
 		}).start();
 	}, [opacity, reduceMotion]);
 	return (
-		<>
-			<View style={styles.rowMetaDot} />
-			<Animated.View
-				style={[styles.rowMetaLine, { opacity }]}
-				accessible
-				accessibilityLabel={`${door.done} ${name} with ${ritual.name} today`}
-				testID={`ritual-notice-${mode}`}
-			>
-				<Glyph name={door.glyph} size={SPACE.md} />
-				<T
-					role="kicker"
-					tone="accent"
-					numberOfLines={1}
-					maxFontSizeMultiplier={ROW_TYPE_CAP}
-					style={styles.rowSubItem}
-				>
-					{door.done.toLowerCase()} · {ritual.name}
-				</T>
-			</Animated.View>
-		</>
+		<Animated.View
+			style={[styles.ritualMark, { backgroundColor: door.fill, opacity }]}
+			accessible
+			accessibilityLabel={`${door.done} ${name} with ${ritual.name} today`}
+			testID={`ritual-notice-${mode}`}
+		>
+			<Image source={ritual.icon} style={styles.ritualMarkArt} resizeMode="contain" />
+		</Animated.View>
 	);
 }
 
@@ -1121,6 +1116,11 @@ const FriendRow = React.memo(function FriendRow({
 	return (
 		<ListRow
 			index={index}
+			// The friend list sits straight: a row this dense (name, code, a
+			// wrapping meta line, the rail) read as clipped when it leaned, and
+			// the tilt's overhang was what the list clipped. The scrapbook tilt
+			// stays on the one-line lists (rankings, tiers). (2026-09-15)
+			tilt={false}
 			// The identity IS the profile door — the same place the menu's Profile
 			// cell goes. A name you can read is a name you can tap.
 			onPress={pickProfile}
@@ -1266,13 +1266,19 @@ const FriendRow = React.memo(function FriendRow({
 						</>
 					)}
 					{/* The cast's answer, on the row it landed on: once this friend
-					    has today's ritual from you the line says so, and keeps
-					    saying so until the day resets. (2026-09-14) */}
-					{bless.state === "settled" && (
-						<RitualCastNotice mode="bless" name={name} caster={caster} />
-					)}
-					{curse.state === "settled" && (
-						<RitualCastNotice mode="curse" name={name} caster={caster} />
+					    has today's ritual from you the mark is there, and stays
+					    until the day resets. Both marks ride one cluster so they
+					    wrap together, never one per line. (2026-09-14; icons only
+					    2026-09-15) */}
+					{(bless.state === "settled" || curse.state === "settled") && (
+						<View style={styles.ritualMarks}>
+							{bless.state === "settled" && (
+								<RitualCastNotice mode="bless" name={name} caster={caster} />
+							)}
+							{curse.state === "settled" && (
+								<RitualCastNotice mode="curse" name={name} caster={caster} />
+							)}
+						</View>
 					)}
 				</View>
 			}
@@ -1438,15 +1444,23 @@ export function FriendsList({
 	// every door and the strip agree on, one memory of who's already had today's
 	// ritual from you.
 	const caster = useRitualCaster();
-	// A cast that LANDS is answered on the row itself — the friend's line grows
-	// a "blessed · Cloud Nine" notice (see `RitualCastNotice`), so the toast
-	// would only say the same thing somewhere else. Only a refusal still needs
-	// the transient surface, because the row has nothing new to show for it.
-	// (2026-09-14)
+	// A cast that LANDS is the ritual bubble — the cast's own art rising the
+	// whole screen (see `RitualBubble`) — and the row's line grows a
+	// "blessed · Cloud Nine" notice (see `RitualCastNotice`) as the record.
+	// Only a refusal still needs the toast, because the row has nothing new to
+	// show for it. (2026-09-14; bubble 2026-09-15)
 	const onRitualOutcome = useCallback(
 		(mode: RitualMode, name: string, outcome: CastOutcome) => {
 			const door = RITUAL_DOOR[mode];
-			if (outcome.kind === "sent") return;
+			if (outcome.kind === "sent") {
+				showRitualBubble({
+					mode,
+					ritual: outcome.ritual,
+					targetName: name,
+					announcement: outcome.text,
+				});
+				return;
+			}
 			if (outcome.kind === "done") {
 				showToast({
 					tone: "fail",
@@ -1877,11 +1891,15 @@ const styles = StyleSheet.create({
 	wrap: { flex: 1, paddingHorizontal: PAGE_PAD },
 	// The list's own root, and the surface the outside-tap hit test listens on.
 	listWrap: { flex: 1 },
-	scroll: { flex: 1 },
+	// The list clips at its own edge, and each row's 2pt sticker shadow falls
+	// past the row's edge: bleed the clip edge out by LIST_BLEED and pad the
+	// content back by the same, so the rows keep the page inset and the shadow
+	// is whole on both sides. (2026-09-15)
+	scroll: { flex: 1, marginHorizontal: -LIST_BLEED },
 	scrollContent: { paddingBottom: TAB_SAFE },
 	// Each row is its own tilted sticker now, so the stack needs a gutter
 	// rather than a shared card edge.
-	listContent: { paddingBottom: TAB_SAFE, gap: SPACE.sm },
+	listContent: { paddingHorizontal: LIST_BLEED, paddingBottom: TAB_SAFE, gap: SPACE.sm },
 	rowStack: { gap: SPACE.sm },
 	// One step under the segment, and the list's own gap is the same step under
 	// the count line: segment → counts → first row, all SPACE.sm. (2026-09-14)
@@ -1932,6 +1950,22 @@ const styles = StyleSheet.create({
 		borderRadius: RADII.pill,
 		backgroundColor: UI_COLORS.uiMuted
 	},
+	// The bless / curse marks: the cast's art on a disc in the door's tint.
+	ritualMarks: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs
+	},
+	ritualMark: {
+		width: ART_SIZE.glyphSm,
+		height: ART_SIZE.glyphSm,
+		borderRadius: RADII.pill,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
+		alignItems: "center",
+		justifyContent: "center"
+	},
+	ritualMarkArt: { width: SPACE.lg, height: SPACE.lg },
 	// Today's two allowances, in one line. No margins of its own: the segment's
 	// bottom step sits above it and the list's own gap below, so the rhythm from
 	// the segment to the first row is one SPACE.sm three times over. It wraps
