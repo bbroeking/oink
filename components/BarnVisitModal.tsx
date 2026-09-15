@@ -172,7 +172,10 @@ const HOST_SCALE = 0.62;
 const HOST_BOX = 200;
 const VISITOR_SCALE = 0.54;
 const VISITOR_BOX = 172;
-const PIG_SIDE_SHIFT = 74;
+// 86, not 74, since the turn (2026-09-15): a turned pig's snout reaches the
+// inboard edge of its canvas, so the pair needs the wider stance to keep
+// a breath of floor between noses.
+const PIG_SIDE_SHIFT = 86;
 // The delivery receipt's find art.
 const DELIVERY_ART = 64;
 // The stage toggle's resting width, and how far the forage banner drops to clear
@@ -1165,7 +1168,11 @@ function BarnVisitSession({
 									tag="you"
 									pigId={myPigId}
 									equip={myEquip}
-									mood={gained > 0 ? "happy" : "content"}
+									// Content, not happy once a heart is shared (2026-09-15): the
+									// happy mood plays from the front frames and would turn the
+									// guest back to the camera on the first tap. The shared
+									// hearts are the floats; the guest keeps facing its host.
+									mood="content"
 									reaction={myReaction}
 									onReactionDone={() => setMyReaction(null)}
 									floats={floats}
@@ -1572,7 +1579,7 @@ function BarnVisitSession({
 							tag="you"
 							pigId={myPigId}
 							equip={myEquip}
-							mood={gained > 0 ? "happy" : "content"}
+							mood="content"
 							reaction={myReaction}
 							onReactionDone={() => setMyReaction(null)}
 							floats={floats}
@@ -1680,8 +1687,8 @@ function TapPig({
 	tag: "you" | null;
 	pigId: PigId;
 	equip: EquipSet;
-	/** The resting mood — tired once the host is spent, happy once you've
-	 *  shared a heart. */
+	/** The resting mood — tired once the host is spent; the guest stays
+	 *  content so it keeps its turn toward the host. */
 	mood: "content" | "happy" | "tired";
 	/** Which way the pig turns to look: the guest right, the host left, so
 	 *  the two face each other (PigStage's three-quarter turn). */

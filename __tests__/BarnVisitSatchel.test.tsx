@@ -161,7 +161,9 @@ describe("a visit with the Satchel", () => {
     expect(room().props.hostPig.props.chip).toEqual({ kind: "spent" });
     expect(room().props.hostPig.props.spent).toBe(true);
     expect(room().props.hostPig.props.mood).toBe("tired");
-    expect(room().props.visitorPig.props.mood).toBe("happy");
+    // The guest stays content — a happy mood would play front frames and
+    // turn it back to the camera; the hearts are the floats.
+    expect(room().props.visitorPig.props.mood).toBe("content");
 
     const before = calls("tickle_at_barn").length;
     await act(async () => { await room().props.hostPig.props.onPress(); });

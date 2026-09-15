@@ -452,6 +452,9 @@ export const HABITAT_CHROME_ASSETS = {
   barnDoor: require("../assets/images/habitat/barn_door.png"),
   workshopCabinet: require("../assets/images/habitat/workshop_cabinet.png"),
   missingItem: require("../assets/images/habitat/missing_item.png"),
+  // The plank under the Shelf decorating spot. Rooms are painted empty, so
+  // the shelf is the scene's to draw (2026-09-15).
+  shelfPlank: require("../assets/images/habitat/shelf_plank.png"),
 } as const;
 
 export const HABITAT_THUMBNAILS: Record<string, ImageSourcePropType> = {

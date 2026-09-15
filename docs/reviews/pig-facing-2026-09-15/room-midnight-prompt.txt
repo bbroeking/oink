@@ -1,0 +1,7 @@
+Generate ONE image with the image generation tool and save it in this directory as room_midnight.png. Use the tallest PORTRAIT size available.
+
+The attached image is the current "Midnight Rafters" room from the game "Tickle the Pig": a cozy barn interior seen straight on — moonlit indigo-blue vertical plank walls, deep blue exposed roof beams meeting in a peak, a full moon and quiet stars seen between the rafters, cool moonlight falling from the upper right, and a dark blue plank floor with a pool of moonlight that fills the bottom half. Its rendering style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on the boards and beams, gentle warm light, no photorealism.
+
+Repaint THIS SAME ROOM, same composition, same camera, same colors, same beams, same window light, same floor — but COMPLETELY EMPTY: remove the shelf unit on the left wall and the painted wardrobe on the right (keep the moon and stars between the rafters). Nothing stands in the room — no furniture, no shelves, no cupboards, no crates, no hay, no tools, no rugs, no hanging objects, no animals. Just the walls, the beams, the window light on the wall, and the bare floor. The back wall is plain planks with its horizontal beam; the two side walls are plain planks. Keep the soft pool of moonlight on the floor.
+
+No text, no labels, no borders, no watermark.

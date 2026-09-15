@@ -228,11 +228,36 @@ describe("Habitat scene contract", () => {
           node.props.testID.startsWith("habitat-item-"),
       ),
     ).toHaveLength(0);
-    expect(renderer.root.findAllByType(Image)).toHaveLength(1);
+    // The room, plus the Shelf spot's plank so the empty spot reads as a
+    // shelf while decorating (the rooms are painted empty, 2026-09-15).
+    expect(renderer.root.findAllByType(Image)).toHaveLength(2);
+    expect(
+      renderer.root.findAllByType(Image).filter((n) => n.props.testID === "habitat-shelf-plank"),
+    ).toHaveLength(1);
     expect(
       renderer.root.findByProps({ accessibilityLabel: "Rafters, empty" }),
     ).toBeTruthy();
     renderer.unmount();
+  });
+
+  test("the Shelf spot draws its plank under a set-down object, and only then", () => {
+    const bare = TestRenderer.create(<HabitatScene snapshot={snapshot()} />);
+    expect(
+      bare.root.findAllByType(Image).filter((n) => n.props.testID === "habitat-shelf-plank"),
+    ).toHaveLength(0);
+    bare.unmount();
+    const shelved = TestRenderer.create(
+      <HabitatScene snapshot={snapshot({ surface: "tiny_radio" })} />,
+    );
+    const plank = shelved.root.findAllByType(Image).find((n) => n.props.testID === "habitat-shelf-plank")!;
+    const item = shelved.root.findAllByType(Image).find((n) => n.props.testID === "habitat-item-tiny_radio");
+    expect(plank).toBeTruthy();
+    expect(item).toBeTruthy();
+    // Under the object, never over it.
+    expect(plank.props.style[1].zIndex).toBeLessThan(
+      HABITAT_POSITION_META.surface.layer,
+    );
+    shelved.unmount();
   });
 
   test("edit scene exposes all seven named controls and only selects through its callback", () => {

@@ -1,0 +1,5 @@
+Generate ONE image with the image generation tool and save it in this directory as shelf_plank.png. Use a landscape size.
+
+The attached image is a furniture item from the game "Tickle the Pig" — a sticker-like storybook object: soft watercolor-style fill, warm dark ink outline, no 3D shading, no drop shadow.
+
+Draw, in exactly that style, ONE small wall shelf seen straight on from the front: a single plain wooden plank (warm honey-brown wood, a little grain) resting on two simple curved wooden brackets underneath, nothing on the plank. The plank is about four times as wide as the brackets are tall; the brackets sit near each end. Centered, filling most of the image width, on a solid flat MAGENTA (#FF00FF) background. No magenta on the shelf. No wall, no text, no labels, no borders.

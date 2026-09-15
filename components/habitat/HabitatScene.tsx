@@ -71,6 +71,13 @@ const SELECTED_SLOT_WASH = "rgba(255,216,122,0.2)";
 // The mark inside a decorating spot's control: one step below the 22pt Icon
 // scale so it reads as an affordance on the art, not as a button.
 const CONTROL_MARK = 16;
+// The Shelf spot's plank: drawn under whatever sits on the spot (and while
+// decorating, so the empty spot reads as a shelf). Sized off the spot's box —
+// a hair wider than it, its top edge just under the box's floor so a set-down
+// object stands on it — and drawn from the keyed plank's own aspect.
+const SHELF_PLANK_W = 1.35;
+const SHELF_PLANK_ASPECT = 279 / 1428;
+const SHELF_PLANK_RISE = 6;
 // Centers of the blank plaques in the authored square keepsake sprites.
 const KEEPSAKE_PLAQUE_Y: Record<string, number> = {
   wallow_keepsake_bronze: .825,
@@ -143,7 +150,23 @@ function HabitatPositionLayer({ position, placed, canvas, editing, selected, wal
   }, [flourish, policy.reduceMotion, selected]);
 
   if (!placed && !editing) return null;
+  const plankW = rect.width * SHELF_PLANK_W;
+  const plankH = plankW * SHELF_PLANK_ASPECT;
+  // The set-down object is contain-fitted and centred in its box; the plank's
+  // top edge meets the object's own floor, not the box's.
+  const placedArt = placed ? Image.resolveAssetSource(habitatItemAsset(placed.assetKey)) : null;
+  const placedH = placedArt?.width && placedArt.height ? Math.min(rect.height, (rect.width * placedArt.height) / placedArt.width) : rect.height;
+  const plankTop = rect.top + (rect.height + placedH) / 2 - SHELF_PLANK_RISE;
   return <>
+    {position === "surface" && (
+      <Image
+        source={HABITAT_CHROME_ASSETS.shelfPlank}
+        style={[styles.shelfPlank, { left: rect.left + (rect.width - plankW) / 2, top: plankTop, width: plankW, height: plankH, zIndex: meta.layer - 1 }]}
+        resizeMode="contain"
+        accessible={false}
+        testID="habitat-shelf-plank"
+      />
+    )}
     <Animated.View pointerEvents="none" style={[styles.positionArt, rect, { zIndex: meta.layer, transform: [{ scale: flourish }] }, editing && styles.editPosition, selected && styles.selectedPosition]}>
       {placed && <HabitatImage source={habitatItemAsset(placed.assetKey)} style={styles.itemArt} resizeMode="contain" testID={`habitat-item-${placed.id}`} onSettled={onSettled} />}
       {rank !== null && <Text accessible={false} style={[styles.keepsakeRank, { top: (rect.height - artSize) / 2 + artSize * plaqueY! - 8 }]} testID="habitat-keepsake-rank">{rank}</Text>}
@@ -286,6 +309,7 @@ const styles = StyleSheet.create({
   selectedPosition: { borderColor: WHIMSY.sun, borderStyle: "solid", backgroundColor: SELECTED_SLOT_WASH },
   pressed: { transform: [{ scale: .97 }] },
   pigStage: { position: "absolute", width: PIG_STAGE, height: PIG_STAGE, zIndex: 50 },
+  shelfPlank: { position: "absolute" },
   cabinet: { position: "absolute", width: "21%", height: "24%", right: "2%", top: "40%", zIndex: 55, alignItems: "stretch", justifyContent: "flex-end" },
   loadingVeil: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 100, backgroundColor: WHIMSY.cream },
   accessibleSummary: { position: "absolute", left: 0, top: 0, width: 1, height: 1, overflow: "hidden", color: "transparent" },

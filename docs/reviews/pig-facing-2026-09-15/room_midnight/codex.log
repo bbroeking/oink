@@ -1,0 +1,769 @@
+Reading prompt from stdin...
+OpenAI Codex v0.154.0
+--------
+workdir: /Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0a59f-da21-7680-8f7c-e7c0445b8b3d
+--------
+user
+Generate ONE image with the image generation tool and save it in this directory as room_midnight.png. Use the tallest PORTRAIT size available.
+
+The attached image is the current "Midnight Rafters" room from the game "Tickle the Pig": a cozy barn interior seen straight on — moonlit indigo-blue vertical plank walls, deep blue exposed roof beams meeting in a peak, a full moon and quiet stars seen between the rafters, cool moonlight falling from the upper right, and a dark blue plank floor with a pool of moonlight that fills the bottom half. Its rendering style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on the boards and beams, gentle warm light, no photorealism.
+
+Repaint THIS SAME ROOM, same composition, same camera, same colors, same beams, same window light, same floor — but COMPLETELY EMPTY: remove the shelf unit on the left wall and the painted wardrobe on the right (keep the moon and stars between the rafters). Nothing stands in the room — no furniture, no shelves, no cupboards, no crates, no hay, no tools, no rugs, no hanging objects, no animals. Just the walls, the beams, the window light on the wall, and the bare floor. The back wall is plain planks with its horizontal beam; the two side walls are plain planks. Keep the soft pool of moonlight on the floor.
+
+No text, no labels, no borders, no watermark.
+
+2026-09-15T15:11:52.149816Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=\"https://api.anthropic.com/v1/design/.well-known/oauth-protected-resource\", scope=\"user:design:read user:design:write\"" })
+warning: Skill descriptions were shortened to fit the skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest.
+codex
+I’ll use the imagegen skill to repaint the room without the shelf or wardrobe, preserving the composition and moonlight, and save it as `room_midnight.png`.
+
+exec
+/bin/zsh -lc 'cat /Users/bbroeking/.codex/skills/.system/imagegen/SKILL.md' in /Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight
+ succeeded in 0ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural — candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup — product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup — app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram — diagrams/infographics with structured layout and text.
+- scientific-educational — classroom explainers, scientific diagrams, and learning visuals with required labels and accuracy constraints.
+- ads-marketing — campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual — slide, chart, workflow, and data-heavy business visuals.
+- logo-brand — logo/mark exploration, vector-friendly.
+- illustration-story — comics, children’s book art, narrative scenes.
+- stylized-concept — style-driven concept art, 3D/stylized renders.
+- historical-scene — period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization — translate/replace in-image text, preserve layout.
+- identity-preserve — try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit — remove/replace a specific element (including interior swaps).
+- lighting-weather — time-of-day/season/atmosphere changes only.
+- background-extraction — transparent background / clean cutout. Ask built-in `image_gen` for actual transparency.
+- style-transfer — apply reference style while changing subject/scene.
+- compositing — multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render — drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in `references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI mode.
+
+exec
+/bin/zsh -lc "pwd && rg --files -g '*.png' -g 'AGENTS.md' -g '"'!node_modules'"' . /Users/bbroeking/projects/oink/assets/images/habitat" in /Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight
+ succeeded in 0ms:
+/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight
+/Users/bbroeking/projects/oink/assets/images/habitat/patchwork_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/workshop_cabinet.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/muddy_paw_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/apple_basket.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/warm_plank_barn.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/barn_bunting.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/sunflower_crock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/dried_herb_garland.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/braided_straw_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/missing_item.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/firefly_lantern.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/imagegen-furnishings-sheet-v2.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/sleepy_clock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cider_jug_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/firefly_bottle_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cornshuck_ottoman.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/toadstool_reading_seat.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/frog_weather_vane.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/constellation_stitchery.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/bedtime_trunk.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/puddle_blue_settee.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pond_ripple_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/acorn_candleholder.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cloudspotters_chart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/moon_milk_carafe.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/copper_pan_chime.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/reed_woven_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/blossom_branch_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/candycane_floor_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/spool_leg_stool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/blueprint_pinboard.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/wool_swatch_sampler.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/braided_hearth_mat.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/ladybug_tea_tin.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/folded_quilt_bench.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pebble_fountain_bowl.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/paper_star_canopy.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/tiny_cider_press.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/dragonfly_field_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/picnic_check_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/inkpot_and_quill.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cattail_lantern_string.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/sled_blanket_rack.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/bluebird_sugar_bowl.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/once_upon_a_barn_map.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/puddle_ring_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/corn_tassel_chandelier.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/strawberry_jam_jar.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/ribbon_kite_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/oilcan_task_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/paper_crown_shadowbox.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/starlight_floor_lantern.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/alphabet_story_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cozy_cableknit_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/stacked_book_step.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/hoedown_star_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/snowy_barn_papercut.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/wicker_picnic_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/butter_bell.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/patched_tool_chest.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/copper_kettle_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/apple_crate_stool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/calico_dance_banner.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pie_bird_crock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/rolling_pie_cart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/folding_sawhorse_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pitchfork_coat_tree.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/goodnight_pig_portrait.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/three_bears_bookends.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/orchard_boot_rack.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pressed_daisy_chart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/gingham_oven_mitts.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/harvest_moon_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/blossom_bough_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/tiny_knitting_basket.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/mini_fiddle_case.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/beanpot_footstool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/snail_mail_box.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/rainy_window_sampler.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/windup_pig_toy.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pumpkin_cushion_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/umbrella_floor_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/duckling_watering_can.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/raincoat_pegs.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/button_sorter_tray.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/snowflake_wool_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/ladderback_supper_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/little_library_cart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/kite_tail_banner.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cocoa_marshmallow_mug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/family_recipe_board.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/glowstar_dreamcatcher.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/yellow_welly_stand.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/wooden_gear_clock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/striped_swim_towel.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/barrel_side_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/orchard_round_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/mitten_storage_bench.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/reading_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/spring_whitewash.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/patchwork_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/workshop_cabinet.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/guestbook_keepsake.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/tiny_radio.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/midnight_rafters.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/hay_bale.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/rosies_pencil_sketch.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/milk_can_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/pressed_clover_frame.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/barn_door.png
+/Users/bbroeking/projects/oink/assets/images/habitat/muddy_paw_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/apple_basket.png
+/Users/bbroeking/projects/oink/assets/images/habitat/warm_plank_barn.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pencil_post_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/barn_bunting.png
+/Users/bbroeking/projects/oink/assets/images/habitat/sunflower_crock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/dried_herb_garland.png
+/Users/bbroeking/projects/oink/assets/images/habitat/braided_straw_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/missing_item.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/crescent_nap_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/firefly_lantern.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pearwood_rocker.png
+/Users/bbroeking/projects/oink/assets/images/habitat/rosies_pencil_sketch_v4.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/measuring_tape_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/cloud_pillow_hamper.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/lily_pad_floor_cushion.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/apple_picking_apron.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/sheepskin_slipper_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/pulley_cage_light.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/daisy_cushion_pouf.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/fishing_creel_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/raindrop_bell_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/midnight_patch_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/thumbnails/expansion/lemonade_stand.png
+/Users/bbroeking/projects/oink/assets/images/habitat/spring_whitewash.png
+/Users/bbroeking/projects/oink/assets/images/habitat/patchwork_rug_v4.png
+/Users/bbroeking/projects/oink/assets/images/habitat/hay_bale.png
+/Users/bbroeking/projects/oink/assets/images/habitat/barn_door.png
+/Users/bbroeking/projects/oink/assets/images/habitat/rosies_pencil_sketch.png
+/Users/bbroeking/projects/oink/assets/images/habitat/pressed_clover_frame.png
+/Users/bbroeking/projects/oink/assets/images/habitat/milk_can_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/guestbook_keepsake.png
+/Users/bbroeking/projects/oink/assets/images/habitat/tiny_radio.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/imagegen-room-triptych-v2.png
+/Users/bbroeking/projects/oink/assets/images/habitat/midnight_rafters.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/imagegen-warm-plank-barn-empty-v1.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/imagegen-guestbook-keepsake-v3.png
+/Users/bbroeking/projects/oink/assets/images/habitat/reading_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/lemonade_stand.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/glowstar_dreamcatcher.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/yellow_welly_stand.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/wooden_gear_clock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/striped_swim_towel.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/barrel_side_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/orchard_round_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/mitten_storage_bench.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/sheepskin_slipper_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/apple_picking_apron.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/raindrop_bell_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/daisy_cushion_pouf.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pencil_post_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/lily_pad_floor_cushion.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/crescent_nap_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pulley_cage_light.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pearwood_rocker.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/fishing_creel_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/measuring_tape_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cloud_pillow_hamper.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/little_library_cart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/kite_tail_banner.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cocoa_marshmallow_mug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/family_recipe_board.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/button_sorter_tray.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/midnight_patch_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/snowflake_wool_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/ladderback_supper_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/umbrella_floor_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/duckling_watering_can.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/raincoat_pegs.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/snail_mail_box.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/windup_pig_toy.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/beanpot_footstool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/rainy_window_sampler.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pumpkin_cushion_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/mini_fiddle_case.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/tiny_knitting_basket.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/orchard_boot_rack.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pressed_daisy_chart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/harvest_moon_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/blossom_bough_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/gingham_oven_mitts.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/goodnight_pig_portrait.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pitchfork_coat_tree.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/three_bears_bookends.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/folding_sawhorse_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/rolling_pie_cart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pie_bird_crock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/calico_dance_banner.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/apple_crate_stool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/copper_kettle_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/patched_tool_chest.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/wicker_picnic_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/butter_bell.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/snowy_barn_papercut.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/hoedown_star_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/stacked_book_step.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/sleepy_clock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cider_jug_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/firefly_bottle_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cornshuck_ottoman.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/toadstool_reading_seat.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/frog_weather_vane.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/constellation_stitchery.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/bedtime_trunk.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/puddle_blue_settee.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pond_ripple_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/acorn_candleholder.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cloudspotters_chart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/moon_milk_carafe.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/copper_pan_chime.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/reed_woven_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/blossom_branch_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/candycane_floor_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/spool_leg_stool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/blueprint_pinboard.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/wool_swatch_sampler.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/braided_hearth_mat.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/ladybug_tea_tin.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/folded_quilt_bench.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/pebble_fountain_bowl.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/paper_star_canopy.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/tiny_cider_press.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/dragonfly_field_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/picnic_check_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/inkpot_and_quill.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cattail_lantern_string.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/sled_blanket_rack.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/bluebird_sugar_bowl.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/once_upon_a_barn_map.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/puddle_ring_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/corn_tassel_chandelier.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/strawberry_jam_jar.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/ribbon_kite_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/paper_crown_shadowbox.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/oilcan_task_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/starlight_floor_lantern.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/alphabet_story_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/source/expansion/cozy_cableknit_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/prestige/wallow_keepsake_bronze.png
+/Users/bbroeking/projects/oink/assets/images/habitat/prestige/wallow_keepsake_gold.png
+/Users/bbroeking/projects/oink/assets/images/habitat/prestige/wallow_keepsake_silver.png
+/Users/bbroeking/projects/oink/assets/images/habitat/prestige/wallow_keepsake_celestial.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/sleepy_clock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cider_jug_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/firefly_bottle_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cornshuck_ottoman.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/toadstool_reading_seat.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/frog_weather_vane.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/constellation_stitchery.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/bedtime_trunk.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/puddle_blue_settee.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pond_ripple_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/acorn_candleholder.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cloudspotters_chart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/moon_milk_carafe.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/copper_pan_chime.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/reed_woven_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/blossom_branch_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/candycane_floor_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/spool_leg_stool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/blueprint_pinboard.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/wool_swatch_sampler.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/braided_hearth_mat.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/ladybug_tea_tin.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/folded_quilt_bench.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pebble_fountain_bowl.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/paper_star_canopy.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/tiny_cider_press.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/dragonfly_field_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/picnic_check_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/inkpot_and_quill.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cattail_lantern_string.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/sled_blanket_rack.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/bluebird_sugar_bowl.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/once_upon_a_barn_map.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/puddle_ring_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/corn_tassel_chandelier.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/strawberry_jam_jar.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/ribbon_kite_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/oilcan_task_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/paper_crown_shadowbox.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/starlight_floor_lantern.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/alphabet_story_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cozy_cableknit_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/stacked_book_step.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/hoedown_star_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/snowy_barn_papercut.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/wicker_picnic_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/butter_bell.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/patched_tool_chest.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/copper_kettle_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/apple_crate_stool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/calico_dance_banner.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pie_bird_crock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/rolling_pie_cart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/folding_sawhorse_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pitchfork_coat_tree.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/goodnight_pig_portrait.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/three_bears_bookends.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/orchard_boot_rack.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pressed_daisy_chart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/gingham_oven_mitts.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/harvest_moon_print.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/blossom_bough_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/tiny_knitting_basket.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/mini_fiddle_case.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/beanpot_footstool.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/snail_mail_box.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/rainy_window_sampler.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/windup_pig_toy.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pumpkin_cushion_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/umbrella_floor_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/duckling_watering_can.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/raincoat_pegs.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/button_sorter_tray.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/snowflake_wool_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/ladderback_supper_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/little_library_cart.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/kite_tail_banner.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cocoa_marshmallow_mug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/family_recipe_board.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pencil_post_lamp.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/crescent_nap_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pearwood_rocker.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/measuring_tape_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/cloud_pillow_hamper.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/apple_picking_apron.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/daisy_cushion_pouf.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/lily_pad_floor_cushion.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/pulley_cage_light.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/fishing_creel_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/midnight_patch_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/sheepskin_slipper_chair.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/raindrop_bell_mobile.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/lemonade_stand.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/glowstar_dreamcatcher.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/yellow_welly_stand.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/wooden_gear_clock.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/striped_swim_towel.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/barrel_side_table.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/orchard_round_rug.png
+/Users/bbroeking/projects/oink/assets/images/habitat/expansion/mitten_storage_bench.png
+
+exec
+/bin/zsh -lc 'cp /Users/bbroeking/.codex/generated_images/01a0a59f-da21-7680-8f7c-e7c0445b8b3d/exec-c3a19605-bf59-4bda-869c-f598d699db11.png /Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.png && sips -g pixelWidth -g pixelHeight /Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.png' in /Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight
+ succeeded in 0ms:
+/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.png
+  pixelWidth: 853
+  pixelHeight: 1844
+
+apply patch
+patch: completed
+/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+diff --git a/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt b/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..da9c569ded73d8a02009a4325d420063485aa472
+--- /dev/null
++++ b/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+@@ -0,0 +1,9 @@
++Tool: built-in image_gen
++
++Use case: precise-object-edit.
++Generate exactly ONE final image, in the tallest PORTRAIT size available.
++Input image 1 is the edit target: the current Midnight Rafters room from Tickle the Pig.
++Repaint THIS SAME ROOM with its composition and camera preserved, but COMPLETELY EMPTY. Remove the entire shelf unit and all shelf supports on the left wall and remove the entire painted wardrobe on the right, including its feet, crown, hardware and shadows. Seamlessly reconstruct plain continuous vertical plank side walls and the matching bare plank floor behind those objects.
++Invariants: same straight-on camera, same framing and perspective, same indigo-blue colors, same dark blue exposed roof beams meeting at the peak, same horizontal structural beams, same full moon and quiet stars visible between the rafters in exactly their original positions, same window light and soft pool of moonlight on the floor. Keep the existing back wall of plain vertical planks and horizontal beam. Both side walls are plain planks. Preserve the original generous foreground floor and its board perspective.
++Style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on boards and beams, gentle cozy lighting within the cool midnight-blue palette; no photorealism. Cool moonlight falls from the upper right. Match the attached image closely.
++The room contains only the architecture: walls, beams, moon and stars between rafters, window light on the wall, and bare floor. Nothing stands or hangs in the room. No furniture, shelves, cupboards, crates, hay, tools, rugs, hanging objects, animals, or added decoration. No text, labels, borders, watermark.
+
+diff --git a/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt b/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..da9c569ded73d8a02009a4325d420063485aa472
+--- /dev/null
++++ b/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+@@ -0,0 +1,9 @@
++Tool: built-in image_gen
++
++Use case: precise-object-edit.
++Generate exactly ONE final image, in the tallest PORTRAIT size available.
++Input image 1 is the edit target: the current Midnight Rafters room from Tickle the Pig.
++Repaint THIS SAME ROOM with its composition and camera preserved, but COMPLETELY EMPTY. Remove the entire shelf unit and all shelf supports on the left wall and remove the entire painted wardrobe on the right, including its feet, crown, hardware and shadows. Seamlessly reconstruct plain continuous vertical plank side walls and the matching bare plank floor behind those objects.
++Invariants: same straight-on camera, same framing and perspective, same indigo-blue colors, same dark blue exposed roof beams meeting at the peak, same horizontal structural beams, same full moon and quiet stars visible between the rafters in exactly their original positions, same window light and soft pool of moonlight on the floor. Keep the existing back wall of plain vertical planks and horizontal beam. Both side walls are plain planks. Preserve the original generous foreground floor and its board perspective.
++Style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on boards and beams, gentle cozy lighting within the cool midnight-blue palette; no photorealism. Cool moonlight falls from the upper right. Match the attached image closely.
++The room contains only the architecture: walls, beams, moon and stars between rafters, window light on the wall, and bare floor. Nothing stands or hangs in the room. No furniture, shelves, cupboards, crates, hay, tools, rugs, hanging objects, animals, or added decoration. No text, labels, borders, watermark.
+
+codex
+Saved [room_midnight.png](/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.png) — 853 × 1844 portrait, with furniture removed and moonlight preserved.
+
+Created with built-in image generation. [Prompt](/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt).
+diff --git a/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt b/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..da9c569ded73d8a02009a4325d420063485aa472
+--- /dev/null
++++ b/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt
+@@ -0,0 +1,9 @@
++Tool: built-in image_gen
++
++Use case: precise-object-edit.
++Generate exactly ONE final image, in the tallest PORTRAIT size available.
++Input image 1 is the edit target: the current Midnight Rafters room from Tickle the Pig.
++Repaint THIS SAME ROOM with its composition and camera preserved, but COMPLETELY EMPTY. Remove the entire shelf unit and all shelf supports on the left wall and remove the entire painted wardrobe on the right, including its feet, crown, hardware and shadows. Seamlessly reconstruct plain continuous vertical plank side walls and the matching bare plank floor behind those objects.
++Invariants: same straight-on camera, same framing and perspective, same indigo-blue colors, same dark blue exposed roof beams meeting at the peak, same horizontal structural beams, same full moon and quiet stars visible between the rafters in exactly their original positions, same window light and soft pool of moonlight on the floor. Keep the existing back wall of plain vertical planks and horizontal beam. Both side walls are plain planks. Preserve the original generous foreground floor and its board perspective.
++Style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on boards and beams, gentle cozy lighting within the cool midnight-blue palette; no photorealism. Cool moonlight falls from the upper right. Match the attached image closely.
++The room contains only the architecture: walls, beams, moon and stars between rafters, window light on the wall, and bare floor. Nothing stands or hangs in the room. No furniture, shelves, cupboards, crates, hay, tools, rugs, hanging objects, animals, or added decoration. No text, labels, borders, watermark.
+
+tokens used
+29,029
+Saved [room_midnight.png](/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.png) — 853 × 1844 portrait, with furniture removed and moonlight preserved.
+
+Created with built-in image generation. [Prompt](/Users/bbroeking/projects/oink/docs/reviews/pig-facing-2026-09-15/room_midnight/room_midnight.prompt.txt).

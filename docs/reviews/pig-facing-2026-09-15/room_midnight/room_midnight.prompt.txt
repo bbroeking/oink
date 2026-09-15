@@ -1,0 +1,9 @@
+Tool: built-in image_gen
+
+Use case: precise-object-edit.
+Generate exactly ONE final image, in the tallest PORTRAIT size available.
+Input image 1 is the edit target: the current Midnight Rafters room from Tickle the Pig.
+Repaint THIS SAME ROOM with its composition and camera preserved, but COMPLETELY EMPTY. Remove the entire shelf unit and all shelf supports on the left wall and remove the entire painted wardrobe on the right, including its feet, crown, hardware and shadows. Seamlessly reconstruct plain continuous vertical plank side walls and the matching bare plank floor behind those objects.
+Invariants: same straight-on camera, same framing and perspective, same indigo-blue colors, same dark blue exposed roof beams meeting at the peak, same horizontal structural beams, same full moon and quiet stars visible between the rafters in exactly their original positions, same window light and soft pool of moonlight on the floor. Keep the existing back wall of plain vertical planks and horizontal beam. Both side walls are plain planks. Preserve the original generous foreground floor and its board perspective.
+Style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on boards and beams, gentle cozy lighting within the cool midnight-blue palette; no photorealism. Cool moonlight falls from the upper right. Match the attached image closely.
+The room contains only the architecture: walls, beams, moon and stars between rafters, window light on the wall, and bare floor. Nothing stands or hangs in the room. No furniture, shelves, cupboards, crates, hay, tools, rugs, hanging objects, animals, or added decoration. No text, labels, borders, watermark.

@@ -32,8 +32,10 @@ On the cap-hitting tap (server `taps_left === 0`):
 - The **count chip** under the host pig ("3 tickles") becomes the **"tickled
   out"** tag (`Tag tone="sun" glyph="zzz"`). One slot changes meaning; no
   chrome is added.
-- Your pig → `happy` once a heart has been shared. The one you can't tickle
-  is the one asleep.
+- Your pig stays `content` (it was `happy` once a heart was shared until
+  2026-09-15: the happy mood plays from the front frames and turned the guest
+  back to the camera on the first tap; the shared hearts are the floats). The
+  one you can't tickle is the one asleep.
 - Action bar → "Head home" (unchanged). The toast stays but is no longer the
   only signal.
 - Arriving at a resting barn keeps the nap card; the host renders tired
@@ -50,7 +52,7 @@ On the cap-hitting tap (server `taps_left === 0`):
 ## 4. Facing each other
 
 - One ground line (`bottom: 9%`), visitor left at 0.54, host right at 0.62,
-  each shifted 74pt to its own side (the Outside diorama). Inside, the room
+  each shifted 86pt to its own side (the Outside diorama; 74 before the turn — a turned snout reaches its canvas edge). Inside, the room
   places the pair itself (`HabitatScene` `PIG_SPOTS`: guest at 0.30, host at
   0.70, the host 0.44 of the canvas wide, the guest 0.36) and TapPig hands it
   the bare 300pt canvas (`stage="room"`) — the two scales used to compound
@@ -73,8 +75,8 @@ On the cap-hitting tap (server `taps_left === 0`):
   eye-bound items take the eye-line scale; a hat or a scarf keeps its size
   and just takes the tilt (`resolveWearablePose`).
 - Accepted: asymmetric worn items swap sides on the host. No worn item
-  carries readable text. Once a heart has been shared the guest's *happy*
-  mood plays from the front frames (mirrored) rather than the turn.
+  carries readable text. The guest's mood never leaves `content`, so it
+  holds the turn for the whole visit.
 
 ## Assets
 
@@ -90,4 +92,5 @@ On the cap-hitting tap (server `taps_left === 0`):
 - The base room `warm_plank_barn` was repainted **empty** the same day (no
   shelf, no wardrobe): `assets/images/habitat/source/imagegen-warm-plank-barn-empty-v1.png`
   → `warm_plank_barn.png` + thumbnail via `scripts/habitat/generate-art.mjs`.
-  Spring Whitewash and Midnight Rafters still carry their painted furniture.
+  Spring Whitewash and Midnight Rafters got the same treatment the same day;
+  the Shelf decorating spot draws its own plank (`shelf_plank.png`).
