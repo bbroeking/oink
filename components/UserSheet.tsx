@@ -28,12 +28,11 @@
 //   · **B-13** — the two `›` text chevrons render as art (`Glyph`/`Icon`).
 //   · **B-06 / B-12** — the eight hand-rolled shapes are `SegmentedControl`
 //     (Ask/Bless/Curse), `Chip` (the 1–5 ask amounts, selected = BORDER.heavy),
-//     `Button` (every action, 44pt floor), `Stat` + `Tag` (the season row),
-//     `ListRow` (the digging-story door) and `Tag` (the keepsake).
+//     `Button` (every action, 44pt floor), `Stat` + `Tag` (the season row)
+//     and `Tag` (the keepsake).
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { router, type Href } from "expo-router";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { fetchBarnVisitStatus, type BarnVisitStatus } from "@/utils/barnVisit";
@@ -46,7 +45,6 @@ import { useCrew } from "@/hooks/useCrew";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { useVisitorEffects } from "@/hooks/useVisitorEffects";
 import { useRitualPresentationFor } from "@/hooks/useRitualPresentation";
-import { MOTE_MACHINE_VISIBLE } from "@/constants/featureFlags";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
 import type { TradeRow } from "@/constants/trade_types";
@@ -71,7 +69,6 @@ import {
 	Glyph,
 	Icon,
 	Kicker,
-	ListRow,
 	LoadingBeat,
 	PrestigeAvatar,
 	ProfileIdentity,
@@ -283,15 +280,6 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			setTargetWallowCount(0);
 			setBreakdownFor(payload); // presents the receipt after the handoff gap
 		}, MOTION.modalHandoff);
-	};
-	const openDiggingStory = () => {
-		if (!stats) return;
-		const href = `/digging-stats?userId=${encodeURIComponent(stats.user_id)}&name=${encodeURIComponent(stats.username ?? "This pig")}` as Href;
-		onDismiss();
-		// Let the native sheet finish dismissing before the stack route presents;
-		// presenting both in one frame is the iOS modal wedge this sheet avoids for
-		// the tickle receipt too.
-		setTimeout(() => router.push(href), MOTION.modalHandoff);
 	};
 	useEffect(
 		() => () => {
@@ -641,29 +629,6 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 					<Glyph name="arrowRight" size={ART_SIZE.mark} />
 				</>
 			</Button>
-
-			<ListRow
-				fill="lilac"
-				tilt={false}
-				leading={<Glyph name="sparkles" size={ART_SIZE.glyphSm} />}
-				title="Digging story"
-				sub={
-					MOTE_MACHINE_VISIBLE
-						? "digs · finds · motes · Sounder bonuses"
-						: "digs · finds · Sounder bonuses"
-				}
-				trailing={
-					<Icon
-						name="chevronRight"
-						size={ART_SIZE.glyphSm}
-						color={UI_COLORS.textSecondary}
-					/>
-				}
-				onPress={openDiggingStory}
-				accessibilityLabel={`See ${stats.username ?? "this pig"}'s digging story`}
-				accessibilityHint="Opens their digs, finds and Sounder bonuses"
-				style={styles.digStoryLink}
-			/>
 
 			{/* Visit their Barn — see their pig + tickle it for them (social).
 			    FRIENDS-ONLY (player decision): visiting mints snouts +
@@ -1100,7 +1065,6 @@ const styles = StyleSheet.create({
 	keepsake: { alignSelf: "center", marginBottom: SPACE.card },
 	// The quiet "how'd they earn it?" receipt door.
 	breakdownLink: { alignSelf: "center", marginBottom: SPACE.xs },
-	digStoryLink: { marginBottom: SPACE.md },
 	visitBtn: {
 		alignSelf: "stretch",
 		paddingVertical: SPACE.lg,

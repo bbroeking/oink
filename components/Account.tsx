@@ -100,7 +100,6 @@ import {
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
-import { MOTE_MACHINE_VISIBLE } from "@/constants/featureFlags";
 import {
 	myReferralSummary,
 	shareMessageForCode,
@@ -927,26 +926,8 @@ export function Account({ session }: { session: Session }) {
 								onTogglePreview={__DEV__ ? () => setDevWallowPreview((shown) => !shown) : undefined}
 							/>
 
-							{/* The player's own Truffle Patch ledger + the achievements
-							    grid. Both sit with the progress surfaces (above the
-							    membership card), not down in Settings. One row
-							    geometry for both. [E18] */}
-							<NavRow
-								glyph="sparkles"
-								label="Your digging story"
-								sub={
-									MOTE_MACHINE_VISIBLE
-										? "See your digs, finds, motes, and Sounder bonuses."
-										: "See your digs, finds, and Sounder bonuses."
-								}
-								onPress={() =>
-									router.push(
-										`/digging-stats?userId=${encodeURIComponent(session.user.id)}&name=${encodeURIComponent(username ?? "You")}` as Href,
-									)
-								}
-								accessibilityHint="Opens your digging story"
-							/>
-
+							{/* The achievements grid sits with the progress surfaces
+							    (above the membership card), not down in Settings. [E18] */}
 							<NavRow
 								icon="trophy"
 								label="Achievements"
