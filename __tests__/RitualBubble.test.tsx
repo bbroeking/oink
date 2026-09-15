@@ -131,15 +131,15 @@ describe("RitualBubble", () => {
 		act(() => renderer.unmount());
 	});
 
-	test("a blessing is gone after MOTION.ritualRise.bless", () => {
+	test("a blessing is gone after MOTION.ritualRiseBless", () => {
 		const renderer = mount(<RitualBubbleHost />);
 		act(() => bless());
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.bless / 2);
+			jest.advanceTimersByTime(MOTION.ritualRiseBless / 2);
 		});
 		expect(host(renderer)).toHaveLength(1);
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.bless / 2 + FRAME);
+			jest.advanceTimersByTime(MOTION.ritualRiseBless / 2 + FRAME);
 		});
 		expect(host(renderer)).toHaveLength(0);
 		act(() => renderer.unmount());
@@ -156,11 +156,11 @@ describe("RitualBubble", () => {
 			});
 		});
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.bless);
+			jest.advanceTimersByTime(MOTION.ritualRiseBless);
 		});
 		expect(host(renderer)).toHaveLength(1);
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.curse - MOTION.ritualRise.bless + FRAME);
+			jest.advanceTimersByTime(MOTION.ritualRiseCurse - MOTION.ritualRiseBless + FRAME);
 		});
 		expect(host(renderer)).toHaveLength(0);
 		act(() => renderer.unmount());
@@ -170,12 +170,12 @@ describe("RitualBubble", () => {
 		const renderer = mount(<RitualBubbleHost />);
 		act(() => bless("Bandit"));
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.bless / 2);
+			jest.advanceTimersByTime(MOTION.ritualRiseBless / 2);
 		});
 		act(() => bless("Biscuit"));
 		// The first bubble's full travel has elapsed; the second is mid-rise.
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.bless / 2 + FRAME);
+			jest.advanceTimersByTime(MOTION.ritualRiseBless / 2 + FRAME);
 		});
 		expect(host(renderer)).toHaveLength(1);
 		expect(texts(renderer)).toContain("→ Biscuit");
@@ -217,7 +217,7 @@ describe("RitualBubble", () => {
 		const drift = loop.mock.results[0].value as { stop: jest.Mock };
 		const stop = jest.spyOn(drift, "stop");
 		act(() => {
-			jest.advanceTimersByTime(MOTION.ritualRise.bless + FRAME);
+			jest.advanceTimersByTime(MOTION.ritualRiseBless + FRAME);
 		});
 		expect(stop).toHaveBeenCalled();
 		act(() => renderer.unmount());

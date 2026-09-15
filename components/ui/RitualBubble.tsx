@@ -22,8 +22,8 @@
 //   rise   — bottom → header, the overshoot surface, the pop (master 0→1)
 //   sway   — a sideways sine + a little tilt, looping on its own clock
 //   wobble — the soap-bubble breathing (scaleX/scaleY), same clock as sway
-// A blessing is buoyant (MOTION.ritualRise.bless, sparkles trickle behind
-// it); a curse is heavier (MOTION.ritualRise.curse, bigger tilt, drips fall).
+// A blessing is buoyant (MOTION.ritualRiseBless, sparkles trickle behind
+// it); a curse is heavier (MOTION.ritualRiseCurse, bigger tilt, drips fall).
 //
 // Reduce Motion: no travel, no loops — the bubble cross-fades at mid-screen
 // and holds a beat. The announcement is not motion, so it always fires.
@@ -113,6 +113,11 @@ const FEEL: Record<
 	},
 };
 
+// Surface-to-pop travel per mode, from the two flat MOTION tokens.
+const RISE_MS: Record<RitualMode, number> = {
+	bless: MOTION.ritualRiseBless,
+	curse: MOTION.ritualRiseCurse,
+};
 const BUBBLE = ART_SIZE.bubble;
 const ART = ART_SIZE.thumb;
 const TRAIL_GLYPH = ART_SIZE.glyphSm;
@@ -214,7 +219,7 @@ export function RitualBubbleHost() {
 		rise.setValue(0);
 		sway.setValue(0);
 		pop.setValue(0);
-		const total = MOTION.ritualRise[bubble.mode];
+		const total = RISE_MS[bubble.mode];
 		const climb = Animated.timing(rise, {
 			toValue: 1,
 			duration: total,
@@ -381,7 +386,7 @@ export function RitualBubbleHost() {
 								index={i}
 								mode={bubble.mode}
 								rise={rise}
-								total={MOTION.ritualRise[bubble.mode]}
+								total={RISE_MS[bubble.mode]}
 							/>
 						))}
 

@@ -430,8 +430,11 @@ export const MOTION = {
 	beat: 800,
 	debounce: 250,
 	// The ritual bubble's surface-to-pop travel. A blessing rides the toast
-	// dwell; a curse is a beat heavier, so it climbs slower. (2026-09-15)
-	ritualRise: { bless: 2400, curse: 2800 },
+	// dwell; a curse is a beat heavier, so it climbs slower. Two flat numbers,
+	// not a nested pair: the web token layer reads MOTION as flat ms values.
+	// (2026-09-15)
+	ritualRiseBless: 2400,
+	ritualRiseCurse: 2800,
 } as const;
 
 // One spring parameterization, replacing 20 springs across 14 configs. Springy

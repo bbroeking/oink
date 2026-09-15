@@ -213,7 +213,8 @@
 	--motion-toast:               2400ms;
 	--motion-beat:                800ms;
 	--motion-debounce:            250ms;
-	--motion-ritual-rise:         [object Object]ms;
+	--motion-ritual-rise-bless:   2400ms;
+	--motion-ritual-rise-curse:   2800ms;
 	--ease-out:                   cubic-bezier(0.22, 1, 0.36, 1);
 
 	/* Art sizes — the fixed boxes hand-drawn art is laid out in (not spacing) */
