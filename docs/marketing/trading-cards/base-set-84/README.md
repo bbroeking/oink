@@ -30,6 +30,14 @@ review surfaces are:
 - [`visual-system/set-art-coverage-wall.png`](./visual-system/set-art-coverage-wall.png)
   for all 88 card assignments.
 
+The public gallery lives at [ticklethepig.com/cards](https://ticklethepig.com/cards)
+(`landing/cards/`, noindex until the set ships). After re-rendering the fronts,
+rebuild its images, data and grid with:
+
+```sh
+node scripts/build-trading-card-gallery.mjs
+```
+
 ## Set skeleton
 
 | Type      |  Count | Role                                                             |
