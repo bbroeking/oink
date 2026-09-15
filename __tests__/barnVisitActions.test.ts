@@ -29,9 +29,8 @@ describe("Barn visit scene actions", () => {
     // One surface for one fact: no bubble, no Leave-triggered nap summary.
     expect(source).not.toContain("All tickled out!");
     expect(source).not.toContain("setNapOpen");
-    expect(source).toContain(
-      "All tickled out — head home when you're ready.",
-    );
+    expect(source).toContain('title: "All tickled out"');
+    expect(source).toContain("Head home when you're ready.");
     // requestExit branches on the Slop Club parting card and nothing else.
     const requestExit = source.slice(
       source.indexOf("const requestExit = () => {"),

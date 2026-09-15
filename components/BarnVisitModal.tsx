@@ -702,7 +702,8 @@ function BarnVisitSession({
 		setTired(true);
 		showToast({
 			tone: "info",
-			title: "All tickled out — head home when you're ready.",
+			title: "All tickled out",
+			text: "Head home when you're ready.",
 		});
 	};
 
@@ -868,7 +869,11 @@ function BarnVisitSession({
 				// A stale bubble: the wish moved on. Show the real one.
 				const nw = r.next_wish;
 				setHostWish((w) => (w ? { ...w, ...nw, fulfilled_by_me: false } : w));
-				showToast({ tone: "info", title: "Their pig is hoping for something else now." });
+				showToast({
+					tone: "info",
+					title: "Their pig changed its mind",
+					text: "See the bubble for what it's hoping for now.",
+				});
 			} else if (r.reason === "not_in_bag") {
 				void satchel.refresh();
 				showToast({ tone: "info", title: "That find isn't in your Satchel." });
@@ -899,9 +904,11 @@ function BarnVisitSession({
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 		react("host", "surprise");
 		const f = satchelFind(item.find_id);
+		// Title one line, the rest as text: a Toast title never wraps.
 		showToast({
 			tone: "info",
-			title: f ? `Not the ${f.name} — see the bubble for what they're hoping for.` : "Not that one.",
+			title: f ? `Not the ${f.name}` : "Not that one",
+			text: "See the bubble for what their pig is hoping for.",
 		});
 	};
 

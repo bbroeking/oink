@@ -19,9 +19,11 @@ import { HabitatFriendRoom } from "@/components/habitat/HabitatFriendRoom";
 import { rpcAction } from "@/utils/rpc";
 import { showToast } from "@/components/ui";
 
+// Title one line, the rest as text — a Toast title never wraps (2026-09-15).
 const TIRED_TOAST = {
   tone: "info",
-  title: "All tickled out — head home when you're ready.",
+  title: "All tickled out",
+  text: "Head home when you're ready.",
 };
 const NEXT_AT = "2026-09-13T10:00:00.000Z";
 
