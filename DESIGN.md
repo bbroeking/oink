@@ -485,6 +485,7 @@ Durations, in ms.
 | `toast` | `2400ms` |
 | `beat` | `800ms` |
 | `debounce` | `250ms` |
+| `ritualRise` | `[object Object]ms` |
 
 One spring parameterization, replacing 20 springs across 14 configs.
 

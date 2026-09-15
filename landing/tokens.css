@@ -213,6 +213,7 @@
 	--motion-toast:               2400ms;
 	--motion-beat:                800ms;
 	--motion-debounce:            250ms;
+	--motion-ritual-rise:         [object Object]ms;
 	--ease-out:                   cubic-bezier(0.22, 1, 0.36, 1);
 
 	/* Art sizes — the fixed boxes hand-drawn art is laid out in (not spacing) */
@@ -223,6 +224,7 @@
 	--art-thumb:                  72px;
 	--art-portrait:               120px;
 	--art-stage:                  300px;
+	--art-bubble:                 104px;
 
 	/* Button geometry (BUTTON_SIZE) — so .btn never retypes a number */
 	--btn-xs-min-h:               32px;
