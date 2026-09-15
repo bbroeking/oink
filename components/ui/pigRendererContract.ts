@@ -45,6 +45,10 @@ export const PIG_IDLE_FPS = 7.5;
 // their own tempo — a tickle answers at the same speed everywhere.
 export const PIG_BARN_REST_TEMPO = 0.8;
 const IDLE_12 = Array.from({ length: 12 }, (_, i) => `idle_${i + 1}`);
+// The turned rests share one playback: a long open hold, a breath in, a
+// blink, a breath out. Ten ticks at the rest fps = one 4 s cycle, the same
+// cadence as the seated rest so a pair rests in step.
+const FACE_PLAYBACK = [0, 0, 0, 0, 0, 1, 1, 2, 3, 3] as const;
 
 export interface PigAnimationSpec {
 	frames: readonly string[];
@@ -74,6 +78,14 @@ export const PIG_ANIMATION_SPECS: Readonly<
 		fps: PIG_REST_FPS,
 		loop: true,
 	},
+	// Facing a friend (2026-09-15): a three-quarter turn, standing and
+	// seated, four frames each — rest, breath in, blink, breath out — from one
+	// ImageGen sheet per pig (scripts/pig-tweens/slice_face_sheet.py; sheets
+	// and prompts in docs/reviews/pig-facing-2026-09-15/). Frame 0 is the
+	// Reduce Motion pose. PigStage picks these in place of idle / sit when a
+	// pig is given a `facing`.
+	face: { frames: ["face_1", "face_2", "face_3", "face_4"], playback: FACE_PLAYBACK, fps: PIG_REST_FPS, loop: true },
+	face_sit: { frames: ["face_sit_1", "face_sit_2", "face_sit_3", "face_sit_4"], playback: FACE_PLAYBACK, fps: PIG_REST_FPS, loop: true },
 	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 4, loop: true },
 	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: false },
 	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
@@ -143,6 +155,43 @@ export function resolveRestingAnimation(
 	return pose === "sit" && resolvePigAnimation(animation, mood) === "idle"
 		? "sit"
 		: animation;
+}
+
+// The rest loops: the pig stands or sits and breathes. Only these take a
+// surface's rest tempo and the stage's breath; a reaction or a mood carries
+// its own motion.
+export function isPigRestAnimation(animation: PigAnimation): boolean {
+	return (
+		animation === "idle" ||
+		animation === "sit" ||
+		animation === "face" ||
+		animation === "face_sit"
+	);
+}
+
+// Which way a pig looks. The front families are drawn with the tail on the
+// viewer's left and the head tilted left, which reads as "left"; the turned
+// families are drawn looking right. PigStage mirrors the stage whenever the
+// asked-for facing differs from the drawn one, so cosmetics ride the canvas
+// and nothing is re-placed.
+export type PigFacing = "left" | "right";
+
+export function pigDrawnFacing(animation: PigAnimation): PigFacing {
+	return animation === "face" || animation === "face_sit" ? "right" : "left";
+}
+
+// A pig given a facing turns toward it — only at rest. The standing idle
+// becomes the standing turn, the seated rest the seated turn; a mood (tired,
+// sad) or a reaction (a wave, a jump) still plays from the front families,
+// mirrored to keep the tilt toward the friend.
+export function resolveFacingAnimation(
+	animation: PigAnimation,
+	facing: PigFacing | undefined,
+): PigAnimation {
+	if (!facing) return animation;
+	if (animation === "idle") return "face";
+	if (animation === "sit") return "face_sit";
+	return animation;
 }
 
 export function pigAnimationDurationMs(animation: PigAnimation): number {

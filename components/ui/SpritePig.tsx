@@ -10,6 +10,7 @@ import { usePigRestTempo } from "./PigRestingPose";
 import {
 	PIG_ANIMATION_SPECS,
 	PIG_REST_FPS,
+	isPigRestAnimation,
 	type PigAnimation,
 } from "./pigRendererContract";
 
@@ -61,7 +62,7 @@ export function SpritePig({
 	// The surface's rest tempo scales the rest loops only; a reaction or a
 	// mood plays at its authored speed wherever it plays.
 	const restTempo = usePigRestTempo();
-	const tempo = animation === "idle" || animation === "sit" ? restTempo : 1;
+	const tempo = isPigRestAnimation(animation) ? restTempo : 1;
 	const reduced = reduceMotion ?? policy.reduceMotion;
 	const [internalIdx, setInternalIdx] = useState(0);
 	const setIdx = setInternalIdx;

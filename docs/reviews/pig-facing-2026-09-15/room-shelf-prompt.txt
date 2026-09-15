@@ -1,0 +1,7 @@
+Generate ONE image with the image generation tool and save it in this directory as room_shelf.png. Use the tallest PORTRAIT size available.
+
+The attached image is the current "Warm Plank Barn" room from the game "Tickle the Pig": a cozy barn interior seen straight on — honey-colored vertical plank walls, broad exposed roof beams meeting in a peak, a warm shaft of afternoon sunlight from a small window on the upper left, and an old sunlit plank floor that fills the bottom half. Its rendering style: painterly storybook, soft watercolor-like fills, warm dark ink outlines on the boards and beams, gentle warm light, no photorealism.
+
+Repaint THIS SAME ROOM, same composition, same camera, same colors, same beams, same window light, same floor — but EMPTY of furniture: remove the tall wooden shelf unit on the left wall and the red painted wardrobe on the right. The ONLY thing left is one simple, short, plain wooden shelf board fixed to the left wall at about chest height (a single plank on two small brackets, nothing on it). Nothing else stands in the room — no cupboards, no crates, no hay, no tools, no rugs, no hanging objects, no animals. Keep the soft pool of sunlight on the floor.
+
+No text, no labels, no borders, no watermark.

@@ -50,6 +50,20 @@ const MIN_TARGET = 44;
 // Both are veils over artwork, so they sit far below TINT.paperWash (.7) and
 // TINT.sunGlow (.5), which are designed to sit on paper. (2026-09-11)
 const PIG_STAGE = 300;
+// Where the pigs sit, as fractions of the canvas: centre x / y and the drawn
+// width. The room is the ONE owner of pig size — a caller hands in a 300pt
+// stage at 1:1 and never pre-shrinks it (the visit's TapPig used to, and the
+// two scales compounded into a 60pt pig on a 390pt room, 2026-09-15). The
+// host is the subject, a shade larger; alone (the owner's room) it sits just
+// off centre, and with a guest the pair moves to either side of the middle,
+// close enough to be facing each other across it: 86 + 70 = the 156pt
+// between their centres, and the three-quarter facing sprites are narrower
+// than that.
+const PIG_SPOTS = {
+  visitor: { x: .30, y: .69, w: .36 },
+  host: { x: .70, y: .69, w: .44 },
+  owner: { x: .52, y: .69, w: .44 },
+} as const;
 const THEME_MARKER_W = 80;
 const TOOLBAR_CLEARANCE = 56;
 const EDIT_SLOT_WASH = "rgba(255,250,240,0.14)";
@@ -238,10 +252,10 @@ export function HabitatScene({
             (a mood or a reaction still plays). The Exterior never provides a
             pose, so its tickle idle is untouched. */}
         <PigRestingPoseProvider pose="sit">
-          <View style={[styles.pigStage, { left: canvas.width * .29 - PIG_STAGE / 2, top: canvas.height * .68 - PIG_STAGE / 2, transform: [{ scale: canvas.width * .30 / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-visitor-pig">
+          <View style={[styles.pigStage, { left: canvas.width * PIG_SPOTS.visitor.x - PIG_STAGE / 2, top: canvas.height * PIG_SPOTS.visitor.y - PIG_STAGE / 2, transform: [{ scale: canvas.width * PIG_SPOTS.visitor.w / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-visitor-pig">
             {visitorPig}
           </View>
-          <View style={[styles.pigStage, { left: canvas.width * .52 - PIG_STAGE / 2, top: canvas.height * .69 - PIG_STAGE / 2, transform: [{ scale: canvas.width * .36 / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-host-pig">
+          <View style={[styles.pigStage, { left: canvas.width * (visitorPig ? PIG_SPOTS.host : PIG_SPOTS.owner).x - PIG_STAGE / 2, top: canvas.height * PIG_SPOTS.host.y - PIG_STAGE / 2, transform: [{ scale: canvas.width * PIG_SPOTS.host.w / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-host-pig">
             {hostPig}
           </View>
         </PigRestingPoseProvider>

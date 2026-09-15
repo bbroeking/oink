@@ -12,6 +12,8 @@ describe("pig renderer contract", () => {
 		expect(Object.keys(PIG_ANIMATION_SPECS)).toEqual([
 			"idle",
 			"sit",
+			"face",
+			"face_sit",
 			"walk",
 			"jump",
 			"bounce",

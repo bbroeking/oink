@@ -222,9 +222,9 @@ describe("existing Visit with a saved Barn Interior", () => {
     await act(async () => { await room.props.visitorPig.props.onPress(); });
     expect(rpc.mock.calls.filter(([name]) => name === "tickle_at_barn")).toHaveLength(1);
     expect(recordPorchStop).toHaveBeenCalledTimes(1);
-    // The host faces its guest; the guest stays as drawn.
-    expect(room.props.hostPig.props.facing).toBe("right");
-    expect(room.props.visitorPig.props.facing).toBeUndefined();
+    // The two turn to face each other: the host left, the guest right.
+    expect(room.props.hostPig.props.facing).toBe("left");
+    expect(room.props.visitorPig.props.facing).toBe("right");
   });
 
   it("falls back outside when the saved room is unavailable", async () => {

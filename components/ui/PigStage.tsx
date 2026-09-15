@@ -41,10 +41,14 @@ import type {
 import { ITEM_PREBAKED, isPrebaked } from "../../constants/prebaked";
 import { PigRenderer, type PigRendererKind } from "./PigRenderer";
 import {
+	isPigRestAnimation,
 	pigAnchorAnimation,
+	pigDrawnFacing,
+	resolveFacingAnimation,
 	resolvePigAnimation,
 	resolveRestingAnimation,
 	type PigAnimation,
+	type PigFacing,
 	type PigMood,
 	type PigReaction,
 } from "./pigRendererContract";
@@ -185,14 +189,17 @@ export interface PigStageProps {
 	// the cosmetic anchors keep working. Lists and sheets pass only the static
 	// channels (`staticPigFx`) — no loops outside the Barn.
 	ritual?: PigFx;
-	// Which way the pig looks. The sprites are drawn front-facing with the
-	// tail on the viewer's left, which reads as "left"; "right" mirrors the
-	// whole stage (art AND every anchored cosmetic, so nothing needs re-placing)
-	// so two pigs can face each other — the visit's diorama (2026-09-14).
-	// Composed on the stage wrapper next to the ritual flip, so raster and Rive
-	// look identical. The nametag, the floats and the ground shadow live
-	// outside the stage and never mirror.
-	facing?: "left" | "right";
+	// Which way the pig looks, when it looks somewhere: unset, the pig faces
+	// the camera as drawn. Given a side, the pig TURNS toward it — at rest it
+	// takes the three-quarter "face" families (drawn looking right, mirrored
+	// for left, 2026-09-15); a mood or a reaction keeps its front frames,
+	// mirrored so the tilt stays toward the friend. The mirror is one
+	// `scaleX: -1` on the stage wrapper (art AND every anchored cosmetic, so
+	// nothing is re-placed), composed next to the ritual flip so raster and
+	// Rive look identical. The nametag, the floats and the ground shadow live
+	// outside the stage and never mirror. Two pigs face each other in the
+	// visit (2026-09-14).
+	facing?: PigFacing;
 
 	// Rive remains asset/rollout gated. Frozen or unsupported appearances use
 	// the complete raster stage, including its existing attachment tables.
@@ -446,7 +453,7 @@ export function PigStage({
 	prestigeLevel = 0,
 	skinTintOverride,
 	ritual,
-	facing = "left",
+	facing,
 	renderer = "rive",
 	riveSource = RIVE_PIG_SOURCE,
 	riveRolloutEnabled,
@@ -465,7 +472,11 @@ export function PigStage({
 	const restTempo = usePigRestTempo();
 	const baseAnimation = resolveRestingAnimation(restingPose, requestedAnimation, pigMood);
 	const reaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;
-	const pigAnimation = reaction?.kind ?? resolvePigAnimation(baseAnimation, pigMood);
+	// Mood first, then the turn: a tired host still naps (from the front
+	// frames, mirrored); only a pig actually at rest turns toward its friend.
+	const restAnimation = resolveFacingAnimation(resolvePigAnimation(baseAnimation, pigMood), facing);
+	const pigAnimation = reaction?.kind ?? restAnimation;
+	const mirrored = facing !== undefined && facing !== pigDrawnFacing(pigAnimation);
 	const motionPolicy = useMotionPolicy();
 	const savedRolloutEnabled = useRivePigRolloutEnabled();
 	const rolloutEnabled = __DEV__ ? riveRolloutEnabled ?? savedRolloutEnabled : savedRolloutEnabled;
@@ -614,7 +625,7 @@ export function PigStage({
 	// own motion, Rive breathes for itself, and a frozen pose (list avatars,
 	// item previews) is a still by contract. Native-driven; stops with the
 	// stage when the screen blurs.
-	const atRest = pigAnimation === "idle" || pigAnimation === "sit";
+	const atRest = isPigRestAnimation(pigAnimation);
 	const breathing = atRest && visible && !pigFrozen && !riveOwnsEquipment;
 	const breathRaw = React.useRef(new Animated.Value(0)).current;
 	React.useEffect(() => {
@@ -748,7 +759,7 @@ export function PigStage({
 						{ translateY: stageLift },
 						...(ritualScale !== undefined ? [{ scale: ritualScale }] : []),
 						...(ritualFlip ? [{ rotate: "180deg" }] : []),
-						...(facing === "right" ? [{ scaleX: -1 }] : []),
+						...(mirrored ? [{ scaleX: -1 }] : []),
 						{ scaleY: breathScaleY },
 						{ scaleX: breathScaleX },
 					],
@@ -844,7 +855,7 @@ export function PigStage({
 			<View style={[styles.pigWrap, { zIndex: 5 }]}>
 				<PigRenderer
 					pigId={pigId}
-					animation={baseAnimation}
+					animation={restAnimation}
 					mood={pigMood}
 					reaction={pigReaction}
 					active={visible}

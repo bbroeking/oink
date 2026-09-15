@@ -72,7 +72,13 @@ export type PigAnimationKey =
 	| "sad"
 	| "tired"
 	| "surprise"
-	| "wave";
+	| "wave"
+	// The three-quarter turn toward a friend (2026-09-15): standing and
+	// seated. Drawn looking toward the viewer's RIGHT; PigStage mirrors them
+	// for a pig that faces left. Own frames, own anchors — a hat sits on a
+	// turned head differently than on a front one.
+	| "face"
+	| "face_sit";
 
 // Named pig anatomy points. Adding a new one is cheap — define it in
 // PIG_FRAME_ANCHORS for each frame, then any item can attach to it.

@@ -1,0 +1,14 @@
+Generate ONE image with the image generation tool and save it in this directory as face_sheet.png. Use the widest landscape size available.
+
+The attached images: (1) THE CHARACTER — a pig from the game "Tickle the Pig", one existing game sprite frame that defines her/his exact coat colours, markings, face, proportions and rendering style (soft watercolor fill, warm dark-brown ink outline, sticker-like, no shading); (2) THE POSE REFERENCE — a finished 8-frame "facing a friend" animation sheet of a DIFFERENT pig (Rosie, pink). Reproduce reference (2)'s camera, poses and frames EXACTLY, cell for cell, but drawn as the pig in reference (1). Do NOT copy Rosie's pink coat or her face — every frame must be the character in (1), with its own coat colour and markings.
+
+Create an 8-FRAME "FACING A FRIEND" ANIMATION SHEET: a grid of 4 columns x 2 rows, frames in reading order (left to right, top to bottom), every cell the same size, wide clear gutters between cells, on a solid flat MAGENTA (#FF00FF) background. No magenta anywhere on the pig.
+
+THE CAMERA, in every frame, exactly as in reference (2): a THREE-QUARTER VIEW — the whole body and head turned about 45 degrees toward the VIEWER'S RIGHT, as if a friend stood just to the right of the picture. BOTH eyes visible (the far eye a little smaller), snout pointing right-and-forward, the near ear in front, the curled tail at the back on the viewer's left. NOT in profile and NOT facing the camera.
+
+ROW 1 (frames 1-4) — STANDING on four planted hooves, a calm idle loop: 1 rest, eyes open, small friendly smile; 2 breath in — body rises a touch, ears lift; 3 blink — eyes closed; 4 breath out — settles, near ear twitches. Frame 4 leads back into frame 1.
+ROW 2 (frames 5-8) — SITTING on the haunches, front hooves planted together in front, turned three-quarter toward the viewer's right like row 1, the same calm loop: 5 rest; 6 breath in; 7 blink; 8 breath out with an ear twitch. Frame 8 leads back into frame 5.
+
+The SAME pig in all 8 frames: identical size, proportions, coat, markings, line weight and camera as reference (1). Hooves on the same invisible baseline in every frame. Consecutive frames differ only slightly — a slow resting loop.
+
+RULES: rendering matches reference (1) exactly — NO 3D shading, NO gradients, NO glossy highlights, NO drop shadow, NO ground shadow. The tail must NEVER appear on top of the head. No text, no labels, no frame numbers, no borders, no gridlines.

@@ -29,7 +29,7 @@ ANIM_SCALE_FILE = os.path.join(ROOT, "constants", "animScale.generated.ts")
 # items to regenerate and WHY (build_strip_prompts.py surfaces it).
 ART_REJECTIONS = os.path.join(ROOT, "docs", "art-rejections.json")
 HATS_DIR = os.path.join(ROOT, "assets", "images", "hats")
-ANIMS = ["idle", "walk", "jump", "happy", "sad", "tired", "surprise", "wave"]
+ANIMS = ["idle", "walk", "jump", "happy", "sad", "tired", "surprise", "wave", "face", "face_sit"]
 HTML = os.path.join(os.path.dirname(__file__), "placement_studio.html")
 PORT = 8124
 
@@ -223,7 +223,7 @@ def write_frame_anchors(data):
              "\tPigAnimationKey,",
              "\tPartial<Record<AnchorName, Anchor>>[]",
              "> = {"]
-    for anim in ["idle", "walk", "jump", "happy", "sad", "tired", "surprise", "wave"]:
+    for anim in ANIMS:
         frames = data.get(anim, [])
         lines.append(f"\t{anim}: [")
         lines += [fmt_frame(fr) + "," for fr in frames]

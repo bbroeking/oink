@@ -1,0 +1,25 @@
+Generate ONE image with the image generation tool and save it in this directory as face_sheet.png. Use the widest landscape size available.
+
+The attached images are your ONLY character reference: (1) an existing game sprite frame of "Rosie" the pink pig that defines her exact look — big round head, round body, blush cheeks, dark brown hooves, small curled tail — AND the rendering style to match: soft watercolor fill, warm dark-brown ink outline, sticker-like, no shading; (2) a side view of her quadruped body from a turnaround; (3) an existing sprite of her sitting, seen from the side.
+
+Create an 8-FRAME "FACING A FRIEND" ANIMATION SHEET of Rosie: a grid of 4 columns x 2 rows, frames in reading order (left to right, top to bottom), every cell the same size, wide clear gutters between cells, on a solid flat MAGENTA (#FF00FF) background. No magenta anywhere on the pig.
+
+THE CAMERA, in every frame: a THREE-QUARTER VIEW — her whole body and head are turned about 45 degrees toward the VIEWER'S RIGHT, as if a friend were standing just to the right of the picture. BOTH eyes stay visible (the far eye a little smaller), the snout points right-and-forward, the near ear is in front, and her curled tail shows at the back on the viewer's left. She is NOT in profile and NOT facing the camera. Same size and drawing scale as reference (1).
+
+ROW 1 (frames 1-4) — STANDING on four planted hooves, a calm idle loop:
+- frame 1: rest pose, eyes open, small friendly smile;
+- frame 2: breath in — body rises a touch, ears lift a touch;
+- frame 3: blink — both eyes closed, body still up;
+- frame 4: breath out — body settles, the near ear gives a tiny twitch.
+Frame 4 leads back into frame 1.
+
+ROW 2 (frames 5-8) — SITTING on her haunches (as in reference 3, but turned three-quarter toward the viewer's right like row 1), front hooves planted together in front, the same calm loop:
+- frame 5: rest pose, eyes open, small friendly smile;
+- frame 6: breath in — body rises a touch, ears lift;
+- frame 7: blink — eyes closed;
+- frame 8: breath out — settles, near ear twitches.
+Frame 8 leads back into frame 5.
+
+The SAME pig in all 8 frames: identical size, proportions, colors, line weight, and the same three-quarter camera. Hooves rest on the same invisible baseline in every frame. Consecutive frames differ only slightly — this plays slowly, as a resting loop.
+
+RULES: rendering matches reference (1) exactly — soft watercolor fill, warm ink outline, NO 3D shading, NO gradients, NO glossy highlights, NO drop shadow, NO ground shadow. The tail must NEVER appear on top of her head. No text, no labels, no frame numbers, no borders, no gridlines.

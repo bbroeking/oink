@@ -19,8 +19,9 @@
 // `tickle_at_barn`: it gives the host a heart, gives you one, and makes both
 // pigs happier — the counts move optimistically and reconcile to the server.
 // Your own pig is the guest: a tap on it waves at the host and, once, says so.
-// The two pigs FACE EACH OTHER — you on the left as drawn, the host on the
-// right mirrored (`PigStage facing="right"`), one ground line.
+// The two pigs FACE EACH OTHER — you on the left turned right, the host on
+// the right turned left (`PigStage facing`, the three-quarter families), one
+// ground line.
 //
 // When the visit's 3–7 tap cap is spent the HOST pig naps — the tired
 // sprite, a zzz, and the count chip under it turns into a "tickled out" tag.
@@ -160,7 +161,9 @@ const FORAGE_ART = 38;
 const EMOTE_CHOICE_MIN_W = 82;
 // The widest the "you" tag under the visitor's pig may grow before it truncates.
 const NAMETAG_MAX_W = 130;
-// The square the Inside room hands each pig to stand in — the sprite canvas.
+// The square the Inside room hands each pig to sit in — the sprite canvas,
+// at 1:1. The room scales it (HabitatScene's PIG_SPOTS); TapPig must not
+// shrink it first, or the two scales compound (2026-09-15).
 const ROOM_PIG_BOX = 300;
 // The diorama's two pigs: the host is the subject (a shade larger), the
 // visitor its guest, on ONE ground line, each shifted off centre toward its
@@ -1148,14 +1151,15 @@ function BarnVisitSession({
 										</View>
 									</View>
 								)}
-								{/* you — the guest, on the left, as drawn (tail out, face in).
-									  The only nametag left on the screen: a newcomer cannot
+								{/* you — the guest, on the left, turned to look right at the
+									  host. The only nametag left on the screen: a newcomer cannot
 									  otherwise tell which pig is theirs. Not a tickle target:
 									  a tap waves. */}
 								<TapPig
 									me
 									slotStyle={[styles.pigSlot, styles.pigSlotVisitor]}
 									squishTransform={squishTransform}
+									facing="right"
 									onPress={greet}
 									label="you"
 									tag="you"
@@ -1166,9 +1170,10 @@ function BarnVisitSession({
 									onReactionDone={() => setMyReaction(null)}
 									floats={floats}
 								/>
-								{/* host — the subject, on the right, MIRRORED so the two face
-									  each other. The one pig you tickle; its chip counts the
-									  visit and becomes the "tickled out" tag. */}
+								{/* host — the subject, on the right, turned to look left at
+									  its guest (the turn is mirrored). The one pig you tickle;
+									  its chip counts the visit and becomes the "tickled out"
+									  tag. */}
 								<TapPig
 									slotStyle={[styles.pigSlot, styles.pigSlotHost]}
 									squishTransform={squishTransform}
@@ -1178,7 +1183,7 @@ function BarnVisitSession({
 									pigId={hostPigId}
 									equip={hostEquip}
 									ritual={hostPresentation.pig}
-									facing="right"
+									facing="left"
 									mood={hostSpent ? "tired" : "content"}
 									spent={hostSpent}
 									chip={hostSpent ? { kind: "spent" } : { kind: "count", n: gained }}
@@ -1559,7 +1564,9 @@ function BarnVisitSession({
 						<TapPig
 							me
 							slotStyle={styles.roomPigSlot}
+							stage="room"
 							squishTransform={squishTransform}
+							facing="right"
 							onPress={greet}
 							label="you"
 							tag="you"
@@ -1574,6 +1581,7 @@ function BarnVisitSession({
 					hostPig={
 						<TapPig
 							slotStyle={styles.roomPigSlot}
+							stage="room"
 							squishTransform={squishTransform}
 							onPress={tickle}
 							label={hostName}
@@ -1582,7 +1590,7 @@ function BarnVisitSession({
 							equip={hostEquip}
 							ritual={hostPresentation.pig}
 							burstRef={hostConfettiRef}
-							facing="right"
+							facing="left"
 							mood={hostSpent ? "tired" : "content"}
 							spent={hostSpent}
 							chip={hostSpent ? { kind: "spent" } : { kind: "count", n: gained }}
@@ -1626,9 +1634,9 @@ function BarnVisitSession({
 }
 
 // A tappable pig, placed by its parent `slotStyle`. The host (`!me`) is the
-// subject — a shade larger, mirrored to face its guest, wearing the wish
+// subject — a shade larger, turned to face its guest, wearing the wish
 // bubble over its head and the visit's chip under its feet. "You" is the
-// guest: as drawn, a nametag, a wave on tap. Reactions belong to the session
+// guest: turned to face the host, a nametag, a wave on tap. Reactions belong to the session
 // (`reaction` / `onReactionDone`), so a tickle, a wave, a sniff and the
 // delivery's surprise all come from one place.
 function TapPig({
@@ -1641,7 +1649,8 @@ function TapPig({
 	pigId,
 	equip,
 	mood,
-	facing = "left",
+	facing,
+	stage = "diorama",
 	spent = false,
 	chip = null,
 	chipWobble,
@@ -1654,6 +1663,10 @@ function TapPig({
 }: {
 	me?: boolean;
 	slotStyle?: StyleProp<ViewStyle>;
+	/** Where the pig stands. The Outside diorama draws each pig at its own
+	 *  scale (HOST_SCALE / VISITOR_SCALE); the Inside room is handed the bare
+	 *  300pt canvas and sizes it itself. */
+	stage?: "diorama" | "room";
 	// Shared squish transform entries — composed WITH this pig's own scale.
 	squishTransform: (
 			| { scaleX: Animated.AnimatedInterpolation<number> }
@@ -1670,7 +1683,8 @@ function TapPig({
 	/** The resting mood — tired once the host is spent, happy once you've
 	 *  shared a heart. */
 	mood: "content" | "happy" | "tired";
-	/** Which way the pig looks; the host faces "right" to meet its guest. */
+	/** Which way the pig turns to look: the guest right, the host left, so
+	 *  the two face each other (PigStage's three-quarter turn). */
 	facing?: "left" | "right";
 	/** The host's tickles are spent: the press still lands (it wobbles the tag)
 	 *  but the screen reader hears it as disabled. */
@@ -1692,8 +1706,8 @@ function TapPig({
 }) {
 	const [riveActive, setRiveActive] = useState(false);
 	const host = !me;
-	const scale = host ? HOST_SCALE : VISITOR_SCALE;
-	const box = host ? HOST_BOX : VISITOR_BOX;
+	const scale = stage === "room" ? 1 : host ? HOST_SCALE : VISITOR_SCALE;
+	const box = stage === "room" ? ROOM_PIG_BOX : host ? HOST_BOX : VISITOR_BOX;
 	const shadowW = box * 0.5;
 	// Living mood surface: track the live sprite frame so equipped items ride
 	// along with the breathing pig (same wiring as SwipeElement).

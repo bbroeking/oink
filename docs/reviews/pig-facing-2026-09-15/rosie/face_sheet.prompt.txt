@@ -1,0 +1,30 @@
+Generate exactly ONE image: a production sprite animation sheet for Rosie, the pink pig. Use the widest landscape output size available.
+
+Use ONLY the three supplied images as character references.
+Reference 1 (idle_1.png): PRIMARY identity and rendering-style authority. Match this exact pig: huge round head, round compact body, pale pink soft watercolor fill, pink circular blush cheeks, warm dark-brown ink contour, dark-brown hooves, small curled tail. Keep her proportions and drawing scale consistent with this reference.
+Reference 2 (rosie-quadruped-right-v2.png): quadruped body/anatomy reference ONLY. Do not use its 3D rendering, lighting, shading, or profile camera.
+Reference 3 (sit_e.png): seated haunches/body pose reference ONLY. Rotate this pose into the required three-quarter view and render exactly in reference 1's style.
+
+LAYOUT:
+Exactly 8 separate full-body Rosies arranged in a perfectly regular grid of 4 equal columns x 2 equal rows, reading left to right then top to bottom. Equal-size cells with generous clear gutters and clear outer margins. Entire canvas, including all gutters, is SOLID FLAT MAGENTA #FF00FF (RGB 255,0,255). No magenta on or inside any pig. No visible grid, cell borders, labels, text, numbers, scenery, props, or friend character. Keep every ear, hoof and tail comfortably within its cell. All pigs have the same head dimensions, body proportions, drawing scale, palette, and outline thickness. Same invisible ground baseline at the same relative height within EVERY cell. Seated poses can have a lower total height naturally, but the character must not be rescaled.
+
+CAMERA — the essential requirement in ALL EIGHT frames:
+A fixed THREE-QUARTER VIEW, her WHOLE BODY AND HEAD rotated about 45 degrees toward the VIEWER'S RIGHT. She looks at an imaginary friend just to the right of the picture. Not a side profile, not facing straight at the camera. BOTH eyes visible when open: near eye full size, far eye a little smaller and visibly separate from the snout. Snout points right-and-forward, with its oval front and a little side visible. Near ear overlaps in front. Body axis also turns 45 degrees right, not a frontal body with only a turned head. Her little curled tail is attached to the rump at the BACK on the viewer's LEFT, well below her head. Tail NEVER on top of her head or confused with an ear. Keep camera and orientation absolutely unchanged between frames.
+
+TOP ROW — FOUR-LEGGED STANDING calm idle loop:
+Four short legs and dark brown hooves; all four hooves planted, far hooves can partially overlap near legs naturally, no lifting or stepping. Compact rounded quadruped stance.
+Frame 1, top-left: rest pose, both eyes open, small friendly smile.
+Frame 2: gentle breath in, body rises only a tiny amount and ears lift a little; hoof contact points unchanged.
+Frame 3: blink, BOTH eyes closed as soft curved ink strokes, body still slightly raised.
+Frame 4: breath out, body settles to almost frame 1, both eyes open again, near ear makes a tiny twitch. Seamless return to frame 1.
+
+BOTTOM ROW — SITTING ON HAUNCHES calm idle loop:
+Same pig, same three-quarter view facing viewer's RIGHT. Rosie sits on her rump with rear haunches resting, and TWO FRONT HOOVES planted together in front. Use reference 3 to understand the seated shape but both eyes must remain visible due to the three-quarter camera.
+Frame 5, bottom-left: seated rest pose, both eyes open, small friendly smile.
+Frame 6: gentle breath in, body rises a tiny amount and ears lift; front hooves stay planted.
+Frame 7: blink, BOTH eyes closed, body still slightly raised.
+Frame 8: breath out, body settles to almost frame 5, both eyes open, tiny near-ear twitch. Seamless return to frame 5.
+
+RENDERING:
+Match reference 1's flat sticker-like hand-painted sprite: soft watercolor pigment texture within pale pink flat color shapes and crisp warm dark-brown ink outlines. Small calm friendly smiles instead of large excited open mouths. Uniform line weight and identical character design across all 8 frames. Consecutive poses differ only very slightly for a slow resting animation.
+NO 3D shading, NO modeled volume lighting, NO color gradients, NO glossy highlights, NO drop shadow, NO ground shadow, NO light halo, NO white sticker border. No added accessories or features. Magenta background must be perfectly flat, with no texture or variation.

@@ -3,7 +3,7 @@
 //
 //   • the host's pig is the only tickle target; yours waves, no RPC
 //   • the count chip under the host counts taps and becomes "tickled out"
-//   • the host faces its guest (PigStage facing="right"), the guest as drawn
+//   • the two turn to face each other (PigStage facing: host left, guest right)
 //   • the bag strip lifts the matching find; tapping it hands it over, the
 //     tallies move by the flat tickles, the receipt names the host first
 //   • a wrong find bounces without reaching the server
@@ -137,8 +137,8 @@ describe("a visit with the Satchel", () => {
   it("only the host's pig tickles; yours waves without reaching the server", async () => {
     script({ taps: [{ ok: true, taps_left: 4, tap_cap: 5 }] });
     const r = await open();
-    expect(r.props.hostPig.props.facing).toBe("right");
-    expect(r.props.visitorPig.props.facing).toBeUndefined();
+    expect(r.props.hostPig.props.facing).toBe("left");
+    expect(r.props.visitorPig.props.facing).toBe("right");
 
     await act(async () => { await r.props.visitorPig.props.onPress(); });
     expect(calls("tickle_at_barn")).toHaveLength(0);

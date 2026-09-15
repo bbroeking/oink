@@ -130,12 +130,22 @@ describe("Habitat scene contract", () => {
       testID: "habitat-visitor-pig",
     });
     expect(host.props.style[1].transform[0].scale).toBeCloseTo(
-      (390 * 0.36) / 300,
+      (390 * 0.44) / 300,
     );
     expect(visitor.props.style[1].transform[0].scale).toBeCloseTo(
-      (390 * 0.3) / 300,
+      (390 * 0.36) / 300,
     );
     expect(host.props.style[1].left).not.toBe(visitor.props.style[1].left);
+    // With a guest the host moves to its own side of the middle; alone (the
+    // owner's room) it sits just off centre.
+    expect(host.props.style[1].left).toBeCloseTo(390 * 0.7 - 150);
+    expect(visitor.props.style[1].left).toBeCloseTo(390 * 0.3 - 150);
+    const alone = TestRenderer.create(
+      <HabitatScene snapshot={snapshot()} hostPig={<Text>host</Text>} />,
+    );
+    expect(
+      alone.root.findByProps({ testID: "habitat-host-pig" }).props.style[1].left,
+    ).toBeCloseTo(390 * 0.52 - 150);
   });
 
   test("visitor scene shows explicitly placed items and both supplied pigs without edit markers", () => {

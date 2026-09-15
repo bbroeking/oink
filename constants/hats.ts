@@ -800,7 +800,19 @@ export const PIG_FRAME_ANCHORS: Record<PigAnimationKey, Partial<Record<AnchorNam
 			leg_l: { x: 79, y: 240 },
 			leg_r: { x: 154, y: 245 }
 		}
-	]
+	],
+	face: [
+		{ head: { x: 190, y: 24 }, eye_l: { x: 200, y: 108 }, eye_r: { x: 263, y: 100 }, snout: { x: 255, y: 135 }, mouth: { x: 240, y: 165 }, neck: { x: 195, y: 208 }, body: { x: 170, y: 235 }, hand_l: { x: 95, y: 270 }, hand_r: { x: 205, y: 270 }, leg_l: { x: 70, y: 275 }, leg_r: { x: 150, y: 280 } },
+		{ head: { x: 190, y: 21 }, eye_l: { x: 200, y: 105 }, eye_r: { x: 263, y: 97 }, snout: { x: 255, y: 132 }, mouth: { x: 240, y: 162 }, neck: { x: 195, y: 205 }, body: { x: 170, y: 232 }, hand_l: { x: 95, y: 270 }, hand_r: { x: 205, y: 270 }, leg_l: { x: 70, y: 275 }, leg_r: { x: 150, y: 280 } },
+		{ head: { x: 190, y: 22 }, eye_l: { x: 200, y: 106 }, eye_r: { x: 263, y: 98 }, snout: { x: 255, y: 133 }, mouth: { x: 240, y: 163 }, neck: { x: 195, y: 206 }, body: { x: 170, y: 233 }, hand_l: { x: 95, y: 270 }, hand_r: { x: 205, y: 270 }, leg_l: { x: 70, y: 275 }, leg_r: { x: 150, y: 280 } },
+		{ head: { x: 190, y: 24 }, eye_l: { x: 200, y: 108 }, eye_r: { x: 263, y: 100 }, snout: { x: 255, y: 135 }, mouth: { x: 240, y: 165 }, neck: { x: 195, y: 208 }, body: { x: 170, y: 235 }, hand_l: { x: 95, y: 270 }, hand_r: { x: 205, y: 270 }, leg_l: { x: 70, y: 275 }, leg_r: { x: 150, y: 280 } },
+	],
+	face_sit: [
+		{ head: { x: 185, y: 33 }, eye_l: { x: 200, y: 122 }, eye_r: { x: 258, y: 112 }, snout: { x: 250, y: 148 }, mouth: { x: 235, y: 175 }, neck: { x: 195, y: 215 }, body: { x: 150, y: 240 }, hand_l: { x: 175, y: 275 }, hand_r: { x: 215, y: 270 }, leg_l: { x: 90, y: 285 }, leg_r: { x: 200, y: 280 } },
+		{ head: { x: 185, y: 30 }, eye_l: { x: 200, y: 119 }, eye_r: { x: 258, y: 109 }, snout: { x: 250, y: 145 }, mouth: { x: 235, y: 172 }, neck: { x: 195, y: 212 }, body: { x: 150, y: 237 }, hand_l: { x: 175, y: 275 }, hand_r: { x: 215, y: 270 }, leg_l: { x: 90, y: 285 }, leg_r: { x: 200, y: 280 } },
+		{ head: { x: 185, y: 31 }, eye_l: { x: 200, y: 120 }, eye_r: { x: 258, y: 110 }, snout: { x: 250, y: 146 }, mouth: { x: 235, y: 173 }, neck: { x: 195, y: 213 }, body: { x: 150, y: 238 }, hand_l: { x: 175, y: 275 }, hand_r: { x: 215, y: 270 }, leg_l: { x: 90, y: 285 }, leg_r: { x: 200, y: 280 } },
+		{ head: { x: 185, y: 33 }, eye_l: { x: 200, y: 122 }, eye_r: { x: 258, y: 112 }, snout: { x: 250, y: 148 }, mouth: { x: 235, y: 175 }, neck: { x: 195, y: 215 }, body: { x: 150, y: 240 }, hand_l: { x: 175, y: 275 }, hand_r: { x: 215, y: 270 }, leg_l: { x: 90, y: 285 }, leg_r: { x: 200, y: 280 } },
+	],
 };
 // ANCHOR_EDITOR_END
 
@@ -869,7 +881,16 @@ export function resolveWearablePose(
 	const currentAngle = Math.atan2(currentDy, currentDx);
 	const rawDegrees = ((currentAngle - restAngle) * 180) / Math.PI;
 	const rotate = ((rawDegrees + 180) % 360) - 180;
-	const scale = Math.max(0.72, Math.min(1.18, currentDistance / restDistance));
+	// On the three-quarter turn the eyes close up because the head TURNED,
+	// not because it shrank: only what sits on the eye line (glasses, a mask)
+	// foreshortens with them; a hat or a scarf keeps its size and just takes
+	// the tilt. (2026-09-15)
+	const turned = anim === "face" || anim === "face_sit";
+	const eyeBound = anchor === "eyes" || anchor === "eye_l" || anchor === "eye_r";
+	const scale =
+		turned && !eyeBound
+			? 1
+			: Math.max(0.72, Math.min(1.18, currentDistance / restDistance));
 	return { rotate, scale };
 }
 

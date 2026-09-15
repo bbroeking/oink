@@ -77,11 +77,20 @@ for (const [name, content] of Object.entries(assets)) {
 
 const roomTriptych = resolve(SRC, "imagegen-room-triptych-v2.png");
 if (existsSync(roomTriptych)) {
-  [["warm_plank_barn", 20], ["spring_whitewash", 532], ["midnight_rafters", 1044]].forEach(([name, x]) => {
+  // The base room is no longer cut from the triptych: its empty repaint
+  // (no shelf, no wardrobe — the room is a stage for the pigs and the
+  // player's own decor, 2026-09-15) is a portrait ImageGen of its own.
+  [["spring_whitewash", 532], ["midnight_rafters", 1044]].forEach(([name, x]) => {
     const output = resolve(OUT, `${name}.png`);
     execFileSync("magick", [roomTriptych, "-crop", `473x1024+${x}+0`, "+repage", "-resize", "780x1688!", "-strip", output]);
     execFileSync("magick", [output, "-resize", "192x416^", "-gravity", "center", "-extent", "192x192", "-strip", resolve(THUMBS, `${name}.png`)]);
   });
+}
+const emptyBarn = resolve(SRC, "imagegen-warm-plank-barn-empty-v1.png");
+if (existsSync(emptyBarn)) {
+  const output = resolve(OUT, "warm_plank_barn.png");
+  execFileSync("magick", [emptyBarn, "-resize", "780x1688!", "-strip", output]);
+  execFileSync("magick", [output, "-resize", "192x416^", "-gravity", "center", "-extent", "192x192", "-strip", resolve(THUMBS, "warm_plank_barn.png")]);
 }
 
 const furnishingSheet = resolve(SRC, "imagegen-furnishings-sheet-v2.png");

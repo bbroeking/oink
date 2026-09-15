@@ -31,9 +31,10 @@ describe("baked pig animation packs", () => {
 	const rosieFiles = pngFiles(path.join(ROOT, "rosie"));
 	const relative = rosieFiles.map((file) => path.relative(path.join(ROOT, "rosie"), file));
 
-	// 32 main frames (eight families × 4) + 8 more idle frames + 22 lounge frames.
-	test("Rosie's production pack has the expected 62 frames", () => {
-		expect(relative).toHaveLength(62);
+	// 32 main frames (eight families × 4) + 8 more idle frames + 22 lounge frames
+	// + 8 turned frames (face / face_sit, 2026-09-15).
+	test("Rosie's production pack has the expected 70 frames", () => {
+		expect(relative).toHaveLength(70);
 	});
 
 	test.each(PIG_IDS)("%s has every frame with Rosie's canvas dimensions", (pigId) => {

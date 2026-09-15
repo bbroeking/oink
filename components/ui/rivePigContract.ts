@@ -90,6 +90,10 @@ export const RIVE_PIG_ANIMATION_COMMANDS = Object.freeze({
 	// The Rive rig has no seated rest yet; the raster sit rides the happy
 	// frames, so its Rive stand-in is the happy rest state.
 	sit: { kind: "rest", value: 3 },
+	// No turned rests in the rig either; the raster turn is mirrored on the
+	// stage wrapper, so the Rive stand-ins are the matching front rests.
+	face: { kind: "rest", value: 0 },
+	face_sit: { kind: "rest", value: 3 },
 	walk: { kind: "activity", value: 1 },
 	jump: { kind: "trigger", input: RIVE_PIG_INPUTS.jump },
 	bounce: { kind: "activity", value: 2 },

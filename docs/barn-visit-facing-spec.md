@@ -1,8 +1,9 @@
 # Visiting a Barn — the host's pig is the one you tickle
 
-Status: **built 2026-09-14** (build 185). `components/BarnVisitModal.tsx`,
-`components/ui/PigStage.tsx` (`facing`). The Satchel (`satchel-spec.md`) sits
-on top of these rules.
+Status: **built 2026-09-14** (build 185); **the turn, the room sizes and the
+empty base room 2026-09-15**. `components/BarnVisitModal.tsx`,
+`components/ui/PigStage.tsx` (`facing`), `components/habitat/HabitatScene.tsx`
+(`PIG_SPOTS`). The Satchel (`satchel-spec.md`) sits on top of these rules.
 
 **Before:** both pigs were tap targets calling `tickle_at_barn`; each success
 bumped both tallies after the round trip; the cap-hitting tap fired a toast and
@@ -49,22 +50,44 @@ On the cap-hitting tap (server `taps_left === 0`):
 ## 4. Facing each other
 
 - One ground line (`bottom: 9%`), visitor left at 0.54, host right at 0.62,
-  each shifted 74pt to its own side.
-- `PigStage facing="right"` mirrors the **host** (`scaleX: -1` composed on the
-  stage wrapper next to the ritual flip). Rosie's tail sits viewer-left and
-  her head tilts left, so un-mirrored visitor + mirrored host puts both tails
-  outboard and both faces inboard. Cosmetics ride the canvas (RelSpec anchors
-  mirror with it — nothing to re-place); raster and Rive agree; the nametag,
-  chip, bubble, floats and ground shadow live outside the stage and never
-  mirror.
-- The Interior room gets the same `facing="right"` on the host.
+  each shifted 74pt to its own side (the Outside diorama). Inside, the room
+  places the pair itself (`HabitatScene` `PIG_SPOTS`: guest at 0.30, host at
+  0.70, the host 0.44 of the canvas wide, the guest 0.36) and TapPig hands it
+  the bare 300pt canvas (`stage="room"`) — the two scales used to compound
+  into a 60pt pig (2026-09-15).
+- **The two turn toward each other** (2026-09-15, supersedes the mirror-only
+  rule). `PigStage facing` now means *which way the pig looks*: the guest is
+  `facing="right"`, the host `facing="left"`. At rest a facing pig takes the
+  **three-quarter families** — `face` (standing, the Outside) and `face_sit`
+  (seated, the Inside) — four frames each: rest, breath in, blink, breath out,
+  on the seated rest's 4 s cadence, so the pair rests in step. They are drawn
+  looking toward the viewer's right; the host's are mirrored (`scaleX: -1` on
+  the stage wrapper beside the ritual flip, as before), so raster and Rive
+  agree and every anchored cosmetic rides the canvas. A mood or a reaction
+  (the tired nap, a wave, the delivery's surprise) plays from the front
+  families, mirrored so the tilt stays toward the friend. No `facing` — the
+  Barn's own pig, the Closet, every list — means no turn and no mirror.
+- The turned families carry their own anchors (`PIG_FRAME_ANCHORS.face` /
+  `.face_sit`; tune in the Placement Studio's Pig mode): a hat sits on a
+  turned crown, glasses on a foreshortened eye line. On the turn only
+  eye-bound items take the eye-line scale; a hat or a scarf keeps its size
+  and just takes the tilt (`resolveWearablePose`).
 - Accepted: asymmetric worn items swap sides on the host. No worn item
-  carries readable text.
+  carries readable text. Once a heart has been shared the guest's *happy*
+  mood plays from the front frames (mirrored) rather than the turn.
 
 ## Assets
 
-None new. Sprites are front-facing and near-symmetric (the flip is a
-transform); `tired` / `wave` / `surprise` sets exist for all six pigs;
-`zzz` / `heart` glyphs exist. A 3/4-turn "glance" set was deliberately not
-generated: it would break every RelSpec anchor for a cue the mirror already
-gives.
+- `assets/images/sprites/<pig>/face_{1..4}.png`, `face_sit_{1..4}.png` for
+  all six pigs — one 4×2 magenta-keyed Codex ImageGen sheet per pig
+  (Rosie from her sprite + turnaround + lounge sit; the recruits from their
+  `idle_1` with Rosie's finished sheet as the pose reference), sliced by
+  `scripts/pig-tweens/slice_face_sheet.py` at one shared scale so sitting
+  reads as a pose, never a shrink. Sheets, prompts and contact strips in
+  `docs/reviews/pig-facing-2026-09-15/`.
+- `tired` / `wave` / `surprise` sets exist for all six pigs; `zzz` / `heart`
+  glyphs exist.
+- The base room `warm_plank_barn` was repainted **empty** the same day (no
+  shelf, no wardrobe): `assets/images/habitat/source/imagegen-warm-plank-barn-empty-v1.png`
+  → `warm_plank_barn.png` + thumbnail via `scripts/habitat/generate-art.mjs`.
+  Spring Whitewash and Midnight Rafters still carry their painted furniture.
