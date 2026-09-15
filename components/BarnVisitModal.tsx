@@ -88,7 +88,8 @@ import {
 	type EquippedItem,
 	type PigReaction,
 } from "./ui";
-import { VISIT_TYPE_CAP } from "./visit/chrome";
+import { VISIT_TOAST_LINE, VISIT_TYPE_CAP } from "./visit/chrome";
+import { ToastHost } from "./ui/Toast";
 import { VisitActionBar } from "./visit/VisitActionBar";
 import { SatchelStrip } from "./visit/SatchelStrip";
 import { WishBubble } from "./visit/WishBubble";
@@ -1642,6 +1643,11 @@ function BarnVisitSession({
 					{visitContent}
 				</>
 			)}
+			{/* The visit's own toast line, under its chrome so a toast never
+			    covers the tallies (placement B, 2026-09-15). Last in the root:
+			    it is the host that takes the calls whether the visit came in
+			    through a Ceremony or inline under the profile sheet. */}
+			<ToastHost top={VISIT_TOAST_LINE} />
 		</View>
 		</PigRestTempoProvider>
 	);

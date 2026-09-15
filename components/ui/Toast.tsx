@@ -96,12 +96,16 @@ export function showToast(opts: ToastOpts): void {
 	host({ ...opts, ts: Date.now() });
 }
 
-export function ToastHost() {
+export function ToastHost({ top }: { top?: number } = {}) {
 	const [toast, setToast] = useState<Toast | null>(null);
 	const opacity = useRef(new Animated.Value(0)).current;
 	const ty = useRef(new Animated.Value(DROP)).current;
 	const insets = useSafeAreaInsets();
 	const { reduceMotion } = useMotionPolicy();
+	// The toast line: just under the safe area by default; a scene with its
+	// own top chrome passes the line under that chrome instead (the visit's
+	// host clears its tallies — 2026-09-15, placement B).
+	const topLine = top ?? insets.top + SPACE.sm;
 
 	useEffect(() => {
 		const mine: SetToast = (t) => setToast(t);
@@ -163,7 +167,7 @@ export function ToastHost() {
 
 	return (
 		<View
-			style={[styles.wrap, { top: insets.top + SPACE.sm }]}
+			style={[styles.wrap, { top: topLine }]}
 			pointerEvents="box-none"
 		>
 			<Animated.View

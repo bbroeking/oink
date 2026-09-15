@@ -14,7 +14,7 @@ import { type ReactNode } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { Glyph, T, Tag } from "@/components/ui";
 import { AVATAR_SIZE, SPACE } from "@/constants/theme";
-import { VISIT_TYPE_CAP } from "./chrome";
+import { STATUS_ROW_GAP, STATUS_TAG_H, VISIT_TYPE_CAP } from "./chrome";
 
 // The rising "+1 ♥" — a drawing size, matched to the capsule's own mark.
 const TICK_MARK = 12;
@@ -24,9 +24,9 @@ export interface VisitTickStyle {
 	transform: { translateY: Animated.AnimatedInterpolation<number> }[];
 }
 
-/** The height of a status capsule — the avatar sets it, so the header's total
- *  chrome is STATUS_SAFE + TAP_MIN + SPACE.sm + this. */
-export const STATUS_TAG_H = AVATAR_SIZE[0];
+// STATUS_TAG_H lives in ./chrome with the rest of the visit's chrome numbers
+// (it is one term of VISIT_CHROME_H); re-exported here for its old importers.
+export { STATUS_TAG_H } from "./chrome";
 
 export function VisitStatusRow({
 	youHearts,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
 		flexWrap: "wrap",
 		alignItems: "center",
 		gap: SPACE.sm,
-		marginTop: SPACE.sm,
+		marginTop: STATUS_ROW_GAP,
 		// `flexWrap` only wraps against a DEFINITE width. Left to size itself the
 		// row measured at its content, ran past the screen edge and never found a
 		// line to break on — and the capsules' `maxWidth: "100%"` had no definite

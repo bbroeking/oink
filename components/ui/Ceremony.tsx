@@ -42,11 +42,14 @@ export function Ceremony({
 			testID={testID}
 		>
 			<View style={styles.ground} accessibilityViewIsModal>
-				{children}
-				{/* A native Modal paints over the root ToastHost, so the scene
-				    carries a host of its own — mounted LAST so it is the host
-				    that takes the calls while the ceremony is up. */}
+				{/* A native Modal paints over the root ToastHost, so the ceremony
+				    carries a host of its own. It comes BEFORE the children in
+				    tree order: effects run in tree order, and a scene that mounts
+				    its own host on its own line (the visit) must register after
+				    this one to take the calls. The wrap's zIndex keeps it on top
+				    regardless of order. */}
 				<ToastHost />
+				{children}
 			</View>
 		</Modal>
 	);

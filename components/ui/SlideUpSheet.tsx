@@ -137,10 +137,12 @@ export function SlideUpSheet({
 			animationType="none"
 			onRequestClose={onClose}
 		>
-			{layers}
-			{/* The native Modal paints over the root ToastHost: a refusal toast
-			    fired from the profile sheet lands here, over the sheet. */}
+			{/* The native Modal paints over the root ToastHost: a toast fired
+			    from the sheet lands here, over it. Before the layers so a scene
+			    inside the sheet with a host of its own (the visit, inline)
+			    registers after and takes the calls. */}
 			<ToastHost />
+			{layers}
 		</Modal>
 	);
 }

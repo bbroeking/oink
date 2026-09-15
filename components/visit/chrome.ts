@@ -1,3 +1,4 @@
+import { AVATAR_SIZE, SPACE, STATUS_SAFE, TAP_MIN } from "@/constants/theme";
 // One number the whole visit chrome agrees on.
 //
 // The visit screen's header row, status capsules, stage toggle and bottom pill
@@ -12,3 +13,19 @@
 // dialogs — still scales the full 200% the design system
 // requires.
 export const VISIT_TYPE_CAP = 1.3;
+
+/** The height of a status capsule — the avatar sets it, so the header's total
+ *  chrome is STATUS_SAFE + TAP_MIN + SPACE.sm + this. */
+export const STATUS_TAG_H = AVATAR_SIZE[0];
+
+/** The gap between the header row and the tally capsules (the status row's
+ *  own top margin) — named so the chrome's height is a sum of named parts. */
+export const STATUS_ROW_GAP = SPACE.sm;
+
+/** The whole chrome above the scene — status inset, header row, gap, tally
+ *  capsules — as the visit lays it out (`BarnVisitModal` `chrome`). */
+export const VISIT_CHROME_H = STATUS_SAFE + TAP_MIN + STATUS_ROW_GAP + STATUS_TAG_H;
+
+/** The toast line on the visit: one gap under the chrome, so a toast never
+ *  covers the tallies (placement B, 2026-09-15). */
+export const VISIT_TOAST_LINE = VISIT_CHROME_H + STATUS_ROW_GAP;

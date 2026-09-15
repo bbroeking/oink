@@ -9,7 +9,8 @@ import {
 	showAppToast,
 	showPurchaseToast,
 } from "../components/PurchaseToast";
-import { MOTION, WHIMSY } from "../constants/theme";
+import { AVATAR_SIZE, MOTION, SPACE, STATUS_SAFE, TAP_MIN, WHIMSY } from "../constants/theme";
+import { VISIT_TOAST_LINE } from "../components/visit/chrome";
 import { MotionPolicyProvider } from "../hooks/useMotionPolicy";
 
 const metrics = {
@@ -185,5 +186,37 @@ describe("Toast hosts stack", () => {
 		expect(cards(root).length).toBeGreaterThan(0);
 		act(() => root.unmount());
 		expect(() => showToast({ tone: "info", title: "nobody" })).not.toThrow();
+	});
+});
+
+describe("Toast top line", () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+		jest.spyOn(AccessibilityInfo, "announceForAccessibility").mockImplementation(
+			() => {},
+		);
+	});
+	afterEach(() => {
+		jest.useRealTimers();
+		jest.restoreAllMocks();
+	});
+	const wrapTop = (r: TestRenderer.ReactTestRenderer) => {
+		const wrap = r.root.findAll(
+			(n) => StyleSheet.flatten(n.props.style)?.position === "absolute" && n.props.pointerEvents === "box-none",
+		)[0];
+		return StyleSheet.flatten(wrap.props.style).top;
+	};
+
+	test("sits just under the safe area by default, or on the line a scene passes", () => {
+		const root = mount(<ToastHost />);
+		act(() => showToast({ tone: "info", title: "root" }));
+		expect(wrapTop(root)).toBe(metrics.insets.top + SPACE.sm);
+		act(() => root.unmount());
+		// The visit passes its own line: under its chrome, clear of the tallies.
+		const visit = mount(<ToastHost top={VISIT_TOAST_LINE} />);
+		act(() => showToast({ tone: "info", title: "visit" }));
+		expect(wrapTop(visit)).toBe(VISIT_TOAST_LINE);
+		expect(VISIT_TOAST_LINE).toBe(STATUS_SAFE + TAP_MIN + SPACE.sm + AVATAR_SIZE[0] + SPACE.sm);
+		act(() => visit.unmount());
 	});
 });
