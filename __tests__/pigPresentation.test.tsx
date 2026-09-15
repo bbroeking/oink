@@ -30,9 +30,10 @@ describe("Pig presentation lifecycle", () => {
     act(() => { jest.advanceTimersByTime(750); });
     act(() => view.update(<RasterPig animation="idle" mood="sad" reaction={{ id: 2, kind: "wave" }} onComplete={complete} />));
     expect(view.root.findByType(SpritePig).props.playbackKey).toBe(2);
+    // wave at 3.2 fps: one pass is 1250 ms.
     act(() => { jest.advanceTimersByTime(400); });
     expect(complete).not.toHaveBeenCalled();
-    act(() => { jest.advanceTimersByTime(600); });
+    act(() => { jest.advanceTimersByTime(900); });
     expect(complete).toHaveBeenCalledTimes(1);
     expect(view.root.findByType(SpritePig).props.animation).toBe("sad");
     act(() => view.unmount());
@@ -87,7 +88,7 @@ describe("Pig presentation lifecycle", () => {
     expect(frame).not.toHaveBeenCalled();
     expect(jest.getTimerCount()).toBe(0);
     act(() => { AppState.currentState = "active"; notify("active"); });
-    act(() => { jest.advanceTimersByTime(250); });
+    act(() => { jest.advanceTimersByTime(320); }); // one 3.2 fps tick
     expect(frame).toHaveBeenCalled();
     act(() => view.unmount());
     expect(remove).toHaveBeenCalledTimes(1);
