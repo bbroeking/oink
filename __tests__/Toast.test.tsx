@@ -147,3 +147,43 @@ describe("PurchaseToast compat", () => {
 		act(() => renderer.unmount());
 	});
 });
+
+describe("Toast hosts stack", () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+		jest.spyOn(AccessibilityInfo, "announceForAccessibility").mockImplementation(
+			() => {},
+		);
+	});
+	afterEach(() => {
+		jest.useRealTimers();
+		jest.restoreAllMocks();
+	});
+	const cards = (r: TestRenderer.ReactTestRenderer) =>
+		r.root.findAll((node) => node.props.accessibilityLiveRegion === "polite");
+
+	test("the last host mounted takes the call alone; unmounting hands back by identity", () => {
+		// Root, then a sheet's host, then a visit's host over the sheet.
+		const root = mount(<ToastHost />);
+		const sheet = mount(<ToastHost />);
+		const visit = mount(<ToastHost />);
+		act(() => showToast({ tone: "info", title: "in the visit" }));
+		// (a card shows as more than one node — composite + host — so count
+		// presence, not nodes.)
+		expect(cards(visit).length).toBeGreaterThan(0);
+		expect(cards(sheet)).toHaveLength(0);
+		expect(cards(root)).toHaveLength(0);
+		// The sheet closes UNDER the visit — out of order. The visit must keep
+		// the calls (splice by identity, never pop).
+		act(() => sheet.unmount());
+		act(() => showToast({ tone: "info", title: "still the visit" }));
+		expect(cards(visit).length).toBeGreaterThan(0);
+		expect(cards(root)).toHaveLength(0);
+		// The visit closes: the root is live again.
+		act(() => visit.unmount());
+		act(() => showToast({ tone: "info", title: "back at root" }));
+		expect(cards(root).length).toBeGreaterThan(0);
+		act(() => root.unmount());
+		expect(() => showToast({ tone: "info", title: "nobody" })).not.toThrow();
+	});
+});

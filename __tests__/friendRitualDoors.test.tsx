@@ -54,6 +54,8 @@ jest.mock("@/hooks/useMotionPolicy", () => ({
 const mockToast = jest.fn();
 jest.mock("@/components/ui/Toast", () => ({
 	showToast: (...args: unknown[]) => mockToast(...args),
+	// SlideUpSheet and Ceremony mount a host of their own (2026-09-15).
+	ToastHost: () => null,
 }));
 const mockBubble = jest.fn();
 jest.mock("@/components/ui/RitualBubble", () => ({

@@ -32,6 +32,7 @@ import {
 	UI_COLORS,
 } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { ToastHost } from "./Toast";
 
 export function SlideUpSheet({
 	open,
@@ -137,6 +138,9 @@ export function SlideUpSheet({
 			onRequestClose={onClose}
 		>
 			{layers}
+			{/* The native Modal paints over the root ToastHost: a refusal toast
+			    fired from the profile sheet lands here, over the sheet. */}
+			<ToastHost />
 		</Modal>
 	);
 }

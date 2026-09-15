@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		// Under the Toast (50): a refusal toast, if one ever coincides, reads on top.
+		// Under the Toast (200): a refusal toast, if one ever coincides, reads on top.
 		zIndex: 40,
 	},
 	rise: {

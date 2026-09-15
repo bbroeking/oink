@@ -10,6 +10,7 @@ import { Modal, StyleSheet, View } from "react-native";
 import { UI_COLORS } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useUnmanagedModalHold } from "./PopupQueue";
+import { ToastHost } from "./Toast";
 
 interface Props {
 	open: boolean;
@@ -42,6 +43,10 @@ export function Ceremony({
 		>
 			<View style={styles.ground} accessibilityViewIsModal>
 				{children}
+				{/* A native Modal paints over the root ToastHost, so the scene
+				    carries a host of its own — mounted LAST so it is the host
+				    that takes the calls while the ceremony is up. */}
+				<ToastHost />
 			</View>
 		</Modal>
 	);

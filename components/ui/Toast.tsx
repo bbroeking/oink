@@ -9,10 +9,14 @@
 //   showToast({ tone: "fail", title: "Not enough snouts" })
 //   showToast({ tone: "info", title: "Your herd oinked" })
 //
-// One toast at a time, MOTION.toast of dwell, MOTION.fade in and out. The host
-// is mounted once at app root; the imperative call routes through a
-// module-level callback the host registers on mount, so calls before/without a
-// host simply no-op.
+// One toast at a time, MOTION.toast of dwell, MOTION.fade in and out. Hosts
+// register in a module-level STACK: the root host is the floor, and a native
+// Modal (Ceremony, SlideUpSheet) mounts a host of its own on top, because a
+// native Modal paints over the root — a toast fired inside the visit used to
+// land on the root host, invisible under the scene (2026-09-15). The LAST host
+// mounted takes the calls, never a broadcast; unmounting removes that host by
+// identity, so closing a Modal hands the calls back to whoever is left. No
+// host: calls simply no-op.
 //
 // Reduce Motion: the drop-from-the-top translate is dropped entirely — the card
 // cross-fades in place. The announcement is NOT motion, so it always fires.
@@ -75,19 +79,21 @@ const TONES: Record<
 	},
 };
 
+const TOAST_Z = 200;
 const BADGE_SIZE = SPACE.xxl;
 const ICON_SIZE = SPACE.lg;
 const COIN_SIZE = SPACE.card;
 // How far the card drops in from above, when motion is allowed.
 const DROP = -SPACE.md;
 
-// Module-level callback set by ToastHost on mount. Stays quiet if no host is
-// mounted — calls just no-op.
-let setToastRef: ((t: Toast | null) => void) | null = null;
+// The host stack. `showToast` addresses hosts[hosts.length - 1] only.
+type SetToast = (t: Toast | null) => void;
+const hosts: SetToast[] = [];
 
 export function showToast(opts: ToastOpts): void {
-	if (!setToastRef) return;
-	setToastRef({ ...opts, ts: Date.now() });
+	const host = hosts[hosts.length - 1];
+	if (!host) return;
+	host({ ...opts, ts: Date.now() });
 }
 
 export function ToastHost() {
@@ -98,9 +104,14 @@ export function ToastHost() {
 	const { reduceMotion } = useMotionPolicy();
 
 	useEffect(() => {
-		setToastRef = (t) => setToast(t);
+		const mine: SetToast = (t) => setToast(t);
+		hosts.push(mine);
 		return () => {
-			setToastRef = null;
+			// By identity, never pop(): a host that unmounts out of order (the
+			// root never does, but a sheet under a visit can) must remove
+			// itself, not whoever mounted last.
+			const at = hosts.indexOf(mine);
+			if (at >= 0) hosts.splice(at, 1);
 		};
 	}, []);
 
@@ -205,7 +216,10 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		left: PAGE_PAD,
 		right: PAGE_PAD,
-		zIndex: 50,
+		// Above every scene: a toast is the topmost transient wherever its host
+		// sits. The visit's root fills its Modal at zIndex 100, so a host
+		// inside that Modal at 50 painted under the barn (2026-09-15).
+		zIndex: TOAST_Z,
 	},
 	card: {
 		flexDirection: "row",
