@@ -72,6 +72,7 @@ import { GreatHungerIntroModal } from "@/components/GreatHungerIntroModal";
 import { FeatureFlagsProvider } from "@/hooks/useFeatureFlags";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { PurchaseToastHost, showAppToast } from "@/components/PurchaseToast";
+import { RitualBubbleHost } from "@/components/ui/RitualBubble";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   PopupQueueProvider,
@@ -1129,6 +1130,10 @@ function RootLayoutInner() {
           );
         }}
       />
+      {/* Ritual bubble — global, rises bottom → header on a landed
+			    blessing / curse. Mounted BEFORE the toast host so a refusal
+			    toast paints above a bubble. */}
+      <RitualBubbleHost />
       {/* Purchase toast — global, slides down from the top on
 			    shop buys + Slop Club join. Stays mounted; quiet until
 			    showPurchaseToast() is called from anywhere. */}

@@ -87,9 +87,11 @@ describe("useRitualCaster", () => {
 		expect(mockRpc).toHaveBeenCalledWith("send_blessing", {
 			target_user_id: "u-42",
 		});
+		// The outcome carries WHAT WAS CAST, so a surface can draw its art.
 		expect(outcome).toEqual({
 			kind: "sent",
 			text: `${dailyRitual("bless").name} sent to alice`,
+			ritual: dailyRitual("bless"),
 		});
 		expect(mockHaptics).toHaveBeenCalledWith("success");
 		expect(caster().usage("bless")).toEqual({ used: 1, cap: 3, remaining: 2 });
@@ -107,7 +109,11 @@ describe("useRitualCaster", () => {
 			outcome = await caster().cast("curse", "u-7", "bob");
 		});
 		expect(mockRpc).toHaveBeenCalledWith("send_curse", { target_user_id: "u-7" });
-		expect(outcome).toEqual({ kind: "sent", text: "bob has been cursed" });
+		expect(outcome).toEqual({
+			kind: "sent",
+			text: "bob has been cursed",
+			ritual: dailyRitual("curse"),
+		});
 		expect(mockHaptics).toHaveBeenCalledWith("warning");
 		expect(caster().usage("curse")).toEqual({ used: 2, cap: 3, remaining: 1 });
 		act(() => r.unmount());
@@ -238,7 +244,13 @@ describe("useRitualCaster — the server's kinds win", () => {
 		await act(async () => {
 			outcome = await caster().cast("bless", "u-42", "alice");
 		});
-		expect(outcome).toEqual({ kind: "sent", text: "Golden Hour sent to alice" });
+		// …and the ritual on the outcome is the server's, so the bubble draws
+		// Golden Hour's art, not Confetti Snout's.
+		expect(outcome).toEqual({
+			kind: "sent",
+			text: "Golden Hour sent to alice",
+			ritual: expect.objectContaining({ kind: "golden_hour", name: "Golden Hour" }),
+		});
 		act(() => r.unmount());
 	});
 });

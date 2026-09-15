@@ -29,6 +29,7 @@ import { Button } from "./ui/Button";
 import { EffectCard } from "./ui/EffectCard";
 import { SectionHeader } from "./ui/SectionHeader";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { showRitualBubble } from "./ui/RitualBubble";
 import { showToast } from "./ui/Toast";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
@@ -72,7 +73,13 @@ function BlessBack({
 		const r = await caster.cast("bless", senderId, senderName);
 		setBusy(false);
 		if (r.kind === "sent") {
-			showToast({ tone: "success", title: r.text });
+			// The cast moment is the ritual bubble, same as a friend-row door.
+			showRitualBubble({
+				mode: "bless",
+				ritual: r.ritual,
+				targetName: senderName,
+				announcement: r.text,
+			});
 		} else if (r.kind === "done") {
 			showToast({
 				tone: "fail",

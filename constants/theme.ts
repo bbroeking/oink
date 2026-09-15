@@ -392,6 +392,7 @@ export const ART_SIZE = {
 	thumb: 72, // catalog thumbnails
 	portrait: 120, // gift / reveal portraits
 	stage: 300, // the pig stage reserve
+	bubble: 104, // the ritual bubble's diameter (its art rides at `thumb`)
 } as const;
 
 // Canonical horizontal page padding — the page header AND the scroll-content
@@ -428,6 +429,9 @@ export const MOTION = {
 	// toast, longer than a fade. (2026-09-11)
 	beat: 800,
 	debounce: 250,
+	// The ritual bubble's surface-to-pop travel. A blessing rides the toast
+	// dwell; a curse is a beat heavier, so it climbs slower. (2026-09-15)
+	ritualRise: { bless: 2400, curse: 2800 },
 } as const;
 
 // One spring parameterization, replacing 20 springs across 14 configs. Springy

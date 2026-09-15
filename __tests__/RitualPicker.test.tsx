@@ -14,6 +14,14 @@ jest.mock("expo-haptics", () => ({
 	NotificationFeedbackType: { Success: "success", Warning: "warning" },
 }));
 
+// The picker lives in the profile sheet — a native Modal, which paints over
+// the root-hosted ritual bubble — so it keeps its own in-sheet "sent" beat and
+// must never fire the bubble. (2026-09-15)
+const mockBubble = jest.fn();
+jest.mock("../components/ui/RitualBubble", () => ({
+	showRitualBubble: (...args: unknown[]) => mockBubble(...args),
+}));
+
 import { RitualPicker } from "../components/RitualPicker";
 import { dailyRitual } from "../utils/rituals";
 
@@ -122,6 +130,9 @@ describe("RitualPicker", () => {
 			await Promise.resolve();
 		});
 		expect(onCast).toHaveBeenCalled();
+		// The sheet's own beat is the moment here — no bubble behind the Modal.
+		expect(mockBubble).not.toHaveBeenCalled();
+		expect(textOf(r.root)).toContain("blessing sent");
 		act(() => r.unmount());
 	});
 

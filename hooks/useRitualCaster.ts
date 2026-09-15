@@ -33,7 +33,9 @@ import {
 // caller writes its own copy in its own voice (a row says it in a label, the
 // picker says it in a beat).
 export type CastOutcome =
-	| { kind: "sent"; text: string }
+	// `ritual` is WHAT WAS CAST — the server's kind when it returns one — so a
+	// surface can draw the cast's own art without re-deriving the day.
+	| { kind: "sent"; text: string; ritual: TodayRitual }
 	| { kind: "done" }
 	| { kind: "capped" }
 	| { kind: "error"; text: string };
@@ -188,7 +190,8 @@ export function useRitualCaster(): UseRitualCaster {
 				// kind — a door armed before 00:00 UTC and pressed after it sends
 				// the new day's ritual, and the line must say so. The local guess
 				// is only the fallback for a server that doesn't return a kind.
-				const castName = serverRitual(mode, r.kind)?.name ?? ritual.name;
+				const castRitual = serverRitual(mode, r.kind) ?? ritual;
+				const castName = castRitual.name;
 				// A blessing lands as success, a curse as a warning — the two
 				// sends do not feel the same in the hand.
 				Haptics.notificationAsync(
@@ -198,6 +201,7 @@ export function useRitualCaster(): UseRitualCaster {
 				).catch(() => {});
 				outcome = {
 					kind: "sent",
+					ritual: castRitual,
 					text: isBless
 						? `${castName} sent to ${targetName}`
 						: `${targetName} has been cursed`,
