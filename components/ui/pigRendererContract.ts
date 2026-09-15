@@ -186,15 +186,17 @@ export function pigDrawnFacing(animation: PigAnimation): PigFacing {
 }
 
 // A pig given a facing turns toward it — only at rest. The standing idle
-// becomes the standing turn, the seated rest the seated turn; a mood (tired,
-// sad) or a reaction (a wave, a jump) still plays from the front families,
-// mirrored to keep the tilt toward the friend.
+// becomes the standing turn, the seated rest the seated turn, and a HAPPY
+// rest (the mood a well-tickled pig keeps on Home) turns too — happy is the
+// idle with a squint, not a reaction; a low mood (tired, sad) or a reaction
+// (a wave, a jump) still plays from the front families, mirrored to keep the
+// tilt toward the friend. (happy added 2026-09-15 with the Home turn button.)
 export function resolveFacingAnimation(
 	animation: PigAnimation,
 	facing: PigFacing | undefined,
 ): PigAnimation {
 	if (!facing) return animation;
-	if (animation === "idle") return "face";
+	if (animation === "idle" || animation === "happy") return "face";
 	if (animation === "sit") return "face_sit";
 	return animation;
 }

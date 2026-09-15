@@ -52,7 +52,11 @@ describe("the contract", () => {
 	test("only the rests turn; the turned families are drawn looking right", () => {
 		expect(resolveFacingAnimation("idle", "right")).toBe("face");
 		expect(resolveFacingAnimation("sit", "left")).toBe("face_sit");
+		// A happy rest is the idle with a squint — it turns (the Home turn
+		// button, 2026-09-15); low moods keep their front frames.
+		expect(resolveFacingAnimation("happy", "left")).toBe("face");
 		expect(resolveFacingAnimation("tired", "left")).toBe("tired");
+		expect(resolveFacingAnimation("sad", "left")).toBe("sad");
 		expect(resolveFacingAnimation("wave", "right")).toBe("wave");
 		expect(resolveFacingAnimation("idle", undefined)).toBe("idle");
 		expect(pigDrawnFacing("face")).toBe("right");

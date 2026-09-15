@@ -12,7 +12,7 @@ import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { ANIM_SCALE } from "../constants/animScale.generated";
 import type { RelSpec } from "../constants/hat_overlay_types";
-import type { PigAnimation, PigMood, PigReaction, PigReactionKind } from "./ui/pigRendererContract";
+import type { PigAnimation, PigFacing, PigMood, PigReaction, PigReactionKind } from "./ui/pigRendererContract";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import type { PigFx } from "@/constants/ritualFx";
 import { ART_SIZE, FONTS, RADII, SPACE, WHIMSY } from "@/constants/theme";
@@ -51,6 +51,10 @@ interface SwipeElementProps {
 	// straight through to PigStage, which owns every one of them so the
 	// raster and Rive renderers inherit them alike.
 	ritual?: PigFx;
+	// Which way the pig looks at rest (the three-quarter `face` families, and
+	// side sprites for what it wears); unset faces the camera. The Home
+	// "turn" button drives it. (2026-09-15)
+	facing?: PigFacing;
 }
 
 const sixSevenSound = require("../assets/sounds/sixseven.m4a");
@@ -81,6 +85,7 @@ export default function SwipeElement({
 	playSixSeven,
 	prestigeLevel = 0,
 	ritual,
+	facing,
 }: SwipeElementProps) {
 	const sixSevenPlayer = useAudioPlayer(sixSevenSound);
 	const scale = useRef(new Animated.Value(1)).current;
@@ -317,6 +322,7 @@ export default function SwipeElement({
 						relOverrides={relOverrides}
 						prestigeLevel={prestigeLevel}
 						ritual={ritual}
+						facing={facing}
 					/>
 				</Animated.View>
 			</Pressable>

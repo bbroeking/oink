@@ -47,10 +47,12 @@ import {
 	PAGE_PAD,
 	RADII,
 	SPACE,
+	TAP_MIN,
 	TILT,
 	WHIMSY,
 } from "@/constants/theme";
 import { MOTION_DURATION, useMotionPolicy } from "@/hooks/useMotionPolicy";
+import type { PigFacing } from "./ui/pigRendererContract";
 import { HAT_IMAGES } from "@/constants/hats";
 import { LuckyPigModal } from "./LuckyPigModal";
 import {
@@ -119,6 +121,15 @@ const YARD_GROUND = 54;
 // object, parked above the tab bar with the same breathing room the comp gives
 // it (docs/design/claude-design/barn/barn-home.html). A drawing measurement.
 const BARN_BUTTON_BOTTOM = 22;
+// The turn button's slot (below the tickle-bank pill, clear of the mound at
+// the bottom-left), its glyph, and what a screen reader hears for each pose.
+const TURN_BUTTON_TOP = 170;
+const TURN_GLYPH = SPACE.xl;
+const TURN_LABEL: Record<"front" | "left" | "right", string> = {
+	front: "Turn your pig to face left",
+	left: "Turn your pig to face right",
+	right: "Turn your pig to face the camera",
+};
 // Above the pig: the button is a control sitting in front of the scene, and a
 // tap in that corner must be an action, not a tickle. The mound draws over her
 // too — it stands in the yard's front row.
@@ -365,6 +376,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const toastY = useRef(new Animated.Value(TOAST_OFFSET)).current;
 	// Heart-particle ref — imperative spawn on successful tickle.
 	const heartFloatsRef = useRef<HeartFloatsHandle>(null);
+	// Which way Rosie looks at rest: the turn button steps front → left →
+	// right → front. Session state; the camera-facing pig is the default.
+	const [pigFacing, setPigFacing] = useState<PigFacing | undefined>(undefined);
+	const turnPig = useCallback(() => {
+		setPigFacing((f) => (f === undefined ? "left" : f === "left" ? "right" : undefined));
+	}, []);
 	// The Exterior's doorway. `useBarnThreshold` owns the sequencing (sprite
 	// doors → threshold panels → push, and the reopen on the way back); Barn owns
 	// the two things it can't: where the route goes and what the tap feels like.
@@ -892,6 +909,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 							equippedHeld={stats.activeHeld}
 							prestigeLevel={wallowCount}
 							ritual={presentation.pig}
+							facing={pigFacing}
 						/>
 						{/* Floating ♥/✦ particles drift up from above the pig on
 						    every successful tickle. Absolute-fills the swipe
@@ -1132,6 +1150,26 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				style={styles.barnButton}
 			/>
 
+			{/* THE TURN BUTTON. Left edge under the tickle bank: each tap turns
+			    Rosie a step — front, left, right — so what she wears can be seen
+			    from the side (the face families and their side sprites,
+			    2026-09-15). A rest pose only: a tickle still plays from the front,
+			    mirrored, like a visit. */}
+			<Sticker
+				color="paper"
+				radius={RADII.pill}
+				shadow="sm"
+				rotate={0}
+				onPress={turnPig}
+				accessibilityRole="button"
+				accessibilityLabel={TURN_LABEL[pigFacing ?? "front"]}
+				accessibilityHint="Turns your pig to show the other side"
+				testID="barn-turn"
+				style={styles.turnButton}
+			>
+				<Glyph name={pigFacing === "right" ? "arrowLeft" : "arrowRight"} size={TURN_GLYPH} />
+			</Sticker>
+
 			{/* Tickle trades moved to the Friends-tab Inbox in the
 			    Season-0 social redesign — no Barn pill or modal. */}
 
@@ -1251,6 +1289,18 @@ const styles = StyleSheet.create({
 		right: PAGE_PAD,
 		bottom: BARN_BUTTON_BOTTOM,
 		zIndex: YARD_Z,
+	},
+	// The turn button: left edge, under the tickle-bank pill, in the sky —
+	// the bottom-left slot belongs to the buried mound. One TAP_MIN round.
+	turnButton: {
+		position: "absolute",
+		left: PAGE_PAD,
+		top: TURN_BUTTON_TOP,
+		zIndex: YARD_Z,
+		width: TAP_MIN,
+		height: TAP_MIN,
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	// Boot-fetch recovery chip, bottom-left corner of the Barn page. Sized by
 	// its own copy now — the old fixed 76×60 box clipped at larger type.
