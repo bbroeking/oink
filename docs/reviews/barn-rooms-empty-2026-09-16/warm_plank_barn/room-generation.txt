@@ -1,0 +1,12 @@
+Mode: built-in image generation tool
+Reference: /Users/bbroeking/projects/oink/assets/images/habitat/warm_plank_barn.png
+Output: room.png
+
+Generate exactly ONE image. Use the tallest PORTRAIT size available, matching the attached tall phone aspect ratio (780:1688, approximately 6:13), full bleed.
+Use case: style-transfer.
+Asset type: empty mobile game room background for Tickle the Pig.
+Input image: edit target and strict architectural, camera, composition, palette, and lighting reference—the Warm Plank Barn room.
+Repaint THIS SAME ROOM as a completely empty background. Preserve the same camera and composition: honey-gold vertical plank walls, the two side walls, broad exposed roof beams meeting in a peak, framed back-wall panel with its horizontal structural beams, the same small window on the upper left and its warm shaft of afternoon sunlight diagonally across the wall, the same sunlit perspective plank floor extending through the lower image with a soft pool of light. Preserve the reference room's architecture, framing, board directions, perspective, and light placement. Broad bare floor in the bottom portion extending to the lower edge; preserve the reference composition rather than reframing the room.
+Rendering style: painterly storybook, soft watercolor-like fills, warm dark ink lines on boards and beams, gentle light, no photorealism.
+The room is COMPLETELY EMPTY. Bare walls, bare structural beams, bare floor. Structural horizontal beams are part of the wall, never shelves.
+No furniture, no shelves, no cupboards, no crates, no hay, no tools, no rugs, no lanterns, no hanging objects, no flowers or vines, no scattered objects, no animals, no people. No text, labels, borders, watermark, vignette frame, or additional props.

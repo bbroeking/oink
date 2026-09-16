@@ -81,7 +81,7 @@ for (const [name, content] of Object.entries(assets)) {
 // player's own decor (2026-09-15). The Shelf spot's plank is chrome
 // (shelf_plank.png, keyed from imagegen-shelf-plank-v1.png), drawn by
 // HabitatScene under whatever sits there.
-[["warm_plank_barn", "imagegen-warm-plank-barn-empty-v1.png"], ["spring_whitewash", "imagegen-spring-whitewash-empty-v1.png"], ["midnight_rafters", "imagegen-midnight-rafters-empty-v1.png"]].forEach(([name, file]) => {
+[["warm_plank_barn", "imagegen-warm-plank-barn-empty-v2.png"], ["spring_whitewash", "imagegen-spring-whitewash-empty-v2.png"], ["midnight_rafters", "imagegen-midnight-rafters-empty-v2.png"]].forEach(([name, file]) => {
   const source = resolve(SRC, file);
   if (!existsSync(source)) return;
   const output = resolve(OUT, `${name}.png`);

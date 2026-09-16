@@ -1,0 +1,9 @@
+Use case: precise-object-edit.
+Generate exactly ONE image: an edited version of the supplied Spring Whitewash room, used as an empty room background in Tickle the Pig.
+Input image 1 is the EDIT TARGET. Repaint THIS SAME ROOM, preserving its architecture, camera position, perspective, composition, framing, colors, floor and spring light with high fidelity.
+Output: tallest available PORTRAIT image, matching the reference's very tall phone proportion (780:1688, approximately 0.462:1 width to height). Full bleed.
+Keep the same fresh whitewashed cream vertical wall planks; sage-green exposed roof beams meeting in a peak; all crossbeams and diagonal braces; framed back-wall panel and its horizontal wooden beam; the small window high on the left wall; both side walls; pale plank floor extending toward the viewer through the lower image, with the same soft pool of sunlight. Keep the same soft spring daylight falling through the window onto the wall and floor.
+Change only the decorative vegetation and scattered material: REMOVE ALL pink blossoms, flowers, petals, climbing vines, ivy, leaves, greenery, plant growth and plant debris everywhere: rafters, beams, braces, window, walls, corners, baseboards and floor. Reconstruct plain painted wooden surfaces behind them. Every beam is bare plain painted wood with natural painted wood grain.
+The interior is completely empty. Bare walls, bare beams, bare floor. No furniture, shelves, cupboards, crates, hay, tools, rugs, lanterns, hanging objects, flowers, vines, scattered objects, animals or people.
+Rendering style: preserve the reference's painterly storybook illustration with soft watercolor-like fills, warm dark ink lines on boards and beams, gentle light. No photorealism.
+No text, labels, borders, watermark or vignette frame.
