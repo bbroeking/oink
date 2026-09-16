@@ -299,6 +299,15 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/91_habitat_pass_rewards_smoke.sql \
 		supabase/migrations/20260916110000_monday_tickle_draw.sql \
 		scripts/db-harness/92_monday_tickle_draw_smoke.sql \
+		supabase/migrations/20260757000000_trough_quarter_cap_and_72h.sql \
+		supabase/migrations/20260916120000_barn_draw_and_trough_quarter_reward.sql \
+		scripts/db-harness/93_barn_draw_and_trough_quarter_smoke.sql \
+		scripts/db-harness/00w_sounder_counter_prep.sql \
+		supabase/migrations/20260916130000_sounder_counter_buys.sql \
+		scripts/db-harness/94_sounder_counter_buys_smoke.sql \
+		scripts/db-harness/00x_satchel_swaps_prep.sql \
+		supabase/migrations/20260917100000_satchel_swaps.sql \
+		scripts/db-harness/95_satchel_swaps_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

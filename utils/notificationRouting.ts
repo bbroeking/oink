@@ -20,6 +20,9 @@
 // to router.replace (bare tab-relative paths, e.g. "/season", not "/(tabs)/…").
 const NOTIFICATION_ROUTES = {
 	home: "/",
+	// The Satchel swap's while-away line and its push: a friend swapped with
+	// your pig, and the thing to look at is your own Barn (2026-09-16).
+	barn: "/",
 	trade: "/friends", // the Inbox on the Friends tab carries the event
 	friends: "/friends", // (trade + friends both land on the Friends Inbox)
 	achievements: "/achievements",

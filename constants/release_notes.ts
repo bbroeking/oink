@@ -339,6 +339,26 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+	{
+		version: "1.15.0",
+		date: "2026-09-17",
+		availableFrom: "2026-09-17",
+		headline: "A swap in the barn",
+		items: [
+			{
+				title: "Your Satchel",
+				body: "Every Dig can turn up a small find — a river pebble, a blue feather, an old key. They ride in your Satchel, by the Barn button.",
+			},
+			{
+				title: "Every pig hopes for something",
+				body: "A friend's pig shows what it is hoping for. If it's in your bag, their row says so — and a visit is where you hand it over.",
+			},
+			{
+				title: "Take something back",
+				body: "Hand a friend's pig its find and take one of up to three things their bag can spare, or just give it. Once a day with each friend. Finds are never for sale.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

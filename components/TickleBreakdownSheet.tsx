@@ -54,14 +54,20 @@ interface Props {
 // separate from the general Glyph set because this compact family was drawn
 // together for this compact ledger and should stay visually coherent here.
 const RECEIPT_HEART = require("../assets/images/glyphs/receipt/heart.png");
+// Two lanes share the exchange mark: a tickle trade and a Satchel swap are the
+// same gesture at different stakes, and the label beside it names which. (The
+// `ads`/`heart` pair sets the precedent — the receipt family is drawn for this
+// ledger, and no new art is owed for a lane that already has its drawing.)
+const RECEIPT_EXCHANGE = require("../assets/images/glyphs/receipt/trades.png");
 
 const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
 	home_taps: require("../assets/images/glyphs/receipt/home.png"),
 	ads: RECEIPT_HEART,
 	visit_taps: require("../assets/images/glyphs/receipt/friends.png"),
+	swaps: RECEIPT_EXCHANGE,
 	dig_finds: require("../assets/images/glyphs/receipt/truffle.png"),
 	pass_tiers: require("../assets/images/glyphs/receipt/pass.png"),
-	trades: require("../assets/images/glyphs/receipt/trades.png"),
+	trades: RECEIPT_EXCHANGE,
 	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
 };
 

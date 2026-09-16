@@ -4,8 +4,12 @@
 //   • the host's pig is the only tickle target; yours waves, no RPC
 //   • the count chip under the host counts taps and becomes "tickled out"
 //   • the two turn to face each other (PigStage facing: host left, guest right)
-//   • the bag strip lifts the matching find; tapping it hands it over, the
-//     tallies move by the flat tickles, the receipt names the host first
+//   • the bag strip lifts the matching find; tapping it opens the OFFER TRAY
+//     (no server call), and only the tray's tiles / "just give it" swap
+//   • the swap carries the host's live wish_no and a nonce; the tallies move
+//     by the flat tickles and the receipt names the host first, both finds
+//   • option_gone redraws the tray without moving anything
+//   • already_today quiets the strip
 //   • a wrong find bounces without reaching the server
 //   • a server without the Satchel draws no strip and no bubble
 import React from "react";
@@ -69,7 +73,8 @@ type Script = {
   satchel?: unknown;
   wishes?: unknown;
   taps?: unknown[];
-  fulfil?: unknown;
+  /** One answer, or a queue read in order (a refusal then a success). */
+  swap?: unknown | unknown[];
 };
 
 describe("a visit with the Satchel", () => {
@@ -100,16 +105,46 @@ describe("a visit with the Satchel", () => {
   };
   const WISH = {
     ok: true,
-    wishes: [{ target_id: "friend", find_id: "blue_feather", wish_no: 3, expires_at: EXPIRES, fulfilled_by_me: false }],
+    wishes: [
+      {
+        target_id: "friend",
+        find_id: "blue_feather",
+        wish_no: 3,
+        expires_at: EXPIRES,
+        fulfilled_by_me: false,
+        options: ["old_key", "marble"],
+        swapped_today: false,
+      },
+    ],
+  };
+  const SWAP_OK = {
+    ok: true,
+    replay: false,
+    gave_find_id: "blue_feather",
+    took_find_id: "old_key",
+    tickles: 3,
+    paid: true,
+    giver_tickled: 103,
+    host_tickled: 103,
+    swaps_given: 1,
+    keepsake: null,
+    next_wish: { find_id: "marble", wish_no: 4, expires_at: EXPIRES },
+    bag: [{ id: 1, find_id: "river_pebble", source: "dig" }],
   };
 
-  const script = ({ satchel = BAG, wishes = WISH, taps = [], fulfil }: Script) => {
+  const script = ({ satchel = BAG, wishes = WISH, taps = [], swap }: Script) => {
     let tap = 0;
+    let swapCall = 0;
+    const swaps = Array.isArray(swap) ? swap : swap === undefined ? [] : [swap];
     rpc.mockImplementation(async (name) => {
       if (name === "barn_visit_status") return { ok: true, visits_left: 3, visit_budget: 3 } as never;
       if (name === "my_satchel") return satchel as never;
       if (name === "friend_wishes") return wishes as never;
-      if (name === "fulfil_pig_wish") return fulfil as never;
+      if (name === "swap_with_host") {
+        const reply = swaps[Math.min(swapCall, swaps.length - 1)];
+        swapCall += 1;
+        return reply as never;
+      }
       const reply = taps[Math.min(tap, taps.length - 1)] ?? { ok: true, taps_left: 3, tap_cap: 5 };
       tap += 1;
       return reply as never;
@@ -131,6 +166,24 @@ describe("a visit with the Satchel", () => {
     tree.root.findAll((n) => n.props.testID === id && typeof n.type === "string");
   const pressable = (id: string, label: string) =>
     tree.root.findAll((n) => n.props.testID === id && n.props.accessibilityLabel === label && typeof n.type !== "string")[0];
+  // The tray's controls: the OUTERMOST composite per distinct label (the one
+  // that owns onPress), since a testID also lands on the inner Pressable.
+  const tray = (id: string) => {
+    const seen = new Set<string>();
+    return tree.root
+      .findAll(
+        (n) =>
+          n.props.testID === id &&
+          typeof n.type !== "string" &&
+          typeof n.props.onPress === "function",
+      )
+      .filter((n) => {
+        const key = String(n.props.accessibilityLabel);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  };
   const calls = (name: string) => rpc.mock.calls.filter(([n]) => n === name);
   const settle = () => act(() => void jest.advanceTimersByTime(600));
 
@@ -182,40 +235,52 @@ describe("a visit with the Satchel", () => {
     expect(hearts()).toBe("Maple's hearts, 100");
   });
 
-  it("lifts the matching find, hands it over, and names the host first", async () => {
-    script({
-      fulfil: {
-        ok: true,
-        find_id: "blue_feather",
-        tickles: 3,
-        giver_tickled: 103,
-        host_tickled: 103,
-        deliveries: 1,
-        keepsake: null,
-        next_wish: { find_id: "marble", wish_no: 4, expires_at: EXPIRES },
-        bag_count: 1,
-      },
-    });
+  it("the lifted tap opens the tray instead of reaching the server", async () => {
+    script({ swap: SWAP_OK });
     await open();
     expect(byTestID("visit-satchel-strip")).toHaveLength(1);
     // The bubble rides the host pig element (the mocked room renders only the
     // overlay), so read it off the prop.
     const bubble = () => room().props.hostPig.props.bubble.props;
     expect(bubble().wish.find_id).toBe("blue_feather");
+    expect(bubble().wish.options).toEqual(["old_key", "marble"]);
     expect(bubble().givenThisVisit).toBe(false);
     expect(byTestID("visit-find-lifted")).toHaveLength(1);
-    const lifted = pressable("visit-find-lifted", "Give the blue feather");
-    expect(lifted).toBeTruthy();
 
+    const lifted = pressable("visit-find-lifted", "Swap the blue feather");
+    expect(lifted).toBeTruthy();
     await act(async () => { await lifted.props.onPress(); });
-    expect(calls("fulfil_pig_wish")).toEqual([["fulfil_pig_wish", { p_host: "friend", p_item_id: 2 }]]);
-    expect(byTestID("visit-delivery-sheet")).toHaveLength(1);
-    const line = tree.root.findAll((n) =>
-      typeof n.props.children === "string" && n.props.children.startsWith("Maple's pig got the blue feather"),
+    expect(calls("swap_with_host")).toHaveLength(0);
+    expect(byTestID("visit-offer-tray").length).toBeGreaterThan(0);
+    expect(tray("visit-offer-option")).toHaveLength(2);
+  });
+
+  it("an option's tap swaps with the live wish_no, a nonce and the take", async () => {
+    script({ swap: SWAP_OK });
+    await open();
+    await act(async () => {
+      await pressable("visit-find-lifted", "Swap the blue feather").props.onPress();
+    });
+    await act(async () => { await tray("visit-offer-option")[0].props.onPress(); });
+
+    expect(calls("swap_with_host")).toHaveLength(1);
+    expect(calls("swap_with_host")[0][1]).toEqual({
+      p_host: "friend",
+      p_item_id: 2,
+      p_take_find: "old_key",
+      p_wish_no: 3,
+      p_nonce: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    });
+
+    // The receipt names the HOST first and draws BOTH finds' story in one line.
+    expect(byTestID("visit-swap-sheet")).toHaveLength(1);
+    const line = tree.root.findAll(
+      (n) =>
+        typeof n.props.children === "string" &&
+        n.props.children.startsWith("Maple's pig got the blue feather"),
     );
-    expect(line.length).toBeGreaterThan(0);
     expect(line[0].props.children).toBe(
-      "Maple's pig got the blue feather it was hoping for — you both got 3 tickles.",
+      "Maple's pig got the blue feather it was hoping for; you took the old key. You both got 3 tickles.",
     );
     // Both tallies moved by the flat tickles.
     expect(
@@ -225,9 +290,62 @@ describe("a visit with the Satchel", () => {
       tree.root.findAll((n) => n.props.accessibilityLabel === "Your hearts, 103").length,
     ).toBeGreaterThan(0);
     // The bubble shows the pig's NEXT wish as "next time"; nothing is lifted.
-    expect(bubble().wish.find_id).toBe("marble");
-    expect(bubble().givenThisVisit).toBe(true);
+    const bubble = room().props.hostPig.props.bubble.props;
+    expect(bubble.wish.find_id).toBe("marble");
+    expect(bubble.givenThisVisit).toBe(true);
     expect(byTestID("visit-find-lifted")).toHaveLength(0);
+  });
+
+  it("'just give it' sends a null take and the receipt says it was a gift", async () => {
+    script({ swap: { ...SWAP_OK, took_find_id: null } });
+    await open();
+    await act(async () => {
+      await pressable("visit-find-lifted", "Swap the blue feather").props.onPress();
+    });
+    await act(async () => { await tray("visit-offer-gift")[0].props.onPress(); });
+    expect(calls("swap_with_host")[0][1]).toMatchObject({ p_take_find: null });
+    const line = tree.root.findAll(
+      (n) =>
+        typeof n.props.children === "string" &&
+        n.props.children.startsWith("Maple's pig got the blue feather"),
+    );
+    expect(line[0].props.children).toBe(
+      "Maple's pig got the blue feather it was hoping for; you gave it away. You both got 3 tickles, and a generous tick.",
+    );
+  });
+
+  it("option_gone redraws the tray's options and nothing moves", async () => {
+    script({ swap: [{ ok: false, reason: "option_gone", options: ["marble"] }, SWAP_OK] });
+    await open();
+    await act(async () => {
+      await pressable("visit-find-lifted", "Swap the blue feather").props.onPress();
+    });
+    await act(async () => { await tray("visit-offer-option")[0].props.onPress(); });
+
+    // Still on the tray, one option fewer, and no receipt.
+    expect(byTestID("visit-offer-tray").length).toBeGreaterThan(0);
+    expect(tray("visit-offer-option")).toHaveLength(1);
+    expect(tray("visit-offer-option")[0].props.accessibilityLabel).toBe("Take the glass marble");
+    expect(byTestID("visit-swap-sheet")).toHaveLength(0);
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Maple's pig changed its mind about that one" }),
+    );
+  });
+
+  it("already_today quiets the strip and the bubble stops inviting a tap", async () => {
+    script({ swap: { ok: false, reason: "already_today" } });
+    await open();
+    await act(async () => {
+      await pressable("visit-find-lifted", "Swap the blue feather").props.onPress();
+    });
+    await act(async () => { await tray("visit-offer-gift")[0].props.onPress(); });
+
+    expect(byTestID("visit-offer-tray")).toHaveLength(0);
+    expect(byTestID("visit-find-lifted")).toHaveLength(0);
+    expect(room().props.hostPig.props.bubble.props.wish.swapped_today).toBe(true);
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "You two swapped today — come back tomorrow" }),
+    );
   });
 
   it("a wrong find bounces without a server call", async () => {
@@ -236,7 +354,7 @@ describe("a visit with the Satchel", () => {
     const rest = pressable("visit-find", "Try the river pebble");
     expect(rest).toBeTruthy();
     await act(async () => { await rest.props.onPress(); });
-    expect(calls("fulfil_pig_wish")).toHaveLength(0);
+    expect(calls("swap_with_host")).toHaveLength(0);
     expect(showToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: expect.stringContaining("Not the river pebble") }),
     );

@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Nunito:wght@700;800;900&amp;family=Patrick+Hand&amp;family=Fredoka:wght@600;700&amp;display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    .pageTitle { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .cardTitle { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; font-size: 14px; line-height: 18px; }
+    .body { font-size: 15px; line-height: 21px; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .kicker { font-family: "Patrick Hand", "Segoe Print", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .mute { color: #605449; } .accent { color: #a03e2f; }
+    /* ── the visit frame: chrome over a flex:1 stage over the strip ── */
+    .room { position: relative; width: 390px; height: 844px; overflow: hidden; background: #c8e3f0 url("room.jpg") center / cover no-repeat; }
+    .chrome { position: absolute; left: 18px; right: 18px; top: 56px; z-index: 5; display: flex; flex-direction: column; gap: 8px; }
+    .hrow { height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .plaque { display: flex; align-items: center; gap: 4px; padding: 4px 12px; background: #3a2c1e; color: #fff3e2; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 2px 2px 0 #2a1f15; min-width: 0; flex-shrink: 1; box-sizing: border-box; }
+    .plaque img { width: 12px; height: 12px; }
+    .plaque span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .leave { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px 6px 12px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; font-weight: 800; font-size: 14px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; flex-shrink: 0; }
+    .leave svg { width: 14px; height: 14px; }
+    .srow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 12px; border: 2px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; white-space: nowrap; box-sizing: border-box; box-shadow: 2px 2px 0 #2a1f15; }
+    .tag.sun { background: #ffd87a; } .tag.paper { box-shadow: none; }
+    .tag img.g { width: 14px; height: 14px; }
+    .tag img.av { width: 26px; height: 26px; margin-left: -8px; }
+    .tag svg { width: 14px; height: 14px; }
+    .toggle { position: absolute; left: 50%; top: 152px; transform: translateX(-50%); width: 190px; height: 48px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 999px; box-shadow: 2px 2px 0 #2a1f15; display: flex; padding: 4px; box-sizing: border-box; z-index: 5; }
+    .toggle div { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; border-radius: 999px; color: #605449; }
+    .toggle div.on { background: #ffd87a; border: 2px solid #2a1f15; color: #2a1f15; }
+    .gear { position: absolute; right: 18px; top: 186px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 250, 240, 0.45); display: flex; align-items: center; justify-content: center; opacity: .7; z-index: 4; }
+    .gear svg { width: 26px; height: 26px; }
+    /* ── the stage: two pigs on one ground line, guest left facing right, host right facing left ── */
+    .pig { position: absolute; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+    .pig img.sprite { width: 132px; height: 132px; object-fit: contain; }
+    .pig img.mirror { transform: scaleX(-1); }
+    .guest { left: 50px; bottom: 190px; }
+    .host { right: 40px; bottom: 150px; }
+    .nametag { margin-top: -10px; padding: 0 8px; background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 999px; font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 11px; line-height: 16px; }
+    .chip { margin-top: -8px; }
+    .chip .tag { height: 24px; font-size: 11px; padding: 0 10px; }
+    .bubble { display: flex; flex-direction: column; align-items: center; margin-bottom: -4px; }
+    .bubble .card { display: flex; align-items: center; gap: 4px; padding: 4px 8px; max-width: 176px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .bubble .card img { width: 24px; height: 24px; flex-shrink: 0; }
+    .bubble .txt { display: flex; flex-direction: column; min-width: 0; }
+    .bubble .txt .kicker { line-height: 16px; }
+    .bubble .tail { width: 10px; height: 10px; margin-top: 2px; margin-left: 40px; background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 999px; box-sizing: border-box; }
+    .bubble .tail.sm { width: 6px; height: 6px; margin-left: 64px; }
+    /* ── the strip, above the action bar ── */
+    .strip { position: absolute; left: 18px; right: 18px; bottom: 96px; z-index: 6; display: flex; flex-direction: column; gap: 4px; }
+    .strip .head { display: flex; align-items: center; gap: 4px; color: #605449; }
+    .strip .head img { width: 12px; height: 12px; }
+    .strip .row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tile { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 14px; box-sizing: border-box; }
+    .tile img { width: 24px; height: 24px; }
+    .tile.lifted { background: #ffd87a; border-width: 3px; box-shadow: 2px 2px 0 #2a1f15; }
+    .tile.rest { opacity: .7; }
+    .tile.muted { opacity: .55; }
+    .tile .from { position: absolute; right: -5px; top: -5px; width: 16px; height: 16px; border-radius: 50%; background: #ffd6dc; border: 1.5px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+    .tile .from img { width: 10px; height: 10px; }
+    .tile.rel { position: relative; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #ffd87a; font-weight: 800; font-size: 15px; letter-spacing: .1px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; color: #2a1f15; text-align: center; }
+    .btn.link { background: transparent; border-color: transparent; box-shadow: none; color: #a03e2f; text-decoration: underline; text-underline-offset: 3px; min-height: 44px; padding: 10px; }
+    /* ── the tray: a sticker rising from the strip (the visit's dialog style, TILT.dialog) ── */
+    .tray { position: absolute; left: 18px; right: 18px; bottom: 46px; z-index: 8; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 12px; transform: rotate(-0.8deg); box-sizing: border-box; }
+    .tray .trow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .tray .gave { display: flex; align-items: center; gap: 8px; }
+    .tray .gave .tile { flex-shrink: 0; }
+    .tray .close { width: 44px; height: 44px; margin: -8px -10px 0 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .tray .close span { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid #2a1f15; background: #fffaf0; display: flex; align-items: center; justify-content: center; }
+    .tray .close svg { width: 12px; height: 12px; }
+    .opts { display: flex; gap: 8px; }
+    .opt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 6px; background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 14px; box-sizing: border-box; min-height: 44px; }
+    .opt img { width: 40px; height: 40px; }
+    .opt .kicker { text-align: center; line-height: 14px; }
+    .opt .n { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 12px; line-height: 14px; color: #605449; }
+    .scrim { position: absolute; inset: 0; background: rgba(42, 31, 21, 0.55); z-index: 20; }
+    /* ── the centred dialog (AdaptiveModalScaffold inline, maxWidth 320, TILT.dialog) ── */
+    .dialog { position: absolute; left: 35px; width: 320px; top: 128px; z-index: 21; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; padding: 24px; display: flex; flex-direction: column; align-items: center; transform: rotate(-0.8deg); box-sizing: border-box; }
+    .dialog .closerow { align-self: stretch; display: flex; align-items: center; justify-content: space-between; margin: -14px -14px 0 0; }
+    .dialog .kicker.accent { margin-top: 4px; }
+    .dialog .closerow .x { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .dialog .closerow .x span { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #2a1f15; background: #fffaf0; display: flex; align-items: center; justify-content: center; }
+    .dialog .closerow .x svg { width: 12px; height: 12px; }
+    .dialog .art { display: flex; align-items: center; gap: 10px; }
+    .dialog .art img { width: 64px; height: 64px; }
+    .dialog .art img.sm { width: 40px; height: 40px; }
+    .dialog .art .arrow { width: 28px; height: 28px; }
+    .dialog .pageTitle { margin-top: 8px; text-align: center; }
+    .dialog .body { margin-top: 8px; margin-bottom: 16px; text-align: center; color: #605449; }
+    .dialog .btn { align-self: stretch; }
+    .dialog .btn.link { margin-top: 12px; }
+    .dialog img.z { width: 40px; height: 40px; }
+  </style>
+</helmet>
+<div class="room"><div class="chrome">
+    <div class="hrow">
+      <div class="plaque cardTitle"><img src="g_star.png" alt=""><span>Maple's Barn</span></div>
+      <div class="leave"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>Leave</div>
+    </div>
+    <div class="srow">
+      <div class="tag"><img class="av" src="g_pigface.png" alt=""><img class="g" src="g_heart.png" alt="">37</div>
+      <div class="tag"><img class="av" src="g_pigface.png" alt=""><img class="g" src="g_heart.png" alt="">20</div>
+      <div class="tag sun"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-7h6v7M9 13l6 7M15 13l-6 7"></path></svg>3 of 3 visits left</div>
+    </div>
+  </div>
+  <div class="toggle"><div>Outside</div><div class="on">Inside</div></div>
+  <div class="gear"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></div><div class="pig guest"><img class="sprite" src="p_face_sit_1.png" alt="your pig"><div class="nametag">you</div></div><div class="pig host"><div class="bubble"><div class="card"><img src="f_red_berries.png" alt=""><div class="txt"><div class="kicker">hoping for some red berries</div><div class="kicker mute">will swap</div></div></div><div class="tail"></div><div class="tail sm"></div></div><img class="sprite mirror" src="p_face_1.png" alt="their pig"><div class="chip"><div class="tag paper"><img class="g" src="g_heart.png" alt="">0 tickles</div></div></div><div class="tray">
+    <div class="trow"><div class="gave"><div class="tile lifted"><img src="f_red_berries.png" alt=""></div><div><div class="kicker accent">Maple's pig can spare</div><div class="cardTitle">one of these for your red berries</div></div></div><div class="close"><span><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></div></div>
+    <div class="opts">
+      <div class="opt"><img src="f_old_key.png" alt=""><div class="kicker">old key</div></div>
+      <div class="opt"><img src="f_river_pebble.png" alt=""><div class="kicker">river pebble</div></div>
+      <div class="opt"><img src="f_pinecone.png" alt=""><div class="kicker">pinecone</div></div>
+    </div>
+    <div class="btn link">…or just give it</div>
+  </div><div class="strip"><div class="head"><img src="g_bag.png" alt=""><div class="kicker">you have some red berries — tap it to swap</div></div><div class="row"><div class="tile rest"><img src="f_blue_feather.png" alt=""></div><div class="tile rest"><img src="f_old_key.png" alt=""></div><div class="tile lifted"><img src="f_red_berries.png" alt=""></div><div class="tile rest"><img src="f_wool_tuft.png" alt=""></div></div></div></div>
+</x-dc>
+</body>
+</html>

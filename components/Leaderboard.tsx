@@ -312,11 +312,16 @@ const ClippingRow = memo(function ClippingRow({
 					{/* The Satchel's Contend slice: finds handed to friends' pigs.
 					    A count beside the tickles, never a payout. Absent at zero
 					    and on a server without the bag. */}
-					{!showAlignment && (player.deliveries ?? 0) > 0 ? (
-						<View style={styles.rowDeliveries} accessibilityLabel={`${player.deliveries} deliveries`}>
+					{!showAlignment && (player.swaps ?? player.deliveries ?? 0) > 0 ? (
+						<View
+							style={styles.rowSwaps}
+							accessibilityLabel={`${player.swaps ?? player.deliveries} swapped`}
+						>
 							<Glyph name="digBag" size={ROW_MARK} />
 							<T role="label" tone="secondary" numberOfLines={1}>
-								{player.deliveries === 1 ? "1 delivered" : `${player.deliveries} delivered`}
+								{(player.swaps ?? player.deliveries) === 1
+									? "1 swapped"
+									: `${player.swaps ?? player.deliveries} swapped`}
 							</T>
 						</View>
 					) : null}
@@ -994,11 +999,11 @@ const styles = StyleSheet.create({
 	// Score column — number above a tiny ♥ suffix, right-aligned. Sizes to its
 	// content so a 5-digit score keeps its own column and the name yields width
 	// instead of the number wrapping.
-	// The row's second line: the wears/standing text and the deliveries count,
+	// The row's second line: the wears/standing text and the swaps count,
 	// dotted apart by the gap, free to wrap.
 	rowSub: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: SPACE.sm },
 	rowSubItem: { flexShrink: 1 },
-	rowDeliveries: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	rowSwaps: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
 	rowScoreCol: {
 		alignItems: "flex-end",
 		minWidth: SCORE_COL,

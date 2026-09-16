@@ -125,6 +125,9 @@ const BARN_BUTTON_BOTTOM = 22;
 // the bottom-left), its glyph, and what a screen reader hears for each pose.
 const TURN_BUTTON_TOP = 170;
 const TURN_GLYPH = SPACE.xl;
+// Hidden for now (2026-09-16): the side sprites aren't ready to be shown from
+// the Barn. Flip back on to bring the turn button back; the turn logic stays.
+const SHOW_TURN_BUTTON = false;
 const TURN_LABEL: Record<"front" | "left" | "right", string> = {
 	front: "Turn your pig to face left",
 	left: "Turn your pig to face right",
@@ -847,15 +850,23 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		fanOptions.push({
 			key: "satchel",
 			title: "Satchel",
+			// F10: a cap lowered under a live bag used to read "8 of 6 finds".
+			// The number the player can act on is "it's full".
 			sub:
 				n === 0
 					? "empty — dig to fill it"
-					: `${n} of ${satchel.state.cap} finds`,
+					: n >= satchel.state.cap
+						? `full — ${n} finds`
+						: `${n} of ${satchel.state.cap} finds`,
 			label: "satchel",
 			mark: "bag",
-			onPress: () => setSatchelOpen(true),
+			onPress: () => {
+				observeFieldGuide("satchel");
+				setSatchelOpen(true);
+			},
 			accessibilityLabel: "Your Satchel",
-			accessibilityHint: "Opens the bag: what you carry, what your pig is hoping for, and the shelf",
+			accessibilityHint:
+				"Opens the bag: what you carry, what your pig is hoping for, and what you have swapped",
 		});
 	}
 
@@ -1155,20 +1166,22 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			    from the side (the face families and their side sprites,
 			    2026-09-15). A rest pose only: a tickle still plays from the front,
 			    mirrored, like a visit. */}
-			<Sticker
-				color="paper"
-				radius={RADII.pill}
-				shadow="sm"
-				rotate={0}
-				onPress={turnPig}
-				accessibilityRole="button"
-				accessibilityLabel={TURN_LABEL[pigFacing ?? "front"]}
-				accessibilityHint="Turns your pig to show the other side"
-				testID="barn-turn"
-				style={styles.turnButton}
-			>
-				<Glyph name={pigFacing === "right" ? "arrowLeft" : "arrowRight"} size={TURN_GLYPH} />
-			</Sticker>
+			{SHOW_TURN_BUTTON ? (
+				<Sticker
+					color="paper"
+					radius={RADII.pill}
+					shadow="sm"
+					rotate={0}
+					onPress={turnPig}
+					accessibilityRole="button"
+					accessibilityLabel={TURN_LABEL[pigFacing ?? "front"]}
+					accessibilityHint="Turns your pig to show the other side"
+					testID="barn-turn"
+					style={styles.turnButton}
+				>
+					<Glyph name={pigFacing === "right" ? "arrowLeft" : "arrowRight"} size={TURN_GLYPH} />
+				</Sticker>
+			) : null}
 
 			{/* Tickle trades moved to the Friends-tab Inbox in the
 			    Season-0 social redesign — no Barn pill or modal. */}

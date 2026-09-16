@@ -1,0 +1,145 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1 \u00b7 Visit \u00b7 a match in the bag"
+    },
+    {
+      "file": "Tray.dc.html",
+      "x": 500,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "2 \u00b7 The offer tray"
+    },
+    {
+      "file": "TrayGiftOnly.dc.html",
+      "x": 1000,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "3 \u00b7 The tray \u00b7 gift only"
+    },
+    {
+      "file": "Receipt.dc.html",
+      "x": 1500,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "4 \u00b7 The receipt \u00b7 swapped"
+    },
+    {
+      "file": "ReceiptGift.dc.html",
+      "x": 2000,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "5 \u00b7 The receipt \u00b7 a gift"
+    },
+    {
+      "file": "After.dc.html",
+      "x": 2500,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "6 \u00b7 After \u00b7 the strip goes quiet"
+    },
+    {
+      "file": "SwappedToday.dc.html",
+      "x": 3000,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "7 \u00b7 Same day \u00b7 swapped already"
+    },
+    {
+      "file": "NapSwap.dc.html",
+      "x": 3500,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "8 \u00b7 Nap card \u00b7 Swap"
+    },
+    {
+      "file": "Rationale.dc.html",
+      "x": 0,
+      "y": 1020,
+      "w": 900,
+      "h": 1200,
+      "title": "Flow notes",
+      "print": "flow"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "n1",
+      "x": 0,
+      "y": -150,
+      "w": 390,
+      "text": "Shipped visit, one line added: the bubble says whether Maple's pig will swap or is gift only. The strip lifts the match as today; the head line now says tap it to SWAP."
+    },
+    {
+      "id": "n2",
+      "x": 500,
+      "y": -150,
+      "w": 390,
+      "text": "Tap the lifted find \u2192 the offer tray rises over the strip, carrying the find you're giving. Three finds the server chose from Maple's bag (largest stacks first, frozen per wish \u2014 never a count, never the whole bag). Tap one \u2192 the swap. The link at the bottom is the gift."
+    },
+    {
+      "id": "n3",
+      "x": 1000,
+      "y": -150,
+      "w": 390,
+      "text": "Options empty: the host's bag has nothing to spare. One honest line and the one button. The bubble already said gift only, so this is never a surprise."
+    },
+    {
+      "id": "n4",
+      "x": 1500,
+      "y": -150,
+      "w": 390,
+      "text": "The receipt, in the delivery's dialog: a kicker says swapped, both finds, the host's gain first, the tickles second. Host and guest pigs happy; both tallies +3; the bubble below already reads next time."
+    },
+    {
+      "id": "n5",
+      "x": 2000,
+      "y": -150,
+      "w": 390,
+      "text": "A gift's receipt: one find, the same title, plus the generous tick. This is exactly today's delivery receipt with one clause added."
+    },
+    {
+      "id": "n6",
+      "x": 2500,
+      "y": -150,
+      "w": 390,
+      "text": "Back on the visit: the strip is quiet, the old key sits in the bag with a small from-a-friend mark, the bubble shows the pig's next wish under next time. Nothing lifts \u2014 one swap per pair per day."
+    },
+    {
+      "id": "n7",
+      "x": 3000,
+      "y": -150,
+      "w": 390,
+      "text": "Same day, second visit: the bubble names the new wish and says you two swapped today; every tile at rest; the strip says come back tomorrow. The server's already_today gate, drawn as a state, never a refusal toast."
+    },
+    {
+      "id": "n8",
+      "x": 3500,
+      "y": -150,
+      "w": 390,
+      "text": "Arriving at a napping barn with a match: the nap card gains Swap under Head home (only when the wish is open, not swapped today, and the bag holds it). Tapping it folds the card; the host keeps napping; the tray works as usual."
+    },
+    {
+      "id": "n9",
+      "x": 960,
+      "y": 1020,
+      "w": 420,
+      "text": "Flow notes: the tray, gift only, the receipt, after and the next day, the nap card, and what each server answer does on screen. Read with Part 2 \u00a72/\u00a75/\u00a712 of the plan."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

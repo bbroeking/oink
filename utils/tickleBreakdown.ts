@@ -17,6 +17,7 @@ export interface TickleBreakdown {
 	home_taps: number;
 	ads: number;
 	visit_taps: number;
+	swaps: number;
 	dig_finds: number;
 	pass_tiers: number;
 	trades: number;
@@ -27,6 +28,7 @@ export type TickleLane =
 	| "home_taps"
 	| "ads"
 	| "visit_taps"
+	| "swaps"
 	| "dig_finds"
 	| "pass_tiers"
 	| "trades"
@@ -44,6 +46,7 @@ const LANE_ROWS: { lane: TickleLane; label: string }[] = [
 	{ lane: "home_taps", label: "tickled at home" },
 	{ lane: "ads", label: "ad refills" },
 	{ lane: "visit_taps", label: "out visiting friends" },
+	{ lane: "swaps", label: "swapped with friends" },
 	{ lane: "dig_finds", label: "truffle digs" },
 	{ lane: "pass_tiers", label: "season pass" },
 	{ lane: "trades", label: "trades repaid" },

@@ -137,6 +137,20 @@ BEGIN
 	SELECT COUNT(*) INTO n FROM public.satchel_keepsakes WHERE user_id = giver AND threshold = 4;
 	IF n <> 1 THEN RAISE EXCEPTION 'keepsake row missing'; END IF;
 
+	-- ── 8. the 48h timeout: a stale wish rerolls on read (audit F9) ─────────
+	-- This is the LOCKING path (_ensure_wish, taken by reroll_my_wish and the
+	-- hand-off); 95_satchel_swaps_smoke covers the lock-free _peek_wish one.
+	UPDATE public.pig_wishes SET expires_at = now() - interval '1 hour',
+		owner_rerolled = true, wish_no = 50 WHERE user_id = other
+		RETURNING find_id INTO wish_find;
+	res := public.friend_wishes(ARRAY[other]);
+	IF (res->'wishes'->0->>'wish_no')::bigint <> 51 THEN
+		RAISE EXCEPTION 'a timed-out wish must reroll on read: %', res; END IF;
+	IF res->'wishes'->0->>'find_id' = wish_find THEN
+		RAISE EXCEPTION 'a timed-out reroll must not pick the find it just dropped'; END IF;
+	SELECT COUNT(*) INTO n FROM public.pig_wishes WHERE user_id = other AND owner_rerolled = false;
+	IF n <> 1 THEN RAISE EXCEPTION 'a timeout restores the owner''s free reroll'; END IF;
+
 	RAISE NOTICE 'satchel smoke ok';
 END
 $satchel$;

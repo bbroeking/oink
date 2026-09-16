@@ -29,16 +29,20 @@
 // napping pig wobbles the tag rather than dying silently. The nap CARD is
 // only for arriving at a barn that is already asleep.
 //
-// THE SATCHEL (docs/satchel-spec.md): the host pig's wish floats over it as a
-// thought bubble; your bag sits above the action bar. The find that matches
-// is lifted; tapping it hands it over (`fulfil_pig_wish`) — both pigs get the
-// same flat tickles, the receipt sheet names the HOST's gain first. A wrong
-// find bounces (the pig sniffs it; nothing leaves the bag). Fulfilment is
-// allowed after the tickles are spent and from the nap card, so a sleeping
-// barn is never a dead end. Tap, not drag — the strip's own note says why.
+// THE SATCHEL AND THE SWAP (docs/satchel-spec.md; the wire contract in
+// docs/design/2026-09-16-satchel-audit-and-barn-trading-plan.md §12): the host
+// pig's wish floats over it as a thought bubble; your bag sits above the
+// action bar. The find that matches is lifted; tapping it raises the OFFER
+// TRAY, where you take one of up to three finds the host's bag can spare — or
+// just give it. `swap_with_host` is the one write (`useSwap` owns the nonce
+// and every named refusal); both pigs get the same flat tickles and the
+// receipt sheet names the HOST's gain first. A wrong find bounces (the pig
+// sniffs it; nothing leaves the bag). Swapping is allowed after the tickles
+// are spent and from the nap card, so a sleeping barn is never a dead end.
+// Tap, not drag — the strip's own note says why.
 //
-// The nap card, the delivery receipt and the Slop Club parting note are the
-// three dialogs, all inline `AdaptiveModalScaffold`s.
+// The nap card, the offer tray, the swap receipt and the Slop Club parting
+// note are the four dialogs, all inline `AdaptiveModalScaffold`s.
 //
 // Full-screen overlay (NOT a nested Modal — iOS won't stack one over UserSheet's
 // Modal); it sits on top within the sheet's modal layer.
@@ -92,17 +96,21 @@ import { VISIT_TOAST_LINE, VISIT_TYPE_CAP } from "./visit/chrome";
 import { ToastHost } from "./ui/Toast";
 import { VisitActionBar } from "./visit/VisitActionBar";
 import { SatchelStrip } from "./visit/SatchelStrip";
+import { OfferTray } from "./visit/OfferTray";
 import { WishBubble } from "./visit/WishBubble";
 import { FindArt } from "./satchel/FindArt";
 import { useSatchel } from "@/hooks/useSatchel";
-import { satchelFind } from "@/constants/satchel";
+import { observeFieldGuide } from "@/utils/fieldGuide";
+import { useSwap } from "@/hooks/useSwap";
+import { satchelFind, type SatchelFindId } from "@/constants/satchel";
 import {
-	deliveryLine,
 	fetchFriendWishes,
-	fulfilPigWish,
+	matchingItems,
+	swapLine,
+	wishOpenForMe,
 	type FriendWish,
-	type FulfilResult,
 	type SatchelItem,
+	type SwapResult,
 } from "@/utils/satchel";
 import { VisitHeader } from "./visit/VisitHeader";
 import { VisitStatusRow } from "./visit/VisitStatusRow";
@@ -177,8 +185,8 @@ const VISITOR_BOX = 172;
 // inboard edge of its canvas, so the pair needs the wider stance to keep
 // a breath of floor between noses.
 const PIG_SIDE_SHIFT = 86;
-// The delivery receipt's find art.
-const DELIVERY_ART = 64;
+// The swap receipt's find art (one square per find that moved).
+const SWAP_ART = 64;
 // The stage toggle's resting width, and how far the forage banner drops to clear
 // it. Both are geometry against a floating control, not spacing steps.
 const TOGGLE_MIN_W = 200;
@@ -459,15 +467,18 @@ function BarnVisitSession({
 	// once per UTC day). Cozy one-time reveal for the rest of the visit.
 	const [foragedTruffle, setForagedTruffle] = useState(false);
 
-	// The Satchel (2026-09-14): your bag, the host pig's wish, and this visit's
-	// delivery. `given` is the find the server accepted this visit — the strip
-	// goes quiet and the bubble shows the pig's NEXT wish with a "next time"
-	// kicker (one delivery per wish per visitor; the new wish is for later).
+	// The Satchel (2026-09-14) and the swap (2026-09-16): your bag, the host
+	// pig's wish with the options its bag can spare, and this visit's swap.
+	// `swapped` is what moved once the server said yes — the strip goes quiet
+	// and the bubble shows the pig's NEXT wish with a "next time" kicker (one
+	// swap per pair per day, server-enforced; the new wish is for later).
 	const satchel = useSatchel(!previewingTickledOut);
 	const [hostWish, setHostWish] = useState<FriendWish | null>(null);
-	const [given, setGiven] = useState<SatchelItem["find_id"] | null>(null);
-	const [giving, setGiving] = useState(false);
-	const [delivery, setDelivery] = useState<FulfilResult | null>(null);
+	const [swapped, setSwapped] = useState<{
+		gave: SatchelFindId;
+		took: SatchelFindId | null;
+	} | null>(null);
+	const [receipt, setReceipt] = useState<SwapResult | null>(null);
 	// Arrived at a napping barn, chose "Leave a find": the nap card folds and
 	// the visit shows with the host asleep and the bag live.
 	const [napFoldedForFind, setNapFoldedForFind] = useState(false);
@@ -663,7 +674,8 @@ function BarnVisitSession({
 			}
 			if (!cancelled && mounted.current) setLoading(false);
 
-			// The host pig's wish — fail-soft: no answer, no bubble.
+			// The host pig's wish, and what its bag can spare for it — fail-soft:
+			// no answer, no bubble.
 			const fw = await fetchFriendWishes([targetUserId]);
 			if (!cancelled && fw.ok) {
 				setHostWish(fw.wishes.find((w) => w.target_id === targetUserId) ?? null);
@@ -851,53 +863,68 @@ function BarnVisitSession({
 		}
 	};
 
-	// The hand-off. The strip only calls this for the lifted (matching) find;
-	// the server re-checks everything and answers {ok:false, reason} otherwise.
-	const give = async (item: SatchelItem) => {
-		if (giving || given) return;
+	// The host's name, resolved once. It reaches the screen in exactly one
+	// visible place (the header plaque); everything else that carries it is a
+	// screen-reader label.
+	const hostName = barn?.username ?? targetName;
+
+	// Re-read the host's wish when a swap answer didn't carry the next one —
+	// the bubble's options come from friend_wishes, never from the client.
+	const refreshHostWish = async () => {
 		const token = sessionToken();
-		setGiving(true);
-		react("host", "surprise");
-		const r = await fulfilPigWish(targetUserId, item.id);
-		if (!sessionIsCurrent(token)) return;
-		setGiving(false);
-		if (!r.ok) {
+		const fw = await fetchFriendWishes([targetUserId]);
+		if (!sessionIsCurrent(token) || !fw.ok) return;
+		setHostWish(fw.wishes.find((w) => w.target_id === targetUserId) ?? null);
+	};
+
+	// The hand-off. The strip's lifted tap opens the tray; the tray's tiles and
+	// its "just give it" link are the only two things that reach the server.
+	// Every rule about what an answer MEANS lives in useSwap; this is the
+	// visit's reaction to it — haptics, the pigs, the tallies, the receipt.
+	const swapper = useSwap({
+		hostId: targetUserId,
+		hostName,
+		wish: hostWish,
+		enabled: !previewingTickledOut,
+		onWishChange: (patch) =>
+			setHostWish((w) => (w ? { ...w, ...patch } : w)),
+		onSwapped: (r) => {
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+			playTap();
+			schedule(() => react("host", "happy"), 420);
+			react("me", "happy");
+			setSwapped({ gave: r.gave_find_id, took: r.took_find_id });
+			setReceipt(r);
+			// Both tallies move by the same flat tickles; the visit's own count
+			// (the chip) is taps only, so it stays.
+			setYouHearts((n) => n + r.tickles);
+			setFriendHearts((n) => n + r.tickles);
+			// The server answers with the WHOLE bag, so nothing is trimmed by a
+			// count and the find that left is the find that left.
+			satchel.applyBag(r.bag);
+			observeFieldGuide("satchel");
+			void satchel.refresh();
+			setHostWish((w) =>
+				r.next_wish
+					? {
+							...(w ?? { target_id: targetUserId, options: [], swapped_today: false }),
+							...r.next_wish,
+							fulfilled_by_me: false,
+						}
+					: w,
+			);
+			if (!r.next_wish) void refreshHostWish();
+		},
+		onRefused: (copy, reason) => {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-			if (r.reason === "already_fulfilled") {
-				setHostWish((w) => (w ? { ...w, fulfilled_by_me: true } : w));
-				showToast({ tone: "info", title: "You already brought this one." });
-			} else if (r.reason === "wrong_find" && r.next_wish) {
-				// A stale bubble: the wish moved on. Show the real one.
-				const nw = r.next_wish;
-				setHostWish((w) => (w ? { ...w, ...nw, fulfilled_by_me: false } : w));
-				showToast({
-					tone: "info",
-					title: "Their pig changed its mind",
-					text: "See the bubble for what it's hoping for now.",
-				});
-			} else if (r.reason === "not_in_bag") {
-				void satchel.refresh();
-				showToast({ tone: "info", title: "That find isn't in your Satchel." });
-			} else {
-				showToast({ tone: "info", title: "That didn't land — try again in a moment." });
-			}
-			return;
-		}
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		playTap();
-		schedule(() => react("host", "happy"), 420, token);
-		react("me", "happy");
-		setGiven(r.find_id);
-		setDelivery(r);
-		// Both tallies move by the same flat tickles; the visit's own count
-		// (the chip) is taps only, so it stays.
-		setYouHearts((n) => n + r.tickles);
-		setFriendHearts((n) => n + r.tickles);
-		satchel.applyBagCount(r.bag_count);
-		void satchel.refresh();
-		setHostWish((w) =>
-			r.next_wish ? { ...(w ?? { target_id: targetUserId }), ...r.next_wish, fulfilled_by_me: false } : w,
-		);
+			if (reason === "not_in_bag") void satchel.refresh();
+			showToast({ tone: "info", ...copy });
+		},
+	});
+
+	const openTray = (item: SatchelItem) => {
+		react("host", "surprise");
+		swapper.openTray(item);
 	};
 
 	// A wrong find: the pig sniffs it, it stays in the bag. No server call.
@@ -998,10 +1025,14 @@ function BarnVisitSession({
 	// Your visit budget (display only): how many visits remain this
 	// prestige-scaled window.
 	const vLeft = visitsLeft ?? visitBudget;
-	// The host's name, resolved once. It reaches the screen in exactly one
-	// visible place (the header plaque); everything else that carries it is a
-	// screen-reader label.
-	const hostName = barn?.username ?? targetName;
+
+	// The nap card's second door. A sleeping barn still takes a swap, but only
+	// when there is one to make: the wish is open (not already swapped with
+	// this pair today) AND the bag holds the match.
+	const canSwapFromNap =
+		!swapped &&
+		wishOpenForMe(hostWish) &&
+		matchingItems(satchel.state.items, hostWish).length > 0;
 
 	// Shared squish transform entries for both pigs. Passed as an ARRAY so each
 	// pig can compose it WITH its own { scale } in one transform list — a second
@@ -1204,7 +1235,7 @@ function BarnVisitSession({
 									chip={hostSpent ? { kind: "spent" } : { kind: "count", n: gained }}
 									chipWobble={chipWobble}
 									bubble={
-										<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!given} />
+										<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!swapped} />
 									}
 									reaction={hostReaction}
 									onReactionDone={() => setHostReaction(null)}
@@ -1298,9 +1329,9 @@ function BarnVisitSession({
 								items={satchel.state.items}
 								cap={satchel.state.cap}
 								wish={hostWish}
-								delivered={given}
-								busy={giving}
-								onGive={give}
+								swapped={swapped}
+								busy={swapper.busy}
+								onOpenTray={openTray}
 								onBounce={bounce}
 							/>
 						)}
@@ -1310,6 +1341,22 @@ function BarnVisitSession({
 							hidden={restingOnArrival && !napFoldedForFind}
 							onHeadHome={requestExit}
 						/>
+
+						{/* The offer tray — one mount point, in the strip's own layer and
+							  AFTER it, so the card draws over the strip and the action bar
+							  while the pigs and the wish bubble stay visible above it. It
+							  positions itself against this layer's bottom edge; the dialogs
+							  below (the nap card, the receipt) come later still and win. */}
+						{swapper.offerFor && hostWish && (
+							<OfferTray
+								hostName={hostName}
+								give={swapper.offerFor.find_id}
+								options={hostWish.options}
+								busy={swapper.busy}
+								onTake={(take) => void swapper.swap(take)}
+								onClose={swapper.closeTray}
+							/>
+						)}
 
 						{/* The nap card is for ARRIVING at a sleeping barn only. Tiring out
 							  mid-visit is a toast; it never takes the screen. */}
@@ -1363,18 +1410,19 @@ function BarnVisitSession({
 										Head home
 									</Button>
 									{/* A sleeping barn is never a dead end: the bag is still
-										  yours to open. Only offered when there is something to
-										  give — an empty bag would make this a second Head home. */}
-									{satchel.available && satchel.state.items.length > 0 && hostWish && !hostWish.fulfilled_by_me && (
+										  yours to open. Only offered when the wish is OPEN (not
+										  already swapped today) and the bag actually holds the
+										  match — anything else would be a second Head home. */}
+									{satchel.available && canSwapFromNap && (
 										<Button
 											variant="link"
 											full
 											onPress={() => setNapFoldedForFind(true)}
-											accessibilityLabel="Leave a find"
-											accessibilityHint="Keeps you here to hand their pig something from your Satchel"
+											accessibilityLabel="Swap"
+											accessibilityHint="Keeps you here to hand their pig what it's hoping for"
 											style={styles.cardAction}
 										>
-											Leave a find
+											Swap
 										</Button>
 									)}
 								</Sticker>
@@ -1383,14 +1431,15 @@ function BarnVisitSession({
 					</>
 				)}
 			</View>
-			{delivery && (
-				/* The delivery receipt. The HOST's gain is the title; the tickles
-				   are the second line; the giver is never "earning". A keepsake,
-				   when one lands, is the third. */
+			{receipt && (
+				/* The swap receipt. The HOST's gain is the title; BOTH finds are
+				   drawn — what you gave, and what you took if anything; the
+				   tickles are the second line and the giver is never "earning".
+				   A keepsake, when one lands, is the third. */
 				<AdaptiveModalScaffold
 					visible
 					presentation="inline"
-					onRequestClose={() => setDelivery(null)}
+					onRequestClose={() => setReceipt(null)}
 					maxWidth={NAP_MAX_W}
 					bare
 					contentContainerStyle={styles.dialogFrame}
@@ -1400,27 +1449,38 @@ function BarnVisitSession({
 						radius={RADII.xl}
 						rotate={TILT.dialog}
 						style={styles.napCard}
-						testID="visit-delivery-sheet"
+						testID="visit-swap-sheet"
 					>
 						<DialogCloseRow
-							onPress={() => setDelivery(null)}
+							onPress={() => setReceipt(null)}
 							label="Back to the visit"
 							style={styles.dialogClose}
 						/>
-						<FindArt id={delivery.find_id} size={DELIVERY_ART} />
+						<View style={styles.swapArt}>
+							<FindArt id={receipt.gave_find_id} size={SWAP_ART} />
+							{receipt.took_find_id ? (
+								<FindArt id={receipt.took_find_id} size={SWAP_ART} />
+							) : null}
+						</View>
 						<T role="pageTitle" align="center" style={styles.napTitle}>
 							{`${hostName}'s pig is beaming`}
 						</T>
 						<T role="body" tone="secondary" align="center" style={styles.napBody}>
-							{deliveryLine(hostName, delivery.find_id, delivery.tickles) +
-								(delivery.keepsake != null
-									? ` That's ${delivery.deliveries} deliveries — a keepsake for your shelf.`
+							{swapLine(
+								hostName,
+								receipt.gave_find_id,
+								receipt.took_find_id,
+								receipt.tickles,
+								receipt.paid,
+							) +
+								(receipt.keepsake != null
+									? ` That's ${receipt.swaps_given} given — a keepsake for your Satchel.`
 									: "")}
 						</T>
 						<Button
 							variant="gold"
 							full
-							onPress={() => setDelivery(null)}
+							onPress={() => setReceipt(null)}
 							accessibilityLabel="Back to the visit"
 						>
 							Back to the visit
@@ -1611,7 +1671,7 @@ function BarnVisitSession({
 							chip={hostSpent ? { kind: "spent" } : { kind: "count", n: gained }}
 							chipWobble={chipWobble}
 							bubble={
-								<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!given} />
+								<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!swapped} />
 							}
 							reaction={hostReaction}
 							onReactionDone={() => setHostReaction(null)}
@@ -2041,6 +2101,9 @@ const styles = StyleSheet.create({
 	cardError: { marginTop: SPACE.sm },
 
 	napCard: { padding: SPACE.xl, alignItems: "center" },
+	// The swap receipt draws BOTH finds side by side — what left and what came
+	// back — so the sentence under it never has to carry the whole story.
+	swapArt: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
 	napTitle: { marginTop: SPACE.sm },
 	napBody: { marginTop: SPACE.sm, marginBottom: SPACE.lg },
 

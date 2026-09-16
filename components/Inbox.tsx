@@ -60,6 +60,8 @@ import {
 	fetchSounderMessages,
 	type SounderMessageRow,
 } from "@/utils/sounderMessages";
+import { satchelFind } from "@/constants/satchel";
+import { fetchMySatchelSwaps, type SatchelSwapRow } from "@/utils/satchel";
 
 interface FriendReq {
 	requester_id: string;
@@ -138,6 +140,24 @@ function curseDescription(kind: string): string {
 	return m ? `${m.name} — ${m.blurb}` : kind;
 }
 
+// The swap band's one line, in the dig-tally voice: whoever's pig GAINED is
+// named first, and the take (if there was one) closes the sentence. A gift
+// reads as a gift — the word "swap" is reserved for a hand-off both ways.
+export function swapFeedLine(row: SatchelSwapRow): string {
+	const who = row.partner_username ?? "A friend";
+	const name = (id: string | null) => (id ? (satchelFind(id)?.name ?? "find") : null);
+	const gave = name(row.gave_find_id);
+	const took = name(row.took_find_id);
+	if (row.direction === "received") {
+		return took
+			? `${who} swapped your pig the ${gave} it was hoping for and took the ${took}`
+			: `${who} brought your pig the ${gave}`;
+	}
+	return took
+		? `you swapped ${who}'s pig the ${gave} and took the ${took}`
+		: `you gave ${who}'s pig the ${gave}`;
+}
+
 interface Props {
 	userId: string;
 	onActionableCount?: (n: number) => void;
@@ -160,6 +180,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [curses, setCurses] = useState<RitualRow[]>([]);
 	const [acceptedFriends, setAcceptedFriends] = useState<AcceptedFriend[]>([]);
 	const [sounderMessages, setSounderMessages] = useState<SounderMessageRow[]>([]);
+	// The Satchel's ledger, both sides. Fail-soft: a server without the swaps
+	// RPC answers an empty list and the band never appears.
+	const [swaps, setSwaps] = useState<SatchelSwapRow[]>([]);
 	// Caller's tickle balance — drives "Give N" → "Need N more" on
 	// incoming trade cards when they can't afford to fulfill. Polled
 	// on every load(), so post-action refreshes catch the deduction.
@@ -176,6 +199,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		setAnswered(trades.filter((t) => t.status === "fulfilled" && t.requester_id === userId));
 		setGifted(trades.filter((t) => t.status === "fulfilled" && t.target_id === userId));
 		setSounderMessages(await fetchSounderMessages(100));
+		setSwaps(await fetchMySatchelSwaps(20));
 
 		// Incoming friend requests.
 		const { data: incRows } = await supabase
@@ -458,6 +482,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		actionableCount === 0 &&
 		outgoingTrades.length === 0 &&
 		passive.length === 0 &&
+		swaps.length === 0 &&
 		!hasPostcards;
 
 	return (
@@ -650,6 +675,47 @@ export function Inbox({ userId, onActionableCount }: Props) {
 											</Button>
 										</View>
 									</Sticker>
+								);
+							})}
+						</>
+					)}
+
+					{/* Swaps — the Satchel ledger, both sides. Same row idiom as the
+					    feed below (an Avatar and one line), its own band so the
+					    finds don't disappear into the trades and the rituals. */}
+					{swaps.length > 0 && (
+						<>
+							<SectionHeader
+								kicker="the satchel"
+								title="Swaps"
+								style={styles.bandHeader}
+							/>
+							{swaps.map((row, i) => {
+								const line = swapFeedLine(row);
+								const age = relTime(Date.parse(row.created_at));
+								return (
+									<ListRow
+										key={`swap-${row.id}`}
+										index={i}
+										leading={
+											<Avatar
+												size={AVATAR_SIZE[0]}
+												fill={row.direction === "received" ? "sky" : "sun"}
+												glyph="digBag"
+												label={row.direction === "received" ? "find received" : "find given"}
+											/>
+										}
+										title={<T role="kicker">{line}</T>}
+										accessibilityLabel={age ? `${line}, ${age} ago` : line}
+										testID="inbox-swap-row"
+										trailing={
+											age ? (
+												<T role="kickerPillSm" tone="secondary">
+													{age}
+												</T>
+											) : undefined
+										}
+									/>
 								);
 							})}
 						</>

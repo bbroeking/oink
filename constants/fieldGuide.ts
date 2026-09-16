@@ -18,6 +18,7 @@ import {
 	feedingWindowsLine,
 } from "@/utils/fieldGuideConfig";
 import { HAT_IMAGES } from "@/constants/hats";
+import { satchelTuning } from "@/utils/satchel";
 
 const SNOUT_COIN = require("../assets/images/snout-coin.png");
 
@@ -34,6 +35,13 @@ export interface FieldGuideEntry {
 	image?: ImageSourcePropType;
 	glyph?: GlyphName;
 	placeholder?: boolean;
+}
+
+/** The Satchel page's value line — the bag cap and the tray size come from the
+ *  live tuning (utils/satchel), the once-a-day rule is the server's gate. */
+export function satchelLine(): string {
+	const t = satchelTuning();
+	return `Holds ${t.cap} finds. Hand a friend's pig what it's hoping for and take one of ${t.options} things back. Once a day per friend, and never for sale.`;
 }
 
 export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
@@ -68,7 +76,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		name: "Trough",
 		whimsy: "A little stone bowl for wishes. Friends fill it until the wish comes true.",
 		value: (cfg) =>
-			`Friends fund the item; you seed the first ${cfg.troughSeedPct}%. No tickles come back — the gift IS the reward.`,
+			`Friends fund the item; you seed the first ${cfg.troughSeedPct}%. Reach a quarter of a friend's Trough and draw one Barn design a week.`,
 		placeholder: true, // needs a stone-trough sprite (see art-todo)
 	},
 	{
@@ -98,5 +106,15 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		whimsy: "The Hunger only opens its mouth a few times a day. Dig while the window's wide.",
 		value: () => feedingWindowsLine(),
 		glyph: "sun",
+	},
+	{
+		// The Satchel (docs/satchel-spec.md): the bag a Dig fills, the wish a pig
+		// carries, and the swap on a visit. Numbers from satchel_tuning so a
+		// retune can never make the page lie.
+		id: "satchel",
+		name: "The Satchel",
+		whimsy: "A little bag that gets heavier every time you dig, and lighter every time you visit.",
+		value: () => satchelLine(),
+		glyph: "digBag",
 	},
 ];

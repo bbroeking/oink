@@ -29,6 +29,7 @@ import {
 	type PairBondRow,
 } from "@/utils/pairBonds";
 import { log } from "@/utils/log";
+import { fetchSatchelSwapsFor } from "@/utils/satchel";
 
 // Page size + hard upper bound for the global leaderboard. 25 lands
 // just over a single phone screen so each "Load more" is a deliberate
@@ -66,10 +67,13 @@ export interface LeaderboardEntry {
 	// Permanent prestige standing. Each Wallow deepens the mud ring around the
 	// pig; absent on pre-migration servers and treated as zero.
 	wallow_count?: number | null;
-	// Satchel deliveries (finds handed to friends' pigs) — the Contend slice
-	// beside tickles. Decorated after the row load through a fail-soft batched
-	// RPC (satchel_deliveries_for), so a server without the Satchel simply
+	// Satchel swaps (finds handed to friends' pigs, gifts included) — the
+	// Contend slice beside tickles. Decorated after the row load through a
+	// fail-soft batched RPC (satchel_swaps_for, falling back to the one-build
+	// satchel_deliveries_for alias), so a server without the Satchel simply
 	// leaves it undefined. A number, never a payout (docs/satchel-spec.md).
+	swaps?: number;
+	/** @deprecated the old name for `swaps`; kept one build. */
 	deliveries?: number;
 	// Alignment-scope only: which half of the leaderboard this row
 	// belongs to (Generous top vs Greedy top) + the within-side rank.
@@ -131,16 +135,16 @@ export interface UseLeaderboard {
 const RANKED_PROFILE_SELECT =
 	"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 
-// Merge each row's delivery count in. Fail-soft: no RPC, no rows, no change.
-async function withDeliveries(rows: LeaderboardEntry[]): Promise<LeaderboardEntry[]> {
+// Merge each row's swap count in. Fail-soft: no RPC, no rows, no change.
+// Both field names are written for one build — an older reader of the row type
+// still sees `deliveries`.
+async function withSwaps(rows: LeaderboardEntry[]): Promise<LeaderboardEntry[]> {
 	if (rows.length === 0) return rows;
-	const counts = await rpc<{ ok?: boolean; counts?: Record<string, number> }>(
-		"satchel_deliveries_for",
-		{ p_targets: rows.map((r) => r.id) },
+	const by = await fetchSatchelSwapsFor(rows.map((r) => r.id));
+	if (!by) return rows;
+	return rows.map((r) =>
+		typeof by[r.id] === "number" ? { ...r, swaps: by[r.id], deliveries: by[r.id] } : r,
 	);
-	if (!counts?.ok || !counts.counts) return rows;
-	const by = counts.counts;
-	return rows.map((r) => (typeof by[r.id] === "number" ? { ...r, deliveries: by[r.id] } : r));
 }
 
 export function useLeaderboard(scope: Scope): UseLeaderboard {
@@ -281,14 +285,14 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					// (matches the global path) instead of casting .data.
 					.returns<RawRow[]>();
 				if (result.error) throw result.error;
-				setLeaderboard(await withDeliveries(normalize(result.data)));
+				setLeaderboard(await withSwaps(normalize(result.data)));
 				return;
 			}
 
 			// Global scope — paginated. Pull the first page (PAGE_SIZE +
 			// 1 so the champion poster doesn't eat a slot from the rest
 			// list) and seed hasMore on whether the page came back full.
-			const firstPage = await withDeliveries(await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE));
+			const firstPage = await withSwaps(await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE));
 			setLeaderboard(firstPage);
 			setHasMore(
 				firstPage.length === LEADERBOARD_PAGE_SIZE &&

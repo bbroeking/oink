@@ -52,8 +52,9 @@ beforeEach(() => {
 });
 
 describe("page-id whitelist", () => {
-	it("has exactly the 8 v1 pages, Echo deliberately absent", () => {
-		expect(FIELD_GUIDE_PAGE_IDS).toHaveLength(8);
+	it("has the 8 v1 pages plus the Satchel, Echo deliberately absent", () => {
+		expect(FIELD_GUIDE_PAGE_IDS).toHaveLength(9);
+		expect(FIELD_GUIDE_PAGE_IDS[FIELD_GUIDE_PAGE_IDS.length - 1]).toBe("satchel");
 		expect(FIELD_GUIDE_PAGE_IDS).not.toContain("echo");
 	});
 
@@ -63,6 +64,17 @@ describe("page-id whitelist", () => {
 		expect(isFieldGuidePageId("")).toBe(false);
 		expect(isFieldGuidePageId(null)).toBe(false);
 		expect(isFieldGuidePageId(42)).toBe(false);
+	});
+});
+
+describe("the Satchel page", () => {
+	it("draws its value line from the live satchel tuning", () => {
+		const { satchelLine, FIELD_GUIDE_ENTRIES } = require("../constants/fieldGuide");
+		const entry = FIELD_GUIDE_ENTRIES.find((e: { id: string }) => e.id === "satchel");
+		expect(entry?.glyph).toBe("digBag");
+		expect(satchelLine()).toBe(
+			"Holds 6 finds. Hand a friend's pig what it's hoping for and take one of 3 things back. Once a day per friend, and never for sale.",
+		);
 	});
 });
 

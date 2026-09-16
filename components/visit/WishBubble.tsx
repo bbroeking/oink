@@ -3,9 +3,11 @@
 // pig and never mirrors with it (the stage flips; the slot does not).
 //
 // Three states, one shape:
-//   open      → the find, "hoping for a blue feather"
-//   you gave  → the NEXT wish, kicker "next time" — this visitor cannot fulfil
-//               a second wish in the same visit, and the bubble says so rather
+//   open      → the find, "hoping for a blue feather", and one short second
+//               line saying whether the host's bag can spare anything back
+//               ("will swap") or the hand-off would be a gift ("gift only")
+//   you gave  → the NEXT wish, kicker "next time" — this visitor cannot swap
+//               a second time in the same visit, and the bubble says so rather
 //               than inviting a tap that would bounce.
 //   silent    → nothing (the server has no wish for this pig — un-pushed
 //               migration, or a non-friend).
@@ -38,26 +40,53 @@ export function WishBubble({
 	const line = givenThisVisit
 		? `next time: ${find.withArticle}`
 		: `hoping for ${find.withArticle}`;
+	// What a hand-off would BE, read off the server's own options list: the
+	// host's bag can spare something, or it cannot and this is a gift.
+	// The second line: the trade on offer — or, the same day after a swap with
+	// this pig, the gate itself, so nobody reads "will swap" over a quiet strip.
+	const offer = givenThisVisit
+		? null
+		: wish.swapped_today
+			? "you two swapped today"
+			: wish.options.length > 0
+				? "will swap"
+				: "gift only";
 	return (
 		<View
 			pointerEvents="none"
 			style={styles.wrap}
 			accessible
 			accessibilityRole="text"
-			accessibilityLabel={`${hostName}'s pig is ${line}`}
+			accessibilityLabel={
+				offer
+					? `${hostName}'s pig is ${line} — ${offer}`
+					: `${hostName}'s pig is ${line}`
+			}
 			testID="visit-wish-bubble"
 		>
 			<Sticker color="paper" radius={RADII.xl} shadow="sm" rotate={0} style={styles.bubble}>
 				<FindArt id={find.id} size={ART_SIZE.glyphSm} />
-				<T
-					role="kicker"
-					tone={givenThisVisit ? "secondary" : undefined}
-					numberOfLines={2}
-					maxFontSizeMultiplier={VISIT_TYPE_CAP}
-					style={styles.line}
-				>
-					{line}
-				</T>
+				<View style={styles.lines}>
+					<T
+						role="kicker"
+						tone={givenThisVisit ? "secondary" : undefined}
+						numberOfLines={2}
+						maxFontSizeMultiplier={VISIT_TYPE_CAP}
+					>
+						{line}
+					</T>
+					{offer ? (
+						<T
+							role="kicker"
+							tone="secondary"
+							numberOfLines={1}
+							maxFontSizeMultiplier={VISIT_TYPE_CAP}
+							testID="visit-wish-offer"
+						>
+							{offer}
+						</T>
+					) : null}
+				</View>
 			</Sticker>
 			<View style={[styles.tail, styles.tailLg]} />
 			<View style={[styles.tail, styles.tailSm]} />
@@ -75,7 +104,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.sm,
 		maxWidth: BUBBLE_MAX_W,
 	},
-	line: { flexShrink: 1 },
+	lines: { flexShrink: 1, gap: SPACE.xxs },
 	tail: {
 		borderRadius: RADII.pill,
 		borderWidth: BORDER.thin,

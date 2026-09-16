@@ -24,6 +24,7 @@ const full: TickleBreakdown = {
 	home_taps: 9,
 	ads: 3,
 	visit_taps: 2,
+	swaps: 6,
 	dig_finds: 15,
 	pass_tiers: 150,
 	trades: 16,
@@ -31,12 +32,25 @@ const full: TickleBreakdown = {
 };
 
 describe("tickleBreakdownRows", () => {
+	it("the swap lane sits with the other social lanes, after visiting", () => {
+		const rows = tickleBreakdownRows(full);
+		const lanes = rows.map((r) => r.lane);
+		expect(lanes.indexOf("swaps")).toBe(lanes.indexOf("visit_taps") + 1);
+	});
+
+	it("a server without the swap lane reads it as zero and drops the row", () => {
+		const { swaps: _swaps, ...older } = full;
+		const rows = tickleBreakdownRows(older as TickleBreakdown);
+		expect(rows.find((r) => r.lane === "swaps")).toBeUndefined();
+	});
+
 	it("maps every non-zero lane to a row in receipt order with whimsy labels", () => {
 		const rows = tickleBreakdownRows(full);
 		expect(rows.map((r) => r.lane)).toEqual([
 			"home_taps",
 			"ads",
 			"visit_taps",
+			"swaps",
 			"dig_finds",
 			"pass_tiers",
 			"trades",
@@ -46,18 +60,20 @@ describe("tickleBreakdownRows", () => {
 			"tickled at home",
 			"ad refills",
 			"out visiting friends",
+			"swapped with friends",
 			"truffle digs",
 			"season pass",
 			"trades repaid",
 			"lucky numbers",
 		]);
-		expect(rows.map((r) => r.value)).toEqual([9, 3, 2, 15, 150, 16, 15]);
+		expect(rows.map((r) => r.value)).toEqual([9, 3, 2, 6, 15, 150, 16, 15]);
 	});
 
 	it("omits zero-value lanes (no 'truffle digs · 0' noise)", () => {
 		const rows = tickleBreakdownRows({
 			...full,
 			dig_finds: 0,
+			swaps: 0,
 			trades: 0,
 			lucky: 0,
 		});
@@ -77,6 +93,7 @@ describe("tickleBreakdownRows", () => {
 				home_taps: 0,
 				ads: 0,
 				visit_taps: 0,
+				swaps: 0,
 				dig_finds: 0,
 				pass_tiers: 0,
 				trades: 0,

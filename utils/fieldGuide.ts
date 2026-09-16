@@ -31,6 +31,9 @@ export const FIELD_GUIDE_PAGE_IDS = [
 	"snouts",
 	"exchange",
 	"feeding_windows",
+	// The Satchel (2026-09-16): the bag, the wish, the swap. Whitelisted on the
+	// server by 20260917110000_field_guide_satchel_page.sql.
+	"satchel",
 ] as const;
 
 export type FieldGuidePageId = (typeof FIELD_GUIDE_PAGE_IDS)[number];

@@ -10,13 +10,15 @@
 //   3. THE CATALOG — every find as a silhouette until you have carried one
 //      (the Field Guide's rule), with the rarity as a kicker: rarity lives in
 //      Collect, never in the payout.
-//   4. THE SHELF — what friends have brought your pig, and your deliveries
-//      with the keepsakes at 10 / 50 / 100 (a count, never a payout).
+//   4. SWAPPED — how many finds you have given and how many have come back,
+//      with the keepsakes at 10 / 50 / 100 (a count, never a payout). There is
+//      no shelf any more: a received find lands in the BAG above, where it is
+//      tossable and giveable on, and wears a small "from a friend" mark.
 import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { SATCHEL_FINDS, satchelFind, type SatchelFindId } from "@/constants/satchel";
 import { ART_SIZE, BORDER, RADII, SPACE, TAP_MIN } from "@/constants/theme";
-import { satchelTuning, wishHoursLeft, type SatchelState } from "@/utils/satchel";
+import { cameFromAFriend, satchelTuning, wishHoursLeft, type SatchelState } from "@/utils/satchel";
 import { Button, EmptyState, Glyph, SectionHeader, Sheet, Sticker, T, Tag } from "../ui";
 import { FindArt } from "./FindArt";
 
@@ -45,14 +47,21 @@ export function SatchelSheet({
 	const hoursLeft = wishHoursLeft(wish);
 	const met = new Set(state.met);
 	const thresholds = satchelTuning().keepsakeThresholds;
-	const nextKeepsake = thresholds.find((t) => t > state.deliveries) ?? null;
+	const nextKeepsake = thresholds.find((t) => t > state.swapsGiven) ?? null;
+	// F10: a cap lowered under a live bag used to read "8 of 6 finds". The
+	// number the player can act on is "it's full".
+	const full = state.items.length >= state.cap;
 
 	return (
 		<Sheet
 			open={open}
 			onClose={onClose}
 			kicker="your satchel"
-			title={`${state.items.length} of ${state.cap} finds`}
+			title={
+				full
+					? `full — ${state.items.length} finds`
+					: `${state.items.length} of ${state.cap} finds`
+			}
 			testID="satchel-sheet"
 		>
 			{/* ── 1. the wish ── */}
@@ -98,27 +107,44 @@ export function SatchelSheet({
 					<View style={styles.bagRow} accessibilityRole="list">
 						{state.items.map((it) => {
 							const f = satchelFind(it.find_id);
+							// A find that arrived from a friend says so: provenance is the
+							// point of a swap, and it is what makes the bag a story.
+							const fromFriend = cameFromAFriend(it.source);
 							return (
-								<Sticker
-									key={it.id}
-									color="paper"
-									radius={RADII.lg}
-									border={BORDER.thin}
-									shadow="none"
-									rotate={0}
-									onLongPress={() => {
-										Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-										onToss(it.id);
-									}}
-									onPress={() => {}}
-									accessibilityRole="button"
-									accessibilityLabel={f?.name ?? "a find"}
-									accessibilityHint="Hold to toss it out of the bag"
-									testID="satchel-bag-item"
-									style={styles.bagTile}
-								>
-									<FindArt id={it.find_id} size={ART_SIZE.glyphSm} />
-								</Sticker>
+								<View key={it.id} style={styles.bagCell}>
+									<Sticker
+										color="paper"
+										radius={RADII.lg}
+										border={BORDER.thin}
+										shadow="none"
+										rotate={0}
+										onLongPress={() => {
+											Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+											onToss(it.id);
+										}}
+										onPress={() => {}}
+										accessibilityRole="button"
+										accessibilityLabel={
+											fromFriend ? `${f?.name ?? "a find"}, from a friend` : (f?.name ?? "a find")
+										}
+										accessibilityHint="Hold to toss it out of the bag"
+										testID="satchel-bag-item"
+										style={styles.bagTile}
+									>
+										<FindArt id={it.find_id} size={ART_SIZE.glyphSm} />
+									</Sticker>
+									{fromFriend ? (
+										<T
+											role="kickerPillSm"
+											tone="secondary"
+											numberOfLines={1}
+											align="center"
+											testID="satchel-bag-from"
+										>
+											from a friend
+										</T>
+									) : null}
+								</View>
 							);
 						})}
 					</View>
@@ -158,19 +184,24 @@ export function SatchelSheet({
 				})}
 			</View>
 
-			{/* ── 4. the shelf ── */}
-			<SectionHeader kicker="given and received" title="The shelf" style={styles.section} />
+			{/* ── 4. swapped ── */}
+			<SectionHeader kicker="given and received" title="Swapped" style={styles.section} />
 			<View style={styles.shelfRow}>
 				<Tag
 					tone="sun"
 					glyph="digBag"
-					label={state.deliveries === 1 ? "1 delivery" : `${state.deliveries} deliveries`}
+					label={state.swapsGiven === 1 ? "1 given" : `${state.swapsGiven} given`}
+				/>
+				<Tag
+					tone="paper"
+					glyph="gift"
+					label={state.swapsReceived === 1 ? "1 received" : `${state.swapsReceived} received`}
 				/>
 				{nextKeepsake != null ? (
 					<T role="hand" tone="secondary">{`keepsake at ${nextKeepsake}`}</T>
 				) : null}
 			</View>
-			{state.keepsakes.length > 0 && (
+			{state.keepsakes.length > 0 ? (
 				<View style={styles.keepsakeRow} accessibilityRole="list">
 					{state.keepsakes.map((t) => (
 						<Sticker
@@ -180,37 +211,18 @@ export function SatchelSheet({
 							pad
 							rotate={0}
 							accessibilityRole="text"
-							accessibilityLabel={`Keepsake for ${t} deliveries`}
+							accessibilityLabel={`Keepsake for ${t} finds given`}
 							style={styles.keepsake}
 						>
 							<KeepsakeArt threshold={t} />
-							<T role="kicker" align="center">{`${t} delivered`}</T>
+							<T role="kicker" align="center">{`${t} given`}</T>
 						</Sticker>
 					))}
 				</View>
-			)}
-			{state.shelf.length > 0 ? (
-				<View style={styles.bagRow} accessibilityRole="list">
-					{state.shelf.map((s) => {
-						const f = satchelFind(s.find_id);
-						return (
-							<View
-								key={s.find_id}
-								style={styles.shelfItem}
-								accessibilityRole="text"
-								accessibilityLabel={`${s.count} ${f?.name ?? "finds"} from friends`}
-							>
-								<FindArt id={s.find_id} size={ART_SIZE.glyphSm} />
-								{s.count > 1 ? (
-									<T role="kickerPillSm" tone="secondary">{`×${s.count}`}</T>
-								) : null}
-							</View>
-						);
-					})}
-				</View>
 			) : (
 				<T role="hand" tone="secondary">
-					nothing brought yet — friends who visit can hand Rosie what she's hoping for.
+					hand a friend&apos;s pig what it&apos;s hoping for and take one of theirs back — both
+					land in the bag above.
 				</T>
 			)}
 		</Sheet>
@@ -255,7 +267,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.xs,
 	},
 	shelfRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm, marginBottom: SPACE.sm },
-	shelfItem: { alignItems: "center", gap: SPACE.xxs, width: TAP_MIN },
+	bagCell: { alignItems: "center", gap: SPACE.xxs, width: TAP_MIN },
 	keepsakeRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm, marginBottom: SPACE.sm },
 	keepsake: { alignItems: "center", gap: SPACE.xs },
 	keepsakeArt: { width: KEEPSAKE_ART, height: KEEPSAKE_ART, justifyContent: "flex-end" },

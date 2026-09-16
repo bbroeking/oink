@@ -71,10 +71,16 @@ export interface SatchelTuning {
 	findOdds: { none: number; one: number; two: number };
 	/** How long a wish stands before it rerolls on its own. */
 	wishRerollHours: number;
-	/** Tickles each pig gets on a delivery — FLAT, whatever the find's rarity. */
+	/** Tickles each pig gets on a swap — FLAT, whatever the find's rarity. */
 	tickles: number;
-	/** Delivery counts that grant a keepsake, ascending. */
+	/** Swap counts that grant a keepsake, ascending. */
 	keepsakeThresholds: number[];
+	/** How many finds a host's bag can spare in one offer tray (server-chosen). */
+	options: number;
+	/** Swaps between one pair that still pay tickles, per UTC day. */
+	paidSwapsPerPairPerDay: number;
+	/** Swaps one pig can be paid for across every pair, per UTC day. */
+	paidSwapsPerPigPerDay: number;
 }
 
 export const SATCHEL_TUNING: Readonly<SatchelTuning> = Object.freeze({
@@ -83,4 +89,7 @@ export const SATCHEL_TUNING: Readonly<SatchelTuning> = Object.freeze({
 	wishRerollHours: 48,
 	tickles: 3,
 	keepsakeThresholds: [10, 50, 100],
+	options: 3,
+	paidSwapsPerPairPerDay: 3,
+	paidSwapsPerPigPerDay: 10,
 });
