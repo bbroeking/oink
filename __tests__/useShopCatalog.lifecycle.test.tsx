@@ -133,8 +133,69 @@ describe("shop request lifecycle", () => {
     await act(async () =>
       resolveSession({ data: { session: { user: { id: "player" } } } }),
     );
-    expect(mockRpc).toHaveBeenCalledTimes(2);
+    // daily_shop + shop_resets_in_seconds + sounder_counter_buys — one
+    // fan-out, three RPC legs (the counter leg rides the rpc() helper, which
+    // reaches the same mocked client).
+    expect(mockRpc).toHaveBeenCalledTimes(3);
     expect(catalog.counter).toBe(42);
+    expect(catalog.counterBuys).toEqual([]);
+  });
+
+  it("keeps a pass-track members piece off the members' shelf, even when owned", async () => {
+    // The season-1 premium track carries nine members-only cosmetics with
+    // catalog prices (20260727), all pass_exclusive. `allItems` keeps an
+    // owned one so the Closet can show it; the shelf must not (the
+    // storefront, 2026-09-16: a pass reward is the pass's, never for sale).
+    const hat = (id: string, extra: Record<string, unknown>) => ({
+      id,
+      name: id,
+      cost: 4200,
+      display_order: 1,
+      emoji: null,
+      image_path: null,
+      category: "hat",
+      rarity: "epic",
+      members_only: true,
+      pass_exclusive: false,
+      ...extra,
+    });
+    mockFrom.mockImplementation((table) => {
+      const result = {
+        data:
+          table === "profiles"
+            ? { counter: 42 }
+            : table === "hats"
+              ? [
+                  hat("sovereign_jewel_crown", { pass_exclusive: true }),
+                  hat("ermine_coronet", { pass_exclusive: true }),
+                  hat("royal_velvet_bow", {}),
+                ]
+              : table === "user_hats"
+                ? [{ hat_id: "sovereign_jewel_crown" }]
+                : [],
+        error: null,
+      };
+      const query = {
+        select: () => query,
+        eq: () => query,
+        order: () => Promise.resolve(result),
+        single: () => Promise.resolve(result),
+        then: (resolve: (value: unknown) => void) =>
+          Promise.resolve(result).then(resolve),
+      };
+      return query;
+    });
+    await mount();
+    // The owned pass reward stays in the catalog (the Closet's), but the
+    // shelf and the buy gate only carry the for-sale piece.
+    expect(catalog.allItems.map((i) => i.id)).toEqual([
+      "sovereign_jewel_crown",
+      "royal_velvet_bow",
+    ]);
+    expect(catalog.membersShelf.map((i) => i.id)).toEqual(["royal_velvet_bow"]);
+    expect(catalog.buyableIds.has("royal_velvet_bow")).toBe(true);
+    expect(catalog.buyableIds.has("sovereign_jewel_crown")).toBe(false);
+    expect(catalog.buyableIds.has("ermine_coronet")).toBe(false);
   });
 
   it("recovers from a thrown transport error without remaining stuck loading", async () => {

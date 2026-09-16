@@ -20,8 +20,13 @@ Round one drew three front-page directions on one axis each (what leads the page
 
 Tokens read from `constants/theme.ts`; card anatomy from `app/(tabs)/shop.tsx`; Home anatomy from `../barn/barn-home.html` (the ratified comp); Trough copy from `components/TroughSection.tsx`; fan rows from `components/Barn.tsx`. Art is the shipped art, downsampled (`../shop/img/` plus `img/`: companion portraits, the yard painting, Rosie's sprite, the stamp heart, the flame, the truffle). The shopkeep is placeholder art (Pepper with a tape note); friend names and drive numbers are sample data.
 
-Balance: `tools/balance_trough_notch.py` + `docs/design/2026-09-16-trough-notch-balance.md` — the loop that settled the reward as the pot rule (replace, bank-only, floor 4).
+Reward: the pot rule shown on the Home boards was superseded the same day by the **quarter rule + Barn Draw** (`docs/design/2026-09-16-barn-prize-draw.md`, ratified block). The boards' notches still read as the Trough's quarters; the reward moment ("Past a notch") becomes "Past your quarter — you drew …" in Build 1. Balance history: `tools/balance_trough_notch.py`, `docs/design/2026-09-16-trough-notch-balance.md`.
 
 Decisions logged 2026-09-16 in `SKILL.md` (product: storefront, trough on Home, notch drop + guardrails) and `docs/design/taste-standard.md` (craft: the five storefront rulings).
 
 `canvas.json` lays the boards out. `shop-front-page-directions.html` is the seeded canvas (regenerable; re-seed from the `.dc.html` files + `canvas.json` when editing, then republish to the URL above).
+
+## Implementation (build 2 · 2026-09-16)
+
+The store's chrome shipped in `app/(tabs)/shop.tsx` with the scene's objects as `components/shop/`: `Chalkboard` (bark sticker, restock countdown), `HangingSign` (Closet · Pen · Furnish, count as a corner badge, a `Store` sign hangs in the chalkboard's place away from the store), `Shelf`/`ShelfItem`/`SlopClubShelf` (rarity coasters three to a plank; the members' shelf is a daily pick of three from the members catalog — `utils/shopShelves.ts`, `useShopCatalog().membersShelf`, folded into `buyableIds`), `TroughByCounter` (the wooden trough; rows with the opener's pig, a notched `ProgressTrack notches={4}`, one chip — `utils/troughRows.ts`; migration `20260916140000_my_drives_opener_pig.sql` adds `opener_pig_id`, Rosie until it lands), `Counter` (figures wearing today's buys, hand tags), `TroughSheet` (today's `TroughSection` in a `Sheet`, the tapped row first). Reduce Motion / VoiceOver get the 2-col `ShopCard` grid in the shelves' place (`hooks/useScreenReader.ts`); trough and counter stay as rows. Build 1 (the yard trough, the fan row on Home) and build 3 (the painted wall, shelves, counter, shopkeep) are still open.
+

@@ -7,7 +7,7 @@
     { "file": "Main.dc.html",          "x": 0,    "y": 0,    "w": 390, "h": 844,  "title": "The Storefront · with the sounder and the Troughs", "page": "page-1" },
     { "file": "HomeTrough.dc.html",    "x": 500,  "y": 0,    "w": 390, "h": 844,  "title": "Home · the trough in the yard", "page": "page-1" },
     { "file": "HomeFan.dc.html",       "x": 1000, "y": 0,    "w": 390, "h": 844,  "title": "Home · Trough on the fan", "page": "page-1" },
-    { "file": "TroughSheet.dc.html",   "x": 1500, "y": 0,    "w": 390, "h": 844,  "title": "Home · the sheet, past a notch", "page": "page-1" },
+    { "file": "TroughSheet.dc.html",   "x": 1500, "y": 0,    "w": 390, "h": 844,  "title": "Home · the sheet, past your quarter", "page": "page-1" },
     { "file": "Rationale.dc.html",     "x": 0,    "y": 1020, "w": 900, "h": 1500, "title": "Rationale + build order", "print": "flow", "page": "page-1" },
     { "file": "DropFirst.dc.html",     "x": 0,    "y": 0,    "w": 390, "h": 844,  "title": "A · Drop First", "page": "page-2" },
     { "file": "NeighborsShop.dc.html", "x": 500,  "y": 0,    "w": 390, "h": 844,  "title": "B · The Neighbors' Shop", "page": "page-2" },

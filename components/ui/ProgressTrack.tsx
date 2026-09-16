@@ -13,7 +13,14 @@
 // a full bar, not a bar that overflows its own outline.
 import React from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { BORDER, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
+import {
+	BORDER,
+	OPACITY,
+	RADII,
+	SPACE,
+	UI_COLORS,
+	WHIMSY,
+} from "@/constants/theme";
 import { Hand, Label } from "./Text";
 
 type TrackTone = "sage" | "sun" | "rose" | "lilac" | "sky";
@@ -46,6 +53,13 @@ interface Props {
 	 * worded label instead. (2026-09-11)
 	 */
 	announceValue?: boolean;
+	/**
+	 * Tick marks dividing the track into this many equal parts — the Trough's
+	 * notched track (Storefront 2026-09-16): four quarters, three ticks, each
+	 * lit in sun once the fill has passed it. Ticks are decoration; the value
+	 * is still announced as "n of max". Omit for a plain capsule.
+	 */
+	notches?: number;
 	/** Container style override. */
 	style?: StyleProp<ViewStyle>;
 }
@@ -58,11 +72,16 @@ export function ProgressTrack({
 	label,
 	accessibilityLabel,
 	announceValue = true,
+	notches,
 	style,
 }: Props) {
 	const safeMax = Math.max(max, 0);
 	const now = Math.min(Math.max(value, 0), safeMax);
 	const fraction = safeMax > 0 ? now / safeMax : 0;
+	const ticks =
+		notches && notches > 1
+			? Array.from({ length: notches - 1 }, (_, i) => (i + 1) / notches)
+			: [];
 
 	return (
 		<View style={style}>
@@ -91,10 +110,28 @@ export function ProgressTrack({
 						]}
 					/>
 				) : null}
+				{ticks.map((at) => {
+					const lit = fraction >= at;
+					return (
+						<View
+							key={at}
+							pointerEvents="none"
+							style={[
+								styles.tick,
+								{ left: `${at * 100}%` },
+								lit ? styles.tickLit : null,
+							]}
+						/>
+					);
+				})}
 			</View>
 		</View>
 	);
 }
+
+/** A lit tick is a hair wider than a resting one, so it reads as a peg. */
+const TICK_W = BORDER.ink;
+const TICK_LIT_W = SPACE.xs;
 
 const styles = StyleSheet.create({
 	captionRow: {
@@ -115,5 +152,25 @@ const styles = StyleSheet.create({
 		height: "100%",
 		borderRightWidth: BORDER.ink,
 		borderRightColor: UI_COLORS.border,
+	},
+	// A resting notch is an ink hairline at the rule opacity; a passed one is
+	// a sun peg with its own ink edge, the way the board draws it.
+	tick: {
+		position: "absolute",
+		top: 0,
+		bottom: 0,
+		width: TICK_W,
+		marginLeft: -TICK_W / 2,
+		backgroundColor: UI_COLORS.border,
+		opacity: OPACITY.rule,
+	},
+	tickLit: {
+		width: TICK_LIT_W,
+		marginLeft: -TICK_LIT_W / 2,
+		backgroundColor: WHIMSY.sun,
+		opacity: 1,
+		borderLeftWidth: BORDER.hair,
+		borderRightWidth: BORDER.hair,
+		borderColor: UI_COLORS.border,
 	},
 });

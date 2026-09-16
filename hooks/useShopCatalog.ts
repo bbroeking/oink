@@ -8,11 +8,17 @@
 // setters (counter/owned/active-ids/title) so a buy or equip reflects
 // immediately without waiting on the refetch round trip.
 //
-// The fetch fans a 5-way Promise.all: daily_shop() (today's drop), the full
+// The fetch fans a 6-way Promise.all: daily_shop() (today's drop), the full
 // hats catalog, the caller's owned hat ids, their profile (balance + equipped
-// slots + VIP), and shop_resets_in_seconds() (the countdown seed). Any select
-// error is a real error — it surfaces through the shared `fetchError` beat
-// rather than being retried with fewer columns.
+// slots + VIP), shop_resets_in_seconds() (the countdown seed), and
+// sounder_counter_buys() (what crewmates put on today — the sounder at the
+// counter, Storefront build 2). The members' shelf is derived from the full
+// catalog client-side (utils/shopShelves), no seventh leg. Any select error is a real error — it surfaces
+// through the shared `fetchError` beat rather than being retried with fewer
+// columns. The counter fetch is the one best-effort leg: it goes through the
+// rpc() helper (never rejects, logs its own failure) and an error there reads
+// as an empty counter, so an unpushed or briefly failing function can never
+// take the shelves down with it.
 //
 // This hook also owns the reset countdown: it seeds resetsIn from the RPC and
 // runs the 1s tick + the UTC-midnight rollover refetch (parked at 0 → refetch
@@ -23,7 +29,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { supabase } from "@/utils/supabase";
-import { HatRow, HIDDEN_CATEGORIES } from "@/constants/hats";
+import { rpc } from "@/utils/rpc";
+import {
+  HAT_IMAGES,
+  HAT_THUMBNAILS_256,
+  HatRow,
+  HIDDEN_CATEGORIES,
+} from "@/constants/hats";
+import {
+  buyableIds as unionBuyableIds,
+  parseCounterBuys,
+  resolveCounterBuys,
+  type CounterBuy,
+} from "@/utils/shopCounter";
+import { dailyPick, dropDateKey } from "@/utils/shopShelves";
+
+// The members' shelf under the Slop Club sign holds this many pieces a day —
+// one shelf's worth, like the drop's own shelves (Storefront build 2).
+const MEMBERS_SHELF_COUNT = 3;
 
 export interface UseShopCatalog {
   // First-load flag — lets the daily grid show the loading beat instead of the
@@ -49,9 +72,21 @@ export interface UseShopCatalog {
   // Countdown seed (seconds) — ticks down every second and refetches on the
   // UTC-midnight rollover, both owned here.
   resetsIn: number;
+  // The sounder at the counter: crewmates' buys from today, each joined to its
+  // catalog item (newest first). A friend who bought nothing has no entry.
+  counterBuys: CounterBuy[];
+  // The members' shelf: today's pick of members-only pieces with art, chosen
+  // from the id + the UTC date so every member sees the same shelf and it
+  // rolls with the drop. daily_shop() excludes members_only, so this is the
+  // one place the members catalog is on sale.
+  membersShelf: HatRow[];
   // Derived: allItems ∩ owned, and the id-set of today's drop.
   ownedItems: HatRow[];
   dailyIds: Set<string>;
+  // Derived: dailyIds ∪ the counter's item ids ∪ the members' shelf —
+  // everything a tap can buy. The screen's "today only" gate and the preview
+  // sheet's `buyable` read this.
+  buyableIds: Set<string>;
   // Re-run the whole fetch (focus, post-mutation resync, paywall unlock).
   refresh: () => Promise<void>;
   // Optimistic mutators — apply a locally-known change now; refresh reconciles.
@@ -79,6 +114,10 @@ export function useShopCatalog(): UseShopCatalog {
   const [isVip, setIsVip] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTitleId, setActiveTitleId] = useState<string | null>(null);
+  const [counterBuys, setCounterBuys] = useState<CounterBuy[]>([]);
+  // The UTC day the shelves were stocked for — set by each fetch, so the
+  // members' shelf re-rolls with the midnight refetch, not on a render.
+  const [dropDate, setDropDate] = useState<string>(() => dropDateKey());
 
   const [focused, setFocused] = useState(false);
   const [appActive, setAppActive] = useState(
@@ -107,7 +146,7 @@ export function useShopCatalog(): UseShopCatalog {
         return;
       }
 
-      const [dailyRes, allRes, ownedRes, profRes, resetsRes] =
+      const [dailyRes, allRes, ownedRes, profRes, resetsRes, counterRes] =
         await Promise.all([
           supabase.rpc("daily_shop"),
           supabase
@@ -125,6 +164,7 @@ export function useShopCatalog(): UseShopCatalog {
             .eq("id", user.id)
             .single(),
           supabase.rpc("shop_resets_in_seconds"),
+          rpc<unknown>("sounder_counter_buys"),
         ]);
       const fetchError =
         dailyRes.error ??
@@ -158,10 +198,15 @@ export function useShopCatalog(): UseShopCatalog {
       // Cost-0 items are season-pass exclusives — not for sale. Only surface
       // them if the player already OWNS them (claimed via the pass); otherwise
       // they leak into the browseable shop (which players noticed).
-      setAllItems(
-        filterPlaceable((allRes.data as HatRow[]) ?? []).filter(
-          (r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id),
-        ),
+      const shoppable = filterPlaceable((allRes.data as HatRow[]) ?? []).filter(
+        (r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id),
+      );
+      setAllItems(shoppable);
+      // The counter resolves against the same shoppable catalog, so a
+      // crewmate's buy of something this shop can't sell (hidden category,
+      // an id the catalog lacks) never stands at the counter.
+      setCounterBuys(
+        resolveCounterBuys(parseCounterBuys(counterRes), shoppable),
       );
       setOwned(ownedSet);
       const prof = profRes.data;
@@ -181,6 +226,7 @@ export function useShopCatalog(): UseShopCatalog {
       setActiveTitleId(prof?.active_title_id ?? null);
       setUserId(user.id);
       setResetsIn(resetsRes.data ?? 0);
+      setDropDate(dropDateKey());
     } catch {
       setError(
         "We couldn't reach the shop. Check your connection and try again.",
@@ -241,6 +287,33 @@ export function useShopCatalog(): UseShopCatalog {
     [allItems, owned],
   );
 
+  // Only pieces the shelf can SELL rotate in. `allItems` keeps a pass
+  // reward the player already owns (so the Closet can show it), but a pass
+  // reward is the pass's — nine members-only cosmetics sit on the season-1
+  // premium track (20260727) with catalog prices, and every one of them is
+  // pass_exclusive; none may take a shelf slot, owned or not.
+  const membersShelf = useMemo(
+    () =>
+      dailyPick(
+        allItems.filter(
+          (i) =>
+            !!i.members_only &&
+            !i.pass_exclusive &&
+            i.cost > 0 &&
+            (!!HAT_IMAGES[i.id] || !!HAT_THUMBNAILS_256[i.id]),
+        ),
+        dropDate,
+        MEMBERS_SHELF_COUNT,
+      ),
+    [allItems, dropDate],
+  );
+
+  const buyableIds = useMemo(() => {
+    const ids = unionBuyableIds(daily, counterBuys);
+    for (const item of membersShelf) ids.add(item.id);
+    return ids;
+  }, [daily, counterBuys, membersShelf]);
+
   return {
     loading,
     error,
@@ -253,8 +326,11 @@ export function useShopCatalog(): UseShopCatalog {
     userId,
     activeTitleId,
     resetsIn,
+    counterBuys,
+    membersShelf,
     ownedItems,
     dailyIds,
+    buyableIds,
     refresh: load,
     setCounter,
     setOwned,

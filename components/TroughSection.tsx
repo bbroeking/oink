@@ -2,9 +2,19 @@
 // Lists open Troughs from your Sounder (my_drives) and lets you chip in snouts
 // toward a friend's item. Rewards credit immediately at donation time; funded
 // drives show a receipt, never a manual claim button.
-import { useEffect, useState } from "react";
+//
+// THE QUARTER RULE (2026-09-16, server 20260916120000). The old 1-tickle-per-
+// 100-snouts thank-you is retired. A giver now earns once their CUMULATIVE
+// contribution to a Trough (`my_contribution`) reaches the quarter cap the UI
+// already clamps every chip against — and only the first time in an ISO week,
+// across every Trough. The prize is one design from the week's featured
+// collection (a tickle purse when they own the whole collection). The caption
+// says which of those a chip is about to do; trough_reward_state() tells us
+// whether the week's draw has already been taken.
+import { useCallback, useEffect, useState } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { rpcAction } from "@/utils/rpc";
+import { fetchTroughRewardState, parseBarnPrize } from "@/utils/barnDraw";
 import {
 	type TroughDrive as Drive,
 	type TroughReceipt,
@@ -90,36 +100,68 @@ export function TroughSection({
 	const [amounts, setAmounts] = useState<Record<string, number>>({});
 	const [busy, setBusy] = useState<string | null>(null);
 	const [note, setNote] = useState<Record<string, string>>({});
+	// Has this week's one giver reward already been drawn? Unknown (a pre-push
+	// server, an offline read) reads as "not yet" — the caption then promises
+	// the draw the server will honour or quietly skip, never a false denial.
+	const [rewardTaken, setRewardTaken] = useState(false);
+
+	const readRewardTaken = useCallback(async () => {
+		const r = await fetchTroughRewardState();
+		return r.ok ? r.state.taken : false;
+	}, []);
 
 	useEffect(() => {
 		if (!loaded) return;
 		onBalance?.(balance);
 	}, [balance, loaded, onBalance]);
 
+	useEffect(() => {
+		let alive = true;
+		readRewardTaken().then((taken) => {
+			if (alive) setRewardTaken(taken);
+		});
+		return () => {
+			alive = false;
+		};
+	}, [readRewardTaken]);
+
 	const donate = async (d: Drive, amt: number) => {
 		if (busy || amt <= 0) return;
 		setBusy(d.id);
 		setNote((n) => ({ ...n, [d.id]: "" }));
 		Haptics.selectionAsync().catch(() => {});
-		const r = await rpcAction<{ reward?: number; funded?: boolean; xp?: number; have?: number }>(
-			"donate_to_drive",
-			{ drive_id: d.id, snouts: amt }
-		);
+		const r = await rpcAction<{
+			reward?: unknown;
+			funded?: boolean;
+			xp?: number;
+			have?: number;
+			quarter_reached?: boolean;
+			weekly_reward_taken?: boolean;
+		}>("donate_to_drive", { drive_id: d.id, snouts: amt });
 		if (r.ok) {
 			// Field Guide: your first donation meets the Trough page (fail-soft).
 			observeFieldGuide("trough");
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+			// The quarter's prize, when this chip crossed it. Anything else keeps
+			// today's notes — a chip that only helps is still a good chip.
+			const prize = parseBarnPrize(r.reward);
 			setNote((n) => ({
 				...n,
-				[d.id]: r.funded
-					? "Funded! You landed it for them."
-					: "Chipped in! Thanks",
+				[d.id]: prize
+					? prize.kind === "habitat"
+						? `Past a quarter! ${prize.itemName ?? "A new design"} is yours — hang it in the Barn.`
+						: `Past a quarter! A purse of ${prize.amount} tickles.`
+					: r.funded
+						? "Funded! You landed it for them."
+						: "Chipped in! Thanks",
 			}));
+			if (r.weekly_reward_taken === true || prize) setRewardTaken(true);
 		} else {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 			setNote((n) => ({ ...n, [d.id]: donateError(r.reason, r.have) }));
 		}
 		await load();
+		setRewardTaken(await readRewardTaken());
 		setBusy(null);
 	};
 
@@ -196,12 +238,20 @@ export function TroughSection({
 				// even while the drive still has a gap for others to close.
 				const open = !d.is_mine && gap > 0 && headroom > 0;
 
-				// Reward caption: XP (first donation/day) + the small immediate
-				// tickle thank-you configured by the current server function.
+				// Reward caption: XP (first donation/day) + the quarter rule. The
+				// quarter is cumulative per drive, so it reads my_contribution,
+				// not this one chip. One draw a week, whichever Trough earns it.
+				const reachesQuarter = d.my_contribution + amt >= cap;
 				const rewardBits: string[] = [];
 				rewardBits.push("helps your Sounder land it");
 				if (!donatedToday) rewardBits.push("+5 XP now");
-				if (amt >= 100) rewardBits.push(`+${Math.floor(amt / 100)} tickle now`);
+				if (reachesQuarter) {
+					rewardBits.push(
+						rewardTaken
+							? "you've had this week's draw"
+							: "reaches a quarter · draws a Barn design",
+					);
+				}
 
 				const troughName = d.is_mine
 					? "Your Trough"

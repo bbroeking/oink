@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -11,10 +11,11 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { HabitatEntry } from "@/components/habitat/HabitatEntry";
 import { useShopCatalog } from "@/hooks/useShopCatalog";
 import { useTroughDrives } from "@/hooks/useTroughDrives";
 import { usePigRoster } from "@/hooks/usePigRoster";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { useScreenReader } from "@/hooks/useScreenReader";
 import { cosmeticAccessibility, equipCosmetic } from "@/utils/cosmetics";
 import { formatCountdownHM } from "@/utils/duration";
 import { IAP_ENABLED, presentPaywall, OFFERING_IDS } from "../../utils/iap";
@@ -22,10 +23,8 @@ import { joinSlopClubAndRecruit } from "@/utils/joinSlopClub";
 import { recruitPig } from "@/utils/pigRoster";
 import { pigDefinition, type PigId } from "@/utils/pigs";
 import {
-  AnimatedCosmetic,
   BuyCelebration,
   Button,
-  CardTitle,
   EmptyState,
   Glyph,
   Icon,
@@ -34,21 +33,25 @@ import {
   PageHeader,
   Ribbon,
   SectionHeader,
-  SegmentedControl,
   SnoutCoin,
   Sticker,
   T,
   Tag,
   type BuyCelebrationHandle,
-  type SegmentOption,
 } from "../../components/ui";
 import { ClosetView } from "../../components/ClosetView";
-import { TroughSection } from "../../components/TroughSection";
 import { PigPenView } from "../../components/PigPenView";
-import { HAT_IMAGES, HAT_THUMBNAILS_256, HatRow } from "@/constants/hats";
+import { HatThumb } from "@/components/shop/HatThumb";
+import { HangingSign } from "@/components/shop/HangingSign";
+import { Chalkboard } from "@/components/shop/Chalkboard";
+import { Shelf, ShelfItem, SlopClubShelf } from "@/components/shop/Shelf";
+import { TroughByCounter } from "@/components/shop/TroughByCounter";
+import { Counter } from "@/components/shop/Counter";
+import { TroughSheet } from "@/components/shop/TroughSheet";
+import { HatRow } from "@/constants/hats";
+import { HABITAT_CHROME_ASSETS } from "@/constants/habitat";
+import { chunkShelves } from "@/utils/shopShelves";
 import { columnForCategory } from "@/constants/slots";
-import { categoryIcon } from "@/constants/emojiArt";
-import { cosmeticFxFor } from "@/constants/cosmeticFx";
 import {
   UI_COLORS,
   BORDER,
@@ -58,8 +61,10 @@ import {
   PAGE_PAD,
   SHADOW_SM,
   TAB_SAFE,
+  TINT,
   RARITY_BG_SOLID,
   RARITY_STRIPE,
+  WOOD,
 } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -89,17 +94,15 @@ const THUMB_RATIO = 1.18;
 const CARD_TILT = 0.5;
 /** The snouts pocket leans the other way, like a chip tucked in a pocket. */
 const BALANCE_TILT = 2;
-/** Inset of a HatThumb's art inside its measured box. */
-const THUMB_INSET = 12;
-/** The fraction of its box a fallback sparkle fills. */
-const FALLBACK_ART_FRAC = 0.5;
 /** The 2-column grid's own page inset and card-to-card gap. */
 const GRID_PAD = SPACE.md;
 const GRID_GAP = SPACE.md;
-/** The default HatThumb box when a caller doesn't state one. */
-const ART_THUMB = 100;
-/** The Trough accordion's header row — a 44pt tap plus its own breathing room. */
-const TROUGH_HEADER_H = 52;
+/** The shelves hold three items each (Storefront build 2). */
+const PER_SHELF = 3;
+/** The plank wall's faint horizontal grain: one hairline every so often. */
+const WALL_STRIPE_PITCH = 48;
+/** The barn-door art on the Furnish sign — art in the icon slot, not an Icon. */
+const DOOR_ART = { width: 20, height: 22 } as const;
 /**
  * Where the buy burst fires when the tile's measured centre is missing (a
  * race, or the card unmounted under the refetch) — a mid-screen fallback.
@@ -108,94 +111,8 @@ const FALLBACK_BURST = { x: 200, y: 400 };
 
 const RARITIES = ["common", "uncommon", "rare", "epic", "legendary"] as const;
 
+// "daily" is the store itself; Closet and Pen hang as signs by the door.
 type ShopView = "daily" | "wardrobe" | "pen";
-
-// The three shop destinations. Navigation-like, so the segmented control wears
-// `icon-over-label` — the icon is what you read first. [D-10] (2026-09-11)
-const SHOP_VIEW_OPTIONS: readonly SegmentOption<ShopView>[] = [
-  {
-    value: "daily",
-    label: "Today",
-    icon: "clock",
-    accessibilityHint: "Shows the items on sale today",
-  },
-  {
-    value: "wardrobe",
-    label: "Closet",
-    icon: "hat",
-    accessibilityHint: "Shows the items you already own",
-  },
-  {
-    value: "pen",
-    label: "Pen",
-    icon: "pig",
-    accessibilityHint: "Shows Rosie's friends in the Pen",
-  },
-];
-
-function HatThumb({
-  item,
-  size,
-  fill,
-}: {
-  item: HatRow;
-  size?: number;
-  fill?: boolean;
-}) {
-  // fill mode: MEASURE the box, then render the Image at an explicit
-  // numeric size. Absolute-inset sizing (the previous fix) still hit the
-  // Yoga intrinsic-size quirk inside the mosaic's aspectRatio cells
-  // (sixth sighting) — bows/hats rendered at native px and cropped.
-  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  const hatSrc = HAT_THUMBNAILS_256[item.id] ?? HAT_IMAGES[item.id];
-  // No item art → fall back to the category icon (real art). Auras +
-  // necklaces have no category art (categoryIcon null) → neutral glyph.
-  const catIcon = !hatSrc ? categoryIcon(item.category) : null;
-  const src = hatSrc ?? catIcon;
-  // Members-only / legendary items with an animation recipe render live
-  // (float + glow + shimmer + sparkles) instead of a flat Image.
-  const fx = hatSrc ? cosmeticFxFor(item.id) : undefined;
-  if (!fill) {
-    const side = size ?? ART_THUMB;
-    if (fx && hatSrc) return <AnimatedCosmetic source={hatSrc} fx={fx} size={side} />;
-    if (src) return <Image source={src} style={{ width: side, height: side }} resizeMode="contain" />;
-    // Missing art is a PLACEHOLDER, not a label — it renders as the hand-drawn
-    // sparkle the Closet already uses for the same case. [D-19] (2026-09-11)
-    return <Glyph name="sparkle" size={side * FALLBACK_ART_FRAC} />;
-  }
-  // Backgrounds + auras are edge-to-edge art — cover the whole box.
-  // Everything else contain-fits a centered square with breathing room.
-  const fullBleed = item.category === "background" || item.category === "aura";
-  const side = box ? Math.max(0, Math.min(box.w, box.h) - THUMB_INSET) : 0;
-  return (
-    <View
-      style={styles.thumbFillBox}
-      onLayout={(e: LayoutChangeEvent) => {
-        const { width, height } = e.nativeEvent.layout;
-        setBox({ w: width, h: height });
-      }}
-    >
-      {box && fx && hatSrc && !fullBleed ? (
-        <AnimatedCosmetic source={hatSrc} fx={fx} size={side} />
-      ) : box && src ? (
-        <Image
-          source={src}
-          style={
-            fullBleed
-              ? { width: box.w, height: box.h }
-              : { width: side, height: side }
-          }
-          resizeMode={fullBleed ? "cover" : "contain"}
-        />
-      ) : !src && box ? (
-        <Glyph
-          name="sparkle"
-          size={Math.min(box.w, box.h) * FALLBACK_ART_FRAC}
-        />
-      ) : null}
-    </View>
-  );
-}
 
 // ── Shop redesign (Claude Design handoff, Shop Layout.html) ─────────
 // Less text, more readable: rarity is a COLOR DOT + one legend (no word
@@ -443,8 +360,11 @@ export default function ShopScreen() {
     userId,
     activeTitleId,
     resetsIn,
+    counterBuys,
+    membersShelf,
     ownedItems,
     dailyIds,
+    buyableIds,
     refresh,
     setCounter,
     setOwned,
@@ -453,8 +373,11 @@ export default function ShopScreen() {
   } = useShopCatalog();
   const hasCatalogData =
     daily.length > 0 || allItems.length > 0 || owned.size > 0;
+  // Wearing implies owning: a dangling equip (the profile points at an item
+  // the closet doesn't hold — seen on the demo account, 2026-09-16) must
+  // never read as "wearing" and hide the buy button.
   const isEquipped = (id: string, category: string | null | undefined) => {
-    return activeIds[columnForCategory(category)] === id;
+    return owned.has(id) && activeIds[columnForCategory(category)] === id;
   };
   const equippedPreviewSlot = (column: "active_hat_id" | "active_bow_id") => {
     const id = activeIds[column];
@@ -470,8 +393,20 @@ export default function ShopScreen() {
   const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
   const [view, setView] = useState<ShopView>("daily");
   const [prestigeOnly, setPrestigeOnly] = useState(false);
+  // The Trough sheet, and the row that opened it (its card comes first).
   const [troughOpen, setTroughOpen] = useState(false);
+  const [troughFocusId, setTroughFocusId] = useState<string | null>(null);
   const troughSummary = useTroughDrives();
+  const openTrough = useCallback((driveId?: string) => {
+    setTroughFocusId(driveId ?? null);
+    setTroughOpen(true);
+  }, []);
+  // The scene ships behind the 2-col grid as its Reduce-Motion / VoiceOver
+  // fallback (taste-standard 2026-09-16, ruling 5): a screen reader gets a
+  // list of cards, not a picture to find its way around by touch.
+  const { reduceMotion } = useMotionPolicy();
+  const screenReader = useScreenReader();
+  const plainShelves = reduceMotion || screenReader;
   const pigRoster = usePigRoster();
   const refreshPigRoster = pigRoster.refresh;
 
@@ -486,8 +421,8 @@ export default function ShopScreen() {
   }>();
   useEffect(() => {
     if (params.view === "trough") {
-      // Compatibility for old links: Trough is now an accordion, not a
-      // Shop destination. Open it in place and leave the player in Today.
+      // Compatibility for old links: the Trough is an object in the store
+      // now, not a Shop destination. Open its sheet over the store.
       setView("daily");
       setPrestigeOnly(false);
       setTroughOpen(true);
@@ -516,8 +451,8 @@ export default function ShopScreen() {
     }
   }, [params.trough]);
   useEffect(() => {
-    if (troughSummary.count === 0) setTroughOpen(false);
-  }, [troughSummary.count]);
+    if (troughSummary.loaded && troughSummary.count === 0) setTroughOpen(false);
+  }, [troughSummary.count, troughSummary.loaded]);
   // Title EQUIP UI renders inside ClosetView (the Closet view). Titles are
   // earned-only now (see 20260677) — there is no shop buy path. activeTitleId
   // + userId are sourced from the profile by useShopCatalog; the Closet reads
@@ -531,22 +466,6 @@ export default function ShopScreen() {
   // .play() after seekTo(0) is effectively instant on subsequent fires.
   const deniedPlayer = useAudioPlayer(deniedSound);
   const equipPlayer = useAudioPlayer(equipSound);
-
-  // The Closet segment carries the owned count, so the control announces what
-  // the number means rather than reading "Closet, dot, 12".
-  const viewOptions = useMemo<SegmentOption<ShopView>[]>(
-    () =>
-      SHOP_VIEW_OPTIONS.map((option) =>
-        option.value === "wardrobe" && owned.size > 0
-          ? {
-              ...option,
-              label: `Closet · ${owned.size}`,
-              accessibilityLabel: `Closet, ${owned.size} owned`,
-            }
-          : option,
-      ),
-    [owned.size],
-  );
 
   // Join Slop Club from the members band header — the SAME RevenueCat offering
   // components/Account.tsx and the season premium unlock present. is_vip flips
@@ -636,7 +555,10 @@ export default function ShopScreen() {
 
   const handleBuy = async (hat: HatRow) => {
     if (busyId) return;
-    if (!daily.some((d) => d.id === hat.id)) {
+    // Today's drop OR the counter (a crewmate bought it today) — the two
+    // inventories share one gate. buy_hat itself never checked the drop, so
+    // this client gate is the only "today only" rule there is.
+    if (!buyableIds.has(hat.id)) {
       showPurchaseToast({
         type: "fail",
         title: "Today only",
@@ -684,6 +606,17 @@ export default function ShopScreen() {
           type: "fail",
           title: "Already yours",
           text: "You already own this one.",
+        });
+        return;
+      }
+      if (r.reason === "members_only") {
+        // A crewmate's Slop Club piece at the counter, tapped by a
+        // non-member — the card wore the lock, so this only fires on a
+        // stale UI state (membership lapsed between load and tap).
+        showPurchaseToast({
+          type: "fail",
+          title: "Slop Club only",
+          text: "Join the Slop Club to buy members' pieces.",
         });
         return;
       }
@@ -764,6 +697,101 @@ export default function ShopScreen() {
   // GRID_GAP MUST equal shopCardStyles.grid.gap.
   const { width: shopScreenW } = useWindowDimensions();
   const dailyTileW = Math.floor((shopScreenW - GRID_PAD * 2 - GRID_GAP) / 2);
+  // The wall's grain is drawn to the measured height of the store's content.
+  const [wallH, setWallH] = useState(0);
+  const stripes = Math.floor(wallH / WALL_STRIPE_PITCH);
+
+  const shelfItem = (item: HatRow, i: number, locked = false) => (
+    <ShelfItem
+      key={item.id}
+      item={item}
+      index={i}
+      owned={owned.has(item.id)}
+      active={isEquipped(item.id, item.category)}
+      canAfford={counter >= item.cost}
+      locked={locked}
+      onPress={() => setPreviewItem(item)}
+      onCenter={(x, y) => tileCenters.current.set(item.id, { x, y })}
+    />
+  );
+  const gridCard = (item: HatRow, i: number, membersOnly = false) => (
+    <View key={item.id} style={{ width: dailyTileW }}>
+      <ShopCard
+        item={item}
+        index={i}
+        owned={owned.has(item.id)}
+        active={isEquipped(item.id, item.category)}
+        canAfford={counter >= item.cost}
+        membersOnly={membersOnly}
+        locked={membersOnly && !isVip}
+        onPress={() => setPreviewItem(item)}
+        onCenter={(x, y) => tileCenters.current.set(item.id, { x, y })}
+      />
+    </View>
+  );
+
+  // The door: the chalkboard (or, away from the store, a sign back to it) and
+  // the hanging signs. Closet and Furnish hang as signs so the counter front
+  // belongs to the pigs (ruling 3); the Pen hangs beside them so it keeps its
+  // door (Account and the paywall deep-link to it).
+  const doorway = (
+    <View style={styles.doorway}>
+      {view === "daily" ? (
+        <Chalkboard countdown={formatCountdownHM(resetsIn)} />
+      ) : null}
+      <View style={styles.signs}>
+        {view !== "daily" ? (
+          <HangingSign
+            label="Store"
+            icon="shop"
+            onPress={() => {
+              setView("daily");
+              setPrestigeOnly(false);
+            }}
+            accessibilityHint="Back to the shelves"
+          />
+        ) : null}
+        <HangingSign
+          label="Closet"
+          count={owned.size}
+          icon="hat"
+          active={view === "wardrobe"}
+          onPress={() => {
+            setView("wardrobe");
+            setPrestigeOnly(false);
+          }}
+          accessibilityLabel={
+            owned.size > 0 ? `Closet, ${owned.size} owned` : "Closet"
+          }
+          accessibilityHint="Shows the items you already own"
+        />
+        <HangingSign
+          label="Pen"
+          icon="pig"
+          active={view === "pen"}
+          onPress={() => {
+            setView("pen");
+            setPrestigeOnly(false);
+          }}
+          accessibilityHint="Shows Rosie's friends in the Pen"
+        />
+        <HangingSign
+          label="Furnish"
+          art={
+            <Image
+              source={HABITAT_CHROME_ASSETS.barnDoor}
+              style={styles.doorArt}
+              resizeMode="contain"
+              accessible={false}
+            />
+          }
+          onPress={() => router.push("/barn-collection")}
+          accessibilityLabel="Furnish"
+          accessibilityHint="Browse Barn furnishings to buy with Snouts or earn through play"
+        />
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -804,87 +832,6 @@ export default function ShopScreen() {
           }
         />
 
-        {troughSummary.count > 0 ? (
-          <View style={styles.troughAccordion}>
-            <Sticker
-              color="sage"
-              radius={RADII.md}
-              shadow="sm"
-              rotate={0}
-              onPress={() => setTroughOpen((open) => !open)}
-              accessibilityState={{ expanded: troughOpen }}
-              accessibilityLabel={`The Trough, ${
-                troughSummary.activeCount > 0
-                  ? `${troughSummary.activeCount} active`
-                  : `${troughSummary.claimable.length} updates`
-              }`}
-              accessibilityHint={
-                troughOpen
-                  ? "Collapses the Trough list"
-                  : "Expands the Trough list"
-              }
-              style={styles.troughAccordionHeader}
-            >
-              <View style={styles.troughAccordionTitleRow}>
-                <Glyph name="pigface" size={TICKET_GLYPH} />
-                <CardTitle>The Trough</CardTitle>
-              </View>
-              <View style={styles.troughAccordionMeta}>
-                <Tag
-                  label={
-                    troughSummary.activeCount > 0
-                      ? `${troughSummary.activeCount} active`
-                      : `${troughSummary.claimable.length} ${
-                          troughSummary.claimable.length === 1
-                            ? "update"
-                            : "updates"
-                        }`
-                  }
-                />
-                <Icon
-                  name="chevronDown"
-                  size={TICKET_GLYPH}
-                  color={UI_COLORS.textPrimary}
-                  style={troughOpen ? styles.troughChevronOpen : undefined}
-                />
-              </View>
-            </Sticker>
-            {troughOpen ? (
-              <View style={styles.troughAccordionBody}>
-                <TroughSection
-                  data={troughSummary}
-                  onBalance={(balance) => setCounter(balance)}
-                />
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
-        <View style={styles.barnFurnishings}>
-          <SectionHeader
-            kicker="decorate your room"
-            title="Barn Furnishings"
-            right="Furnish your room"
-          />
-          <T role="body" tone="secondary" style={styles.barnFurnishingsCopy}>
-            Shop with Snouts. Complete themed collections to earn bonus
-            furnishings at four and eight owned designs.
-          </T>
-          <HabitatEntry collection />
-        </View>
-        <View style={styles.viewSwitch}>
-          <SegmentedControl
-            label="Shop view"
-            layout="icon-over-label"
-            options={viewOptions}
-            value={view}
-            onChange={(next) => {
-              setView(next);
-              setPrestigeOnly(false);
-            }}
-          />
-        </View>
-
         {error ? (
           <EmptyState
             kind="error"
@@ -906,89 +853,135 @@ export default function ShopScreen() {
         ) : null}
 
         {error && !hasCatalogData ? null : view === "daily" ? (
-          // Daily view fills the available height — no scroll.
-          // The bento expands inside this flex container so the
-          // 4×4 day-rotated mosaic. Scrolls vertically — the mosaic
-          // is taller than the available space on smaller phones.
+          // The store (Storefront build 2, 2026-09-16): a plank wall with the
+          // chalkboard and signs by the door, the drop three to a shelf, the
+          // members' shelf under the Slop Club sign, the Trough by the
+          // counter, and the sounder at the counter. It scrolls as one room.
           <ScrollView
             key="daily"
-            style={styles.dailyScroll}
-            contentContainerStyle={styles.dailyScrollContent}
+            style={styles.wall}
+            contentContainerStyle={styles.wallContent}
             showsVerticalScrollIndicator={false}
           >
-            <SectionHeader
-              kicker="today's drop"
-              title="Today's Drop"
-              right={`resets in ${formatCountdownHM(resetsIn)}`}
-            />
-            <RarityLegend />
-            {daily.length === 0 ? (
-              loading ? (
-                // Still fetching today's drop — a loading shop must
-                // never read as sold-out. Show the cozy loading beat
-                // until the fetch completes and the result is
-                // genuinely empty.
-                <LoadingBeat label="stocking the shelves" />
-              ) : (
-                <EmptyState
-                  glyph="zzz"
-                  title="All sold out for today"
-                  sub="A fresh drop arrives at sunrise."
-                />
-              )
-            ) : (
-              <>
-                {/* Uniform 2-col grid of all 8 daily items — bento mosaic
-									    + featured hero retired per the redesign handoff.
-									    Numeric widths (Yoga-quirk discipline). */}
-                <View style={shopCardStyles.grid}>
-                  {daily.map((item, i) => (
-                    <View key={item.id} style={{ width: dailyTileW }}>
-                      <ShopCard
-                        item={item}
-                        index={i}
-                        owned={owned.has(item.id)}
-                        active={isEquipped(item.id, item.category)}
-                        canAfford={counter >= item.cost}
-                        onPress={() => setPreviewItem(item)}
-                        onCenter={(x, y) =>
-                          tileCenters.current.set(item.id, { x, y })
-                        }
-                      />
+            <View
+              style={styles.room}
+              onLayout={(e: LayoutChangeEvent) =>
+                setWallH(e.nativeEvent.layout.height)
+              }
+            >
+              <View style={styles.grain} pointerEvents="none">
+                {Array.from({ length: stripes }, (_, i) => (
+                  <View
+                    key={i}
+                    style={[styles.stripe, { top: (i + 1) * WALL_STRIPE_PITCH }]}
+                  />
+                ))}
+              </View>
+              {doorway}
+              <View style={styles.shelves}>
+                {daily.length === 0 ? (
+                  loading ? (
+                    // Still fetching today's drop — a loading shop must
+                    // never read as sold-out. Show the cozy loading beat
+                    // until the fetch completes and the result is
+                    // genuinely empty.
+                    <LoadingBeat label="stocking the shelves" />
+                  ) : (
+                    <EmptyState
+                      glyph="zzz"
+                      title="All sold out for today"
+                      sub="A fresh drop arrives at sunrise."
+                    />
+                  )
+                ) : plainShelves ? (
+                  <>
+                    <SectionHeader
+                      kicker="today's drop"
+                      title="Today's Drop"
+                      right={`resets in ${formatCountdownHM(resetsIn)}`}
+                    />
+                    <RarityLegend />
+                    <View style={shopCardStyles.grid}>
+                      {daily.map((item, i) => gridCard(item, i))}
                     </View>
-                  ))}
-                </View>
-              </>
-            )}
+                  </>
+                ) : (
+                  chunkShelves(daily, PER_SHELF).map((row, r) => (
+                    <Shelf key={r}>
+                      {row.map((item, i) => shelfItem(item, r * PER_SHELF + i))}
+                    </Shelf>
+                  ))
+                )}
+                {membersShelf.length > 0 ? (
+                  plainShelves ? (
+                    <>
+                      <SectionHeader
+                        kicker="members only"
+                        title="Slop Club"
+                        right={isVip ? "yours to wear" : "join in the Pen"}
+                      />
+                      <View style={shopCardStyles.grid}>
+                        {membersShelf.map((item, i) => gridCard(item, i, true))}
+                      </View>
+                    </>
+                  ) : (
+                    <SlopClubShelf onPressSign={() => setView("pen")}>
+                      {membersShelf.map((item, i) => shelfItem(item, i, !isVip))}
+                    </SlopClubShelf>
+                  )
+                ) : null}
+              </View>
+              <View style={styles.troughWrap}>
+                <TroughByCounter
+                  drives={troughSummary.drives}
+                  receipts={troughSummary.claimable}
+                  onOpen={openTrough}
+                />
+              </View>
+              <Counter
+                buys={counterBuys}
+                owned={owned}
+                isEquipped={isEquipped}
+                isVip={isVip}
+                onPreview={(buy) => setPreviewItem(buy.item)}
+              />
+              <View style={styles.floor} />
+            </View>
           </ScrollView>
         ) : view === "wardrobe" ? (
-          <ClosetView
-            active={!previewItem}
-            pigId={pigRoster.roster.activePigId}
-            ownedItems={ownedItems}
-            allItems={allItems}
-            activeIds={activeIds}
-            onEquip={handleEquip}
-            onPreview={setPreviewItem}
-            isEquipped={isEquipped}
-            userId={userId}
-            activeTitleId={activeTitleId}
-            onTitleChange={setActiveTitleId}
-            isVip={isVip}
-            prestigeOnly={prestigeOnly}
-            onClearPrestigeFilter={() => setPrestigeOnly(false)}
-          />
+          <>
+            {doorway}
+            <ClosetView
+              active={!previewItem}
+              pigId={pigRoster.roster.activePigId}
+              ownedItems={ownedItems}
+              allItems={allItems}
+              activeIds={activeIds}
+              onEquip={handleEquip}
+              onPreview={setPreviewItem}
+              isEquipped={isEquipped}
+              userId={userId}
+              activeTitleId={activeTitleId}
+              onTitleChange={setActiveTitleId}
+              isVip={isVip}
+              prestigeOnly={prestigeOnly}
+              onClearPrestigeFilter={() => setPrestigeOnly(false)}
+            />
+          </>
         ) : (
-          <PigPenView
-            roster={pigRoster.roster}
-            loading={pigRoster.loading}
-            error={pigRoster.error}
-            onRetry={() => void pigRoster.refresh()}
-            busyPigId={pigRoster.busyPigId}
-            onJoinSlopClub={handleJoinSlopClub}
-            onRecruit={pigRoster.recruit}
-            onActivate={pigRoster.activate}
-          />
+          <>
+            {doorway}
+            <PigPenView
+              roster={pigRoster.roster}
+              loading={pigRoster.loading}
+              error={pigRoster.error}
+              onRetry={() => void pigRoster.refresh()}
+              busyPigId={pigRoster.busyPigId}
+              onJoinSlopClub={handleJoinSlopClub}
+              onRecruit={pigRoster.recruit}
+              onActivate={pigRoster.activate}
+            />
+          </>
         )}
       </SafeAreaView>
 
@@ -1001,14 +994,19 @@ export default function ShopScreen() {
         canAfford={previewItem ? counter >= previewItem.cost : false}
         balance={counter}
         busy={previewItem ? busyId === previewItem.id : false}
-        buyable={previewItem ? dailyIds.has(previewItem.id) : true}
+        buyable={previewItem ? buyableIds.has(previewItem.id) : true}
+        troughable={previewItem ? dailyIds.has(previewItem.id) : true}
+        locked={previewItem ? !!previewItem.members_only && !isVip : false}
         equippedHat={equippedPreviewSlot("active_hat_id")}
         equippedBow={equippedPreviewSlot("active_bow_id")}
-        onTroughOpened={(spent, newBalance) =>
+        onTroughOpened={(spent, newBalance) => {
           // Seed left the account server-side — reflect it in the
           // header chip NOW, not on the next focus refetch.
-          setCounter((c) => newBalance ?? Math.max(0, c - spent))
-        }
+          setCounter((c) => newBalance ?? Math.max(0, c - spent));
+          // And the new Trough belongs in the trough by the counter now, not
+          // after the next tab switch (the list only refetched on focus).
+          void troughSummary.refresh();
+        }}
         onClose={() => setPreviewItem(null)}
         onBuy={() => {
           if (previewItem) {
@@ -1027,6 +1025,13 @@ export default function ShopScreen() {
             setPreviewItem(null);
           }
         }}
+      />
+      <TroughSheet
+        open={troughOpen}
+        focusDriveId={troughFocusId}
+        data={troughSummary}
+        onClose={() => setTroughOpen(false)}
+        onBalance={(balance) => setCounter(balance)}
       />
       {/* On-screen ka-ching sparkle burst overlay. Rendered at root
 			    so it sits above every other view (tabs, modals are below
@@ -1056,71 +1061,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.md,
     paddingVertical: SPACE.sm,
   },
-  barnFurnishings: {
-    marginHorizontal: PAGE_PAD,
-    marginTop: SPACE.sm,
-    paddingTop: SPACE.md,
-    // A section break under the crown is a hairline in the paper's own warm
-    // grey, never the sticker's ink outline (the Divider primitive's rule).
-    borderTopWidth: BORDER.hair,
-    borderColor: WHIMSY.barkMute,
-  },
-  barnFurnishingsCopy: {
-    marginBottom: SPACE.sm,
-  },
-  viewSwitch: {
-    marginHorizontal: PAGE_PAD,
-    marginTop: SPACE.md,
-    marginBottom: SPACE.sm,
-  },
-  troughAccordion: {
-    marginHorizontal: PAGE_PAD,
-    marginTop: SPACE.sm,
-  },
-  troughAccordionHeader: {
-    minHeight: TROUGH_HEADER_H,
+  // The door: chalkboard left, the hanging signs right, on one line under
+  // the crown. The signs hang from the top edge, so the row has no top pad.
+  doorway: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    paddingHorizontal: SPACE.md,
+    gap: SPACE.md,
+    paddingHorizontal: PAGE_PAD,
+    marginBottom: SPACE.sm,
   },
-  troughAccordionTitleRow: {
+  // The signs share whatever the chalkboard leaves; away from the store a
+  // fourth sign, back to it, hangs in the chalkboard's place.
+  signs: {
+    flex: 1,
     flexDirection: "row",
-    alignItems: "center",
     gap: SPACE.sm,
   },
-  troughAccordionMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACE.sm,
-  },
-  troughChevronOpen: { transform: [{ rotate: "180deg" }] },
-  troughAccordionBody: {
-    marginTop: SPACE.sm,
-    padding: SPACE.md,
-    borderWidth: BORDER.ink,
+  doorArt: { ...DOOR_ART },
+  // The wall — the plank room the store is, with its faint grain, under an
+  // ink rule. It is the scroller; the room inside it measures for the grain.
+  wall: {
+    flex: 1,
+    backgroundColor: WHIMSY.cream2,
+    borderTopWidth: BORDER.ink,
     borderColor: UI_COLORS.border,
-    borderRadius: RADII.md,
-    backgroundColor: UI_COLORS.surfaceMuted,
+    marginTop: SPACE.sm,
   },
-  // Today tab — scrolling container holding the 2-col grid.
-  dailyScroll: { flex: 1 },
-  dailyScrollContent: {
-    paddingHorizontal: GRID_PAD,
-    paddingTop: SPACE.xs,
-    paddingBottom: TAB_SAFE,
-  },
-  // Measuring container for HatThumb's fill mode — the VIEW takes the
-  // insets (views resolve them fine; it's Images that fall back to
-  // intrinsic px), the Image inside gets measured numerics.
-  thumbFillBox: {
+  wallContent: { flexGrow: 1 },
+  room: { position: "relative", flexGrow: 1, paddingTop: SPACE.sm },
+  grain: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
+  },
+  stripe: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: BORDER.ink,
+    backgroundColor: TINT.inkWash,
+  },
+  shelves: {
+    paddingHorizontal: PAGE_PAD,
+    gap: SPACE.md,
+  },
+  // The trough's pill hangs above its rim, over the shelf before it: the
+  // wrapper stacks above the shelves so Fabric never paints them over it.
+  troughWrap: {
+    marginTop: SPACE.lg,
+    marginHorizontal: PAGE_PAD,
+    zIndex: 1,
+  },
+  // The counter's face runs on under the tab bar: the floor of the store.
+  floor: {
+    height: TAB_SAFE,
+    backgroundColor: WOOD.bottom,
   },
 });

@@ -75,7 +75,9 @@ describe("held-item image tiers", () => {
 	it("reserves masters for composition and uses tiers in browse surfaces", () => {
 		const hats = source("constants/hats.ts");
 		const closet = source("components/ClosetView.tsx");
-		const shop = source("app/(tabs)/shop.tsx");
+		// The shop's thumbnail moved to components/shop/HatThumb (the
+		// storefront, 2026-09-16); the screen draws every product shot through it.
+		const shop = source("components/shop/HatThumb.tsx");
 
 		for (const id of ids) {
 			expect(hats).toContain(`thumbs/128/${id}.png`);

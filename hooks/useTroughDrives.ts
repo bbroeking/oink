@@ -8,6 +8,10 @@ export interface TroughDrive {
 	item_name: string | null;
 	opener_id: string;
 	opener_name: string | null;
+	// The opener's companion (profiles.active_pig_id) — the pig at the head of
+	// the drive's row in the store. Absent from a server without 20260916140000;
+	// the row then draws Rosie, which is right for everyone without a companion.
+	opener_pig_id?: string | null;
 	target: number;
 	raised: number;
 	status: string;

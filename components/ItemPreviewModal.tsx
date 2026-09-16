@@ -209,6 +209,15 @@ interface Props {
 	balance: number;
 	busy?: boolean;
 	buyable?: boolean;
+	// Whether a Trough can be OPENED for this item. Troughs only open for
+	// items in today's drop (open_item_drive refuses `not_in_shop`), while
+	// `buyable` also covers the counter (a crewmate's buy from today) — so the
+	// two gates split (2026-09-16). Defaults to `buyable` for older callers.
+	troughable?: boolean;
+	// Members-only item and the caller is not a Slop Club member. The card
+	// already wears this lock; the sheet used to fall through to the balance
+	// branch ("Not enough") — checked before it now (2026-09-16).
+	locked?: boolean;
 	equippedHat?: EquippedItem | null;
 	equippedBow?: EquippedItem | null;
 	onClose: () => void;
@@ -231,6 +240,8 @@ export function ItemPreviewModal({
 	balance,
 	busy,
 	buyable = true,
+	troughable = buyable,
+	locked = false,
 	equippedHat = null,
 	equippedBow = null,
 	onClose,
@@ -417,11 +428,13 @@ export function ItemPreviewModal({
 							>
 								Wear
 							</Button>
-						) : item.cost <= 0 ? (
+						) : item.cost <= 0 || item.pass_exclusive ? (
 							// Season-pass exclusives + referral milestones carry
 							// cost=0 in the catalog. They're earned, not bought —
 							// surface that instead of showing "0 snouts" + a
-							// misleading "Available in Today's Shop" lock.
+							// misleading "Available in Today's Shop" lock. The
+							// premium-track members' cosmetics keep a catalog price
+							// but are pass_exclusive (20260727): same answer.
 							<Button
 								size="md"
 								variant="locked"
@@ -440,6 +453,16 @@ export function ItemPreviewModal({
 								accessibilityHint="This item isn't in today's shop"
 							>
 								Rotates in soon — not today's pick
+							</Button>
+						) : locked ? (
+							<Button
+								size="md"
+								variant="locked"
+								full
+								disabled
+								accessibilityHint="Join the Slop Club to buy members' pieces"
+							>
+								Slop Club members only
 							</Button>
 						) : !canAfford ? (
 							<Button
@@ -471,7 +494,7 @@ export function ItemPreviewModal({
 					    (today's rotation or an always-stocked flag) — gated
 					    here AND server-side (20260639's `not_in_shop`), so
 					    out-of-rotation items just show the locked Buy row. */}
-					{!owned && item.cost > 0 && buyable && (
+					{!owned && item.cost > 0 && troughable && (
 						<View style={styles.troughCtaWrap}>
 							{/* A control that spends states its cost on its own face.
 							    This one used to be `ghost` — the quietest fill in the

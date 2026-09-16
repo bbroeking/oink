@@ -132,15 +132,15 @@
 
   <div class="sticker" style="background: #fff3d0; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; transform: rotate(-0.3deg);">
     <div class="kicker">★ the notch reward</div>
-    <div class="sectionTitle">The Trough holds a pot; each notch spills some of it</div>
-    <div class="body">Today a chip pays 1 tickle per 100 snouts, credited inline (2026-07-20) — which at the 10 · 25 · 50 presets is almost never (≈ 0.24 tickles a drive; 95% of donors get nothing). Replaced by the <span class="label">pot rule</span>: a Trough holds a pot of <span class="label">max(4, cost ÷ 100)</span> tickles. When your chip pushes it past a quarter notch, a random share of what is left in the pot (2/8–6/8) spills into your bank — shown as it lands (toast on the app-wide line, the coin bumps), never quoted before. The filling notch empties the pot.</div>
-    <div class="body"><span class="label">Why the pot.</span> The pot IS the 2026-07-20 ceiling, so nothing is ever clamped and a funded Trough always spends its whole allowance; a fixed drop table could not respect a ceiling that scales with price (the balance loop, tools/balance_trough_notch.py). The share reads from server config with a compiled fallback, and the credit lands in the <span class="label">bank only</span>, so a tickle still has to be played to count toward Most Tickles (crediting tickles_earned would add ≈ 1.4% of a season's played tickles).</div>
+    <div class="sectionTitle">Reach your quarter, draw one Barn design a week</div>
+    <div class="body">Ratified 2026-09-16, superseding the pot rule drawn earlier that day. <span class="label">The quarter rule:</span> a giver earns from a Trough only once their contributions to it reach 25% of the price — the most anyone may give. <span class="label">One random reward per week, no stacking:</span> the first quarter you reach in a week draws one reward — a furnishing from the current featured collection at 60 / 28 / 12, or a tickle purse when you own the collection — and nothing more that week, however many Troughs or snouts. Never quoted before it lands. The 1-per-100 credit retires.</div>
+    <div class="body"><span class="label">Separate from the Barn Draw.</span> Every Monday each crew (up to 8, roster only, never the friends list) draws one for-sale furnishing among its diggers, equal odds, seed committed before the week ends. Giving to a Trough never enters or weights it — Troughs reach friends and the draw is crew-only. Collection gifts, keepsakes, pass rewards and bunting are never drawn.</div>
   </div>
 
   <div class="sticker" style="background: #c9dec1; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; transform: rotate(0.4deg);">
     <div class="kicker">★ build order</div>
     <div class="sectionTitle">Three builds, one asset order</div>
-    <div class="body">1 — Home first: the yard trough, the fan row, the sheet, the pot rule (server: pot + notch detection in donate_to_drive, config-fed share; the 1-per-100 credit retires). 2 — The store's chrome: Troughs as rows, Closet/Furnish as signs, the sounder at the counter (needs one sounder-scoped “bought today” RPC). 3 — The scene: wall, shelves, counter, shopkeep painted in Rosie's sticker hand; the grid stays as the fallback until the art lands.</div>
+    <div class="body">1 — Home first: the yard trough, the fan row, the sheet, the quarter rule (server: 20260916120000 — the weekly draw in donate_to_drive, the crew draw on the race cycle). 2 — The store's chrome: Troughs as rows, Closet/Furnish as signs, the sounder at the counter (needs one sounder-scoped “bought today” RPC). 3 — The scene: wall, shelves, counter, shopkeep painted in Rosie's sticker hand; the grid stays as the fallback until the art lands.</div>
   </div>
 </div>
 

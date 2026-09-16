@@ -1,5 +1,7 @@
 # Trough notch reward — balance loop results (2026-09-16)
 
+> **Superseded the same day.** The pot rule was replaced by the quarter rule (one random draw per week once a giver reaches 25% of a Trough — see `2026-09-16-barn-prize-draw.md`, ratified block). This note stays as the record of why a fixed drop table and the 1-per-100 credit were both rejected. `tools/balance_trough_notch.py` still runs.
+
 Tool: `tools/balance_trough_notch.py` (fixture: `tools/balance/catalog_costs.json`, the live catalog prices read 2026-09-16; output: `tools/balance/trough_notch.tuned.json`). Design: `docs/design/claude-design/shop-2026-09-16/`.
 
 The loop simulates Troughs under the server's real rules (opener seeds 10%, per-donor quarter cap, 12h cooldown, 72h window, 10 · 25 · 50 · Max chips), measures what a reward rule mints, scores it against guardrails, nudges the rule, and repeats until nothing improves. Player behaviour (sounder size, chip odds, wallets) is a set of knobs at the top of the script.
