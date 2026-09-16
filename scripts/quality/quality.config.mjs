@@ -47,7 +47,7 @@ export const LAYOUT_TESTS = Object.freeze([
   "__tests__/motionPolicy.test.tsx",
   "__tests__/colorSystem.test.ts",
   "__tests__/listAndImageOptimization.test.ts",
-  "__tests__/HungerHero.test.ts",
+  "__tests__/seasonAlmanac.test.tsx",
 ]);
 
 export const SECURITY_TESTS = Object.freeze([

@@ -16,7 +16,7 @@ describe("Barn furnishing expansion metadata", () => {
     expect(
       HABITAT_EXPANSION_CATALOG.some((item) => classicIds.has(item.id)),
     ).toBe(false);
-    expect(HABITAT_CATALOG).toHaveLength(122);
+    expect(HABITAT_CATALOG).toHaveLength(123);
     expect(new Set(HABITAT_EXPANSION_CATALOG.map((item) => item.id)).size).toBe(
       100,
     );

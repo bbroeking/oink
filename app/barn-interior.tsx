@@ -93,6 +93,11 @@ export function BarnInterior({
   const params = useLocalSearchParams<{
     position?: string;
     purchasedItemId?: string;
+    // A furnishing handed in without placing it — the editor opens on the
+    // spot it fits, with the item wearing its "new" mark in the choices, and
+    // the player hangs it. The pass claim sheet's "Hang it in the Barn" uses
+    // this; `purchasedItemId` (the shop hand-off) places into the draft.
+    handItemId?: string;
     entry?: HabitatEntryPoint;
   }>();
   const habitat = useHabitat(accountId, backend);
@@ -152,6 +157,23 @@ export function BarnInterior({
       router.setParams({ position: undefined, purchasedItemId: undefined });
     }
   }, [accountId, params.position, params.purchasedItemId, habitat.data, habitat.loading, compatiblePosition, journal.acquisitions, journal.markSeen]);
+  useEffect(() => {
+    if (!params.handItemId) return;
+    if (habitat.loading || !habitat.draft || !habitat.data) return;
+    const item = habitat.data.owned.find((i) => i.id === params.handItemId);
+    if (!item) return;
+    const handoff = `${accountId}:hand:${item.id}`;
+    if (consumedHandoff.current === handoff) return;
+    const target = compatiblePosition(item.category);
+    if (!target) return;
+    consumedHandoff.current = handoff;
+    // Never auto-place: open the editor on the compatible spot and let the
+    // player choose the furnishing from the spot's choices.
+    setStartInList(false);
+    setInitialPosition(target);
+    setEditing(true);
+    router.setParams({ handItemId: undefined });
+  }, [accountId, params.handItemId, habitat.data, habitat.loading, habitat.draft, compatiblePosition]);
   useEffect(() => {
     if (message !== "Barn saved.") return;
     const timer = setTimeout(() => setMessage(null), 3500);

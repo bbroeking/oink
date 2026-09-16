@@ -51,8 +51,19 @@ interface MoteClaimFields {
 	motes_balance?: number;
 }
 
+// A Barn-furnishing claim (reward_type 'habitat', 20260916100000). The server
+// grants through the habitat helper and answers the same claim shape plus the
+// item it hung in the inventory; `already_owned` when the player had it already
+// (the tier is still marked claimed). `habitat_acquisition_id` is the journal
+// entry the claim already presented.
+export interface HabitatClaimFields {
+	habitat_item_id?: string;
+	already_owned?: boolean;
+	habitat_acquisition_id?: string;
+}
+
 type RawClaim =
-	| ({ ok: boolean; reason?: string; current_tier?: number } & MysteryBoxRevealPayload & MoteClaimFields)
+	| ({ ok: boolean; reason?: string; current_tier?: number } & MysteryBoxRevealPayload & MoteClaimFields & HabitatClaimFields)
 	| null;
 
 // A claim outcome the screen maps to its dialogs. Success carries current_tier +
@@ -61,7 +72,7 @@ type RawClaim =
 // the screen's maps — so it renders the same "Couldn't claim / give it another
 // tap" fallback the raw-null path always did.
 export type ClaimResult =
-	| ({ ok: true; current_tier?: number } & MysteryBoxRevealPayload & MoteClaimFields)
+	| ({ ok: true; current_tier?: number } & MysteryBoxRevealPayload & MoteClaimFields & HabitatClaimFields)
 	| { ok: false; reason: string; current_tier?: number };
 
 // The claim-all tally. The screen turns this into its one summary beat (the

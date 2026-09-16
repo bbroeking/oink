@@ -220,10 +220,12 @@
 	/* Art sizes — the fixed boxes hand-drawn art is laid out in (not spacing) */
 	--art-mark:                   12px;
 	--art-glyph-sm:               24px;
+	--art-glyph-md:               32px;
 	--art-glyph:                  40px;
 	--art-badge:                  56px;
 	--art-thumb:                  72px;
 	--art-portrait:               120px;
+	--art-reveal:                 148px;
 	--art-stage:                  300px;
 	--art-bubble:                 104px;
 

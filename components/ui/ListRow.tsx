@@ -62,6 +62,12 @@ export interface ListRowProps {
 	// A row that cannot be chosen right now keeps its shape (DISABLED chrome via
 	// Sticker) and announces it. (2026-09-11)
 	disabled?: boolean;
+	// A row INSIDE a sticker — a roster, a ladder — draws no outline of its own,
+	// no lift, and no side inset (the host card already has all three). It keeps
+	// the 44pt frame, the press, and the identity/rail grammar. Selection still
+	// draws its heavy outline. Added so no caller has to zero the chrome from
+	// outside (the 2026-09-12 ruling). (2026-09-16)
+	flat?: boolean;
 	// A row that opens something in place announces the state it is in, so a
 	// screen reader hears "expanded" rather than discovering new buttons.
 	expanded?: boolean;
@@ -91,6 +97,7 @@ export function ListRow({
 	tilt = true,
 	fill,
 	disabled,
+	flat,
 	expanded,
 	accessibilityLabel,
 	accessibilityHint,
@@ -118,12 +125,12 @@ export function ListRow({
 		return (
 			<Sticker
 				color={muted ? UI_COLORS.surfaceStrong : (fill ?? "paper")}
-				shadow="sm"
+				shadow={flat ? "none" : "sm"}
 				radius={RADII.md}
-				border={selected ? BORDER.heavy : BORDER.ink}
-				rotate={rotate}
+				border={selected ? BORDER.heavy : flat ? 0 : BORDER.ink}
+				rotate={flat ? 0 : rotate}
 				disabled={disabled}
-				style={[styles.row, styles.withFooter, style]}
+				style={[styles.row, styles.withFooter, flat && styles.flat, style]}
 			>
 				<View style={styles.header}>
 					<Pressable
@@ -148,10 +155,10 @@ export function ListRow({
 	return (
 		<Sticker
 			color={muted ? UI_COLORS.surfaceStrong : (fill ?? "paper")}
-			shadow="sm"
+			shadow={flat ? "none" : "sm"}
 			radius={RADII.md}
-			border={selected ? BORDER.heavy : BORDER.ink}
-			rotate={rotate}
+			border={selected ? BORDER.heavy : flat ? 0 : BORDER.ink}
+			rotate={flat ? 0 : rotate}
 			pad
 			onPress={onPress}
 			disabled={disabled}
@@ -167,6 +174,7 @@ export function ListRow({
 			testID={testID}
 			style={[
 				styles.row,
+				flat && styles.flat,
 				(overlay !== undefined || after !== undefined) && styles.clipped,
 				style,
 			]}
@@ -279,6 +287,12 @@ const styles = StyleSheet.create({
 		// and wider side-to-side than a card, so it restates both axes.
 		paddingVertical: SPACE.sm,
 		paddingHorizontal: SPACE.md,
+	},
+	// A row inside a card: the card owns the side inset; the row keeps its
+	// vertical rhythm and its 44pt frame.
+	flat: {
+		paddingHorizontal: 0,
+		minHeight: TAP_MIN,
 	},
 	// Only rows carrying an `overlay` or an `after` layer clip: a sliding layer
 	// has to be cut at the card edge, and every other row keeps the (unclipped)

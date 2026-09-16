@@ -340,6 +340,22 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
     },
     17,
   ),
+  // The weekly race's first-place spoils (20260916110000): grant-only, never
+  // sold. ART PENDING — its asset key maps onto the Barn Bunting art below
+  // until a gilded set lands; surfaces tint it gold meanwhile.
+  item(
+    {
+      id: "gold_bunting",
+      assetKey: "gold_bunting",
+      name: "Gold Bunting",
+      description: "Gilded pennants strung for the herd that dug the most in one week.",
+      category: "wall_decor",
+      rarity: "rare",
+      snoutCost: 0,
+      isForSale: false,
+    },
+    18,
+  ),
   ...HABITAT_EXPANSION_CATALOG,
   item(
     {
@@ -423,6 +439,8 @@ export const HABITAT_ASSETS: Record<string, ImageSourcePropType> = {
   rosies_pencil_sketch: require("../assets/images/habitat/rosies_pencil_sketch_v4.png"),
   pressed_clover_frame: require("../assets/images/habitat/pressed_clover_frame.png"),
   barn_bunting: require("../assets/images/habitat/barn_bunting.png"),
+  // gold_bunting art pending — the bunting art stands in (2026-09-16).
+  gold_bunting: require("../assets/images/habitat/barn_bunting.png"),
   firefly_lantern: require("../assets/images/habitat/firefly_lantern.png"),
   dried_herb_garland: require("../assets/images/habitat/dried_herb_garland.png"),
   sunflower_crock: require("../assets/images/habitat/sunflower_crock.png"),
@@ -469,6 +487,7 @@ export const HABITAT_THUMBNAILS: Record<string, ImageSourcePropType> = {
   rosies_pencil_sketch: require("../assets/images/habitat/rosies_pencil_sketch_v4.png"),
   pressed_clover_frame: require("../assets/images/habitat/thumbnails/pressed_clover_frame.png"),
   barn_bunting: require("../assets/images/habitat/thumbnails/barn_bunting.png"),
+  gold_bunting: require("../assets/images/habitat/thumbnails/barn_bunting.png"),
   firefly_lantern: require("../assets/images/habitat/thumbnails/firefly_lantern.png"),
   dried_herb_garland: require("../assets/images/habitat/thumbnails/dried_herb_garland.png"),
   sunflower_crock: require("../assets/images/habitat/thumbnails/sunflower_crock.png"),

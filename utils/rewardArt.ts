@@ -13,6 +13,7 @@
 import type { ImageSourcePropType } from "react-native";
 import { MOTE_IMAGE } from "@/constants/motes";
 import { HAT_IMAGES } from "@/constants/hats";
+import { HABITAT_CATALOG_BY_ID, habitatItemAsset } from "@/constants/habitat";
 
 // The reward_value jsonb shape varies per reward_type (Supabase jsonb). Legacy
 // seeds used category-specific keys (bg_id, aura_id, cape_id); the 20260514020000
@@ -29,6 +30,9 @@ export type RewardValue =
 			count?: number;
 			amount?: number;
 			title?: string;
+			// A Barn furnishing (reward_type 'habitat', 20260916100000): the
+			// HABITAT_CATALOG id. Never coalesced with the hats-table ids above.
+			item_id?: string;
 	  }
 	| null
 	| undefined;
@@ -52,6 +56,16 @@ export const WEARABLE_REWARD_TYPES = new Set<string>([
 // forward-compat with un-migrated rows.
 export function rewardItemId(val: RewardValue): string | null {
 	return val?.hat_id ?? val?.bg_id ?? val?.aura_id ?? val?.cape_id ?? null;
+}
+
+// The Barn furnishing a 'habitat' reward pins — a HABITAT_CATALOG id, resolved
+// through the catalog rather than HAT_IMAGES. Null for any other reward type or
+// when the id is unknown to the bundled catalog (a server-only item lands as the
+// missing-item art through resolveRewardArt's fallback, never as a hat).
+export function rewardHabitatItemId(reward: RewardArtInput): string | null {
+	if (reward.reward_type !== "habitat") return null;
+	const id = reward.reward_value?.item_id;
+	return typeof id === "string" && id.length > 0 ? id : null;
 }
 
 // A resolved cosmetic sprite by bundled id, or undefined when the id has no art.
@@ -90,7 +104,36 @@ export type RewardArt =
 	| { kind: "legacyAura" }
 	| { kind: "legacyCape" }
 	| { kind: "special" } // mystery_box | cap_increase | pig_skin
+	// A Barn furnishing. Carries the catalog art (or the Barn's missing-item
+	// art when the id isn't in the bundled catalog) so a surface can draw it
+	// exactly as the Barn does — the kind stays distinct from `image` because
+	// furnishings are not sprites on the pig.
+	| { kind: "habitat"; source: ImageSourcePropType }
 	| { kind: "fallback" };
+
+// The ladder pill's vocabulary — the FIVE words a tier row may wear
+// (`wear` lilac / `barn` sage / `title` rose / `tickles` sky / `milestone` rose)
+// plus `mystery` for the box. One owner so the Pass panel, the full track and
+// the claim sheets agree on which pill a reward_type earns.
+export type RewardKind =
+	| "wear"
+	| "barn"
+	| "title"
+	| "tickles"
+	| "mystery"
+	| "milestone";
+
+export function rewardKind(reward: RewardArtInput): RewardKind {
+	const type = reward.reward_type;
+	if (type === "habitat") return "barn";
+	if (type === "title") return "title";
+	if (type === "tickles" || type === "snouts") return "tickles";
+	if (type === "mystery_box") return "mystery";
+	if (WEARABLE_REWARD_TYPES.has(type)) return "wear";
+	// motes / golden_truffle / boost / cap_increase / pig_skin — progression
+	// beats rather than things to wear or hang.
+	return "milestone";
+}
 
 // Resolve a reward's art source. Mirrors the exact branch ORDER the season tab's
 // StoneThumb used — image resolution for wearables (background/aura/cape included)
@@ -108,6 +151,13 @@ export function resolveRewardArt(reward: RewardArtInput): RewardArt {
 	}
 	if (WEARABLE_REWARD_TYPES.has(type) && itemId && HAT_IMAGES[itemId]) {
 		return { kind: "image", source: HAT_IMAGES[itemId] };
+	}
+	if (type === "habitat") {
+		const habitatId = rewardHabitatItemId(reward);
+		const item = habitatId ? HABITAT_CATALOG_BY_ID[habitatId] : undefined;
+		// habitatItemAsset already falls back to the Barn's missing-item art for
+		// an unknown asset key; an unknown ID takes the same road.
+		return { kind: "habitat", source: habitatItemAsset(item?.assetKey ?? "") };
 	}
 	if (type === "title") return { kind: "title" };
 	if (type === "boost") return { kind: "boost" };

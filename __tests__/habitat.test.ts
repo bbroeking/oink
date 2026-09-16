@@ -79,12 +79,12 @@ describe("habitat contract", () => {
       ).toBeNull();
     },
   );
-  it("preserves the 18 originals and 100 expansion designs with four free exclusive keepsakes", () => {
-    expect(HABITAT_CATALOG).toHaveLength(122);
+  it("preserves the 18 originals, the race's gold bunting, and 100 expansion designs with four free exclusive keepsakes", () => {
+    expect(HABITAT_CATALOG).toHaveLength(123);
     const originals = HABITAT_CATALOG.filter(
       (i) => !i.collectionId && !i.prestigeKeepsake,
     );
-    expect(originals).toHaveLength(18);
+    expect(originals).toHaveLength(19);
     expect(originals.reduce((sum, i) => sum + i.snoutCost, 0)).toBe(1125);
     expect(
       HABITAT_CATALOG.filter((i) => i.isForSale).reduce(
@@ -92,7 +92,7 @@ describe("habitat contract", () => {
         0,
       ),
     ).toBe(8625);
-    expect(new Set(HABITAT_CATALOG.map((i) => i.id)).size).toBe(122);
+    expect(new Set(HABITAT_CATALOG.map((i) => i.id)).size).toBe(123);
     expect(Object.keys(HABITAT_ASSETS).sort()).toEqual(
       HABITAT_CATALOG.map((i) => i.assetKey).sort(),
     );

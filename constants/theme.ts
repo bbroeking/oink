@@ -387,10 +387,12 @@ export const LENS_TEXT_SHADOW = {
 export const ART_SIZE = {
 	mark: 12, // an inline glyph beside a label
 	glyphSm: 24, // a row/avatar glyph
+	glyphMd: 32, // a glyph's art box inside a row (the Monday draw's ember)
 	glyph: 40, // EmptyState / detail-card art
 	badge: 56, // reveal marks (a coin, a gem), the lg Avatar
 	thumb: 72, // catalog thumbnails
 	portrait: 120, // gift / reveal portraits
+	reveal: 148, // the Almanac sheets' hero card (a claimed furnishing, the Monday purse)
 	stage: 300, // the pig stage reserve
 	bubble: 104, // the ritual bubble's diameter (its art rides at `thumb`)
 } as const;
@@ -457,6 +459,9 @@ export const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];
 export const TILT = {
 	card: -0.6,
 	dialog: -0.8,
+	// The Almanac sheets' hero card (a claimed furnishing) — a stuck-on art
+	// square that leans more than furniture, less than tape. (2026-09-16)
+	reveal: -1.5,
 	tape: -8,
 	row: ROW_TILTS,
 } as const;

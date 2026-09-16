@@ -102,6 +102,16 @@ export interface PrizeLadder {
 	field: number;
 }
 
+/**
+ * The Barn furnishings the cycle grants (20260916110000): one to every digging
+ * snout in a ranked herd, one more to the winning herd's diggers. Habitat
+ * catalog item ids.
+ */
+export interface RaceFurnishings {
+	allWhoDug: string;
+	first: string;
+}
+
 /** This week's spoils, as the server pays them — the source for the prize strip. */
 export interface RacePrizes {
 	/** Tickles banked to the SPENDABLE tap pool (never tickles_earned). */
@@ -111,6 +121,12 @@ export interface RacePrizes {
 	};
 	/** Golden Truffles minted at cycle end. */
 	truffles: PrizeLadder;
+	/**
+	 * Present once the server pays furnishings instead of tickles. When it is,
+	 * the tickle ladder above is the server's honest zeros, not the compiled
+	 * fallback.
+	 */
+	furnishings?: RaceFurnishings;
 }
 
 // Compiled fallback for the spoils ladder — used until the server reports its own
@@ -267,9 +283,43 @@ function parsePrizeLadder(v: unknown, fb: PrizeLadder): PrizeLadder {
 	};
 }
 
+// A server that names the furnishings pays furnishings — its tickle ladder is
+// read as-is (zeros included) instead of "0 means missing → compiled fallback",
+// so no shipped strip can advertise a purse the cycle no longer pays.
+function parseFurnishings(v: unknown): RaceFurnishings | undefined {
+	if (v == null || typeof v !== "object") return undefined;
+	const s = obj(v);
+	const allWhoDug = str(s.all_who_dug);
+	const first = str(s.first);
+	if (!allWhoDug || !first) return undefined;
+	return { allWhoDug, first };
+}
+
+function parsePrizeLadderExact(v: unknown): PrizeLadder {
+	const s = obj(v);
+	return {
+		first: nonneg(s.first),
+		second: nonneg(s.second),
+		third: nonneg(s.third),
+		upper: nonneg(s.upper),
+		field: nonneg(s.field),
+	};
+}
+
 function parseRacePrizes(v: unknown): RacePrizes {
 	if (v == null) return DEFAULT_RACE_PRIZES;
 	const s = obj(v);
+	const furnishings = parseFurnishings(s.furnishings);
+	if (furnishings) {
+		return {
+			tickles: {
+				...parsePrizeLadderExact(s.tickles),
+				participation: nonneg(obj(s.tickles).participation),
+			},
+			truffles: parsePrizeLadder(s.truffles, DEFAULT_RACE_PRIZES.truffles),
+			furnishings,
+		};
+	}
 	const t = parsePrizeLadder(s.tickles, DEFAULT_RACE_PRIZES.tickles);
 	const partRaw = nonneg(obj(s.tickles).participation);
 	return {

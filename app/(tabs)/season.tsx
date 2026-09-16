@@ -8,6 +8,7 @@ import {
 	Pressable,
 	type ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useIsFocused } from "expo-router/react-navigation";
 import { router } from "expo-router";
 import {
@@ -18,6 +19,7 @@ import {
 // The design system's front door — spec §2: `components/ui/index.tsx` is the
 // only sanctioned import path for a primitive.
 import {
+	ActionSheet,
 	AdaptiveModalScaffold,
 	AlignmentBar,
 	Body,
@@ -37,6 +39,7 @@ import {
 	ProgressTrack,
 	SectionHeader,
 	SegmentedControl,
+	Sheet,
 	SpotlightOverlay,
 	SpotlightProvider,
 	Sticker,
@@ -62,35 +65,50 @@ import {
 } from "../../components/SeasonEndModal";
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
-import { HungerHero } from "../../components/season1/HungerHero";
 import { TickleBreakdownSheet } from "../../components/TickleBreakdownSheet";
-import { BountyBoard } from "../../components/BountyBoard";
-import { WindowStrip } from "../../components/season1/WindowStrip";
-import {
-	FeedingAction,
-	SounderHomeCard,
-} from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
 import { MoteRewardDialog } from "@/components/season1/MoteRewardDialog";
 import { MoteMachineCard } from "../../components/season1/MoteMachineCard";
+import { SounderOinkSheet } from "@/components/SounderOinkSheet";
+import { UserSheet } from "@/components/UserSheet";
 import { HabitatGiftReveal } from "@/components/habitat/HabitatGiftReveal";
 import { HABITAT_CATALOG } from "@/constants/habitat";
 import { useHabitatJournal } from "@/hooks/useHabitatJournal";
 import { useFeedingCta } from "../../components/mudwar/useFeedingCta";
 import { seasonHeroSurface, seasonPrimaryAction } from "@/utils/seasonHero";
-import { YourTakeStrip } from "../../components/season1/YourTakeStrip";
 import { useSounderPath } from "../../hooks/useSounderPath";
 import {
 	useJoinSpotlight,
 	JOIN_SPOTLIGHT_TARGET_ID,
 } from "../../hooks/useJoinSpotlight";
-import { RaceSection } from "../../components/season1/RaceSection";
 import { DevSeasonStatesSheet } from "../../components/season1/DevSeasonStatesSheet";
 import { SeasonGuideModal } from "../../components/season1/SeasonGuideModal";
 import {
 	SeasonInfoModal,
 	type SeasonInfoTopic,
 } from "../../components/season1/SeasonInfoModal";
+// The Almanac — the four verb panels and their pure state.
+import {
+	almanacInitialTab,
+	almanacTodo,
+	almanacValues,
+	seasonDay,
+	type AlmanacFacts,
+	type AlmanacTab,
+} from "@/components/season1/almanac/almanacState";
+import { VerbTabStrip } from "@/components/season1/almanac/VerbTabStrip";
+import { FeedPanel } from "@/components/season1/almanac/FeedPanel";
+import { HerdPanel } from "@/components/season1/almanac/HerdPanel";
+import { RacePanel } from "@/components/season1/almanac/RacePanel";
+import { PassPanel } from "@/components/season1/almanac/PassPanel";
+import { useHerdFeeding } from "@/components/season1/almanac/useHerdFeeding";
+import { useRaceRun } from "@/components/season1/almanac/useRaceRun";
+import { useWeeklyQuests } from "@/components/season1/almanac/useWeeklyQuests";
+import {
+	HUNGER_LEVEL_NAME,
+	HUNGER_STAGES,
+	useHungerMeter,
+} from "@/hooks/useHungerMeter";
 import { useCrew } from "../../hooks/useCrew";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
@@ -99,7 +117,14 @@ import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
 import { resolveRewardArt, rewardItemId, WEARABLE_REWARD_TYPES } from "@/utils/rewardArt";
 import { useSeason } from "../../hooks/useSeason";
 import * as seasonPass from "@/utils/seasonPass";
-import type { PassTrack, TierRow, TierState } from "@/utils/seasonPass";
+import type {
+	PassTrack,
+	SeasonRow,
+	SeasonState,
+	TierRow,
+	TierState,
+	TiersByNumber,
+} from "@/utils/seasonPass";
 import {
 	BORDER,
 	OPACITY,
@@ -132,7 +157,14 @@ import {
 	useDevSeasonOverrides,
 } from "@/utils/devSeasonOverrides";
 
+import { BarnRewardClaimSheet } from "@/components/season1/BarnRewardClaimSheet";
+import { MondayDrawSheet } from "@/components/season1/MondayDrawSheet";
+import { useMondayDraw } from "@/hooks/useMondayDraw";
+import type { ClaimResult } from "@/hooks/useSeason";
+
 const claimSound = require("../../assets/sounds/claim.mp3");
+// The Hungerer — the page's protagonist, once per screen.
+const HUNGERER_SPRITE = require("../../assets/images/hunger/great_hungerer_chip.png");
 
 // SeasonRow / RewardValue / TierRow / ClaimRow / SeasonState now live in
 // utils/seasonPass (the pure derivation module); NextReward + TierState too.
@@ -159,6 +191,7 @@ const CREST_MARK = 12; // … and the crest inside it
 const BANNER_CREST = 34; // the Slop Club crest on the locked-premium banner …
 const CREST_ICON = 18; // … and the crest mark inside it
 const HEADER_BTN = 38; // the page crown's reference-sheet doors
+const TITLE_SPRITE = 44; // the Hungerer beside the title
 const CHIP_BTN = 34; // the pass header's star / crown chips …
 const CHIP_MARK = 16; // … and the glyph inside one
 const REWARD_WELL = 160; // the claim dialog's art well …
@@ -178,27 +211,20 @@ const HEADER_BTN_HIT = (TAP_MIN - HEADER_BTN) / 2;
 const CHIP_BTN_HIT = (TAP_MIN - CHIP_BTN) / 2;
 
 /**
- * The tab's ONE hero. Audit C-26: eleven decision surfaces stack in this
+ * The tab's ONE hero. Audit C-26: eleven decision surfaces once stacked in this
  * scroll, and on a "rewards ready" load six of them wore the sun-yellow
  * full-card highlight at once — so nothing was the one thing. The highlight is
  * the loudest sentence the app can say; exactly one surface may speak it, and
  * WHICH one is derived here, once, never decided per card.
  *
  * Order of precedence: the dig (the thing to do right now) > a claimable
- * reward > joining a Sounder > browsing. Everything that loses falls back to
- * outline-only — it keeps its shape, its tag and its button, it just stops
- * shouting.
+ * reward > joining a Sounder > browsing.
  *
- * Wave 4 carries the rule off this file and across the whole scroll: the cards
- * this tab composes (`HungerHero`, `FeedingAction`, `SounderHomeCard`,
- * `SounderStepCard`) each take a `hero` prop and NEVER decide it from their own
- * state. One state → one hero:
- *
- *   dig    → the Feeding card (or the funnel's `first_dig` step card)
- *   claim  → the ClaimAllBar
- *   join   → the Sounder join door (framed by the step card while onboarding)
- *   browse → the Hunger banner — with nothing to do, the season's own story is
- *            the one thing worth looking at
+ * In the Almanac the same derivation picks the verb panel that opens FIRST
+ * (`almanacInitialTab`): dig → Feed, claim → Pass, join → Herd, browse → Feed.
+ * The strip's golds are a separate, per-cell fact (`almanacTodo`) — several
+ * doors may be gold, but only one panel opens. The onboarding step card still
+ * takes `hero` as a prop and never decides it from its own state.
  */
 // The type + the derivation live in `utils/seasonHero.ts` so the invariant is
 // a unit test, not a reading of four JSX props.
@@ -990,13 +1016,13 @@ export default function SeasonScreen() {
 		tiersByNumber,
 		wallowClaimedSet,
 		wallowTiersByNumber,
-		nextReward,
 		claim,
 		claimAll,
 		wallow,
 	} = useSeason();
 	const habitatJournal = useHabitatJournal(uid);
 	const isFocused = useIsFocused();
+	const insets = useSafeAreaInsets();
 	const [wallowGiftAccount, setWallowGiftAccount] = useState<string | null>(null);
 	useEffect(() => {
 		if (wallowGiftAccount && wallowGiftAccount !== uid) setWallowGiftAccount(null);
@@ -1005,7 +1031,7 @@ export default function SeasonScreen() {
 	const s1 = useSeason1Active();
 	// The Great Hunger intro — the tale cinematic. Auto-opens on this account's
 	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
-	// re-opens any time from the hero's "Hear the tale again" chip.
+	// re-opens any time from the title row's `?` door.
 	const [introOpen, setIntroOpen] = useState(false);
 	// Sounder state drives the walkthrough stepper (join → dig).
 	const crewHook = useCrew(s1);
@@ -1032,17 +1058,31 @@ export default function SeasonScreen() {
 		// onboarding card retires this frame instead of on the next focus.
 		sounderPath.refresh();
 	}, [crewHook.refresh, sounderPath.refresh]);
-	// The tab's ONE feeding CTA — every dig surface (the HungerHero banner, the
-	// SounderHomeCard play row, the onboarding step card) reads THIS instance, and
-	// its modal renders exactly once below the cards. Two independent hooks each
-	// held their own dugThisWindow, so digging via one left the other's button
-	// lying until window rollover (the stale-dig-button class, fixed twice on
-	// 2026-07-12) — one instance makes disagreement impossible.
+	// The tab's ONE feeding CTA — every dig surface (the Feed panel's hero, the
+	// onboarding step card) reads THIS instance, and its modal renders exactly
+	// once below the panel. Two independent hooks each held their own
+	// dugThisWindow, so digging via one left the other's button lying until
+	// window rollover (the stale-dig-button class, fixed twice on 2026-07-12) —
+	// one instance makes disagreement impossible.
 	const feedingCta = useFeedingCta(handleDug, ticklesEarned);
 	// Leaving your Sounder now lives in the season-guide dialog's footer.
 	const handleLeave = useCallback(() => {
 		crewHook.leave().catch(() => {});
 	}, [crewHook.leave]);
+	// The Almanac's reads — the Hungerer's stage (the title row's kicker and the
+	// Feed panel's meter), the herd's feeding snapshot (the Feed + Herd panels
+	// and the strip's `4 of 6`), the race with its Monday beat (the Race panel
+	// and the strip's `3rd` / `Run`), and this week's quests (the Pass panel).
+	const hunger = useHungerMeter(digTick);
+	const herd = useHerdFeeding(crewHook, uid, digTick, feedingCta.dugThisWindow);
+	const myCrewId = crewHook.crew.crew?.id ?? null;
+	const raceRun = useRaceRun(
+		s1 && !!myCrewId,
+		digTick,
+		devSeason.ceremony,
+		() => patchDevSeasonOverrides({ ceremony: undefined })
+	);
+	const quests = useWeeklyQuests(s1);
 	// Season-end reveal — the beta Founding Herd recap. Live path: season1_finale
 	// flag (legacy key name — it means the SEASON-0 finale; the key shipped in
 	// build 103 and never changes) + an unseen my_beta_reward grant (held
@@ -1068,7 +1108,7 @@ export default function SeasonScreen() {
 	}, [seasonEndSlot.visible]);
 	// Persistent re-entry into the season-end recap. The auto-reveal only
 	// plays once (seen-stamp), so this lets a player look back at their
-	// Founding Herd rewards any time via the season-pass header icon.
+	// Founding Herd rewards any time via the full-track sheet's recap door.
 	const [recapOpen, setRecapOpen] = useState(false);
 	// __DEV__-only founder-gift preview: cycles the four tiers so the full
 	// reveal (chip count + copy per tier) is testable without a server grant.
@@ -1078,22 +1118,31 @@ export default function SeasonScreen() {
 	// Which pass track the player is browsing — free by default. Only
 	// surfaces tabs when the season actually has premium rewards.
 	const [passTrack, setPassTrack] = useState<PassTrack>("free");
-	// The season's reference sheets (story / earnables) — opened from the two
-	// header icon buttons; the tab's scroll stays the playable path.
+	// The season's reference sheets (story / earnables) — opened from the title
+	// row's doors; the tab's panels stay the playable path.
 	const [infoTopic, setInfoTopic] = useState<SeasonInfoTopic | null>(null);
-	// "How to earn XP" — the pass header's star button.
+	// "How to earn XP" — the full-track sheet's star door.
 	const [xpHelpOpen, setXpHelpOpen] = useState(false);
-	// Alignment placard moved here from the Me tab — the player's greedy↔generous
-	// score + its blessing/curse/regen modifiers. alignmentScore + ticklesEarned
-	// (this season's reclaimed count) ride the season fetch in useSeason.
+	// Alignment placard (Season 0 only) — the player's greedy↔generous score +
+	// its blessing/curse/regen modifiers.
 	const [alignmentExplainerOpen, setAlignmentExplainerOpen] = useState(false);
-	// Controlled-open for the compressed HungerHero — the YOUR TAKE tickle cell
-	// opens the SAME hero sheet (the emotional home for "tickles reclaimed")
-	// instead of minting a second one.
-	const [heroOpen, setHeroOpen] = useState(false);
 	// The tickle breakdown receipt (spec 17) — your own count decomposed. Opened
-	// from the YOUR TAKE tickle cell; the hero stays reachable from the banner.
+	// from the `?` door's chooser.
 	const [breakdownOpen, setBreakdownOpen] = useState(false);
+	// The Almanac's own doors: the `?` chooser, the full pass track, the herd
+	// Oink, a crewmate's profile (its Visit is the door to their Barn), and
+	// which verb panel is open (null = the one-hero rule's pick).
+	const [doorsOpen, setDoorsOpen] = useState(false);
+	const [trackOpen, setTrackOpen] = useState(false);
+	// The Barn-furnishing claim sheet (a `habitat` rung on the ladder) and the
+	// Monday purse — both native sheets, so they take the same `afterSheet`
+	// hand-off as the track sheet when they open a dialog.
+	const [habitatClaimTier, setHabitatClaimTier] = useState<number | null>(null);
+	const [drawOpen, setDrawOpen] = useState(false);
+	const mondayDraw = useMondayDraw(s1);
+	const [oinkOpen, setOinkOpen] = useState(false);
+	const [memberSheet, setMemberSheet] = useState<string | null>(null);
+	const [pickedTab, setPickedTab] = useState<AlmanacTab | null>(null);
 	// Reward dialog: set after a successful claim_tier_reward RPC so the
 	// user gets a beat to read what they got and (for wearables) jump
 	// straight to the wardrobe to equip it.
@@ -1126,8 +1175,9 @@ export default function SeasonScreen() {
 	// path is queue-slotted in app/_layout.tsx and must NOT be held here), and the
 	// season-end recap's manual/dev bypass (recapOpen / devReward — the slot path,
 	// seasonEndSlot.visible, is excluded so we never drain our own presenting
-	// slot). The self-holding sheets (guide/info/explainer/hero, TickleBreakdown,
-	// mystery reveal) manage their own hold or slot and are intentionally omitted.
+	// slot). The self-holding sheets (guide/info/explainer, TickleBreakdown,
+	// mystery reveal, the Sheet-based doors) manage their own hold or slot and
+	// are intentionally omitted.
 	useUnmanagedModalHold(
 		introOpen ||
 			recapOpen ||
@@ -1144,10 +1194,6 @@ export default function SeasonScreen() {
 	// just because the user opened the tab at tier 7).
 	const tierBannerRef = useRef<TierUpBannerHandle>(null);
 	const lastSeenTier = useRef<number | null>(null);
-	// Scroll-to-pass for the YOUR TAKE strip's pass cell — the ScrollView + the
-	// measured y of the pass section header.
-	const scrollRef = useRef<ScrollView>(null);
-	const passSectionY = useRef(0);
 	const claimPlayer = useAudioPlayer(claimSound);
 
 	// The season_state fetch + the profile read + focus refresh now live in
@@ -1170,7 +1216,7 @@ export default function SeasonScreen() {
 	// NO auto-open: the first session already carries the tale video and the
 	// step card teaches by doing — a guide popped onto a tab the player hasn't
 	// seen yet was the third modal in a row (critique run 2, P1). It lives
-	// behind "how it works ›" only. GUIDE_EVERY_VISIT is a dev-only loop for
+	// behind the `?` door only. GUIDE_EVERY_VISIT is a dev-only loop for
 	// exercising the flow and can never ship on (gated behind __DEV__).
 	const GUIDE_EVERY_VISIT = __DEV__ && false;
 	const [guideOpen, setGuideOpen] = useState(false);
@@ -1187,7 +1233,7 @@ export default function SeasonScreen() {
 	// The FIRST-VIEW auto-present of the tale now lives at ROOT (app/_layout.tsx)
 	// so it tells itself on the MAIN page at login, queue-slotted (pri 27) behind
 	// the season-end recap. This tab keeps ONLY the manual "Hear the tale again"
-	// replay chip (setIntroOpen(true)) — a plain Modal, no queue, no stamp.
+	// replay (setIntroOpen(true)) — a plain Modal, no queue, no stamp.
 	const dismissIntro = useCallback(() => {
 		setIntroOpen(false);
 	}, []);
@@ -1209,7 +1255,7 @@ export default function SeasonScreen() {
 	}, [state?.current_tier]);
 
 	// claimedSet / tiersByNumber / wallowClaimedSet / wallowTiersByNumber /
-	// prestigeMode / nextReward are derived in useSeason (memoized calls into
+	// prestigeMode are derived in useSeason (memoized calls into
 	// utils/seasonPass) and destructured above. The claim RPC round-trip lives in
 	// the hook too (claim / claimAll).
 
@@ -1223,6 +1269,26 @@ export default function SeasonScreen() {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 	};
 
+	// The full-track sheet is a native Modal; the claim dialogs, the XP sheet, the
+	// recap and the paywall are native Modals too, and iOS renders two stacked
+	// Modals clipped. Anything the sheet opens closes the sheet FIRST and lands a
+	// teardown beat later — the PopupQueue's own handoff gap.
+	// Three sheets can be up when a claim resolves: the full track, the Barn
+	// furnishing claim, and the Monday purse. Refs mirror their open state so
+	// the decision reads the latest value without re-creating the callback.
+	const sheetsUp = useRef(false);
+	sheetsUp.current = trackOpen || habitatClaimTier != null || drawOpen;
+	const afterSheet = useCallback((fn: () => void) => {
+		if (sheetsUp.current) {
+			setTrackOpen(false);
+			setHabitatClaimTier(null);
+			setDrawOpen(false);
+			setTimeout(fn, POPUP_TEARDOWN_MS);
+		} else {
+			fn();
+		}
+	}, []);
+
 	const handleWallow = async () => {
 		const r = await wallow();
 		if (!r) return;
@@ -1233,22 +1299,26 @@ export default function SeasonScreen() {
 					: r.reason === "not_ready"
 						? "The mud needs a little more XP before you can Wallow."
 						: "The Wallow didn't settle. Give it another tap in a moment.";
-			setClaimNotice({ title: "Not quite yet", body });
+			afterSheet(() => setClaimNotice({ title: "Not quite yet", body }));
 			return;
 		}
 		claimFlourish();
-		setClaimAllSummary({
-			title: `Wallow Rank ${r.wallow_count}`,
-			body: `Your aura burns brighter. Tickle ${wallowWaitReductionLabel(r.regen_percent)} — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
-		});
+		afterSheet(() =>
+			setClaimAllSummary({
+				title: `Wallow Rank ${r.wallow_count}`,
+				body: `Your aura burns brighter. Tickle ${wallowWaitReductionLabel(r.regen_percent)} — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
+			})
+		);
 		await load();
 		await habitatJournal.refresh();
 		if (uid) setWallowGiftAccount(uid);
 	};
 
-	const handleClaim = async (tier: number, track: PassTrack) => {
+	// Returns the claim result so a caller with its own reveal (the Barn
+	// furnishing sheet) can read it; the generic reveal below skips `habitat`.
+	const handleClaim = async (tier: number, track: PassTrack): Promise<ClaimResult | null> => {
 		const r = await claim(tier, track);
-		if (!r) return;
+		if (!r) return null;
 		if (!r.ok) {
 			// In-world notice, not a system Alert — and a per-reason title so
 			// "already claimed" doesn't wear a wrong "Locked" hat. A transport miss
@@ -1274,11 +1344,13 @@ export default function SeasonScreen() {
 				no_reward: "Nothing here",
 				truffle_cap: "Pouch full",
 			};
-			setClaimNotice({
-				title: titleMap[reason] ?? "Couldn't claim",
-				body: bodyMap[reason] ?? "Give it another tap in a moment.",
-			});
-			return;
+			afterSheet(() =>
+				setClaimNotice({
+					title: titleMap[reason] ?? "Couldn't claim",
+					body: bodyMap[reason] ?? "Give it another tap in a moment.",
+				})
+			);
+			return r;
 		}
 		// Claim succeeded — magical chime + light haptic confirmation.
 		// Tier-up celebration (if the claim actually crossed a tier
@@ -1290,14 +1362,15 @@ export default function SeasonScreen() {
 		// the generic reward dialog so the user sees what they got + can
 		// jump to the wardrobe to equip wearables.
 		if (r.reward_type === "motes" && r.motes_granted !== undefined) {
-			setClaimedMotes(r.motes_granted);
+			afterSheet(() => setClaimedMotes(r.motes_granted ?? null));
 		} else if (r.granted_hat_id || r.fallback_snouts) {
-			setMysteryReveal(r);
-		} else {
+			afterSheet(() => setMysteryReveal(r));
+		} else if (r.reward_type !== "habitat") {
 			const claimedRow = (prestigeMode ? wallowTiersByNumber : tiersByNumber)[tier]?.[track];
-			if (claimedRow) setClaimedReward(claimedRow);
+			if (claimedRow) afterSheet(() => setClaimedReward(claimedRow));
 		}
 		load();
+		return r;
 	};
 
 	// The shown track + the tiers READY to claim on it. Both depend on passTrack
@@ -1332,10 +1405,12 @@ export default function SeasonScreen() {
 		if (!tally) return;
 		if (tally.reason) {
 			await load();
-			setClaimNotice({
-				title: tally.reason === "pass_changed" ? "Your pass has moved on" : "Couldn't claim",
-				body: "Review your current rewards and try again.",
-			});
+			afterSheet(() =>
+				setClaimNotice({
+					title: tally.reason === "pass_changed" ? "Your pass has moved on" : "Couldn't claim",
+					body: "Review your current rewards and try again.",
+				})
+			);
 			return;
 		}
 		claimFlourish();
@@ -1346,7 +1421,7 @@ export default function SeasonScreen() {
 		// A sweep containing only Motes gets the same direct machine handoff as
 		// an individual Mote claim. Mixed hauls retain the full reward summary.
 		if (motes > 0 && items.length === 1 && tickles === 0 && !lastMystery && failed === 0) {
-			setClaimedMotes(motes);
+			afterSheet(() => setClaimedMotes(motes));
 			return;
 		}
 		const parts: string[] = [];
@@ -1363,13 +1438,15 @@ export default function SeasonScreen() {
 		// Stage the mystery reveal (if any) to follow the summary's dismissal, not
 		// co-present with it.
 		pendingMysteryRef.current = lastMystery;
-		setClaimAllSummary({
-			title:
-				claimedCount === 1
-					? "1 reward claimed"
-					: `${claimedCount} rewards claimed`,
-			body,
-		});
+		afterSheet(() =>
+			setClaimAllSummary({
+				title:
+					claimedCount === 1
+						? "1 reward claimed"
+						: `${claimedCount} rewards claimed`,
+				body,
+			})
+		);
 	};
 
 	// The premium track unlocks via Slop Club membership (handleUnlockPremium);
@@ -1419,74 +1496,111 @@ export default function SeasonScreen() {
 	// premium rewards; otherwise the free list stands alone (today's UI).
 	const hasPremiumTrack = (state.tiers ?? []).some((r) => r.track === "premium");
 	const activeTiersByNumber = prestigeMode ? wallowTiersByNumber : tiersByNumber;
+	const habitatClaimRow =
+		habitatClaimTier != null
+			? activeTiersByNumber[habitatClaimTier]?.[prestigeMode ? "free" : shownTrack] ?? null
+			: null;
 	const activeClaimedSet = prestigeMode ? wallowClaimedSet : claimedSet;
 
-	// YOUR TAKE strip → pass cell. READY? scroll to the pass so the claim button
-	// is on screen (the strip is a glance, the claim lives on the track). Not
-	// ready? same scroll, so the player sees where the XP is headed. One motion
-	// either way — the section's claim state does the rest.
-	const openPassSection = () => {
-		scrollRef.current?.scrollTo({ y: passSectionY.current, animated: true });
-	};
-
-	// The one-hero derivation (see the block comment above). Every surface this
-	// tab draws asks THIS, not its own state, before it reaches for the sun.
+	// The one-hero derivation. Every surface this tab draws asks THIS, not its
+	// own state, before it reaches for the sun — and in the Almanac the rule
+	// also decides which verb tab opens first.
+	const inCrew = !!crewHook.crew.crew;
 	const digAvailable =
 		!feedingCta.noCrew && feedingCta.phaseOpen && !feedingCta.dugThisWindow;
 	const primaryAction = seasonPrimaryAction({
 		digAvailable,
 		readyTierCount: readyTiers.length,
-		inCrew: !!crewHook.crew.crew,
+		inCrew,
 	});
-
-	// …and the ONE surface it hands the sun to. Exactly one of these is true in
-	// every state; the cards take it as a prop and never ask their own state.
 	const heroSurface = seasonHeroSurface(primaryAction);
 	const feedingIsHero = heroSurface === "feeding";
-	const claimIsHero = heroSurface === "claim";
 	const sounderIsHero = heroSurface === "sounder";
 	// The onboarding step card stands in for whichever surface it is currently
 	// drawing: the dig CTA on `first_dig`, the join door on taste / join.
 	const stepCardIsHero =
 		visibleSounderStep === "first_dig" ? feedingIsHero : sounderIsHero;
+	const selectedTab: AlmanacTab = pickedTab ?? almanacInitialTab(heroSurface);
+
+	// The strip's four values and its golds, from the same facts every panel reads.
+	const facts: AlmanacFacts = {
+		inCrew,
+		phaseOpen: feedingCta.phaseOpen,
+		dugThisWindow: feedingCta.dugThisWindow || herd.meDug,
+		countdown: feedingCta.countdown,
+		dugCount: herd.dugCount,
+		herdSize: herd.members.length,
+		raceRank: raceRun.rank,
+		raceRun: raceRun.run != null,
+		mondayDraw: mondayDraw.state ?? undefined,
+		currentTier: tier,
+		readyTierCount: readyTiers.length,
+	};
+	const xpPer = season.xp_per_tier || 1;
+	const xp = state.xp ?? 0;
+	const passProgress =
+		tier >= season.total_tiers
+			? 1
+			: Math.max(0, Math.min(1, (xp - (tier - 1) * xpPer) / xpPer));
+	const stageIndex =
+		__DEV__ && devSeason.hungerStage != null ? devSeason.hungerStage : hunger.stageIndex;
+	const stageName = HUNGER_LEVEL_NAME[HUNGER_STAGES[Math.max(0, Math.min(HUNGER_STAGES.length - 1, stageIndex))]];
+	const { day, total: totalDays } = seasonDay(season.starts_at, season.ends_at);
+	// Herdless and mid-funnel: the step card IS the Herd panel.
+	const stepCard =
+		!inCrew && visibleSounderStep && visibleSounderStep !== "done" && visibleSounderStep !== "hook" ? (
+			<SounderStepCard
+				step={visibleSounderStep}
+				stalled={sounderPath.stalled}
+				leaver={sounderPath.leaver}
+				joinSpotlightActive={joinSpotlight.show}
+				crewHook={crewHook}
+				uid={uid}
+				cta={feedingCta}
+				refreshKey={digTick}
+				onAdvance={sounderPath.refresh}
+				hero={stepCardIsHero}
+			/>
+		) : undefined;
+
+	const openOink = () => setOinkOpen(true);
+	const goHerd = () => setPickedTab("herd");
 
 	return (
 		<SpotlightProvider>
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
-				{/* Season 1 wears the Hungerer's name; Season 0 keeps its framing.
-				    (The old dev intro-preview chip is gone — the real retrigger
-				    lives on the hero as "Hear the tale again".) The crown is
-				    `PageHeader variant="tab"` — the kicker + title rulings live in
-				    that component's header comment. [C-10] */}
+				{/* The title row. Season 1 wears the Hungerer's name; Season 0 keeps
+				    its framing. The crown is `PageHeader variant="tab"` — the kicker
+				    + title rulings live in that component's header comment. [C-10]
+				    The Hungerer sprite rides the right slot everywhere but the Feed
+				    panel, whose hero already carries him — he never appears twice
+				    on one screen. */}
 				<PageHeader
 					variant="tab"
-					kicker={s1 ? "season 1 — the great hunger" : season.name.toLowerCase()}
+					kicker={
+						s1
+							? `day ${day} of ${totalDays} · the Hungerer is ${stageName}`
+							: season.name.toLowerCase()
+					}
 					title={s1 ? "The Great Hunger" : "Goblins vs Angels"}
-					/* Reference sheets — the tale cinematic (scene), the season
-					   story (scroll), and the earnables shelf (gift). Their
-					   sections left the scroll for these modals. */
 					right={
 						s1 ? (
 							<>
+								{selectedTab !== "feed" && (
+									<Image
+										source={HUNGERER_SPRITE}
+										style={styles.titleSprite}
+										resizeMode="contain"
+										accessibilityIgnoresInvertColors
+									/>
+								)}
 								<HeaderDoor
-									label="Hear the tale again"
-									hint="Replays the Great Hunger tale"
-									onPress={() => setIntroOpen(true)}
+									label="How the season works"
+									hint="Opens the guide, the story, the tale, and what you can earn"
+									onPress={() => setDoorsOpen(true)}
 								>
-									<Glyph name="scene" size={CREST_ICON} />
-								</HeaderDoor>
-								<HeaderDoor
-									label="The season's story"
-									onPress={() => setInfoTopic("story")}
-								>
-									<Icon name="scroll" size={CREST_ICON} color={WHIMSY.ink} />
-								</HeaderDoor>
-								<HeaderDoor
-									label="What you can earn"
-									onPress={() => setInfoTopic("spoils")}
-								>
-									<Icon name="gift" size={CREST_ICON} color={WHIMSY.ink} />
+									<T role="cardTitle">?</T>
 								</HeaderDoor>
 							</>
 						) : undefined
@@ -1494,10 +1608,10 @@ export default function SeasonScreen() {
 					below={
 						__DEV__ ? (
 						<>
-							{/* Live entry point is the pass header's recap icon (only shows
-							    when a real grant exists). This __DEV__-only chip cycles the
-							    four founder tiers so the reveal is previewable without a
-							    grant; it never renders in production. */}
+							{/* Live entry point is the full-track sheet's recap door (only
+							    shows when a real grant exists). This __DEV__-only chip
+							    cycles the four founder tiers so the reveal is previewable
+							    without a grant; it never renders in production. */}
 							{__DEV__ && (
 								<View style={styles.devChipRow}>
 									<Pressable
@@ -1533,396 +1647,234 @@ export default function SeasonScreen() {
 					}
 				/>
 
-				{/* The standalone XP progress card was dropped per the
-				    redesign — tier + total now reads from the
-				    "season pass / Tier N/M" SectionHeader inline with
-				    the snake track, and the snake stones themselves
-				    show progress via their fill state. The Unlock
-				    Premium CTA moved into the SectionHeader's right
-				    slot below. */}
-
-				<ScrollView ref={scrollRef} contentContainerStyle={styles.tierList}>
-					{/* ── Season 1: the Hunger overview answers "what is this?", then
-					    the Feeding action answers "what do I do now?" before schedule,
-					    Sounder context, rewards, bounties, pass, and standings. ── */}
-					{s1 && (
-						<>
-							{/* The value banner — the compressed hero. Its full art +
-							    hunger ladder open in a sheet on tap. Controlled-open so
-							    the YOUR TAKE tickle cell can open this same sheet. */}
-							{/* The Hunger overview is context, not another action surface. */}
-							<HungerHero
-								refreshKey={digTick}
-								open={heroOpen}
-								onOpenChange={setHeroOpen}
-								stageIndexOverride={devSeason.hungerStage}
-								hero={heroSurface === "hunger"}
+				{s1 ? (
+					<>
+						{/* The verb tab strip — Feed · Herd · Race · Pass. */}
+						<View style={styles.strip}>
+							<VerbTabStrip
+								values={almanacValues(facts)}
+								todo={almanacTodo(facts)}
+								selected={selectedTab}
+								onSelect={setPickedTab}
+								passProgress={passProgress}
+								testID="almanac-strip"
 							/>
+						</View>
 
-							{/* The tickle breakdown receipt for yourself (spec 17) — opened
-							    from the YOUR TAKE tickle cell. A native Modal; nothing else
-							    modal is up on the season tab, so it presents directly. */}
-							<TickleBreakdownSheet
-								userId={breakdownOpen ? uid : null}
-								fallbackTotal={ticklesEarned}
-								onClose={() => setBreakdownOpen(false)}
-							/>
-
-							{/* Returning players see one authoritative Feeding action before
-							    schedule, herd context, rewards, or standings. */}
-							{(!visibleSounderStep ||
-								visibleSounderStep === "done" ||
-								visibleSounderStep === "hook") &&
-								crewHook.crew.crew && (
-									<FeedingAction cta={feedingCta} prominent hero={feedingIsHero} />
-								)}
-
-							{MOTE_MACHINE_VISIBLE && <MoteMachineCard balance={state.motes} />}
-
-							{/* The schedule explains the action after the action itself. */}
-							<WindowStrip cta={feedingCta} />
-
-							<View style={styles.sectionGap}>
-								<SectionHeader
-									style={styles.sectionHeaderTight}
-									kicker="your Sounder"
-									title={crewHook.crew.crew?.name ?? "Join a Sounder"}
-									right={
-										<Button
-											variant="link"
-											size="sm"
-											style={styles.headerLink}
-											onPress={() => setGuideOpen(true)}
-											accessibilityLabel="How the season works"
-											accessibilityHint="Opens the season guide"
-										>
-											how it works ›
-										</Button>
-									}
+						{/* The selected panel, fitted to the space above the hanging-signs
+						    tab bar. The bar is in flow (it owns its own height + home
+						    indicator), so the panel simply fills what's left; the scroller
+						    is a safety net for large Dynamic Type — on a 17 Pro every
+						    panel fits and it never moves. */}
+						<ScrollView
+							style={styles.panelScroll}
+							contentContainerStyle={[
+								styles.panel,
+								{ paddingBottom: Math.max(SPACE.lg, insets.bottom) },
+							]}
+							bounces={false}
+							showsVerticalScrollIndicator={false}
+						>
+							{selectedTab === "feed" && (
+								<FeedPanel
+									cta={feedingCta}
+									stageIndex={stageIndex}
+									seasonDays={totalDays}
+									herd={herd}
+									inCrew={inCrew}
+									onOinkHerd={openOink}
+									onOpenMember={setMemberSheet}
+									onGoHerd={goHerd}
+									testID="almanac-feed"
 								/>
+							)}
+							{selectedTab === "herd" && (
+								<HerdPanel
+									crewHook={crewHook}
+									cta={feedingCta}
+									herd={herd}
+									onOinkHerd={openOink}
+									onOpenMember={setMemberSheet}
+									stepCard={stepCard}
+									testID="almanac-herd"
+								/>
+							)}
+							{selectedTab === "race" && (
+								<RacePanel
+									raceRun={raceRun}
+									myCrewId={myCrewId}
+									onOinkHerd={openOink}
+									onGoHerd={goHerd}
+									mondayDraw={mondayDraw.state ?? undefined}
+									onOpenMondayDraw={() => setDrawOpen(true)}
+									testID="almanac-race"
+								/>
+							)}
+							{selectedTab === "pass" && (
+								<>
+									<PassPanel
+										xp={xp}
+										xpPerTier={xpPer}
+										currentTier={tier}
+										totalTiers={season.total_tiers}
+										tiersByNumber={activeTiersByNumber}
+										claimedSet={activeClaimedSet}
+										track={prestigeMode ? "free" : shownTrack}
+										busy={busy}
+										onClaim={handleClaim}
+										onClaimHabitat={(t) => setHabitatClaimTier(t)}
+										onOpenTrack={() => setTrackOpen(true)}
+										quests={quests.quests}
+										questBusyCode={quests.busyCode}
+										onClaimQuest={(code) => void quests.claim(code)}
+										testID="almanac-pass"
+									/>
+									{MOTE_MACHINE_VISIBLE && <MoteMachineCard balance={state.motes} />}
+								</>
+							)}
+						</ScrollView>
+					</>
+				) : (
+					<ScrollView contentContainerStyle={styles.tierList}>
+						<PassTrackBody
+							state={state}
+							season={season}
+							tier={tier}
+							premium={premium}
+							prestigeMode={prestigeMode}
+							hasPremiumTrack={hasPremiumTrack}
+							passTrack={passTrack}
+							onPassTrack={setPassTrack}
+							shownTrack={shownTrack}
+							readyTiers={readyTiers}
+							tiersByNumber={activeTiersByNumber}
+							claimedSet={activeClaimedSet}
+							busy={busy}
+							showRecap={seasonEnd.reward != null}
+							onOpenRecap={() => setRecapOpen(true)}
+							onOpenXpHelp={() => setXpHelpOpen(true)}
+							onUnlockPremium={handleUnlockPremium}
+							onWallow={handleWallow}
+							onClaim={handleClaim}
+							onClaimAll={handleClaimAll}
+						/>
+
+						{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
+						    in Season 1 (the mechanics still hum server-side, but the
+						    identity UI retires with Judgement Day). */}
+						<View style={styles.sectionGap}>
+							<SectionHeader kicker="standing" title="Alignment" />
+						</View>
+						<Sticker color="cream" rotate={TILT.card} radius={RADII.xl} style={alignmentStoryStyles.wrap}>
+							<View style={alignmentStoryStyles.labelRow}>
+								<T role="kickerPill" style={alignmentStoryStyles.greedy}>Greedy</T>
+								<Numeral>
+									{alignmentScore >= 0 ? "+" : ""}
+									{alignmentScore}
+								</Numeral>
+								<T role="kickerPill" style={alignmentStoryStyles.generous}>Generous</T>
 							</View>
-							{/* Pre-DONE, the onboarding step card remains the primary
-							    taste → join → first-dig path. */}
-							{visibleSounderStep && visibleSounderStep !== "done" && visibleSounderStep !== "hook" ? (
-								// The spotlight target is now nested INSIDE the step card,
-								// wrapping just the join door (not the whole card), so the
-								// coach-mark hole hugs the join affordance. We only pass the
-								// "should show" flag down; the card owns the target wrap.
-								<SounderStepCard
-									step={visibleSounderStep}
-									stalled={sounderPath.stalled}
-									leaver={sounderPath.leaver}
-									joinSpotlightActive={joinSpotlight.show}
-									crewHook={crewHook}
-									uid={uid}
-									cta={feedingCta}
-									refreshKey={digTick}
-									onAdvance={sounderPath.refresh}
-									hero={stepCardIsHero}
-								/>
-							) : (
-								<SounderHomeCard
-									crewHook={crewHook}
-									uid={uid}
-									cta={feedingCta}
-									refreshKey={digTick}
-									showFeedingAction={false}
-									hero={sounderIsHero}
-								/>
-							)}
-							{/* One shared modal for the promoted action and first-dig step. */}
-							{feedingCta.modal}
-
-							{/* YOUR TAKE (Q3 — "what do I get?"). The personal value
-							    strip: pass tier + next-reward art, the Golden Truffle
-							    pouch → Exchange, and this season's tickles reclaimed →
-							    the hero. Between the "do this now" slot and the dig-off. */}
-							<YourTakeStrip
-								nextReward={nextReward}
-								nextRewardLoading={false}
-								currentTier={tier}
-								totalTiers={season.total_tiers}
-								ticklesEarned={ticklesEarned}
-								onOpenPass={openPassSection}
-								onOpenHero={() => setHeroOpen(true)}
-								onOpenBreakdown={uid ? () => setBreakdownOpen(true) : undefined}
-							/>
-
-							{/* The dig-off — the cumulative season board (headline) + the
-							    weekly beat. Feature-dark (renders nothing) until the
-							    migration is pushed. Only meaningful once you're in a Sounder. */}
-							{crewHook.crew.crew && (
-								<RaceSection
-									myCrewId={crewHook.crew.crew.id}
-									crewSize={crewHook.crew.members.length}
-									refreshKey={digTick}
-									devCeremony={devSeason.ceremony}
-									onDismissDevCeremony={() =>
-										patchDevSeasonOverrides({ ceremony: undefined })
-									}
-								/>
-							)}
-						</>
-					)}
-
-					{/* Weekly bounty board — fetches my_weekly_bounties on focus
-					    and renders one card per active bounty. Self-gates: renders
-					    nothing when the player has no active bounties this week, so
-					    it's safe above the pass for every season. The Season tab's
-					    hanging-sign badge (bounty_ready_count in _layout) points here
-					    when a bounty is claimable. */}
-					<BountyBoard />
-
-					{/* Section header for the pass — the list gap (SPACE.sm) owns
-					    the seam above; no extra margin so the sections sit tight. */}
-					<View
-						onLayout={(e) => {
-							passSectionY.current = e.nativeEvent.layout.y;
-						}}
-					>
-						<SectionHeader
-							kicker={prestigeMode ? "prestige path" : "season pass"}
-							title={prestigeMode
-								? `Wallow Rank ${state.wallow_count ?? 0} · Tier ${tier}/${season.total_tiers}`
-								: `Tier ${tier}/${season.total_tiers}`}
-							right={(() => {
-								// Show the VIP marker + a CTA whenever the caller isn't a
-								// member. When IAP is live it's the real "Unlock"; when IAP
-								// is off (TestFlight) it's a disabled "Coming Soon".
-								const showVip = !premium && !prestigeMode;
-								// The recap icon only earns its place when there's
-								// actually a Founding Herd grant to look back on.
-								const showRecap = seasonEnd.reward != null;
+							<AlignmentBar score={alignmentScore} />
+							{(() => {
+								const fx = alignmentEffects(alignmentScore);
+								const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 								return (
-									<>
-										{/* How XP is earned — reference sheet, one tap away. */}
-										<ChipDoor
-											label="How to earn XP"
-											hint="Opens the XP reference sheet"
-											onPress={() => setXpHelpOpen(true)}
-										>
-											<Glyph name="star" size={CHIP_MARK} />
-										</ChipDoor>
-										{showVip &&
-											(IAP_ENABLED ? (
-												<Button
-													size="xs"
-													variant="gold"
-													onPress={handleUnlockPremium}
-													icon={
-														<Icon
-															name="premium"
-															size={CREST_MARK}
-															color={WHIMSY.goldInk}
-															filled
-														/>
-													}
-													accessibilityLabel="Join the Slop Club"
-													accessibilityHint="Opens the Slop Club subscription — it unlocks the premium track"
-												>
-													Slop Club
-												</Button>
-											) : (
-												// A button asleep, not a dissolved one. [C-07]
-												<Button
-													size="xs"
-													variant="locked"
-													disabled
-													accessibilityLabel="Slop Club coming soon"
-												>
-													Coming Soon
-												</Button>
-											))}
-										{showRecap && (
-											<ChipDoor
-												label="See your season-end rewards"
-												onPress={() => setRecapOpen(true)}
-											>
-												<Glyph name="crown" size={CHIP_MARK} />
-											</ChipDoor>
-										)}
-									</>
+									<View style={alignmentStoryStyles.effectsRow}>
+										<Tag tone="paper" label={`Regen ${sgn(fx.regenPct)}%`} />
+										<Tag tone="paper" label={`Blessings ${sgn(fx.blessingPct)}%`} />
+										<Tag tone="paper" label={`Curses ${sgn(fx.cursePct)}%`} />
+									</View>
 								);
 							})()}
-						/>
-					</View>
+							<Hand tone="secondary" align="center" style={alignmentStoryStyles.effectHint}>
+								Give freely → your blessings grow stronger. Keep to
+								yourself → your curses bite harder.
+							</Hand>
+							<Hand tone="secondary" align="center" style={alignmentStoryStyles.hint}>
+								★ blessings push you up. asks for tickles pull you
+								down. ★
+							</Hand>
+							<Button
+								testID="alignment-how-it-works"
+								variant="link"
+								size="sm"
+								style={alignmentStoryStyles.howLink}
+								onPress={() => setAlignmentExplainerOpen(true)}
+								accessibilityLabel="How alignment works"
+								accessibilityHint="Opens the alignment explainer"
+							>
+								how alignment works ›
+							</Button>
+						</Sticker>
+					</ScrollView>
+				)}
 
-					{/* Promise-before-ask: the XP chain in one line under the pass
-					    header (the full "how to earn XP" modal stays for detail). */}
-					<Hand tone="secondary" style={passProgressStyles.subtitle}>
-						{prestigeMode
-							? `Rank ${state.wallow_count ?? 0} · ${wallowWaitReductionLabel(state.wallow_regen_percent ?? 0)} · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · ${state.wallow_tiers?.length ?? 0} rewards`
-							: "earn XP by burying, digging, tickling, and visiting"}
-					</Hand>
+				{/* The one shared dig modal — rendered once, beside every trigger. */}
+				{s1 && feedingCta.modal}
+			</SafeAreaView>
 
-					{/* XP progress toward the next tier. The pass-track stones
-					    only show discrete claim state, so this restores the
-					    granular "how close to the next tier" readout. */}
-					{(() => {
-						const xpPer = season.xp_per_tier || 1;
-						const xp = state.xp ?? 0;
-						const progress = wallowProgress({
-							xp,
-							xpPerTier: xpPer,
-							currentTier: tier,
-							totalTiers: season.total_tiers,
-							canWallow: state.can_wallow,
-							prestigeMode,
-						});
-						// `ProgressTrack` is the one meter — it carries the
-						// `progressbar` role and its `accessibilityValue`, which the
-						// hand-rolled bar never did. The hand-written label stays
-						// centred beneath it; `wallowProgress` only yields a fraction,
-						// so the meter is expressed out of 100.
-						return (
-							<View style={passProgressStyles.wrap}>
-								<ProgressTrack
-									value={Math.round(progress.fraction * XP_METER_MAX)}
-									max={XP_METER_MAX}
-									tone="lilac"
-									height="sm"
-									accessibilityLabel="Pass XP"
-								/>
-								<Hand tone="secondary" align="center" style={passProgressStyles.label}>
-									{progress.label}
-								</Hand>
-							</View>
-						);
-					})()}
+			{/* The tickle breakdown receipt for yourself (spec 17) — from the `?`
+			    chooser. A native Modal; nothing else modal is up when it opens. */}
+			<TickleBreakdownSheet
+				userId={breakdownOpen ? uid : null}
+				fallbackTotal={ticklesEarned}
+				onClose={() => setBreakdownOpen(false)}
+			/>
 
-					{/* Prestige converts the activity routes that already award pass XP
-					    (burying, social digs, Golden Truffle Patch digs) into permanent,
-					    visibly escalating regeneration power. */}
-					{state.can_wallow !== undefined && tier >= season.total_tiers && (
-						<WallowCard
-							count={state.wallow_count ?? 0}
-							ready={state.can_wallow ?? false}
-							powerLevel={state.wallow_power_level ?? 0}
-							regenPercent={state.wallow_regen_percent ?? 0}
-							nextRegenPercent={state.wallow_next_regen_percent ?? WALLOW_REGEN_STEP_PCT}
-							regenSeconds={state.wallow_regen_seconds ?? 3600}
-							nextRegenSeconds={state.wallow_next_regen_seconds ?? 2700}
-							busy={busy}
-							onWallow={handleWallow}
-						/>
-					)}
+			{/* The `?` door's chooser — the guide, the story, the tale, the earnables
+			    shelf and the tickle receipt. Items dismiss first and open a beat later. */}
+			<ActionSheet
+				open={doorsOpen}
+				onClose={() => setDoorsOpen(false)}
+				title="The Great Hunger"
+				subtitle="how the season works"
+				items={[
+					{ label: "How the season works", onPress: () => setGuideOpen(true) },
+					{ label: "The season's story", onPress: () => setInfoTopic("story") },
+					{ label: "Hear the tale again", onPress: () => setIntroOpen(true) },
+					{ label: "What you can earn", onPress: () => setInfoTopic("spoils") },
+					...(uid ? [{ label: "Your tickle receipt", onPress: () => setBreakdownOpen(true) }] : []),
+				]}
+			/>
 
-					{/* "How to earn XP" lives in the header-star modal (XPHowToModal). */}
-
-					{/* Vertical-list pass track — straight column of node +
-					    card rows with per-state visual treatment (sage
-					    claimed / heavy-outlined ready / dashed locked) and
-					    display-only stats tags above. Replaces the
-					    snake; matches the design's bottom-of-screen
-					    reference. */}
-					{hasPremiumTrack && !prestigeMode && (
-						// Both segments stay tappable — browsing a locked premium track
-						// is the point — so the lock is a mark on the segment, not a
-						// `disabled` state. [C-05]
-						<SegmentedControl
-							label="Pass track"
-							value={passTrack}
-							onChange={setPassTrack}
-							style={passTabStyles.row}
-							options={[
-								{ value: "free", label: "Free", accessibilityLabel: "Free pass track" },
-								{
-									value: "premium",
-									label: "Premium",
-									icon: premium ? undefined : "lock",
-									accessibilityLabel: premium
-										? "Premium pass track"
-										: "Premium pass track, locked behind Slop Club",
-								},
-							]}
-						/>
-					)}
-					{hasPremiumTrack && !prestigeMode && passTrack === "premium" && !premium && (
-						<PremiumLockedBanner onUnlock={handleUnlockPremium} />
-					)}
-					{/* Ready-claim shortcut — surfaces at the TOP of the track whenever
-					    anything is claimable. One ready tier names its reward; two or
-					    more sweep in one tap and end on a single summary beat (instead
-					    of tap→dialog→dismiss, N times). */}
-					{readyTiers.length >= 1 && (
-						<ClaimAllBar
-							count={readyTiers.length}
-							label={
-								readyTiers.length === 1
-									? activeTiersByNumber[readyTiers[0]]?.[shownTrack]?.display_label
-									: undefined
-							}
-							busy={busy}
-							hero={claimIsHero}
-							onPress={handleClaimAll}
-						/>
-					)}
-					<VerticalListPassTrack
-						key={`${season.id}:${prestigeMode ? `wallow:${state.season_wallow_count ?? 0}` : shownTrack}`}
-						totalTiers={season.total_tiers}
-						currentTier={tier}
+			{/* The whole ladder — the existing full pass track, in a sheet. */}
+			{s1 && (
+				<Sheet
+					open={trackOpen}
+					onClose={() => setTrackOpen(false)}
+					title="The whole ladder"
+					testID="pass-track-sheet"
+				>
+					<PassTrackBody
+						state={state}
+						season={season}
+						tier={tier}
+						premium={premium}
+						prestigeMode={prestigeMode}
+						hasPremiumTrack={hasPremiumTrack}
+						passTrack={passTrack}
+						onPassTrack={setPassTrack}
+						shownTrack={shownTrack}
+						readyTiers={readyTiers}
 						tiersByNumber={activeTiersByNumber}
 						claimedSet={activeClaimedSet}
+						busy={busy}
+						showRecap={seasonEnd.reward != null}
+						onOpenRecap={() => afterSheet(() => setRecapOpen(true))}
+						onOpenXpHelp={() => afterSheet(() => setXpHelpOpen(true))}
+						onUnlockPremium={() => afterSheet(() => void handleUnlockPremium())}
+						onWallow={handleWallow}
 						onClaim={handleClaim}
-						track={prestigeMode ? "free" : hasPremiumTrack ? passTrack : "free"}
-						premiumUnlocked={premium}
-						sparse={prestigeMode}
-						tierLabel={prestigeMode ? "WALLOW TIER" : "TIER"}
+						onClaimAll={handleClaimAll}
 					/>
+				</Sheet>
+			)}
 
-					{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
-					    in Season 1 (the mechanics still hum server-side, but the
-					    identity UI retires with Judgement Day). */}
-					{!s1 && (
-					<>
-					<View style={styles.sectionGap}>
-						<SectionHeader kicker="standing" title="Alignment" />
-					</View>
-					<Sticker color="cream" rotate={TILT.card} radius={RADII.xl} style={alignmentStoryStyles.wrap}>
-						<View style={alignmentStoryStyles.labelRow}>
-							<T role="kickerPill" style={alignmentStoryStyles.greedy}>Greedy</T>
-							<Numeral>
-								{alignmentScore >= 0 ? "+" : ""}
-								{alignmentScore}
-							</Numeral>
-							<T role="kickerPill" style={alignmentStoryStyles.generous}>Generous</T>
-						</View>
-						<AlignmentBar score={alignmentScore} />
-						{(() => {
-							const fx = alignmentEffects(alignmentScore);
-							const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
-							return (
-								<View style={alignmentStoryStyles.effectsRow}>
-									<Tag tone="paper" label={`Regen ${sgn(fx.regenPct)}%`} />
-									<Tag tone="paper" label={`Blessings ${sgn(fx.blessingPct)}%`} />
-									<Tag tone="paper" label={`Curses ${sgn(fx.cursePct)}%`} />
-								</View>
-							);
-						})()}
-						<Hand tone="secondary" align="center" style={alignmentStoryStyles.effectHint}>
-							Give freely → your blessings grow stronger. Keep to
-							yourself → your curses bite harder.
-						</Hand>
-						<Hand tone="secondary" align="center" style={alignmentStoryStyles.hint}>
-							★ blessings push you up. asks for tickles pull you
-							down. ★
-						</Hand>
-						<Button
-							testID="alignment-how-it-works"
-							variant="link"
-							size="sm"
-							style={alignmentStoryStyles.howLink}
-							onPress={() => setAlignmentExplainerOpen(true)}
-							accessibilityLabel="How alignment works"
-							accessibilityHint="Opens the alignment explainer"
-						>
-							how alignment works ›
-						</Button>
-					</Sticker>
-					</>
-					)}
-				</ScrollView>
-			</SafeAreaView>
+			{/* Oink at the herd — the Sounder coordination sheet. */}
+			{s1 && <SounderOinkSheet visible={oinkOpen} onDismiss={() => setOinkOpen(false)} />}
+
+			{/* A crewmate's door — their profile sheet, whose Visit walks into their Barn. */}
+			<UserSheet targetUserId={memberSheet} onDismiss={() => setMemberSheet(null)} />
 
 			{alignmentExplainerOpen && (
 				<AlignmentExplainerModal
@@ -1982,7 +1934,7 @@ export default function SeasonScreen() {
 
 			{/* Season 1 intro — the tale cinematic. Auto-plays on the first
 			    Season-1 visit (per-user AsyncStorage stamp) and re-opens from
-			    the hero's "Hear the tale again" chip. */}
+			    the `?` chooser's "Hear the tale again". */}
 			{s1 && <GreatHungerIntroModal visible={introOpen} onDone={dismissIntro} />}
 
 			{/* The season guide — every visit while testing (GUIDE_EVERY_VISIT);
@@ -2021,7 +1973,7 @@ export default function SeasonScreen() {
 			{/* The header-icon reference sheets — story (scroll) / earnables (gift). */}
 			<SeasonInfoModal topic={infoTopic} onDismiss={() => setInfoTopic(null)} />
 
-			{/* The pass header's star button — how XP is earned. */}
+			{/* The full-track sheet's star door — how XP is earned. */}
 			<XPHowToModal
 				xpPer={season.xp_per_tier || 100}
 				visible={xpHelpOpen}
@@ -2030,7 +1982,7 @@ export default function SeasonScreen() {
 
 			{/* Season-end reveal — the beta Founding Herd recap. Live when the
 			    season1_finale flag is on and the caller has an unseen grant, or
-			    re-opened from the pass header's recap icon. */}
+			    re-opened from the full-track sheet's recap door. */}
 			{(seasonEnd.reward || devReward) && (
 				<SeasonEndModal
 					visible={seasonEndSlot.visible || recapOpen || devReward != null}
@@ -2063,8 +2015,247 @@ export default function SeasonScreen() {
 				overrides={devSeason}
 				onClose={() => setDevSeasonSheetOpen(false)}
 			/>
+		{/* A Barn furnishing on the ladder claims through its own sheet — the
+		    claim then hands the item to the Barn editor (never auto-placed). */}
+		{habitatClaimRow ? (
+			<BarnRewardClaimSheet
+				open
+				tier={habitatClaimRow}
+				onClose={() => setHabitatClaimTier(null)}
+				onClaim={(t) => handleClaim(t.tier, prestigeMode ? "free" : shownTrack)}
+			/>
+		) : null}
+		<MondayDrawSheet
+			open={drawOpen}
+			onClose={() => setDrawOpen(false)}
+			state={mondayDraw.state}
+			onDraw={mondayDraw.draw}
+		/>
 		</View>
 		</SpotlightProvider>
+	);
+}
+
+// ── The full pass track ──────────────────────────────────────────────────────
+// The existing list — header row with its doors, the XP meter, the Wallow card,
+// the Free / Premium toggle, the locked-premium banner, the claim-all bar and
+// the vertical track. Season 1 mounts it in the "See all N tiers" sheet; Season
+// 0 keeps it inline on the tab. One body, two homes, so the two can't drift.
+function PassTrackBody({
+	state,
+	season,
+	tier,
+	premium,
+	prestigeMode,
+	hasPremiumTrack,
+	passTrack,
+	onPassTrack,
+	shownTrack,
+	readyTiers,
+	tiersByNumber: activeTiersByNumber,
+	claimedSet: activeClaimedSet,
+	busy,
+	showRecap,
+	onOpenRecap,
+	onOpenXpHelp,
+	onUnlockPremium,
+	onWallow,
+	onClaim,
+	onClaimAll,
+}: {
+	state: SeasonState;
+	season: SeasonRow;
+	tier: number;
+	premium: boolean;
+	prestigeMode: boolean;
+	hasPremiumTrack: boolean;
+	passTrack: PassTrack;
+	onPassTrack: (track: PassTrack) => void;
+	shownTrack: PassTrack;
+	readyTiers: number[];
+	tiersByNumber: TiersByNumber;
+	claimedSet: Set<string>;
+	busy: boolean;
+	showRecap: boolean;
+	onOpenRecap: () => void;
+	onOpenXpHelp: () => void;
+	onUnlockPremium: () => void;
+	onWallow: () => void;
+	onClaim: (tier: number, track: PassTrack) => void;
+	onClaimAll: () => void;
+}) {
+	// Show the VIP marker + a CTA whenever the caller isn't a member. When IAP
+	// is live it's the real "Unlock"; when IAP is off (TestFlight) it's a
+	// disabled "Coming Soon".
+	const showVip = !premium && !prestigeMode;
+	const xpPer = season.xp_per_tier || 1;
+	const xp = state.xp ?? 0;
+	const progress = wallowProgress({
+		xp,
+		xpPerTier: xpPer,
+		currentTier: tier,
+		totalTiers: season.total_tiers,
+		canWallow: state.can_wallow,
+		prestigeMode,
+	});
+	return (
+		<View style={styles.trackBody}>
+			<SectionHeader
+				kicker={prestigeMode ? "prestige path" : "season pass"}
+				title={prestigeMode
+					? `Wallow Rank ${state.wallow_count ?? 0} · Tier ${tier}/${season.total_tiers}`
+					: `Tier ${tier}/${season.total_tiers}`}
+				right={
+					<>
+						{/* How XP is earned — reference sheet, one tap away. */}
+						<ChipDoor
+							label="How to earn XP"
+							hint="Opens the XP reference sheet"
+							onPress={onOpenXpHelp}
+						>
+							<Glyph name="star" size={CHIP_MARK} />
+						</ChipDoor>
+						{showVip &&
+							(IAP_ENABLED ? (
+								<Button
+									size="xs"
+									variant="gold"
+									onPress={onUnlockPremium}
+									icon={
+										<Icon
+											name="premium"
+											size={CREST_MARK}
+											color={WHIMSY.goldInk}
+											filled
+										/>
+									}
+									accessibilityLabel="Join the Slop Club"
+									accessibilityHint="Opens the Slop Club subscription — it unlocks the premium track"
+								>
+									Slop Club
+								</Button>
+							) : (
+								// A button asleep, not a dissolved one. [C-07]
+								<Button
+									size="xs"
+									variant="locked"
+									disabled
+									accessibilityLabel="Slop Club coming soon"
+								>
+									Coming Soon
+								</Button>
+							))}
+						{showRecap && (
+							<ChipDoor
+								label="See your season-end rewards"
+								onPress={onOpenRecap}
+							>
+								<Glyph name="crown" size={CHIP_MARK} />
+							</ChipDoor>
+						)}
+					</>
+				}
+			/>
+
+			{/* Promise-before-ask: the XP chain in one line under the pass
+			    header (the full "how to earn XP" modal stays for detail). */}
+			<Hand tone="secondary" style={passProgressStyles.subtitle}>
+				{prestigeMode
+					? `Rank ${state.wallow_count ?? 0} · ${wallowWaitReductionLabel(state.wallow_regen_percent ?? 0)} · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · ${state.wallow_tiers?.length ?? 0} rewards`
+					: "earn XP by burying, digging, tickling, and visiting"}
+			</Hand>
+
+			{/* XP progress toward the next tier. `ProgressTrack` is the one meter —
+			    it carries the `progressbar` role and its `accessibilityValue`. The
+			    hand-written label stays centred beneath it; `wallowProgress` only
+			    yields a fraction, so the meter is expressed out of 100. */}
+			<View style={passProgressStyles.wrap}>
+				<ProgressTrack
+					value={Math.round(progress.fraction * XP_METER_MAX)}
+					max={XP_METER_MAX}
+					tone="lilac"
+					height="sm"
+					accessibilityLabel="Pass XP"
+				/>
+				<Hand tone="secondary" align="center" style={passProgressStyles.label}>
+					{progress.label}
+				</Hand>
+			</View>
+
+			{/* Prestige converts the activity routes that already award pass XP
+			    (burying, social digs, Golden Truffle Patch digs) into permanent,
+			    visibly escalating regeneration power. */}
+			{state.can_wallow !== undefined && tier >= season.total_tiers && (
+				<WallowCard
+					count={state.wallow_count ?? 0}
+					ready={state.can_wallow ?? false}
+					powerLevel={state.wallow_power_level ?? 0}
+					regenPercent={state.wallow_regen_percent ?? 0}
+					nextRegenPercent={state.wallow_next_regen_percent ?? WALLOW_REGEN_STEP_PCT}
+					regenSeconds={state.wallow_regen_seconds ?? 3600}
+					nextRegenSeconds={state.wallow_next_regen_seconds ?? 2700}
+					busy={busy}
+					onWallow={onWallow}
+				/>
+			)}
+
+			{/* Vertical-list pass track — straight column of node + card rows with
+			    per-state visual treatment (sage claimed / heavy-outlined ready /
+			    dashed locked) and display-only stats tags above. */}
+			{hasPremiumTrack && !prestigeMode && (
+				// Both segments stay tappable — browsing a locked premium track
+				// is the point — so the lock is a mark on the segment, not a
+				// `disabled` state. [C-05]
+				<SegmentedControl
+					label="Pass track"
+					value={passTrack}
+					onChange={onPassTrack}
+					style={passTabStyles.row}
+					options={[
+						{ value: "free", label: "Free", accessibilityLabel: "Free pass track" },
+						{
+							value: "premium",
+							label: "Premium",
+							icon: premium ? undefined : "lock",
+							accessibilityLabel: premium
+								? "Premium pass track"
+								: "Premium pass track, locked behind Slop Club",
+						},
+					]}
+				/>
+			)}
+			{hasPremiumTrack && !prestigeMode && passTrack === "premium" && !premium && (
+				<PremiumLockedBanner onUnlock={onUnlockPremium} />
+			)}
+			{/* Ready-claim shortcut — surfaces at the TOP of the track whenever
+			    anything is claimable. One ready tier names its reward; two or
+			    more sweep in one tap and end on a single summary beat. */}
+			{readyTiers.length >= 1 && (
+				<ClaimAllBar
+					count={readyTiers.length}
+					label={
+						readyTiers.length === 1
+							? activeTiersByNumber[readyTiers[0]]?.[shownTrack]?.display_label
+							: undefined
+					}
+					busy={busy}
+					hero
+					onPress={onClaimAll}
+				/>
+			)}
+			<VerticalListPassTrack
+				key={`${season.id}:${prestigeMode ? `wallow:${state.season_wallow_count ?? 0}` : shownTrack}`}
+				totalTiers={season.total_tiers}
+				currentTier={tier}
+				tiersByNumber={activeTiersByNumber}
+				claimedSet={activeClaimedSet}
+				onClaim={onClaim}
+				track={prestigeMode ? "free" : hasPremiumTrack ? passTrack : "free"}
+				premiumUnlocked={premium}
+				sparse={prestigeMode}
+				tierLabel={prestigeMode ? "WALLOW TIER" : "TIER"}
+			/>
+		</View>
 	);
 }
 
@@ -2331,14 +2522,10 @@ const wallowStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
-	// A `Button variant="link"` in a header's right slot keeps its full 44pt
-	// frame; this only stops its own padding from pushing the title row apart.
-	headerLink: { paddingHorizontal: 0, paddingVertical: 0 },
 	safeArea: { flex: 1 },
 	center: { alignItems: "center", justifyContent: "center" },
 	// Section seams inside the scroll — the container gap carries the rest.
 	sectionGap: { marginTop: SPACE.sm },
-	sectionHeaderTight: { marginBottom: 0 },
 	// The reference-sheet doors — small paper sticker circles by the title.
 	// PageHeader's right slot lays them out and spaces them; this is only the
 	// circle each one draws.
@@ -2381,6 +2568,22 @@ const styles = StyleSheet.create({
 		// so a large container gap double-counted into dead space at every seam.
 		gap: SPACE.sm,
 	},
+	// The Almanac: the verb strip under the crown, then the panel filling the
+	// rest of the screen above the (in-flow) hanging-signs bar.
+	titleSprite: { width: TITLE_SPRITE, height: TITLE_SPRITE },
+	strip: {
+		paddingHorizontal: PAGE_PAD,
+		paddingTop: SPACE.xs,
+		paddingBottom: SPACE.md,
+	},
+	panelScroll: { flex: 1 },
+	panel: {
+		flexGrow: 1,
+		paddingHorizontal: PAGE_PAD,
+		paddingTop: SPACE.xs,
+	},
+	// The full track inside its sheet (and inline on Season 0).
+	trackBody: { gap: SPACE.sm },
 	// The StoneThumb well — the reward chip inside a pass-track node.
 	stone: {
 		width: STONE,

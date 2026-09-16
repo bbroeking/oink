@@ -55,15 +55,15 @@ describe("Barn housing acceptance fixture", () => {
       .toHaveLength(1);
   });
 
-  it("exposes all 122 designs and can preload ownership of every design", async () => {
+  it("exposes all 123 designs and can preload ownership of every design", async () => {
     await habitatAcceptanceControls.reset(true);
     const result = await habitatAcceptanceBackend.fetch();
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.catalog).toHaveLength(122);
-    expect(result.owned).toHaveLength(122);
-    expect(new Set(result.catalog.map((item) => item.id)).size).toBe(122);
+    expect(result.catalog).toHaveLength(123);
+    expect(result.owned).toHaveLength(123);
+    expect(new Set(result.catalog.map((item) => item.id)).size).toBe(123);
   });
 
   it("awards and reports deterministic collection progress", async () => {

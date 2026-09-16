@@ -58,6 +58,8 @@ import {
 	standingsRows,
 } from "@/utils/race";
 import { cosmeticImage, cosmeticName } from "@/utils/rewardArt";
+// "3rd of 12" — the one ordinal, shared with the Almanac's Race cell.
+import { ordinal } from "./almanac/almanacState";
 import {
 	BORDER,
 	FONTS,
@@ -94,22 +96,6 @@ const EMPTY_GLYPH = 28;
 // cosmeticName (id → "Mud Derby Bg") + cosmeticImage (id → sprite) now live in
 // utils/rewardArt, the single owner of cosmetic art/name resolution.
 
-// "3rd of 12" — ordinal placement.
-function ordinal(n: number): string {
-	const v = Math.max(1, Math.floor(n));
-	const rem100 = v % 100;
-	if (rem100 >= 11 && rem100 <= 13) return `${v}th`;
-	switch (v % 10) {
-		case 1:
-			return `${v}st`;
-		case 2:
-			return `${v}nd`;
-		case 3:
-			return `${v}rd`;
-		default:
-			return `${v}th`;
-	}
-}
 
 export function RaceSection({
 	myCrewId,

@@ -38,8 +38,8 @@ const snapshot = (
 
 describe("Habitat scene contract", () => {
   test("ships the exact complete launch catalog and empty starter room", () => {
-    expect(HABITAT_CATALOG).toHaveLength(122);
-    expect(new Set(HABITAT_CATALOG.map((item) => item.id)).size).toBe(122);
+    expect(HABITAT_CATALOG).toHaveLength(123);
+    expect(new Set(HABITAT_CATALOG.map((item) => item.id)).size).toBe(123);
     expect(
       HABITAT_CATALOG.filter((item) => item.category === "interior_background"),
     ).toHaveLength(3);

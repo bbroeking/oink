@@ -70,6 +70,7 @@ function RewardArt({ reward, size }: { reward: NextReward; size: number }) {
 			return <Glyph name="pigface" size={size} />;
 		case "goldenTruffle":
 		case "image":
+		case "habitat":
 			return (
 				<Image
 					source={art.source}
