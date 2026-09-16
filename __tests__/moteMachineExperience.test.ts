@@ -9,7 +9,6 @@ const productionSurfaces = [
   "app/mote-machine.tsx",
   "app/contraptions.tsx",
   "components/season1/MoteMachineCard.tsx",
-  "app/digging-stats.tsx",
   "components/mudwar/TrufflePatch.tsx",
 ].map(read);
 
@@ -27,12 +26,11 @@ describe("native Mote Machine experience", () => {
     expect(source).not.toMatch(/no tickles this time/i);
   });
 
-  it("opens from Season, the Mote ledger tile, and a newly earned Mote", () => {
+  // The digging-story page (app/digging-stats.tsx) was a third door until it
+  // was removed with the digging story on 2026-09-15.
+  it("opens from Season and a newly earned Mote", () => {
     expect(read("components/season1/MoteMachineCard.tsx")).toContain(
       'router.push("/mote-machine")',
-    );
-    expect(read("app/digging-stats.tsx")).toContain(
-      'router.push("/mote-machine" as Href)',
     );
     const patch = read("components/mudwar/TrufflePatch.tsx");
     expect(patch).toContain('end.finds.includes("shimmer")');
