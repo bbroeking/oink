@@ -271,8 +271,9 @@ export function resolveSlot(
 		// An eye-line item on the turned head sits back from the eye midpoint so
 		// its bridge lands over the nose (TURNED_EYE_SHIFT); a forced ritual image
 		// keeps the raw anchor.
-		const eyeBound = anchorName === "eyes" || anchorName === "eye_l" || anchorName === "eye_r";
-		const a = turned && eyeBound && !slot.imageSrc ? { x: resolved.x - TURNED_EYE_SHIFT, y: resolved.y } : resolved;
+		// Only the `eyes` midpoint has a bridge to place; a single-eye anchor is
+		// already on the eye it names.
+		const a = turned && anchorName === "eyes" && !slot.imageSrc ? { x: resolved.x - TURNED_EYE_SHIFT, y: resolved.y } : resolved;
 		const aspect = resolvePigStageAssetAspect(
 			imageSrc,
 			typeof Image.resolveAssetSource === "function"

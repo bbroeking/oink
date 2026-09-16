@@ -110,7 +110,7 @@ ONE_EYE = (
     "handle trailing down and to the LEFT. Keep the metal, the glass and the "
     "decoration exactly as in the front sprite."
 )
-ONE_EYE_IDS = frozenset({"monocle", "slop_club_monocle_crest", "opera_lorgnette"})
+ONE_EYE_IDS = frozenset({"monocle", "slop_club_monocle_crest"})
 
 REL_FILES = ("constants/hat_rel.generated.ts", "constants/membersRel.generated.ts")
 

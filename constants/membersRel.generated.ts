@@ -52,7 +52,7 @@ export const MEMBERS_REL_DATA: Record<string, RelSpec> = {
 	slop_club_laurel_cap: { pivot: { x: 0.5, y: 0.86 }, widthFrac: 0.42, anchor: "head", behind: false },
 	slop_club_signet_visor: { pivot: { x: 0.5, y: 0.86 }, widthFrac: 0.42, anchor: "head", behind: false },
 	slop_club_seal_bow: { pivot: { x: 0.46, y: 0.5 }, widthFrac: 0.42, anchor: "head", behind: false },
-	slop_club_monocle_crest: { pivot: { x: 0.49, y: 0.52 }, widthFrac: 0.62, anchor: "eyes", behind: false },
+	slop_club_monocle_crest: { pivot: { x: 0.484, y: 0.441 }, widthFrac: 0.5, anchor: "eye_l", behind: false },
 	slop_club_membership_card: { pivot: { x: 0.45, y: 0.72 }, widthFrac: 0.42, anchor: "hand_r", behind: false },
 	corn_on_the_cob: { pivot: { x: 0.45, y: 0.72 }, widthFrac: 0.42, anchor: "hand_r", behind: false },
 	slop_club_signet_crown: { pivot: { x: 0.5, y: 0.86 }, widthFrac: 0.42, anchor: "head", behind: false },

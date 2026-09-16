@@ -93,3 +93,18 @@ python3 tools/gen_side_items.py pirate_tricorn messenger masquerade_plume_hat si
 
 Then re-run the sheet with `?side=1` to check placement of the new sprites, and
 the placement studio for the monocle family's near-eye pivot.
+
+## Follow-up — same day
+
+Queue A generated and reviewed on the pig (50 side sprites now: 28 face,
+17 hats, 5 originals). Two renderer rulings fell out of it:
+
+- The three-quarter camera is stated from the pig's geometry (near side =
+  viewer's LEFT); the generator had it inverted. Eye-line items get a
+  lens / mask / one-eye addendum (`tools/gen_side_items.py`).
+- An item on the `eyes` anchor of the turned families sits back
+  `TURNED_EYE_SHIFT` (16 canvas px) so its bridge is over the nose — the
+  midpoint of a near eye and a foreshortened far eye is not where a bridge
+  goes. Single-eye anchors are already on their eye and take no shift.
+
+`slop_club_monocle_crest` now anchors `eye_l` with its pivot on the lens.
