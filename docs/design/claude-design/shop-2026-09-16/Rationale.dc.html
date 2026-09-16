@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Rationale</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Nunito:wght@700;800;900&amp;family=Patrick+Hand&amp;family=Fredoka:wght@600;700&amp;display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    /* fonts — FONTS.whimsy / FONTS.hand / FONTS.bodyExtra */
+    .whimsy { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    /* TYPE roles */
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 22px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .body { font-size: 15px; line-height: 21px; }
+    .bodySm { font-size: 13px; line-height: 18px; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; }
+    .handTxt { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; }
+    .mute { color: #605449; } .muteDim { color: #6a5c50; }
+    /* the phone — paper canvas, status area left alone (no fake chrome) */
+    .phone { position: relative; width: 390px; height: 844px; overflow: hidden; background: #fffaf0; display: flex; flex-direction: column; }
+    .statusArea { height: 48px; flex: none; }
+    /* Sticker — BORDER.ink 2, RADII.lg 14, STICKER_SHADOW 4/4, TILT.card -0.6 */
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .sm { box-shadow: 2px 2px 0 #2a1f15; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; }
+    /* PageHeader variant=tab — PAGE_PAD 18, paddingTop SPACE.sm */
+    .pageHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 8px 18px 0; }
+    .pageHeader .crown { display: flex; flex-direction: column; gap: 4px; }
+    /* SectionHeader — kicker (hand, accent, ★) over sectionTitle, right slot = label mute */
+    .sectionHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px; }
+    .sectionHeader .col { display: flex; flex-direction: column; gap: 2px; }
+    /* Tag / Chip — RADII.pill, BORDER.thin 1.5, minH 24, pad 2/12, TYPE.label */
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; white-space: nowrap; box-sizing: border-box; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; }
+    .tag.sky { background: #c8e3f0; } .tag.rose { background: #ffd6dc; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; }
+    .tag.stretch { align-self: stretch; }
+    .tag img { width: 14px; height: 14px; }
+    /* Button — minH 44, RADII.xxl 22, BORDER.ink, label Nunito 800 15 */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #ffd87a; font-weight: 800; font-size: 15px; letter-spacing: .1px; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.ghost { background: #fffaf0; }
+    .btn.sm { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+    .btn.full { align-self: stretch; }
+    /* ShopCard — Sticker radius xl 18, thumb aspect 1.18 on rarity bg, ink bottom rule, rarity dot 14, owned badge 26, foot pad md gap sm */
+    .card { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
+    .card.gated { background: #f6e6d4; }
+    .card .thumb { position: relative; aspect-ratio: 1.18; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .card .thumb img.art { width: 74%; height: 74%; object-fit: contain; }
+    .card .rdot { position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; z-index: 2; }
+    .card .owned { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 999px; background: #c9dec1; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .card .owned img { width: 14px; height: 14px; }
+    .card .foot { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    /* Ribbon — slopGold, 120 wide, 35°, kickerPillSm, thin ink rules */
+    .ribbon { position: absolute; top: 12px; right: -30px; width: 120px; padding: 2px 0; background: #F5C44A; border-top: 1.5px solid #2a1f15; border-bottom: 1.5px solid #2a1f15; transform: rotate(35deg); z-index: 3; display: flex; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: #2a1f15; }
+    .ribbon img { width: 10px; height: 10px; }
+    /* rarity — RARITY_BG_SOLID / RARITY_STRIPE */
+    .r-common { background: #FAF7F3; } .r-uncommon { background: #E8F5E0; } .r-rare { background: #E0EBFF; } .r-epic { background: #EFE9FF; } .r-legendary { background: #FFF3D0; }
+    .d-common { background: #cdbfae; } .d-uncommon { background: #7ba868; } .d-rare { background: #5a8bc5; } .d-epic { background: #a89bff; } .d-legendary { background: #d4a437; }
+    /* the coin pocket in the header (Sticker sun, radius md, tilt 2°) */
+    .pocket { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .ticketBtn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .ticketBtn img { width: 20px; height: 20px; }
+    /* a door — paper sticker, radius md, SHADOW_SM, icon over label (≥44pt) */
+    .door { position: relative; flex: 1 1 0; min-width: 0; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; padding: 8px 4px; box-sizing: border-box; }
+    .door svg, .door img { width: 22px; height: 22px; }
+    .door .lbl { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; white-space: nowrap; }
+    .door .badge { position: absolute; top: -8px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #ffd87a; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 13px; line-height: 18px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    /* Avatar — the 32 / 40 / 56 diameters, ink border */
+    .avatar { border-radius: 999px; border: 2px solid #2a1f15; background: #fffaf0; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; flex: none; box-sizing: border-box; }
+    .avatar img { width: 92%; height: 92%; object-fit: contain; }
+    /* progress track — 16px capsule, ink border, sage fill */
+    .track { height: 16px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; box-sizing: border-box; }
+    .track > div { height: 100%; background: #c9dec1; border-right: 2px solid #2a1f15; box-sizing: border-box; }
+    /* masking tape (WHIMSY.tape / tapeEdge) */
+    .tape { position: absolute; width: 70px; height: 18px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .95; transform: rotate(-8deg); z-index: 4; }
+    /* hanging-signs tab bar — WOOD rail dirt→dirtDeep, paper signs, Shop active peach */
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 2px solid #2a1f15; z-index: 20; }
+    .tabbar:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: #2a1f15; opacity: .35; }
+    .sign { position: absolute; top: 20px; width: 64px; height: 58px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 800; font-size: 11px; box-sizing: border-box; }
+    .sign:before { content: ""; position: absolute; top: -18px; left: 50%; width: 2px; height: 18px; background: #2a1f15; transform: translateX(-50%); }
+    .sign svg { width: 20px; height: 20px; }
+    .sign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    /* storefront — WOOD planks, bark chalkboard, rarity coasters */
+    .plank { height: 14px; background: linear-gradient(180deg, #8d5a2c, #74441e); border: 2px solid #2a1f15; border-radius: 4px; box-shadow: 2px 3px 0 #2a1f15; box-sizing: border-box; }
+    .coaster { width: 78px; height: 78px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .coaster img { width: 58px; height: 58px; object-fit: contain; }
+    .chalk { background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; color: #fff3e2; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="width: 900px; padding: 40px 44px 56px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px; background: #fbeee2;">
+  <div style="display: flex; flex-direction: column; gap: 4px;">
+    <div class="kickerPill">★ shop · the storefront · 2026-09-16</div>
+    <div class="whimsy" style="font-size: 32px; line-height: 34px;">The Storefront, with the sounder in it</div>
+    <div class="rule"></div>
+    <div class="handLg mute" style="max-width: 720px;">Direction C chosen on 2026-09-16, with two of B's pieces folded in — the open Troughs and the current sounder — and the Trough carried out to the Home yard. The three round-one sketches are on the Directions page.</div>
+  </div>
+
+  <div class="sticker" style="padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; transform: rotate(-0.4deg);">
+    <div class="kicker">★ the store</div>
+    <div class="sectionTitle">Where the sounder and the Troughs live in the scene</div>
+    <div class="body"><span class="label">The Trough is by the counter.</span> A wooden trough sits under the shelves with the sounder's open drives inside it as rows — the friend's pig, the item, a notched track, one Chip-in chip. It replaces the accordion and the “2 wishes” door: the Trough is an object you walk past, not a section you expand.</div>
+    <div class="body"><span class="label">Your sounder is at the counter.</span> Friends who bought something today stand along the counter front wearing it, with a hand tag (“Jen · Top Hat”). A friend who bought nothing is simply not there — never a public zero. No friends yet: the counter is empty and the shopkeep has the floor.</div>
+    <div class="body"><span class="label">Closet and Furnish are hanging signs</span> beside the chalkboard, so the counter front belongs to the pigs. The chalkboard says when the shelves restock.</div>
+    <div class="body"><span class="label">What is still grid.</span> The tap on any shelf item opens the same preview sheet; Reduce Motion and VoiceOver get the 2-col grid underneath. The scene needs a wall, three shelves, a counter and a shopkeep painted at 3× the tallest phone; every other object on the board is a token.</div>
+  </div>
+
+  <div class="sticker" style="padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; transform: rotate(0.3deg);">
+    <div class="kicker">★ home</div>
+    <div class="sectionTitle">The Trough on Home: a thing in the yard, and a verb on the fan</div>
+    <div class="body"><span class="label">In the yard.</span> While any sounder Trough is open, a small wooden trough sits in the yard beside the mound — the mound's own rule (2026-09-13: diegetic accessories are for things in the yard). Its slop level is the leading drive's fill, the friend's pig peeks over it wearing the item, and four notches on the rim light as quarters pass. Steady state is the trough alone; a tap unfolds one tag (“Sam's Top Hat · 140 of 200 · chip in ›”) and only the tag opens the sheet.</div>
+    <div class="body"><span class="label">On the fan.</span> “Trough” joins Dig · Barn · Bury a truffle as a fan row with the hand line “Sam's Top Hat · 140 of 200 · 2 open”; it can be armed like any other, so the face can wear the trough. Nothing else on Home changes — no pill in the scene, no strip.</div>
+    <div class="body"><span class="label">The sheet</span> is today's TroughSection in a Sheet: drive card, notched track, 10 · 25 · 50 · Max, one button. It opens from the yard tag, the fan, and the store.</div>
+  </div>
+
+  <div class="sticker" style="background: #fff3d0; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; transform: rotate(-0.3deg);">
+    <div class="kicker">★ the notch reward</div>
+    <div class="sectionTitle">The Trough holds a pot; each notch spills some of it</div>
+    <div class="body">Today a chip pays 1 tickle per 100 snouts, credited inline (2026-07-20) — which at the 10 · 25 · 50 presets is almost never (≈ 0.24 tickles a drive; 95% of donors get nothing). Replaced by the <span class="label">pot rule</span>: a Trough holds a pot of <span class="label">max(4, cost ÷ 100)</span> tickles. When your chip pushes it past a quarter notch, a random share of what is left in the pot (2/8–6/8) spills into your bank — shown as it lands (toast on the app-wide line, the coin bumps), never quoted before. The filling notch empties the pot.</div>
+    <div class="body"><span class="label">Why the pot.</span> The pot IS the 2026-07-20 ceiling, so nothing is ever clamped and a funded Trough always spends its whole allowance; a fixed drop table could not respect a ceiling that scales with price (the balance loop, tools/balance_trough_notch.py). The share reads from server config with a compiled fallback, and the credit lands in the <span class="label">bank only</span>, so a tickle still has to be played to count toward Most Tickles (crediting tickles_earned would add ≈ 1.4% of a season's played tickles).</div>
+  </div>
+
+  <div class="sticker" style="background: #c9dec1; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; transform: rotate(0.4deg);">
+    <div class="kicker">★ build order</div>
+    <div class="sectionTitle">Three builds, one asset order</div>
+    <div class="body">1 — Home first: the yard trough, the fan row, the sheet, the pot rule (server: pot + notch detection in donate_to_drive, config-fed share; the 1-per-100 credit retires). 2 — The store's chrome: Troughs as rows, Closet/Furnish as signs, the sounder at the counter (needs one sounder-scoped “bought today” RPC). 3 — The scene: wall, shelves, counter, shopkeep painted in Rosie's sticker hand; the grid stays as the fallback until the art lands.</div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

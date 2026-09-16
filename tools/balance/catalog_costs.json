@@ -1,0 +1,355 @@
+{
+ "source": "public.hats where cost > 0, grouped (read 2026-09-16)",
+ "rows": [
+  {
+   "cost": 100,
+   "rarity": "common",
+   "n": 2
+  },
+  {
+   "cost": 103,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 109,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 111,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 114,
+   "rarity": "common",
+   "n": 3
+  },
+  {
+   "cost": 117,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 120,
+   "rarity": "common",
+   "n": 4
+  },
+  {
+   "cost": 123,
+   "rarity": "common",
+   "n": 2
+  },
+  {
+   "cost": 126,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 129,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 130,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 131,
+   "rarity": "common",
+   "n": 2
+  },
+  {
+   "cost": 137,
+   "rarity": "common",
+   "n": 2
+  },
+  {
+   "cost": 140,
+   "rarity": "common",
+   "n": 2
+  },
+  {
+   "cost": 143,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 149,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 150,
+   "rarity": "common",
+   "n": 2
+  },
+  {
+   "cost": 154,
+   "rarity": "common",
+   "n": 3
+  },
+  {
+   "cost": 160,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 189,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 200,
+   "rarity": "common",
+   "n": 1
+  },
+  {
+   "cost": 200,
+   "rarity": "uncommon",
+   "n": 1
+  },
+  {
+   "cost": 213,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 227,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 240,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 247,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 250,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 260,
+   "rarity": "uncommon",
+   "n": 1
+  },
+  {
+   "cost": 267,
+   "rarity": "uncommon",
+   "n": 1
+  },
+  {
+   "cost": 280,
+   "rarity": "uncommon",
+   "n": 1
+  },
+  {
+   "cost": 293,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 300,
+   "rarity": "rare",
+   "n": 47
+  },
+  {
+   "cost": 300,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 313,
+   "rarity": "uncommon",
+   "n": 4
+  },
+  {
+   "cost": 320,
+   "rarity": "uncommon",
+   "n": 2
+  },
+  {
+   "cost": 333,
+   "rarity": "uncommon",
+   "n": 1
+  },
+  {
+   "cost": 400,
+   "rarity": "uncommon",
+   "n": 1
+  },
+  {
+   "cost": 400,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 444,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 467,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 489,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 500,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 511,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 533,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 556,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 578,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 600,
+   "rarity": "rare",
+   "n": 5
+  },
+  {
+   "cost": 650,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 667,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 700,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 711,
+   "rarity": "rare",
+   "n": 4
+  },
+  {
+   "cost": 750,
+   "rarity": "rare",
+   "n": 1
+  },
+  {
+   "cost": 756,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 800,
+   "rarity": "rare",
+   "n": 2
+  },
+  {
+   "cost": 800,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 818,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 855,
+   "rarity": "epic",
+   "n": 2
+  },
+  {
+   "cost": 929,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 966,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 985,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 1000,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 1200,
+   "rarity": "common",
+   "n": 5
+  },
+  {
+   "cost": 1200,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 2000,
+   "rarity": "epic",
+   "n": 1
+  },
+  {
+   "cost": 2000,
+   "rarity": "uncommon",
+   "n": 17
+  },
+  {
+   "cost": 2000,
+   "rarity": "legendary",
+   "n": 1
+  },
+  {
+   "cost": 3000,
+   "rarity": "rare",
+   "n": 23
+  },
+  {
+   "cost": 3500,
+   "rarity": "legendary",
+   "n": 1
+  },
+  {
+   "cost": 4200,
+   "rarity": "epic",
+   "n": 20
+  },
+  {
+   "cost": 5500,
+   "rarity": "legendary",
+   "n": 10
+  }
+ ]
+}

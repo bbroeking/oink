@@ -1,0 +1,219 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Home · the Trough sheet, past a notch</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Nunito:wght@700;800;900&amp;family=Patrick+Hand&amp;family=Fredoka:wght@600;700&amp;display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    /* fonts — FONTS.whimsy / FONTS.hand / FONTS.bodyExtra */
+    .whimsy { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    /* TYPE roles */
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 22px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .body { font-size: 15px; line-height: 21px; }
+    .bodySm { font-size: 13px; line-height: 18px; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; }
+    .handTxt { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; }
+    .mute { color: #605449; } .muteDim { color: #6a5c50; }
+    /* the phone — paper canvas, status area left alone (no fake chrome) */
+    .phone { position: relative; width: 390px; height: 844px; overflow: hidden; background: #fffaf0; display: flex; flex-direction: column; }
+    .statusArea { height: 48px; flex: none; }
+    /* Sticker — BORDER.ink 2, RADII.lg 14, STICKER_SHADOW 4/4, TILT.card -0.6 */
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .sm { box-shadow: 2px 2px 0 #2a1f15; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; }
+    /* PageHeader variant=tab — PAGE_PAD 18, paddingTop SPACE.sm */
+    .pageHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 8px 18px 0; }
+    .pageHeader .crown { display: flex; flex-direction: column; gap: 4px; }
+    /* SectionHeader — kicker (hand, accent, ★) over sectionTitle, right slot = label mute */
+    .sectionHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px; }
+    .sectionHeader .col { display: flex; flex-direction: column; gap: 2px; }
+    /* Tag / Chip — RADII.pill, BORDER.thin 1.5, minH 24, pad 2/12, TYPE.label */
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; white-space: nowrap; box-sizing: border-box; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; }
+    .tag.sky { background: #c8e3f0; } .tag.rose { background: #ffd6dc; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; }
+    .tag.stretch { align-self: stretch; }
+    .tag img { width: 14px; height: 14px; }
+    /* Button — minH 44, RADII.xxl 22, BORDER.ink, label Nunito 800 15 */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #ffd87a; font-weight: 800; font-size: 15px; letter-spacing: .1px; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.ghost { background: #fffaf0; }
+    .btn.sm { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+    .btn.full { align-self: stretch; }
+    /* ShopCard — Sticker radius xl 18, thumb aspect 1.18 on rarity bg, ink bottom rule, rarity dot 14, owned badge 26, foot pad md gap sm */
+    .card { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
+    .card.gated { background: #f6e6d4; }
+    .card .thumb { position: relative; aspect-ratio: 1.18; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .card .thumb img.art { width: 74%; height: 74%; object-fit: contain; }
+    .card .rdot { position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; z-index: 2; }
+    .card .owned { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 999px; background: #c9dec1; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .card .owned img { width: 14px; height: 14px; }
+    .card .foot { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    /* Ribbon — slopGold, 120 wide, 35°, kickerPillSm, thin ink rules */
+    .ribbon { position: absolute; top: 12px; right: -30px; width: 120px; padding: 2px 0; background: #F5C44A; border-top: 1.5px solid #2a1f15; border-bottom: 1.5px solid #2a1f15; transform: rotate(35deg); z-index: 3; display: flex; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: #2a1f15; }
+    .ribbon img { width: 10px; height: 10px; }
+    /* rarity — RARITY_BG_SOLID / RARITY_STRIPE */
+    .r-common { background: #FAF7F3; } .r-uncommon { background: #E8F5E0; } .r-rare { background: #E0EBFF; } .r-epic { background: #EFE9FF; } .r-legendary { background: #FFF3D0; }
+    .d-common { background: #cdbfae; } .d-uncommon { background: #7ba868; } .d-rare { background: #5a8bc5; } .d-epic { background: #a89bff; } .d-legendary { background: #d4a437; }
+    /* the coin pocket in the header (Sticker sun, radius md, tilt 2°) */
+    .pocket { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .ticketBtn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .ticketBtn img { width: 20px; height: 20px; }
+    /* a door — paper sticker, radius md, SHADOW_SM, icon over label (≥44pt) */
+    .door { position: relative; flex: 1 1 0; min-width: 0; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; padding: 8px 4px; box-sizing: border-box; }
+    .door svg, .door img { width: 22px; height: 22px; }
+    .door .lbl { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; white-space: nowrap; }
+    .door .badge { position: absolute; top: -8px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #ffd87a; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 13px; line-height: 18px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    /* Avatar — the 32 / 40 / 56 diameters, ink border */
+    .avatar { border-radius: 999px; border: 2px solid #2a1f15; background: #fffaf0; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; flex: none; box-sizing: border-box; }
+    .avatar img { width: 92%; height: 92%; object-fit: contain; }
+    /* progress track — 16px capsule, ink border, sage fill */
+    .track { height: 16px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; box-sizing: border-box; }
+    .track > div { height: 100%; background: #c9dec1; border-right: 2px solid #2a1f15; box-sizing: border-box; }
+    /* masking tape (WHIMSY.tape / tapeEdge) */
+    .tape { position: absolute; width: 70px; height: 18px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .95; transform: rotate(-8deg); z-index: 4; }
+    /* hanging-signs tab bar — WOOD rail dirt→dirtDeep, paper signs, Shop active peach */
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 2px solid #2a1f15; z-index: 20; }
+    .tabbar:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: #2a1f15; opacity: .35; }
+    .sign { position: absolute; top: 20px; width: 64px; height: 58px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 800; font-size: 11px; box-sizing: border-box; }
+    .sign:before { content: ""; position: absolute; top: -18px; left: 50%; width: 2px; height: 18px; background: #2a1f15; transform: translateX(-50%); }
+    .sign svg { width: 20px; height: 20px; }
+    .sign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    /* storefront — WOOD planks, bark chalkboard, rarity coasters */
+    .plank { height: 14px; background: linear-gradient(180deg, #8d5a2c, #74441e); border: 2px solid #2a1f15; border-radius: 4px; box-shadow: 2px 3px 0 #2a1f15; box-sizing: border-box; }
+    .coaster { width: 78px; height: 78px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .coaster img { width: 58px; height: 58px; object-fit: contain; }
+    .chalk { background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; color: #fff3e2; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; }
+
+    .yard { position: relative; width: 390px; height: 844px; overflow: hidden; background: #c8e3f0 url("yard.jpg") center / cover no-repeat; }
+    .earned { position: absolute; top: 70px; left: 20px; background: #ffd6dc; border: 3px solid #2a1f15; border-radius: 16px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-3deg); padding: 8px 14px 8px 12px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+    .earned img { width: 26px; height: 26px; }
+    .earned .n { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 22px; }
+    .earned .cap { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 11px; line-height: 14px; letter-spacing: 1.5px; text-transform: uppercase; color: #605449; margin-top: 2px; }
+    .coin { position: absolute; top: 66px; right: 20px; width: 100px; height: 100px; background: #fffaf0; border: 3px solid #2a1f15; border-radius: 50%; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(4deg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; box-sizing: border-box; }
+    .coin:before { content: ""; position: absolute; inset: 6px; border: 2px dashed rgba(42, 31, 21, 0.25); border-radius: 50%; }
+    .coin .big { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 38px; line-height: 40px; letter-spacing: .5px; }
+    .coin .cap { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 14px; color: #605449; margin-top: 2px; }
+    .coin .chip { position: absolute; left: -12px; top: -8px; width: 30px; height: 30px; background: #ffd6dc; border: 2.5px solid #2a1f15; border-radius: 50%; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); box-sizing: border-box; }
+    .coin .chip img { width: 18px; height: 18px; }
+    .flame { position: absolute; top: 150px; right: 34px; background: #ffd87a; border: 2.5px solid #2a1f15; border-radius: 10px; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; gap: 4px; padding: 2px 8px 2px 4px; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 13px; line-height: 18px; transform: rotate(-3deg); z-index: 3; }
+    .flame img { width: 18px; height: 18px; }
+    .clockline { position: absolute; top: 184px; right: 22px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 18px; color: #fffaf0; white-space: nowrap; text-shadow: 0 1px 0 #2a1f15, 1px 0 0 #2a1f15, -1px 0 0 #2a1f15, 0 -1px 0 #2a1f15; }
+    .rosie { position: absolute; left: 50%; bottom: 150px; width: 240px; transform: translateX(-50%); }
+    .fab { position: absolute; right: 22px; bottom: 146px; width: 72px; height: 72px; border-radius: 50%; background: #ffd87a; border: 3px solid #2a1f15; box-shadow: 4px 4px 0 #2a1f15; display: flex; align-items: center; justify-content: center; transform: rotate(-3deg); z-index: 6; box-sizing: border-box; }
+    .fab svg { width: 40px; height: 40px; }
+    .fab .more { position: absolute; right: -8px; top: -8px; width: 26px; height: 26px; border-radius: 50%; background: #fffaf0; border: 2.5px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 16px; line-height: 16px; box-sizing: border-box; }
+    .fab .lbl { position: absolute; right: 84px; top: 50%; transform: translateY(-50%) rotate(-2deg); background: #fffaf0; border: 2px solid #2a1f15; border-radius: 7px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; padding: 0 9px; white-space: nowrap; box-shadow: 2px 2px 0 #2a1f15; }
+    .fab.open { background: #c9dec1; }
+    .fab.open:after { content: ""; position: absolute; inset: -10px; border: 3px dashed #2a1f15; border-radius: 50%; opacity: .45; }
+    .fab.x { background: #fffaf0; transform: rotate(0deg); }
+    .fab.x svg { width: 28px; height: 28px; }
+    .opt { position: absolute; right: 34px; display: flex; align-items: center; gap: 10px; flex-direction: row-reverse; z-index: 6; }
+    .opt .c { width: 50px; height: 50px; border-radius: 50%; background: #fffaf0; border: 3px solid #2a1f15; box-shadow: 3px 3px 0 #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .opt .c svg, .opt .c img { width: 28px; height: 28px; }
+    .opt .t { background: #fffaf0; border: 2.5px solid #2a1f15; border-radius: 9px; box-shadow: 2px 2px 0 #2a1f15; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 14px; line-height: 18px; padding: 5px 12px; white-space: nowrap; }
+    .opt .t small { display: block; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 14px; color: #605449; }
+    .opt.default .c { background: #c9dec1; width: 58px; height: 58px; box-shadow: 4px 4px 0 #2a1f15; }
+    .opt.default .t { background: #ffd87a; }
+    .opt.default .c svg { width: 34px; height: 34px; }
+    .opt.default { right: 28px; }
+    .scrim { position: absolute; inset: 0; background: rgba(42, 31, 21, 0.18); z-index: 5; }
+    .mound { position: absolute; left: 30px; bottom: 176px; width: 54px; height: 24px; background: #3a2c1e; border: 2.5px solid #2a1f15; border-radius: 50%; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .mound img { position: absolute; left: 50%; top: -16px; transform: translateX(-50%); width: 26px; height: 26px; }
+    /* the yard trough — a thing in the yard, like the mound; wood body, slop level, four notches on the rim */
+    .ytrough { position: absolute; z-index: 3; }
+    .ytrough .body { position: relative; width: 118px; height: 40px; background: linear-gradient(180deg, #8d5a2c, #74441e); border: 2.5px solid #2a1f15; border-radius: 6px 6px 14px 14px; box-shadow: 2px 2px 0 #2a1f15; clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%); box-sizing: border-box; overflow: hidden; }
+    .ytrough .slop { position: absolute; left: 6px; right: 6px; bottom: 5px; top: 8px; background: #526f40; border-radius: 4px 4px 10px 10px; overflow: hidden; }
+    .ytrough .slop > div { position: absolute; left: 0; bottom: 0; top: 0; background: #c9dec1; border-right: 2px solid #2a1f15; }
+    .ytrough .notch { position: absolute; top: 8px; width: 2px; height: 8px; background: #2a1f15; opacity: .55; }
+    .ytrough .notch.lit { background: #ffd87a; opacity: 1; box-shadow: 0 0 0 1px #2a1f15; }
+    .ytag { position: absolute; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 7px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 18px; padding: 0 8px; white-space: nowrap; box-shadow: 2px 2px 0 #2a1f15; z-index: 4; }
+    .htab { position: absolute; left: 0; right: 0; bottom: 0; height: 124px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 3px solid #2a1f15; z-index: 20; }
+    .htab:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 3px; background: #2a1f15; opacity: .35; }
+    .hsign { position: absolute; top: 30px; width: 62px; height: 66px; background: #fffaf0; border: 3px solid #2a1f15; border-radius: 10px; box-shadow: 3px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 12px; box-sizing: border-box; }
+    .hsign:before { content: ""; position: absolute; top: -22px; left: 50%; width: 2px; height: 22px; background: #2a1f15; transform: translateX(-50%); }
+    .hsign svg { width: 22px; height: 22px; }
+    .hsign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    /* toast — paper sticker on the app-wide top line, over everything */
+    .toast { position: absolute; left: 18px; right: 136px; top: 56px; z-index: 40; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; padding: 10px 14px; display: flex; align-items: center; gap: 12px; transform: rotate(-0.6deg); }
+    .toast img { width: 32px; height: 32px; }
+    /* sheet — paper panel from the bottom, grabber, SPACE.xl + inset footer */
+    .sheetScrim { position: absolute; inset: 0; background: rgba(42, 31, 21, 0.55); z-index: 30; }
+    .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 31; background: #fffaf0; border: 2px solid #2a1f15; border-bottom: 0; border-radius: 22px 22px 0 0; padding: 10px 18px 40px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+    .grabber { width: 40px; height: 4px; border-radius: 2px; background: #8c7e71; align-self: center; }
+    .chipRow { display: flex; gap: 8px; }
+    .chip { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 4px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .chip.on { border-width: 3px; background: #ffd87a; }
+    /* the notched track — the Trough's own ProgressTrack: quarter ticks, passed ones lit */
+    .ntrack { position: relative; height: 16px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; box-sizing: border-box; }
+    .ntrack .fill { position: absolute; left: 0; top: 0; bottom: 0; background: #c9dec1; border-right: 2px solid #2a1f15; box-sizing: border-box; }
+    .ntrack .tick { position: absolute; top: 0; bottom: 0; width: 2px; background: #2a1f15; opacity: .35; }
+    .ntrack .tick.lit { background: #ffd87a; opacity: 1; width: 4px; margin-left: -1px; box-shadow: 0 0 0 1px #2a1f15; }
+  </style>
+</helmet>
+
+<div class="yard">
+  <div class="earned"><img src="g_heart.png" alt=""><div><div class="n">1,126</div><div class="cap">tickled</div></div></div>
+  <div class="coin"><div class="chip"><img src="g_heart.png" alt=""></div><div class="big">21</div><div class="cap">of 25</div></div>
+  <div class="flame"><img src="g_flame.png" alt="">12</div>
+  <div class="clockline">+1 in 42:10</div>
+
+  <img class="rosie" src="rosie_sprite.png" alt="">
+  <div class="mound"><img src="g_truffle.png" alt=""></div>
+  <div class="ytrough" style="left: 88px; bottom: 182px;">
+    <div class="avatar" style="position: absolute; left: -18px; top: -30px; width: 36px; height: 36px; background: #F3DED5; z-index: 2;"><img src="pig_copper.png" alt=""></div>
+    <img src="hat_tophat.png" alt="" style="position: absolute; left: -12px; top: -46px; width: 26px; z-index: 3;">
+    <div class="body"><div class="slop"><div style="width: 83%;"></div></div><div class="notch lit" style="left: 34px;"></div><div class="notch lit" style="left: 58px;"></div><div class="notch lit" style="left: 82px;"></div></div>
+    
+  </div>
+
+  <div class="fab"><svg viewBox="0 0 64 64"><path d="M8 26 L32 8 L56 26 V58 H8 Z" fill="#ffc8a8" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"></path><rect x="16" y="30" width="16" height="28" fill="#a03e2f" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"></rect><path d="M16 30 L32 58 M32 30 L16 58" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"></path><rect x="32" y="30" width="16" height="28" fill="#3a2c1e" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"></rect><path d="M36 44 H48 M44 39 L49 44 L44 49" fill="none" stroke="#fff3e2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg><div class="more">+</div><div class="lbl">barn</div></div>
+<div class="htab"><div class="hsign on" style="left: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-7h6v7M9 13l6 7M15 13l-6 7"></path></svg><span>Barn</span></div><div class="hsign" style="left: 92px; transform: rotate(1.5deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 19c0-3 2.5-5 6-5s6 2 6 5M15 19c0-2 1.5-3.5 4-3.5s3 1.5 3 3.5"></path></svg><span>Friends</span></div><div class="hsign" style="left: 168px; transform: rotate(-1deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"></path></svg><span>Season</span></div><div class="hsign" style="left: 244px; transform: rotate(2deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-4h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"></path></svg><span>Shop</span></div><div class="hsign" style="left: 320px; transform: rotate(-1.5deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg><span>Me</span></div></div>
+  <div class="sheetScrim"></div>
+  <div class="sheet">
+    <div class="grabber"></div>
+    <div class="sectionHeader" style="padding: 0;"><div class="col"><div class="kicker">★ chip in</div><div class="sectionTitle">The Trough</div></div><div class="label mute" style="padding-bottom: 2px;">2 open</div></div>
+    <div class="sticker sm" style="background: #c9dec1; border-radius: 12px; transform: rotate(-0.6deg); padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="avatar" style="width: 40px; height: 40px; background: #F3DED5;"><img src="pig_copper.png" alt=""></div>
+        <div style="flex: 1 1 0; min-width: 0;"><div class="cardTitle">Sam's Top Hat</div><div class="handTxt mute">9h left · 4 chipped in · you've given 50</div></div>
+        <img src="hat_tophat.png" alt="" style="width: 40px; height: 40px;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;"><div class="ntrack" style="flex: 1 1 0;"><div class="fill" style="width: 83%;"></div><div class="tick lit" style="left: 25%;"></div><div class="tick lit" style="left: 50%;"></div><div class="tick lit" style="left: 75%;"></div></div><div class="numeral" style="white-space: nowrap;">165 / 200</div></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div class="chipRow"><div class="chip">10</div><div class="chip on">25</div><div class="chip">50</div><div class="chip">Max</div></div>
+        <div class="handTxt mute" style="white-space: nowrap;">past the third notch</div>
+      </div>
+      <div class="btn full">Chip in 25</div>
+      <div style="display: flex; align-items: center; gap: 8px; background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 8px; padding: 6px 10px;"><img src="g_heart.png" alt="" style="width: 16px; height: 16px;"><div class="handTxt">Chipped in! Past a notch — <b>2 tickles</b> fell in your bank.</div></div>
+    </div>
+    <div class="sticker sm" style="background: #c9dec1; border-radius: 12px; transform: rotate(0.4deg); padding: 10px 12px; display: flex; align-items: center; gap: 10px;">
+      <div class="avatar" style="width: 32px; height: 32px; background: #FADFE6;"><img src="pig_pickles.png" alt=""></div>
+      <div style="flex: 1 1 0; min-width: 0;"><div class="cardTitleSm" style="line-height: 18px;">Jen's Halo</div><div class="handTxt mute" style="font-size: 12px; line-height: 16px;">1d left · just opened · 150 / 1,800</div></div>
+      <div class="chip">Chip in</div>
+    </div>
+  </div>
+  <div class="toast"><img src="g_heart.png" alt=""><div style="display: flex; flex-direction: column;"><div class="cardTitle">Past a notch!</div><div class="handTxt mute">+2 tickles · 21 of 25 in the bank</div></div></div>
+</div>
+
+</x-dc>
+</body>
+</html>

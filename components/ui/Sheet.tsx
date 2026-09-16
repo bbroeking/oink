@@ -26,7 +26,6 @@ import type { ReactNode } from "react";
 import {
 	KeyboardAvoidingView,
 	Platform,
-	Pressable,
 	ScrollView,
 	StyleSheet,
 	View,
@@ -128,9 +127,15 @@ export function Sheet({
 				pointerEvents="box-none"
 				style={styles.shrinkable}
 			>
-			{/* Swallows taps on the panel so they don't reach the dismissing scrim. */}
-			<Pressable
-				onPress={() => {}}
+			{/* A plain View, on purpose. The scrim is a SIBLING under the panel, not
+			    an ancestor, so a tap here never reaches it — no swallowing Pressable
+			    is needed, and one was the bug: it became the JS responder for every
+			    touch on non-pressable body content (a catalog tile, a hand line),
+			    and Fabric's scroll view refuses to cancel content touches while an
+			    ANCESTOR holds the JS responder (`_shouldDisableScrollInteraction`).
+			    A slow drag over the satchel's field guide never scrolled; only a
+			    fling — too quick for JS to claim the touch — did. (2026-09-15) */}
+			<View
 				testID={testID}
 				accessibilityViewIsModal
 				style={styles.shrinkable}
@@ -205,7 +210,7 @@ export function Sheet({
 					</ScrollView>
 					{!!footer && <View style={styles.footer}>{footer}</View>}
 				</Sticker>
-			</Pressable>
+			</View>
 			</KeyboardAvoidingView>
 		</SlideUpSheet>
 	);

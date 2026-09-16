@@ -1,0 +1,68 @@
+{
+ "notch_drop": {
+  "policy": "pot",
+  "lo_eighths": 2,
+  "hi_eighths": 6,
+  "final_bonus_eighths": 0,
+  "ceiling_rate": 100,
+  "min_drive_cap": 4,
+  "rule": "pot: P = max(min_drive_cap, floor(cost/ceiling_rate)) tickles held by the Trough; a notch crossed spills randint(round(P_left*lo/8), round(P_left*hi/8)); the filling notch spills the rest"
+ },
+ "notches": [
+  0.25,
+  0.5,
+  0.75,
+  1.0
+ ],
+ "replaces_rate_per_100": true,
+ "credit": "bank",
+ "tuned": {
+  "drives": 5000,
+  "seed": 1,
+  "ceiling_ratio": 1.0,
+  "mean_notch_funded": 4.127,
+  "mean_drop": 1.91,
+  "drop_rate": 0.26,
+  "donor_zero_rate": 0.548,
+  "p_over_cap": 0.0
+ },
+ "assumptions": {
+  "donor_pool": [
+   [
+    2,
+    0.1
+   ],
+   [
+    3,
+    0.2
+   ],
+   [
+    4,
+    0.3
+   ],
+   [
+    5,
+    0.2
+   ],
+   [
+    6,
+    0.12
+   ],
+   [
+    8,
+    0.08
+   ]
+  ],
+  "p_chip_per_slot": 0.35,
+  "preset_weights": [
+   0.35,
+   0.35,
+   0.2,
+   0.1
+  ],
+  "wallet_median": 300,
+  "max_item_cost": 1500,
+  "drives_chipped_per_season": 6,
+  "season_played_tickles": 400
+ }
+}

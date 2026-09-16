@@ -1,0 +1,27 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "The Storefront" },
+    { "id": "page-2", "name": "Directions (round 1)" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html",          "x": 0,    "y": 0,    "w": 390, "h": 844,  "title": "The Storefront · with the sounder and the Troughs", "page": "page-1" },
+    { "file": "HomeTrough.dc.html",    "x": 500,  "y": 0,    "w": 390, "h": 844,  "title": "Home · the trough in the yard", "page": "page-1" },
+    { "file": "HomeFan.dc.html",       "x": 1000, "y": 0,    "w": 390, "h": 844,  "title": "Home · Trough on the fan", "page": "page-1" },
+    { "file": "TroughSheet.dc.html",   "x": 1500, "y": 0,    "w": 390, "h": 844,  "title": "Home · the sheet, past a notch", "page": "page-1" },
+    { "file": "Rationale.dc.html",     "x": 0,    "y": 1020, "w": 900, "h": 1500, "title": "Rationale + build order", "print": "flow", "page": "page-1" },
+    { "file": "DropFirst.dc.html",     "x": 0,    "y": 0,    "w": 390, "h": 844,  "title": "A · Drop First", "page": "page-2" },
+    { "file": "NeighborsShop.dc.html", "x": 500,  "y": 0,    "w": 390, "h": 844,  "title": "B · The Neighbors' Shop", "page": "page-2" },
+    { "file": "Storefront.dc.html",    "x": 1000, "y": 0,    "w": 390, "h": 844,  "title": "C · The Storefront (sketch)", "page": "page-2" }
+  ],
+  "annotations": [
+    { "id": "n-store", "x": 0,    "y": -190, "w": 390, "page": "page-1", "text": "The store — C with B folded in. The Trough is a wooden trough by the counter holding the sounder's open drives as notched rows; friends who bought today stand at the counter wearing it; Closet and Furnish hang as signs by the chalkboard. Same states, same sheet on tap." },
+    { "id": "n-yard",  "x": 500,  "y": -190, "w": 390, "page": "page-1", "text": "Home, steady — while a sounder Trough is open, a small trough sits in the yard beside the mound (the mound's rule: things in the yard, never actions). Slop level = the leading drive; notches light as quarters pass; a tap unfolds one tag, and the tag opens the sheet." },
+    { "id": "n-fan",   "x": 1000, "y": -190, "w": 390, "page": "page-1", "text": "Home, fanned — “Trough” joins Dig · Barn · Bury a truffle with a hand line naming the leading drive. Armable like the rest; the face can wear it." },
+    { "id": "n-sheet", "x": 1500, "y": -190, "w": 390, "page": "page-1", "text": "The sheet, just after a chip pushed Sam's Top Hat past the third notch: the receipt line says what fell, the toast on the app-wide line says the bank (19 → 21). The amount is random inside a server-tuned range and never quoted before it lands." },
+    { "id": "read-me", "x": 1000, "y": 1020, "w": 520, "page": "page-1", "text": "Tokens from constants/theme.ts; Home anatomy from docs/design/claude-design/barn/barn-home.html (the ratified comp); Trough copy from components/TroughSection.tsx; fan rows from components/Barn.tsx. The shopkeep is placeholder art (Pepper with a tape note). Friend names and drive numbers are sample data.\n\nWorking files: docs/design/claude-design/shop-2026-09-16/" },
+    { "id": "r1-a", "x": 0,    "y": -170, "w": 390, "page": "page-2", "text": "A · Drop First — \"the drop is the shop; everything else is a door.\" Not chosen." },
+    { "id": "r1-b", "x": 500,  "y": -170, "w": 390, "page": "page-2", "text": "B · The Neighbors' Shop — \"see what your sounder wears; buy it, or chip in for theirs.\" Not chosen as a whole; its Troughs-as-cards and sounder strip were folded into C." },
+    { "id": "r1-c", "x": 1000, "y": -170, "w": 390, "page": "page-2", "text": "C · The Storefront — the round-one sketch, before the sounder and the Troughs moved into the scene. Chosen 2026-09-16." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

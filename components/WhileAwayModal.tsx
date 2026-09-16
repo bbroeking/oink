@@ -4,7 +4,14 @@
 // mounts this; the events also live in the Friends-tab Inbox, this
 // is just the can't-miss-it announcement.
 import React from "react";
-import { View, ScrollView, StyleSheet, Image } from "react-native";
+import {
+	View,
+	ScrollView,
+	StyleSheet,
+	Image,
+	useWindowDimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
 	AdaptiveModalScaffold,
 	Avatar,
@@ -28,6 +35,7 @@ import {
 	LIST_BLEED,
 	RADII,
 	SPACE,
+	TAP_MIN,
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
@@ -45,6 +53,16 @@ const EMOTE_ART = 48;
 // rows' own band, plus the bleed on both ends so the visible rows don't lose
 // height to the gutter that keeps their corners and shadows unclipped.
 const RECAP_MAX_H = 270 + LIST_BLEED * 2;
+// …and the least it may claim on a short window (an SE): one full row plus
+// its bleed. Below that the outer sheet scrolls the whole recap rather than
+// the list scrolling a sliver.
+const RECAP_MIN_H = TAP_MIN + SPACE.sm * 2 + LIST_BLEED * 2;
+// Everything in the dialog that is NOT the list, at default type: the window
+// gutters and frame border, the close rail with its kicker + one-line title,
+// the gap, the primary and the sheet's bottom inset. The list is capped at
+// what's left so the primary stays on screen; the sheet's own ScrollView is
+// the safety net when Dynamic Type grows the rail past this estimate.
+const RECAP_CHROME_H = 200;
 // The recap's frame: the reveal family's width (docs/reveal-family-spec.md).
 const RECAP_MAX_W = 390;
 
@@ -99,6 +117,14 @@ export function WhileAwayModal({
 	// Rows without a route stay non-pressable.
 	onNavigate?: (route: string) => void;
 }) {
+	// The list's cap follows the window so a short screen still shows the
+	// primary under the rows instead of pushing it below the fold.
+	const { height } = useWindowDimensions();
+	const insets = useSafeAreaInsets();
+	const listMaxHeight = Math.max(
+		RECAP_MIN_H,
+		Math.min(RECAP_MAX_H, height - insets.top - insets.bottom - RECAP_CHROME_H),
+	);
 	const blessings = events.filter((e) => e.source === "blessing").length;
 	const curses = events.filter((e) => e.source === "curse").length;
 	const trades = events.filter((e) => e.source === "trade_fulfilled").length;
@@ -149,7 +175,7 @@ export function WhileAwayModal({
 			closeRowContent={
 				<View style={styles.heading}>
 					<Kicker>while you were away</Kicker>
-					<PageTitle numberOfLines={2}>{headline}</PageTitle>
+					<PageTitle>{headline}</PageTitle>
 				</View>
 			}
 			contentContainerStyle={styles.sheet}
@@ -161,7 +187,7 @@ export function WhileAwayModal({
 				    edge lands past the shadow and the tilt's overhang. The two
 				    values must stay equal or the rows shift off the inset. */}
 				<ScrollView
-					style={styles.list}
+					style={[styles.list, { maxHeight: listMaxHeight }]}
 					contentContainerStyle={styles.listContent}
 					bounces={false}
 					showsVerticalScrollIndicator={false}
@@ -301,15 +327,20 @@ export function WhileAwayModal({
 
 const styles = StyleSheet.create({
 	// The sheet's inset: sides and bottom; the top is the close rail's row.
+	// The top pad is exactly the list's bleed: the list pulls itself up by
+	// LIST_BLEED, so this is what keeps its clip edge INSIDE the sheet's own
+	// ScrollView. Without it the first row's tilted top corner and border were
+	// sliced flat by the outer clip. (2026-09-15)
 	sheet: {
+		paddingTop: LIST_BLEED,
 		paddingHorizontal: SPACE.xl,
 		paddingBottom: SPACE.xl,
 		gap: SPACE.md,
 	},
 	heading: { gap: SPACE.xxs },
 	// Bleed: the clip edge sits LIST_BLEED outside the rows on all four sides.
+	// (The height cap is set inline from the window.)
 	list: {
-		maxHeight: RECAP_MAX_H,
 		marginHorizontal: -LIST_BLEED,
 		marginVertical: -LIST_BLEED,
 	},
