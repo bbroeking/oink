@@ -31,7 +31,7 @@ import {
 	frameDelta,
 	resolveAnchor,
 	resolveWearablePose,
-	TURNED_FRONT_EYE_SHIFT,
+	TURNED_EYE_SHIFT,
 } from "../../constants/hats";
 import { HAT_SIDE_IMAGES } from "../../constants/hat_side.generated";
 import type {
@@ -268,11 +268,11 @@ export function resolveSlot(
 			pigFrameIdx,
 			anchorName,
 		);
-		// A front sprite on the turned eye line sits back from the eye midpoint
-		// (TURNED_FRONT_EYE_SHIFT); side art is drawn for that camera and stays.
+		// An eye-line item on the turned head sits back from the eye midpoint so
+		// its bridge lands over the nose (TURNED_EYE_SHIFT); a forced ritual image
+		// keeps the raw anchor.
 		const eyeBound = anchorName === "eyes" || anchorName === "eye_l" || anchorName === "eye_r";
-		const frontOnTurn = turned && eyeBound && !slot.imageSrc && !(itemId in HAT_SIDE_IMAGES);
-		const a = frontOnTurn ? { x: resolved.x - TURNED_FRONT_EYE_SHIFT, y: resolved.y } : resolved;
+		const a = turned && eyeBound && !slot.imageSrc ? { x: resolved.x - TURNED_EYE_SHIFT, y: resolved.y } : resolved;
 		const aspect = resolvePigStageAssetAspect(
 			imageSrc,
 			typeof Image.resolveAssetSource === "function"
