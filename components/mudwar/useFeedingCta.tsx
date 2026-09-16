@@ -16,9 +16,10 @@ import { router } from "expo-router";
 import { AppState, InteractionManager, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRooting } from "@/hooks/useRooting";
+import { useRooting, type RootingSession } from "@/hooks/useRooting";
 import { useFeedingClock } from "@/hooks/useFeedingClock";
 import { nextOpenCountdown } from "@/utils/rooting";
+import { MOTION_DURATION } from "@/hooks/useMotionPolicy";
 import {
   hydrateFeedingScheduleCache,
   refreshFeedingSchedule,
@@ -71,6 +72,11 @@ export interface FeedingCta {
 const dismissedReceipts = new WeakSet<object>();
 const dismissedWindows = new Set<string>();
 const receiptListeners = new Set<() => void>();
+
+// How long a dismissed modal may keep its last screen before it is released
+// regardless — the slide-out plus margin, for a host that never reports the
+// dismissal (Android's Modal has no exit animation).
+const DISMISS_RELEASE_MS = MOTION_DURATION.modal * 3;
 
 export function useFeedingCta(
   onDug?: () => void,
@@ -133,8 +139,17 @@ export function useFeedingCta(
   // gate — its submit is the only copy of the finds. (2026-09-14: a slow
   // submit_rooting_deep left the X and "Back to the Barn" dead.)
   const leaveIsFree = session?.mode === "snout_deep";
+  // The session the modal is sliding OUT with. close() nulls the live session
+  // in the same tick `visible` goes false, so without this the exit animation
+  // rendered the fallback recovery card — "Let's check your finds" flashed
+  // over the Barn after every dig (2026-09-16). The tree reads
+  // `session ?? exiting`, so the patch and its tally ride the slide out;
+  // released when the native Modal reports its dismissal, or by a timer for
+  // a host that never does (Android has no exit animation).
+  const [exiting, setExiting] = useState<RootingSession | null>(null);
   const close = useCallback(() => {
     if ((busy || serverBusy) && !leaveIsFree) return;
+    setExiting(session);
     if (recoveredOutcome) dismissedReceipts.add(recoveredOutcome);
     if (recoveredWindowIndex != null)
       dismissedWindows.add(`${recoveredUserId}:${recoveredWindowIndex}`);
@@ -145,11 +160,19 @@ export function useFeedingCta(
     busy,
     serverBusy,
     leaveIsFree,
+    session,
     recoveredOutcome,
     recoveredWindowIndex,
     recoveredUserId,
     clear,
   ]);
+  const dismissed = useCallback(() => setExiting(null), []);
+  useEffect(() => {
+    if (visible || !exiting) return;
+    const id = setTimeout(dismissed, DISMISS_RELEASE_MS);
+    return () => clearTimeout(id);
+  }, [visible, exiting, dismissed]);
+  const shown = session ?? (visible ? null : exiting);
   const requestClose = useCallback(() => {
     if ((busy || serverBusy) && !leaveIsFree) return;
     if (leaveRef.current) leaveRef.current();
@@ -253,25 +276,29 @@ export function useFeedingCta(
     if (helpUid) AsyncStorage.setItem(HELP_SEEN_KEY(helpUid), "1").catch(() => {});
   }, [helpUid]);
 
+  const deep = shown?.mode === "snout_deep";
   const modal = (
     <AdaptiveModalScaffold
       visible={visible}
       onRequestClose={requestClose}
+      onDismiss={dismissed}
       // Snout Deep is a MODE you step into, not a card: the whole screen,
-      // sliding up. The classic patch keeps its bare card.
-      bare={session?.mode !== "snout_deep"}
-      fullScreen={session?.mode === "snout_deep"}
-      animationType={session?.mode === "snout_deep" ? "slide" : "fade"}
-      contentContainerStyle={session?.mode === "snout_deep" ? styles.fullBody : styles.modalBody}
+      // sliding up. The classic patch keeps its bare card. The mode is the
+      // SHOWN session's, so a dismissing dig does not turn into a card
+      // mid-slide.
+      bare={!deep}
+      fullScreen={deep}
+      animationType={deep ? "slide" : "fade"}
+      contentContainerStyle={deep ? styles.fullBody : styles.modalBody}
       scrollViewProps={{ scrollEnabled: !brushing }}
     >
-      {session && session.mode === "snout_deep" ? (
+      {shown && shown.mode === "snout_deep" ? (
         // Snout Deep (the server's mode decision at open): the three-layer
         // press-your-luck dig. Same modal, same open/close contract — only
         // the patch inside it differs.
         <SnoutDeepDig
-          key={`deep:${session.userId ?? "practice"}:${session.windowIndex}:${session.seed}`}
-          session={session}
+          key={`deep:${shown.userId ?? "practice"}:${shown.windowIndex}:${shown.seed}`}
+          session={shown}
           onSubmit={submitDeep}
           onSync={syncRooting}
           onClose={close}
@@ -282,10 +309,10 @@ export function useFeedingCta(
           onHelpSeen={markHelpSeen}
           tickledBefore={tickledBefore}
         />
-      ) : session ? (
+      ) : shown ? (
         <TrufflePatch
-          key={`${session.userId ?? "practice"}:${session.windowIndex}:${session.seed}`}
-          session={session}
+          key={`${shown.userId ?? "practice"}:${shown.windowIndex}:${shown.seed}`}
+          session={shown}
           onSubmit={async (finds, actions, missed) => {
             const r = await submit(finds, actions, missed);
             if (r.ok && r.outcome && !r.outcome.practice) onDug?.();
@@ -299,7 +326,7 @@ export function useFeedingCta(
           registerLeave={registerLeave}
           onRetry={retry}
           recoveredOutcome={
-            recoveredWindowIndex === session.windowIndex
+            recoveredWindowIndex === shown.windowIndex
               ? recoveredOutcome
               : null
           }

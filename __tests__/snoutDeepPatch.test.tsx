@@ -124,6 +124,39 @@ describe("SnoutDeepPatch", () => {
     act(() => renderer.unmount());
   });
 
+  test("a surfaced thing announces in an overlay above the scroll — nothing below it moves", () => {
+    // Two rubs on row 1, column 5 clear the seed's Tickle Boom (tile 4). The
+    // reveal used to mount in the scroll flow and shove the whole patch down
+    // for its 1.6s dwell (2026-09-16); it is a pointer-transparent overlay
+    // pinned over the header now, a sibling of the ScrollView, never a child.
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness />));
+    });
+    const { ScrollView } = require("react-native");
+    const scroll = renderer.root.findAllByType(ScrollView)[0];
+    // The scroll's flow, top to bottom, before the thing surfaces.
+    const flowBefore = scroll.findAllByType(Text).map((n) => String(n.props.children)).slice(0, 3);
+    pressLabelled(renderer, /^row 1, column 5, buried/);
+    pressLabelled(renderer, /^row 1, column 5, half cleared/);
+    expect(seen.latest!.found).toEqual(["l0:boom"]);
+    const all = texts(renderer).join("\n");
+    expect(all).toMatch(/Tickle Boom/);
+    // The sticker is not in the scroll's tree …
+    const scrollAfter = renderer.root.findAllByType(ScrollView)[0];
+    expect(scrollAfter.findAllByType(Text).map((n) => String(n.props.children)).join("\n")).not.toMatch(
+      /Tickle Boom/,
+    );
+    // … and the flow still opens with the sign, not a sticker.
+    expect(scrollAfter.findAllByType(Text).map((n) => String(n.props.children)).slice(0, 3)).toEqual(flowBefore);
+    // … and the overlay lets taps through to the patch beneath.
+    const overlay = renderer.root.findAll(
+      (n) => n.props.pointerEvents === "none" && n.findAllByType(Text).some((t) => /Tickle Boom/.test(String(t.props.children))),
+    );
+    expect(overlay.length).toBeGreaterThan(0);
+    act(() => renderer.unmount());
+  });
+
   test("Dig deeper enters the mud (stirring); at the root the footer is one gold tie", () => {
     let renderer!: TestRenderer.ReactTestRenderer;
     act(() => {

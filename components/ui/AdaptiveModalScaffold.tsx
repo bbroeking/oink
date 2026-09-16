@@ -64,6 +64,12 @@ interface Props {
 	 * NOT dismiss on a stray tap, an explainer may. (2026-09-11)
 	 */
 	dismissOnBackdrop?: boolean;
+	/**
+	 * The native Modal has finished its exit animation (iOS; Android has no
+	 * exit animation and never calls it). A host that keeps its last screen
+	 * mounted through the slide-out releases it here. (2026-09-16)
+	 */
+	onDismiss?: () => void;
 }
 
 /**
@@ -91,6 +97,7 @@ export function AdaptiveModalScaffold({
 	testID,
 	presentation = "native",
 	dismissOnBackdrop,
+	onDismiss,
 }: Props) {
 	const { width, height } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
@@ -188,6 +195,7 @@ export function AdaptiveModalScaffold({
 			transparent
 			animationType={animationType}
 			onRequestClose={onRequestClose}
+			onDismiss={onDismiss}
 			statusBarTranslucent
 		>
 			{backdrop}

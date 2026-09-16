@@ -239,9 +239,6 @@ export function SnoutDeepPatch({
           </View>
         </View>
 
-        {/* THE REVEAL: full width, above the layer strip, for a beat. */}
-        {reveal ? <FindReveal find={reveal} boomTickles={boomTickles} /> : null}
-
         {/* THE VERB BAR — at the top, where the hand reads it before the mud.
             Three picture buttons: the snout sniffs, the trotter rubs, the
             shovel shoves. The selected one wears sun and the full sticker
@@ -386,6 +383,16 @@ export function SnoutDeepPatch({
         </View>
 
       </ScrollView>
+
+      {/* THE REVEAL: a sticker slapped over the header for a beat. It floats
+          above the scroll — never in its flow — so surfacing a thing does
+          not shove the patch under the player's trotter and snap it back
+          1.6s later (2026-09-16). Taps pass through it. */}
+      {reveal ? (
+        <View style={styles.revealOverlay} pointerEvents="none">
+          <FindReveal find={reveal} boomTickles={boomTickles} />
+        </View>
+      ) : null}
 
       <SnoutDeepHelpSheet visible={helpOpen} onClose={closeHelp} />
     </View>
@@ -649,6 +656,14 @@ const styles = StyleSheet.create({
   verbButtonPressed: {
     ...PRESSED,
     elevation: 0,
+  },
+  // Pinned over the header row, inside the page pad, above everything.
+  revealOverlay: {
+    position: "absolute",
+    top: SPACE.sm,
+    left: PAGE_PAD,
+    right: PAGE_PAD,
+    zIndex: 10,
   },
   reveal: { alignSelf: "stretch" },
   revealSticker: { alignSelf: "stretch" },

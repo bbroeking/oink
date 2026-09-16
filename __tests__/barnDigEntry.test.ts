@@ -66,12 +66,14 @@ describe("Barn Truffle Patch entry", () => {
     expect(digEntry).toContain("const inPlace = crewed || (coopDig && snoutDeep);");
     expect(digEntry).toContain("hint: inPlace ? DIG_HINT_CREWED : DIG_HINT_UNCREWED,");
     // The modal branches on the SERVER's mode decision, not the client flag,
-    // and the classic TrufflePatch branch survives verbatim beside it.
-    expect(feedingCta).toContain('session && session.mode === "snout_deep" ? (');
+    // and the classic TrufflePatch branch survives verbatim beside it. It
+    // reads `shown` — the live session, or the one it is sliding out with
+    // (digModalExit.test.ts, 2026-09-16).
+    expect(feedingCta).toContain('shown && shown.mode === "snout_deep" ? (');
     expect(feedingCta).toContain("<SnoutDeepDig");
     expect(feedingCta).toContain("onSubmit={submitDeep}");
     expect(feedingCta).toContain("onSync={syncRooting}");
-    expect(feedingCta).toContain(") : session ? (");
+    expect(feedingCta).toContain(") : shown ? (");
     expect(feedingCta).toContain("<TrufflePatch");
     expect(feedingCta).toContain("useUnmanagedModalHold(visible);");
   });
