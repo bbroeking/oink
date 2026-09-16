@@ -44,6 +44,57 @@ STYLE = (
 )
 
 
+# The camera, stated from the pig's geometry rather than guessed: on `face_1`
+# the pig looks to the viewer's RIGHT, so the side of the face nearer the
+# camera is the viewer's LEFT — the left eye is full and large, the right eye
+# is farther, smaller and tucked against the snout. The first six side sprites
+# were prompted the other way round; a brim survived it, a pair of lenses did
+# not (the aviator's big lens landed on the far eye — angle audit, 2026-09-15).
+CAMERA = (
+    "THE ONLY CHANGE IS THE CAMERA. The SECOND attached image is the pig "
+    "wearing nothing, drawn at a three-quarter view looking to the RIGHT of "
+    "the picture. Repaint the item at EXACTLY that camera: the same yaw as "
+    "the pig's head, so the item would sit naturally on this pig. Read the "
+    "pig: the side of its face NEARER the camera is the viewer's LEFT (its "
+    "left eye is full and large); the FAR side is the viewer's RIGHT, where "
+    "the head turns away toward the snout (its right eye is smaller and "
+    "tucked against the snout). So the item's near side is on the LEFT of the "
+    "picture — larger and closer — and its far side is on the RIGHT, "
+    "foreshortened and partly hidden behind the near side. The item's FRONT "
+    "faces the way the pig looks: to the right. Keep the item's silhouette "
+    "open where it meets the head; never draw the pig, a head, hair, or any "
+    "body part. This is a camera instruction, NOT a style instruction — keep "
+    "the full dimensional, glossy, juicy cartoon rendering of the original "
+    "intact."
+)
+
+# Eye-line items are the unforgiving case: two lenses read wrong the moment
+# the near/far sides swap or the bridge floats.
+LENSES = (
+    "THIS ITEM SITS ON THE EYES. Draw it as a pair of lenses seen at that "
+    "three-quarter angle: the NEAR lens on the LEFT of the picture at full "
+    "size and full shape, over where the near eye would be; the FAR lens on "
+    "the RIGHT foreshortened to about sixty percent of its width, sitting a "
+    "little lower and tighter to the bridge, its outer edge cut off where the "
+    "snout would hide it. A short bridge between them angled with the snout. "
+    "The near temple arm shows as a short stub trailing back to the LEFT "
+    "toward the near ear; the far arm is hidden. Keep the lens tint, frame "
+    "colour, shape and decoration exactly as in the front sprite."
+)
+
+
+def is_eye_item(item_id: str) -> bool:
+    """RelSpec anchor eyes / eye_l / eye_r — read straight off the registry."""
+    rel = os.path.join(ROOT, "constants/hat_rel.generated.ts")
+    try:
+        for line in open(rel):
+            if line.strip().startswith(item_id + ":"):
+                return 'anchor: "eye' in line
+    except OSError:
+        pass
+    return False
+
+
 def prompt(item_id: str) -> str:
     name = item_id.replace("_", " ")
     return "\n".join([
@@ -53,16 +104,8 @@ def prompt(item_id: str) -> str:
         f"The FIRST attached image is the current front-view sprite of \"{name}\", "
         "a cosmetic worn by a cartoon pig in our game. " + STYLE,
         "",
-        "THE ONLY CHANGE IS THE CAMERA. The SECOND attached image is the pig "
-        "wearing nothing, drawn at a three-quarter view looking to the RIGHT of "
-        "the picture. Repaint the item at EXACTLY that camera: the same yaw as "
-        "the pig's head, so the item would sit naturally on this pig. The near "
-        "side of the item (the pig's right, toward the viewer's right) is "
-        "larger and closer; the far side recedes and is partly hidden by the "
-        "near side. Keep the item's silhouette open at the bottom where it "
-        "meets the head; never draw the pig, a head, hair, or any body part. "
-        "This is a camera instruction, NOT a style instruction — keep the full "
-        "dimensional, glossy, juicy cartoon rendering of the original intact.",
+        CAMERA,
+        *(["", LENSES] if is_eye_item(item_id) else []),
         "",
         "Technical: single item centered on a SOLID, FLAT MAGENTA (#FF00FF) "
         "background — one uniform colour edge to edge, no checkerboard, no "
