@@ -82,3 +82,59 @@ describe("troughPillLabel", () => {
 		expect(troughPillLabel(0, 3)).toBe("3 updates");
 	});
 });
+
+// ── Home (SKILL.md 2026-09-16): the yard trough and the fan row ─────────────
+import { leadingTroughDrive, troughYardOffer } from "@/utils/troughRows";
+
+describe("leadingTroughDrive", () => {
+	const d = (id: string, raised: number, target: number, closes_at: string) => ({ id, raised, target, closes_at });
+	it("is null when nothing is open", () => {
+		expect(leadingTroughDrive([])).toBeNull();
+	});
+	it("picks the drive nearest full", () => {
+		const a = d("a", 20, 200, "2026-09-20T00:00:00Z");
+		const b = d("b", 140, 200, "2026-09-21T00:00:00Z");
+		expect(leadingTroughDrive([a, b])?.id).toBe("b");
+	});
+	it("breaks a tie by the one closing soonest", () => {
+		const a = d("a", 50, 100, "2026-09-21T00:00:00Z");
+		const b = d("b", 100, 200, "2026-09-20T00:00:00Z");
+		expect(leadingTroughDrive([a, b])?.id).toBe("b");
+	});
+	it("never divides by a zero target", () => {
+		expect(leadingTroughDrive([d("z", 0, 0, "2026-09-20T00:00:00Z")])?.id).toBe("z");
+	});
+});
+
+describe("troughYardOffer", () => {
+	it("offers the chip, says when the quarter is in, asks the sounder on mine", () => {
+		expect(troughYardOffer({ is_mine: false, target: 200, raised: 140, my_contribution: 0 })).toBe("chip in 25 ›");
+		expect(troughYardOffer({ is_mine: false, target: 200, raised: 140, my_contribution: 50 })).toBe("your quarter is in ›");
+		expect(troughYardOffer({ is_mine: true, target: 200, raised: 140, my_contribution: 0 })).toBe("ask your Sounder ›");
+		expect(troughYardOffer({ is_mine: false, target: 200, raised: 200, my_contribution: 0 })).toBe("landed ›");
+	});
+});
+
+describe("Home carries the Trough (source scan)", () => {
+	const fs = require("node:fs") as typeof import("node:fs");
+	const path = require("node:path") as typeof import("node:path");
+	const barn = fs.readFileSync(path.join(__dirname, "..", "components", "Barn.tsx"), "utf8");
+	it("the fan has a Trough row only while a Trough is open, and it opens the sheet", () => {
+		expect(barn).toContain("if (leadingTrough) {");
+		expect(barn).toContain('key: "trough",');
+		expect(barn).toContain('mark: "trough",');
+		expect(barn).toContain("onPress: () => setTroughOpen(true),");
+	});
+	it("the yard trough is absolute on itself and drawn under the mound", () => {
+		const trough = barn.indexOf("<YardTrough");
+		const mound = barn.indexOf("<BuriedMound");
+		expect(trough).toBeGreaterThan(0);
+		expect(trough).toBeLessThan(mound);
+		expect(barn).toContain("zIndex: YARD_Z - 1,");
+		expect(barn).toContain("marginLeft: YARD_TROUGH_SHIFT,");
+	});
+	it("Home mounts the same Trough sheet the store opens", () => {
+		expect(barn).toContain('import { TroughSheet } from "./shop/TroughSheet";');
+		expect(barn).toContain("focusDriveId={leadingTrough?.id ?? null}");
+	});
+});

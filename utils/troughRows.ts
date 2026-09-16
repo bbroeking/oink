@@ -56,3 +56,39 @@ export function troughPillLabel(open: number, receipts: number): string {
 	if (open > 0) return `${open} open`;
 	return `${receipts} ${receipts === 1 ? "update" : "updates"}`;
 }
+
+/**
+ * The one Trough Home shows (the yard trough, the fan row's hand line): the
+ * open drive nearest full — the herd's leading effort — ties to the one
+ * closing soonest. A drive you can no longer chip into (your quarter is in)
+ * still leads; the tag then says so. Null when nothing is open.
+ */
+export function leadingTroughDrive<T extends Pick<TroughDrive, "target" | "raised" | "closes_at">>(
+	drives: readonly T[],
+): T | null {
+	let best: T | null = null;
+	let bestFrac = -1;
+	for (const d of drives) {
+		const frac = d.target > 0 ? d.raised / d.target : 0;
+		if (
+			best === null ||
+			frac > bestFrac ||
+			(frac === bestFrac && d.closes_at < best.closes_at)
+		) {
+			best = d;
+			bestFrac = frac;
+		}
+	}
+	return best;
+}
+
+/** The yard tag's second line: what one tap on the sheet would offer. */
+export function troughYardOffer(
+	d: Pick<TroughDrive, "is_mine" | "target" | "raised" | "my_contribution">,
+): string {
+	if (d.is_mine) return "ask your Sounder ›";
+	const state = troughRowState(d);
+	if (state.gap === 0) return "landed ›";
+	if (state.quarterFilled) return "your quarter is in ›";
+	return `chip in ${state.chip} ›`;
+}

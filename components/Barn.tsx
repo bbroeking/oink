@@ -68,6 +68,10 @@ import { EarnedStamp } from "./EarnedStamp";
 import { TickleCoin } from "./TickleCoin";
 import { BarnButton, type BarnFanOption } from "./BarnButton";
 import { BuriedMound, buriedSnoutsCopy } from "./BuriedMound";
+import { YardTrough, troughYardCount } from "./YardTrough";
+import { TroughSheet } from "./shop/TroughSheet";
+import { useTroughDrives } from "@/hooks/useTroughDrives";
+import { leadingTroughDrive, troughRowTitle } from "@/utils/troughRows";
 import { HabitatDoorTransition } from "./habitat/HabitatDoorTransition";
 import { useBarnThreshold } from "@/hooks/useBarnThreshold";
 import { useHabitatAccount } from "@/hooks/useHabitatAccount";
@@ -137,6 +141,10 @@ const TURN_LABEL: Record<"front" | "left" | "right", string> = {
 // tap in that corner must be an action, not a tickle. The mound draws over her
 // too — it stands in the yard's front row.
 const YARD_Z = 4;
+// Where the yard trough stands when the mound is out too: one mound-width
+// (BuriedMound MOUND_W, 54) plus a hand's gap to its right. A drawing
+// measurement, like YARD_GROUND — not a spacing token.
+const YARD_TROUGH_SHIFT = 70;
 // What going in does, spoken — the door's hint on the button and in the fan.
 const BARN_HINT = "Opens the doors to your room and furnishings";
 // Which action the Barn button wears — the player's pick from its fan, kept on
@@ -785,6 +793,13 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const satchel = useSatchel();
 	const [satchelOpen, setSatchelOpen] = useState(false);
 
+	// THE TROUGH (SKILL.md 2026-09-16): the herd's leading open Trough stands
+	// in the yard beside the mound and rides the fan as a row; both open the
+	// Trough sheet. Nothing open → no trough, no row: the yard stays a painting.
+	const trough = useTroughDrives();
+	const leadingTrough = leadingTroughDrive(trough.drives);
+	const [troughOpen, setTroughOpen] = useState(false);
+
 	// THE FAN, in its fixed order: Dig · Barn · the truffle · the Satchel.
 	// Burying rides along whenever the truffle status has loaded — as the act
 	// (nothing down) or as the check-in (one buried).
@@ -843,6 +858,19 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						accessibilityHint: "Opens the bury sheet, where you choose how many snouts to stake",
 					},
 		);
+	}
+
+	if (leadingTrough) {
+		fanOptions.push({
+			key: "trough",
+			title: "Trough",
+			sub: `${troughRowTitle(leadingTrough)} · ${troughYardCount(leadingTrough)}`,
+			label: "trough",
+			mark: "trough",
+			onPress: () => setTroughOpen(true),
+			accessibilityLabel: "The Trough",
+			accessibilityHint: "Opens the Trough, where the sounder chips in on a friend's wish",
+		});
 	}
 
 	if (satchel.available) {
@@ -1131,6 +1159,15 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						    MOUND, never on a wrapper: a full-width absolute layer over
 						    the scene swallows every tap meant for Rosie (the Fabric
 						    overlay footgun, build 99). */}
+						{/* The leading Trough is a thing in the yard too — beside the
+						    mound, on the same ground line; drawn under the mound so the
+						    mound's unfolded tag can pass over it. ABSOLUTE ON THE TROUGH,
+						    for the same footgun reason as the mound. */}
+						{leadingTrough ? (
+							<View style={[styles.yardTrough, truffleBuried && truffle.status ? styles.yardTroughBesideMound : null]}>
+								<YardTrough drive={leadingTrough} onPress={() => setTroughOpen(true)} />
+							</View>
+						) : null}
 						{truffleBuried && truffle.status ? (
 							<View style={styles.mound}>
 								<BuriedMound
@@ -1210,6 +1247,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				onResynced={() => truffle.refresh()}
 			/>
 
+			<TroughSheet
+				open={troughOpen}
+				focusDriveId={leadingTrough?.id ?? null}
+				data={trough}
+				onClose={() => setTroughOpen(false)}
+			/>
 			<BuriedTruffleSheet
 				open={truffleSheetOpen}
 				balance={stats.counter}
@@ -1295,6 +1338,17 @@ const styles = StyleSheet.create({
 		left: PAGE_PAD,
 		bottom: YARD_GROUND,
 		zIndex: YARD_Z,
+	},
+	// The yard trough's stance: the mound's spot when the yard is otherwise
+	// empty, else one mound-width to the mound's right, on the same ground line.
+	yardTrough: {
+		position: "absolute",
+		left: PAGE_PAD,
+		bottom: YARD_GROUND,
+		zIndex: YARD_Z - 1,
+	},
+	yardTroughBesideMound: {
+		marginLeft: YARD_TROUGH_SHIFT,
 	},
 	// The Barn button's seat: the page's bottom-right corner, above the tab bar.
 	barnButton: {
