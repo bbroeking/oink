@@ -1,0 +1,21 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",          "x": 0,    "y": 0,    "w": 390, "h": 844,  "title": "1 · Home · the hut, dark (just tapped)" },
+    { "file": "HutLit.dc.html",        "x": 500,  "y": 0,    "w": 390, "h": 844,  "title": "2 · Home · the lantern lit" },
+    { "file": "HutOnboarding.dc.html", "x": 1000, "y": 0,    "w": 390, "h": 844,  "title": "3 · The hut · first entry" },
+    { "file": "HutCounter.dc.html",    "x": 1500, "y": 0,    "w": 390, "h": 844,  "title": "4 · The hut · the counter, a set ready" },
+    { "file": "HutSlip.dc.html",       "x": 2000, "y": 0,    "w": 390, "h": 844,  "title": "5 · The hut · the slip" },
+    { "file": "HutDark.dc.html",       "x": 2500, "y": 0,    "w": 390, "h": 844,  "title": "6 · The hut · shutters down" },
+    { "file": "Rationale.dc.html",     "x": 0,    "y": 1020, "w": 900, "h": 760,  "title": "Flow notes", "print": "flow" }
+  ],
+  "annotations": [
+    { "id": "n1", "x": 0,    "y": -170, "w": 390, "text": "Unmet. A dark hut up the field, right edge, on every background since day one. Tapped: the shutters rattle and one tag — nothing opens." },
+    { "id": "n2", "x": 500,  "y": -170, "w": 390, "text": "The dig receipt landed a third pebble. Home again: the lantern is lit and the hooded bust looks out. No toast, no arrow — the light is the notice. Tap the hut → door-swing into /hut." },
+    { "id": "n3", "x": 1000, "y": -170, "w": 390, "text": "First entry only. The sheep's line, the exact deal for the set you hold, one button. This is the Field Guide reveal ceremony reused; the entry lifts from silhouette." },
+    { "id": "n4", "x": 1500, "y": -170, "w": 390, "text": "The counter. Lantern · hatch with the bust · chalk slate with today's fancy ×2 · the line · the slot. Stacks below with the deal on the ready one; partials say how many more. Tap the ready stack → the confirm pill names the exact tickles." },
+    { "id": "n5", "x": 2000, "y": -170, "w": 390, "text": "Sold. The slip prints from the slot — the receipt, Zoltar's card repurposed — with the coin tally 38 → 43. The stack is gone; Dealings has its first row." },
+    { "id": "n6", "x": 2500, "y": -170, "w": 390, "text": "Known dark. Third sale of the day: shutters down, lantern out, slate blank till tomorrow. The section still opens (you've met it); stacks show what's one more away." },
+    { "id": "readme", "x": 1000, "y": 1020, "w": 520, "text": "Tokens from constants/theme.ts as lifted for the Shop canvas; Home anatomy from ../barn/barn-home.html; the yard, Rosie and the find glyphs are shipped art. The hooded bust and the hut are inline placeholders until the icon sheet lands. Bag contents and tallies are sample data.\n\nSpec: docs/design/2026-09-16-trading-hut.md · working files: docs/design/claude-design/hut-2026-09-16/" }
+  ],
+  "launch": { "view": "canvas" }
+}

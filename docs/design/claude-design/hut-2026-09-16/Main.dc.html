@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Home · the hut, dark</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Nunito:wght@700;800;900&amp;family=Patrick+Hand&amp;family=Fredoka:wght@600;700&amp;display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    .whimsy { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .body { font-size: 15px; line-height: 21px; }
+    .bodySm { font-size: 13px; line-height: 18px; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; }
+    .handTxt { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .mute { color: #605449; }
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; white-space: nowrap; box-sizing: border-box; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; } .tag.rose { background: #ffd6dc; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #ffd87a; font-weight: 800; font-size: 15px; letter-spacing: .1px; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; color: #2a1f15; }
+    .btn.ghost { background: #fffaf0; } .btn.full { align-self: stretch; }
+    /* ── the yard (Home) ── */
+    .yard { position: relative; width: 390px; height: 844px; overflow: hidden; background: #c8e3f0 url("yard.jpg") center / cover no-repeat; }
+    .earned { position: absolute; top: 70px; left: 20px; background: #ffd6dc; border: 3px solid #2a1f15; border-radius: 16px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-3deg); padding: 8px 14px 8px 12px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+    .earned img { width: 26px; height: 26px; }
+    .earned .n { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 22px; }
+    .earned .cap { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 11px; line-height: 14px; letter-spacing: 1.5px; text-transform: uppercase; color: #605449; margin-top: 2px; }
+    .coin { position: absolute; top: 66px; right: 20px; width: 100px; height: 100px; background: #fffaf0; border: 3px solid #2a1f15; border-radius: 50%; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(4deg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; box-sizing: border-box; }
+    .coin:before { content: ""; position: absolute; inset: 6px; border: 2px dashed rgba(42, 31, 21, 0.25); border-radius: 50%; }
+    .coin .big { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 38px; line-height: 40px; letter-spacing: .5px; }
+    .coin .cap { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 14px; color: #605449; margin-top: 2px; }
+    .coin .chip { position: absolute; left: -12px; top: -8px; width: 30px; height: 30px; background: #ffd6dc; border: 2.5px solid #2a1f15; border-radius: 50%; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); box-sizing: border-box; }
+    .coin .chip img { width: 18px; height: 18px; }
+    .flame { position: absolute; top: 150px; right: 34px; background: #ffd87a; border: 2.5px solid #2a1f15; border-radius: 10px; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; gap: 4px; padding: 2px 8px 2px 4px; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 13px; line-height: 18px; transform: rotate(-3deg); z-index: 3; }
+    .flame img { width: 18px; height: 18px; }
+    .clockline { position: absolute; top: 184px; right: 22px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 18px; color: #fffaf0; white-space: nowrap; text-shadow: 0 1px 0 #2a1f15, 1px 0 0 #2a1f15, -1px 0 0 #2a1f15, 0 -1px 0 #2a1f15; }
+    .rosie { position: absolute; left: 50%; bottom: 150px; width: 240px; transform: translateX(-50%); z-index: 2; }
+    .fab { position: absolute; right: 22px; bottom: 146px; width: 72px; height: 72px; border-radius: 50%; background: #ffd87a; border: 3px solid #2a1f15; box-shadow: 4px 4px 0 #2a1f15; display: flex; align-items: center; justify-content: center; transform: rotate(-3deg); z-index: 6; box-sizing: border-box; }
+    .fab svg { width: 40px; height: 40px; }
+    .fab .more { position: absolute; right: -8px; top: -8px; width: 26px; height: 26px; border-radius: 50%; background: #fffaf0; border: 2.5px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 16px; line-height: 16px; box-sizing: border-box; }
+    .fab .lbl { position: absolute; right: 84px; top: 50%; transform: translateY(-50%) rotate(-2deg); background: #fffaf0; border: 2px solid #2a1f15; border-radius: 7px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; padding: 0 9px; white-space: nowrap; box-shadow: 2px 2px 0 #2a1f15; }
+    .mound { position: absolute; left: 30px; bottom: 176px; width: 54px; height: 24px; background: #3a2c1e; border: 2.5px solid #2a1f15; border-radius: 50%; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; z-index: 2; }
+    .mound img { position: absolute; left: 50%; top: -16px; transform: translateX(-50%); width: 26px; height: 26px; }
+    .htab { position: absolute; left: 0; right: 0; bottom: 0; height: 124px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 3px solid #2a1f15; z-index: 20; }
+    .htab:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 3px; background: #2a1f15; opacity: .35; }
+    .hsign { position: absolute; top: 30px; width: 62px; height: 66px; background: #fffaf0; border: 3px solid #2a1f15; border-radius: 10px; box-shadow: 3px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 12px; box-sizing: border-box; }
+    .hsign:before { content: ""; position: absolute; top: -22px; left: 50%; width: 2px; height: 22px; background: #2a1f15; transform: translateX(-50%); }
+    .hsign svg { width: 22px; height: 22px; }
+    .hsign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    /* the hut in the yard — a thing in the background up the field, right edge, ~two mounds wide */
+    .hut { position: absolute; right: 14px; bottom: 318px; width: 96px; height: 92px; z-index: 1; }
+    .hut svg { width: 96px; height: 92px; }
+    .glow { position: absolute; right: -4px; bottom: 300px; width: 140px; height: 130px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 216, 122, 0.55), rgba(255, 216, 122, 0)); z-index: 0; }
+    .ytag { position: absolute; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 7px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 18px; padding: 0 8px; white-space: nowrap; box-shadow: 2px 2px 0 #2a1f15; z-index: 4; }
+    .receiptToast { position: absolute; left: 18px; right: 136px; top: 56px; z-index: 40; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; padding: 10px 14px; display: flex; align-items: center; gap: 12px; transform: rotate(-0.6deg); }
+    .receiptToast img { width: 30px; height: 30px; }
+    /* ── the hut section (/hut) — dim bark room, one warm lantern ── */
+    .room { position: relative; width: 390px; height: 844px; overflow: hidden; background: #2a1f15; color: #fff3e2; display: flex; flex-direction: column; }
+    .room .paper { color: #2a1f15; }
+    .planks { position: absolute; inset: 0; background: repeating-linear-gradient(180deg, #3a2c1e 0 46px, #2f2318 46px 48px); }
+    .lampGlow { position: absolute; left: 50%; top: 150px; width: 420px; height: 420px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 216, 122, 0.28), rgba(255, 216, 122, 0)); pointer-events: none; }
+    .topbar { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 56px 18px 0; }
+    .back { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px 6px 8px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; color: #2a1f15; font-weight: 800; font-size: 13px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .back svg { width: 16px; height: 16px; }
+    .counter { position: relative; z-index: 2; margin: 18px 18px 0; height: 262px; }
+    .hatch { position: absolute; left: 50%; top: 0; width: 176px; height: 176px; transform: translateX(-50%); background: #1b130d; border: 3px solid #2a1f15; border-radius: 88px 88px 18px 18px; box-shadow: 4px 4px 0 #2a1f15, inset 0 0 0 6px #5b3b1e; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; box-sizing: border-box; }
+    .hatch svg { width: 150px; height: 150px; }
+    .hatch.shut { background: repeating-linear-gradient(180deg, #8d5a2c 0 28px, #74441e 28px 30px); }
+    .lantern { position: absolute; left: 6px; top: 6px; width: 44px; height: 70px; }
+    .slate { position: absolute; right: 0; top: 18px; width: 92px; background: #1b130d; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; padding: 8px 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; transform: rotate(3deg); box-sizing: border-box; }
+    .slate .kk { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 11px; line-height: 14px; letter-spacing: 1.2px; text-transform: uppercase; color: #cdbfae; }
+    .slate img { width: 44px; height: 44px; }
+    .slate .x2 { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 20px; color: #ffd87a; }
+    .line { position: absolute; left: 50%; top: 186px; transform: translateX(-50%) rotate(-1deg); background: #fffaf0; color: #2a1f15; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 2px 0 #2a1f15; padding: 6px 12px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 15px; line-height: 20px; white-space: nowrap; }
+    .slot { position: absolute; left: 50%; top: 232px; width: 150px; height: 14px; transform: translateX(-50%); background: #0e0906; border: 2px solid #2a1f15; border-radius: 7px; box-shadow: inset 0 3px 0 rgba(0,0,0,.6); box-sizing: border-box; }
+    .slip { position: absolute; left: 50%; top: 218px; width: 168px; transform: translateX(-50%) rotate(-2deg); background: #fffaf0; color: #2a1f15; border: 2px solid #2a1f15; border-radius: 4px 4px 10px 10px; box-shadow: 4px 4px 0 #2a1f15; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; z-index: 5; box-sizing: border-box; }
+    .slip:before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 6px; background: repeating-linear-gradient(90deg, #fffaf0 0 8px, #2a1f15 8px 10px); opacity: .5; }
+    .slip .stamp { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border: 2.5px solid #a03e2f; border-radius: 50%; opacity: .75; transform: rotate(-14deg); display: flex; align-items: center; justify-content: center; font-family: "Patrick Hand", cursive; font-size: 10px; line-height: 12px; text-align: center; color: #a03e2f; letter-spacing: 1px; text-transform: uppercase; }
+    .section { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 10px; padding: 0 18px; }
+    .shead { display: flex; align-items: flex-end; justify-content: space-between; }
+    .shead .k { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #ffd87a; }
+    .shead .t { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 20px; line-height: 24px; color: #fff3e2; }
+    .stacks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .stack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 8px; background: #fffaf0; color: #2a1f15; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; min-height: 88px; }
+    .stack img { width: 40px; height: 40px; }
+    .stack .n { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 18px; }
+    .stack .hint { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 11px; line-height: 13px; color: #605449; text-align: center; }
+    .stack.ready { background: #ffd87a; transform: translateY(-6px); box-shadow: 4px 4px 0 #2a1f15; }
+    .stack.ready .deal { position: absolute; top: -12px; right: -8px; background: #c9dec1; border: 2px solid #2a1f15; border-radius: 999px; box-shadow: 2px 2px 0 #2a1f15; padding: 1px 8px; font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 12px; line-height: 16px; white-space: nowrap; }
+    .stack.dim { background: #f6e6d4; color: #6a5c50; opacity: .9; }
+    .stack.dim img { opacity: .55; }
+    .dealings { display: flex; flex-direction: column; gap: 6px; }
+    .drow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fffaf0; color: #2a1f15; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; min-height: 44px; }
+    .drow img { width: 24px; height: 24px; }
+    .drow .when { margin-left: auto; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; color: #605449; }
+    .foot { position: relative; z-index: 2; margin-top: auto; padding: 0 18px 28px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; color: #cdbfae; text-align: center; }
+    .confirm { position: absolute; left: 18px; right: 18px; bottom: 28px; z-index: 30; }
+    .scrim { position: absolute; inset: 0; background: rgba(14, 9, 6, 0.62); z-index: 30; }
+    .card { position: absolute; left: 22px; right: 22px; top: 250px; z-index: 31; background: #fffaf0; color: #2a1f15; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; padding: 20px 18px 18px; display: flex; flex-direction: column; gap: 14px; transform: rotate(-0.6deg); box-sizing: border-box; }
+    .deal { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: #f6e6d4; border: 2px solid #2a1f15; border-radius: 14px; box-sizing: border-box; }
+    .deal img { width: 30px; height: 30px; }
+    .deal .arrow { font-family: "Caprasimo", Georgia, serif; font-size: 20px; line-height: 24px; }
+    .tally { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+    .tally .from { font-family: "Caprasimo", Georgia, serif; font-size: 18px; line-height: 22px; color: #6a5c50; text-decoration: line-through; }
+    .tally .to { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 34px; line-height: 36px; }
+    .tally .cap { font-family: "Patrick Hand", cursive; font-size: 13px; line-height: 16px; color: #605449; }
+  </style>
+</helmet>
+<div class="yard">
+  <div class="earned"><img src="g_heart.png" alt=""><div><div class="n">1,126</div><div class="cap">tickled</div></div></div>
+  <div class="coin"><div class="chip"><img src="g_heart.png" alt=""></div><div class="big">38</div><div class="cap">of 25</div></div>
+  <div class="flame"><img src="g_flame.png" alt="">12</div>
+  <div class="clockline">+1 in 42:10</div>
+  <div class="hut"><svg viewBox="0 0 96 92">
+  
+  <path d="M12 44 L50 14 L90 40 L86 42 L50 20 L16 46 Z" fill="#3e4a6b" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"></path>
+  <path d="M14 44 H86 L84 88 H18 Z" fill="#8d5a2c" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"></path>
+  <path d="M22 54 H80 M20 64 H82 M20 74 H80" stroke="#5b3b1e" stroke-width="2"></path>
+  <path d="M14 44 L50 16 L86 42" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"></path>
+  <path d="M8 40 L20 36 M88 38 L92 30" stroke="#c8ad77" stroke-width="2" stroke-linecap="round"></path>
+  <rect x="40" y="46" width="30" height="24" rx="4" fill="#1b130d" stroke="#2a1f15" stroke-width="2.5"></rect><path d="M40 52 H70 M40 58 H70 M40 64 H70" stroke="#74441e" stroke-width="5"></path><path d="M40 52 H70 M40 58 H70 M40 64 H70" stroke="#2a1f15" stroke-width="1.2"></path>
+  <rect x="22" y="58" width="12" height="30" rx="2" fill="#5b3b1e" stroke="#2a1f15" stroke-width="2.5"></rect>
+  <rect x="60" y="84" width="22" height="8" rx="2" fill="#a07a4a" stroke="#2a1f15" stroke-width="2"></rect>
+  <path d="M18 24 V38" stroke="#2a1f15" stroke-width="2"></path>
+  <rect x="12" y="32" width="12" height="14" rx="3" fill="#6a5c50" stroke="#2a1f15" stroke-width="2.5"></rect>
+</svg></div>
+  <img class="rosie" src="rosie_sprite.png" alt="">
+  <div class="mound"><img src="g_truffle.png" alt=""></div>
+  <div class="fab"><svg viewBox="0 0 64 64"><path d="M8 26 L32 8 L56 26 V58 H8 Z" fill="#ffc8a8" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"></path><rect x="16" y="30" width="16" height="28" fill="#a03e2f" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"></rect><path d="M16 30 L32 58 M32 30 L16 58" stroke="#2a1f15" stroke-width="2.4" stroke-linecap="round"></path><rect x="32" y="30" width="16" height="28" fill="#3a2c1e" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"></rect><path d="M36 44 H48 M44 39 L49 44 L44 49" fill="none" stroke="#fff3e2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg><div class="more">+</div><div class="lbl">barn</div></div>
+  <div class="ytag" style="right: 18px; bottom: 296px; transform: rotate(-2deg);">Shut. Someone's in there.</div>
+  <div class="htab"><div class="hsign on" style="left: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-7h6v7M9 13l6 7M15 13l-6 7"></path></svg><span>Barn</span></div><div class="hsign" style="left: 92px; transform: rotate(1.5deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 19c0-3 2.5-5 6-5s6 2 6 5M15 19c0-2 1.5-3.5 4-3.5s3 1.5 3 3.5"></path></svg><span>Friends</span></div><div class="hsign" style="left: 168px; transform: rotate(-1deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"></path></svg><span>Season</span></div><div class="hsign" style="left: 244px; transform: rotate(2deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-4h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"></path></svg><span>Shop</span></div><div class="hsign" style="left: 320px; transform: rotate(-1.5deg);"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg><span>Me</span></div></div>
+</div>
+</x-dc>
+</body>
+</html>
