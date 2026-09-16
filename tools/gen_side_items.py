@@ -83,16 +83,58 @@ LENSES = (
 )
 
 
+# A mask wraps the face instead of sitting on it: eyeholes rather than lenses,
+# no bridge, no temple arms, and the far side curves away around the snout.
+MASKS = (
+    "THIS ITEM IS A MASK WORN OVER THE EYES. Draw it wrapping the face at that "
+    "three-quarter angle: the NEAR eyehole on the LEFT of the picture at full "
+    "size, the FAR eyehole on the RIGHT foreshortened to about sixty percent "
+    "and tighter to the middle, the mask's far edge curving away and cut off "
+    "where the snout would hide it. Any nose piece, brow, crest, feathers or "
+    "trim turn with it — the front of the decoration faces the way the pig "
+    "looks (right). Keep every colour, gem, pattern and trim of the front "
+    "sprite."
+)
+MASK_IDS = frozenset({
+    "carnival_mask", "cat_mask", "domino", "hero_mask", "masquerade",
+    "midnight_eye_mask", "robber_mask", "skull_mask", "sleep_mask",
+    "venice_mask", "vr_headset",
+})
+
+# One lens over the near eye (the RelSpec anchors these on `eye_l`, which on
+# the turned families is the near, full-size eye).
+ONE_EYE = (
+    "THIS ITEM SITS OVER ONE EYE — the NEAR eye, on the LEFT of the picture. "
+    "Draw the single lens seen at that three-quarter angle: a little narrower "
+    "than the front view, its rim turned with the head, any chain, ribbon or "
+    "handle trailing down and to the LEFT. Keep the metal, the glass and the "
+    "decoration exactly as in the front sprite."
+)
+ONE_EYE_IDS = frozenset({"monocle", "slop_club_monocle_crest", "opera_lorgnette"})
+
+REL_FILES = ("constants/hat_rel.generated.ts", "constants/membersRel.generated.ts")
+
+
 def is_eye_item(item_id: str) -> bool:
-    """RelSpec anchor eyes / eye_l / eye_r — read straight off the registry."""
-    rel = os.path.join(ROOT, "constants/hat_rel.generated.ts")
-    try:
-        for line in open(rel):
-            if line.strip().startswith(item_id + ":"):
-                return 'anchor: "eye' in line
-    except OSError:
-        pass
+    """RelSpec anchor eyes / eye_l / eye_r — read straight off the registries."""
+    for rel in REL_FILES:
+        try:
+            for line in open(os.path.join(ROOT, rel)):
+                if line.strip().startswith(item_id + ":"):
+                    return 'anchor: "eye' in line
+        except OSError:
+            pass
     return False
+
+
+def addendum(item_id: str) -> str | None:
+    if item_id in MASK_IDS:
+        return MASKS
+    if item_id in ONE_EYE_IDS:
+        return ONE_EYE
+    if is_eye_item(item_id):
+        return LENSES
+    return None
 
 
 def prompt(item_id: str) -> str:
@@ -105,7 +147,7 @@ def prompt(item_id: str) -> str:
         "a cosmetic worn by a cartoon pig in our game. " + STYLE,
         "",
         CAMERA,
-        *(["", LENSES] if is_eye_item(item_id) else []),
+        *(["", addendum(item_id)] if addendum(item_id) else []),
         "",
         "Technical: single item centered on a SOLID, FLAT MAGENTA (#FF00FF) "
         "background — one uniform colour edge to edge, no checkerboard, no "
