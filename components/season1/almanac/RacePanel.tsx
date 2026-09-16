@@ -50,6 +50,7 @@ import {
 import { countWord, ordinal, raceGapLine } from "./almanacState";
 import type { RaceRun } from "./useRaceRun";
 import type { MondayDrawState } from "@/utils/mondayDraw";
+import { herdPrizeLine, type HerdPrizeState } from "@/utils/barnDraw";
 
 // The board shows the podium and one more; my herd pins beneath when it is
 // further down.
@@ -97,6 +98,11 @@ export interface RacePanelProps {
 	onGoHerd: () => void;
 	mondayDraw?: MondayDrawState;
 	onOpenMondayDraw?: () => void;
+	/** The Barn Draw — the crew's Monday furnishing draw (dark until the server answers). */
+	herdPrize?: HerdPrizeState;
+	/** Who I am, so the row can say "you drew". */
+	uid?: string | null;
+	onOpenHerdPrize?: () => void;
 	testID?: string;
 }
 
@@ -107,6 +113,9 @@ export function RacePanel({
 	onGoHerd,
 	mondayDraw,
 	onOpenMondayDraw,
+	herdPrize,
+	uid,
+	onOpenHerdPrize,
 	testID,
 }: RacePanelProps) {
 	const { race, run, finals, dismissRun } = raceRun;
@@ -157,6 +166,9 @@ export function RacePanel({
 				myCrewId={myCrewId}
 				mondayDraw={mondayDraw}
 				onOpenMondayDraw={onOpenMondayDraw}
+				herdPrize={herdPrize}
+				uid={uid}
+				onOpenHerdPrize={onOpenHerdPrize}
 				onDismiss={dismissRun}
 				testID={testID}
 			/>
@@ -170,6 +182,9 @@ export function RacePanel({
 			onOinkHerd={onOinkHerd}
 			mondayDraw={mondayDraw}
 			onOpenMondayDraw={onOpenMondayDraw}
+			herdPrize={herdPrize}
+			uid={uid}
+			onOpenHerdPrize={onOpenHerdPrize}
 			testID={testID}
 		/>
 	);
@@ -182,6 +197,9 @@ function LiveRaceView({
 	onOinkHerd,
 	mondayDraw,
 	onOpenMondayDraw,
+	herdPrize,
+	uid,
+	onOpenHerdPrize,
 	testID,
 }: {
 	state: RaceStandings;
@@ -189,6 +207,9 @@ function LiveRaceView({
 	onOinkHerd: () => void;
 	mondayDraw?: MondayDrawState;
 	onOpenMondayDraw?: () => void;
+	herdPrize?: HerdPrizeState;
+	uid?: string | null;
+	onOpenHerdPrize?: () => void;
 	testID?: string;
 }) {
 	const rows = standingsRows(state, myCrewId, VISIBLE_ROWS).rows;
@@ -266,6 +287,8 @@ function LiveRaceView({
 				/>
 			)}
 
+			{herdPrize && <HerdPrizeRow state={herdPrize} uid={uid} onPress={onOpenHerdPrize} />}
+
 			<Button
 				variant="gold"
 				size="lg"
@@ -288,6 +311,9 @@ function RaceRunView({
 	myCrewId,
 	mondayDraw,
 	onOpenMondayDraw,
+	herdPrize,
+	uid,
+	onOpenHerdPrize,
 	onDismiss,
 	testID,
 }: {
@@ -297,6 +323,9 @@ function RaceRunView({
 	myCrewId: string;
 	mondayDraw?: MondayDrawState;
 	onOpenMondayDraw?: () => void;
+	herdPrize?: HerdPrizeState;
+	uid?: string | null;
+	onOpenHerdPrize?: () => void;
 	onDismiss: () => void;
 	testID?: string;
 }) {
@@ -386,6 +415,8 @@ function RaceRunView({
 					gold
 				/>
 			</Sticker>
+
+			{herdPrize && <HerdPrizeRow state={herdPrize} uid={uid} onPress={onOpenHerdPrize} />}
 
 			{drawReady ? (
 				<View style={styles.drawBlock}>
@@ -561,6 +592,45 @@ function FurnishingWell({ id, gold }: { id: string; gold: boolean }) {
 	);
 }
 
+// The Barn Draw row: one for-sale furnishing per herd every Monday, among the
+// diggers. Before a crew has ever drawn it says the rule; after, the last
+// result — mine as "you drew", a crewmate's by name. A purse (the winner owned
+// every design) says so. The row opens the reveal sheet.
+function HerdPrizeRow({
+	state,
+	uid,
+	onPress,
+}: {
+	state: HerdPrizeState;
+	uid?: string | null;
+	onPress?: () => void;
+}) {
+	const last = state.last;
+	const art = last?.itemId ? HABITAT_THUMBNAILS[last.itemId] : undefined;
+	return (
+		<ListRow
+			tilt={false}
+			fill="paper"
+			leading={
+				<Avatar size={AVATAR_SIZE[1]} fill="sage" label="The Barn Draw">
+					{art ? (
+						<Image source={art} style={styles.herdPrizeArt} resizeMode="contain" accessibilityIgnoresInvertColors />
+					) : (
+						<Glyph name="gift" size={ART_SIZE.glyphSm} />
+					)}
+				</Avatar>
+			}
+			title="The Barn Draw"
+			sub={herdPrizeLine(state, uid)}
+			trailing={<Icon name="chevronRight" size={ART_SIZE.glyphSm} color={UI_COLORS.textSecondary} />}
+			onPress={onPress}
+			accessibilityLabel="The Barn Draw"
+			accessibilityHint="Opens the herd's Monday furnishing draw"
+			testID="race-herd-prize-row"
+		/>
+	);
+}
+
 function drawLine(d: Pick<MondayDrawState, "mondaysSinceRare" | "nextRareOddsOneIn">): string {
 	const since =
 		d.mondaysSinceRare <= 0
@@ -578,6 +648,7 @@ function raceCountdownChip(endsAtMs: number, nowMs: number = Date.now()): string
 }
 
 const styles = StyleSheet.create({
+	herdPrizeArt: { width: SPOILS_ART * 0.8, height: SPOILS_ART * 0.8 },
 	panel: { gap: SPACE.md },
 	center: { alignItems: "center", justifyContent: "center" },
 	board: {

@@ -31,6 +31,7 @@ import {
   LoadingBeat,
   Numeral,
   PageHeader,
+  POPUP_HANDOFF_GAP_MS,
   Ribbon,
   SectionHeader,
   SnoutCoin,
@@ -48,6 +49,8 @@ import { Shelf, ShelfItem, SlopClubShelf } from "@/components/shop/Shelf";
 import { TroughByCounter } from "@/components/shop/TroughByCounter";
 import { Counter } from "@/components/shop/Counter";
 import { TroughSheet } from "@/components/shop/TroughSheet";
+import { DrawRevealSheet } from "@/components/season1/DrawRevealSheet";
+import type { BarnPrize } from "@/utils/barnDraw";
 import { HatRow } from "@/constants/hats";
 import { HABITAT_CHROME_ASSETS } from "@/constants/habitat";
 import { chunkShelves } from "@/utils/shopShelves";
@@ -400,6 +403,20 @@ export default function ShopScreen() {
   const openTrough = useCallback((driveId?: string) => {
     setTroughFocusId(driveId ?? null);
     setTroughOpen(true);
+  }, []);
+  // The quarter's prize (2026-09-16): the chip that crossed a quarter drew a
+  // furnishing. The Trough sheet folds away, then the shared reveal opens on
+  // the gap every popup-to-popup hand-off keeps — two native Modals never
+  // overlap. The note under the row stays as the record.
+  const [troughPrize, setTroughPrize] = useState<BarnPrize | null>(null);
+  const [prizeOpen, setPrizeOpen] = useState(false);
+  const prizeHandoff = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (prizeHandoff.current) clearTimeout(prizeHandoff.current); }, []);
+  const showTroughPrize = useCallback((prize: BarnPrize) => {
+    setTroughPrize(prize);
+    setTroughOpen(false);
+    if (prizeHandoff.current) clearTimeout(prizeHandoff.current);
+    prizeHandoff.current = setTimeout(() => setPrizeOpen(true), POPUP_HANDOFF_GAP_MS);
   }, []);
   // The scene ships behind the 2-col grid as its Reduce-Motion / VoiceOver
   // fallback (taste-standard 2026-09-16, ruling 5): a screen reader gets a
@@ -1032,6 +1049,15 @@ export default function ShopScreen() {
         data={troughSummary}
         onClose={() => setTroughOpen(false)}
         onBalance={(balance) => setCounter(balance)}
+        onPrize={showTroughPrize}
+      />
+      <DrawRevealSheet
+        open={prizeOpen}
+        prize={troughPrize}
+        kicker="the trough · past your quarter"
+        mine
+        onClose={() => setPrizeOpen(false)}
+        testID="trough-prize-reveal"
       />
       {/* On-screen ka-ching sparkle burst overlay. Rendered at root
 			    so it sits above every other view (tabs, modals are below

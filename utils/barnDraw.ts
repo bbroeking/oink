@@ -235,3 +235,17 @@ export async function fetchTroughRewardState(): Promise<RpcResult<{ state: Troug
 	if (!r.ok) return { ok: false, reason: r.reason };
 	return { ok: true, state: parseTroughRewardState(r) };
 }
+
+/**
+ * The Race panel's Barn Draw row, in one line. Before a crew has ever drawn,
+ * the rule; after, the last result — mine as "you", a crewmate's by name; a
+ * purse (the winner owned every design) says so. Never names who slept.
+ */
+export function herdPrizeLine(state: HerdPrizeState, uid?: string | null): string {
+	const last = state.last;
+	if (!last || !last.kind) return "one furnishing per herd, every Monday · dig once to be in";
+	const mine = !!uid && last.winnerUserId === uid;
+	const who = mine ? "you" : (last.winnerName ?? "a crewmate");
+	if (last.kind === "tickles") return `${who} drew a purse of ${last.amount} tickles last Monday`;
+	return `${who} drew the ${last.itemName ?? "new design"} last Monday`;
+}

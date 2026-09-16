@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { rpcAction } from "@/utils/rpc";
-import { fetchTroughRewardState, parseBarnPrize } from "@/utils/barnDraw";
+import { fetchTroughRewardState, parseBarnPrize, type BarnPrize } from "@/utils/barnDraw";
 import {
 	type TroughDrive as Drive,
 	type TroughReceipt,
@@ -78,6 +78,7 @@ function donateError(reason: string | undefined, have?: number): string {
 export function TroughSection({
 	data,
 	onBalance,
+	onPrize,
 }: {
 	data: {
 		drives: Drive[];
@@ -88,6 +89,8 @@ export function TroughSection({
 		refresh: () => Promise<unknown>;
 	};
 	onBalance?: (balance: number) => void;
+	/** The quarter's prize landed on this chip — the caller opens the reveal. */
+	onPrize?: (prize: BarnPrize) => void;
 }) {
 	const {
 		drives,
@@ -156,6 +159,7 @@ export function TroughSection({
 						: "Chipped in! Thanks",
 			}));
 			if (r.weekly_reward_taken === true || prize) setRewardTaken(true);
+			if (prize) onPrize?.(prize);
 		} else {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 			setNote((n) => ({ ...n, [d.id]: donateError(r.reason, r.have) }));

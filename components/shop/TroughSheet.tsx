@@ -4,6 +4,7 @@
 // comes first in the list, so the chip you tapped is the card under your thumb.
 import { useMemo } from "react";
 import type { useTroughDrives } from "@/hooks/useTroughDrives";
+import type { BarnPrize } from "@/utils/barnDraw";
 import { Sheet } from "../ui/Sheet";
 import { TroughSection } from "../TroughSection";
 
@@ -13,6 +14,7 @@ export function TroughSheet({
 	data,
 	onClose,
 	onBalance,
+	onPrize,
 }: {
 	open: boolean;
 	/** The drive whose row opened the sheet, if one did. */
@@ -20,6 +22,8 @@ export function TroughSheet({
 	data: ReturnType<typeof useTroughDrives>;
 	onClose: () => void;
 	onBalance?: (balance: number) => void;
+	/** A chip crossed the giver's quarter and drew — the caller shows it. */
+	onPrize?: (prize: BarnPrize) => void;
 }) {
 	const sectionData = useMemo(() => {
 		if (!focusDriveId) return data;
@@ -38,7 +42,7 @@ export function TroughSheet({
 			title="The Trough"
 			closeLabel="Close the Trough"
 		>
-			<TroughSection data={sectionData} onBalance={onBalance} />
+			<TroughSection data={sectionData} onBalance={onBalance} onPrize={onPrize} />
 		</Sheet>
 	);
 }

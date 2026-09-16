@@ -160,6 +160,8 @@ import {
 import { BarnRewardClaimSheet } from "@/components/season1/BarnRewardClaimSheet";
 import { MondayDrawSheet } from "@/components/season1/MondayDrawSheet";
 import { useMondayDraw } from "@/hooks/useMondayDraw";
+import { DrawRevealSheet } from "@/components/season1/DrawRevealSheet";
+import { useHerdPrize } from "@/hooks/useHerdPrize";
 import type { ClaimResult } from "@/hooks/useSeason";
 
 const claimSound = require("../../assets/sounds/claim.mp3");
@@ -1140,6 +1142,18 @@ export default function SeasonScreen() {
 	const [habitatClaimTier, setHabitatClaimTier] = useState<number | null>(null);
 	const [drawOpen, setDrawOpen] = useState(false);
 	const mondayDraw = useMondayDraw(s1);
+	// The Barn Draw: the crew's Monday furnishing draw. A win of mine opens the
+	// reveal once (the hook remembers the week); the Race panel's row opens the
+	// last result for anyone, any time.
+	const herdPrize = useHerdPrize(uid, s1);
+	const [herdPrizeOpen, setHerdPrizeOpen] = useState(false);
+	useEffect(() => {
+		if (herdPrize.unseenWin) setHerdPrizeOpen(true);
+	}, [herdPrize.unseenWin]);
+	const closeHerdPrize = useCallback(() => {
+		setHerdPrizeOpen(false);
+		if (herdPrize.unseenWin) herdPrize.dismissWin();
+	}, [herdPrize]);
 	const [oinkOpen, setOinkOpen] = useState(false);
 	const [memberSheet, setMemberSheet] = useState<string | null>(null);
 	const [pickedTab, setPickedTab] = useState<AlmanacTab | null>(null);
@@ -1707,6 +1721,9 @@ export default function SeasonScreen() {
 									onGoHerd={goHerd}
 									mondayDraw={mondayDraw.state ?? undefined}
 									onOpenMondayDraw={() => setDrawOpen(true)}
+									herdPrize={herdPrize.state ?? undefined}
+									uid={uid}
+									onOpenHerdPrize={herdPrize.state?.last ? () => setHerdPrizeOpen(true) : undefined}
 									testID="almanac-race"
 								/>
 							)}
@@ -2030,6 +2047,25 @@ export default function SeasonScreen() {
 			onClose={() => setDrawOpen(false)}
 			state={mondayDraw.state}
 			onDraw={mondayDraw.draw}
+		/>
+		<DrawRevealSheet
+			open={herdPrizeOpen}
+			prize={
+				herdPrize.state?.last?.kind
+					? {
+							kind: herdPrize.state.last.kind,
+							itemId: herdPrize.state.last.itemId,
+							itemName: herdPrize.state.last.itemName,
+							amount: herdPrize.state.last.amount,
+						}
+					: null
+			}
+			kicker="the barn draw · monday"
+			mine={!!uid && herdPrize.state?.last?.winnerUserId === uid}
+			winnerName={herdPrize.state?.last?.winnerName}
+			seed={herdPrize.state?.last?.seed}
+			onClose={closeHerdPrize}
+			testID="herd-prize-reveal"
 		/>
 		</View>
 		</SpotlightProvider>
