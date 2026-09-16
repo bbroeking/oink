@@ -1,5 +1,16 @@
 # The Barn Draw — a random prize mechanic for furnishings (proposal, 2026-09-16)
 
+> **Ratified 2026-09-16 (supersedes the two-layer proposal below).** Founder call, in response to the proposal: no "everyone's draw"; the herd prize is crew-only; the Trough reward is one random draw per week behind the quarter rule. Implementation: `supabase/migrations/20260916120000_barn_draw_and_trough_quarter_reward.sql`, `utils/barnDraw.ts`.
+>
+> **1 · The herd prize draw.** Every Monday, when the race resolves, each crew holds one draw for one furnishing. Pool: every furnishing that is for sale for snouts; never the collection gifts (own 4 / own 8), Wallow keepsakes, season-pass rewards or race bunting. Group: **the crew only, up to 8 pigs on one crew roster** — friends off the roster are never in it, whatever they chipped, visited or blessed; a crew of one draws alone and wins. Entry: dug at least one feeding that week; nothing else enters or weights you. Odds: equal among entrants; one winner per crew per week; the server draws from a seed committed before the week ends and revealed with the result, so anyone can recompute it. An owned prize re-rolls to an unowned one; a winner who owns the whole pool gets the Monday tickle purse instead.
+>
+> **2 · Special gifts and keepsakes.** Never drawn, never sold, never rolled — one path each, the one they have today.
+>
+> **3 · The Trough giver's reward.** *The quarter rule:* a giver earns from a Trough only once their contributions to that Trough reach 25% of the price (also the most anyone may give). *One random reward per week, no stacking:* the first time in a week a giver reaches a quarter on any Trough they receive one random reward, and that is the only Trough reward that week — a second quarter, five Troughs, or the maximum everywhere grants nothing more until next week. *A roll, not a rate:* one draw from the current featured collection at the 60 / 28 / 12 tier weights, falling back to a tickle purse when the giver owns the collection; never quoted before it lands. *Separate from the herd prize:* giving never enters or weights the crew draw, because Troughs reach friends and the draw is crew-only. This replaces the 1-per-100 credit and the pot rule.
+>
+> **What this rules out.** Spreading small chips across many Troughs earns nothing; a full quarter earns exactly one reward a week, so snouts convert to nothing at any rate; nothing bought, given or paid changes anyone's odds in the herd draw.
+
+
 Numbers: `tools/balance_barn_draw.py`. Catalog: `docs/design/barn-furnishing-expansion-100.json` (80 for-sale designs in 10 collections, 20 milestone gifts). Machinery it reuses: the Monday tickle draw (`20260916110000_monday_tickle_draw.sql`: participation gate, weighted roll, catch-up curve, `app_settings` tuning, one receipt per user per ISO week) and `grant_habitat_item()` (idempotent per `(user, source, source_ref)`).
 
 **A rule this reverses.** The furnishing expansion's recorded rules say *"No random rewards, Motes, wagering, or real-money acquisition."* This proposal keeps the last three and drops the first, on the grounds that the Monday tickle draw (spec'd today) already made random rewards part of the game. That reversal is the founder's to make; it is logged nowhere yet.
