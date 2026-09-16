@@ -31,6 +31,7 @@ import {
 	frameDelta,
 	resolveAnchor,
 	resolveWearablePose,
+	TURNED_FRONT_EYE_SHIFT,
 } from "../../constants/hats";
 import { HAT_SIDE_IMAGES } from "../../constants/hat_side.generated";
 import type {
@@ -262,11 +263,16 @@ export function resolveSlot(
 			relSpec.anchor ??
 			(category ? CATEGORY_ANCHORS[category] : undefined) ??
 			"head";
-		const a = resolveAnchor(
+		const resolved = resolveAnchor(
 			anchorAnim,
 			pigFrameIdx,
 			anchorName,
 		);
+		// A front sprite on the turned eye line sits back from the eye midpoint
+		// (TURNED_FRONT_EYE_SHIFT); side art is drawn for that camera and stays.
+		const eyeBound = anchorName === "eyes" || anchorName === "eye_l" || anchorName === "eye_r";
+		const frontOnTurn = turned && eyeBound && !slot.imageSrc && !(itemId in HAT_SIDE_IMAGES);
+		const a = frontOnTurn ? { x: resolved.x - TURNED_FRONT_EYE_SHIFT, y: resolved.y } : resolved;
 		const aspect = resolvePigStageAssetAspect(
 			imageSrc,
 			typeof Image.resolveAssetSource === "function"

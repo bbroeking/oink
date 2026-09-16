@@ -854,6 +854,15 @@ const FACE_RIG_ANCHORS = new Set<AnchorName>([
 	"neck"
 ]);
 
+// A FRONT sprite on the eye line of a turned head sits back from the eye
+// midpoint. `eyes` is the midpoint of the near eye and the foreshortened far
+// eye, which is right for side art drawn at that camera, but a flat pair of
+// front lenses centred there hangs its front lens past the snout. Shifting it
+// toward the back of the head (drawn space: the pig looks right, so minus x)
+// centres the flat art on the visible face instead. Side art is untouched.
+// Angle-audit ruling, 2026-09-15.
+export const TURNED_FRONT_EYE_SHIFT = 12;
+
 // Head/face wearables inherit Rosie's authored face angle and apparent scale.
 // The item-specific RelSpec still owns art size and pivot; this pose transform
 // only makes that tuned item sit on the moving anatomy instead of translating
