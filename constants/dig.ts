@@ -207,6 +207,15 @@ export const WAKE_TABLE: Readonly<
   1: { sniff: 3, rub: 6, shove: 20 },
   2: { sniff: 7, rub: 15, shove: 40 },
 };
+// The sniff budget (2026-09-16 ruling): the first SNIFF_FREE_PER_DIG sniffs
+// of a dig roll at the table's odds — in topsoil that is truly free. Every
+// sniff past the budget draws his attention: its threshold rises by
+// SNIFF_ATTENTION_STEP per extra sniff (the 6th sniff +1, the 7th +2 …),
+// never above the layer's shove. Rubs and shoves are untouched. Counted over
+// the whole dig, across layers, from the action log — so client and server
+// count the same sniffs.
+export const SNIFF_FREE_PER_DIG = 5;
+export const SNIFF_ATTENTION_STEP = 1;
 // Co-op (a crewmate submitted this Feeding) halves the ROOT's sniff and rub
 // thresholds — integer floor + 1, so 7 → 4 and 15 → 8. Shove is unchanged,
 // and nothing else in the game changes with co-op (§1.4).

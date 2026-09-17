@@ -29,6 +29,8 @@ import {
   PATCH_COLS,
   PATCH_LAYERS,
   PATCH_ROWS,
+  SNIFF_ATTENTION_STEP,
+  SNIFF_FREE_PER_DIG,
   STIR_RUB,
   STIR_SHOVE,
   TILE_DEPTH,
@@ -1172,16 +1174,29 @@ export class WakeStream {
   }
 }
 
+/** How much a sniff draws his attention, given how many sniffs the dig has
+ *  already spent (spec §1.4, the sniff budget): 0 inside the budget, then
+ *  SNIFF_ATTENTION_STEP per sniff past it — the (budget+1)th sniff is +1. */
+export function sniffAttention(priorSniffs: number): number {
+  return Math.max(0, priorSniffs + 1 - SNIFF_FREE_PER_DIG) * SNIFF_ATTENTION_STEP;
+}
+
 /** The wake threshold (in 120ths) for a verb on a layer — spec §1.4. Co-op
- *  halves the root's sniff and rub (integer floor + 1: 7 → 4, 15 → 8). */
+ *  halves the root's sniff and rub (integer floor + 1: 7 → 4, 15 → 8). A
+ *  sniff past the dig's budget adds its attention, capped at the layer's
+ *  shove — a sniff is never louder than a shove. `priorSniffs` is the count
+ *  of sniffs already in the log before this action. */
 export function wakeThreshold(
   layer: SnoutDeepLayer,
   verb: SnoutDeepVerb,
   coop: boolean,
+  priorSniffs = 0,
 ): number {
-  const base = WAKE_TABLE[layer][verb];
-  if (coop && layer === WAKE_COOP_LAYER && WAKE_COOP_VERBS.includes(verb) && base > 0) {
-    return Math.floor(base / 2) + 1;
-  }
-  return base;
+  const raw = WAKE_TABLE[layer][verb];
+  const base =
+    coop && layer === WAKE_COOP_LAYER && WAKE_COOP_VERBS.includes(verb) && raw > 0
+      ? Math.floor(raw / 2) + 1
+      : raw;
+  if (verb !== "sniff") return base;
+  return Math.min(base + sniffAttention(priorSniffs), WAKE_TABLE[layer].shove);
 }

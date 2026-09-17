@@ -21,6 +21,7 @@ import { ART_SIZE, BORDER, RADII, SPACE, TAP_MIN } from "@/constants/theme";
 import { cameFromAFriend, satchelTuning, wishHoursLeft, type SatchelState } from "@/utils/satchel";
 import { Button, EmptyState, Glyph, SectionHeader, Sheet, Sticker, T, Tag } from "../ui";
 import { FindArt } from "./FindArt";
+import { FindTile } from "./FindTile";
 
 // The catalog tile: three across a phone with the gaps.
 const CATALOG_TILE_MIN_W = 96;
@@ -112,12 +113,8 @@ export function SatchelSheet({
 							const fromFriend = cameFromAFriend(it.source);
 							return (
 								<View key={it.id} style={styles.bagCell}>
-									<Sticker
-										color="paper"
-										radius={RADII.lg}
-										border={BORDER.thin}
-										shadow="none"
-										rotate={0}
+									<FindTile
+										id={it.find_id}
 										onLongPress={() => {
 											Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 											onToss(it.id);
@@ -129,10 +126,7 @@ export function SatchelSheet({
 										}
 										accessibilityHint="Hold to toss it out of the bag"
 										testID="satchel-bag-item"
-										style={styles.bagTile}
-									>
-										<FindArt id={it.find_id} size={ART_SIZE.glyphSm} />
-									</Sticker>
+									/>
 									{fromFriend ? (
 										<T
 											role="kickerPillSm"
@@ -256,7 +250,6 @@ const styles = StyleSheet.create({
 	wishCard: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
 	wishText: { flex: 1, minWidth: 0, gap: SPACE.xxs },
 	bagRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm, marginBottom: SPACE.sm },
-	bagTile: { width: TAP_MIN, height: TAP_MIN, alignItems: "center", justifyContent: "center" },
 	catalog: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm },
 	catalogTile: {
 		flexGrow: 1,

@@ -49,10 +49,15 @@ export const HUNGERER_STATE_LABEL: Readonly<Record<HungererState, string>> = {
 };
 
 /** His face for a layer (spec §1.6): topsoil snoring, mud stirring, the root
- *  one eye open; `woke` overrides everything. */
-export function hungererStateFor(layer: 0 | 1 | 2, woke: boolean): HungererState {
+ *  one eye open; `attentive` (a sniff past the budget) lifts it a step; `woke`
+ *  overrides everything. */
+export function hungererStateFor(layer: 0 | 1 | 2, woke: boolean, attentive = false): HungererState {
   if (woke) return "awake";
-  return layer === 0 ? "snoring" : layer === 1 ? "stirring" : "oneeye";
+  // Attention (the sniff budget, 2026-09-16) lifts his face one step: a
+  // snorer stirs, a stirrer opens an eye. The root has nowhere higher to go
+  // short of waking, so it stays one eye open — the tag says the rest.
+  const step = (layer === 0 ? 0 : layer === 1 ? 1 : 2) + (attentive ? 1 : 0);
+  return step <= 0 ? "snoring" : step === 1 ? "stirring" : "oneeye";
 }
 
 export function Hungerer({ state, size = FACE_BOX }: { state: HungererState; size?: number }) {

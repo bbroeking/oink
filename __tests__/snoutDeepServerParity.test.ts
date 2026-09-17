@@ -201,3 +201,31 @@ describe("Snout Deep server parity", () => {
     expect(hook).toContain('rpcAction<SubmitPayload>("submit_rooting_checked", {');
   });
 });
+
+// ── The sniff budget (20260917130000) mirrors constants/dig.ts ──────────────
+describe("sniff attention parity", () => {
+  const { SNIFF_ATTENTION_STEP, SNIFF_FREE_PER_DIG } = require("@/constants/dig") as typeof import("@/constants/dig");
+  const { sniffAttention } = require("@/utils/rooting") as typeof import("@/utils/rooting");
+  const mig = fs.readFileSync(
+    path.join(ROOT, "supabase/migrations/20260917130000_snout_deep_sniff_attention.sql"),
+    "utf8",
+  );
+  it("the SQL overload's budget and step are the client's", () => {
+    const m = mig.match(/GREATEST\(0, COALESCE\(p_prior_sniffs, 0\) \+ 1 - (\d+)\) \* (\d+)/);
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBe(SNIFF_FREE_PER_DIG);
+    expect(Number(m![2])).toBe(SNIFF_ATTENTION_STEP);
+    expect(mig).toMatch(/LEAST\(/); // capped at the layer's shove
+    expect(mig).toContain("public._snout_deep_wake_threshold(p_layer, 'h', p_coop)");
+  });
+  it("the core counts sniffs BEFORE the entry, the way sniffCount(actions) does", () => {
+    expect(mig).toContain("thr := public._snout_deep_wake_threshold(lyr, verb, row_r.coop_at_open, prior_sniffs);");
+    expect(mig).toContain("IF verb = 's' THEN prior_sniffs := prior_sniffs + 1; END IF;");
+    expect(mig.indexOf("row_r.coop_at_open, prior_sniffs)")).toBeLessThan(mig.indexOf("prior_sniffs := prior_sniffs + 1"));
+  });
+  it("attention is 0 through the budget, then +step per extra sniff", () => {
+    for (let k = 0; k < SNIFF_FREE_PER_DIG; k++) expect(sniffAttention(k)).toBe(0);
+    expect(sniffAttention(SNIFF_FREE_PER_DIG)).toBe(SNIFF_ATTENTION_STEP);
+    expect(sniffAttention(SNIFF_FREE_PER_DIG + 3)).toBe(4 * SNIFF_ATTENTION_STEP);
+  });
+});

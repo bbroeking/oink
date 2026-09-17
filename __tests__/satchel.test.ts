@@ -16,7 +16,9 @@ import {
 	matchingItems,
 	newSwapNonce,
 	sanitizeSatchelTuning,
+	satchelReceiptCopy,
 	satchelReceiptLine,
+	satchelReceiptRoll,
 	swapLine,
 	swapRefusalCopy,
 	fetchFriendWishes,
@@ -198,8 +200,54 @@ describe("the dig receipt carries the satchel line", () => {
 		expect(again.satchelLine).toBe(first.satchelLine);
 	});
 
-	it("leaves the line null on a pre-migration receipt", () => {
-		expect(reconcileReceipt(receipt, { ticklesTotal: 4 }).satchelLine).toBeNull();
+	it("fills the drawn roll — finds, the turned-away, count and cap — and keeps it too", () => {
+		const first = reconcileReceipt(receipt, {
+			satchel: { found: ["honeycomb", "clover"], lost: ["marble"], count: 6, cap: 6 },
+		});
+		expect(first.satchel).toEqual({ found: ["honeycomb", "clover"], lost: ["marble"], count: 6, cap: 6 });
+		const again = reconcileReceipt(first, { ticklesTotal: 4 });
+		expect(again.satchel).toEqual(first.satchel);
+	});
+
+	it("leaves the line and the roll null on a pre-migration receipt", () => {
+		const r = reconcileReceipt(receipt, { ticklesTotal: 4 });
+		expect(r.satchelLine).toBeNull();
+		expect(r.satchel).toBeNull();
+	});
+});
+
+describe("the receipt's bag roll and its words", () => {
+	it("parses the server object, dropping ids this build cannot draw and bad numbers", () => {
+		expect(satchelReceiptRoll(null)).toBeNull();
+		expect(satchelReceiptRoll({ found: [], lost: [] })).toBeNull();
+		expect(satchelReceiptRoll({ found: ["unicorn_horn"] })).toBeNull();
+		expect(satchelReceiptRoll({ found: ["river_pebble", "unicorn_horn"], count: 2.7, cap: "6" })).toEqual({
+			found: ["river_pebble"],
+			lost: [],
+			count: 2,
+			cap: null,
+		});
+	});
+
+	it("says what went in and where the bag stands", () => {
+		expect(
+			satchelReceiptCopy({ found: ["river_pebble", "old_key"], lost: [], count: 3, cap: 6 }),
+		).toEqual({ kicker: "into your satchel", line: "a river pebble and an old key · 3 of 6 finds" });
+		expect(satchelReceiptCopy({ found: ["clover"], lost: [], count: null, cap: null })).toEqual({
+			kicker: "into your satchel",
+			line: "a four-leaf clover",
+		});
+	});
+
+	it("says what the full bag turned away", () => {
+		expect(satchelReceiptCopy({ found: [], lost: ["pinecone"], count: 6, cap: 6 })).toEqual({
+			kicker: "the satchel's full",
+			line: "a pinecone stayed in the mud · full — 6 finds",
+		});
+		expect(satchelReceiptCopy({ found: ["clover"], lost: ["marble"], count: 6, cap: 6 })).toEqual({
+			kicker: "into your satchel",
+			line: "a four-leaf clover · full now — a glass marble stayed in the mud",
+		});
 	});
 });
 

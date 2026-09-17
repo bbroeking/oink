@@ -4,7 +4,10 @@
 // at the very top shows the rolls. `?seed=` (default 20260913) · `?coop=1` ·
 // `?uncrewed=1` · `?motion=reduced` · `?before=` (the tally's count before the
 // dig; default 0 — offline, the tally counts from DIG_FIND_TICKLES and no
-// server corrects it).
+// server corrects it) · `?satchel=` what the receipt's bag beat shows: `2`
+// (two finds in, the default) · `full` (one in, one turned away) · `none`
+// (the pre-Satchel receipt) · `late` (the roll lands a beat after the
+// sheet, the way a slow server's receipt does).
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,11 +22,23 @@ import { generateLayeredBoard } from "@/utils/rooting";
 import {
   decodeAction,
   initialState,
+  reconcileReceipt,
   reduce,
   wakeDrawAt,
   wakeThreshold,
   type DigReceipt,
 } from "@/utils/snoutDeep";
+import type { SatchelRoll } from "@/hooks/useRooting";
+
+// The bag beat's fixtures — the server's `receipt.satchel` as it would land.
+type SatchelFixture = "2" | "full" | "none" | "late";
+const SATCHEL_ROLLS: Readonly<Record<Exclude<SatchelFixture, "none">, SatchelRoll>> = {
+  "2": { found: ["river_pebble", "old_key"], lost: [], count: 3, cap: 6 },
+  full: { found: ["clover"], lost: ["marble"], count: 6, cap: 6 },
+  late: { found: ["honeycomb"], lost: [], count: 4, cap: 6 },
+};
+// A slow server: the receipt's roll lands this long after the sheet opens.
+const LATE_ROLL_MS = 2400;
 
 const DEFAULT_SEED = 20260913;
 // A Feeding's "closes in" for the sign: 2h 10m, ticking.
@@ -47,6 +62,7 @@ function SnoutDeepPreview() {
     motion?: string | string[];
     help?: string | string[];
     before?: string | string[];
+    satchel?: string | string[];
   }>();
   const seedParam = Number(one(params.seed));
   const [seed, setSeed] = useState(
@@ -58,6 +74,9 @@ function SnoutDeepPreview() {
   const helpOnMount = one(params.help) === "1";
   const beforeParam = Number(one(params.before));
   const tickledBefore = Number.isFinite(beforeParam) && beforeParam >= 0 ? Math.trunc(beforeParam) : 0;
+  const satchelParam = one(params.satchel);
+  const satchel: SatchelFixture =
+    satchelParam === "full" || satchelParam === "none" || satchelParam === "late" ? satchelParam : "2";
 
   // A new seed from the old one, deterministic: the next board is always the
   // same next board, so a report can say "seed N, then Dig again".
@@ -67,7 +86,7 @@ function SnoutDeepPreview() {
     <MotionPolicyProvider reduceMotion={reduceMotion}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Keyed on the seed: a new seed is a new dig, reducer and all. */}
-      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} tickledBefore={tickledBefore} onDigAgain={digAgain} />
+      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} tickledBefore={tickledBefore} satchel={satchel} onDigAgain={digAgain} />
     </MotionPolicyProvider>
   );
 }
@@ -79,6 +98,7 @@ function LocalDig({
   reduceMotion,
   helpOnMount,
   tickledBefore,
+  satchel,
   onDigAgain,
 }: {
   seed: number;
@@ -87,6 +107,7 @@ function LocalDig({
   reduceMotion: boolean;
   helpOnMount: boolean;
   tickledBefore: number;
+  satchel: SatchelFixture;
   onDigAgain: () => void;
 }) {
   const board = useMemo(() => generateLayeredBoard(seed), [seed]);
@@ -100,10 +121,19 @@ function LocalDig({
     return () => clearInterval(id);
   }, []);
 
-  const onDone = useCallback((r: DigReceipt) => {
-    setReceipt(r);
-    setSheetOpen(true);
-  }, []);
+  const onDone = useCallback(
+    (r: DigReceipt) => {
+      // The server's receipt, stood in for: the bag roll rides in with the
+      // sheet, or a beat later on `late` — the path a slow receipt takes.
+      const roll = satchel === "none" ? null : SATCHEL_ROLLS[satchel];
+      setReceipt(roll && satchel !== "late" ? reconcileReceipt(r, { satchel: roll }) : r);
+      setSheetOpen(true);
+      if (roll && satchel === "late") {
+        setTimeout(() => setReceipt((cur) => (cur ? reconcileReceipt(cur, { satchel: roll }) : cur)), LATE_ROLL_MS);
+      }
+    },
+    [satchel],
+  );
 
   // The last draw, read straight off the stream — the k-th action drew the
   // k-th number; the reducer keeps only the count.

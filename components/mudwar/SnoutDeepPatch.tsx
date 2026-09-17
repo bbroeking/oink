@@ -31,7 +31,11 @@ import {
   findRevealLine,
   gtReasons,
   LAYER_NAMES,
+  nextSniffAttention,
+  nextThreshold,
   receipt as buildReceipt,
+  shortOdds,
+  sniffsLeft,
   whisperFor,
   type DigFindTickles,
   type DigReceipt,
@@ -81,13 +85,22 @@ function VerbMark({ verb: v, size }: { verb: Verb; size: number }) {
   return <Shovel size={size} />;
 }
 const VERB_LABEL: Readonly<Record<Verb, string>> = { sniff: "Sniff", rub: "Rub", shove: "Shove" };
-// The price under each verb, per layer. Topsoil's sniff is the only free
-// action in the dig; from the mud down a sniff is the quietest, never free.
-const VERB_SUB: Readonly<Record<Layer, Readonly<Record<Verb, string>>>> = {
-  0: { sniff: "free", rub: "quiet", shove: "loud" },
-  1: { sniff: "quietest", rub: "quiet", shove: "loud" },
-  2: { sniff: "quietest", rub: "quiet", shove: "loud" },
-};
+// The price under each verb: the live odds the NEXT one rolls at — "free ·
+// 3 left" while the sniff budget holds, then "1 in 120", "1 in 60" … as his
+// attention builds (2026-09-16: so the player can SEE a sniff start to cost).
+// Rub and shove read their odds the same way, so the three cards are one
+// ladder of quiet at every moment of the dig.
+function verbSub(state: SnoutDeepState, v: Verb): string {
+  const thr = nextThreshold(state, v);
+  if (v === "sniff") {
+    const left = sniffsLeft(state);
+    if (thr <= 0) return `free · ${left} left`;
+    if (left > 0) return `${shortOdds(thr)} · ${left} free left`;
+  }
+  return shortOdds(thr);
+}
+// What the tag under his face says while his attention is up.
+const ATTENTIVE_LABEL = "noticing you";
 const LAYER_CHIP: Readonly<Record<Layer, string>> = { 0: "topsoil", 1: "the mud", 2: "the root" };
 
 export interface SnoutDeepPatchProps {
@@ -133,7 +146,10 @@ export function SnoutDeepPatch({
 
   const woke = state.ended?.reason === "wake";
   const atRoot = state.layer === 2;
-  const face = hungererStateFor(state.layer, woke);
+  // His attention: the next sniff would cost more than the layer's table
+  // says. His face lifts a step and the tag says so — the budget made visible.
+  const attentive = !woke && nextSniffAttention(state) > 0;
+  const face = hungererStateFor(state.layer, woke, attentive);
   const gt = gtReasons(state).length;
   const gtIfTied = state.uncrewed ? 0 : gt + (state.loose ? 1 : 0) + (atRoot && state.layersTied.includes(1) ? 1 : 0);
   const allFinds = state.board.layers.flatMap((l) => l.finds);
@@ -235,7 +251,11 @@ export function SnoutDeepPatch({
           </Sticker>
           <View style={styles.hungerer}>
             <Hungerer state={face} size={HUNGERER_FACE} />
-            <Tag label={HUNGERER_STATE_LABEL[face]} tone={woke ? "roseDeep" : atRoot ? "rose" : "paper"} />
+            <Tag
+              label={attentive ? ATTENTIVE_LABEL : HUNGERER_STATE_LABEL[face]}
+              tone={woke ? "roseDeep" : attentive || atRoot ? "rose" : "paper"}
+              testID="hungerer-tag"
+            />
           </View>
         </View>
 
@@ -252,7 +272,7 @@ export function SnoutDeepPatch({
                 onPress={() => setVerb(v)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected, checked: selected }}
-                accessibilityLabel={`${VERB_LABEL[v]}, ${VERB_SUB[state.layer][v]}`}
+                accessibilityLabel={`${VERB_LABEL[v]}, ${verbSub(state, v)}`}
                 accessibilityHint={VERB_HINT[v]}
                 style={({ pressed }) => [
                   styles.verbButton,
@@ -263,7 +283,7 @@ export function SnoutDeepPatch({
                 <VerbMark verb={v} size={VERB_ART} />
                 <Label>{VERB_LABEL[v]}</Label>
                 <Hand tone={selected ? "primary" : "secondary"} numberOfLines={1}>
-                  {VERB_SUB[state.layer][v]}
+                  {verbSub(state, v)}
                 </Hand>
               </Pressable>
             );
@@ -350,17 +370,24 @@ export function SnoutDeepPatch({
             </Button>
           ) : (
             <>
+              {/* Two different acts, said in the labels (2026-09-16; the screen
+                  fits a phone without a scroll, so no line under them, and the
+                  half-width holds ~18 characters, so no counts — the pouch card
+                  above already lists what is loose): the tie LEAVES with what's
+                  banked — the gold one; digging deeper RESETS the board one
+                  layer down, where he sleeps lighter. The counts stay in the
+                  accessibility labels. */}
               <View style={styles.footerHalf}>
                 <Button
-                  variant="ghost"
+                  variant="gold"
                   size="sm"
                   full
                   disabled={!!state.ended}
                   onPress={() => dispatch({ type: "tie" })}
-                  accessibilityLabel={looseCount > 0 ? `Tie it off, bank ${looseCount}` : "Tie it off"}
-                  accessibilityHint="Banks everything loose and ends the dig"
+                  accessibilityLabel={looseCount > 0 ? `Tie it off, leave with ${looseCount}` : "Tie it off and leave"}
+                  accessibilityHint="Banks everything loose, leaves the patch and ends the dig"
                 >
-                  {looseCount > 0 ? `Tie it off · bank ${looseCount}` : "Tie it off"}
+                  Tie it off · leave
                 </Button>
               </View>
               <View style={styles.footerHalf}>
@@ -370,12 +397,12 @@ export function SnoutDeepPatch({
                   full
                   disabled={!!state.ended}
                   onPress={() => dispatch({ type: "descend" })}
-                  accessibilityLabel={`Dig deeper, into ${LAYER_NAMES[(state.layer + 1) as Layer]}${
+                  accessibilityLabel={`Dig deeper, a new board in ${LAYER_NAMES[(state.layer + 1) as Layer]}${
                     looseCount > 0 ? `, carry ${looseCount} down` : ""
                   }`}
-                  accessibilityHint="Banks the loose truffle, carries the loose things down and opens the next layer"
+                  accessibilityHint="Banks the loose truffle, carries the loose things down and opens a fresh board one layer down"
                 >
-                  {looseCount > 0 ? `Dig deeper · carry ${looseCount}` : "Dig deeper"}
+                  Dig deeper · reset
                 </Button>
               </View>
             </>

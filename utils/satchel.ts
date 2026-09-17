@@ -511,22 +511,73 @@ export function bagHasWishFor(items: SatchelItem[], wish: FriendWish | undefined
 	return items.some((it) => it.find_id === wish.find_id);
 }
 
-/** The receipt's satchel line. `found`/`lost` are catalog ids the server
- *  rolled; `lost` is what stayed in the mud because the bag was full. */
-export function satchelReceiptLine(
+/** What the dig rolled into the bag, as the receipt draws it: the finds that
+ *  went in, the ones that stayed in the mud because the bag was full, and the
+ *  bag's count / cap after the roll (null on a server that names neither). */
+export interface SatchelReceiptRoll {
+	found: SatchelFindId[];
+	lost: SatchelFindId[];
+	count: number | null;
+	cap: number | null;
+}
+
+/** The server's `receipt.satchel` ({found, lost, count, cap}) → the roll the
+ *  receipt draws. Null when nothing was rolled (or a pre-Satchel server), so
+ *  the sheet shows no bag at all rather than an empty one. Ids this build
+ *  cannot name are dropped: a blank tile is worse than one fewer. */
+export function satchelReceiptRoll(
 	satchel: { found?: unknown; lost?: unknown; count?: unknown; cap?: unknown } | null | undefined,
-): string | null {
+): SatchelReceiptRoll | null {
 	if (!satchel) return null;
 	const found = (Array.isArray(satchel.found) ? satchel.found : []).filter(isSatchelFindId);
 	const lost = (Array.isArray(satchel.lost) ? satchel.lost : []).filter(isSatchelFindId);
 	if (found.length === 0 && lost.length === 0) return null;
+	const int = (v: unknown) =>
+		typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.floor(v) : null;
+	return { found, lost, count: int(satchel.count), cap: int(satchel.cap) };
+}
+
+/** The receipt's satchel sentence — the bag block's accessibility label, and
+ *  the whole of it on a surface with no room for art. `found`/`lost` are
+ *  catalog ids the server rolled; `lost` is what stayed in the mud because
+ *  the bag was full. */
+export function satchelReceiptLine(
+	satchel: { found?: unknown; lost?: unknown; count?: unknown; cap?: unknown } | null | undefined,
+): string | null {
+	const roll = satchelReceiptRoll(satchel);
+	if (!roll) return null;
 	const name = (id: SatchelFindId) => satchelFind(id)?.withArticle ?? id;
-	if (found.length === 0) {
-		return `Satchel's full — ${joinNames(lost.map(name))} stayed in the mud.`;
+	if (roll.found.length === 0) {
+		return `Satchel's full — ${joinNames(roll.lost.map(name))} stayed in the mud.`;
 	}
-	const heavier = `your Satchel got heavier: ${joinNames(found.map(name))}.`;
-	if (lost.length === 0) return heavier;
-	return `${heavier} Satchel's full — ${joinNames(lost.map(name))} stayed in the mud.`;
+	const heavier = `your Satchel got heavier: ${joinNames(roll.found.map(name))}.`;
+	if (roll.lost.length === 0) return heavier;
+	return `${heavier} Satchel's full — ${joinNames(roll.lost.map(name))} stayed in the mud.`;
+}
+
+/** The bag block's words, in the hand voice: the kicker over the tiles and
+ *  one line under them — what went in and where the bag stands, or what the
+ *  full bag turned away. */
+export function satchelReceiptCopy(roll: SatchelReceiptRoll): { kicker: string; line: string } {
+	const name = (id: SatchelFindId) => satchelFind(id)?.withArticle ?? id;
+	const got = joinNames(roll.found.map(name));
+	const left = joinNames(roll.lost.map(name));
+	const standing =
+		roll.count == null || roll.cap == null
+			? null
+			: roll.count >= roll.cap
+				? `full — ${roll.count} ${roll.count === 1 ? "find" : "finds"}`
+				: `${roll.count} of ${roll.cap} finds`;
+	if (roll.found.length === 0) {
+		return {
+			kicker: "the satchel's full",
+			line: standing ? `${left} stayed in the mud · ${standing}` : `${left} stayed in the mud`,
+		};
+	}
+	if (roll.lost.length === 0) {
+		return { kicker: "into your satchel", line: standing ? `${got} · ${standing}` : got };
+	}
+	return { kicker: "into your satchel", line: `${got} · full now — ${left} stayed in the mud` };
 }
 
 function joinNames(names: string[]): string {

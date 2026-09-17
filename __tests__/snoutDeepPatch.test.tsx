@@ -96,7 +96,8 @@ describe("SnoutDeepPatch", () => {
     expect(all).toContain("yours for keeps");
     expect(all).toContain("Tie it off");
     expect(all).toContain("Dig deeper");
-    for (const word of ["Sniff", "Rub", "Shove", "free", "quiet", "loud"]) expect(all).toContain(word);
+    // The cards wear live odds (2026-09-16): the free sniffs left, then "1 in N".
+    for (const word of ["Sniff", "Rub", "Shove", "free · 5 left", "1 in 120", "1 in 12"]) expect(all).toContain(word);
     // No emoji anywhere on the screen.
     expect(all).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
 
@@ -162,16 +163,16 @@ describe("SnoutDeepPatch", () => {
     act(() => {
       renderer = TestRenderer.create(wrap(<Harness />));
     });
-    pressLabelled(renderer, /^Dig deeper, into the mud/);
+    pressLabelled(renderer, /^Dig deeper, a new board in the mud/);
     expect(seen.latest!.layer).toBe(1);
     let all = texts(renderer).join("\n");
     expect(all).toContain("stirring");
     expect(all).toMatch(/the mud\. fatter down here/);
-    pressLabelled(renderer, /^Dig deeper, into the root/);
+    pressLabelled(renderer, /^Dig deeper, a new board in the root/);
     expect(seen.latest!.layer).toBe(2);
     all = texts(renderer).join("\n");
     expect(all).toContain("one eye open");
-    expect(all).toContain("quietest");
+    expect(all).toContain("1 in 17"); // the root's sniff, at the table's odds inside the budget
     expect(all).toContain("Tie it off · +0 Golden Truffles");
     expect(all).not.toContain("Dig deeper");
     pressLabelled(renderer, /^Tie it off, plus 0 Golden Truffles/);
@@ -203,8 +204,8 @@ describe("SnoutDeepPatch", () => {
     }
     expect(seen.latest!.looseThings).toEqual([boom.id]);
     all = texts(renderer).join("\n");
-    expect(all).toContain("Tie it off · bank 1");
-    expect(all).toContain("Dig deeper · carry 1");
+    expect(all).toContain("Tie it off · leave");
+    expect(all).toContain("Dig deeper · reset");
     expect(all).not.toContain("nothing loose yet");
     // The loose well names the Boom, the tied well nothing yet.
     const wells = renderer.root.findAll(
@@ -214,15 +215,15 @@ describe("SnoutDeepPatch", () => {
     expect(labels.some((l) => l.startsWith("loose, his if he wakes: a Tickle Boom"))).toBe(true);
     expect(labels.some((l) => l.startsWith("tied, yours for keeps: nothing tied yet"))).toBe(true);
     // Descend: the Boom rides down — still loose, still counted in the footer.
-    pressLabelled(renderer, /^Dig deeper, into the mud, carry 1 down/);
+    pressLabelled(renderer, /^Dig deeper, a new board in the mud, carry 1 down/);
     expect(seen.latest!.layer).toBe(1);
     expect(seen.latest!.looseThings).toEqual([boom.id]);
     expect(seen.latest!.banked).toEqual([]);
     all = texts(renderer).join("\n");
-    expect(all).toContain("Tie it off · bank 1");
-    expect(all).toContain("Dig deeper · carry 1");
+    expect(all).toContain("Tie it off · leave");
+    expect(all).toContain("Dig deeper · reset");
     // Tie: the pouch banks; the receipt pays the Boom.
-    pressLabelled(renderer, /^Tie it off, bank 1/);
+    pressLabelled(renderer, /^Tie it off, leave with 1/);
     expect(seen.latest!.banked).toEqual([boom.id]);
     expect(seen.latest!.looseThings).toEqual([]);
     expect(seen.done?.rows.find((r) => r.id === boom.id)?.tickles).toBe(3);
@@ -341,6 +342,135 @@ describe("the sheets — the tally", () => {
     expect(texts(renderer)).toContain("48");
     expect(hosts(renderer, "The tally")).toHaveLength(1);
     expect(hosts(renderer, "Hurry the tally")).toHaveLength(0);
+    act(() => renderer.unmount());
+    jest.useRealTimers();
+  });
+
+  /** The bag's tiles, in order, as [testID, hidden-or-not-yet-dropped]. */
+  function bagTiles(renderer: TestRenderer.ReactTestRenderer): string[] {
+    return renderer.root
+      .findAll((n) => typeof n.type === "string" && typeof n.props.testID === "string" && /^dig-satchel-(find|lost)-/.test(n.props.testID))
+      .map((n) => n.props.testID as string);
+  }
+  const bagBlock = (renderer: TestRenderer.ReactTestRenderer) =>
+    renderer.root.findAll((n) => typeof n.type === "string" && n.props.testID === "dig-satchel");
+  const withBag = (r: ReturnType<typeof receipt>) =>
+    reconcileReceipt(r, { satchel: { found: ["river_pebble", "old_key"], lost: ["pinecone"], count: 6, cap: 6 } });
+
+  test("no bag on the receipt → no bag block at all", () => {
+    const r = receipt(tiedDomino(), { tickledBefore: 38 });
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />),
+      );
+    });
+    expect(bagBlock(renderer)).toHaveLength(0);
+    expect(texts(renderer).join("\n")).not.toContain("satchel");
+    act(() => renderer.unmount());
+  });
+
+  test("under Reduce Motion the bag is present at once: the bag, a tile per find, a ghost tile for the turned-away, the words", () => {
+    const r = withBag(receipt(tiedDomino(), { tickledBefore: 38 }));
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />),
+      );
+    });
+    const block = bagBlock(renderer);
+    expect(block).toHaveLength(1);
+    expect(block[0].props.accessibilityElementsHidden).toBe(false);
+    expect(bagTiles(renderer)).toEqual([
+      "dig-satchel-find-river_pebble",
+      "dig-satchel-find-old_key",
+      "dig-satchel-lost-pinecone",
+    ]);
+    const all = texts(renderer).join("\n");
+    expect(all).toContain("into your satchel");
+    expect(all).toContain("a river pebble and an old key · full now — a pinecone stayed in the mud");
+    // The whole block reads as the receipt's one satchel sentence.
+    expect(
+      hosts(renderer, "your Satchel got heavier: a river pebble and an old key. Satchel's full — a pinecone stayed in the mud."),
+    ).toHaveLength(1);
+    // Settled: nothing left to hurry.
+    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    act(() => renderer.unmount());
+  });
+
+  test("the bag lands a stagger after the last row, then the finds drop one by one", () => {
+    jest.useFakeTimers();
+    const r = withBag(receipt(tiedDomino(), { tickledBefore: 38 }));
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    const hidden = () => bagBlock(renderer)[0].props.accessibilityElementsHidden as boolean;
+    expect(hidden()).toBe(true);
+    ticks(450, 1); // row 1
+    ticks(350, 1); // row 2 (XP)
+    expect(landedFlags(renderer)).toEqual([true, true]);
+    expect(hidden()).toBe(true); // the rows are down; the bag has its own beat
+    // Still hurry-able: the bag has not landed.
+    expect(hosts(renderer, "Hurry the tally")).toHaveLength(1);
+    ticks(350, 1); // the bag
+    expect(hidden()).toBe(false);
+    // The tiles drop 175 ms apart; each keeps its square meanwhile.
+    expect(bagTiles(renderer)).toHaveLength(3);
+    ticks(175, 3);
+    ticks(40, 8); // the count settles on its own clock
+    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    act(() => renderer.unmount());
+    jest.useRealTimers();
+  });
+
+  test("a bag the server names after the rows have landed still lands, on its own beat", () => {
+    jest.useFakeTimers();
+    const r = receipt(tiedDomino(), { tickledBefore: 38 });
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    ticks(450, 1);
+    ticks(350, 1);
+    ticks(40, 8);
+    expect(landedFlags(renderer)).toEqual([true, true]);
+    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(bagBlock(renderer)).toHaveLength(0);
+    // The server's receipt lands late with the roll.
+    act(() => {
+      renderer.update(
+        wrap(<DigReceiptSheet visible receipt={withBag(r)} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    expect(bagBlock(renderer)).toHaveLength(1);
+    expect(bagBlock(renderer)[0].props.accessibilityElementsHidden).toBe(true);
+    ticks(350, 1);
+    expect(bagBlock(renderer)[0].props.accessibilityElementsHidden).toBe(false);
+    expect(landedFlags(renderer)).toEqual([true, true]); // the rows never restarted
+    act(() => renderer.unmount());
+    jest.useRealTimers();
+  });
+
+  test("a hurry lands the bag and drops every find at once", () => {
+    jest.useFakeTimers();
+    const r = withBag(receipt(tiedDomino(), { tickledBefore: 38 }));
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
+      );
+    });
+    act(() => {
+      renderer.root.findAll((n) => n.props.accessibilityLabel === "Hurry the tally")[0].props.onPress();
+    });
+    expect(landedFlags(renderer)).toEqual([true, true]);
+    expect(bagBlock(renderer)[0].props.accessibilityElementsHidden).toBe(false);
+    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
     act(() => renderer.unmount());
     jest.useRealTimers();
   });
@@ -520,5 +650,33 @@ describe("Hungerer", () => {
       );
       act(() => renderer.unmount());
     }
+  });
+});
+
+// ── Attention is visible (2026-09-16) ────────────────────────────────────────
+describe("the sniff budget shows on the patch", () => {
+  const fs = require("node:fs") as typeof import("node:fs");
+  const path = require("node:path") as typeof import("node:path");
+  const src = fs.readFileSync(path.join(__dirname, "..", "components", "mudwar", "SnoutDeepPatch.tsx"), "utf8");
+  const hungerer = fs.readFileSync(path.join(__dirname, "..", "components", "mudwar", "Hungerer.tsx"), "utf8");
+  it("the verb cards wear live odds, the sniff card its free count", () => {
+    expect(src).toContain("function verbSub(state: SnoutDeepState, v: Verb): string");
+    expect(src).toContain("return `free · ${left} left`;");
+    expect(src).toContain("return `${shortOdds(thr)} · ${left} free left`;");
+    expect(src).not.toMatch(/VERB_SUB\[/);
+  });
+  it("his face lifts a step and the tag says he's noticing", () => {
+    expect(src).toContain("const attentive = !woke && nextSniffAttention(state) > 0;");
+    expect(src).toContain("hungererStateFor(state.layer, woke, attentive)");
+    expect(src).toContain('const ATTENTIVE_LABEL = "noticing you";');
+    expect(hungerer).toContain("attentive = false): HungererState");
+  });
+  it("tie leaves, deeper opens a fresh board — said in the labels (the screen never scrolls)", () => {
+    expect(src).toContain("Tie it off · leave");
+    expect(src).toContain("Dig deeper · reset");
+    expect(src).toContain("`Dig deeper, a new board in ${LAYER_NAMES[(state.layer + 1) as Layer]}${");
+    // the tie is the gold one below the root too
+    const footer = src.slice(src.indexOf("THE FOOTER"), src.indexOf("THE REVEAL"));
+    expect(footer.match(/variant="gold"/g)?.length).toBe(2);
   });
 });

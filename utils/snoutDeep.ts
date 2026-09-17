@@ -40,7 +40,7 @@
 //     mud's and the root's together — into `missed`; `banked` and `things`
 //     are untouched.
 
-import { satchelReceiptLine } from "@/utils/satchel";
+import { satchelReceiptLine, satchelReceiptRoll, type SatchelReceiptRoll } from "@/utils/satchel";
 import {
   DIG_FIND_TICKLES,
   DIG_FOOD_KINDS,
@@ -48,6 +48,7 @@ import {
   PATCH_COLS,
   PATCH_ROWS,
   SNOUT_DEEP_ACTION_CAP,
+  SNIFF_FREE_PER_DIG,
   WAKE_DIE,
   type DigFindKind,
   type SnoutDeepLayer,
@@ -59,6 +60,7 @@ import {
   clusterTouched,
   generateLayeredBoard,
   WakeStream,
+  sniffAttention,
   wakeThreshold as kernelWakeThreshold,
   type LayerBoard,
   type LayerFind,
@@ -153,6 +155,37 @@ export function initialState(
 }
 
 export const wakeThreshold = kernelWakeThreshold;
+
+/** Sniffs spent so far — every "s…" entry in the log (no-ops are never logged). */
+export function sniffCount(actions: readonly string[]): number {
+  let n = 0;
+  for (const a of actions) if (a.charCodeAt(0) === 115 /* s */) n += 1;
+  return n;
+}
+
+/** Free sniffs left in this dig, never below 0. */
+export function sniffsLeft(state: Pick<SnoutDeepState, "actions">): number {
+  return Math.max(0, SNIFF_FREE_PER_DIG - sniffCount(state.actions));
+}
+
+/** The attention the NEXT sniff would draw (0 inside the budget). */
+export function nextSniffAttention(state: Pick<SnoutDeepState, "actions">): number {
+  return sniffAttention(sniffCount(state.actions));
+}
+
+/** The wake threshold the next action of `verb` would roll at. */
+export function nextThreshold(
+  state: Pick<SnoutDeepState, "actions" | "layer" | "coop">,
+  verb: Verb,
+): number {
+  return wakeThreshold(state.layer, verb, state.coop, sniffCount(state.actions));
+}
+
+/** "free" · "1 in 120" · "1 in 6" — the short odds a verb card wears. */
+export function shortOdds(threshold: number): string {
+  if (threshold <= 0) return "free";
+  return `1 in ${Math.round(WAKE_DIE / threshold)}`;
+}
 
 /** Encode one log entry. Exposed so the tests and the dev strip read the log
  *  the way the server will. */
@@ -293,7 +326,7 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
   // the k-th action is the k-th draw on every replay.
   const draw = new WakeStream(state.board.seed).skip(state.wakeIndex).next();
   const wakeIndex = state.wakeIndex + 1;
-  const threshold = wakeThreshold(state.layer, verb, state.coop);
+  const threshold = wakeThreshold(state.layer, verb, state.coop, sniffCount(state.actions));
   const woke = draw < threshold;
 
   const next: SnoutDeepState = {
@@ -576,8 +609,11 @@ export interface DigReceipt {
   tickledBefore: number | null;
   /** The count after: before + total; null while before is unknown. */
   tickledNow: number | null;
-  /** The Satchel line — what the dig rolled into the bag (or what stayed in
-   *  the mud because it was full). Filled by the server's receipt. */
+  /** What the dig rolled into the Satchel — the finds that went in, the ones
+   *  a full bag turned away, and the bag's count / cap — drawn as the tally's
+   *  last beat. Filled by the server's receipt; null until it lands. */
+  satchel?: SatchelReceiptRoll | null;
+  /** The same roll as one sentence — the bag block's accessibility label. */
   satchelLine?: string | null;
   /** Uncrewed only, when no truffle row carries the join line: the foot's join door. */
   joinLine?: string;
@@ -775,7 +811,7 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
     const a = ended.wokeOn ? decodeAction(ended.wokeOn) : null;
     const wokeLine = a
       ? `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]}. ${oddsPhrase(
-          wakeThreshold(a.layer, a.verb, state.coop),
+          wakeThreshold(a.layer, a.verb, state.coop, sniffCount(state.actions.slice(0, -1))),
         )} — this was the one.`
       : "he woke on the last one.";
     const took =
@@ -855,8 +891,9 @@ export function reconcileReceipt(r: DigReceipt, server: ServerTally): DigReceipt
   const ticklesTotal = server.ticklesTotal ?? total;
   const before = server.tickledBefore ?? r.tickledBefore;
   const now = server.tickledNow ?? (before == null ? null : before + ticklesTotal);
+  const satchel = satchelReceiptRoll(server.satchel) ?? r.satchel ?? null;
   const satchelLine = satchelReceiptLine(server.satchel) ?? r.satchelLine ?? null;
-  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now, satchelLine };
+  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now, satchel, satchelLine };
 }
 
 function layerOf(board: SnoutDeepBoard, id: string): Layer | null {
@@ -909,7 +946,10 @@ export function whisperFor(state: SnoutDeepState): string {
   const pouch = pouchWhisper(state);
   if (state.layer === 0) {
     if (sniffed === 0)
-      return "topsoil. a sniff counts the finds touching a tile. a rub moves a little, a shove a lot. nothing quiet wakes him here.";
+      return `topsoil. a sniff counts the finds touching a tile. a rub moves a little, a shove a lot. ${SNIFF_FREE_PER_DIG} sniffs are free — past that, each one draws his attention.`;
+    // The budget's turn speaks first: the moment a sniff starts to cost, say so.
+    if (nextSniffAttention(state) > 0 && !state.loose)
+      return `he's noticing you — the next sniff is ${oddsPhrase(nextThreshold(state, "sniff"))}. a rub is ${oddsPhrase(nextThreshold(state, "rub"))}.`;
     if (hasHigh && hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
     if (pouch) return pouch;
@@ -1031,6 +1071,11 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
   // bot rubs the buried tile the scent marks point at hardest (the sum of the
   // sniffed marks whose 3 × 3 covers it) and sniffs rather than rub blind
   // while no mark points anywhere; the blind bot rubs a random buried tile.
+  // The sniff budget (2026-09-16): past five sniffs each one draws his
+  // attention, so the nose bot — like a player who has read the card — only
+  // sniffs while a sniff is still quieter than a rub. In topsoil that is the
+  // five free ones; deeper, until attention lifts the sniff to the rub's odds.
+  const sniffWorthIt = () => nextThreshold(state, "sniff") < nextThreshold(state, "rub");
   const step = (): boolean => {
     const rub = (tile: number) => {
       state = reduce(state, { type: "act", verb: "rub", tile });
@@ -1087,7 +1132,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
       }
       if (best >= 0) return rub(best);
       const unsniffed = unknown.filter((t) => state.scent[t] == null);
-      if (unsniffed.length > 0) {
+      if (unsniffed.length > 0 && sniffWorthIt()) {
         state = reduce(state, { type: "act", verb: "sniff", tile: unsniffed[scanNext(unsniffed.length)] });
         return true;
       }
@@ -1137,7 +1182,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
     const spent = () => state.actions.length - atEntry;
     if (style === "nose") {
       for (const t of NOSE_LATTICE) {
-        if (state.ended || spent() >= layerActions) break;
+        if (state.ended || spent() >= layerActions || !sniffWorthIt()) break;
         state = reduce(state, { type: "act", verb: "sniff", tile: t });
       }
       // A second round pins the strongest mark down where a sniff is under

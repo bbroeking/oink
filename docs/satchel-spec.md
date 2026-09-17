@@ -45,10 +45,15 @@ into the shape:
   Visible from the Barn button's fan ("Satchel · 3 of 6 finds") and as a strip
   on the visit screen.
 - **Search** = a **Dig**. Every submitted Dig rolls **0 / 1 / 2** finds
-  (30 / 50 / 20 %) into the bag alongside its normal finds. The receipt says
-  *"your Satchel got heavier: a river pebble."* A full bag says *"Satchel's
-  full — the pinecone stayed in the mud."* — the roll still happens, overflow
-  is discarded, never queued.
+  (30 / 50 / 20 %) into the bag alongside its normal finds. The receipt
+  DRAWS the roll as the tally's last beat (2026-09-16): the bag glyph, each
+  find dropping onto its own paper tile, and one hand line — *"a river
+  pebble and an old key · 3 of 6 finds"*. A full bag shows the turned-away
+  find on a ghost tile (the catalog's never-carried grammar) under *"the
+  satchel's full"* — *"a pinecone stayed in the mud · full — 6 finds"* —
+  the roll still happens, overflow is discarded, never queued. The one
+  sentence (*"your Satchel got heavier: a river pebble."*) survives as the
+  block's accessibility label.
 - **Find** — one of **12** pocketable objects: river pebble · blue feather ·
   four-leaf clover · snail shell · brass button · tuft of wool · red berries ·
   pinecone (common) · old key · honeycomb chip · glass marble (uncommon) · tin
@@ -72,7 +77,7 @@ into the shape:
 
 ## 2. Flow
 
-1. Dig → receipt line → bag badge on the Barn button's fan.
+1. Dig → the receipt's bag beat → bag badge on the Barn button's fan.
 2. Friends list: a row shows a **wish mark** (the find's art + "you have it")
    only when the bag holds what that pig wants and you haven't brought it.
    That is the entire discovery surface.
@@ -148,8 +153,9 @@ Every number is `app_settings.satchel_tuning` with the compiled fallback in
 ## 5. Edge cases
 
 - **Wrong item** — bounce (above).
-- **Full bag** — receipt says what stayed in the mud; the sheet's only
-  action on a find is **Toss** (hold). No selling.
+- **Full bag** — the receipt's bag beat shows what stayed in the mud on a
+  ghost tile and says so; the sheet's only action on a find is **Toss**
+  (hold). No selling.
 - **Empty bag on a visit** — strip says "dig to fill it"; the bubble still
   shows what to bring back.
 - **Gift-only host** — the host's bag has nothing to spare: `options: []`, the

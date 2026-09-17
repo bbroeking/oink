@@ -110,6 +110,24 @@ in 20 · shove 1 in 6 · root sniff ≈ 1 in 17 · rub 1 in 8 · shove 1 in 3.)
   sniff: in topsoil a sniff truly never wakes him, so the nose is learned on
   the tutorial layer at the price of actions only. (Amended 2026-09-13 from
   "never in topsoil or the mud".)
+- **The sniff budget (amended 2026-09-16 — "so many free sniffs, then he
+  starts to notice").** A dig has **5** sniffs at the table's odds, counted
+  over the whole dig, across layers, from the action log. Every sniff past
+  the budget draws his attention: its threshold is the layer's sniff
+  threshold (co-op halving applied first) **+ 1 per extra sniff** — the 6th
+  sniff +1, the 7th +2 … — **capped at the layer's shove**, so a sniff is
+  never louder than a shove. Rubs and shoves take no attention. Topsoil's
+  sixth sniff is therefore 1 in 120, its fifteenth 1 in 12; the mud's sixth
+  is 4 in 120. `constants/dig.ts` `SNIFF_FREE_PER_DIG` / `SNIFF_ATTENTION_STEP`
+  mirror `20260917130000_snout_deep_sniff_attention.sql`; the parity test pins
+  them. **Attention is visible:** the verb cards wear the live odds the next
+  action rolls at (*free · 3 left* → *1 in 120* → *1 in 60*…), his face lifts
+  one step (a snorer stirs, a stirrer opens an eye) and his tag reads
+  *noticing you* while the next sniff would cost more than the table says.
+  **Tie vs deeper is said plainly, in the labels** (the screen fits a phone
+  without a scroll): *Tie it off · leave* is the gold button below the root
+  too; *Dig deeper · reset* (the founder's word — a fresh board one layer
+  down). The counts live in the accessibility labels and the pouch card.
 
 ### 1.5 Loose, banked, food, things (rewritten 2026-09-14 — the loose pouch)
 
@@ -270,7 +288,11 @@ are kept on reveal (§1.5).
   push to root ≈ 0.34 × 3 + 0.32 × 2 + 0.34 × 1 ≈ 2.0 GT. **Sim (2,000
   seeds, priced sniff):** nose 3.87 finds · 1.76 GT · 69 % woke · 74 % of
   root pushes survive five actions; blind 3.79 · 1.34 · 93 % · 52 %; mud-tie
-  EV 1.45. Bank-on-descent raises the faucet; the Exchange's prices (25–500
+  EV 1.45. **Sim after the sniff budget (2026-09-16, `finds` = banked + kept
+  since the loose pouch; the nose bot sniffs only while a sniff is quieter
+  than a rub):** nose 2.73 finds · 1.62 GT · 75 % woke · 64 % of root pushes
+  survive five; blind 2.26 · 1.34 · 92 % · 52 % — the nose still beats blind
+  play on every axis. Bank-on-descent raises the faucet; the Exchange's prices (25–500
   GT) are re-checked in §11 step 6 and `'dig_root'` may drop to 0 if the sim
   says so.
 - **Closed economy.** Every mint server-side via `mint_truffles` (999 cap,

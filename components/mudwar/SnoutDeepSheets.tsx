@@ -13,9 +13,18 @@
 // present at once. The server's receipt may correct the numbers while the
 // roll-up runs (`reconcileReceipt`): the target re-aims, the roll never
 // restarts.
+//
+// The bag (2026-09-16): what the dig rolled into the Satchel is the tally's
+// LAST beat, not a line above the count — the bag glyph, each find dropping
+// onto its own paper tile one after another, and the bag's standing under
+// them. It lands a stagger after the last row (or as soon as the server's
+// receipt names the roll, when that comes later), so the eye reads tickles
+// first and things second. A find the full bag turned away sits on a ghost
+// tile: the catalog's never-carried grammar, because it is not yours.
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
-import { AdaptiveModalScaffold, Button, Hand, Icon, Kicker, KickerPill, PageTitle, Shovel, Snout, Sticker, T, Trotter } from "../ui";
+import { AdaptiveModalScaffold, Button, Glyph, Hand, Icon, Kicker, KickerPill, PageTitle, Shovel, Snout, Sticker, T, Trotter } from "../ui";
+import type { SatchelFindId } from "@/constants/satchel";
 import { ART_SIZE, BORDER, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { popIn } from "@/utils/motionRecipes";
@@ -24,6 +33,8 @@ import {
   type DigReceiptRow,
   type FindTone,
 } from "@/utils/snoutDeep";
+import { satchelReceiptCopy, type SatchelReceiptRoll } from "@/utils/satchel";
+import { FindTile } from "../satchel/FindTile";
 import { FindMark } from "./FindMark";
 import { Hungerer } from "./Hungerer";
 
@@ -37,6 +48,8 @@ const MARK_ART = ART_SIZE.glyphSm;
 const VALUE_MAX_W = 88;
 // The arrow between before and now — a mark beside two numerals.
 const ARROW = ART_SIZE.glyphSm;
+// The bag on the receipt: the detail-card art step, like the mark discs.
+const BAG_ART = ART_SIZE.glyph;
 
 // --- MOTION ----------------------------------------------------------------
 // The tally's cadence (spec §5.7): rows land ~350 ms apart — a beat per find,
@@ -46,6 +59,9 @@ const ARROW = ART_SIZE.glyphSm;
 // gap per tick so a big Boom lands in a few ticks and a +3 in three.
 export const ROW_STAGGER_MS = 350;
 const FIRST_ROW_MS = 450;
+// The finds drop onto their tiles half a row apart once the bag has landed —
+// each is a thing, but the bag is one beat, not a second ledger.
+export const FIND_DROP_MS = ROW_STAGGER_MS / 2;
 const COUNT_TICK_MS = 40;
 const COUNT_ROLL_DIVISOR = 4;
 
@@ -274,6 +290,112 @@ function TallyRow({
   );
 }
 
+/** The tally's bag beat: the bag, the finds dropping onto their tiles, the
+ *  words. `landed` is the beat's turn (a stagger after the last row); the
+ *  tiles then drop one by one, or all at once when hurried. The whole block
+ *  is one accessibility element reading the receipt's satchel sentence. */
+function SatchelDrop({
+  roll,
+  line,
+  landed,
+  hurried,
+}: {
+  roll: SatchelReceiptRoll;
+  line: string | null;
+  landed: boolean;
+  hurried: boolean;
+}) {
+  const policy = useMotionPolicy();
+  const scale = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!landed) {
+      scale.setValue(0);
+      opacity.setValue(0);
+      return;
+    }
+    const anim = popIn(scale, opacity, policy);
+    anim.start();
+    return () => anim.stop();
+  }, [landed, policy, scale, opacity]);
+
+  const tiles = [
+    ...roll.found.map((id) => ({ id, ghost: false })),
+    ...roll.lost.map((id) => ({ id, ghost: true })),
+  ];
+  // How many tiles have dropped: all of them under Reduce Motion or a hurry,
+  // else one more every FIND_DROP_MS once the bag has landed.
+  const [dropped, setDropped] = useState(0);
+  const all = policy.reduceMotion || hurried ? tiles.length : dropped;
+  useEffect(() => {
+    if (!landed || policy.reduceMotion || hurried || dropped >= tiles.length) return;
+    const id = setTimeout(() => setDropped((n) => Math.min(tiles.length, n + 1)), FIND_DROP_MS);
+    return () => clearTimeout(id);
+  }, [landed, policy.reduceMotion, hurried, dropped, tiles.length]);
+
+  const copy = satchelReceiptCopy(roll);
+  return (
+    <Animated.View
+      style={[styles.bagWrap, { opacity, transform: [{ scale }] }]}
+      accessibilityElementsHidden={!landed}
+      importantForAccessibility={landed ? "auto" : "no-hide-descendants"}
+      testID="dig-satchel"
+    >
+      <Sticker
+        color="paper"
+        pad
+        accessibilityRole="text"
+        accessibilityLabel={line ?? `${copy.kicker}: ${copy.line}`}
+        style={styles.bag}
+      >
+        <Glyph name="digBag" size={BAG_ART} />
+        <View style={styles.bagWords}>
+          <KickerPill star={false}>{copy.kicker}</KickerPill>
+          <View
+            style={styles.bagTiles}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {tiles.map((t, i) => (
+              <FindDrop key={`${t.id}:${i}`} id={t.id} ghost={t.ghost} dropped={i < all} />
+            ))}
+          </View>
+          <Hand tone="secondary" testID="dig-satchel-line">
+            {copy.line}
+          </Hand>
+        </View>
+      </Sticker>
+    </Animated.View>
+  );
+}
+
+/** One find dropping onto its tile (the popIn recipe; under Reduce Motion it
+ *  is simply there). An undropped tile keeps its square so the row never
+ *  grows tile by tile. */
+function FindDrop({ id, ghost, dropped }: { id: SatchelFindId; ghost: boolean; dropped: boolean }) {
+  const policy = useMotionPolicy();
+  const scale = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!dropped) {
+      scale.setValue(0);
+      opacity.setValue(0);
+      return;
+    }
+    const anim = popIn(scale, opacity, policy);
+    anim.start();
+    return () => anim.stop();
+  }, [dropped, policy, scale, opacity]);
+  return (
+    <Animated.View
+      style={{ opacity, transform: [{ scale }] }}
+      testID={`dig-satchel-${ghost ? "lost" : "find"}-${id}`}
+    >
+      <FindTile id={id} ghost={ghost} />
+    </Animated.View>
+  );
+}
+
 /** The tally's count so far: the tickles of every landed row. */
 function landedTotal(rows: readonly DigReceiptRow[], landed: number): number {
   let n = 0;
@@ -296,17 +418,22 @@ function TallyBody({
   const rows = receipt.rows;
   const before = receipt.tickledBefore;
 
-  // ── landing: rows land one by one; under Reduce Motion all are present ───
+  // ── landing: rows land one by one, then the bag; under Reduce Motion all
+  // are present. The bag is one more slot after the rows — a slot that
+  // appears when the server's receipt names the roll, which may be after
+  // every row has landed: the effect re-arms on `slots` and lands it then.
+  const roll = receipt.satchel ?? null;
+  const slots = rows.length + (roll ? 1 : 0);
   const [landed, setLanded] = useState(() => (policy.reduceMotion ? rows.length : 0));
   useEffect(() => {
-    if (policy.reduceMotion || landed >= rows.length) return;
+    if (policy.reduceMotion || landed >= slots) return;
     const id = setTimeout(
-      () => setLanded((n) => Math.min(rows.length, n + 1)),
+      () => setLanded((n) => Math.min(slots, n + 1)),
       landed === 0 ? FIRST_ROW_MS : ROW_STAGGER_MS,
     );
     return () => clearTimeout(id);
-  }, [landed, rows.length, policy.reduceMotion]);
-  const done = landed >= rows.length;
+  }, [landed, slots, policy.reduceMotion]);
+  const bagLanded = policy.reduceMotion ? roll != null : landed > rows.length;
 
   // ── the count: rolls toward the landed total; the server may re-aim it ───
   // The number reads `before + landed` when the count is known and the dig's
@@ -327,12 +454,19 @@ function TallyBody({
     return () => clearTimeout(id);
   }, [rolled, target, policy.reduceMotion]);
 
+  // Hurried: every row lands, the bag lands, every find drops, the count
+  // settles. A bag the server names AFTER a hurry still lands on its own
+  // beat (`slots` grows; the landing effect re-arms) and drops all at once.
+  const [hurried, setHurried] = useState(false);
   const hurry = useCallback(() => {
-    setLanded(rows.length);
+    setLanded(slots);
     setRolled(landedTotal(rows, rows.length));
-  }, [rows]);
+    setHurried(true);
+  }, [rows, slots]);
 
-  const settled = done && shown === target;
+  // Settled: every slot down (under Reduce Motion they all are) and the count
+  // at its target — the hurry target goes quiet.
+  const settled = (policy.reduceMotion || landed >= slots) && shown === target;
   const total = receipt.ticklesTotal;
   const nowLabel = before == null ? `+${shown}` : `${before + shown}`;
   const countLabel =
@@ -352,11 +486,6 @@ function TallyBody({
     >
       <Hand tone="secondary">{receipt.countLine}</Hand>
       {receipt.wokeLine ? <Hand tone="secondary">{receipt.wokeLine}</Hand> : null}
-      {receipt.satchelLine ? (
-        <Hand tone="secondary" testID="dig-satchel-line">
-          {receipt.satchelLine}
-        </Hand>
-      ) : null}
       <Sticker
         color={woke ? "cream2" : "sun"}
         pad
@@ -400,6 +529,9 @@ function TallyBody({
           +{total}
         </T>
       </View>
+      {roll ? (
+        <SatchelDrop roll={roll} line={receipt.satchelLine ?? null} landed={bagLanded} hurried={hurried} />
+      ) : null}
     </Pressable>
   );
 }
@@ -564,4 +696,10 @@ const styles = StyleSheet.create({
   countNum: { fontVariant: ["tabular-nums"] },
   // "the dig · +67", on the baseline under the ledger's bottom rule.
   foot: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+  // The bag beat under the foot: the bag glyph beside a column of kicker,
+  // tiles and the hand line. A row-gap above so it reads as its own beat.
+  bagWrap: { marginTop: SPACE.md },
+  bag: { flexDirection: "row", alignItems: "flex-start", columnGap: SPACE.md },
+  bagWords: { flex: 1, minWidth: 0, gap: SPACE.xs },
+  bagTiles: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm },
 });

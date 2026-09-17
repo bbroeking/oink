@@ -3,7 +3,7 @@
 // replays its incidents. Boards are hand-built so a test names its tiles;
 // seeds are picked so the wake stream says what the test needs.
 
-import { PATCH_COLS, SNOUT_DEEP_ACTION_CAP, TILE_DEPTH } from "../constants/dig";
+import { PATCH_COLS, SNIFF_FREE_PER_DIG, SNOUT_DEEP_ACTION_CAP, TILE_DEPTH } from "../constants/dig";
 import { generateLayeredBoard, WakeStream } from "../utils/rooting";
 import {
   decodeAction,
@@ -76,13 +76,33 @@ describe("sniff", () => {
     expect(s.ended).toBeNull();
   });
 
-  test("never ends a dig in topsoil, whatever the stream says", () => {
+  test("inside the budget a topsoil sniff never ends a dig, whatever the stream says", () => {
     for (let seed = 1; seed <= 400; seed++) {
       let s = initialState(board(seed), opts);
-      for (let tile = 0; tile < 12; tile++) s = act(s, "sniff", tile);
+      for (let tile = 0; tile < SNIFF_FREE_PER_DIG; tile++) s = act(s, "sniff", tile);
       expect(s.ended).toBeNull();
-      expect(s.actions).toHaveLength(12);
+      expect(s.actions).toHaveLength(SNIFF_FREE_PER_DIG);
     }
+  });
+
+  test("past the budget a sniff draws his attention: +1 per extra sniff, capped at the shove (2026-09-16)", () => {
+    // Thresholds the k-th sniff rolls at (k 1-based): five at 0, then 1, 2, 3 …
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 14, 15].map((prior) => wakeThreshold(0, "sniff", false, prior)))
+      .toEqual([0, 0, 0, 0, 0, 1, 2, 3, 10, 10]);
+    expect(wakeThreshold(1, "sniff", false, 5)).toBe(4); // mud 3 + 1
+    expect(wakeThreshold(2, "sniff", true, 5)).toBe(5); // co-op root 4 + 1
+    expect(wakeThreshold(0, "rub", false, 40)).toBe(1); // rubs never take attention
+    expect(wakeThreshold(2, "shove", false, 40)).toBe(40);
+    // The sixth topsoil sniff CAN wake him: a seed whose sixth draw is 0.
+    const seed = seedWhere(6, (d, k) => k < 5 || d === 0);
+    let s = initialState(board(seed), opts);
+    for (let tile = 0; tile < 6; tile++) s = act(s, "sniff", tile);
+    expect(s.ended).toEqual({ reason: "wake", layer: 0, wokeOn: "s0:5" });
+    // …and only the sixth: the same six sniffs on a stream whose sixth draw is 1 survive.
+    const seed2 = seedWhere(6, (d, k) => k < 5 || d === 1);
+    let s2 = initialState(board(seed2), opts);
+    for (let tile = 0; tile < 6; tile++) s2 = act(s2, "sniff", tile);
+    expect(s2.ended).toBeNull();
   });
 
   test("costs a little below topsoil: mud sniffs wake at 3/120, topsoil rubs at 1/120", () => {
@@ -330,9 +350,15 @@ describe("tie · cap · close", () => {
     expect(s.layersTied).toEqual([1]);
   });
 
+  // The k-th draw (0-based) of a run of sniffs below the root: 22 in topsoil,
+  // the rest in the mud. Past the budget the sniffs roll (2026-09-16), so the
+  // seed must miss every one of them.
+  const sniffRunMisses = (d: number, k: number) =>
+    d >= wakeThreshold(k < 22 ? 0 : 1, "sniff", false, k);
+
   test("the 45th action ends as cap (= tie), banking the loose truffle", () => {
-    // 42 sniffs below the root never roll; the three mud shoves must miss.
-    let s = initialState(board(seedWhere(45, (d, k) => k < 42 || d >= 20)), opts);
+    // 42 sniffs below the root must all miss; so must the three mud shoves.
+    let s = initialState(board(seedWhere(45, (d, k) => (k < 42 ? sniffRunMisses(d, k) : d >= 20))), opts);
     // 44 sniffs across three layers (sniffs never move mud, so tiles stay
     // sniffable once per layer), then the truffle on the 45th.
     for (let i = 0; i < 30 && s.actions.length < 22; i++) s = act(s, "sniff", i);
@@ -349,9 +375,9 @@ describe("tie · cap · close", () => {
   });
 
   test("a wake on the 45th action wins over the cap", () => {
-    // 44 sniffs below the root never roll; the 45th is a mud rub (6) and the
+    // 44 sniffs below the root must all miss; the 45th is a mud rub (6) and the
     // seed's 45th draw is under it.
-    const seed = seedWhere(45, (d, k) => k < 44 || d < 6);
+    const seed = seedWhere(45, (d, k) => (k < 44 ? sniffRunMisses(d, k) : d < 6));
     let s = initialState(board(seed), opts);
     for (let i = 0; i < 30 && s.actions.length < 22; i++) s = act(s, "sniff", i);
     s = descend(s);
