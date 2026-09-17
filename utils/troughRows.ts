@@ -58,17 +58,21 @@ export function troughPillLabel(open: number, receipts: number): string {
 }
 
 /**
- * The one Trough Home shows (the yard trough, the fan row's hand line): the
- * open drive nearest full — the herd's leading effort — ties to the one
- * closing soonest. A drive you can no longer chip into (your quarter is in)
- * still leads; the tag then says so. Null when nothing is open.
+ * The one Trough Home shows (the yard trough, the fan row's hand line): a
+ * FRIEND's open drive nearest full — the herd's leading effort — ties to the
+ * one closing soonest. Never your own (founder, 2026-09-16: "friends only" —
+ * the thing in the yard invites a chip-in, and you can't chip into your own
+ * ask; yours lives in the store). A friend's drive you can no longer chip
+ * into (your quarter is in) still leads; the tag then says so. Null when no
+ * friend's Trough is open.
  */
-export function leadingTroughDrive<T extends Pick<TroughDrive, "target" | "raised" | "closes_at">>(
+export function leadingTroughDrive<T extends Pick<TroughDrive, "target" | "raised" | "closes_at" | "is_mine">>(
 	drives: readonly T[],
 ): T | null {
 	let best: T | null = null;
 	let bestFrac = -1;
 	for (const d of drives) {
+		if (d.is_mine) continue;
 		const frac = d.target > 0 ? d.raised / d.target : 0;
 		if (
 			best === null ||
@@ -86,7 +90,7 @@ export function leadingTroughDrive<T extends Pick<TroughDrive, "target" | "raise
 export function troughYardOffer(
 	d: Pick<TroughDrive, "is_mine" | "target" | "raised" | "my_contribution">,
 ): string {
-	if (d.is_mine) return "ask your Sounder ›";
+	if (d.is_mine) return "ask your Sounder ›"; // unreachable from the yard (friends only); kept for the row
 	const state = troughRowState(d);
 	if (state.gap === 0) return "landed ›";
 	if (state.quarterFilled) return "your quarter is in ›";

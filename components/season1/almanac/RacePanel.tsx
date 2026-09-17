@@ -275,7 +275,7 @@ function LiveRaceView({
 							<TickleIcon size={ART_SIZE.glyphSm} />
 						</Avatar>
 					}
-					title="Your Monday tickle draw"
+					title={mondayDraw.drawn ? "Your Monday purse, drawn" : "Your Monday tickle draw"}
 					sub={drawLine(mondayDraw)}
 					trailing={
 						<Icon name="chevronRight" size={ART_SIZE.glyphSm} color={UI_COLORS.textSecondary} />
@@ -631,12 +631,21 @@ function HerdPrizeRow({
 	);
 }
 
-function drawLine(d: Pick<MondayDrawState, "mondaysSinceRare" | "nextRareOddsOneIn">): string {
+// Undrawn, the row sells the odds; drawn, it is the receipt — the amount is
+// already in the snout's count, so the row must not read as a purse still
+// waiting (the "it didn't clear" report, 2026-09-17).
+function drawLine(
+	d: Pick<MondayDrawState, "drawn" | "amount" | "mondaysSinceRare" | "nextRareOddsOneIn">,
+): string {
+	const oneIn = Math.max(1, Math.round(d.nextRareOddsOneIn));
+	if (d.drawn && d.amount != null) {
+		return `${d.amount} tickles pocketed · 1 in ${oneIn} for rare or better next Monday`;
+	}
 	const since =
 		d.mondaysSinceRare <= 0
 			? "a rare last Monday"
 			: `${countWord(d.mondaysSinceRare)} ${d.mondaysSinceRare === 1 ? "Monday" : "Mondays"} since a rare`;
-	return `${since} · 1 in ${Math.max(1, Math.round(d.nextRareOddsOneIn))} for rare or better`;
+	return `${since} · 1 in ${oneIn} for rare or better`;
 }
 
 // "ends Monday" while far out, "ends in 22h" in the last day, "ends any moment" at the bell.

@@ -17,6 +17,11 @@
 //     Motion), the hit tile wears `you`, and `Pocket N tickles` closes the
 //     sheet (the tickles are already in the snout's count — pocketing is the
 //     snout's beat, not a second write).
+//   · POCKETED — the week was already drawn when this open began (the Race
+//     panel's row reopens the result any time). The disc holds the amount,
+//     the title is a receipt (`60 tickles, pocketed.`) and the button is
+//     `Back to the race` — never a second `Pocket`, which read as a claim
+//     that hadn't cleared (2026-09-17).
 //
 // No shame: a week without a dig is `No purse this Monday. Dig any feeding
 // and next one's yours.` — a door, not a verdict. The warming row tells the
@@ -66,6 +71,12 @@ const DRAWING_TITLE = "Drawing your purse…";
 const FAILED_TITLE = "The purse slipped — try again.";
 const DRAW_LABEL = "Draw your Monday purse";
 const DRAWING_LABEL = "drawing your purse";
+const POCKETED_LABEL = "Back to the race";
+
+/** The receipt title for a reopened, already-pocketed purse. */
+export function pocketedTitle(amount: number): string {
+	return `${amount} tickles, pocketed.`;
+}
 
 interface Props {
 	open: boolean;
@@ -99,12 +110,21 @@ export function MondayDrawSheet({
 	const [failed, setFailed] = useState(false);
 	// Each open starts afresh (a peek), however the last one was closed.
 	const [seenOpen, setSeenOpen] = useState(open);
+	// Was the week already drawn when this open began? Captured from the first
+	// state this open sees (the state can land after the sheet does), and
+	// before any tap flips `drawn` — so a purse drawn THIS open still gets its
+	// reveal, and one drawn earlier reads as the receipt it is.
+	const [drawnAtOpen, setDrawnAtOpen] = useState<boolean | null>(null);
 	if (open !== seenOpen) {
 		setSeenOpen(open);
+		setDrawnAtOpen(null);
 		if (open) {
 			setTapped(false);
 			setFailed(false);
 		}
+	}
+	if (open && drawnAtOpen === null && state) {
+		setDrawnAtOpen(state.drawn);
 	}
 	// An autoDraw open is "asked" from its first frame; the effect below sends
 	// the one request once the state says the week is drawable.
@@ -138,6 +158,7 @@ export function MondayDrawSheet({
 
 	const tiers = state?.tuning.tiers ?? MONDAY_DRAW_TUNING.tiers;
 	const revealed = !!state && state.drawn && state.amount != null && state.tier != null;
+	const pocketed = revealed && drawnAtOpen === true;
 	const peeking = !!state && state.eligible && !state.drawn && !asked;
 	const drawing = !!state && state.eligible && !revealed && asked && !failed;
 
@@ -146,6 +167,18 @@ export function MondayDrawSheet({
 		footer = (
 			<Button variant="lilac" full onPress={close} testID="monday-draw-done">
 				Back to the race
+			</Button>
+		);
+	} else if (pocketed) {
+		footer = (
+			<Button
+				variant="lilac"
+				full
+				onPress={close}
+				accessibilityHint="Closes the sheet; this week's purse is already in your count"
+				testID="monday-draw-done"
+			>
+				{POCKETED_LABEL}
 			</Button>
 		);
 	} else if (peeking || failed) {
@@ -198,9 +231,11 @@ export function MondayDrawSheet({
 				<View style={styles.body}>
 					<PurseDisc amount={revealed ? state.amount : null} />
 					<PageTitle align="center" accessibilityRole="header" testID="monday-draw-verdict">
-						{revealed && state.tier
-							? verdictFor(state.tier)
-							: failed
+						{pocketed && state.amount != null
+							? pocketedTitle(state.amount)
+							: revealed && state.tier
+								? verdictFor(state.tier)
+								: failed
 								? FAILED_TITLE
 								: drawing
 									? DRAWING_TITLE

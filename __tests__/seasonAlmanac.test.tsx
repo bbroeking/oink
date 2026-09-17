@@ -572,6 +572,26 @@ describe("RacePanel", () => {
 		act(() => r.unmount());
 	});
 
+	test("a drawn purse's row is the receipt — the amount pocketed, never a purse still waiting", async () => {
+		const drawn: MondayDrawState = { ...draw, drawn: true, amount: 60, tier: "good", mondaysSinceRare: 1, nextRareOddsOneIn: 8 };
+		const r = await render(
+			<RacePanel
+				raceRun={raceRun()}
+				myCrewId="c1"
+				onOinkHerd={jest.fn()}
+				onGoHerd={jest.fn()}
+				mondayDraw={drawn}
+				onOpenMondayDraw={jest.fn()}
+			/>
+		);
+		const text = textOf(r.root);
+		expect(text).toContain("Your Monday purse, drawn");
+		expect(text).toContain("60 tickles pocketed · 1 in 8 for rare or better next Monday");
+		expect(text).not.toContain("since a rare");
+		expect(r.root.findAllByProps({ testID: "race-monday-draw-cta" })).toHaveLength(0);
+		act(() => r.unmount());
+	});
+
 	test("Monday: the race is run, last week's finals, the spoils ladder and the purse CTA", async () => {
 		const open = jest.fn();
 		const r = await render(

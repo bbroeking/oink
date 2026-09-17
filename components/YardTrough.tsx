@@ -3,7 +3,8 @@
 // Rosie's ground plane — the slop level as a notched track, the opener's pig
 // peeking over the rim. Diegetic accessories are allowed for things in the
 // yard, never for actions (taste-standard, 2026-09-13): chipping in lives in
-// the Trough sheet; this is only the herd's leading Trough, standing there.
+// the Trough sheet; this is only the herd's leading Trough, standing there —
+// a FRIEND's, never yours (founder, 2026-09-16): it invites a chip-in.
 //
 // COLLAPSED BY DEFAULT, like the mound. Tap the trough and a paper tag unfolds
 // beside it with the count and the offer — "140 of 200 · chip in 25 ›" — and

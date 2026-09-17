@@ -87,7 +87,13 @@ describe("troughPillLabel", () => {
 import { leadingTroughDrive, troughYardOffer } from "@/utils/troughRows";
 
 describe("leadingTroughDrive", () => {
-	const d = (id: string, raised: number, target: number, closes_at: string) => ({ id, raised, target, closes_at });
+	const d = (id: string, raised: number, target: number, closes_at: string, is_mine = false) => ({ id, raised, target, closes_at, is_mine });
+	it("never picks my own Trough — friends only (2026-09-16)", () => {
+		const mine = d("mine", 190, 200, "2026-09-20T00:00:00Z", true);
+		const theirs = d("theirs", 20, 200, "2026-09-21T00:00:00Z");
+		expect(leadingTroughDrive([mine, theirs])?.id).toBe("theirs");
+		expect(leadingTroughDrive([mine])).toBeNull();
+	});
 	it("is null when nothing is open", () => {
 		expect(leadingTroughDrive([])).toBeNull();
 	});

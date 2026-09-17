@@ -793,9 +793,10 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const satchel = useSatchel();
 	const [satchelOpen, setSatchelOpen] = useState(false);
 
-	// THE TROUGH (SKILL.md 2026-09-16): the herd's leading open Trough stands
+	// THE TROUGH (SKILL.md 2026-09-16): a friend's leading open Trough stands
 	// in the yard beside the mound and rides the fan as a row; both open the
-	// Trough sheet. Nothing open → no trough, no row: the yard stays a painting.
+	// Trough sheet. Never your own ask (friends only) — nothing open → no
+	// trough, no row: the yard stays a painting.
 	const trough = useTroughDrives();
 	const leadingTrough = leadingTroughDrive(trough.drives);
 	const [troughOpen, setTroughOpen] = useState(false);

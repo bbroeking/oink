@@ -163,7 +163,7 @@ describe("MondayDrawSheet", () => {
 		expect(textOf(renderer.root)).toContain("Pocket 150 tickles");
 	});
 
-	it("does not draw an already-drawn week, even with autoDraw", async () => {
+	it("does not draw an already-drawn week, even with autoDraw — and reads as the receipt", async () => {
 		const onDraw = jest.fn(async () => null);
 		const onClose = jest.fn();
 		let renderer!: TestRenderer.ReactTestRenderer;
@@ -174,12 +174,50 @@ describe("MondayDrawSheet", () => {
 		});
 		expect(onDraw).not.toHaveBeenCalled();
 		const text = textOf(renderer.root);
-		expect(text).toContain("Jackpot.");
+		// Pocketed before this open: the title is the receipt, the button is a
+		// door back — never a second `Pocket` (which read as an uncleared claim).
+		expect(text).toContain("400 tickles, pocketed.");
+		expect(text).not.toContain("Pocket 400 tickles");
 		expect(text).toContain("Every Monday without a rare warms the next: 1 in 8 for rare or better.");
+		expect(renderer.root.findAllByProps({ testID: "monday-draw-pocket" })).toHaveLength(0);
 		await act(async () => {
-			renderer.root.findByProps({ testID: "monday-draw-pocket" }).props.onPress();
+			renderer.root.findByProps({ testID: "monday-draw-done" }).props.onPress();
 		});
 		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("reads as the receipt when the drawn state lands after the sheet opens", async () => {
+		const onDraw = jest.fn(async () => null);
+		let renderer!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			renderer = TestRenderer.create(mount(null, onDraw));
+		});
+		await act(async () => {
+			renderer.update(mount(baseState({ drawn: true, amount: 60, tier: "good", mondaysSinceRare: 1, nextRareOddsOneIn: 8 }), onDraw));
+		});
+		expect(onDraw).not.toHaveBeenCalled();
+		expect(textOf(renderer.root)).toContain("60 tickles, pocketed.");
+		expect(renderer.root.findAllByProps({ testID: "monday-draw-pocket" })).toHaveLength(0);
+		expect(renderer.root.findByProps({ testID: "monday-draw-done" })).toBeTruthy();
+	});
+
+	it("a purse drawn this open keeps its reveal and its Pocket beat", async () => {
+		const drawn = baseState({ drawn: true, amount: 60, tier: "good", mondaysSinceRare: 1, nextRareOddsOneIn: 8 });
+		const onDraw = jest.fn(async () => drawn);
+		let renderer!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			renderer = TestRenderer.create(mount(baseState(), onDraw));
+		});
+		await act(async () => {
+			renderer.root.findByProps({ testID: "monday-draw-draw" }).props.onPress();
+		});
+		await act(async () => {
+			renderer.update(mount(drawn, onDraw));
+		});
+		const text = textOf(renderer.root);
+		expect(text).toContain("A good purse.");
+		expect(text).toContain("Pocket 60 tickles");
+		expect(text).not.toContain("pocketed.");
 	});
 
 	it("shows the warm not-eligible line — a door, not a verdict — and never draws", async () => {
