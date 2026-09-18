@@ -116,15 +116,11 @@ interface Props {
 	// belongs to the closet section, not to the page).
 	storeContent?: ReactNode;
 	// Fires when the fitting room scrolls off the top (and back on). The store
-	// shows its folded strip on this.
+	// rests the hero pig on this.
 	onFoldChange?: (folded: boolean) => void;
-	// Fires when the "Your closet" crown reaches the top (and when it leaves).
-	// The store hides its folded strip on this: the strip is an overlay with no
-	// layout height, so inside the catalog it simply sat on the top row of
-	// tiles (the shop-IA pass, 2026-09-17).
-	onClosetReached?: (reached: boolean) => void;
-	// How much of the top of this list something else is sitting on — the
-	// store's folded strip. `scrollToCloset` lands the crown just under it.
+	// How much of the top of this list something else is sitting on.
+	// `scrollToCloset` lands the crown just under it. (The folded strip that
+	// sat there retired 2026-09-18.)
 	closetScrollInset?: number;
 }
 
@@ -309,7 +305,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		storeContent,
 		closetScrollInset = 0,
 		onFoldChange,
-		onClosetReached,
 	}: Props,
 	ref,
 ) {
@@ -498,7 +493,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 	// A scroll asked for before the crown has laid out (a deep link landing on
 	// a cold list) waits for the measurement rather than scrolling to nowhere.
 	const closetPending = useRef(false);
-	const inCloset = useRef(false);
 
 	const scrollToClosetOffset = useCallback(() => {
 		listRef.current?.scrollToOffset({
@@ -541,17 +535,8 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 					onFoldChange(next);
 				}
 			}
-			if (onClosetReached && closetAnchorY.current > 0) {
-				// Same band, same reason — the crown's top edge is the seam.
-				const closetAt = CONTENT_TOP + closetAnchorY.current - FOLD_BAND;
-				const next = y >= closetAt;
-				if (next !== inCloset.current) {
-					inCloset.current = next;
-					onClosetReached(next);
-				}
-			}
 		},
-		[onClosetReached, onFoldChange],
+		[onFoldChange],
 	);
 
 	// Slot chips map 1:1 to the sections below: show a chip only for a slot you
@@ -674,7 +659,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 			style={styles.root}
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
-			onScroll={onFoldChange || onClosetReached ? handleScroll : undefined}
+			onScroll={onFoldChange ? handleScroll : undefined}
 			scrollEventThrottle={SCROLL_THROTTLE}
 			data={closetRows}
 			keyExtractor={(row) => row.key}

@@ -8,10 +8,6 @@ const closet = fs.readFileSync(
 	path.join(ROOT, "components/ClosetView.tsx"),
 	"utf8",
 );
-const strip = fs.readFileSync(
-	path.join(ROOT, "components/shop/FittingStrip.tsx"),
-	"utf8",
-);
 
 // The Closet stopped being a room (the hero fitting room, 2026-09-17): the
 // store is one scroll, so every old link INTO the wardrobe now lands on the
@@ -81,15 +77,11 @@ describe("the store is one scroll", () => {
 		expect(shop).toContain("onFoldChange={setFolded}");
 		expect(shop).toContain("ref={closetRef}");
 		expect(shop).toContain("closetRef.current?.scrollToCloset()");
-		expect(shop).toContain("<FittingStrip");
 	});
 
-	it("stands the folded strip down once the catalog's crown is up", () => {
-		expect(shop).toContain("onClosetReached={setInCloset}");
-		expect(shop).toContain("visible={folded && !inCloset}");
-		// The strip is a reminder, not a door: no Closet chip on it.
-		expect(strip).not.toContain("onPressCloset");
-		expect(strip).not.toContain("Closet · ");
+	it("carries no folded 'wearing N of M' strip (retired 2026-09-18 — not necessary)", () => {
+		expect(shop).not.toContain("FittingStrip");
+		expect(fs.existsSync(path.join(ROOT, "components/shop/FittingStrip.tsx"))).toBe(false);
 	});
 
 	it("hangs only the two doors, and both of them leave the page", () => {
@@ -110,11 +102,11 @@ describe("the store is one scroll", () => {
 		expect(closet).toContain("{storeContent ? null : prestigeBanner}");
 	});
 
-	it("exposes the scroll-to-closet handle and both scroll callbacks", () => {
+	it("exposes the scroll-to-closet handle and the fold callback (the crown callback went with the strip)", () => {
 		expect(closet).toContain("ClosetViewHandle");
 		expect(closet).toContain("useImperativeHandle(ref, () => ({ scrollToCloset })");
 		expect(closet).toContain("onFoldChange");
-		expect(closet).toContain("onClosetReached");
+		expect(closet).not.toContain("onClosetReached");
 	});
 
 	it("gives the Pen its own route, with the way back to the shop", () => {

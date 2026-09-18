@@ -40,7 +40,6 @@ import { HangingSign } from "@/components/shop/HangingSign";
 import { Chalkboard } from "@/components/shop/Chalkboard";
 import { Shelf, ShelfItem, SlopClubShelf } from "@/components/shop/Shelf";
 import { Counter } from "@/components/shop/Counter";
-import { FittingStrip } from "@/components/shop/FittingStrip";
 import { HatRow } from "@/constants/hats";
 import {
   cardTag,
@@ -50,11 +49,7 @@ import {
 } from "@/utils/shopShelves";
 import { resolveShopParams } from "@/utils/shopNav";
 import { SHOP_SIGN_LABELS_MIN } from "@/constants/layoutBreakpoints";
-import {
-  columnForCategory,
-  columnsForSlot,
-  SLOT_ORDER,
-} from "@/constants/slots";
+import { columnForCategory } from "@/constants/slots";
 import {
   UI_COLORS,
   BORDER,
@@ -391,16 +386,12 @@ export default function ShopScreen() {
   const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
   const [prestigeOnly, setPrestigeOnly] = useState(false);
   // The store's one scroller, and the two things the screen drives on it: the
-  // folded strip (shown once the fitting room scrolls off) and the imperative
-  // jump to "Your closet" that every Closet door now performs.
+  // fold (the hero fitting room scrolled off — the hero pig rests while it is
+  // off screen) and the imperative jump to "Your closet" that every Closet
+  // door now performs. (The folded "wearing N of M" strip that rode the fold
+  // retired 2026-09-18 — founder: "it's not necessary".)
   const closetRef = useRef<ClosetViewHandle>(null);
   const [folded, setFolded] = useState(false);
-  // Once the catalog's crown reaches the top the strip stands down: it is an
-  // overlay with no layout height, so inside "Your closet" it sat on the top
-  // row of tiles (the shop-IA pass, 2026-09-17).
-  const [inCloset, setInCloset] = useState(false);
-  // The strip's bottom edge — what the jump to "Your closet" has to clear.
-  const [stripBottom, setStripBottom] = useState(0);
   const [closetPending, setClosetPending] = useState(false);
   // The Trough left the store 2026-09-17: it is reached from the Barn
   // button's fan and nowhere else (its sheet, the counter trough and the
@@ -776,21 +767,6 @@ export default function ShopScreen() {
     </View>
   );
 
-  // What the folded strip says, and what it puts on the little pig.
-  const stageSlot = (column: string) => {
-    const id = activeIds[column];
-    if (!id) return null;
-    const catalogItem = allItems.find((candidate) => candidate.id === id);
-    return {
-      id,
-      category: catalogItem?.category ?? null,
-      emoji: catalogItem?.emoji ?? null,
-    };
-  };
-  const wornSlots = SLOT_ORDER.filter((s) =>
-    columnsForSlot(s).some((c) => activeIds[c]),
-  ).length;
-
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -864,28 +840,6 @@ export default function ShopScreen() {
               onClearPrestigeFilter={() => setPrestigeOnly(false)}
               storeContent={storeWall}
               onFoldChange={setFolded}
-              onClosetReached={setInCloset}
-              closetScrollInset={stripBottom}
-            />
-            {/* The fitting room, folded — it pins over the wall once the hero
-                has scrolled off, and lets every tap behind it through. It
-                stands down at the catalog's crown, where it would otherwise
-                sit on the first row of tiles. */}
-            <FittingStrip
-              visible={folded && !inCloset}
-              pigId={pigRoster.roster.activePigId}
-              slots={{
-                hat: stageSlot("active_hat_id"),
-                bow: stageSlot("active_bow_id"),
-                glasses: stageSlot("active_glasses_id"),
-                mask: stageSlot("active_mask_id"),
-                neck: stageSlot("active_neck_id"),
-                aura: stageSlot("active_aura_id"),
-                held: stageSlot("active_held_id"),
-              }}
-              worn={wornSlots}
-              slotCount={SLOT_ORDER.length}
-              onMeasure={setStripBottom}
             />
           </View>
         )}
@@ -950,8 +904,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.md,
     paddingVertical: SPACE.sm,
   },
-  // The list area — the store's one scroller, with the folded strip pinned
-  // over the top of it.
+  // The list area — the store's one scroller.
   listArea: { flex: 1, position: "relative" },
   // The door: chalkboard left, the hanging signs right, on one line under
   // the crown. The row's top pad is the badge's clearance: a sign's count
