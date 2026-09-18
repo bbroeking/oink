@@ -59,6 +59,18 @@ export interface RelSpec {
 	// Render behind the pig (true) or in front (false/undefined).
 	// Set per-item in tools/placement_studio.py.
 	behind?: boolean;
+	// Per-pose override (2026-09-17). Fields here replace the base spec for that
+	// animation family only (shallow merge, resolved in PigStage.resolveSlot);
+	// the render-only variants (bounce, sit) resolve through pigAnchorAnimation
+	// to their source family. Meant for a side sprite (a different silhouette
+	// wants its own pivot / width) and for one-eyed items on the turn — the base
+	// spec stays the front truth. Written by tools/placement_studio.
+	perAnim?: Partial<
+		Record<
+			PigAnimationKey,
+			Partial<Pick<RelSpec, "pivot" | "widthFrac" | "anchor" | "behind">>
+		>
+	>;
 }
 
 // Re-export so this module is the single source of truth for both

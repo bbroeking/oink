@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
-  Image,
   SafeAreaView,
-  ScrollView,
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
@@ -12,26 +10,19 @@ import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { useShopCatalog } from "@/hooks/useShopCatalog";
-import { useTroughDrives } from "@/hooks/useTroughDrives";
 import { usePigRoster } from "@/hooks/usePigRoster";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useScreenReader } from "@/hooks/useScreenReader";
 import { cosmeticAccessibility, equipCosmetic } from "@/utils/cosmetics";
 import { formatCountdownHM } from "@/utils/duration";
-import { IAP_ENABLED, presentPaywall, OFFERING_IDS } from "../../utils/iap";
-import { joinSlopClubAndRecruit } from "@/utils/joinSlopClub";
-import { recruitPig } from "@/utils/pigRoster";
-import { pigDefinition, type PigId } from "@/utils/pigs";
 import {
   BuyCelebration,
   Button,
   EmptyState,
-  Glyph,
   Icon,
   LoadingBeat,
   Numeral,
   PageHeader,
-  POPUP_HANDOFF_GAP_MS,
   Ribbon,
   SectionHeader,
   SnoutCoin,
@@ -40,21 +31,30 @@ import {
   Tag,
   type BuyCelebrationHandle,
 } from "../../components/ui";
-import { ClosetView } from "../../components/ClosetView";
-import { PigPenView } from "../../components/PigPenView";
+import {
+  ClosetView,
+  type ClosetViewHandle,
+} from "../../components/ClosetView";
 import { HatThumb } from "@/components/shop/HatThumb";
 import { HangingSign } from "@/components/shop/HangingSign";
 import { Chalkboard } from "@/components/shop/Chalkboard";
 import { Shelf, ShelfItem, SlopClubShelf } from "@/components/shop/Shelf";
-import { TroughByCounter } from "@/components/shop/TroughByCounter";
 import { Counter } from "@/components/shop/Counter";
-import { TroughSheet } from "@/components/shop/TroughSheet";
-import { DrawRevealSheet } from "@/components/season1/DrawRevealSheet";
-import type { BarnPrize } from "@/utils/barnDraw";
+import { FittingStrip } from "@/components/shop/FittingStrip";
 import { HatRow } from "@/constants/hats";
-import { HABITAT_CHROME_ASSETS } from "@/constants/habitat";
-import { chunkShelves } from "@/utils/shopShelves";
-import { columnForCategory } from "@/constants/slots";
+import {
+  cardTag,
+  cardTagFace,
+  cardTapAction,
+  chunkShelves,
+} from "@/utils/shopShelves";
+import { resolveShopParams } from "@/utils/shopNav";
+import { SHOP_SIGN_LABELS_MIN } from "@/constants/layoutBreakpoints";
+import {
+  columnForCategory,
+  columnsForSlot,
+  SLOT_ORDER,
+} from "@/constants/slots";
 import {
   UI_COLORS,
   BORDER,
@@ -63,11 +63,9 @@ import {
   RADII,
   PAGE_PAD,
   SHADOW_SM,
-  TAB_SAFE,
   TINT,
   RARITY_BG_SOLID,
   RARITY_STRIPE,
-  WOOD,
 } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -87,9 +85,6 @@ const LEGEND_DOT = 12;
 const OWNED_BADGE = 26;
 /** Marks riding inside those badges / chips. */
 const CHECK_MARK = 14;
-/** The square paper chip that opens the Golden Ticket scanner. */
-const TICKET_CHIP = 40;
-const TICKET_GLYPH = 20;
 const COIN_MARK = 20;
 /** The card thumbnail's letterbox: a touch wider than it is tall. */
 const THUMB_RATIO = 1.18;
@@ -104,8 +99,6 @@ const GRID_GAP = SPACE.md;
 const PER_SHELF = 3;
 /** The plank wall's faint horizontal grain: one hairline every so often. */
 const WALL_STRIPE_PITCH = 48;
-/** The barn-door art on the Furnish sign — art in the icon slot, not an Icon. */
-const DOOR_ART = { width: 20, height: 22 } as const;
 /**
  * Where the buy burst fires when the tile's measured centre is missing (a
  * race, or the card unmounted under the refetch) — a mid-screen fallback.
@@ -114,8 +107,10 @@ const FALLBACK_BURST = { x: 200, y: 400 };
 
 const RARITIES = ["common", "uncommon", "rare", "epic", "legendary"] as const;
 
-// "daily" is the store itself; Closet and Pen hang as signs by the door.
-type ShopView = "daily" | "wardrobe" | "pen";
+// The Shop tab is ONE room: the fitting room, the doorway, the shelves, the
+// counter, the catalog, on one scroll (2026-09-17). The Pen and Furnish are
+// pushed routes behind their signs — a hanging sign always leaves the page —
+// and `utils/shopNav` holds the rule that redirects an old `?view=pen` link.
 
 // ── Shop redesign (Claude Design handoff, Shop Layout.html) ─────────
 // Less text, more readable: rarity is a COLOR DOT + one legend (no word
@@ -152,16 +147,21 @@ function ShopCard({
   owned,
   active,
   canAfford,
+  inDrop,
   index,
   locked,
   membersOnly,
   onPress,
+  onLongPress,
   onCenter,
 }: {
   item: HatRow;
   owned: boolean;
   active: boolean;
   canAfford: boolean;
+  // On today's shelf — the only day it can be bought (the price goes muted
+  // otherwise, one grammar with the coaster).
+  inDrop: boolean;
   // Position in the grid — drives the alternating ±0.5° sticker tilt.
   index: number;
   // Members-only item + caller isn't a Slop Club member → the ribbon says so
@@ -170,7 +170,10 @@ function ShopCard({
   // Members-only item, regardless of VIP status. Drives the MEMBERS ribbon —
   // which stays for members too (it's Slop Club identity, not a lock).
   membersOnly?: boolean;
+  // An owned card wears / takes off on tap (cardTapAction); an unowned one
+  // opens the sheet. Long press opens the sheet for an owned card.
   onPress: () => void;
+  onLongPress?: () => void;
   // Reports the card's window-space center (the buy celebration anchor).
   onCenter?: (x: number, y: number) => void;
 }) {
@@ -180,7 +183,11 @@ function ShopCard({
   // ownership, its cost and what a tap will do. [D-03] (2026-09-11)
   const a11y = cosmeticAccessibility(
     { name: item.name, rarity, cost: item.cost },
-    { owned, active, locked, canAfford, action: "preview" },
+    { owned, active, locked, canAfford, action: owned ? "equip" : "preview" },
+  );
+  // One grammar for every card in the store (utils/shopShelves cardTag).
+  const face = cardTagFace(
+    cardTag(item, { owned, active, inDrop, canAfford, locked: !!locked }),
   );
   return (
     <View
@@ -199,6 +206,7 @@ function ShopCard({
         rotate={index % 2 === 0 ? -CARD_TILT : CARD_TILT}
         radius={RADII.xl}
         onPress={onPress}
+        onLongPress={onLongPress}
         accessibilityLabel={a11y.accessibilityLabel}
         accessibilityHint={a11y.accessibilityHint}
         accessibilityState={a11y.accessibilityState}
@@ -241,30 +249,17 @@ function ShopCard({
           <T role="cardTitleSm" numberOfLines={1}>
             {item.name}
           </T>
-          {owned ? (
-            <Tag
-              tone="sage"
-              icon="check"
-              label={active ? "Wearing" : "Owned"}
-              style={shopCardStyles.footTag}
-            />
-          ) : item.cost <= 0 ? (
-            <Tag
-              tone="muted"
-              label="Season pass"
-              style={shopCardStyles.footTag}
-            />
-          ) : (
-            // The price IS the action's face. Affordable wears the sun; a
-            // price you can't meet wears the muted (locked) fill rather than
-            // an opacity crush. [D-12] (2026-09-11)
-            <Tag
-              tone={canAfford ? "sun" : "muted"}
-              coin
-              label={item.cost.toLocaleString()}
-              style={shopCardStyles.footTag}
-            />
-          )}
+          {/* The tag is the action's face: "Wear" / "Wearing" for an owned
+              item, otherwise the price — sun when you can pay it today, the
+              muted (locked) fill when you cannot, never an opacity crush.
+              [D-12] (2026-09-11) */}
+          <Tag
+            tone={face.tone}
+            icon={face.icon}
+            coin={face.coin}
+            label={face.label}
+            style={shopCardStyles.footTag}
+          />
         </View>
       </Sticker>
     </View>
@@ -394,38 +389,31 @@ export default function ShopScreen() {
   };
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
-  const [view, setView] = useState<ShopView>("daily");
   const [prestigeOnly, setPrestigeOnly] = useState(false);
-  // The Trough sheet, and the row that opened it (its card comes first).
-  const [troughOpen, setTroughOpen] = useState(false);
-  const [troughFocusId, setTroughFocusId] = useState<string | null>(null);
-  const troughSummary = useTroughDrives();
-  const openTrough = useCallback((driveId?: string) => {
-    setTroughFocusId(driveId ?? null);
-    setTroughOpen(true);
-  }, []);
-  // The quarter's prize (2026-09-16): the chip that crossed a quarter drew a
-  // furnishing. The Trough sheet folds away, then the shared reveal opens on
-  // the gap every popup-to-popup hand-off keeps — two native Modals never
-  // overlap. The note under the row stays as the record.
-  const [troughPrize, setTroughPrize] = useState<BarnPrize | null>(null);
-  const [prizeOpen, setPrizeOpen] = useState(false);
-  const prizeHandoff = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (prizeHandoff.current) clearTimeout(prizeHandoff.current); }, []);
-  const showTroughPrize = useCallback((prize: BarnPrize) => {
-    setTroughPrize(prize);
-    setTroughOpen(false);
-    if (prizeHandoff.current) clearTimeout(prizeHandoff.current);
-    prizeHandoff.current = setTimeout(() => setPrizeOpen(true), POPUP_HANDOFF_GAP_MS);
-  }, []);
+  // The store's one scroller, and the two things the screen drives on it: the
+  // folded strip (shown once the fitting room scrolls off) and the imperative
+  // jump to "Your closet" that every Closet door now performs.
+  const closetRef = useRef<ClosetViewHandle>(null);
+  const [folded, setFolded] = useState(false);
+  // Once the catalog's crown reaches the top the strip stands down: it is an
+  // overlay with no layout height, so inside "Your closet" it sat on the top
+  // row of tiles (the shop-IA pass, 2026-09-17).
+  const [inCloset, setInCloset] = useState(false);
+  // The strip's bottom edge — what the jump to "Your closet" has to clear.
+  const [stripBottom, setStripBottom] = useState(0);
+  const [closetPending, setClosetPending] = useState(false);
+  // The Trough left the store 2026-09-17: it is reached from the Barn
+  // button's fan and nowhere else (its sheet, the counter trough and the
+  // quarter-prize reveal all live in components/Barn.tsx now).
   // The scene ships behind the 2-col grid as its Reduce-Motion / VoiceOver
   // fallback (taste-standard 2026-09-16, ruling 5): a screen reader gets a
   // list of cards, not a picture to find its way around by touch.
   const { reduceMotion } = useMotionPolicy();
   const screenReader = useScreenReader();
   const plainShelves = reduceMotion || screenReader;
+  // The store only needs the roster for WHICH pig stands in the fitting room;
+  // recruiting and joining moved out with the Pen (app/pen.tsx, 2026-09-17).
   const pigRoster = usePigRoster();
-  const refreshPigRoster = pigRoster.refresh;
 
   // Deep-link target: navigation from elsewhere (e.g. the battle-pass
   // reward dialog) can pass `?view=wardrobe` to jump straight there.
@@ -437,39 +425,35 @@ export default function ShopScreen() {
     trough?: string;
   }>();
   useEffect(() => {
-    if (params.view === "trough") {
-      // Compatibility for old links: the Trough is an object in the store
-      // now, not a Shop destination. Open its sheet over the store.
-      setView("daily");
-      setPrestigeOnly(false);
-      setTroughOpen(true);
-      router.setParams({ view: undefined, filter: undefined });
-    } else if (params.view === "browse") {
-      // Compatibility for old links: Collectibles now lives inside Closet.
-      setView("wardrobe");
-      setPrestigeOnly(false);
-      router.setParams({ view: undefined, filter: undefined });
-    } else if (
-      params.view === "wardrobe" ||
-      params.view === "daily" ||
-      params.view === "pen"
-    ) {
-      setView(params.view);
-      setPrestigeOnly(
-        params.view === "wardrobe" && params.filter === "prestige",
-      );
-      router.setParams({ view: undefined, filter: undefined });
+    // One rule, in one place: utils/shopNav. `?view=wardrobe` / `browse` and
+    // `?filter=prestige` are old links to a room that no longer exists — they
+    // land on the store and scroll to the closet section instead.
+    const target = resolveShopParams({
+      view: params.view,
+      filter: params.filter,
+    });
+    if (!target) return;
+    router.setParams({ view: undefined, filter: undefined });
+    // The Pen is a route now, not a view: an old link leaves the tab.
+    if (target.redirect) {
+      router.replace(target.redirect);
+      return;
     }
+    setPrestigeOnly(target.prestigeOnly);
+    if (target.scrollToCloset) setClosetPending(true);
   }, [params.filter, params.view]);
+  // The jump waits for the list: ClosetView mounts with the store, and its own
+  // handle waits again if the crown has not laid out yet.
   useEffect(() => {
-    if (params.trough === "open") {
-      setTroughOpen(true);
-      router.setParams({ trough: undefined });
-    }
+    if (!closetPending) return;
+    setClosetPending(false);
+    closetRef.current?.scrollToCloset();
+  }, [closetPending]);
+  useEffect(() => {
+    // `?trough=open` used to open the sheet here; the Trough is the Barn
+    // fan's now. Consume the param so an old link doesn't stick.
+    if (params.trough === "open") router.setParams({ trough: undefined });
   }, [params.trough]);
-  useEffect(() => {
-    if (troughSummary.loaded && troughSummary.count === 0) setTroughOpen(false);
-  }, [troughSummary.count, troughSummary.loaded]);
   // Title EQUIP UI renders inside ClosetView (the Closet view). Titles are
   // earned-only now (see 20260677) — there is no shop buy path. activeTitleId
   // + userId are sourced from the profile by useShopCatalog; the Closet reads
@@ -483,92 +467,6 @@ export default function ShopScreen() {
   // .play() after seekTo(0) is effectively instant on subsequent fires.
   const deniedPlayer = useAudioPlayer(deniedSound);
   const equipPlayer = useAudioPlayer(equipSound);
-
-  // Join Slop Club from the members band header — the SAME RevenueCat offering
-  // components/Account.tsx and the season premium unlock present. is_vip flips
-  // server-side via the webhook; re-running the catalog fetch re-reads the
-  // profile, which unlocks the members band + drops the ribbon locks.
-  const handleJoinSlopClub = useCallback(
-    async (pigId?: PigId) => {
-      if (!pigId) {
-        if (!IAP_ENABLED) {
-          showPurchaseToast({
-            type: "fail",
-            title: "Slop Club isn’t enabled in this build",
-            text: "Open a store-enabled build to join the Slop Club.",
-          });
-          return;
-        }
-        const paywall = await presentPaywall(OFFERING_IDS.slopClub);
-        if (paywall.ok) {
-          await Promise.all([refresh(), refreshPigRoster()]);
-          showPurchaseToast({
-            type: "success",
-            title: "Welcome to the Slop Club!",
-            text: "Choose Rosie’s friend in the Pen.",
-          });
-        } else if (paywall.reason !== "cancelled") {
-          showPurchaseToast({
-            type: "fail",
-            title: "Couldn’t open the Slop Club",
-            text:
-              paywall.reason === "no_offering"
-                ? "The storefront isn’t available right now. Please try again soon."
-                : "Please try again.",
-          });
-        }
-        return;
-      }
-
-      const outcome = await joinSlopClubAndRecruit(pigId, {
-        iapEnabled: IAP_ENABLED,
-        presentPaywall: () => presentPaywall(OFFERING_IDS.slopClub),
-        recruit: recruitPig,
-      });
-
-      if (outcome.kind === "cancelled") return;
-      if (outcome.kind === "unavailable") {
-        showPurchaseToast({
-          type: "fail",
-          title: "Slop Club isn’t enabled in this build",
-          text: "Open a store-enabled build to join and recruit this pig.",
-        });
-        return;
-      }
-      if (outcome.kind === "paywall_error") {
-        showPurchaseToast({
-          type: "fail",
-          title: "Couldn’t open the Slop Club",
-          text:
-            outcome.reason === "no_offering"
-              ? "The storefront isn’t available right now. Please try again soon."
-              : "Please try again.",
-        });
-        return;
-      }
-
-      await Promise.all([refresh(), refreshPigRoster()]);
-      if (outcome.kind === "joined") {
-        const pig = pigDefinition(outcome.pigId);
-        showPurchaseToast({
-          type: "success",
-          title: `${pig.name} joined the Pen!`,
-          text: "Your Slop Club membership is active.",
-        });
-        return;
-      }
-
-      showPurchaseToast({
-        type: "success",
-        title: "Membership active",
-        text:
-          outcome.reason === "membership_syncing"
-            ? "Your membership is still syncing. Try Recruit again in a moment."
-            : "The membership worked, but this pig couldn’t join yet. Try Recruit again.",
-      });
-    },
-    [refresh, refreshPigRoster],
-  );
 
   const handleBuy = async (hat: HatRow) => {
     if (busyId) return;
@@ -718,6 +616,16 @@ export default function ShopScreen() {
   const [wallH, setWallH] = useState(0);
   const stripes = Math.floor(wallH / WALL_STRIPE_PITCH);
 
+  // Owned items dress the pig from the shelf (the Closet grid's rule, back
+  // in the store 2026-09-17); anything else opens the sheet.
+  const tapCard = (item: HatRow) => {
+    const tap = cardTapAction(item.id, {
+      owned: owned.has(item.id),
+      active: isEquipped(item.id, item.category),
+    });
+    if (tap.kind === "equip") void handleEquip(tap.itemId, item.category);
+    else setPreviewItem(item);
+  };
   const shelfItem = (item: HatRow, i: number, locked = false) => (
     <ShelfItem
       key={item.id}
@@ -726,8 +634,10 @@ export default function ShopScreen() {
       owned={owned.has(item.id)}
       active={isEquipped(item.id, item.category)}
       canAfford={counter >= item.cost}
+      inDrop={buyableIds.has(item.id)}
       locked={locked}
-      onPress={() => setPreviewItem(item)}
+      onPress={() => tapCard(item)}
+      onLongPress={() => setPreviewItem(item)}
       onCenter={(x, y) => tileCenters.current.set(item.id, { x, y })}
     />
   );
@@ -739,69 +649,41 @@ export default function ShopScreen() {
         owned={owned.has(item.id)}
         active={isEquipped(item.id, item.category)}
         canAfford={counter >= item.cost}
+        inDrop={buyableIds.has(item.id)}
         membersOnly={membersOnly}
         locked={membersOnly && !isVip}
-        onPress={() => setPreviewItem(item)}
+        onPress={() => tapCard(item)}
+        onLongPress={() => setPreviewItem(item)}
         onCenter={(x, y) => tileCenters.current.set(item.id, { x, y })}
       />
     </View>
   );
 
-  // The door: the chalkboard (or, away from the store, a sign back to it) and
-  // the hanging signs. Closet and Furnish hang as signs so the counter front
-  // belongs to the pigs (ruling 3); the Pen hangs beside them so it keeps its
-  // door (Account and the paywall deep-link to it).
+  // The door: the chalkboard, and the two hanging signs beside it.
+  //
+  // THREE VERBS, THREE LOOKS (2026-09-17): a hanging sign always LEAVES the
+  // page — the Pen and Furnish are pushed routes — a chip or segment always
+  // stays on it, and a card always acts on an item. The Store and Closet signs
+  // retired with the rooms they opened: there is one room, and the catalog is a
+  // section of it. Below SHOP_SIGN_LABELS_MIN the signs drop their word and
+  // keep their painted glyph.
+  const signLabelsHidden = shopScreenW < SHOP_SIGN_LABELS_MIN;
   const doorway = (
     <View style={styles.doorway}>
-      {view === "daily" ? (
-        <Chalkboard countdown={formatCountdownHM(resetsIn)} />
-      ) : null}
+      <Chalkboard countdown={formatCountdownHM(resetsIn)} />
       <View style={styles.signs}>
-        {view !== "daily" ? (
-          <HangingSign
-            label="Store"
-            icon="shop"
-            onPress={() => {
-              setView("daily");
-              setPrestigeOnly(false);
-            }}
-            accessibilityHint="Back to the shelves"
-          />
-        ) : null}
-        <HangingSign
-          label="Closet"
-          count={owned.size}
-          icon="hat"
-          active={view === "wardrobe"}
-          onPress={() => {
-            setView("wardrobe");
-            setPrestigeOnly(false);
-          }}
-          accessibilityLabel={
-            owned.size > 0 ? `Closet, ${owned.size} owned` : "Closet"
-          }
-          accessibilityHint="Shows the items you already own"
-        />
         <HangingSign
           label="Pen"
-          icon="pig"
-          active={view === "pen"}
-          onPress={() => {
-            setView("pen");
-            setPrestigeOnly(false);
-          }}
-          accessibilityHint="Shows Rosie's friends in the Pen"
+          glyph="signPen"
+          labelHidden={signLabelsHidden}
+          onPress={() => router.push("/pen")}
+          accessibilityLabel="Pen"
+          accessibilityHint="Opens the Pen, where Rosie's friends live"
         />
         <HangingSign
           label="Furnish"
-          art={
-            <Image
-              source={HABITAT_CHROME_ASSETS.barnDoor}
-              style={styles.doorArt}
-              resizeMode="contain"
-              accessible={false}
-            />
-          }
+          glyph="barnDoor"
+          labelHidden={signLabelsHidden}
           onPress={() => router.push("/barn-collection")}
           accessibilityLabel="Furnish"
           accessibilityHint="Browse Barn furnishings to buy with Snouts or earn through play"
@@ -810,42 +692,128 @@ export default function ShopScreen() {
     </View>
   );
 
+  // The store's wall: the plank room with its faint grain, the doorway, the
+  // shelves, the members' shelf and the counter. It is no longer a scroller of
+  // its own — it rides inside the Closet's list, between the fitting room above
+  // it and the closet catalog below (2026-09-17).
+  const storeWall = (
+    <View style={styles.wall}>
+      <View
+        style={styles.room}
+        onLayout={(e: LayoutChangeEvent) =>
+          setWallH(e.nativeEvent.layout.height)
+        }
+      >
+        <View style={styles.grain} pointerEvents="none">
+          {Array.from({ length: stripes }, (_, i) => (
+            <View
+              key={i}
+              style={[styles.stripe, { top: (i + 1) * WALL_STRIPE_PITCH }]}
+            />
+          ))}
+        </View>
+        {doorway}
+        <View style={styles.shelves}>
+          {daily.length === 0 ? (
+            loading ? (
+              // Still fetching today's drop — a loading shop must never read
+              // as sold-out. Show the cozy loading beat until the fetch
+              // completes and the result is genuinely empty.
+              <LoadingBeat label="stocking the shelves" />
+            ) : (
+              <EmptyState
+                glyph="zzz"
+                title="All sold out for today"
+                sub="A fresh drop arrives at sunrise."
+              />
+            )
+          ) : plainShelves ? (
+            <>
+              <SectionHeader
+                kicker="today's drop"
+                title="Today's Drop"
+                right={`resets in ${formatCountdownHM(resetsIn)}`}
+              />
+              <RarityLegend />
+              <View style={shopCardStyles.grid}>
+                {daily.map((item, i) => gridCard(item, i))}
+              </View>
+            </>
+          ) : (
+            chunkShelves(daily, PER_SHELF).map((row, r) => (
+              <Shelf key={r}>
+                {row.map((item, i) => shelfItem(item, r * PER_SHELF + i))}
+              </Shelf>
+            ))
+          )}
+          {membersShelf.length > 0 ? (
+            plainShelves ? (
+              <>
+                <SectionHeader
+                  kicker="members only"
+                  title="Slop Club"
+                  right={isVip ? "yours to wear" : "join in the Pen"}
+                />
+                <View style={shopCardStyles.grid}>
+                  {membersShelf.map((item, i) => gridCard(item, i, true))}
+                </View>
+              </>
+            ) : (
+              <SlopClubShelf onPressSign={() => router.push("/pen")}>
+                {membersShelf.map((item, i) => shelfItem(item, i, !isVip))}
+              </SlopClubShelf>
+            )
+          ) : null}
+        </View>
+        <Counter
+          buys={counterBuys}
+          owned={owned}
+          isEquipped={isEquipped}
+          isVip={isVip}
+          onPreview={(buy) => setPreviewItem(buy.item)}
+        />
+      </View>
+    </View>
+  );
+
+  // What the folded strip says, and what it puts on the little pig.
+  const stageSlot = (column: string) => {
+    const id = activeIds[column];
+    if (!id) return null;
+    const catalogItem = allItems.find((candidate) => candidate.id === id);
+    return {
+      id,
+      category: catalogItem?.category ?? null,
+      emoji: catalogItem?.emoji ?? null,
+    };
+  };
+  const wornSlots = SLOT_ORDER.filter((s) =>
+    columnsForSlot(s).some((c) => activeIds[c]),
+  ).length;
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {/* The crown every screen wears. Balance pocket + Golden Ticket chip
-            ride the right slot; the kicker names THIS destination (it used to
-            read "your closet" above a title that says Shop). [D-15] */}
+        {/* The crown every screen wears. The snouts pocket alone rides the
+            right slot — the Golden Ticket left for Me, where redeeming a code
+            already lives (2026-09-17); the kicker names THIS destination (it
+            used to read "your closet" above a title that says Shop). [D-15] */}
         <PageHeader
           variant="tab"
           kicker="the shop"
           title="Shop"
           right={
-            <>
-              <Sticker
-                color="paper"
-                radius={RADII.md}
-                shadow="sm"
-                rotate={0}
-                onPress={() => router.push("/scan-code")}
-                accessibilityLabel="Redeem a Golden Ticket"
-                accessibilityHint="Opens the code scanner"
-                style={styles.ticketBtn}
-              >
-                <Glyph name="gift" size={TICKET_GLYPH} />
-              </Sticker>
-              <Sticker
-                color="sun"
-                radius={RADII.md}
-                rotate={BALANCE_TILT}
-                accessibilityRole="text"
-                accessibilityLabel={`${counter.toLocaleString()} snouts`}
-                style={styles.balance}
-              >
-                <SnoutCoin size={COIN_MARK} />
-                <Numeral>{counter.toLocaleString()}</Numeral>
-              </Sticker>
-            </>
+            <Sticker
+              color="sun"
+              radius={RADII.md}
+              rotate={BALANCE_TILT}
+              accessibilityRole="text"
+              accessibilityLabel={`${counter.toLocaleString()} snouts`}
+              style={styles.balance}
+            >
+              <SnoutCoin size={COIN_MARK} />
+              <Numeral>{counter.toLocaleString()}</Numeral>
+            </Sticker>
           }
         />
 
@@ -869,107 +837,16 @@ export default function ShopScreen() {
           />
         ) : null}
 
-        {error && !hasCatalogData ? null : view === "daily" ? (
-          // The store (Storefront build 2, 2026-09-16): a plank wall with the
-          // chalkboard and signs by the door, the drop three to a shelf, the
-          // members' shelf under the Slop Club sign, the Trough by the
-          // counter, and the sounder at the counter. It scrolls as one room.
-          <ScrollView
-            key="daily"
-            style={styles.wall}
-            contentContainerStyle={styles.wallContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <View
-              style={styles.room}
-              onLayout={(e: LayoutChangeEvent) =>
-                setWallH(e.nativeEvent.layout.height)
-              }
-            >
-              <View style={styles.grain} pointerEvents="none">
-                {Array.from({ length: stripes }, (_, i) => (
-                  <View
-                    key={i}
-                    style={[styles.stripe, { top: (i + 1) * WALL_STRIPE_PITCH }]}
-                  />
-                ))}
-              </View>
-              {doorway}
-              <View style={styles.shelves}>
-                {daily.length === 0 ? (
-                  loading ? (
-                    // Still fetching today's drop — a loading shop must
-                    // never read as sold-out. Show the cozy loading beat
-                    // until the fetch completes and the result is
-                    // genuinely empty.
-                    <LoadingBeat label="stocking the shelves" />
-                  ) : (
-                    <EmptyState
-                      glyph="zzz"
-                      title="All sold out for today"
-                      sub="A fresh drop arrives at sunrise."
-                    />
-                  )
-                ) : plainShelves ? (
-                  <>
-                    <SectionHeader
-                      kicker="today's drop"
-                      title="Today's Drop"
-                      right={`resets in ${formatCountdownHM(resetsIn)}`}
-                    />
-                    <RarityLegend />
-                    <View style={shopCardStyles.grid}>
-                      {daily.map((item, i) => gridCard(item, i))}
-                    </View>
-                  </>
-                ) : (
-                  chunkShelves(daily, PER_SHELF).map((row, r) => (
-                    <Shelf key={r}>
-                      {row.map((item, i) => shelfItem(item, r * PER_SHELF + i))}
-                    </Shelf>
-                  ))
-                )}
-                {membersShelf.length > 0 ? (
-                  plainShelves ? (
-                    <>
-                      <SectionHeader
-                        kicker="members only"
-                        title="Slop Club"
-                        right={isVip ? "yours to wear" : "join in the Pen"}
-                      />
-                      <View style={shopCardStyles.grid}>
-                        {membersShelf.map((item, i) => gridCard(item, i, true))}
-                      </View>
-                    </>
-                  ) : (
-                    <SlopClubShelf onPressSign={() => setView("pen")}>
-                      {membersShelf.map((item, i) => shelfItem(item, i, !isVip))}
-                    </SlopClubShelf>
-                  )
-                ) : null}
-              </View>
-              <View style={styles.troughWrap}>
-                <TroughByCounter
-                  drives={troughSummary.drives}
-                  receipts={troughSummary.claimable}
-                  onOpen={openTrough}
-                />
-              </View>
-              <Counter
-                buys={counterBuys}
-                owned={owned}
-                isEquipped={isEquipped}
-                isVip={isVip}
-                onPreview={(buy) => setPreviewItem(buy.item)}
-              />
-              <View style={styles.floor} />
-            </View>
-          </ScrollView>
-        ) : view === "wardrobe" ? (
-          <>
-            {doorway}
+        {error && !hasCatalogData ? null : (
+          // The store is ONE scroll (the hero fitting room, 2026-09-17): the
+          // Closet's paper-doll leads, the wall — doorway, shelves, members'
+          // shelf, counter — sits in the middle of the very same list, and the
+          // catalog follows it. No rooms, no lost scroll position.
+          <View style={styles.listArea}>
             <ClosetView
-              active={!previewItem}
+              key="store"
+              ref={closetRef}
+              active={!previewItem && !folded}
               pigId={pigRoster.roster.activePigId}
               ownedItems={ownedItems}
               allItems={allItems}
@@ -981,24 +858,36 @@ export default function ShopScreen() {
               activeTitleId={activeTitleId}
               onTitleChange={setActiveTitleId}
               isVip={isVip}
+              buyableIds={buyableIds}
+              counter={counter}
               prestigeOnly={prestigeOnly}
               onClearPrestigeFilter={() => setPrestigeOnly(false)}
+              storeContent={storeWall}
+              onFoldChange={setFolded}
+              onClosetReached={setInCloset}
+              closetScrollInset={stripBottom}
             />
-          </>
-        ) : (
-          <>
-            {doorway}
-            <PigPenView
-              roster={pigRoster.roster}
-              loading={pigRoster.loading}
-              error={pigRoster.error}
-              onRetry={() => void pigRoster.refresh()}
-              busyPigId={pigRoster.busyPigId}
-              onJoinSlopClub={handleJoinSlopClub}
-              onRecruit={pigRoster.recruit}
-              onActivate={pigRoster.activate}
+            {/* The fitting room, folded — it pins over the wall once the hero
+                has scrolled off, and lets every tap behind it through. It
+                stands down at the catalog's crown, where it would otherwise
+                sit on the first row of tiles. */}
+            <FittingStrip
+              visible={folded && !inCloset}
+              pigId={pigRoster.roster.activePigId}
+              slots={{
+                hat: stageSlot("active_hat_id"),
+                bow: stageSlot("active_bow_id"),
+                glasses: stageSlot("active_glasses_id"),
+                mask: stageSlot("active_mask_id"),
+                neck: stageSlot("active_neck_id"),
+                aura: stageSlot("active_aura_id"),
+                held: stageSlot("active_held_id"),
+              }}
+              worn={wornSlots}
+              slotCount={SLOT_ORDER.length}
+              onMeasure={setStripBottom}
             />
-          </>
+          </View>
         )}
       </SafeAreaView>
 
@@ -1018,11 +907,9 @@ export default function ShopScreen() {
         equippedBow={equippedPreviewSlot("active_bow_id")}
         onTroughOpened={(spent, newBalance) => {
           // Seed left the account server-side — reflect it in the
-          // header chip NOW, not on the next focus refetch.
+          // header chip NOW, not on the next focus refetch. (The Barn's fan
+          // row picks the new Trough up on its next focus.)
           setCounter((c) => newBalance ?? Math.max(0, c - spent));
-          // And the new Trough belongs in the trough by the counter now, not
-          // after the next tab switch (the list only refetched on focus).
-          void troughSummary.refresh();
         }}
         onClose={() => setPreviewItem(null)}
         onBuy={() => {
@@ -1043,22 +930,6 @@ export default function ShopScreen() {
           }
         }}
       />
-      <TroughSheet
-        open={troughOpen}
-        focusDriveId={troughFocusId}
-        data={troughSummary}
-        onClose={() => setTroughOpen(false)}
-        onBalance={(balance) => setCounter(balance)}
-        onPrize={showTroughPrize}
-      />
-      <DrawRevealSheet
-        open={prizeOpen}
-        prize={troughPrize}
-        kicker="the trough · past your quarter"
-        mine
-        onClose={() => setPrizeOpen(false)}
-        testID="trough-prize-reveal"
-      />
       {/* On-screen ka-ching sparkle burst overlay. Rendered at root
 			    so it sits above every other view (tabs, modals are below
 			    the absolute fill order). Fired imperatively from handleBuy. */}
@@ -1070,14 +941,6 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: WHIMSY.cream },
   safeArea: { flex: 1 },
-  // Golden Ticket chip — square paper-face icon button next to the
-  // balance pocket. Ink border + SHADOW_SM chrome comes from Sticker.
-  ticketBtn: {
-    width: TICKET_CHIP,
-    height: TICKET_CHIP,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   // Snouts pocket — tilted sun sticker (the redesign's "snouts pocket":
   // makes the balance feel like a chip you keep, not a system bar).
   balance: {
@@ -1087,35 +950,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.md,
     paddingVertical: SPACE.sm,
   },
+  // The list area — the store's one scroller, with the folded strip pinned
+  // over the top of it.
+  listArea: { flex: 1, position: "relative" },
   // The door: chalkboard left, the hanging signs right, on one line under
-  // the crown. The signs hang from the top edge, so the row has no top pad.
+  // the crown. The row's top pad is the badge's clearance: a sign's count
+  // badge hangs SPACE.sm above its sign, and used to land on the card above.
+  // (2026-09-17 — the overlap fix. The signs state their width, the board is
+  // the only thing in here that shrinks.)
   doorway: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: SPACE.md,
     paddingHorizontal: PAGE_PAD,
+    paddingTop: SPACE.card,
     marginBottom: SPACE.sm,
   },
-  // The signs share whatever the chalkboard leaves; away from the store a
-  // fourth sign, back to it, hangs in the chalkboard's place.
+  // The signs take exactly their own width — three SIGN_W signs and two gaps —
+  // and the chalkboard takes what is left.
   signs: {
-    flex: 1,
+    flexShrink: 0,
     flexDirection: "row",
-    gap: SPACE.sm,
+    gap: SPACE.xs,
   },
-  doorArt: { ...DOOR_ART },
-  // The wall — the plank room the store is, with its faint grain, under an
-  // ink rule. It is the scroller; the room inside it measures for the grain.
+  // The wall — the plank room the store is, with its faint grain, closed top
+  // and bottom by an ink rule. It rides inside the Closet's list now, so it
+  // is a block, not a scroller; the room inside it measures for the grain.
   wall: {
-    flex: 1,
     backgroundColor: WHIMSY.cream2,
     borderTopWidth: BORDER.ink,
+    borderBottomWidth: BORDER.ink,
     borderColor: UI_COLORS.border,
-    marginTop: SPACE.sm,
   },
-  wallContent: { flexGrow: 1 },
-  room: { position: "relative", flexGrow: 1, paddingTop: SPACE.sm },
+  room: { position: "relative", paddingTop: SPACE.sm },
   grain: {
     position: "absolute",
     top: 0,
@@ -1133,17 +1001,5 @@ const styles = StyleSheet.create({
   shelves: {
     paddingHorizontal: PAGE_PAD,
     gap: SPACE.md,
-  },
-  // The trough's pill hangs above its rim, over the shelf before it: the
-  // wrapper stacks above the shelves so Fabric never paints them over it.
-  troughWrap: {
-    marginTop: SPACE.lg,
-    marginHorizontal: PAGE_PAD,
-    zIndex: 1,
-  },
-  // The counter's face runs on under the tab bar: the floor of the store.
-  floor: {
-    height: TAB_SAFE,
-    backgroundColor: WOOD.bottom,
   },
 });

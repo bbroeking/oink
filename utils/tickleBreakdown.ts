@@ -22,6 +22,8 @@ export interface TickleBreakdown {
 	pass_tiers: number;
 	trades: number;
 	lucky: number;
+	/** The Ghost Sheep Trader's ledger (20260917170000); absent on an older server. */
+	trader?: number;
 }
 
 export type TickleLane =
@@ -32,7 +34,8 @@ export type TickleLane =
 	| "dig_finds"
 	| "pass_tiers"
 	| "trades"
-	| "lucky";
+	| "lucky"
+	| "trader";
 
 export interface TickleRow {
 	lane: TickleLane;
@@ -51,6 +54,7 @@ const LANE_ROWS: { lane: TickleLane; label: string }[] = [
 	{ lane: "pass_tiers", label: "season pass" },
 	{ lane: "trades", label: "trades repaid" },
 	{ lane: "lucky", label: "lucky numbers" },
+	{ lane: "trader", label: "traded to the Ghost Sheep" },
 ];
 
 // Map a breakdown to its visible receipt rows: lane order preserved, ZERO rows

@@ -131,15 +131,17 @@ describe("Home carries the Trough (source scan)", () => {
 		expect(barn).toContain('mark: "trough",');
 		expect(barn).toContain("onPress: () => setTroughOpen(true),");
 	});
-	it("the yard trough is absolute on itself and drawn under the mound", () => {
-		const trough = barn.indexOf("<YardTrough");
-		const mound = barn.indexOf("<BuriedMound");
-		expect(trough).toBeGreaterThan(0);
-		expect(trough).toBeLessThan(mound);
-		expect(barn).toContain("zIndex: YARD_Z - 1,");
-		expect(barn).toContain("marginLeft: YARD_TROUGH_SHIFT,");
+	it("the fan row is the Trough's ONLY door (2026-09-17): no yard trough, no shop door, no deep-link auto-open", () => {
+		expect(barn).not.toContain("<YardTrough");
+		expect(barn.match(/setTroughOpen\(true\)/g)).toHaveLength(1);
+		const shop = fs.readFileSync(path.join(__dirname, "..", "app", "(tabs)", "shop.tsx"), "utf8");
+		expect(shop).not.toMatch(/TroughByCounter|TroughSheet|setTroughOpen/);
+		const routing = fs.readFileSync(path.join(__dirname, "..", "utils", "notificationRouting.ts"), "utf8");
+		expect(routing).toContain('trough: "/",');
+		expect(barn).toContain("<BuriedMound");
 	});
-	it("Home mounts the same Trough sheet the store opens", () => {
+	it("Home mounts the Trough sheet, with the quarter-prize reveal behind it", () => {
+		expect(barn).toContain("onPrize={showTroughPrize}");
 		expect(barn).toContain('import { TroughSheet } from "./shop/TroughSheet";');
 		expect(barn).toContain("focusDriveId={leadingTrough?.id ?? null}");
 	});

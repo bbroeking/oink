@@ -48,11 +48,45 @@ export const HUNGERER_STATE_LABEL: Readonly<Record<HungererState, string>> = {
   awake: "HE WOKE.",
 };
 
+// Under the METER his tag reads the bar, not the layer, so "snoring" (a thing
+// he is doing) gives way to "sound asleep" (a depth he is at) — the same words
+// the wake-meter doc uses for the three bands. Rules 1 keeps the tag it
+// shipped with. (2026-09-17 §5)
+export const HUNGERER_METER_LABEL: Readonly<Record<HungererState, string>> = {
+  ...HUNGERER_STATE_LABEL,
+  snoring: "sound asleep",
+};
+
+// The meter's bands (rules 2, 2026-09-17 §5): his face follows the meter, not
+// the layer — that is the whole point of a meter. And the bands come off the
+// dig's own STAMP, not a constant: under `lo` he is sleeping through anything
+// you do; inside the band he could go at any moment, and the second half of it
+// is where the bar starts to look short. A tuning change moves his face with
+// the odds it moved.
+export function hungererBands(lo: number, hi: number): { stirring: number; oneeye: number } {
+  return { stirring: lo, oneeye: lo + Math.ceil((hi - lo) / 2) };
+}
+
 /** His face for a layer (spec §1.6): topsoil snoring, mud stirring, the root
  *  one eye open; `attentive` (a sniff past the budget) lifts it a step; `woke`
- *  overrides everything. */
-export function hungererStateFor(layer: 0 | 1 | 2, woke: boolean, attentive = false): HungererState {
+ *  overrides everything. Under rules 2 pass the meter — `{ attention, lo, hi }`
+ *  — and the BAND decides instead of the layer: the face is the bar's other
+ *  reading, and the two must never disagree. */
+export function hungererStateFor(
+  layer: 0 | 1 | 2,
+  woke: boolean,
+  attentive = false,
+  meter: { attention: number; lo: number; hi: number } | null = null,
+): HungererState {
   if (woke) return "awake";
+  if (meter != null) {
+    const bands = hungererBands(meter.lo, meter.hi);
+    return meter.attention < bands.stirring
+      ? "snoring"
+      : meter.attention < bands.oneeye
+        ? "stirring"
+        : "oneeye";
+  }
   // Attention (the sniff budget, 2026-09-16) lifts his face one step: a
   // snorer stirs, a stirrer opens an eye. The root has nowhere higher to go
   // short of waking, so it stays one eye open — the tag says the rest.

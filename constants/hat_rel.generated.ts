@@ -31,7 +31,7 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	coffee_mug: { pivot: { x: 0.6964, y: 0.6339 }, widthFrac: 0.4, anchor: "hand_r", behind: false },
 	comet_wand: { pivot: { x: 0.2298, y: 0.787 }, widthFrac: 0.42, anchor: "hand_r", behind: false },
 	controller: { pivot: { x: 0.4, y: 0.6839 }, widthFrac: 0.4, anchor: "hand_r", behind: false },
-	cowboy: { pivot: { x: 0.5266, y: 0.7178 }, widthFrac: 0.59, anchor: "head", behind: false },
+	cowboy: { pivot: { x: 0.5266, y: 0.58 }, widthFrac: 0.59, anchor: "head", behind: false },
 	crew_pennant: { pivot: { x: 0.2482, y: 0.9067 }, widthFrac: 0.4, anchor: "hand_r", behind: false },
 	crown: { pivot: { x: 0.5196, y: 0.8609 }, widthFrac: 0.4, anchor: "head", behind: false },
 	daisy_flower_crown: { pivot: { x: 0.4816, y: 0.5789 }, widthFrac: 0.42, anchor: "head", behind: false },

@@ -40,7 +40,6 @@ import { pairBondWith, bondBreakdown, type PairBondWith } from "@/utils/pairBond
 import { BarnVisitModal } from "./BarnVisitModal";
 import { RitualPicker } from "./RitualPicker";
 import { GameIcon } from "./ui/GameIcon";
-import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
 import { useCrew } from "@/hooks/useCrew";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { useVisitorEffects } from "@/hooks/useVisitorEffects";
@@ -263,30 +262,9 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// blessings / visits). Fail-soft — an unpushed migration or any null result
 	// leaves this null, and the line renders nothing (never an error).
 	const [bond, setBond] = useState<PairBondWith | null>(null);
-	// The tickle breakdown receipt (spec 17). Opening it must NOT stack a second
-	// native Modal over this sheet (the #50152 wedge), so we HIDE this sheet
-	// first (breakdownPending), then present the receipt one handoff beat later
-	// (breakdownFor) — the same hide→gap→present handshake the popup queue uses.
-	const [breakdownPending, setBreakdownPending] = useState<{ id: string; total: number } | null>(null);
-	const [breakdownFor, setBreakdownFor] = useState<{ id: string; total: number } | null>(null);
-	const breakdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const openBreakdown = () => {
-		if (!stats) return;
-		const payload = { id: stats.user_id, total: targetTickles ?? 0 };
-		setBreakdownPending(payload); // hides this sheet's Modal this frame
-		if (breakdownTimer.current) clearTimeout(breakdownTimer.current);
-		breakdownTimer.current = setTimeout(() => {
-			setBreakdownPending(null);
-			setTargetWallowCount(0);
-			setBreakdownFor(payload); // presents the receipt after the handoff gap
-		}, MOTION.modalHandoff);
-	};
-	useEffect(
-		() => () => {
-			if (breakdownTimer.current) clearTimeout(breakdownTimer.current);
-		},
-		[]
-	);
+	// (The "how'd they earn it?" tickle-receipt door and its modal handshake
+	// left this sheet 2026-09-17 at the founder's ask; the receipt still opens
+	// from the board.)
 
 	useEffect(() => {
 		const generation = ++targetGeneration.current;
@@ -295,8 +273,6 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		if (!targetUserId) {
 			setStats(null);
 			setFeedback(null);
-			setBreakdownFor(null);
-			setBreakdownPending(null);
 			return;
 		}
 		setLoading(true);
@@ -614,22 +590,6 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 				/>
 			)}
 
-			{/* The tickle receipt (spec 17) — a quiet door into how this
-			    pig earned its season tickles. Self and others render
-			    identically; the total is already public on the board. */}
-			<Button
-				variant="handLink"
-				onPress={openBreakdown}
-				accessibilityLabel="How this pig earned its tickles"
-				accessibilityHint="Opens the tickle receipt"
-				style={styles.breakdownLink}
-			>
-				<>
-					{"how'd they earn it? "}
-					<Glyph name="arrowRight" size={ART_SIZE.mark} />
-				</>
-			</Button>
-
 			{/* Visit their Barn — see their pig + tickle it for them (social).
 			    FRIENDS-ONLY (player decision): visiting mints snouts +
 			    leaderboard to both pigs, so it's hidden for non-friends (the
@@ -792,10 +752,6 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			<Sheet
 				open
 				onClose={onDismiss}
-				// The breakdown handshake: the native Modal drops the frame the
-				// receipt is queued, while this session stays MOUNTED so its state
-				// survives the handoff gap.
-				modalVisible={!breakdownFor && !breakdownPending}
 				kicker="profile"
 				closeLabel="Close"
 				testID="user-sheet"
@@ -846,16 +802,6 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			>
 				{body}
 			</Sheet>
-
-			{/* The tickle breakdown receipt — a peer native Modal, presented only
-			    after this sheet has hidden (breakdownFor set) so the two never
-			    stack. Closing it dismisses the whole flow (onDismiss) rather than
-			    re-presenting this sheet in the same commit (which would re-wedge). */}
-			<TickleBreakdownSheet
-				userId={breakdownFor?.id ?? null}
-				fallbackTotal={breakdownFor?.total ?? null}
-				onClose={onDismiss}
-			/>
 		</>
 	);
 }
@@ -1063,8 +1009,6 @@ const styles = StyleSheet.create({
 	// Keepsake line — the quiet, warm note of the two pigs' lifetime bond,
 	// sitting just under the stats cluster.
 	keepsake: { alignSelf: "center", marginBottom: SPACE.card },
-	// The quiet "how'd they earn it?" receipt door.
-	breakdownLink: { alignSelf: "center", marginBottom: SPACE.xs },
 	visitBtn: {
 		alignSelf: "stretch",
 		paddingVertical: SPACE.lg,

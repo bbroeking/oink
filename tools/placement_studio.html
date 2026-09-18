@@ -8,6 +8,7 @@
   :root{
     --ink:#3b2a1e;--cream:#fdf6ec;--panel:#fffdf8;--line:#e7d8c4;--gold:#caa04a;
     --green:#3f9d63;--blue:#5c9dff;--red:#cf5b4e;--muted:#8c7a66;--chip:#f1e7d6;
+    --auto:#e08a2e;
     --shadow:0 2px 0 #e7d8c4,0 6px 18px rgba(80,60,40,.08);
   }
   *{box-sizing:border-box}
@@ -49,12 +50,16 @@
   .dot.tuned{background:var(--green)}
   .dot.def{background:var(--gold)}
   .dot.none{background:#cbbfa e;background:#d7c8b2}
+  .tag{display:inline-block;border-radius:5px;padding:0 4px;font-size:9.5px;font-weight:800;letter-spacing:.03em;
+    background:var(--chip);color:#7a674f;margin-left:4px;vertical-align:middle}
+  .tag.side{background:#dde9ff;color:#2f5ea8}
+  .tag.ov{background:#f6e6c2;color:#8a6a1e}
   /* STAGE */
   .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;
     background:radial-gradient(circle at 50% 40%,#fffdf8,#f4ead9)}
   .animbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:50;display:flex;
     align-items:center;gap:6px;flex-wrap:wrap;max-width:92%;background:rgba(255,253,248,.96);
-    border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;box-shadow:var(--shadow)}
+    border:1.5px solid var(--line);border-radius:18px;padding:5px 12px;box-shadow:var(--shadow)}
   .animbar select{padding:4px 8px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12.5px;color:var(--ink);background:var(--panel)}
   .animbar .fb{border:1.5px solid var(--line);background:var(--panel);border-radius:7px;min-width:26px;height:26px;
     font-size:12px;font-weight:800;cursor:pointer;color:var(--ink)}
@@ -64,6 +69,8 @@
   .stage .pig img{width:100%;height:100%;object-fit:contain}
   .stage .item{position:absolute}
   .stage .item img{width:100%;height:100%;object-fit:contain}
+  .srctag{position:absolute;left:10px;bottom:8px;z-index:60;font-size:10.5px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--muted)}
   .anchorDot{position:absolute;width:13px;height:13px;border-radius:50%;border:2px solid #fff;
     background:#5c9dff;transform:translate(-50%,-50%);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:30}
   .anchorDot.on{background:var(--red);width:17px;height:17px}
@@ -73,6 +80,7 @@
   .panel{width:300px;border-left:2px solid var(--line);background:var(--panel);padding:14px;overflow-y:auto;
     display:flex;flex-direction:column;gap:14px}
   .panel h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:#6e5a44}
+  .panel h3.ov{color:var(--gold)}
   .itemcanvas{width:150px;height:150px;margin:0 auto;position:relative;border:1.5px dashed var(--line);border-radius:10px;
     background:#f3ece0;background-image:linear-gradient(45deg,#e4d8c6 25%,transparent 25%),linear-gradient(-45deg,#e4d8c6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4d8c6 75%),linear-gradient(-45deg,transparent 75%,#e4d8c6 75%);
     background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0;cursor:crosshair;touch-action:none}
@@ -88,6 +96,15 @@
   .btn{font-weight:800}
   .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
   .btn.ghost{background:var(--panel)}
+  .btn.gold{background:var(--gold);color:#fff;border-color:var(--gold)}
+  .btn.danger{color:var(--red);border-color:#e9c6c0}
+  .ovbox{border:1.5px solid var(--line);border-radius:11px;padding:10px;display:flex;flex-direction:column;gap:8px;
+    background:#fffaf0}
+  .ovbox.on{border-color:var(--gold);background:#fdf6e4}
+  .posechips{display:flex;gap:4px;flex-wrap:wrap}
+  .posechip{border:1.5px solid var(--gold);background:#fdf3de;color:#8a6a1e;border-radius:99px;padding:2px 9px;
+    font-size:11px;font-weight:800;cursor:pointer}
+  .posechip.on{background:var(--gold);color:#fff}
   .toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.45}
   .rejbox{border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;flex-direction:column;gap:6px}
@@ -95,17 +112,47 @@
   .empty{margin:auto;color:var(--muted)}
   /* PIG MODE */
   .pigbar{display:flex;gap:6px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  .seg{display:flex;gap:4px}
+  .seg{display:flex;gap:4px;flex-wrap:wrap}
   .anchorList{font-size:12px;color:var(--muted)}
-  .anchorList .ar{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #f3ece0}
+  .anchorList .ar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid #f3ece0}
+  /* second line of an anchor row: the auto-rig candidate's value + delta */
+  .anchorList .arauto{flex-basis:100%;display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);padding-top:2px}
+  .anchorList .arauto .av{color:var(--auto);font-weight:800}
+  .anchorList .arauto .conf{margin-left:auto;font-size:9.5px;letter-spacing:.03em;text-transform:uppercase}
+  .autobtn{border:1px solid var(--auto);background:#fdf1e2;border-radius:6px;font-size:10px;font-weight:800;
+    padding:1px 6px;cursor:pointer;color:#9a5c13;white-space:nowrap}
+  .autobtn:hover{background:var(--auto);color:#fff}
   .syncbtn{border:1px solid var(--line);background:var(--panel);border-radius:6px;font-size:10px;font-weight:800;
     padding:1px 6px;cursor:pointer;color:#7a674f;margin-left:6px;white-space:nowrap}
   .syncbtn:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
   .anchorList .ar.miss{color:var(--red);font-weight:700}
+  .clampnote{font-size:11.5px;font-weight:700;color:var(--gold)}
   .dragDot{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;background:var(--green);
     transform:translate(-50%,-50%);cursor:grab;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.4)}
   .dragDot .lbl{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font-size:9px;font-weight:800;
     color:#3b2a1e;background:rgba(255,255,255,.85);padding:0 3px;border-radius:3px;white-space:nowrap;pointer-events:none}
+  /* AUTO RIG CANDIDATE — read-only overlay, never draggable */
+  .autoDot{position:absolute;width:11px;height:11px;border-radius:50%;border:2px solid #fff;background:var(--auto);
+    transform:translate(-50%,-50%);pointer-events:none;z-index:28;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+  .autoLine{position:absolute;height:1.5px;margin-top:-.75px;background:var(--auto);opacity:.85;transform-origin:0 50%;
+    pointer-events:none;z-index:26}
+  .rigbtn{border:1.5px solid var(--line);background:var(--panel);border-radius:7px;padding:3px 9px;font:inherit;
+    font-size:11.5px;font-weight:800;cursor:pointer;color:var(--ink)}
+  .rigbtn.on{background:var(--auto);color:#fff;border-color:var(--auto)}
+  .autonote{padding:4px 16px 8px;font-size:11.5px;color:var(--muted);border-bottom:1px solid var(--line)}
+  .autonote b{color:var(--auto)}
+  /* SHEET MODE */
+  .sheetgrid{flex:1;overflow-y:auto;padding:34px 18px 40px;display:flex;flex-wrap:wrap;gap:34px 16px;align-content:flex-start}
+  .cell{width:150px;cursor:pointer}
+  .cellbox{position:relative;width:150px;height:150px;overflow:visible;border-radius:12px;
+    background:#fbf4e8;border:1.5px solid var(--line)}
+  .cell:hover .cellbox{border-color:var(--gold)}
+  .cellcard{position:absolute;width:300px;height:300px;transform-origin:0 0;overflow:visible}
+  .cellcard .pig{position:absolute;inset:0}
+  .cellcard .pig img{width:100%;height:100%;object-fit:contain}
+  .cellcard .item{position:absolute}
+  .cellcard .item img{width:100%;height:100%;object-fit:contain}
+  .celllbl{margin-top:5px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hidden{display:none!important}
 </style>
 </head>
@@ -115,6 +162,7 @@
   <div class="tabs">
     <button class="tab on" data-m="items">Items</button>
     <button class="tab" data-m="pig">Pig anatomy</button>
+    <button class="tab" data-m="sheet">Sheet</button>
   </div>
   <div class="status" id="status">loading…</div>
 </header>
@@ -124,12 +172,14 @@
   <aside class="rail">
     <div class="railhead">
       <input id="search" placeholder="Search items…">
-      <div class="chips">
+      <div class="chips" id="itemchips">
         <button class="chip on" data-f="all">All</button>
         <button class="chip" data-f="untuned">Untuned</button>
         <button class="chip" data-f="members">Members</button>
         <button class="chip" data-f="base">Base</button>
         <button class="chip" data-f="auras">Auras</button>
+        <button class="chip" data-f="side">Side art</button>
+        <button class="chip" data-f="overridden">Overridden</button>
         <button class="chip" data-f="rejected">⚠ Rejected</button>
       </div>
       <button class="btn primary hidden" id="unlockBrianAuras">Unlock all auras for Brian</button>
@@ -152,6 +202,8 @@
   <div class="pigbar">
     <span class="hint" style="font-weight:700;color:#6e5a44">Animation:</span>
     <select id="pig-anim"></select>
+    <span class="hint" style="font-weight:700;color:#6e5a44;margin-left:8px">Pig:</span>
+    <select id="pig-pig" title="Preview only — anchors are shared by every pig"></select>
     <span class="hint" style="font-weight:700;color:#6e5a44;margin-left:8px">Frame:</span>
     <span class="seg" id="pig-frames"></span>
     <button class="btn ghost" id="pig-onion" style="margin-left:8px">Onion skin: off</button>
@@ -161,23 +213,57 @@
     <span class="seg" style="margin-left:6px"><button class="btn ghost" id="pig-scaledn" title="Scale all anchors smaller around their center">Scale −</button>
     <button class="btn ghost" id="pig-scaleup" title="Scale all anchors larger around their center">Scale +</button></span>
     <label class="toggle" style="margin-left:6px;font-size:12px"><input type="checkbox" id="pig-pin"> Pin edits to all frames</label>
+    <span style="width:1px;height:22px;background:var(--line);margin:0 6px"></span>
+    <button class="btn ghost hidden" id="pig-auto" title="Draw the auto-rig candidate (docs/rig-candidate.json) beside the live rig">Auto rig: off</button>
+    <span class="seg hidden" id="pig-accept">
+      <button class="btn ghost" id="pig-accept-frame" title="Copy every candidate anchor into THIS frame">Accept auto: this frame</button>
+      <button class="btn ghost" id="pig-accept-anim" title="Copy every candidate anchor into every frame of this animation">Accept auto: this animation</button>
+      <button class="btn ghost" id="pig-accept-all" title="Copy the whole candidate rig over every animation">Accept auto: all animations</button>
+    </span>
     <span class="status" id="pig-status"></span>
   </div>
+  <div class="autonote hidden" id="pig-autonote"></div>
   <div style="flex:1;display:flex;min-height:0">
     <div class="stagewrap">
       <div class="stage" id="pig-stage"></div>
     </div>
     <aside class="panel" style="width:260px">
       <h3>Anchors (this frame)</h3>
+      <div class="clampnote hidden" id="pig-clampnote"></div>
       <div class="anchorList" id="pig-anchorlist"></div>
       <div class="hint">Drag a dot to move it. Missing anchors fall back to REST (shown dim) — drag to set one for this frame. <code>eyes</code>/<code>feet</code> are computed midpoints, not editable.</div>
     </aside>
   </div>
 </main>
 
+<!-- SHEET MODE -->
+<main id="mode-sheet" class="hidden" style="flex-direction:column">
+  <div class="pigbar">
+    <span class="hint" style="font-weight:700;color:#6e5a44">Pose:</span>
+    <select id="sh-anim"></select>
+    <span class="hint" style="font-weight:700;color:#6e5a44">Pig:</span>
+    <select id="sh-pig" title="Preview only — anchors are shared by every pig"></select>
+    <span class="hint" style="font-weight:700;color:#6e5a44">Frame:</span>
+    <span class="seg" id="sh-frames"></span>
+    <span class="seg" id="rig-sheet"></span>
+    <input id="sh-search" placeholder="Search items…" style="border:1.5px solid var(--line);border-radius:9px;padding:6px 9px;font:inherit;font-size:13px;margin-left:8px">
+    <div class="chips" id="sheetchips">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="untuned">Untuned</button>
+      <button class="chip" data-f="members">Members</button>
+      <button class="chip" data-f="base">Base</button>
+      <button class="chip" data-f="auras">Auras</button>
+      <button class="chip" data-f="side">Side art</button>
+      <button class="chip" data-f="overridden">Overridden</button>
+      <button class="chip" data-f="rejected">⚠ Rejected</button>
+    </div>
+    <span class="status" id="sh-status"></span>
+  </div>
+  <div class="sheetgrid" id="sheet"></div>
+</main>
+
 <script>
 const ANCHORS=["head","eye_l","eye_r","snout","mouth","neck","body","hand_l","hand_r","leg_l","leg_r"];
-const PIG_IMG="/img/assets/images/sprites/rosie/idle_1.png";
 const CARD=300, SCALE=1.5, S=CARD*SCALE; // stage px
 const $=(s,r=document)=>r.querySelector(s);
 let DATA={items:[],rest:{}}, REL={}, SEL=null, FILTER="all", Q="", REJ={};
@@ -185,49 +271,163 @@ let aspectCache={};
 // Items-mode pose scrubber: preview the selected item across animations/frames
 // using the SAME per-frame anchors the app resolves (so you catch placement
 // that drifts on walk/jump/wave, not just idle).
-let IANIM="idle", IFRAME=0, IPLAY=null, ANIMSCALE={};
+let IANIM="idle", IFRAME=0, IPLAY=null, ANIMSCALE={}, IPIG="rosie";
+// Poses + pigs come from the server (the PigAnimationKey union, the sprite dirs
+// on disk) — never from a hardcoded list here.
+let ANIMS=["idle"], PIGS={rosie:{idle:12}};
+// Renderer constants mirrored from constants/hats.ts, served by /api/data.
+let TURNED_EYE_SHIFT=16, WEARABLE_CLAMP=[0.72,1.18];
+// Head/face wearables inherit the pig's authored face angle (hats.ts
+// FACE_RIG_ANCHORS); everything else takes no tilt and no apparent-scale.
+const FACE_RIG=new Set(["head","eye_l","eye_r","eyes","snout","mouth","neck"]);
+// The auto-rig candidate (docs/rig-candidate.json, written by
+// scripts/auto_rig.py) — a whole proposed PIG_FRAME_ANCHORS. Null when the file
+// is missing or empty, and every control below stays hidden. It is DATA: never
+// applied until a human accepts a scope, and always escaped before display.
+let CAND=null;
+// Which rig the Items stage and the Sheet resolve from — shared by both so the
+// two tabs never disagree. "auto" is preview only; nothing is written.
+let RIGVIEW="current";
+const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
 // ---- load ----
 async function boot(){
   DATA=await fetch("/api/data").then(r=>r.json());
   const an=await fetch("/api/anchors").then(r=>r.json()); FRAMES=an.frames; DATA.rest=an.rest;
+  // No candidate is the normal case — degrade quietly to "no candidate".
+  CAND=await fetch("/api/rig-candidate").then(r=>r.json()).catch(()=>null);
+  if(!CAND||!CAND.frames||!Object.keys(CAND.frames).length) CAND=null;
   ANIMSCALE=DATA.animScale||{};
   REJ=DATA.rejections||{};
+  ANIMS=(DATA.anims&&DATA.anims.length)?DATA.anims:Object.keys(FRAMES);
+  PIGS=DATA.pigs&&Object.keys(DATA.pigs).length?DATA.pigs:{rosie:{}};
+  if(!PIGS[IPIG]) IPIG=Object.keys(PIGS)[0];
+  if(typeof DATA.turnedEyeShift==="number") TURNED_EYE_SHIFT=DATA.turnedEyeShift;
+  if(DATA.wearableClamp&&DATA.wearableClamp.length===2) WEARABLE_CLAMP=DATA.wearableClamp;
+  if(ANIMS.indexOf(IANIM)<0) IANIM=ANIMS[0];
   // Seed the save-map from the FULL hat_rel (every hand-tuned entry, incl. ones
-  // whose art isn't under hats/) so a rebuild-all save never drops any.
-  REL={}; Object.keys(DATA.hatRel||{}).forEach(id=>{const s=DATA.hatRel[id];REL[id]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};});
-  renderList(); drawAnimBar();
-  $("#status").innerHTML=`${DATA.items.length} items · <b>${DATA.items.filter(i=>i.tuned).length}</b> tuned · ${DATA.items.filter(i=>!i.tuned).length} untuned`;
+  // whose art isn't under hats/) so a rebuild-all save never drops any — and
+  // carry each per-pose override through untouched.
+  REL={}; Object.keys(DATA.hatRel||{}).forEach(id=>{REL[id]=cloneSpec(DATA.hatRel[id]);});
+  renderList(); drawAnimBar(); buildSheetBar();
+  setStatus();
   buildPigMode();
   // deep-link: /?item=<id> jumps straight to that item (regen studio hands off here)
   const want=new URLSearchParams(location.search).get("item");
   if(want&&DATA.items.some(i=>i.id===want)) select(want);
 }
+const clone=o=>JSON.parse(JSON.stringify(o));
+function cloneSpec(s){
+  const out={pivot:{x:s.pivot.x,y:s.pivot.y},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};
+  if(s.perAnim&&Object.keys(s.perAnim).length) out.perAnim=clone(s.perAnim);
+  return out;
+}
+function setStatus(){
+  const n=DATA.items.length, tuned=DATA.items.filter(i=>i.tuned).length;
+  const side=DATA.items.filter(i=>i.side).length;
+  const ov=Object.keys(REL).filter(id=>ovPoses(id).length).length;
+  $("#status").innerHTML=`${n} items · <b>${tuned}</b> tuned · ${n-tuned} untuned · ${side} with side art · ${ov} overridden`;
+}
 
+// ---- app-exact placement math (mirrors PigStage.resolveSlot) ----
+function isTurned(anim){ return anim==="face"||anim==="face_sit"; }
+function frameCount(pig,anim){ const p=PIGS[pig]||PIGS.rosie||{}; return p[anim]||4; }
 // Resolve a pig anchor at (anim, frame) — mirrors resolveAnchor in hats.ts:
-// per-frame value, REST fallback, eyes/feet = computed L/R midpoints.
+// per-frame value CLAMPED to the last authored frame, REST fallback,
+// eyes/feet = computed L/R midpoints.
 function resolveA(anim, frame, name){
   if(name==="eyes"){const l=resolveA(anim,frame,"eye_l"),r=resolveA(anim,frame,"eye_r");return {x:(l.x+r.x)/2,y:(l.y+r.y)/2};}
   if(name==="feet"){const l=resolveA(anim,frame,"leg_l"),r=resolveA(anim,frame,"leg_r");return {x:(l.x+r.x)/2,y:(l.y+r.y)/2};}
-  const fr=(FRAMES[anim]&&FRAMES[anim][frame])||{};
+  const arr=rigFrames(anim);
+  const fr=arr[Math.min(frame,arr.length-1)]||{};
   return fr[name]||DATA.rest[name]||{x:150,y:150};
 }
+// The frame array resolveA reads: the live rig, or the candidate's own frames
+// when the Rig control is on "auto" (so idle 5-12 read the candidate's real
+// frames, not a clamp). An anim the candidate doesn't carry falls back to live.
+function rigFrames(anim){
+  if(RIGVIEW==="auto"&&CAND&&CAND.frames){
+    const a=CAND.frames[anim];
+    if(a&&a.length) return a;
+  }
+  return FRAMES[anim]||[];
+}
+// ---- the Rig segmented control (Items pose bar + Sheet toolbar) ----
+function rigSegInner(){
+  if(!CAND) return "";
+  return `<span class="sub" style="font-weight:700;color:#6e5a44;margin-right:2px">Rig</span>`
+    +["current","auto"].map(v=>`<button class="rigbtn ${RIGVIEW===v?"on":""}" data-rig="${v}">${v}</button>`).join("");
+}
+function wireRigSeg(root){
+  if(!root) return;
+  root.querySelectorAll("[data-rig]").forEach(b=>b.onclick=()=>setRig(b.dataset.rig));
+}
+function setRig(v){
+  if(RIGVIEW===v) return;
+  RIGVIEW=v;
+  drawAnimBar(); buildSheetBar();
+  if(SEL) drawStage();
+  drawSheet();
+}
+// hats.ts resolveWearablePose — the eye-line tilt + apparent scale.
+function wearablePose(anim, frame, anchor){
+  if(!FACE_RIG.has(anchor)) return {rotate:0,scale:1};
+  const rl=resolveA("idle",0,"eye_l"), rr=resolveA("idle",0,"eye_r");
+  const cl=resolveA(anim,frame,"eye_l"), cr=resolveA(anim,frame,"eye_r");
+  const rdx=rr.x-rl.x, rdy=rr.y-rl.y, cdx=cr.x-cl.x, cdy=cr.y-cl.y;
+  const rd=Math.hypot(rdx,rdy), cd=Math.hypot(cdx,cdy);
+  const raw=((Math.atan2(cdy,cdx)-Math.atan2(rdy,rdx))*180)/Math.PI;
+  const rotate=((raw+180)%360)-180;
+  const eyeBound=anchor==="eyes"||anchor==="eye_l"||anchor==="eye_r";
+  const scale=isTurned(anim)&&!eyeBound?1:Math.max(WEARABLE_CLAMP[0],Math.min(WEARABLE_CLAMP[1],cd/rd));
+  return {rotate,scale};
+}
+// The one placement function — used by the Items stage AND the Sheet, so what
+// you see in either is what resolveSlot ships: side sprite on the turn, the
+// eye shift, the head tilt, the pivot-compensated box.
+function layoutItem(spec, anim, frame, opts){
+  opts=opts||{};
+  const it=opts.item||null;
+  const turned=isTurned(anim);
+  const useSide=!!(turned&&it&&it.side);
+  const src="/img/"+(useSide?it.side:(it?it.image:opts.image));
+  const aspect=aspectCache[src]||1;
+  const anchor=spec.anchor||"head";
+  const resolved=resolveA(anim,frame,anchor);
+  const a=(turned&&anchor==="eyes")?{x:resolved.x-TURNED_EYE_SHIFT,y:resolved.y}:resolved;
+  const pose=wearablePose(anim,frame,anchor);
+  const w=spec.widthFrac*CARD*pose.scale, h=w*aspect;
+  const rad=(pose.rotate*Math.PI)/180;
+  const fcx=spec.pivot.x*w-w/2, fcy=spec.pivot.y*h-h/2;
+  const rpx=w/2+fcx*Math.cos(rad)-fcy*Math.sin(rad);
+  const rpy=h/2+fcx*Math.sin(rad)+fcy*Math.cos(rad);
+  return {src,useSide,anchorName:anchor,anchorPt:a,w,h,
+          left:a.x-rpx,top:a.y-rpy,rotate:pose.rotate,scale:pose.scale,behind:!!spec.behind};
+}
+
 function drawAnimBar(){
   const bar=$("#animbar"); if(!bar)return;
-  const anims=Object.keys(FRAMES); if(!anims.length){bar.innerHTML="";return;}
-  const nf=(FRAMES[IANIM]||[]).length||4;
+  if(!ANIMS.length){bar.innerHTML="";return;}
+  const nf=frameCount(IPIG,IANIM);
+  if(IFRAME>=nf) IFRAME=0;
   bar.innerHTML=`<span class="sub" style="font-weight:700;color:#6e5a44">Pose</span>
-    <select id="ianim">${anims.map(a=>`<option ${a===IANIM?'selected':''}>${a}</option>`).join("")}</select>
+    <select id="ianim">${ANIMS.map(a=>`<option ${a===IANIM?'selected':''}>${a}</option>`).join("")}</select>
+    <span class="sub" style="font-weight:700;color:#6e5a44">Pig</span>
+    <select id="ipig" title="Preview only — anchors are shared by every pig">${Object.keys(PIGS).map(p=>`<option ${p===IPIG?'selected':''}>${p}</option>`).join("")}</select>
     ${Array.from({length:nf},(_,i)=>`<button class="fb ${i===IFRAME?'on':''}" data-f="${i}">${i+1}</button>`).join("")}
     <button class="fb" id="iplay" style="min-width:30px">${IPLAY?'❚❚':'▶'}</button>
     <span style="width:1px;height:20px;background:var(--line);margin:0 4px"></span>
     <span class="sub" style="font-weight:700;color:#6e5a44">Scale</span>
     <input type="range" id="iscale" min="0.6" max="1.8" step="0.01" value="${ANIMSCALE[IANIM]||1}" style="width:96px;vertical-align:middle;accent-color:var(--gold)">
-    <span class="sub" id="iscaleval" style="min-width:34px">${(ANIMSCALE[IANIM]||1).toFixed(2)}×</span>`;
-  $("#ianim").onchange=e=>{IANIM=e.target.value;IFRAME=0;drawAnimBar();drawStage();};
+    <span class="sub" id="iscaleval" style="min-width:34px">${(ANIMSCALE[IANIM]||1).toFixed(2)}×</span>
+    ${CAND?`<span style="width:1px;height:20px;background:var(--line);margin:0 4px"></span>
+    <span class="seg" id="rig-items">${rigSegInner()}</span>`:""}`;
+  $("#ianim").onchange=e=>{IANIM=e.target.value;IFRAME=0;drawAnimBar();if(SEL)select(SEL);else drawStage();};
+  $("#ipig").onchange=e=>{IPIG=e.target.value;IFRAME=0;drawAnimBar();drawStage();};
   bar.querySelectorAll(".fb[data-f]").forEach(b=>b.onclick=()=>{stopPlay();IFRAME=+b.dataset.f;drawAnimBar();drawStage();});
   $("#iplay").onclick=togglePlay;
   $("#iscale").oninput=e=>{const v=parseFloat(e.target.value);ANIMSCALE[IANIM]=v;$("#iscaleval").textContent=v.toFixed(2)+"×";drawStage();saveAnimScale();};
+  wireRigSeg($("#rig-items"));
 }
 let scaleT;
 function saveAnimScale(){clearTimeout(scaleT);
@@ -235,7 +435,7 @@ function saveAnimScale(){clearTimeout(scaleT);
 function stopPlay(){ if(IPLAY){clearInterval(IPLAY);IPLAY=null;} }
 function togglePlay(){
   if(IPLAY){stopPlay();drawAnimBar();return;}
-  IPLAY=setInterval(()=>{const nf=(FRAMES[IANIM]||[]).length||4;IFRAME=(IFRAME+1)%nf;drawAnimBar();drawStage();},450);
+  IPLAY=setInterval(()=>{IFRAME=(IFRAME+1)%frameCount(IPIG,IANIM);drawAnimBar();drawStage();},450);
   drawAnimBar();
 }
 
@@ -247,6 +447,8 @@ function visible(){
     if(FILTER==="members") return it.members;
     if(FILTER==="base") return !it.members;
     if(FILTER==="auras") return it.category==="aura";
+    if(FILTER==="side") return !!it.side;
+    if(FILTER==="overridden") return ovPoses(it.id).length>0;
     if(FILTER==="rejected") return !!REJ[it.id];
     return true;
   });
@@ -255,12 +457,16 @@ function visible(){
 // on tap. Auras are deliberately placeable so their size/position can be tuned
 // per asset instead of forcing every aura through one visible 300×300 box.
 function noPlacement(cat){ return cat==="background"||cat==="tickle_particle"; }
+function badges(it){
+  const n=ovPoses(it.id).length;
+  return (it.side?'<span class="tag side">side</span>':"")+(n?`<span class="tag ov">±${n} pose${n>1?"s":""}</span>`:"");
+}
 function makeRow(it){
   const rej=!!REJ[it.id];
   const r=document.createElement("div"); r.className="row"+(SEL===it.id?" sel":"")+(rej?" rej":"");
   const dot=it.tuned?"tuned":(it.defaulted?"def":"none");
   r.innerHTML=`<div class="th"><img src="/img/${it.image}"></div>
-    <div class="meta"><div class="id">${it.id}</div><div class="cat">${rej?'<span class="rejmark">⚠ rejected</span>':(it.category||"—")+(it.members?" · members":"")}</div></div>
+    <div class="meta"><div class="id">${it.id}${badges(it)}</div><div class="cat">${rej?'<span class="rejmark">⚠ rejected</span>':(it.category||"—")+(it.members?" · members":"")}</div></div>
     <div class="dot ${dot}" title="${it.tuned?'hand-tuned':it.defaulted?'category default':'no spec'}"></div>`;
   r.onclick=()=>select(it.id);
   return r;
@@ -280,13 +486,21 @@ function renderList(){
     parts.forEach(it=>list.appendChild(makeRow(it)));
   }
 }
-$("#search").oninput=e=>{Q=e.target.value.trim().toLowerCase();renderList();};
-document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{
-  document.querySelectorAll(".chip[data-f]").forEach(x=>x.classList.remove("on"));
-  c.classList.add("on");FILTER=c.dataset.f;
+function setQuery(v){
+  Q=v.trim().toLowerCase();
+  if($("#search").value!==v) $("#search").value=v;
+  if($("#sh-search").value!==v) $("#sh-search").value=v;
+  renderList(); drawSheet();
+}
+$("#search").oninput=e=>setQuery(e.target.value);
+$("#sh-search").oninput=e=>setQuery(e.target.value);
+function setFilter(f){
+  FILTER=f;
+  document.querySelectorAll(".chip[data-f]").forEach(x=>x.classList.toggle("on",x.dataset.f===f));
   $("#unlockBrianAuras").classList.toggle("hidden",FILTER!=="auras");
-  renderList();
-});
+  renderList(); drawSheet();
+}
+document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>setFilter(c.dataset.f));
 $("#unlockBrianAuras").onclick=async()=>{
   const btn=$("#unlockBrianAuras");btn.disabled=true;btn.textContent="Unlocking…";
   const r=await fetch("/api/unlock-brian-auras",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
@@ -300,12 +514,45 @@ $("#unlockBrianAuras").onclick=async()=>{
   }
 };
 
-// ---- ITEMS: selection + spec ----
-function curSpec(){
-  const it=DATA.items.find(i=>i.id===SEL);
-  return REL[SEL] || (it&&it.rel) || (it&&it.category==="aura"
+// ---- ITEMS: selection + spec (pose-aware) ----
+function defaultSpec(it){
+  return it&&it.category==="aura"
     ? {pivot:{x:0.5,y:0.7},widthFrac:1.2,anchor:"body",behind:true}
-    : {pivot:{x:0.5,y:1},widthFrac:0.4,anchor:"head",behind:false});
+    : {pivot:{x:0.5,y:1},widthFrac:0.4,anchor:"head",behind:false};
+}
+// The BASE spec — the front truth, shared by every pose.
+function baseSpec(id){
+  const it=DATA.items.find(i=>i.id===id);
+  return REL[id] || (it&&it.rel) || defaultSpec(it);
+}
+function ovFor(id,anim){ const r=REL[id]; return (r&&r.perAnim&&r.perAnim[anim])||null; }
+function ovPoses(id){ const r=REL[id]; return r&&r.perAnim?ANIMS.filter(a=>r.perAnim[a]):[]; }
+// Base merged with this pose's override — what the renderer actually uses.
+function effSpec(id,anim){ const b=baseSpec(id), o=ovFor(id,anim); return o?Object.assign({},b,o):b; }
+function curSpec(){ return effSpec(SEL,IANIM); }
+function ensureRel(){
+  if(!REL[SEL]) REL[SEL]=cloneSpec(baseSpec(SEL));
+  return REL[SEL];
+}
+// Where an edit lands: this pose's override when it has one, else the base.
+function editSpec(){ return ovFor(SEL,IANIM) || ensureRel(); }
+function addOverride(anim){
+  const r=ensureRel(), e=effSpec(SEL,anim);
+  r.perAnim=r.perAnim||{};
+  r.perAnim[anim]={pivot:{x:e.pivot.x,y:e.pivot.y},widthFrac:e.widthFrac,anchor:e.anchor,behind:!!e.behind};
+  select(SEL); save();
+}
+function removeOverride(anim){
+  const r=REL[SEL]; if(!r||!r.perAnim)return;
+  delete r.perAnim[anim];
+  if(!Object.keys(r.perAnim).length) delete r.perAnim;
+  select(SEL); save();
+}
+function copyOverride(to){
+  const src=ovFor(SEL,IANIM); if(!src||!to)return;
+  const r=ensureRel(); r.perAnim=r.perAnim||{};
+  r.perAnim[to]=clone(src);
+  select(SEL); save();
 }
 function select(id){
   SEL=id; renderList();
@@ -316,12 +563,26 @@ function select(id){
 
 function renderPanel(it,fullCanvas){
   const s=curSpec();
+  const ov=ovFor(it.id,IANIM);
+  const poses=ovPoses(it.id);
+  const others=ANIMS.filter(a=>a!==IANIM);
+  const ovBlock=`
+    <div class="ovbox ${ov?"on":""}">
+      <h3 class="${ov?"ov":""}">${ov?`Editing override: ${IANIM}`:"Placement for this pose"}</h3>
+      ${ov?`<div class="hint">Every edit above writes to <b>${IANIM}</b> only. The base spec stays the front truth.</div>
+        <div style="display:flex;gap:6px"><select id="ovCopyTo" style="flex:1">${others.map(a=>`<option>${a}</option>`).join("")}</select>
+        <button class="btn gold" id="ovCopy">Copy to…</button></div>
+        <button class="btn danger" id="ovRemove">Remove override</button>`
+      :`<div class="hint">Base spec (every pose).</div>
+        <button class="btn ghost" id="ovAdd">Override for ${IANIM}</button>`}
+    </div>`;
   $("#panel").innerHTML=`
     <h3>${it.id}</h3>
-    <div class="hint">${it.category||"uncategorised"}${it.members?" · members":""} · ${it.tuned?"hand-tuned":it.defaulted?"category default":"no spec yet"}</div>
+    <div class="hint">${it.category||"uncategorised"}${it.members?" · members":""} · ${it.tuned?"hand-tuned":it.defaulted?"category default":"no spec yet"}${it.side?' · <b>side art</b>':""}</div>
+    ${poses.length?`<div class="posechips" id="ovChips">${poses.map(p=>`<button class="posechip ${p===IANIM?"on":""}" data-pose="${p}">${p}</button>`).join("")}</div>`:""}
     ${fullCanvas?`<div class="hint" style="color:var(--red)">${it.category==="tickle_particle"?"Tickle particles are a burst effect played on tap — not placed on the pig. Nothing to tune here.":`${it.category} is full-canvas (rendered behind the pig at 300×300) — it has no pivot/anchor placement. Nothing to tune here.`}</div>`:`
     <h3>Pivot (drag on the item)</h3>
-    <div class="itemcanvas" id="itemcanvas"><img src="/img/${it.image}"><div class="pivotMark" id="pivotMark"></div></div>
+    <div class="itemcanvas" id="itemcanvas"><img src="/img/${(isTurned(IANIM)&&it.side)?it.side:it.image}"><div class="pivotMark" id="pivotMark"></div></div>
     <div class="fld"><label>Anchor <span id="anchorName">${s.anchor}</span></label>
       <div class="hint"><b>Drag the item on the pig</b> to move it. Click a blue dot to change which anchor it attaches to.</div></div>
     <div class="fld"><label>Width <span id="wfVal">${s.widthFrac.toFixed(3)}</span></label>
@@ -331,8 +592,10 @@ function renderPanel(it,fullCanvas){
     <div class="fld"><label>Pivot Y <span id="pyVal">${s.pivot.y.toFixed(3)}</span></label>
       <input type="range" id="py" min="-0.3" max="1.3" step="0.005" value="${s.pivot.y}"></div>
     <label class="toggle"><input type="checkbox" id="behind" ${s.behind?"checked":""}> Render behind pig</label>
+    ${ovBlock}
     <button class="btn ghost" id="resetDefault">Reset to category default</button>
     <button class="btn primary" id="nextUntuned">Next untuned →</button>
+    <button class="btn ghost" id="nextInList">Next in list →</button>
     <div class="hint" id="saveHint">Saved automatically to hat_rel.generated.ts.</div>
     `}
     <div class="rejbox">
@@ -350,41 +613,44 @@ function renderPanel(it,fullCanvas){
     };
     let rrt; rr.oninput=()=>{if(!REJ[SEL])REJ[SEL]={reason:""};REJ[SEL].reason=rr.value;clearTimeout(rrt);rrt=setTimeout(()=>saveReject(false),400);};
   }
+  // Pose chips jump the scrubber to a pose that already has an override.
+  const chips=$("#ovChips");
+  if(chips) chips.querySelectorAll(".posechip").forEach(b=>b.onclick=()=>{
+    stopPlay(); IANIM=b.dataset.pose; IFRAME=0; drawAnimBar(); select(SEL);
+  });
   if(fullCanvas) return;
-  const bind=(id,key,sub)=>{const el=$("#"+id);el.oninput=()=>{
-    const v=parseFloat(el.value); const sp=ensureRel();
-    if(sub){sp.pivot[sub]=v;}else{sp[key]=v;}
-    $("#"+id+"Val")&&($("#"+(key==='widthFrac'?'wf':key)+"Val").textContent=v.toFixed(3));
-    drawStage(); drawItemCanvas(); save();
-  };};
-  $("#wf").oninput=()=>{ensureRel().widthFrac=parseFloat($("#wf").value);$("#wfVal").textContent=parseFloat($("#wf").value).toFixed(3);drawStage();drawItemCanvas();save();};
-  $("#px").oninput=()=>{ensureRel().pivot.x=parseFloat($("#px").value);$("#pxVal").textContent=parseFloat($("#px").value).toFixed(3);drawStage();drawItemCanvas();save();};
-  $("#py").oninput=()=>{ensureRel().pivot.y=parseFloat($("#py").value);$("#pyVal").textContent=parseFloat($("#py").value).toFixed(3);drawStage();drawItemCanvas();save();};
-  $("#behind").onchange=()=>{ensureRel().behind=$("#behind").checked;drawStage();save();};
-  $("#resetDefault").onclick=()=>{const it=DATA.items.find(i=>i.id===SEL);if(it&&it.rel){REL[SEL]={...it.rel,pivot:{...it.rel.pivot}};select(SEL);save();}};
+  $("#wf").oninput=()=>{editSpec().widthFrac=parseFloat($("#wf").value);$("#wfVal").textContent=parseFloat($("#wf").value).toFixed(3);drawStage();drawItemCanvas();save();};
+  $("#px").oninput=()=>{editSpec().pivot.x=parseFloat($("#px").value);$("#pxVal").textContent=parseFloat($("#px").value).toFixed(3);drawStage();drawItemCanvas();save();};
+  $("#py").oninput=()=>{editSpec().pivot.y=parseFloat($("#py").value);$("#pyVal").textContent=parseFloat($("#py").value).toFixed(3);drawStage();drawItemCanvas();save();};
+  $("#behind").onchange=()=>{editSpec().behind=$("#behind").checked;drawStage();save();};
+  $("#resetDefault").onclick=()=>{const it=DATA.items.find(i=>i.id===SEL);if(it&&it.rel){REL[SEL]=cloneSpec(it.rel);select(SEL);save();}};
   $("#nextUntuned").onclick=()=>{const u=visible().find(i=>!i.tuned&&i.id!==SEL)||DATA.items.find(i=>!i.tuned);if(u)select(u.id);};
+  $("#nextInList").onclick=()=>{const vis=visible();const i=vis.findIndex(x=>x.id===SEL);if(vis.length)select(vis[(i+1)%vis.length].id);};
+  if($("#ovAdd")) $("#ovAdd").onclick=()=>addOverride(IANIM);
+  if($("#ovRemove")) $("#ovRemove").onclick=()=>removeOverride(IANIM);
+  if($("#ovCopy")) $("#ovCopy").onclick=()=>copyOverride($("#ovCopyTo").value);
   setupItemCanvasDrag();
 }
-function ensureRel(){ if(!REL[SEL]){const s=curSpec();REL[SEL]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};} return REL[SEL]; }
 
 // item-aspect (natural h/w), cached
-function itemAspect(src){return new Promise(res=>{if(aspectCache[src])return res(aspectCache[src]);const im=new Image();im.onload=()=>{aspectCache[src]=im.naturalHeight/im.naturalWidth||1;res(aspectCache[src]);};im.onerror=()=>res(1);im.src=src;});}
+function itemAspect(src){return new Promise(res=>{if(aspectCache[src])return res(aspectCache[src]);const im=new Image();im.onload=()=>{aspectCache[src]=im.naturalHeight/im.naturalWidth||1;res(aspectCache[src]);};im.onerror=()=>{aspectCache[src]=1;res(1);};im.src=src;});}
+
+function pigFrameImg(anim,frame,pig){return `/img/assets/images/sprites/${pig||IPIG}/${anim}_${frame+1}.png`;}
 
 async function drawStage(){
   const it=DATA.items.find(i=>i.id===SEL); if(!it)return;
   const st=$("#stage"); st.style.width=S+"px"; st.style.height=S+"px";
   const fullCanvas=noPlacement(it.category);
   const s=curSpec();
-  const src="/img/"+it.image, aspect=await itemAspect(src);
-  const w=s.widthFrac*CARD, h=w*aspect;
-  const a=resolveA(IANIM,IFRAME,s.anchor);              // per-frame anchor (idle/walk/jump/…)
-  const left=a.x - s.pivot.x*w, top=a.y - s.pivot.y*h;
-  const behind=!!s.behind;
-  let html=`<div class="pig" style="z-index:${behind?20:5}"><img src="${pigFrameImg(IANIM,IFRAME)}"></div>`;
+  // Preload BOTH sprites' aspects so a pose flip never lays out at 1:1.
+  await itemAspect("/img/"+it.image);
+  if(it.side) await itemAspect("/img/"+it.side);
+  const L=layoutItem(s,IANIM,IFRAME,{item:it});
+  let html=`<div class="pig" style="z-index:${L.behind?20:5}"><img src="${pigFrameImg(IANIM,IFRAME)}"></div>`;
   if(!fullCanvas){
-    html+=`<div class="item" style="z-index:${behind?2:10};left:${left*SCALE}px;top:${top*SCALE}px;width:${w*SCALE}px;height:${h*SCALE}px"><img src="${src}" draggable="false"></div>`;
+    html+=`<div class="item" style="z-index:${L.behind?2:10};left:${L.left*SCALE}px;top:${L.top*SCALE}px;width:${L.w*SCALE}px;height:${L.h*SCALE}px;transform:rotate(${L.rotate}deg)"><img src="${L.src}" draggable="false"></div>`;
   }else{
-    html+=`<div class="item" style="z-index:2;left:0;top:0;width:${S}px;height:${S}px"><img src="${src}" style="object-fit:cover"></div>`;
+    html+=`<div class="item" style="z-index:2;left:0;top:0;width:${S}px;height:${S}px"><img src="/img/${it.image}" style="object-fit:cover"></div>`;
   }
   // anchor dots (move with the pose so you see exactly what the item tracks)
   if(!fullCanvas){
@@ -398,22 +664,28 @@ async function drawStage(){
   // scale together around centre, exactly like the in-app pig card. This is what
   // makes every pose read at the same size as idle.
   const k=ANIMSCALE[IANIM]||1;
-  st.innerHTML=`<div style="position:absolute;inset:0;transform:scale(${k});transform-origin:50% 50%">${html}</div>`;
-  st.querySelectorAll(".anchorDot").forEach(d=>d.onclick=()=>{ensureRel().anchor=d.dataset.anchor;$("#anchorName")&&($("#anchorName").textContent=d.dataset.anchor);drawStage();save();});
+  st.innerHTML=`<div style="position:absolute;inset:0;transform:scale(${k});transform-origin:50% 50%">${html}</div>`
+    +(fullCanvas?"":`<div class="srctag">${L.useSide?"side sprite":"front sprite"}${Math.abs(L.rotate)>0.05?` · tilt ${L.rotate.toFixed(1)}°`:""}${Math.abs(L.scale-1)>0.005?` · ×${L.scale.toFixed(2)}`:""}${RIGVIEW==="auto"?' · <b style="color:var(--auto)">auto rig</b>':""}</div>`);
+  st.querySelectorAll(".anchorDot").forEach(d=>d.onclick=()=>{editSpec().anchor=d.dataset.anchor;$("#anchorName")&&($("#anchorName").textContent=d.dataset.anchor);drawStage();save();});
   // Drag the item directly on the pig to move it (adjusts the pivot live).
   if(!fullCanvas){
     const el=st.querySelector(".item");
     if(el){
       el.style.cursor="grab";
       let drag=false,lx=0,ly=0;
+      const rad=(L.rotate*Math.PI)/180, cos=Math.cos(rad), sin=Math.sin(rad);
       el.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;el.setPointerCapture(e.pointerId);el.style.cursor="grabbing";e.preventDefault();};
       el.onpointermove=e=>{ if(!drag)return;
-        const sp=ensureRel();
-        sp.pivot.x-=((e.clientX-lx)/(SCALE*k))/w;
-        sp.pivot.y-=((e.clientY-ly)/(SCALE*k))/h;
+        const sp=editSpec();
+        // Screen delta -> card delta -> pivot delta, un-rotated: the rendered
+        // box moves by -R·(dpivot·size), so invert R to keep drag 1:1 under tilt.
+        const dx=(e.clientX-lx)/(SCALE*k), dy=(e.clientY-ly)/(SCALE*k);
+        sp.pivot.x-=(dx*cos+dy*sin)/L.w;
+        sp.pivot.y-=(-dx*sin+dy*cos)/L.h;
         lx=e.clientX; ly=e.clientY;
-        el.style.left=((a.x-sp.pivot.x*w)*SCALE)+"px";
-        el.style.top =((a.y-sp.pivot.y*h)*SCALE)+"px";
+        const M=layoutItem(effSpec(SEL,IANIM),IANIM,IFRAME,{item:it});
+        el.style.left=(M.left*SCALE)+"px";
+        el.style.top =(M.top*SCALE)+"px";
         const px=$("#px"),py=$("#py");
         if(px){px.value=sp.pivot.x;$("#pxVal").textContent=sp.pivot.x.toFixed(3);}
         if(py){py.value=sp.pivot.y;$("#pyVal").textContent=sp.pivot.y.toFixed(3);}
@@ -434,7 +706,7 @@ function setupItemCanvasDrag(){
   const cv=$("#itemcanvas"); if(!cv)return;
   let drag=false;
   const set=e=>{const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
-    const sp=ensureRel();sp.pivot.x=Math.max(-0.3,Math.min(1.3,x));sp.pivot.y=Math.max(-0.3,Math.min(1.3,y));
+    const sp=editSpec();sp.pivot.x=Math.max(-0.3,Math.min(1.3,x));sp.pivot.y=Math.max(-0.3,Math.min(1.3,y));
     $("#px").value=sp.pivot.x;$("#py").value=sp.pivot.y;$("#pxVal").textContent=sp.pivot.x.toFixed(3);$("#pyVal").textContent=sp.pivot.y.toFixed(3);
     drawItemCanvas();drawStage();save();};
   cv.onpointerdown=e=>{drag=true;cv.setPointerCapture(e.pointerId);set(e);};
@@ -447,11 +719,12 @@ let saveT;
 function save(){
   // mark current item tuned in the list immediately
   const it=DATA.items.find(i=>i.id===SEL); if(it&&!it.tuned){it.tuned=true;renderList();}
+  setStatus();
   clearTimeout(saveT);
   $("#status").innerHTML=`saving…`;
   saveT=setTimeout(async()=>{
     const r=await fetch("/api/save-rel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(REL)}).then(r=>r.json()).catch(()=>null);
-    $("#status").innerHTML=r&&r.ok?`<b>saved</b> · ${r.count} item specs in hat_rel.generated.ts`:`save failed`;
+    if(r&&r.ok){setStatus();}else{$("#status").innerHTML=`save failed`;}
   },350);
 }
 // Persist an art rejection (+ reason) to docs/art-rejections.json — the durable
@@ -463,44 +736,143 @@ function saveReject(clear){
 }
 
 // ---- mode switch ----
-document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
-  const m=t.dataset.m;
+function showMode(m){
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.m===m));
   $("#mode-items").classList.toggle("hidden",m!=="items");
   $("#mode-pig").classList.toggle("hidden",m!=="pig");
-});
+  $("#mode-sheet").classList.toggle("hidden",m!=="sheet");
+  if(m==="sheet"){buildSheetBar();drawSheet();}
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showMode(t.dataset.m));
 
 // ============ PIG ANATOMY MODE ============
-let FRAMES={}, PANIM="idle", PFRAME=0, ONION=false, PIN_ALL=false;
-const clone=o=>JSON.parse(JSON.stringify(o));
+let FRAMES={}, PANIM="idle", PFRAME=0, ONION=false, PIN_ALL=false, PPIG="rosie";
+// Auto-rig compare: the candidate drawn beside the live rig (orange vs green).
+let AUTOSHOW=false, ALL_ARMED=false;
+// One candidate anchor at (anim, frame), clamped to the candidate's own length.
+function autoAt(anim,frame,name){
+  if(!CAND||!CAND.frames) return null;
+  const arr=CAND.frames[anim]||[]; if(!arr.length) return null;
+  const fr=arr[Math.min(frame,arr.length-1)]||{};
+  const a=fr[name];
+  return (a&&typeof a.x==="number"&&typeof a.y==="number")?{x:a.x,y:a.y}:null;
+}
+function autoConf(anim,frame,name){
+  if(!CAND||!CAND.confidence) return "";
+  const arr=CAND.confidence[anim]||[]; if(!arr.length) return "";
+  const fr=arr[Math.min(frame,arr.length-1)]||{};
+  return fr[name]||"";
+}
+const fmtD=v=>(v>0?"+":"")+Math.round(v);
+// Copy the candidate's anchors for (anim, i) into a live frame object.
+function copyCandFrame(anim,i,dst){
+  let any=false;
+  ANCHORS.forEach(n=>{ const a=autoAt(anim,i,n); if(a){dst[n]=a;any=true;} });
+  return any;
+}
+// A whole animation: grow the live array to the candidate's frame count first
+// (same materialise-then-write rule dragging uses), then write every frame.
+function acceptCandAnim(anim){
+  const c=(CAND&&CAND.frames&&CAND.frames[anim])||[];
+  if(!c.length) return false;
+  materialiseFrames(anim,c.length-1);
+  const f=FRAMES[anim];
+  let any=false;
+  for(let i=0;i<f.length;i++){ f[i]=f[i]||{}; if(copyCandFrame(anim,i,f[i])) any=true; }
+  return any;
+}
+function acceptAuto(scope){
+  if(!CAND||!CAND.frames) return;
+  let n=0;
+  if(scope==="frame"){
+    materialiseFrames(PANIM,PFRAME);
+    if(copyCandFrame(PANIM,PFRAME,FRAMES[PANIM][PFRAME])) n=1;
+  }else if(scope==="anim"){
+    if(acceptCandAnim(PANIM)) n=1;
+  }else{
+    Object.keys(CAND.frames).filter(a=>ANIMS.indexOf(a)>=0).forEach(a=>{ if(acceptCandAnim(a)) n++; });
+  }
+  if(!n){ $("#pig-status").textContent="no candidate anchors for that scope"; return; }
+  drawPig(); savePig();
+}
+// One anchor, this frame — the per-row "← auto".
+function acceptAutoAnchor(name){
+  const a=autoAt(PANIM,PFRAME,name); if(!a) return;
+  materialiseFrames(PANIM,PFRAME);
+  FRAMES[PANIM][PFRAME][name]=a;
+  drawPig(); savePig();
+}
+// No blocking browser dialog anywhere (they stall the automation harness) and
+// there is no undo, so the all-animations button arms itself on the first click
+// and fires on the second; a click anywhere else disarms it.
+function disarmAll(){
+  if(!ALL_ARMED) return;
+  ALL_ARMED=false;
+  const b=$("#pig-accept-all");
+  if(b){ b.textContent="Accept auto: all animations"; b.classList.remove("danger"); }
+}
+function armAcceptAll(){
+  const b=$("#pig-accept-all"); if(!b) return;
+  if(!ALL_ARMED){ ALL_ARMED=true; b.textContent="Really replace every animation?"; b.classList.add("danger"); return; }
+  disarmAll(); acceptAuto("all");
+}
+document.addEventListener("click",disarmAll);
+function drawAutoNote(){
+  const el=$("#pig-autonote"); if(!el) return;
+  const on=!!(CAND&&AUTOSHOW);
+  el.classList.toggle("hidden",!on);
+  if(on) el.innerHTML=`auto rig from <b>${esc(CAND.source||"scripts/auto_rig.py")}</b> · ${esc(CAND.generatedAt||"unknown time")}`;
+}
 async function buildPigMode(){
   const d=await fetch("/api/anchors").then(r=>r.json());
   FRAMES=d.frames; DATA.rest=d.rest;
-  const sel=$("#pig-anim"); sel.innerHTML=Object.keys(FRAMES).map(a=>`<option>${a}</option>`).join("");
+  if(!PIGS[PPIG]) PPIG=Object.keys(PIGS)[0];
+  if(ANIMS.indexOf(PANIM)<0) PANIM=ANIMS[0];
+  const sel=$("#pig-anim"); sel.innerHTML=ANIMS.map(a=>`<option ${a===PANIM?"selected":""}>${a}</option>`).join("");
   sel.onchange=()=>{PANIM=sel.value;PFRAME=0;drawPig();};
+  const psel=$("#pig-pig"); psel.innerHTML=Object.keys(PIGS).map(p=>`<option ${p===PPIG?"selected":""}>${p}</option>`).join("");
+  psel.onchange=()=>{PPIG=psel.value;PFRAME=0;drawPig();};
   $("#pig-onion").onclick=()=>{ONION=!ONION;$("#pig-onion").textContent="Onion skin: "+(ONION?"on":"off");drawPig();};
   $("#pig-pin").onchange=e=>{PIN_ALL=e.target.checked;};
+  $("#pig-auto").classList.toggle("hidden",!CAND);
+  $("#pig-accept").classList.toggle("hidden",!CAND);
+  $("#pig-auto").onclick=()=>{AUTOSHOW=!AUTOSHOW;$("#pig-auto").textContent="Auto rig: "+(AUTOSHOW?"show":"off");drawPig();};
+  $("#pig-accept-frame").onclick=()=>acceptAuto("frame");
+  $("#pig-accept-anim").onclick=()=>acceptAuto("anim");
+  $("#pig-accept-all").onclick=e=>{e.stopPropagation();armAcceptAll();};
   $("#pig-scaledn").onclick=()=>scaleFrame(0.97);
   $("#pig-scaleup").onclick=()=>scaleFrame(1.03);
   // Match this frame to the previous one (every anchor) — for poses that
   // shouldn't move between frames.
   $("#pig-matchprev").onclick=()=>{
+    materialiseFrames(PANIM,PFRAME);
     const f=FRAMES[PANIM]; if(!f||f.length<2)return;
     f[PFRAME]=clone(f[(PFRAME-1+f.length)%f.length]); drawPig(); savePig();
   };
   // Freeze the whole animation: every frame = the current frame (nothing moves).
   $("#pig-freeze").onclick=()=>{
+    materialiseFrames(PANIM,PFRAME);
     const f=FRAMES[PANIM]; if(!f)return;
     const cur=clone(f[PFRAME]); for(let i=0;i<f.length;i++) f[i]=clone(cur);
     drawPig(); savePig();
   };
   drawPig();
 }
-function pigFrameImg(anim,frame){return `/img/assets/images/sprites/rosie/${anim}_${frame+1}.png`;}
+// An anim's anchor array can be SHORTER than its sprite count (the app clamps
+// past the end — resolveAnchor). Editing a clamped frame has to give it a row
+// of its own first: fill the gap with copies of the last authored frame so
+// nothing moves except what's dragged.
+function materialiseFrames(anim,idx){
+  const f=FRAMES[anim]||(FRAMES[anim]=[]);
+  while(f.length<=idx) f.push(clone(f[f.length-1]||{}));
+  return f[idx];
+}
+function clampedIdx(anim,idx){ const f=FRAMES[anim]||[]; return Math.min(idx,Math.max(0,f.length-1)); }
 // Scale every anchor of the current frame around their centroid (or all frames
 // when Pin is on). Missing anchors are materialised from REST first so the
 // whole cluster scales together.
 function scaleFrame(factor){
+  materialiseFrames(PANIM,PFRAME);
   const apply=(fr)=>{
     ANCHORS.forEach(n=>{ if(!fr[n]) fr[n]={...(DATA.rest[n]||{x:150,y:150})}; });
     const cx=ANCHORS.reduce((s,n)=>s+fr[n].x,0)/ANCHORS.length;
@@ -510,33 +882,66 @@ function scaleFrame(factor){
   if(PIN_ALL) FRAMES[PANIM].forEach(apply); else apply(FRAMES[PANIM][PFRAME]);
   drawPig(); savePig();
 }
-function resolvePig(name){ // frame value or REST fallback
-  const fr=FRAMES[PANIM]&&FRAMES[PANIM][PFRAME]||{};
+function resolvePig(name){ // frame value (clamped like the app) or REST fallback
+  const fr=(FRAMES[PANIM]&&FRAMES[PANIM][clampedIdx(PANIM,PFRAME)])||{};
   if(name in fr) return {...fr[name],set:true};
   if(DATA.rest[name]) return {...DATA.rest[name],set:false};
   return null;
 }
 function drawPig(){
-  const frames=FRAMES[PANIM]||[];
-  $("#pig-frames").innerHTML=frames.map((_,i)=>`<button class="tab ${i===PFRAME?'on':''}" data-fr="${i}">${i}</button>`).join("");
+  const nf=frameCount(PPIG,PANIM);
+  if(PFRAME>=nf) PFRAME=0;
+  const authored=(FRAMES[PANIM]||[]).length;
+  $("#pig-frames").innerHTML=Array.from({length:nf},(_,i)=>`<button class="tab ${i===PFRAME?'on':''}" data-fr="${i}" style="${i>=authored?"opacity:.55":""}">${i}</button>`).join("");
   $("#pig-frames").querySelectorAll("button").forEach(b=>b.onclick=()=>{PFRAME=+b.dataset.fr;drawPig();});
+  const note=$("#pig-clampnote");
+  const clamped=PFRAME>=authored;
+  note.classList.toggle("hidden",!clamped);
+  if(clamped) note.textContent=`Frame ${PFRAME} has no anchors of its own — clamped from frame ${Math.max(0,authored-1)}. Drag a dot to give it its own.`;
   const st=$("#pig-stage"); st.style.width=S+"px"; st.style.height=S+"px";
-  let html=`<div class="pig"><img src="${pigFrameImg(PANIM,PFRAME)}"></div>`;
-  if(ONION&&PFRAME>0) html=`<div class="pig" style="opacity:.3"><img src="${pigFrameImg(PANIM,PFRAME-1)}"></div>`+html;
+  let html=`<div class="pig"><img src="${pigFrameImg(PANIM,PFRAME,PPIG)}"></div>`;
+  if(ONION&&PFRAME>0) html=`<div class="pig" style="opacity:.3"><img src="${pigFrameImg(PANIM,PFRAME-1,PPIG)}"></div>`+html;
   ANCHORS.forEach(name=>{
     const a=resolvePig(name); if(!a)return;
-    html+=`<div class="dragDot" data-a="${name}" style="left:${a.x*SCALE}px;top:${a.y*SCALE}px;opacity:${a.set?1:.4};background:${a.set?'var(--green)':'#b9a98f'}"><span class="lbl">${name}</span></div>`;
+    html+=`<div class="dragDot" data-a="${name}" style="left:${a.x*SCALE}px;top:${a.y*SCALE}px;opacity:${a.set&&!clamped?1:.4};background:${a.set&&!clamped?'var(--green)':'#b9a98f'}"><span class="lbl">${name}</span></div>`;
   });
+  // The candidate, read-only: an orange dot per anchor plus a thin line back to
+  // the live (green) one, so the delta reads at a glance.
+  if(AUTOSHOW&&CAND){
+    ANCHORS.forEach(name=>{
+      const a=autoAt(PANIM,PFRAME,name); if(!a) return;
+      const cur=resolvePig(name);
+      if(cur){
+        const dx=(a.x-cur.x)*SCALE, dy=(a.y-cur.y)*SCALE, len=Math.hypot(dx,dy);
+        if(len>1.5) html+=`<div class="autoLine" style="left:${cur.x*SCALE}px;top:${cur.y*SCALE}px;width:${len}px;transform:rotate(${Math.atan2(dy,dx)*180/Math.PI}deg)"></div>`;
+      }
+      html+=`<div class="autoDot" data-auto="${name}" style="left:${a.x*SCALE}px;top:${a.y*SCALE}px"></div>`;
+    });
+  }
+  drawAutoNote();
   st.innerHTML=html;
   st.querySelectorAll(".dragDot").forEach(setupDotDrag);
   // anchor list — each row has a "⇉ all" to sync THAT anchor across every frame
   $("#pig-anchorlist").innerHTML=ANCHORS.map(n=>{const a=resolvePig(n);const miss=!a||!a.set;
-    return `<div class="ar ${miss?'miss':''}"><span>${n}</span><span>${a?Math.round(a.x)+", "+Math.round(a.y):"—"}${miss?" (rest)":""} <button class="syncbtn" data-sync="${n}" title="Set ${n} in ALL frames of ${PANIM} to this frame's value">⇉ all</button></span></div>`;}).join("");
+    return `<div class="ar ${miss?'miss':''}"><span>${n}</span><span>${a?Math.round(a.x)+", "+Math.round(a.y):"—"}${miss?" (rest)":""} <button class="syncbtn" data-sync="${n}" title="Set ${n} in ALL frames of ${PANIM} to this frame's value">⇉ all</button></span>${autoRowHtml(n,a)}</div>`;}).join("");
   $("#pig-anchorlist").querySelectorAll(".syncbtn").forEach(b=>b.onclick=()=>syncAnchorAcrossFrames(b.dataset.sync));
+  $("#pig-anchorlist").querySelectorAll(".autobtn").forEach(b=>b.onclick=()=>acceptAutoAnchor(b.dataset.auto));
+}
+// The candidate's line in an anchor row: its value, the delta from the live
+// rig, how it was arrived at, and a one-anchor accept.
+function autoRowHtml(name,cur){
+  if(!CAND) return "";
+  const a=autoAt(PANIM,PFRAME,name); if(!a) return "";
+  const c=autoConf(PANIM,PFRAME,name);
+  const d=cur?`Δ${fmtD(a.x-cur.x)}, ${fmtD(a.y-cur.y)}`:"";
+  return `<div class="arauto"><span class="av">auto ${Math.round(a.x)}, ${Math.round(a.y)}</span><span>${d}</span>`
+    +`<span class="conf">${esc(c)}</span>`
+    +`<button class="autobtn" data-auto="${name}" title="Copy the candidate ${name} into ${PANIM} frame ${PFRAME}">← auto</button></div>`;
 }
 // Sync ONE anchor across all frames of the current animation to the current
 // frame's value (e.g. make every "head" match this frame) — leaves the rest.
 function syncAnchorAcrossFrames(name){
+  materialiseFrames(PANIM,PFRAME);
   const f=FRAMES[PANIM]; if(!f)return;
   const cur=resolvePig(name); if(!cur)return;
   const val={x:cur.x,y:cur.y};
@@ -550,6 +955,9 @@ function setupDotDrag(dot){
     const x=Math.max(0,Math.min(CARD,(e.clientX-r.left)/SCALE));
     const y=Math.max(0,Math.min(CARD,(e.clientY-r.top)/SCALE));
     const pos={x,y};
+    // A frame past the authored array gets its own row (and every gap before
+    // it) the moment it's edited — until then it just clamps, like the app.
+    materialiseFrames(PANIM,PFRAME);
     // PIN_ALL: this anchor shouldn't move across the animation — write it to
     // every frame at once. Otherwise just the current frame.
     if(PIN_ALL) FRAMES[PANIM].forEach(fr=>fr[dot.dataset.a]={...pos});
@@ -569,6 +977,51 @@ let pigT;
 function savePig(){clearTimeout(pigT);$("#pig-status").textContent="saving…";
   pigT=setTimeout(async()=>{const r=await fetch("/api/save-anchors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(FRAMES)}).then(r=>r.json()).catch(()=>null);
     $("#pig-status").innerHTML=r&&r.ok?"<b>saved</b> to PIG_FRAME_ANCHORS":"save failed";},400);}
+
+// ============ SHEET MODE ============
+// A contact sheet of every visible item on the pig, laid out by the SAME
+// layoutItem the stage uses. The 300 card is drawn at 82% inside a 150px cell
+// with overflow visible — a hat on the turn rides above the canvas top and a
+// clipped cell is what made the first angle audit report "squashed" art.
+const CELL=150, CELL_CARD=0.82;
+function buildSheetBar(){
+  const nf=frameCount(IPIG,IANIM);
+  if(IFRAME>=nf) IFRAME=0;
+  $("#sh-anim").innerHTML=ANIMS.map(a=>`<option ${a===IANIM?"selected":""}>${a}</option>`).join("");
+  $("#sh-anim").onchange=e=>{IANIM=e.target.value;IFRAME=0;drawAnimBar();buildSheetBar();drawSheet();if(SEL)select(SEL);};
+  $("#sh-pig").innerHTML=Object.keys(PIGS).map(p=>`<option ${p===IPIG?"selected":""}>${p}</option>`).join("");
+  $("#sh-pig").onchange=e=>{IPIG=e.target.value;IFRAME=0;drawAnimBar();buildSheetBar();drawSheet();};
+  $("#sh-frames").innerHTML=Array.from({length:nf},(_,i)=>`<button class="tab ${i===IFRAME?'on':''}" data-fr="${i}">${i+1}</button>`).join("");
+  $("#sh-frames").querySelectorAll("button").forEach(b=>b.onclick=()=>{IFRAME=+b.dataset.fr;drawAnimBar();buildSheetBar();drawSheet();});
+  $("#sh-search").value=$("#search").value;
+  const rs=$("#rig-sheet");
+  if(rs){ rs.innerHTML=rigSegInner(); wireRigSeg(rs); }
+  document.querySelectorAll("#sheetchips .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===FILTER));
+}
+let sheetSeq=0;
+async function drawSheet(){
+  const grid=$("#sheet"); if(!grid||$("#mode-sheet").classList.contains("hidden"))return;
+  const seq=++sheetSeq;
+  const vis=visible().filter(it=>!noPlacement(it.category));
+  $("#sh-status").textContent=`${vis.length} items · ${IANIM} frame ${IFRAME+1} · ${IPIG}`;
+  // One aspect load per sprite, cached forever — the layout needs real heights.
+  await Promise.all(vis.map(it=>itemAspect("/img/"+((isTurned(IANIM)&&it.side)?it.side:it.image))));
+  if(seq!==sheetSeq) return;
+  const k=CELL*CELL_CARD/CARD;                 // 300 card -> 123px inside a 150 cell
+  const inset=(CELL-CARD*k)/2;                 // centred, with the rest as headroom
+  const pigSrc=pigFrameImg(IANIM,IFRAME,IPIG);
+  grid.innerHTML=vis.map(it=>{
+    const L=layoutItem(effSpec(it.id,IANIM),IANIM,IFRAME,{item:it});
+    return `<div class="cell" data-id="${it.id}" title="${it.id}">
+      <div class="cellbox"><div class="cellcard" style="transform:scale(${k});left:${inset}px;top:${CELL-CARD*k}px">
+        <div class="pig" style="z-index:${L.behind?20:5}"><img src="${pigSrc}"></div>
+        <div class="item" style="z-index:${L.behind?2:10};left:${L.left}px;top:${L.top}px;width:${L.w}px;height:${L.h}px;transform:rotate(${L.rotate}deg)"><img src="${L.src}"></div>
+      </div></div>
+      <div class="celllbl">${it.id}${badges(it)}</div>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".cell").forEach(c=>c.onclick=()=>{showMode("items");select(c.dataset.id);});
+}
 
 boot();
 </script>

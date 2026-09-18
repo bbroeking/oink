@@ -7,7 +7,9 @@ import { rpc, rpcAction } from "@/utils/rpc";
 
 // The Satchel's read RPCs answer "no such feature" here — the visit under test
 // is the tickle visit, on a server without the bag.
-const SATCHEL_RPCS = new Set(["my_satchel", "friend_wishes"]);
+// The visit's side reads: the bag, the bubble, and (2026-09-18) whether the
+// host's greeter is out on an errand. None of them spends the Visit.
+const SATCHEL_RPCS = new Set(["my_satchel", "friend_wishes", "host_pig_away"]);
 import { PigStage } from "@/components/ui/PigStage";
 import { RITUAL_FX, fxWash, hasPigFx } from "@/constants/ritualFx";
 import { recordPorchStop } from "@/utils/porchRound";

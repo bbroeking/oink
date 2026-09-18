@@ -60,6 +60,23 @@ const GLYPHS = {
 	flame: require("../../assets/images/glyphs/flame.png"),
 	globe: require("../../assets/images/glyphs/globe.png"),
 	ghost: require("../../assets/images/glyphs/ghost.png"),
+	// The Ghost Sheep Trader — his own sticker (2026-09-17), for the fan row's mark.
+	trader: require("../../assets/images/glyphs/trader.png"),
+	// The Barn button's door — the barn front with the right leaf swung open,
+	// painted in the satchel sticker style (2026-09-17; replaces the BarnDoor SVG).
+	barnDoor: require("../../assets/images/glyphs/barn_door.png"),
+	// The store's hanging signs (2026-09-17) — Store, Closet, Pen in the same
+	// painted family (Codex ImageGen off dig/bag.png; docs/reviews/shop-signs-2026-09-17/).
+	signStore: require("../../assets/images/glyphs/store.png"),
+	signCloset: require("../../assets/images/glyphs/closet.png"),
+	signPen: require("../../assets/images/glyphs/pen.png"),
+	// The tab bar's five signs (2026-09-17) — the same painted family as the
+	// Barn button's fan, one sheet so they match each other.
+	tabBarn: require("../../assets/images/glyphs/tabs/barn.png"),
+	tabFriends: require("../../assets/images/glyphs/tabs/friends.png"),
+	tabSeason: require("../../assets/images/glyphs/tabs/season.png"),
+	tabShop: require("../../assets/images/glyphs/tabs/shop.png"),
+	tabMe: require("../../assets/images/glyphs/tabs/me.png"),
 	// Snout Deep's painted find marks (ImageGen lane, the truffle glyph as the
 	// style anchor) — what a find wears on a cleared tile, in the pouch, on the
 	// reveal sticker and on the tally's disc. Truffles keep `truffle`; a stone

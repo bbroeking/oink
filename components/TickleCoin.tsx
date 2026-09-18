@@ -38,6 +38,11 @@ const CHIP_GLYPH = 18;
 const STAMP_OVERLAP = -14;
 const STAMP_RIGHT = 10;
 const STREAK_GLYPH = 16;
+// The room the coin keeps under itself for the stamp's overhang plus its hard
+// shadow, so the clock line and the ribbon start BELOW the flame instead of
+// under it. Reserved whether or not a streak is running, so nothing below the
+// coin jumps when one starts (the lucky-pig ribbon sat on the flame, 2026-09-17).
+const STAMP_ROOM = -STAMP_OVERLAP + SHADOW_SM.shadowOffset.height;
 // Leans: the coin sits a touch clockwise, the marks on it a touch counter, so
 // the corner reads as stuck on by hand rather than laid out.
 const COIN_TILT = "4deg";
@@ -211,6 +216,7 @@ const styles = StyleSheet.create({
 	coinWrap: {
 		width: COIN,
 		height: COIN,
+		marginBottom: STAMP_ROOM,
 	},
 	coin: {
 		width: COIN,
@@ -289,7 +295,7 @@ const styles = StyleSheet.create({
 		elevation: 0,
 	},
 	clock: {
-		marginTop: SPACE.sm,
+		// No extra lead: `STAMP_ROOM` on the coin already clears the flame.
 		textShadowColor: WHIMSY.ink,
 		textShadowOffset: CLOCK_SHADOW,
 		textShadowRadius: CLOCK_SHADOW_RADIUS,

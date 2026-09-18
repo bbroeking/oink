@@ -24,7 +24,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { BarnDoor, Glyph, Hand, Label, Shovel, T } from "./ui";
+import { Glyph, Hand, Label, Shovel, T } from "./ui";
 import {
 	BORDER,
 	MODAL_BACKDROP_BG,
@@ -71,14 +71,18 @@ const OPTION_RISE = 24;
 // its gutters. An absolute child of the 72pt anchor is otherwise measured
 // against the anchor and its copy clips.
 const FAN_SPAN = Dimensions.get("window").width - PAGE_PAD * 2;
-// The gap between the button's rim and the word beside it.
-const LABEL_GAP = 12;
+// The gap between the "+"'s top and the word above the button (2026-09-17:
+// the word moved from the button's left to above it), and how far past the
+// 72pt anchor the word's seat may reach on either side so a long word still
+// centres on the face.
+const LABEL_GAP = 2;
+const LABEL_SLACK = 48;
 // Leans.
 const FAB_TILT = "-3deg";
 const LABEL_TILT = "-2deg";
 
 /** The marks the button can wear — on its face and in the fan. */
-export type BarnMark = "door" | "shovel" | "truffle" | "bag" | "trough";
+export type BarnMark = "door" | "shovel" | "truffle" | "bag" | "trough" | "trader" | "pen";
 
 export interface BarnFanOption {
 	key: string;
@@ -119,12 +123,19 @@ interface Props {
 	testID?: string;
 }
 
+// THE MARKS ARE ONE FAMILY (2026-09-17): painted 256² sticker glyphs — ink
+// outline, cel shade, two sparkles, the subject at ~88% of its box — drawn
+// `contain` at OPTION_ART / OPTION_ART_DEFAULT / FACE. The shovel is the one
+// drawn (SVG) exception: it is the "live" face the sage fill sits behind.
 function Mark({ mark, size }: { mark: BarnMark; size: number }) {
 	if (mark === "shovel") return <Shovel size={size} />;
 	if (mark === "truffle") return <Glyph name="truffle" size={size} />;
 	if (mark === "bag") return <Glyph name="digBag" size={size} />;
 	if (mark === "trough") return <Glyph name="pigface" size={size} />;
-	return <BarnDoor size={size} />;
+	if (mark === "trader") return <Glyph name="trader" size={size} />;
+	// The Pen's sign (the errand row: a pig out looking, or back on the board).
+	if (mark === "pen") return <Glyph name="signPen" size={size} />;
+	return <Glyph name="barnDoor" size={size} />;
 }
 
 export function BarnButton({ options, armedKey, onArm, live = false, style, testID }: Props) {
@@ -397,11 +408,16 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 								<Label>+</Label>
 							</Pressable>
 						) : null}
+						{/* The word above the face — the armed action's name. It lives in
+						    the shut-button branch only, so the fan's ladder (which climbs
+						    from the same rim) never shares the space with it. */}
 						{armed ? (
-							<View pointerEvents="none" style={[styles.label, faceDisabled && styles.labelDisabled]}>
-								<Hand numberOfLines={1} tone={faceDisabled ? "disabled" : "primary"}>
-									{faceDisabled && armed.disabledLine ? armed.disabledLine : armed.label}
-								</Hand>
+							<View pointerEvents="none" style={styles.labelSeat}>
+								<View style={[styles.label, faceDisabled && styles.labelDisabled]}>
+									<Hand numberOfLines={1} tone={faceDisabled ? "disabled" : "primary"}>
+										{faceDisabled && armed.disabledLine ? armed.disabledLine : armed.label}
+									</Hand>
+								</View>
 							</View>
 						) : null}
 					</Pressable>
@@ -494,10 +510,17 @@ const styles = StyleSheet.create({
 		...PRESSED,
 		elevation: 0,
 	},
-	// The word beside the face, hanging off the button's left edge.
-	label: {
+	// The word above the face: a seat wider than the anchor so the word can
+	// centre on the button, clearing the "+" on the shoulder.
+	labelSeat: {
 		position: "absolute",
-		right: FAB + LABEL_GAP,
+		left: -LABEL_SLACK,
+		right: -LABEL_SLACK,
+		// Just clear of the rim, tucked beside the "+" rather than above it.
+		bottom: FAB + LABEL_GAP,
+		alignItems: "center",
+	},
+	label: {
 		paddingHorizontal: SPACE.sm,
 		borderRadius: RADII.sm,
 		borderWidth: BORDER.ink,

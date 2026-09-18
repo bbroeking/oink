@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { observeFieldGuide, observeSnouts } from "@/utils/fieldGuide";
+import { traderMinutesLeft, traderStayLine } from "@/utils/trader";
 import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/crews";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
@@ -28,6 +29,7 @@ import {
 	Hand,
 	Icon,
 	PageBackground,
+	POPUP_HANDOFF_GAP_MS,
 	POPUP_TEARDOWN_MS,
 	Sticker,
 	T,
@@ -68,8 +70,10 @@ import { EarnedStamp } from "./EarnedStamp";
 import { TickleCoin } from "./TickleCoin";
 import { BarnButton, type BarnFanOption } from "./BarnButton";
 import { BuriedMound, buriedSnoutsCopy } from "./BuriedMound";
-import { YardTrough, troughYardCount } from "./YardTrough";
+import { troughYardCount } from "./YardTrough";
 import { TroughSheet } from "./shop/TroughSheet";
+import { DrawRevealSheet } from "./season1/DrawRevealSheet";
+import type { BarnPrize } from "@/utils/barnDraw";
 import { useTroughDrives } from "@/hooks/useTroughDrives";
 import { leadingTroughDrive, troughRowTitle } from "@/utils/troughRows";
 import { HabitatDoorTransition } from "./habitat/HabitatDoorTransition";
@@ -79,12 +83,19 @@ import { useHabitatJournal } from "@/hooks/useHabitatJournal";
 import { BuryTruffleSheet } from "./BuryTruffleSheet";
 import { SatchelSheet } from "./satchel/SatchelSheet";
 import { useSatchel } from "@/hooks/useSatchel";
+import { satchelStanding } from "@/utils/satchel";
+import { TraderSheet } from "./trader/TraderSheet";
+import { useTrader } from "@/hooks/useTrader";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { useDigEntry } from "@/hooks/useDigEntry";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
 import { usePigRoster } from "@/hooks/usePigRoster";
+import { usePigErrands } from "@/hooks/usePigErrands";
+import { EmptyYard } from "./pen/EmptyYard";
+import { backAboutLabel } from "@/utils/errands";
+import { pigDefinition } from "@/utils/pigs";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { AdRefillOffer } from "@/features/rewarded-ads/AdRefillOffer";
 import { createAdMobRewardedProvider } from "@/features/rewarded-ads/admobAdapter";
@@ -141,10 +152,6 @@ const TURN_LABEL: Record<"front" | "left" | "right", string> = {
 // tap in that corner must be an action, not a tickle. The mound draws over her
 // too — it stands in the yard's front row.
 const YARD_Z = 4;
-// Where the yard trough stands when the mound is out too: one mound-width
-// (BuriedMound MOUND_W, 54) plus a hand's gap to its right. A drawing
-// measurement, like YARD_GROUND — not a spacing token.
-const YARD_TROUGH_SHIFT = 70;
 // What going in does, spoken — the door's hint on the button and in the fan.
 const BARN_HINT = "Opens the doors to your room and furnishings";
 // Which action the Barn button wears — the player's pick from its fan, kept on
@@ -333,6 +340,15 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const [wallowCount, setWallowCount] = useState(0);
   const pigRoster = usePigRoster();
   const popupActive = usePopupActive();
+	// THE ERRAND (2026-09-18): while the greeter is out looking, the yard is
+	// empty — the mound stays, a sticker says who is out and when she is
+	// back, and there is nothing to tickle. Read once per focus, then a timer
+	// to the return. Fail-soft: an un-pushed server draws the yard as before.
+	const errands = usePigErrands();
+	const greeterAway =
+		errands.available && errands.state.away != null && errands.state.away === pigRoster.roster.activePigId
+			? errands.state.out.find((row) => row.pig_id === errands.state.away) ?? null
+			: null;
 
 	// The one merged look the active rituals add up to (weekday rituals,
 	// 2026-09-14): a scene wash for the Barn, a transform / skin / follower
@@ -793,13 +809,63 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const satchel = useSatchel();
 	const [satchelOpen, setSatchelOpen] = useState(false);
 
-	// THE TROUGH (SKILL.md 2026-09-16): a friend's leading open Trough stands
-	// in the yard beside the mound and rides the fan as a row; both open the
-	// Trough sheet. Never your own ask (friends only) — nothing open → no
-	// trough, no row: the yard stays a painting.
+	// THE TROUGH (SKILL.md 2026-09-16, amended 2026-09-17): a friend's leading
+	// open Trough rides the fan as a row — THE ONLY door to the Trough sheet
+	// (the yard trough and the shop-counter door retired). Never your own ask
+	// (friends only) — nothing open → no row.
 	const trough = useTroughDrives();
 	const leadingTrough = leadingTroughDrive(trough.drives);
 	const [troughOpen, setTroughOpen] = useState(false);
+	// The quarter's prize (2026-09-16): the chip that crossed a quarter drew a
+	// furnishing. The Trough sheet folds away, then the shared reveal opens on
+	// the gap every popup-to-popup hand-off keeps — two native Modals never
+	// overlap. Lived in the Shop tab until the Trough became the fan's alone.
+	const [troughPrize, setTroughPrize] = useState<BarnPrize | null>(null);
+	const [troughPrizeOpen, setTroughPrizeOpen] = useState(false);
+	const prizeHandoff = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => () => { if (prizeHandoff.current) clearTimeout(prizeHandoff.current); }, []);
+	// (A plain function: the sheet's onPrize needs no stable identity, and the
+	// React Compiler owns the memoization here.)
+	const showTroughPrize = (prize: BarnPrize) => {
+		setTroughPrize(prize);
+		setTroughOpen(false);
+		if (prizeHandoff.current) clearTimeout(prizeHandoff.current);
+		prizeHandoff.current = setTimeout(() => setTroughPrizeOpen(true), POPUP_HANDOFF_GAP_MS);
+	};
+
+	// THE GHOST SHEEP TRADER (2026-09-17): a hooded wandering trader the server
+	// sends round at random. He rides the fan as a row ONLY while he is at the
+	// hedge — a yard state, never a fixture — and the row opens his sheet, where
+	// finds in the bag go into his satchel for tickles. The yard says so when he
+	// arrives while you are watching.
+	const [traderOpen, setTraderOpen] = useState(false);
+	// (useTrader keeps the arrival callback in a ref, so a plain function is fine.)
+	const trader = useTrader({
+		onArrive: () =>
+			showToast("A hooded stranger is at the hedge", "The Ghost Sheep Trader — finds for tickles, while he stays", () =>
+				setTraderOpen(true),
+			),
+	});
+	const { sell } = trader;
+	const { applyBag } = satchel;
+	const sellToTrader = useCallback(
+		async (itemId: number) => {
+			const r = await sell(itemId);
+			// The server answers the WHOLE bag on a sale and on not_in_bag: install it.
+			if (r.ok) {
+				applyBag(r.bag);
+				if (!r.replay) {
+					observeFieldGuide("trader");
+					fetchStats();
+				}
+			} else if (r.bag) {
+				applyBag(r.bag);
+			}
+			return r;
+		},
+		[sell, applyBag, fetchStats],
+	);
+	const traderRefused = useCallback((line: string) => showToast("He shook his head", line), [showToast]);
 
 	// THE FAN, in its fixed order: Dig · Barn · the truffle · the Satchel.
 	// Burying rides along whenever the truffle status has loaded — as the act
@@ -884,9 +950,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			sub:
 				n === 0
 					? "empty — dig to fill it"
-					: n >= satchel.state.cap
-						? `full — ${n} finds`
-						: `${n} of ${satchel.state.cap} finds`,
+					: (satchelStanding(n, satchel.state.cap) ?? `${n} finds`),
 			label: "satchel",
 			mark: "bag",
 			onPress: () => {
@@ -896,6 +960,74 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			accessibilityLabel: "Your Satchel",
 			accessibilityHint:
 				"Opens the bag: what you carry, what your pig is hoping for, and what you have swapped",
+		});
+	}
+
+	if (trader.present) {
+		const left = trader.status.visit?.findsLeft ?? 0;
+		fanOptions.push({
+			key: "trader",
+			title: "Trader",
+			sub:
+				left <= 0
+					? "the Ghost Sheep has had enough"
+					: `the Ghost Sheep · ${traderStayLine(traderMinutesLeft(trader.status, trader.readAt))}`,
+			label: "trader",
+			mark: "trader",
+			onPress: () => setTraderOpen(true),
+			accessibilityLabel: "The Ghost Sheep Trader",
+			accessibilityHint: "Opens the trader, who takes finds out of your bag for tickles",
+		});
+	}
+	// THE ERRAND'S ROW (2026-09-18): beside the Trader's, never replacing it.
+	// "{Pig} · out" while the greeter is out looking; "{Pig} · back" while a
+	// return waits on the Pen's corkboard. Both open the Pen. Hidden while the
+	// flag is off — open errands still return there.
+	if (errands.available && errands.state.enabled) {
+		if (greeterAway) {
+			fanOptions.push({
+				key: "pen-out",
+				title: `${pigDefinition(greeterAway.pig_id).name} · out`,
+				sub: backAboutLabel(greeterAway.ends_at),
+				label: "pen",
+				mark: "pen",
+				onPress: () => router.push("/pen"),
+				accessibilityLabel: `${pigDefinition(greeterAway.pig_id).name} is out looking`,
+				accessibilityHint: "Opens the Pen, where the errand is",
+			});
+		} else if (errands.state.board.length > 0) {
+			const n = errands.state.board.length;
+			const first = errands.state.board[0];
+			fanOptions.push({
+				key: "pen-back",
+				title: `${pigDefinition(first.pig_id).name} · back`,
+				sub: n === 1 ? "one on the board" : `${n} on the board`,
+				label: "pen",
+				mark: "pen",
+				onPress: () => router.push("/pen"),
+				accessibilityLabel: `${pigDefinition(first.pig_id).name} is back from the hedge`,
+				accessibilityHint: "Opens the Pen, where the return waits on the board",
+			});
+		}
+	}
+	// DEV ONLY: summon him now, so the row above and his sheet can be seen
+	// without waiting for the day's hour. Compiled out of production; the
+	// server refuses any account that is not is_test anyway.
+	if (__DEV__ && trader.available && !trader.present) {
+		fanOptions.push({
+			key: "dev-trader",
+			title: "Summon the trader",
+			sub: "dev only · starts a visit now",
+			label: "summon",
+			mark: "trader",
+			onPress: () => {
+				void trader.summon().then((ok) => {
+					if (ok) setTraderOpen(true);
+					else showToast("No summoning", "The server refused — not a test account, or not pushed yet");
+				});
+			},
+			accessibilityLabel: "Summon the trader (dev)",
+			accessibilityHint: "Starts a trader visit right now on a test account",
 		});
 	}
 
@@ -968,8 +1100,19 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						<ConfettiBurst ref={confettiRef} />
 		</>
 	);
-	const pigContent = renderPigContent(interiorPigOnly);
-	const interiorPigContent = renderPigContent(true);
+	// The empty yard replaces the pig (and so the tickle target) while the
+	// greeter is out — the mound and the button stay, drawn beside it as ever.
+	const awayContent = greeterAway ? (
+		<EmptyYard
+			pig={greeterAway.pig_id}
+			endsAt={greeterAway.ends_at}
+			onOpen={() => router.push("/pen")}
+			size={PIG_STAGE}
+			testID="barn-empty-yard"
+		/>
+	) : null;
+	const pigContent = awayContent ?? renderPigContent(interiorPigOnly);
+	const interiorPigContent = awayContent ?? renderPigContent(true);
 	const toastContent = (toast && (
 					<Animated.View
 						pointerEvents={toast.onPress ? "box-none" : "none"}
@@ -1160,15 +1303,10 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						    MOUND, never on a wrapper: a full-width absolute layer over
 						    the scene swallows every tap meant for Rosie (the Fabric
 						    overlay footgun, build 99). */}
-						{/* The leading Trough is a thing in the yard too — beside the
-						    mound, on the same ground line; drawn under the mound so the
-						    mound's unfolded tag can pass over it. ABSOLUTE ON THE TROUGH,
-						    for the same footgun reason as the mound. */}
-						{leadingTrough ? (
-							<View style={[styles.yardTrough, truffleBuried && truffle.status ? styles.yardTroughBesideMound : null]}>
-								<YardTrough drive={leadingTrough} onPress={() => setTroughOpen(true)} />
-							</View>
-						) : null}
+						{/* The yard trough that stood beside the mound (2026-09-16) retired
+						    2026-09-17: the Trough is reached from the Barn button's fan and
+						    nowhere else (founder: "the only way to trigger the Trough should
+						    be via the dropdown bottom-right menu"). */}
 						{truffleBuried && truffle.status ? (
 							<View style={styles.mound}>
 								<BuriedMound
@@ -1240,6 +1378,16 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				onNotThisOne={() => void satchel.notThisOne()}
 			/>
 
+			<TraderSheet
+				open={traderOpen}
+				onClose={() => setTraderOpen(false)}
+				status={trader.status}
+				readAt={trader.readAt}
+				items={satchel.state.items}
+				onSell={sellToTrader}
+				onRefused={traderRefused}
+			/>
+
 			<BuryTruffleSheet
 				open={buryOpen}
 				balance={stats.counter}
@@ -1253,6 +1401,17 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				focusDriveId={leadingTrough?.id ?? null}
 				data={trough}
 				onClose={() => setTroughOpen(false)}
+				// A chip-in spends snouts: the coin's count is server truth, re-read now.
+				onBalance={() => fetchStats()}
+				onPrize={showTroughPrize}
+			/>
+			<DrawRevealSheet
+				open={troughPrizeOpen}
+				prize={troughPrize}
+				kicker="the trough · past your quarter"
+				mine
+				onClose={() => setTroughPrizeOpen(false)}
+				testID="trough-prize-reveal"
 			/>
 			<BuriedTruffleSheet
 				open={truffleSheetOpen}
@@ -1339,17 +1498,6 @@ const styles = StyleSheet.create({
 		left: PAGE_PAD,
 		bottom: YARD_GROUND,
 		zIndex: YARD_Z,
-	},
-	// The yard trough's stance: the mound's spot when the yard is otherwise
-	// empty, else one mound-width to the mound's right, on the same ground line.
-	yardTrough: {
-		position: "absolute",
-		left: PAGE_PAD,
-		bottom: YARD_GROUND,
-		zIndex: YARD_Z - 1,
-	},
-	yardTroughBesideMound: {
-		marginLeft: YARD_TROUGH_SHIFT,
 	},
 	// The Barn button's seat: the page's bottom-right corner, above the tab bar.
 	barnButton: {

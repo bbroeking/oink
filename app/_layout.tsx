@@ -1031,11 +1031,11 @@ function RootLayoutInner() {
             setTimeout(() => setPigFriendsLaunch(false), POPUP_TEARDOWN_MS);
             setTimeout(async () => {
               if (pigFriendsMember) {
-                router.replace("/shop?view=pen");
+                router.replace("/pen");
                 return;
               }
               const result = await presentPaywall(OFFERING_IDS.slopClub);
-              if (result.ok) router.replace("/shop?view=pen");
+              if (result.ok) router.replace("/pen");
             }, POPUP_HANDOFF_GAP_MS);
           }}
         />

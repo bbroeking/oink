@@ -5,6 +5,8 @@
 // number), the resolver must drop what the catalog can't sell, and the buy
 // gate must be the union of the drop and the counter.
 
+import fs from "node:fs";
+import path from "node:path";
 import type { HatRow } from "@/constants/hats";
 import {
 	buyableIds,
@@ -12,6 +14,8 @@ import {
 	parseCounterBuys,
 	resolveCounterBuys,
 } from "@/utils/shopCounter";
+
+const ROOT = path.resolve(__dirname, "..");
 
 const hat = (id: string, extra: Partial<HatRow> = {}): HatRow => ({
 	id,
@@ -94,5 +98,20 @@ describe("resolveCounterBuys + buyableIds", () => {
 		expect(counterTag({ username: null, item: hat("halo") })).toBe(
 			"a sounder pig · halo",
 		);
+	});
+});
+
+// An empty counter used to draw ~130pt of blank wood under the shelves (the
+// shop-IA pass, 2026-09-17): the scene is gone now, not merely unpopulated.
+describe("an empty counter is absent", () => {
+	const counter = fs.readFileSync(
+		path.join(ROOT, "components/shop/Counter.tsx"),
+		"utf8",
+	);
+
+	it("returns nothing at all before it draws the wood", () => {
+		expect(counter).toContain("if (buys.length === 0) return null;");
+		// The kicker no longer guards itself — the early return does.
+		expect(counter).not.toContain("{buys.length > 0 ? (");
 	});
 });

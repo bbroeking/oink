@@ -19,6 +19,7 @@ export function FindTile({
 	accessibilityRole,
 	accessibilityLabel,
 	accessibilityHint,
+	accessibilityState,
 	testID,
 	style,
 	children,
@@ -30,6 +31,7 @@ export function FindTile({
 	accessibilityRole?: "button" | "text" | "image";
 	accessibilityLabel?: string;
 	accessibilityHint?: string;
+	accessibilityState?: { selected?: boolean; disabled?: boolean };
 	testID?: string;
 	style?: StyleProp<ViewStyle>;
 	children?: ReactNode;
@@ -47,6 +49,7 @@ export function FindTile({
 			accessibilityRole={accessibilityRole}
 			accessibilityLabel={accessibilityLabel}
 			accessibilityHint={accessibilityHint}
+			accessibilityState={accessibilityState}
 			testID={testID}
 			style={[styles.tile, style]}
 		>

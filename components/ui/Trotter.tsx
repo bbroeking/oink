@@ -2,7 +2,7 @@ import Svg, { Path } from "react-native-svg";
 import { WHIMSY } from "@/constants/theme";
 
 // A pig's trotter, rubbing the mud away — the Rub verb's face in the Snout
-// Deep dig. Ink-outline sticker art like `Shovel` and `BarnDoor`: the leg
+// Deep dig. Ink-outline sticker art like `Shovel` (and the retired `BarnDoor`): the leg
 // comes down from the top, the cloven hoof splits at the bottom, and two
 // small arcs to its right are the rub. (2026-09-13)
 export function Trotter({ size = 40 }: { size?: number }) {

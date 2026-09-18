@@ -30,7 +30,7 @@ import {
   PATCH_LAYERS,
   PATCH_ROWS,
   SNIFF_ATTENTION_STEP,
-  SNIFF_FREE_PER_DIG,
+  SNIFF_FREE_PER_BOARD,
   STIR_RUB,
   STIR_SHOVE,
   TILE_DEPTH,
@@ -1174,18 +1174,19 @@ export class WakeStream {
   }
 }
 
-/** How much a sniff draws his attention, given how many sniffs the dig has
- *  already spent (spec §1.4, the sniff budget): 0 inside the budget, then
- *  SNIFF_ATTENTION_STEP per sniff past it — the (budget+1)th sniff is +1. */
+/** How much a sniff draws his attention, given how many sniffs THIS BOARD
+ *  has already spent (spec §1.4, the sniff budget — per layer since
+ *  2026-09-17): 0 inside the budget, then SNIFF_ATTENTION_STEP per sniff past
+ *  it — the (budget+1)th sniff is +1. */
 export function sniffAttention(priorSniffs: number): number {
-  return Math.max(0, priorSniffs + 1 - SNIFF_FREE_PER_DIG) * SNIFF_ATTENTION_STEP;
+  return Math.max(0, priorSniffs + 1 - SNIFF_FREE_PER_BOARD) * SNIFF_ATTENTION_STEP;
 }
 
 /** The wake threshold (in 120ths) for a verb on a layer — spec §1.4. Co-op
  *  halves the root's sniff and rub (integer floor + 1: 7 → 4, 15 → 8). A
  *  sniff past the dig's budget adds its attention, capped at the layer's
  *  shove — a sniff is never louder than a shove. `priorSniffs` is the count
- *  of sniffs already in the log before this action. */
+ *  of sniffs already in the log ON THIS LAYER before this action. */
 export function wakeThreshold(
   layer: SnoutDeepLayer,
   verb: SnoutDeepVerb,
@@ -1199,4 +1200,14 @@ export function wakeThreshold(
       : raw;
   if (verb !== "sniff") return base;
   return Math.min(base + sniffAttention(priorSniffs), WAKE_TABLE[layer].shove);
+}
+
+/** How deeply he is sleeping on a board, drawn from the wake stream (rules 2).
+ *  `draw` is one nextInt(WAKE_DIE) — the entry draw — spread uniformly over
+ *  the stamped band: T = lo + floor(draw * (hi - lo + 1) / WAKE_DIE). Below
+ *  `lo` he cannot be woken; at `hi` he certainly is. MUST match the server's
+ *  _snout_deep_sleep_depth — this is the line parity pins over all 120 draws.
+ */
+export function sleepDepthFrom(draw: number, lo: number, hi: number): number {
+  return lo + Math.floor((draw * (hi - lo + 1)) / WAKE_DIE);
 }

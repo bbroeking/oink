@@ -16,7 +16,11 @@ describe("approved pig portraits", () => {
 	});
 
 	test.each([
-		"components/PigPenView.tsx",
+		// The Pen's character surfaces since the errand board (2026-09-18): the
+		// fence row's medallions, the card's portrait, the ticket's picker.
+		"components/pen/FenceRow.tsx",
+		"components/pen/PigCard.tsx",
+		"components/pen/ErrandTicket.tsx",
 		"components/PigFriendsLaunchModal.tsx",
 	])("%s renders approved portraits on character-selection surfaces", (relative) => {
 		const source = fs.readFileSync(path.join(ROOT, relative), "utf8");

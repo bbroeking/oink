@@ -4,8 +4,8 @@
 // of the store; crewmates who bought something today stand along its front
 // wearing it, each with a hand tag ("Jen · Top Hat"). A tap opens the same
 // preview sheet a shelf item opens — the counter is a second inventory, not
-// a second shop. Nobody bought: the counter is simply empty (the shopkeep
-// behind it is build 3's art).
+// a second shop. Nobody bought: there is no counter at all (2026-09-17 — the
+// furniture used to stay behind; the shopkeep is build 3's art).
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { counterTag, type CounterBuy } from "@/utils/shopCounter";
@@ -117,6 +117,10 @@ export function Counter({
 	isVip: boolean;
 	onPreview: (buy: CounterBuy) => void;
 }) {
+	// Nobody bought anything today: the whole scene is absent, wood and all
+	// (taste-standard ruling 2, 09-16 — an empty counter drew ~130pt of blank
+	// furniture; the shop-IA pass, 2026-09-17).
+	if (buys.length === 0) return null;
 	return (
 		<View style={styles.scene}>
 			<LinearGradient
@@ -125,11 +129,9 @@ export function Counter({
 				pointerEvents="none"
 			/>
 			<Plank style={styles.lip} />
-			{buys.length > 0 ? (
-				<T role="kickerPillSm" tone="secondary" style={styles.kicker}>
-					at the counter today
-				</T>
-			) : null}
+			<T role="kickerPillSm" tone="secondary" style={styles.kicker}>
+				at the counter today
+			</T>
 			<ScrollView
 				horizontal
 				showsHorizontalScrollIndicator={false}

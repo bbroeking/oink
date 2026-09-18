@@ -75,3 +75,32 @@ export function isPigId(value: unknown): value is PigId {
 export function pigDefinition(id: PigId | string | null | undefined): PigDefinition {
 	return (isPigId(id) && BY_ID.get(id)) || PIGS[0];
 }
+
+// ── Pronouns ───────────────────────────────────────────────────────────────
+// The errand's copy speaks about the pig in the third person ("he found it",
+// "call her home"). Rosie / Pepper / Pickles are she; Copper / Bandit /
+// Biscuit are he. The SAME map lives in the errand migration's push body
+// (20260918120000_pig_errands.sql) — change both. (2026-09-18)
+export interface PigPronouns {
+	subject: "he" | "she";
+	object: "him" | "her";
+	possessive: "his" | "her";
+	/** Capitalised subject for a sentence start. */
+	Subject: "He" | "She";
+}
+
+const SHE: PigPronouns = { subject: "she", object: "her", possessive: "her", Subject: "She" };
+const HE: PigPronouns = { subject: "he", object: "him", possessive: "his", Subject: "He" };
+
+const PRONOUNS: Record<PigId, PigPronouns> = {
+	rosie: SHE,
+	copper: HE,
+	pepper: SHE,
+	bandit: HE,
+	pickles: SHE,
+	biscuit: HE,
+};
+
+export function pigPronouns(id: PigId | string | null | undefined): PigPronouns {
+	return isPigId(id) ? PRONOUNS[id] : SHE;
+}

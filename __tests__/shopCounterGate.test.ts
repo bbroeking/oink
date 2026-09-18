@@ -79,8 +79,9 @@ describe("the preview sheet's remaining gates", () => {
 		expect(screen).toMatch(/return owned\.has\(id\) && activeIds\[columnForCategory\(category\)\] === id;/);
 	});
 
-	it("opening a Trough from the sheet refreshes the trough by the counter", () => {
-		expect(screen).toMatch(/onTroughOpened=\{[\s\S]{0,400}troughSummary\.refresh\(\)/);
+	it("opening a Trough from the sheet moves the header chip; the counter trough left the store (2026-09-17)", () => {
+		expect(screen).toMatch(/onTroughOpened=\{[\s\S]{0,400}setCounter\(/);
+		expect(screen).not.toContain("TroughByCounter");
 	});
 });
 

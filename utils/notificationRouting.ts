@@ -29,10 +29,14 @@ const NOTIFICATION_ROUTES = {
 	account: "/account",
 	season: "/season", // bounties (and the season pass) live here
 	shop: "/shop", // finale/world-cup reward grants open the Shop (wardrobe)
-	// Reserved alias, NOT emitted by the server today: kept so a future
-	// trough (item-drive) push routes to the Shop tab without another edit.
-	// utils/whileAway.ts also resolves "trough" through here on purpose.
-	trough: "/shop?trough=open",
+	// Reserved alias, NOT emitted by the server today. Since 2026-09-17 the
+	// Trough is reached from the Barn button's fan and nowhere else, so a
+	// trough nudge lands on the Barn tab (its row is on the fan); nothing
+	// auto-opens. utils/whileAway.ts also resolves "trough" through here.
+	trough: "/",
+	// A pig is back from its errand (20260918120000): the homecoming waits on
+	// the Pen's corkboard, so the push opens the Pen (2026-09-18).
+	pen: "/pen",
 } as const;
 
 // Every screen the router accepts (table keys). Includes the reserved `trough`

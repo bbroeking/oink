@@ -64,6 +64,12 @@ interface Props {
 	below?: React.ReactNode;
 	/** The `‹ back` affordance. Stack + plaque only; a tab screen has no back. */
 	onBack?: () => void;
+	/**
+	 * What the back affordance goes back TO, when "back" alone is ambiguous —
+	 * a room reached from several doors names its door ("back to the shop").
+	 * (2026-09-17)
+	 */
+	backLabel?: string;
 	/** Hand-voice line under a `plaque` title ("sounders, one board"). */
 	subtitle?: string;
 	variant?: PageHeaderVariant;
@@ -81,15 +87,22 @@ const PLAQUE_WIDTH = 258;
 const HANGER_INSET = 92;
 const HANGER_HEIGHT = SPACE.lg;
 
-function BackButton({ onBack }: { onBack: () => void }) {
+function BackButton({
+	onBack,
+	label = "back",
+}: {
+	onBack: () => void;
+	label?: string;
+}) {
 	return (
 		<Pressable
 			onPress={onBack}
 			accessibilityRole="button"
-			accessibilityLabel="Back"
+			// Spoken as a sentence, drawn as the hand line it is.
+			accessibilityLabel={label.charAt(0).toUpperCase() + label.slice(1)}
 			style={styles.backBtn}
 		>
-			<Hand tone="secondary">‹ back</Hand>
+			<Hand tone="secondary">‹ {label}</Hand>
 		</Pressable>
 	);
 }
@@ -100,6 +113,7 @@ export function PageHeader({
 	right,
 	below,
 	onBack,
+	backLabel,
 	subtitle,
 	variant = "stack",
 	ruleWidth = RULE_WIDTH,
@@ -113,7 +127,11 @@ export function PageHeader({
 			<View testID={testID} style={[styles.wrap, styles.plaqueWrap, style]}>
 				{onBack || right ? (
 					<View style={styles.plaqueTopRow}>
-						{onBack ? <BackButton onBack={onBack} /> : <View />}
+						{onBack ? (
+							<BackButton onBack={onBack} label={backLabel} />
+						) : (
+							<View />
+						)}
 						{right ? <View style={styles.rightSlot}>{right}</View> : null}
 					</View>
 				) : null}
@@ -155,7 +173,9 @@ export function PageHeader({
 			style={[styles.wrap, tab ? styles.tabWrap : styles.stackWrap, style]}
 		>
 			{/* A tab screen is already at the root of its stack: no back. */}
-			{!tab && onBack ? <BackButton onBack={onBack} /> : null}
+			{!tab && onBack ? (
+				<BackButton onBack={onBack} label={backLabel} />
+			) : null}
 			{kicker ? <KickerPill accessibilityRole="text">{kicker}</KickerPill> : null}
 			<View style={styles.row}>
 				<PageTitle accessibilityRole="header" style={styles.title}>

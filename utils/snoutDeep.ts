@@ -13,6 +13,16 @@
 //     ("s2:14" / "r2:14" / "h2:14" = sniff / rub / shove, LAYER (0-based —
 //     the `Layer` type's own numbering: 0 topsoil · 1 mud · 2 the root), then
 //     ":" and the tile index) and one wake draw;
+//   · under rules 2 (2026-09-17) nothing rolls. The wake table below becomes
+//     LOUDNESS: every action adds its threshold to `attention`, and he wakes
+//     on the action that carries it to `sleepDepth` or past it. His sleep
+//     depth is drawn from the wake stream when a board is ENTERED, uniformly
+//     over the stamped band [lo, hi] — so under `lo` is certain sleep, `hi` is
+//     a certain wake, and the band between is the gamble the player can watch
+//     coming. The action still consumes its draw, so the stream indexes the
+//     same on both sides. Rules 1 is build 192's game, kept for the rows
+//     opened under it (docs/design/2026-09-17-cumulative-attention.md);
+//   · you cannot dig deeper until this board's truffle is out of the ground;
 //   · every verb draws once. A sniff marks scent; its threshold is 0 in
 //     topsoil (truly never), 3 in the mud, 7 at the root (4 co-op). A rub is
 //     1 · 6 · 15 (8 co-op). Sniff and rub are never free below topsoil;
@@ -48,11 +58,15 @@ import {
   PATCH_COLS,
   PATCH_ROWS,
   SNOUT_DEEP_ACTION_CAP,
-  SNIFF_FREE_PER_DIG,
+  SNIFF_FREE_PER_BOARD,
   WAKE_DIE,
+  WAKE_METER,
   type DigFindKind,
   type SnoutDeepLayer,
+  type SnoutDeepRules,
   type SnoutDeepVerb,
+  type WakeMeter,
+  type WakeMeterScope,
 } from "@/constants/dig";
 import {
   applySplash,
@@ -60,6 +74,7 @@ import {
   clusterTouched,
   generateLayeredBoard,
   WakeStream,
+  sleepDepthFrom as kernelSleepDepthFrom,
   sniffAttention,
   wakeThreshold as kernelWakeThreshold,
   type LayerBoard,
@@ -69,6 +84,8 @@ import {
 
 export type Verb = SnoutDeepVerb;
 export type Layer = SnoutDeepLayer;
+export type Rules = SnoutDeepRules;
+export type { WakeMeter, WakeMeterScope };
 export type FindKind = DigFindKind;
 export type Find = LayerFind;
 export type { LayerBoard, SnoutDeepBoard };
@@ -91,6 +108,21 @@ export function digLayerLine(
 
 export interface SnoutDeepState {
   board: SnoutDeepBoard;
+  /** Which rule set this dig was opened under — the server stamps it on the
+   *  row and replays under it. 1 is build 192's per-action roll, 2 the meter. */
+  rules: Rules;
+  /** The tuning this dig was STAMPED with at open — the band his sleep depth
+   *  is drawn from, where the meter resets, and whether the root tie pays. A
+   *  rules-1 dig carries the compiled default and never reads it. */
+  wakeMeter: WakeMeter;
+  /** The meter, in 120ths (rules 2): the loudness of every action on THIS
+   *  board (scope "board") or on the whole dig (scope "dig"). Always 0 under
+   *  rules 1 — there is no meter there. */
+  attention: number;
+  /** How deeply he is sleeping, in 120ths (rules 2): drawn from the wake
+   *  stream when this board was entered, somewhere in [lo, hi]. He wakes on
+   *  the action that carries `attention` to it. 0 under rules 1. */
+  sleepDepth: number;
   layer: Layer;
   depths: number[]; // the current layer's live depths
   scent: (number | null)[]; // per tile, this layer
@@ -132,15 +164,25 @@ const LETTER_VERB: Readonly<Record<string, Verb>> = {
 
 export function initialState(
   board: SnoutDeepBoard,
-  opts: { coop: boolean; uncrewed: boolean },
+  opts: { coop: boolean; uncrewed: boolean; rules?: Rules; wakeMeter?: WakeMeter },
 ): SnoutDeepState {
+  const rules: Rules = opts.rules ?? 1;
+  const wakeMeter = opts.wakeMeter ?? WAKE_METER;
+  // Rules 2: topsoil's sleep depth is the FIRST number of the wake stream —
+  // draw 0 — so the board's first action reads draw 1. Board entries count in
+  // the stream exactly as actions do, and the server indexes it the same way.
+  const entry = rules === 2 ? new WakeStream(board.seed).next() : null;
   return {
     board,
+    rules,
+    wakeMeter,
+    attention: 0,
+    sleepDepth: entry == null ? 0 : sleepDepthFrom(entry, wakeMeter.lo, wakeMeter.hi),
     layer: 0,
     depths: board.layers[0].depths.slice(),
     scent: new Array<number | null>(TILE_COUNT).fill(null),
     actions: [],
-    wakeIndex: 0,
+    wakeIndex: entry == null ? 0 : 1,
     loose: null,
     looseThings: [],
     banked: [],
@@ -155,36 +197,127 @@ export function initialState(
 }
 
 export const wakeThreshold = kernelWakeThreshold;
+export const sleepDepthFrom = kernelSleepDepthFrom;
 
-/** Sniffs spent so far — every "s…" entry in the log (no-ops are never logged). */
-export function sniffCount(actions: readonly string[]): number {
+/** The meter, in 120ths — 0 under rules 1, where there is none. */
+export function attentionOf(state: Pick<SnoutDeepState, "rules" | "attention">): number {
+  return state.rules === 2 ? state.attention : 0;
+}
+
+/** How loud one action is, in 120ths (rules 2) — and it is the wake table,
+ *  unchanged: what rule 1 rolled against, rule 2 adds to the meter. There is
+ *  no second table. `priorSniffs` is the sniffs already logged on this board. */
+export function loudness(
+  layer: Layer,
+  verb: Verb,
+  coop: boolean,
+  priorSniffs = 0,
+): number {
+  return wakeThreshold(layer, verb, coop, priorSniffs);
+}
+
+/** The server row's wake-meter stamp, made safe. Every field falls back on its
+ *  own (a half-written row still plays), the band is kept the right way round
+ *  and inside the die: 1 ≤ lo < hi ≤ 120. Server config over constants — the
+ *  compiled WAKE_METER is only what we play before the row answers. */
+export function sanitizeWakeMeter(raw: unknown): WakeMeter {
+  const row = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const int = (v: unknown, fallback: number): number =>
+    typeof v === "number" && Number.isFinite(v) ? Math.trunc(v) : fallback;
+  let lo = int(row.lo, WAKE_METER.lo);
+  let hi = int(row.hi, WAKE_METER.hi);
+  lo = Math.min(Math.max(lo, 1), WAKE_DIE);
+  hi = Math.min(Math.max(hi, 1), WAKE_DIE);
+  // A band that is not a band is no band at all: fall back rather than invent.
+  if (lo >= hi) {
+    lo = WAKE_METER.lo;
+    hi = WAKE_METER.hi;
+  }
+  const scope: WakeMeterScope = row.scope === "dig" ? "dig" : "board";
+  const digRootGt: 0 | 1 = int(row.dig_root_gt, WAKE_METER.digRootGt) === 1 ? 1 : 0;
+  return { lo, hi, scope, digRootGt };
+}
+
+/** Sniffs spent on `layer` so far — every "s<layer>:…" entry in the log
+ *  (no-ops are never logged). The budget is per board (2026-09-17): a
+ *  descent wipes the scent, so the sniffs that read a board come back. */
+export function sniffCount(actions: readonly string[], layer: Layer): number {
   let n = 0;
-  for (const a of actions) if (a.charCodeAt(0) === 115 /* s */) n += 1;
+  const l = 48 + layer; /* "0" + layer */
+  for (const a of actions) if (a.charCodeAt(0) === 115 /* s */ && a.charCodeAt(1) === l) n += 1;
   return n;
 }
 
-/** Free sniffs left in this dig, never below 0. */
-export function sniffsLeft(state: Pick<SnoutDeepState, "actions">): number {
-  return Math.max(0, SNIFF_FREE_PER_DIG - sniffCount(state.actions));
+/** Free sniffs left on this board, never below 0. */
+export function sniffsLeft(state: Pick<SnoutDeepState, "actions" | "layer">): number {
+  return Math.max(0, SNIFF_FREE_PER_BOARD - sniffCount(state.actions, state.layer));
 }
 
 /** The attention the NEXT sniff would draw (0 inside the budget). */
-export function nextSniffAttention(state: Pick<SnoutDeepState, "actions">): number {
-  return sniffAttention(sniffCount(state.actions));
+export function nextSniffAttention(state: Pick<SnoutDeepState, "actions" | "layer">): number {
+  return sniffAttention(sniffCount(state.actions, state.layer));
 }
 
-/** The wake threshold the next action of `verb` would roll at. */
+/** What the next action of `verb` costs: the odds it rolls at under rules 1,
+ *  and its LOUDNESS — what it would add to the meter, the card's "+N" — under
+ *  rules 2. One table, two readings. */
 export function nextThreshold(
-  state: Pick<SnoutDeepState, "actions" | "layer" | "coop">,
+  state: Pick<SnoutDeepState, "actions" | "layer" | "coop" | "rules">,
   verb: Verb,
 ): number {
-  return wakeThreshold(state.layer, verb, state.coop, sniffCount(state.actions));
+  return wakeThreshold(state.layer, verb, state.coop, sniffCount(state.actions, state.layer));
 }
 
-/** "free" · "1 in 120" · "1 in 6" — the short odds a verb card wears. */
+/** The chance the next `verb` is the one that wakes him (rules 2), as a
+ *  fraction of 1: loudness / (hi − attention) — his sleep depth is uniform on
+ *  what is left of the band, so this is the honest hazard. 0 while the meter
+ *  cannot reach the band at all; 1 at `hi`, where he wakes for certain. It is
+ *  a READING, never a rule — the rule is `attention >= sleepDepth`. */
+export function meterHazard(
+  state: Pick<SnoutDeepState, "actions" | "layer" | "coop" | "rules" | "attention" | "wakeMeter">,
+  verb: Verb,
+): number {
+  if (state.rules !== 2) return 0;
+  const loud = nextThreshold(state, verb);
+  const room = Math.max(1, state.wakeMeter.hi - state.attention);
+  return Math.min(1, Math.max(0, loud / room));
+}
+
+/** Every truffle on THIS board is out of the ground — the descent gate
+ *  (2026-09-17 §4): you cannot dig deeper until you have found this board's
+ *  truffle(s). The root has none of its own, and is never descended from. */
+export function boardFoodFound(
+  state: Pick<SnoutDeepState, "board" | "layer" | "found">,
+): boolean {
+  return state.board.layers[state.layer].finds.every(
+    (f) => !f.food || state.found.includes(f.id),
+  );
+}
+
+/** Is `Dig deeper` open? Not at the root, not on an ended dig, not before the
+ *  board's truffle is up. */
+export function canDescend(
+  state: Pick<SnoutDeepState, "board" | "layer" | "found" | "ended">,
+): boolean {
+  if (state.ended || state.layer >= 2) return false;
+  return boardFoodFound(state);
+}
+
+/** The chance one action at `threshold` wakes him, as a percent: the
+ *  threshold's share of the die, rounded to a whole number, "<1" under one.
+ *  Null at 0 — a roll that can never wake him has no percent. */
+export function wakePercent(threshold: number): string | null {
+  if (threshold <= 0) return null;
+  const pct = (threshold / WAKE_DIE) * 100;
+  return pct < 1 ? "<1%" : `${Math.round(pct)}%`;
+}
+
+/** "free" · "<1% he wakes" · "8% he wakes" — the price a verb card wears
+ *  (2026-09-16: a percent per action, one denominator on every card; the
+ *  "1 in N" fractions read backwards — bigger looked louder). */
 export function shortOdds(threshold: number): string {
-  if (threshold <= 0) return "free";
-  return `1 in ${Math.round(WAKE_DIE / threshold)}`;
+  const pct = wakePercent(threshold);
+  return pct == null ? "free" : `${pct} he wakes`;
 }
 
 /** Encode one log entry. Exposed so the tests and the dev strip read the log
@@ -322,15 +455,23 @@ function act(state: SnoutDeepState, verb: Verb, tile: number): SnoutDeepState {
     }
   }
 
-  // Then the roll. One draw per action, drawn even when the threshold is 0 so
-  // the k-th action is the k-th draw on every replay.
+  // Then the wake. One draw per action, consumed even when nothing reads it,
+  // so the k-th draw of the stream belongs to the k-th action on both sides —
+  // under rules 2 the meter decides and the draw is spent all the same.
   const draw = new WakeStream(state.board.seed).skip(state.wakeIndex).next();
   const wakeIndex = state.wakeIndex + 1;
-  const threshold = wakeThreshold(state.layer, verb, state.coop, sniffCount(state.actions));
-  const woke = draw < threshold;
+  const priorSniffs = sniffCount(state.actions, state.layer);
+  const loud = wakeThreshold(state.layer, verb, state.coop, priorSniffs);
+  // Rules 2: the dig has landed, so its noise lands too — and he wakes if that
+  // carried the meter to how deeply he was sleeping. No roll: past `lo` every
+  // action COULD be the one, and at `hi` it certainly is.
+  // Rules 1: the layer's table, one roll per action, as build 192 shipped.
+  const attention = state.rules === 2 ? state.attention + loud : state.attention;
+  const woke = state.rules === 2 ? attention >= state.sleepDepth : draw < loud;
 
   const next: SnoutDeepState = {
     ...state,
+    attention,
     depths,
     scent,
     actions,
@@ -408,16 +549,32 @@ function bankPouch(state: SnoutDeepState): Pick<SnoutDeepState, "banked" | "laye
   return { ...truffle, banked, looseThings: [] };
 }
 
-function descend(state: SnoutDeepState): SnoutDeepState {
+// `force` is the replay's key: a log that already reached the mud found the
+// truffle by construction (the gate ran on the phone that wrote it), so a
+// replay descends on a deeper entry whatever this board says.
+function descend(state: SnoutDeepState, force = false): SnoutDeepState {
   if (state.ended) return state;
   if (state.layer >= 2) return state; // no fourth layer — not offered at the root
+  if (!force && !boardFoodFound(state)) return state; // find this board's truffle first
   const nextLayer = (state.layer + 1) as Layer;
+  // Rules 2, scope "board": he settles again as the dig goes deeper — the
+  // meter empties and a fresh sleep depth comes off the stream (the entry
+  // draw, counted like any action). Scope "dig": one nap, one meter, all the
+  // way down — the descent neither quiets him nor redraws him.
+  const resets = state.rules === 2 && state.wakeMeter.scope === "board";
+  const entry = resets ? new WakeStream(state.board.seed).skip(state.wakeIndex).next() : null;
   // The truffle banks on the way down; the loose pouch rides down with you.
   return {
     ...state,
     ...bank(state),
     missed: withMissed(state, null),
     layer: nextLayer,
+    attention: resets ? 0 : state.attention,
+    sleepDepth:
+      entry == null
+        ? state.sleepDepth
+        : sleepDepthFrom(entry, state.wakeMeter.lo, state.wakeMeter.hi),
+    wakeIndex: resets ? state.wakeIndex + 1 : state.wakeIndex,
     depths: state.board.layers[nextLayer].depths.slice(),
     scent: new Array<number | null>(TILE_COUNT).fill(null),
   };
@@ -441,16 +598,30 @@ function end(state: SnoutDeepState, reason: "tie" | "cap" | "close"): SnoutDeepS
 
 export function replay(
   board: SnoutDeepBoard,
-  opts: { coop: boolean; uncrewed: boolean },
+  opts: { coop: boolean; uncrewed: boolean; rules?: Rules; wakeMeter?: WakeMeter },
   actions: readonly string[],
 ): SnoutDeepState {
   let state = initialState(board, opts);
   for (const entry of actions) {
     const a = decodeAction(entry);
     if (!a) continue;
-    while (state.layer < a.layer && !state.ended) state = reduce(state, { type: "descend" });
+    while (state.layer < a.layer && !state.ended) state = descend(state, true);
     state = reduce(state, { type: "act", verb: a.verb, tile: a.tile });
   }
+  return state;
+}
+
+/** A saved snapshot back into a state (§10): the log replayed, then whatever
+ *  descent the log alone cannot show — a board entered but not yet acted on.
+ *  The descent gate never applies to a replay: a log that reached the mud
+ *  found the topsoil truffle on the phone that wrote it. */
+export function restore(
+  board: SnoutDeepBoard,
+  opts: { coop: boolean; uncrewed: boolean; rules?: Rules; wakeMeter?: WakeMeter },
+  snapshot: { layer: number; actions: readonly string[] },
+): SnoutDeepState {
+  let state = replay(board, opts, snapshot.actions);
+  while (state.layer < snapshot.layer && !state.ended) state = descend(state, true);
   return state;
 }
 
@@ -615,6 +786,19 @@ export interface DigReceipt {
   satchel?: SatchelReceiptRoll | null;
   /** The same roll as one sentence — the bag block's accessibility label. */
   satchelLine?: string | null;
+  /** The server's receipt has landed, so `satchel` is the whole truth: a null
+   *  roll means the bag got nothing this dig, and the beat says so out loud —
+   *  silence reads as a defect (2026-09-17 §5). False until it lands. */
+  satchelKnown?: boolean;
+  /** What the dig put on the Sounder's board — "+1 Golden Truffle" — or,
+   *  plainly, that nothing did and why: things are yours, only a tied truffle
+   *  is the herd's (the "it didn't add to the sounder's total" complaint,
+   *  2026-09-17). Absent when uncrewed: the join line says it instead. */
+  herdLine?: string;
+  /** Rules 2: where the meter and his sleep depth stood as the dig ended —
+   *  what the woke line's "at 84" names, kept so the server's replay can
+   *  re-aim it. Absent under rules 1, which has no meter. */
+  meter?: { attention: number; sleepDepth: number } | null;
   /** Uncrewed only, when no truffle row carries the join line: the foot's join door. */
   joinLine?: string;
   primary: string;
@@ -625,24 +809,19 @@ export const DIG_PASS_XP = 20;
 const SCROLL_XP = 40;
 export const JOIN_LINE = "truffles are for herds — find yours ›";
 
-// "one in six" — the odds a wake line names. The wake table's reciprocals,
-// rounded, with a numeric fallback for a server-tuned threshold.
-const ODDS_WORDS: Readonly<Record<number, string>> = {
-  3: "three",
-  6: "six",
-  8: "eight",
-  12: "twelve",
-  15: "fifteen",
-  17: "seventeen",
-  20: "twenty",
-  30: "thirty",
-  40: "forty",
-  120: "a hundred and twenty",
-};
+/** "a 13% chance" · "less than a 1% chance" · "never" — the odds a wake
+ *  line names, in the same percent the verb cards wear. */
 export function oddsPhrase(threshold: number): string {
-  if (threshold <= 0) return "never";
-  const n = Math.round(WAKE_DIE / threshold);
-  return `one in ${ODDS_WORDS[n] ?? n}`;
+  const pct = wakePercent(threshold);
+  if (pct == null) return "never";
+  return pct === "<1%" ? "less than a 1% chance" : `a ${pct} chance`;
+}
+
+/** Where the meter stood on the action that woke him (rules 2) — "at 84".
+ *  Not a chance: under the meter the last action was not unlucky, it was the
+ *  one that reached him. */
+export function meterPhrase(attention: number): string {
+  return `at ${Math.max(0, Math.round(attention))}`;
 }
 
 const VERB_PAST: Readonly<Record<Verb, string>> = {
@@ -662,7 +841,11 @@ const NEXT_TIME: Readonly<Record<Layer, string>> = {
 };
 
 /** The GT reasons a state mints (§4): 'dig' topsoil, 'dig_deep' mud,
- *  'dig_root' when the mud truffle banked and the dig TIED at the root. */
+ *  'dig_root' when the mud truffle banked and the dig TIED at the root.
+ *  Under rules 2 the root's bonus obeys the dig's stamp: with a per-board
+ *  meter the descent is silent, so tying on arrival would be a free truffle
+ *  for walking downstairs — `digRootGt` 0 withholds it, and the tie button's
+ *  "+N Golden Truffles" agrees with what the server will mint (§1). */
 export function gtReasons(state: SnoutDeepState): GtReason[] {
   if (state.uncrewed) return [];
   const out: GtReason[] = [];
@@ -670,7 +853,8 @@ export function gtReasons(state: SnoutDeepState): GtReason[] {
   if (state.layersTied.includes(1)) out.push("dig_deep");
   const tiedAtRoot =
     state.ended != null && state.ended.reason !== "wake" && state.ended.layer === 2;
-  if (tiedAtRoot && state.layersTied.includes(1)) out.push("dig_root");
+  const rootPays = state.rules !== 2 || state.wakeMeter.digRootGt === 1;
+  if (rootPays && tiedAtRoot && state.layersTied.includes(1)) out.push("dig_root");
   return out;
 }
 
@@ -688,6 +872,15 @@ function truffleSub(kind: FindKind, gt: GtReason[]): string {
   return root
     ? "the herd's too — +1 Golden Truffle, +1 for the root"
     : "the herd's too — +1 Golden Truffle";
+}
+
+/** The herd line: what went on the Sounder's board, or why nothing did. */
+export function herdLine(gtCount: number, woke: boolean, truffleTaken: boolean): string {
+  if (gtCount > 0) {
+    return `the herd's board: +${gtCount} Golden Truffle${gtCount === 1 ? "" : "s"}. things you found are yours alone.`;
+  }
+  if (woke && truffleTaken) return "nothing for the herd — the truffle was his. things you found are yours alone.";
+  return "nothing for the herd this dig — only a tied truffle is a Golden Truffle. things you found are yours alone.";
 }
 
 export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigReceipt {
@@ -801,6 +994,13 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
 
   const actionsLine = `${state.actions.length} ${state.actions.length === 1 ? "action" : "actions"}`;
   const join = state.uncrewed && truffleRows === 0 ? { joinLine: JOIN_LINE } : {};
+  const herd = state.uncrewed ? {} : { herdLine: herdLine(gt.length, woke, lost != null) };
+  // Rules 2: the meter goes on the receipt, so the server's replay can re-aim
+  // the woke line's number without the sheet re-deriving the whole dig.
+  const metered =
+    state.rules === 2
+      ? { meter: { attention: state.attention, sleepDepth: state.sleepDepth } }
+      : {};
   const counts = {
     ticklesTotal: total,
     tickledBefore: before,
@@ -809,11 +1009,16 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
 
   if (woke) {
     const a = ended.wokeOn ? decodeAction(ended.wokeOn) : null;
-    const wokeLine = a
-      ? `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]}. ${oddsPhrase(
-          wakeThreshold(a.layer, a.verb, state.coop, sniffCount(state.actions.slice(0, -1))),
-        )} — this was the one.`
-      : "he woke on the last one.";
+    // Under rules 2 the line names the POSITION the dig reached — the meter
+    // after the waking action's own loudness landed on it. Under rules 1 it
+    // names the odds that action rolled at, as build 192 said them.
+    const wokeLine = !a
+      ? "he woke on the last one."
+      : state.rules === 2
+        ? `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]} ${meterPhrase(state.attention)} — this was the one.`
+        : `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]}. ${oddsPhrase(
+            wakeThreshold(a.layer, a.verb, state.coop, sniffCount(state.actions.slice(0, -1), a.layer)),
+          )} — this was the one.`;
     const took =
       lost && lostThings > 0
         ? "the loose truffle and the pouch were his."
@@ -834,6 +1039,8 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
       xp,
       ...counts,
       ...join,
+      ...herd,
+      ...metered,
       primary: "Back to the Barn",
     };
   }
@@ -854,6 +1061,8 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
     xp,
     ...counts,
     ...join,
+    ...herd,
+    ...metered,
     primary: "Back to the Barn",
     secondary: state.uncrewed ? undefined : "share the dig ›",
   };
@@ -867,6 +1076,11 @@ export interface ServerTally {
   tickledBefore?: number | null;
   tickledNow?: number | null;
   satchel?: { found?: unknown; lost?: unknown; count?: unknown; cap?: unknown } | null;
+  /** Rules 2: the meter as the server replayed it, and the sleep depth the
+   *  last board drew. Optional — the client's own replay already agrees, and
+   *  parity is what proves it; this is the belt to that pair of braces. */
+  attention?: number | null;
+  sleep_depth?: number | null;
 }
 
 /** Correct a client-built receipt with the server's numbers: every row's
@@ -893,7 +1107,23 @@ export function reconcileReceipt(r: DigReceipt, server: ServerTally): DigReceipt
   const now = server.tickledNow ?? (before == null ? null : before + ticklesTotal);
   const satchel = satchelReceiptRoll(server.satchel) ?? r.satchel ?? null;
   const satchelLine = satchelReceiptLine(server.satchel) ?? r.satchelLine ?? null;
-  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now, satchel, satchelLine };
+  // Rules 2: if the server's replay names a different meter than ours, the
+  // server is right — re-aim the number in the woke line rather than leave two
+  // stories on one screen.
+  const meter =
+    r.meter == null
+      ? r.meter
+      : {
+          attention: typeof server.attention === "number" ? server.attention : r.meter.attention,
+          sleepDepth:
+            typeof server.sleep_depth === "number" ? server.sleep_depth : r.meter.sleepDepth,
+        };
+  const wokeLine =
+    r.wokeLine && r.meter && meter && meter.attention !== r.meter.attention
+      ? r.wokeLine.replace(meterPhrase(r.meter.attention), meterPhrase(meter.attention))
+      : r.wokeLine;
+  // The server answered, so the bag beat can speak either way from here on.
+  return { ...r, rows, ticklesTotal, tickledBefore: before, tickledNow: now, satchel, satchelLine, satchelKnown: true, ...(meter ? { meter } : {}), ...(wokeLine ? { wokeLine } : {}) };
 }
 
 function layerOf(board: SnoutDeepBoard, id: string): Layer | null {
@@ -928,6 +1158,54 @@ function pouchWhisper(state: SnoutDeepState): string | null {
   return `${countPhrase(n, "thing")} loose in the pouch. ${tail}`;
 }
 
+/** Actions logged on the board the dig is standing on — 0 is a board nobody
+ *  has touched yet, which is when the whisper introduces it. */
+export function boardActions(state: Pick<SnoutDeepState, "actions" | "layer">): number {
+  const l = 48 + state.layer; /* "0" + layer */
+  let n = 0;
+  for (const a of state.actions) if (a.charCodeAt(1) === l) n += 1;
+  return n;
+}
+
+// How a board introduces itself — its name and what the ground is like, in
+// both rule sets. No numbers: the cards wear the live odds (2026-09-16) and
+// the sleeper strip paints the band with its own two stamps under it, so a
+// whisper that repeated either would be the same scale said twice. Every
+// whisper on this screen fits two lines of hand type on the sticker — about
+// a hundred characters — and none of them is ever truncated.
+const BOARD_OPEN: Readonly<Record<Layer, string>> = {
+  0: "topsoil. a sniff counts what touches a tile. a rub moves a little, a shove a lot.",
+  1: "the mud. fatter down here — and everything you do is louder.",
+  2: "the root. a 1 on its own is usually a thing, not a truffle. loudest ground there is.",
+};
+
+/** The whisper under the meter (rules 2, §5): it introduces the board on the
+ *  first read, says so out loud the moment the dig crosses into the band, and
+ *  otherwise teaches the same things rule 1 teaches — minus the odds, which
+ *  the meter has replaced. How deep he sleeps is the strip's job now: the
+ *  band is painted there and stamped with its own `lo` and `hi`. */
+function meterWhisper(
+  state: SnoutDeepState,
+  ctx: { hasHigh: boolean; hasLow: boolean; pouch: string | null },
+): string {
+  const { lo } = state.wakeMeter;
+  if (state.attention >= lo) return "he could wake on any of these now.";
+  if (boardActions(state) === 0) return BOARD_OPEN[state.layer];
+  if (state.layer === 0) {
+    if (ctx.hasHigh && ctx.hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
+    if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
+    if (ctx.pouch) return ctx.pouch;
+    return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";
+  }
+  if (state.layer === 1) {
+    if (state.loose) return "the fat one is loose. the root grows none of its own — tie it there and it pays for this.";
+    if (ctx.pouch) return ctx.pouch;
+    return `the bar is short of ${lo} — nothing you do here can reach him yet.`;
+  }
+  if (ctx.pouch) return ctx.pouch;
+  return "no truffle down here is his to take. every action lifts the bar — tie it off whenever you like.";
+}
+
 export function whisperFor(state: SnoutDeepState): string {
   if (state.ended?.reason === "wake") {
     const lostTruffle = state.missed.some((id) => findById(state.board, id)?.food);
@@ -944,30 +1222,28 @@ export function whisperFor(state: SnoutDeepState): string {
   const hasHigh = state.scent.some((s) => s != null && s >= 3);
   const hasLow = state.scent.some((s) => s === 1);
   const pouch = pouchWhisper(state);
+  if (state.rules === 2) return meterWhisper(state, { hasHigh, hasLow, pouch });
   if (state.layer === 0) {
-    if (sniffed === 0)
-      return `topsoil. a sniff counts the finds touching a tile. a rub moves a little, a shove a lot. ${SNIFF_FREE_PER_DIG} sniffs are free — past that, each one draws his attention.`;
+    // A board introduces itself the same way in both rule sets; the free
+    // sniffs are counted on the sniff card ("free · 5 left"), not here.
+    if (sniffed === 0) return BOARD_OPEN[0];
     // The budget's turn speaks first: the moment a sniff starts to cost, say so.
     if (nextSniffAttention(state) > 0 && !state.loose)
-      return `he's noticing you — the next sniff is ${oddsPhrase(nextThreshold(state, "sniff"))}. a rub is ${oddsPhrase(nextThreshold(state, "rub"))}.`;
+      return `he's noticing you — the next sniff is ${oddsPhrase(nextThreshold(state, "sniff"))} he wakes. a rub, ${oddsPhrase(nextThreshold(state, "rub"))}.`;
     if (hasHigh && hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
     if (pouch) return pouch;
     return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";
   }
   if (state.layer === 1) {
-    if (sniffed === 0) return "the mud. fatter down here — and he sleeps lighter. a sniff is the quiet way to know: one in forty stirs him. a rub, one in twenty.";
-    if (state.loose) return "the fat one is loose. the root has no truffle of its own — it pays for this one, if you tie it there.";
+    if (sniffed === 0) return BOARD_OPEN[1];
+    if (state.loose) return "the fat one is loose. the root grows none of its own — tie it there and it pays for this.";
     if (pouch) return pouch;
-    return "one rub in twenty stirs him here. one sniff in forty. nothing here is free.";
+    return `a rub is ${oddsPhrase(nextThreshold(state, "rub"))} he stirs here. a sniff, ${
+      wakePercent(nextThreshold(state, "sniff")) ?? "never"
+    }. nothing here is free.`;
   }
-  if (sniffed === 0)
-    return `the root. a 1 on its own is usually a thing, not a truffle. ${oddsPhrase(
-      wakeThreshold(2, "rub", state.coop),
-    ).replace("one in", "one rub in")} wakes him now. ${oddsPhrase(wakeThreshold(2, "sniff", state.coop)).replace(
-      "one in",
-      "one sniff in",
-    )}.`;
+  if (sniffed === 0) return BOARD_OPEN[2];
   if (pouch) return pouch;
   return "no truffle down here is his to take. every action is a roll — tie it off whenever you like.";
 }
@@ -988,11 +1264,29 @@ export function whisperFor(state: SnoutDeepState): string {
 export type PolicyStyle = "blind" | "nose";
 export type Policy =
   | PolicyStyle
-  | { style: PolicyStyle; tieAt?: Layer; layerActions?: number };
+  | {
+      style: PolicyStyle;
+      tieAt?: Layer;
+      layerActions?: number;
+      rules?: Rules;
+      wakeMeter?: WakeMeter;
+      /** Where in the band [lo, hi] the bot stops, as a fraction of it
+       *  (rules 2 only): 0 never enters the band — the careful player who
+       *  keeps everything; 0.5 ties when the next action would carry the
+       *  meter past the band's middle — the bold one; Infinity ignores the
+       *  meter altogether — the greedy one, and the default. */
+      stopAt?: number;
+    };
 
 export interface SimResult {
   seed: number;
   policy: PolicyStyle;
+  /** Which rule set the dig ran under — 1 the per-action roll, 2 the meter. */
+  rules: Rules;
+  /** The meter as the dig ended (0 under rules 1). */
+  attention: number;
+  /** His sleep depth on the last board (0 under rules 1). */
+  sleepDepth: number;
   tieAt: Layer;
   finds: number; // what the dig keeps: banked truffles + banked consumables + kept collection things
   things: number; // banked consumables + kept collection things
@@ -1050,8 +1344,36 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
   const style = opts.style;
   const tieAt: Layer = opts.tieAt ?? 2;
   const layerActions = opts.layerActions ?? DEFAULT_LAYER_ACTIONS;
+  const rules: Rules = opts.rules ?? 1;
+  const wakeMeter = opts.wakeMeter ?? WAKE_METER;
+  const stopAt = opts.stopAt ?? Infinity;
   const board = generateLayeredBoard(seed);
-  let state = initialState(board, { coop: false, uncrewed: false });
+  let state = initialState(board, { coop: false, uncrewed: false, rules, wakeMeter });
+  // Where the bot ties: the line in the band past which it will not carry the
+  // meter. A greedy bot has none and reads the meter only as a place it is.
+  const stopLine =
+    rules === 2 && Number.isFinite(stopAt)
+      ? wakeMeter.lo + stopAt * (wakeMeter.hi - wakeMeter.lo)
+      : Infinity;
+  // True when the bot ties rather than take this action — checked before the
+  // verb lands, because after it the meter has already moved.
+  const meterSaysStop = (verb: Verb): boolean =>
+    stopLine !== Infinity &&
+    !state.ended &&
+    state.attention + nextThreshold(state, verb) > stopLine;
+  // The bots write `state` from inside their own closures, so the loops
+  // below narrow nothing the checker can trust — read the end through here.
+  const endedNow = (): SnoutDeepState["ended"] => state.ended;
+  // Every action the bots take goes through here, so one stop rule governs
+  // the lattice sniffs, the reads and the rubs alike. False = it stopped.
+  const doAct = (verb: Verb, tile: number): boolean => {
+    if (meterSaysStop(verb)) {
+      state = reduce(state, { type: "tie" });
+      return false;
+    }
+    state = reduce(state, { type: "act", verb, tile });
+    return true;
+  };
   // Park–Miller inline for the scan so the sim has no hidden coupling.
   let scan = ((seed * SCAN_SEED_MULT) % 2147483646) + 1;
   const scanNext = (n: number) => {
@@ -1077,10 +1399,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
   // five free ones; deeper, until attention lifts the sniff to the rub's odds.
   const sniffWorthIt = () => nextThreshold(state, "sniff") < nextThreshold(state, "rub");
   const step = (): boolean => {
-    const rub = (tile: number) => {
-      state = reduce(state, { type: "act", verb: "rub", tile });
-      return true;
-    };
+    const rub = (tile: number) => doAct("rub", tile);
     // 1. Finish a silhouette.
     let silhouette = -1;
     let silhouetteDepth = Infinity;
@@ -1133,8 +1452,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
       if (best >= 0) return rub(best);
       const unsniffed = unknown.filter((t) => state.scent[t] == null);
       if (unsniffed.length > 0 && sniffWorthIt()) {
-        state = reduce(state, { type: "act", verb: "sniff", tile: unsniffed[scanNext(unsniffed.length)] });
-        return true;
+        return doAct("sniff", unsniffed[scanNext(unsniffed.length)]);
       }
     }
     const buried = unknown.length > 0 ? unknown : [];
@@ -1183,7 +1501,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
     if (style === "nose") {
       for (const t of NOSE_LATTICE) {
         if (state.ended || spent() >= layerActions || !sniffWorthIt()) break;
-        state = reduce(state, { type: "act", verb: "sniff", tile: t });
+        if (!doAct("sniff", t)) break;
       }
       // A second round pins the strongest mark down where a sniff is under
       // HALF a rub — the root (7 vs 15). In the mud a sniff is exactly half
@@ -1195,7 +1513,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
       // nose ahead of blind play on finds, GT and sleep together.)
       if (
         layer > 0 &&
-        wakeThreshold(layer, "sniff", state.coop) * 2 < wakeThreshold(layer, "rub", state.coop) &&
+        nextThreshold(state, "sniff") * 2 < nextThreshold(state, "rub") &&
         NOSE_LATTICE.some((t) => (state.scent[t] ?? 0) >= 2)
       ) {
         let strongest = -1;
@@ -1210,7 +1528,7 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
         if (strongest >= 0) {
           for (const n of neighbours4(strongest)) {
             if (state.ended || spent() >= layerActions) break;
-            state = reduce(state, { type: "act", verb: "sniff", tile: n });
+            if (!doAct("sniff", n)) break;
           }
         }
       }
@@ -1224,14 +1542,24 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
     }
     if (layer === 2) {
       const took = spent();
-      const wokeHere = state.ended?.reason === "wake";
+      const wokeHere = endedNow()?.reason === "wake";
       // Survived = he did not wake within the first five root actions; a bot
       // that read four zeros and tied on the spot survived them too.
       rootSurvivedFive = !(wokeHere && took <= 5);
     }
     if (state.ended) break;
+    // The descent gate (2026-09-17 §4): deeper is closed until this board's
+    // truffle is out of the ground, so a bot that spent its budget without
+    // finding it keeps digging for it — and ties where it stands if the board
+    // has nothing left to turn over.
+    if (layer < tieAt) {
+      while (!state.ended && !canDescend(state)) {
+        if (!step()) break;
+      }
+    }
+    if (state.ended) break;
     survived[layer] = true;
-    if (layer >= tieAt) {
+    if (layer >= tieAt || !canDescend(state)) {
       state = reduce(state, { type: "tie" });
       break;
     }
@@ -1242,6 +1570,9 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
   return {
     seed,
     policy: style,
+    rules,
+    attention: state.attention,
+    sleepDepth: state.sleepDepth,
     tieAt,
     finds: state.things.length + state.banked.length,
     things: state.things.length + state.banked.filter((id) => !findById(state.board, id)?.food).length,

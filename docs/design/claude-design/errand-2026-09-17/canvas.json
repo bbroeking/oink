@@ -1,0 +1,102 @@
+{
+ "artboards": [
+  {
+   "file": "Main.dc.html",
+   "title": "1 \u00b7 the Pen, the job board",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Send_Sheet.dc.html",
+   "title": "2 \u00b7 what to look for (friends first)",
+   "x": 480,
+   "y": 0,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Ticket.dc.html",
+   "title": "3 \u00b7 who goes? the ticket",
+   "x": 960,
+   "y": 0,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Friends_Door.dc.html",
+   "title": "2b \u00b7 the target-first door",
+   "x": 1440,
+   "y": 0,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Out.dc.html",
+   "title": "4 \u00b7 out looking",
+   "x": 0,
+   "y": 1000,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Home_Empty_Yard.dc.html",
+   "title": "4b \u00b7 Home while Rosie is out",
+   "x": 480,
+   "y": 1000,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Homecoming.dc.html",
+   "title": "5 \u00b7 the homecoming",
+   "x": 960,
+   "y": 1000,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "Corkboard.dc.html",
+   "title": "6 \u00b7 the board (returns wait)",
+   "x": 1440,
+   "y": 1000,
+   "w": 390,
+   "h": 844
+  },
+  {
+   "file": "States.dc.html",
+   "title": "7 \u00b7 states",
+   "x": 0,
+   "y": 2000,
+   "w": 1200,
+   "h": 1500
+  }
+ ],
+ "annotations": [
+  {
+   "id": "loop",
+   "x": 1920,
+   "y": 0,
+   "w": 320,
+   "text": "BUILD 1 \u00b7 THE ERRAND (docs/design/scavenging-plan-2026-09-17.md \u00a73)\n\nSend a pig to look for a Find; it comes back hours later with it or without it. Every pig is a generic worker in Build 1 (stats and families are Build 2 \u2014 the about-sheet and ticket hint on the states board show where they land).\n\nRead left to right: the job board \u2192 what to look for (friends' wishes first) \u2192 who goes \u2192 out \u2192 the homecoming (Give / Keep) \u2192 the board where returns wait."
+  },
+  {
+   "id": "rules",
+   "x": 1920,
+   "y": 300,
+   "w": 320,
+   "text": "RULES DRAWN HERE\n\u2022 Rosie is sendable; Home shows the empty yard and says when she's back (4b).\n\u2022 One errand per pig per day. A recall spends the day; a failed send doesn't.\n\u2022 Only a Find ever comes back. Give = the existing gift swap (3 tickles each). Keep = Satchel; full bag = he holds it in his mouth.\n\u2022 Empty hands is muddy trotters, never a fail.\n\u2022 The push says who and what; the return is materialised on open (the gate line)."
+  },
+  {
+   "id": "next",
+   "x": 1920,
+   "y": 1000,
+   "w": 320,
+   "text": "NOT DRAWN (later)\nBuild 2: families on the find coins, pips on the about sheet (sketched), the curio case in the Barn, the Trader's family fancy + trade-up, the spoken wish bias.\nBuild 3: hands at the Trader, the herd's wishbook."
+  }
+ ],
+ "launch": {
+  "view": "canvas"
+ }
+}

@@ -2,7 +2,7 @@ import Svg, { Ellipse, Path } from "react-native-svg";
 import { WHIMSY } from "@/constants/theme";
 
 // A pig's snout, pressed to the mud and sniffing — the Sniff verb's face in
-// the Snout Deep dig. Ink-outline sticker art like `Shovel` and `BarnDoor`:
+// the Snout Deep dig. Ink-outline sticker art like `Shovel` (and the retired `BarnDoor`):
 // one flat fill, two nostrils, three scent lines rising off the top. Same
 // stroke weight and viewBox as its two siblings so the verb bar reads as one
 // family. (2026-09-13)

@@ -1,0 +1,175 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "A_Everything.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 Everything \u00b7 Owned (your closet)",
+   "page": "r2"
+  },
+  "A_FittingRoom.dc.html": {
+   "x": 0,
+   "y": 1200,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 fitting room sheet \u2014 title as a row",
+   "page": "r2"
+  },
+  "B_Mine.dc.html": {
+   "h": 844,
+   "title": "B \u00b7 The Mirror \u2014 Mine",
+   "w": 390,
+   "x": 470,
+   "y": 0,
+   "page": "r1"
+  },
+  "B_Today.dc.html": {
+   "h": 844,
+   "title": "B \u00b7 The Mirror \u2014 trying on from the rail",
+   "w": 390,
+   "x": 0,
+   "y": 0,
+   "page": "r1"
+  },
+  "C_Face.dc.html": {
+   "h": 844,
+   "title": "C \u00b7 scrolled \u2014 FACE peg selected",
+   "w": 390,
+   "x": 470,
+   "y": 1200,
+   "page": "r1"
+  },
+  "C_Racks.dc.html": {
+   "h": 844,
+   "title": "C \u00b7 The Rack \u2014 pegs are the nav",
+   "w": 390,
+   "x": 0,
+   "y": 1200,
+   "page": "r1"
+  },
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 the store \u2014 pig pinned, shelves first",
+   "page": "r2"
+  },
+  "A_All.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 Everything \u00b7 All \u2014 one grammar",
+   "page": "r2"
+  },
+  "A_Pen.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 the Pen \u2014 its own screen, a back link",
+   "page": "r2"
+  },
+  "A_Titles.dc.html": {
+   "x": 470,
+   "y": 1200,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 Titles picker \u2014 a list, search, two tabs",
+   "page": "r2"
+  },
+  "A_ItemSheet.dc.html": {
+   "x": 940,
+   "y": 1200,
+   "w": 390,
+   "h": 844,
+   "title": "A \u00b7 item sheet from a shelf tap",
+   "page": "r2"
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-09-17T20:47:44Z",
+  "v": 1
+ },
+ "designSystems": [],
+ "launch": {
+  "view": "canvas",
+  "page": "r2"
+ },
+ "notes": {
+  "t_page": {
+   "x": 0,
+   "y": -300,
+   "text": "A \u00b7 The Counter \u2014 the page",
+   "kind": "title1",
+   "maxW": 1800,
+   "page": "r2"
+  },
+  "t_sheets": {
+   "x": 0,
+   "y": 900,
+   "text": "A \u00b7 The Counter \u2014 the sheets",
+   "kind": "title1",
+   "maxW": 1330,
+   "page": "r2"
+  },
+  "n_page": {
+   "x": 1880,
+   "y": 0,
+   "w": 300,
+   "page": "r2",
+   "text": "One scroll. The try-on bar is a sticky header with real height; her window and the Fitting room chip both open the sheet. Pen and Furnish are the only signs and both leave the page (the Pen is its own screen with a back link). Under the shelves: one catalog, one card grammar \u2014 sun price = on the shelf today, grey price = not today, Wear / Wearing = yours, gold lock = members."
+  },
+  "n_sheets": {
+   "x": 1410,
+   "y": 1200,
+   "w": 300,
+   "page": "r2",
+   "text": "Titles can run to dozens, so the fitting room shows ONE row (current title \u00b7 placement \u00b7 count) and the row opens a picker: a list with search, Earned / Not yet tabs, one line each for how it was earned. The item sheet leads with the thing and her wearing it; the commit is a ticket; the Trough is the quiet second line."
+  },
+  "t_b": {
+   "x": 0,
+   "y": -300,
+   "text": "B \u00b7 The Mirror (round 1, set aside)",
+   "kind": "title1",
+   "maxW": 860,
+   "page": "r1"
+  },
+  "t_c": {
+   "x": 0,
+   "y": 900,
+   "text": "C \u00b7 The Rack (round 1, set aside)",
+   "kind": "title1",
+   "maxW": 860,
+   "page": "r1"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A_Everything.dc.html",
+  "A_All.dc.html",
+  "A_Pen.dc.html",
+  "A_FittingRoom.dc.html",
+  "A_Titles.dc.html",
+  "A_ItemSheet.dc.html",
+  "B_Today.dc.html",
+  "B_Mine.dc.html",
+  "C_Racks.dc.html",
+  "C_Face.dc.html"
+ ],
+ "pages": [
+  {
+   "id": "r2",
+   "name": "Round 2 \u00b7 The Counter"
+  },
+  {
+   "id": "r1",
+   "name": "Round 1 \u00b7 B and C"
+  }
+ ],
+ "title": "Shop From Scratch"
+}

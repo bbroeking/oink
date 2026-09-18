@@ -12,11 +12,11 @@ import TestRenderer, { act } from "react-test-renderer";
 import { Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SnoutDeepPatch } from "../components/mudwar/SnoutDeepPatch";
-import { DigReceiptSheet } from "../components/mudwar/SnoutDeepSheets";
+import { DigReceiptSheet, SnoutDeepHelpSheet } from "../components/mudwar/SnoutDeepSheets";
 import { Hungerer, hungererStateFor } from "../components/mudwar/Hungerer";
 import { MotionPolicyProvider } from "../hooks/useMotionPolicy";
-import { generateLayeredBoard } from "../utils/rooting";
-import { initialState, receipt, reconcileReceipt, reduce, type DigReceipt, type SnoutDeepState } from "../utils/snoutDeep";
+import { generateLayeredBoard, WakeStream } from "../utils/rooting";
+import { initialState, receipt, reconcileReceipt, reduce, type DigReceipt, type Find, type SnoutDeepState } from "../utils/snoutDeep";
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -29,12 +29,34 @@ const wrap = (node: React.ReactNode, reduceMotion = true) => (
 );
 
 const SEED = 20260913;
+// A seed that sleeps through anything a test does: every draw clears the
+// root's shove, the loudest roll in either rule set. The descent gate (§4)
+// makes a test dig its way down, and those actions must not wake him.
+const QUIET = (() => {
+  for (let seed = 1; seed < 1_000_000; seed++) {
+    const s = new WakeStream(seed);
+    let ok = true;
+    for (let k = 0; k < 20 && ok; k++) ok = s.next() >= 40;
+    if (ok) return seed;
+  }
+  throw new Error("no seed");
+})();
 // The harness reports its state through a box the tests read after each act.
 const seen: { latest: SnoutDeepState | null; done: DigReceipt | null } = { latest: null, done: null };
 
-function Harness({ coop = false, uncrewed = false }: { coop?: boolean; uncrewed?: boolean }) {
+function Harness({
+  coop = false,
+  uncrewed = false,
+  seed = SEED,
+  rules = 1,
+}: {
+  coop?: boolean;
+  uncrewed?: boolean;
+  seed?: number;
+  rules?: 1 | 2;
+}) {
   const [state, dispatch] = useReducer(reduce, undefined, () =>
-    initialState(generateLayeredBoard(SEED), { coop, uncrewed }),
+    initialState(generateLayeredBoard(seed), { coop, uncrewed, rules }),
   );
   useEffect(() => {
     seen.latest = state;
@@ -66,6 +88,22 @@ const isPressable = (n: TestRenderer.ReactTestInstance) =>
 function pressables(renderer: TestRenderer.ReactTestRenderer) {
   return renderer.root.findAll(isPressable);
 }
+/** Shove every tile of a find until it surfaces — how a test opens the
+ *  descent gate (§4: deeper stays shut until this board's truffle is up). */
+function surface(renderer: TestRenderer.ReactTestRenderer, find: Find) {
+  for (const tile of find.tiles) {
+    const node = pressables(renderer).filter((n) =>
+      new RegExp(`^row ${Math.floor(tile / 6) + 1}, column ${(tile % 6) + 1}, `).test(
+        n.props.accessibilityLabel ?? "",
+      ),
+    )[0];
+    if (node?.props.disabled) continue; // a splash already cleared it
+    act(() => node.props.onLongPress());
+  }
+}
+/** The board's truffle on the layer the dig is on. */
+const truffleHere = (): Find =>
+  seen.latest!.board.layers[seen.latest!.layer].finds.find((f) => f.food)!;
 function pressLabelled(renderer: TestRenderer.ReactTestRenderer, label: string | RegExp) {
   const node = pressables(renderer).filter(
     (n) =>
@@ -95,9 +133,9 @@ describe("SnoutDeepPatch", () => {
     expect(all).toContain("his if he wakes");
     expect(all).toContain("yours for keeps");
     expect(all).toContain("Tie it off");
-    expect(all).toContain("Dig deeper");
-    // The cards wear live odds (2026-09-16): the free sniffs left, then "1 in N".
-    for (const word of ["Sniff", "Rub", "Shove", "free · 5 left", "1 in 120", "1 in 12"]) expect(all).toContain(word);
+    expect(all).toContain("Find the truffle first"); // gated until the board's truffle is up
+    // The cards wear live odds (2026-09-16): the free sniffs left, then a percent per action.
+    for (const word of ["Sniff", "Rub", "Shove", "free · 5 left", "<1% he wakes", "8% he wakes"]) expect(all).toContain(word);
     // No emoji anywhere on the screen.
     expect(all).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
 
@@ -161,21 +199,25 @@ describe("SnoutDeepPatch", () => {
   test("Dig deeper enters the mud (stirring); at the root the footer is one gold tie", () => {
     let renderer!: TestRenderer.ReactTestRenderer;
     act(() => {
-      renderer = TestRenderer.create(wrap(<Harness />));
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} />));
     });
+    // The gate: this board's truffle first, on every board (§4).
+    surface(renderer, truffleHere());
     pressLabelled(renderer, /^Dig deeper, a new board in the mud/);
     expect(seen.latest!.layer).toBe(1);
     let all = texts(renderer).join("\n");
     expect(all).toContain("stirring");
     expect(all).toMatch(/the mud\. fatter down here/);
+    surface(renderer, truffleHere());
     pressLabelled(renderer, /^Dig deeper, a new board in the root/);
     expect(seen.latest!.layer).toBe(2);
     all = texts(renderer).join("\n");
     expect(all).toContain("one eye open");
-    expect(all).toContain("1 in 17"); // the root's sniff, at the table's odds inside the budget
-    expect(all).toContain("Tie it off · +0 Golden Truffles");
+    expect(all).toContain("6% · "); // the root's sniff, at the table's odds inside the budget
+    // Two truffles banked on the way down, and the root's own +1 for the mud's.
+    expect(all).toContain("Tie it off · +3 Golden Truffles");
     expect(all).not.toContain("Dig deeper");
-    pressLabelled(renderer, /^Tie it off, plus 0 Golden Truffles/);
+    pressLabelled(renderer, /^Tie it off, plus 3 Golden Truffles/);
     expect(seen.latest!.ended).toEqual({ reason: "tie", layer: 2 });
     expect(seen.done?.kind).toBe("tied");
     expect(seen.done?.title).toBe("What the dig was worth");
@@ -190,12 +232,13 @@ describe("SnoutDeepPatch", () => {
     });
     let all = texts(renderer).join("\n");
     expect(all).toContain("Tie it off");
-    expect(all).toContain("Dig deeper");
+    expect(all).toContain("Find the truffle first");
     expect(all).not.toContain("· bank");
     expect(all).not.toContain("· carry");
     expect(all).toContain("nothing loose yet");
     // Surface the topsoil Boom (a consumable): one thing loose in the pouch.
     const boom = seen.latest!.board.layers[0].finds.find((f) => f.kind === "boom")!;
+    const truffleId = seen.latest!.board.layers[0].finds.find((f) => f.food)!.id;
     for (const tile of boom.tiles) {
       const node = pressables(renderer).filter((n) =>
         new RegExp(`^row ${Math.floor(tile / 6) + 1}, column ${(tile % 6) + 1}, `).test(n.props.accessibilityLabel ?? ""),
@@ -205,7 +248,8 @@ describe("SnoutDeepPatch", () => {
     expect(seen.latest!.looseThings).toEqual([boom.id]);
     all = texts(renderer).join("\n");
     expect(all).toContain("Tie it off · leave");
-    expect(all).toContain("Dig deeper · reset");
+    // The gate: with the truffle still buried, deeper asks for it by name (§4).
+    expect(all).toContain("Find the truffle first");
     expect(all).not.toContain("nothing loose yet");
     // The loose well names the Boom, the tied well nothing yet.
     const wells = renderer.root.findAll(
@@ -214,17 +258,20 @@ describe("SnoutDeepPatch", () => {
     const labels = wells.map((n) => n.props.accessibilityLabel as string);
     expect(labels.some((l) => l.startsWith("loose, his if he wakes: a Tickle Boom"))).toBe(true);
     expect(labels.some((l) => l.startsWith("tied, yours for keeps: nothing tied yet"))).toBe(true);
-    // Descend: the Boom rides down — still loose, still counted in the footer.
-    pressLabelled(renderer, /^Dig deeper, a new board in the mud, carry 1 down/);
+    // The truffle up, the gate opens; the Boom rides down — still loose.
+    surface(renderer, truffleHere());
+    expect(texts(renderer).join("\n")).toContain("Dig deeper · reset");
+    pressLabelled(renderer, /^Dig deeper, a new board in the mud, carry 2 down/);
     expect(seen.latest!.layer).toBe(1);
     expect(seen.latest!.looseThings).toEqual([boom.id]);
-    expect(seen.latest!.banked).toEqual([]);
+    expect(seen.latest!.banked).toEqual([truffleId]);
     all = texts(renderer).join("\n");
     expect(all).toContain("Tie it off · leave");
-    expect(all).toContain("Dig deeper · reset");
+    // A new board, a new gate: the mud's fat one has not surfaced yet.
+    expect(all).toContain("Find the truffle first");
     // Tie: the pouch banks; the receipt pays the Boom.
     pressLabelled(renderer, /^Tie it off, leave with 1/);
-    expect(seen.latest!.banked).toEqual([boom.id]);
+    expect(seen.latest!.banked).toEqual([truffleId, boom.id]);
     expect(seen.latest!.looseThings).toEqual([]);
     expect(seen.done?.rows.find((r) => r.id === boom.id)?.tickles).toBe(3);
     act(() => renderer.unmount());
@@ -291,6 +338,7 @@ describe("the sheets — the tally", () => {
     expect(all).toContain("the dig");
     expect(all).toContain("Back to the Barn");
     expect(all).toContain("share the dig ›");
+    expect(all).toContain("the herd's board: +1 Golden Truffle. things you found are yours alone.");
     expect(all).not.toContain("GT");
     expect(landedFlags(renderer)).toEqual([true, true]);
     // Settled: the hurry target is disabled.
@@ -513,6 +561,9 @@ describe("the sheets — the tally", () => {
     // Wake in the mud with the fat one loose: descend at once, shove the L
     // until a draw under 20 wakes him (the mud shove threshold).
     let s = initialState(generateLayeredBoard(SEED), { coop: false, uncrewed: false });
+    // The gate: topsoil's truffle first, then down.
+    const domino = s.board.layers[0].finds.find((f) => f.food)!;
+    for (const t of domino.tiles) s = reduce(s, { type: "act", verb: "shove", tile: t });
     s = reduce(s, { type: "descend" });
     const fat = s.board.layers[1].finds.find((f) => f.kind === "truffle_l")!;
     for (const t of fat.tiles) s = reduce(s, { type: "act", verb: "shove", tile: t });
@@ -662,14 +713,21 @@ describe("the sniff budget shows on the patch", () => {
   it("the verb cards wear live odds, the sniff card its free count", () => {
     expect(src).toContain("function verbSub(state: SnoutDeepState, v: Verb): string");
     expect(src).toContain("return `free · ${left} left`;");
-    expect(src).toContain("return `${shortOdds(thr)} · ${left} free left`;");
+    expect(src).toContain("return `${wakePercent(thr)} · ${left} left`;");
+    // …and under the meter, how loud the action is, in the bar's own units.
+    expect(src).toContain('const price = thr <= 0 ? "free" : `+${thr}`;');
+    expect(src).toContain("if (left > 0) return `${price} · ${left} left`;");
     expect(src).not.toMatch(/VERB_SUB\[/);
   });
   it("his face lifts a step and the tag says he's noticing", () => {
     expect(src).toContain("const attentive = !woke && nextSniffAttention(state) > 0;");
-    expect(src).toContain("hungererStateFor(state.layer, woke, attentive)");
+    expect(src).toContain(
+      "hungererStateFor(state.layer, woke, attentive, metered ? { attention: meter, lo, hi } : null)",
+    );
     expect(src).toContain('const ATTENTIVE_LABEL = "noticing you";');
-    expect(hungerer).toContain("attentive = false): HungererState");
+    expect(hungerer).toContain("attentive = false,");
+    // The bands come off the dig's stamp, not a constant.
+    expect(hungerer).toContain("export function hungererBands(lo: number, hi: number)");
   });
   it("tie leaves, deeper opens a fresh board — said in the labels (the screen never scrolls)", () => {
     expect(src).toContain("Tie it off · leave");
@@ -678,5 +736,227 @@ describe("the sniff budget shows on the patch", () => {
     // the tie is the gold one below the root too
     const footer = src.slice(src.indexOf("THE FOOTER"), src.indexOf("THE REVEAL"));
     expect(footer.match(/variant="gold"/g)?.length).toBe(2);
+  });
+});
+
+// ── The meter on the patch (rules 2, 2026-09-17) ────────────────────────────
+
+describe("the meter, the gate and the bag", () => {
+  /** A dig that tied on the topsoil truffle — a receipt with rows on it. */
+  function tiedTopsoilTruffle() {
+    let s = initialState(generateLayeredBoard(SEED), { coop: false, uncrewed: false });
+    const domino = s.board.layers[0].finds.find((f) => f.food)!;
+    for (const t of domino.tiles) s = reduce(s, { type: "act", verb: "shove", tile: t });
+    return reduce(s, { type: "tie" });
+  }
+  const meterNode = (renderer: TestRenderer.ReactTestRenderer) =>
+    renderer.root.findAll((n) => n.props.accessibilityRole === "progressbar")[0];
+  const shove = (renderer: TestRenderer.ReactTestRenderer, tile: number) => {
+    const node = pressables(renderer).filter((n) =>
+      new RegExp(`^row ${Math.floor(tile / 6) + 1}, column ${(tile % 6) + 1}, `).test(
+        n.props.accessibilityLabel ?? "",
+      ),
+    )[0];
+    act(() => node.props.onLongPress());
+  };
+
+  test("the bar under his face reads the meter; the cards wear the loudness", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} rules={2} />));
+    });
+    // The bar runs to `hi`, and the band it paints is [lo, hi].
+    const bar = meterNode(renderer);
+    expect(bar.props.accessibilityLabel).toBe("his attention, 0 of 110. he sleeps through the first 50.");
+    // The cards: the price is a numeral of its own, the budget its own line.
+    expect(texts(renderer)).toEqual(expect.arrayContaining(["free", "· 5 left", "+1", "+10"]));
+    const all = texts(renderer).join("\n");
+    expect(all).not.toMatch(/% he wakes/); // the meter's language, not rule 1's
+    expect(all).toContain("sound asleep"); // the tag reads the band, not the layer
+    // Four far-apart shoves lift the bar forty 120ths — and it shows.
+    for (const tile of [0, 5, 24, 29]) shove(renderer, tile);
+    expect(seen.latest!.attention).toBe(40);
+    expect(seen.latest!.ended).toBeNull();
+    expect(meterNode(renderer).props.accessibilityLabel).toBe(
+      "his attention, 40 of 110. he sleeps through the first 50.",
+    );
+    // …and the cards do NOT climb: the loudness of a shove is still ten.
+    expect(texts(renderer)).toEqual(expect.arrayContaining(["+10"]));
+    // Past `lo` the bar speaks the hazard instead, and his face has opened an eye.
+    for (const tile of [12, 17]) shove(renderer, tile);
+    expect(seen.latest!.attention).toBe(60);
+    expect(meterNode(renderer).props.accessibilityLabel).toBe(
+      "his attention, 60 of 110. past 50 — about a 2% chance the next rub is the one.",
+    );
+    expect(texts(renderer).join("\n")).toContain("stirring");
+    act(() => renderer.unmount());
+  });
+
+  test("the sleeper strip is the meter's row — rules 2 only, one element, one label", () => {
+    const strip = (renderer: TestRenderer.ReactTestRenderer) =>
+      renderer.root.findAll((n) => typeof n.type === "string" && n.props.testID === "sleeper-strip");
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} rules={2} />));
+    });
+    expect(strip(renderer)).toHaveLength(1);
+    // One element, and it reads the bar: where he is, where the band starts,
+    // and the word his face is saying.
+    expect(strip(renderer)[0].props.accessible).toBe(true);
+    expect(strip(renderer)[0].props.accessibilityLabel).toBe(
+      "attention 0 of 110, band from 50; sound asleep",
+    );
+    // The band's two ends are stamped under it.
+    expect(texts(renderer)).toEqual(expect.arrayContaining(["50", "110"]));
+    // Four shoves later the label has moved with the bar.
+    for (const tile of [0, 5, 24, 29]) shove(renderer, tile);
+    expect(strip(renderer)[0].props.accessibilityLabel).toBe(
+      "attention 40 of 110, band from 50; sound asleep",
+    );
+    act(() => renderer.unmount());
+
+    // Rules 1 never grows one: the rail keeps its face and its tag.
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} />));
+    });
+    expect(strip(renderer)).toHaveLength(0);
+    expect(
+      renderer.root.findAll((n) => typeof n.type === "string" && n.props.testID === "hungerer-tag"),
+    ).not.toHaveLength(0);
+    act(() => renderer.unmount());
+  });
+
+  test("the meter's bar paints the band and stops at `hi`", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} rules={2} />));
+    });
+    // The band is drawn as its own stretch of the track, from lo to hi.
+    const bands = renderer.root.findAll(
+      (n) =>
+        typeof n.type === "string" &&
+        Array.isArray(n.props.style) &&
+        n.props.style.some((x: unknown) => !!x && typeof x === "object" && "left" in (x as object)),
+    );
+    expect(bands.length).toBeGreaterThan(0);
+    const style = bands[0].props.style.find((x: Record<string, unknown>) => x && "left" in x);
+    expect(style.left).toBe(`${(50 / 110) * 100}%`);
+    expect(style.width).toBe(`${(60 / 110) * 100}%`);
+    act(() => renderer.unmount());
+  });
+
+  test("rules 1 has no meter at all — the patch is what build 192 shipped", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} />));
+    });
+    expect(renderer.root.findAll((n) => n.props.accessibilityRole === "progressbar")).toHaveLength(0);
+    expect(texts(renderer).join("\n")).toMatch(/% he wakes/);
+    act(() => renderer.unmount());
+  });
+
+  test("the descent gate names what it wants, and the press does nothing until it has it", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness seed={QUIET} />));
+    });
+    expect(texts(renderer).join("\n")).toContain("Find the truffle first");
+    const shut = pressables(renderer).filter((n) => n.props.accessibilityLabel === "Dig deeper, not yet")[0];
+    expect(shut).toBeDefined();
+    expect(shut.props.accessibilityHint).toBe("Find this board's truffle first");
+    expect(shut.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    act(() => shut.props.onPress?.());
+    expect(seen.latest!.layer).toBe(0); // the reducer refuses it too
+    // The truffle up: the door opens and says the other thing.
+    surface(renderer, truffleHere());
+    expect(texts(renderer).join("\n")).toContain("Dig deeper · reset");
+    pressLabelled(renderer, /^Dig deeper, a new board in the mud/);
+    expect(seen.latest!.layer).toBe(1);
+    act(() => renderer.unmount());
+  });
+
+  test("the bag beat always shows once the server has answered — 'nothing for the bag this dig'", () => {
+    // The server's receipt landed and named no roll: the block still lands.
+    const r = reconcileReceipt(receipt(tiedTopsoilTruffle(), { tickledBefore: 38 }), { ticklesTotal: 10 });
+    expect(r.satchelKnown).toBe(true);
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onClose={() => {}} />),
+      );
+    });
+    const block = renderer.root.findAll(
+      (n) => typeof n.type === "string" && n.props.testID === "dig-satchel",
+    );
+    expect(block).toHaveLength(1);
+    expect(
+      renderer.root.findAll(
+        (n) => typeof n.type === "string" && typeof n.props.testID === "string" && /^dig-satchel-(find|lost)-/.test(n.props.testID),
+      ),
+    ).toHaveLength(0);
+    const all = texts(renderer).join("\n");
+    expect(all).toContain("nothing for the bag this dig");
+    expect(all).toContain("the satchel");
+    act(() => renderer.unmount());
+  });
+
+  test("the help ledger explains the meter under rules 2, and does not invent one under rules 1", () => {
+    for (const rules of [2, 1] as const) {
+      let renderer!: TestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = TestRenderer.create(
+          wrap(<SnoutDeepHelpSheet visible rules={rules} onClose={() => {}} />),
+        );
+      });
+      const all = texts(renderer).join("\n");
+      expect(all).toContain("Snout Deep");
+      if (rules === 2) {
+        expect(all).toContain("How deep he sleeps");
+        expect(all).toContain("the darker stretch is where he might wake");
+      } else {
+        expect(all).not.toContain("How deep he sleeps");
+      }
+      act(() => renderer.unmount());
+    }
+  });
+});
+
+// ── The rule set rides in from the server (2026-09-17 §2) ───────────────────
+describe("rules on the wire", () => {
+  const fs = require("node:fs") as typeof import("node:fs");
+  const path = require("node:path") as typeof import("node:path");
+  const read = (...bits: string[]) => fs.readFileSync(path.join(__dirname, "..", ...bits), "utf8");
+
+  it("the open asks for the newest rules and keeps what the server stamps", () => {
+    const hook = read("hooks", "useRooting.ts");
+    expect(hook).toMatch(/p_rules:\s*SNOUT_DEEP_RULES_MAX/);
+    expect(hook).toContain("rules: r.rules === 2 ? 2 : 1,");
+    // Absent on an un-migrated server → rule 1, by the session's own type.
+    expect(read("utils", "digSession.ts")).toContain("rules?: 1 | 2;");
+  });
+
+  it("the dig plays under the row's rules, and a restore replays under them too", () => {
+    const dig = read("components", "mudwar", "SnoutDeepDig.tsx");
+    expect(dig).toContain("rules: session.rules ?? 1,");
+    expect(dig).toContain("const next = restore(board, opts, snapshot);");
+  });
+
+  it("the dev preview takes ?rules=1|2, ?meter=lo-hi and ?scope=, and plays the meter by default", () => {
+    const preview = read("components", "dev", "screens", "snout-deep-preview.tsx");
+    expect(preview).toContain('const rules: 1 | 2 = one(params.rules) === "1" ? 1 : 2;');
+    expect(preview).toContain("initialState(board, { coop, uncrewed, rules, wakeMeter })");
+    expect(preview).toContain("rules?: string | string[];");
+    expect(preview).toContain("meter?: string | string[];");
+    expect(preview).toContain("scope?: string | string[];");
+    expect(preview).toContain('const scope = one(params.scope) === "dig" ? "dig" : WAKE_METER.scope;');
+  });
+
+  it("the session carries the row's wake-meter stamp, sanitized", () => {
+    const hook = read("hooks", "useRooting.ts");
+    expect(hook).toContain("sanitizeWakeMeter(r.wake_meter)");
+    expect(read("utils", "digSession.ts")).toContain("wakeMeter?: WakeMeter;");
+    expect(read("components", "mudwar", "SnoutDeepDig.tsx")).toContain(
+      "...(session.wakeMeter ? { wakeMeter: session.wakeMeter } : {}),",
+    );
   });
 });

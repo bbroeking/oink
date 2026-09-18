@@ -121,7 +121,11 @@ def is_eye_item(item_id: str) -> bool:
         try:
             for line in open(os.path.join(ROOT, rel)):
                 if line.strip().startswith(item_id + ":"):
-                    return 'anchor: "eye' in line
+                    # Only the BASE anchor decides the prompt addendum — a
+                    # per-pose override (perAnim, written inline on the same
+                    # line) describes where the finished sprite sits, not what
+                    # kind of item it is.
+                    return 'anchor: "eye' in line.split("perAnim")[0]
         except OSError:
             pass
     return False

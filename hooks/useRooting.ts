@@ -19,6 +19,8 @@ import { supabase } from "@/utils/supabase";
 import { markFirstRealDig } from "@/utils/sounderPath";
 import { cancelOpenReminder } from "@/utils/pushNotifications";
 import { fetchFeedingState } from "@/utils/dig";
+import { SNOUT_DEEP_RULES_MAX, WAKE_METER } from "@/constants/dig";
+import { sanitizeWakeMeter } from "@/utils/snoutDeep";
 import { hasFeedingClock } from "@/utils/feedingClock";
 import {
   ClaimableFind,
@@ -140,6 +142,12 @@ type OpenPayload = {
   uncrewed?: boolean;
   // app_settings.dig_finds — the per-layer find odds.
   dig_finds?: unknown;
+  // The rule set the row was opened under: LEAST(what we asked for, the
+  // server's own config). Absent (no p_rules overload yet) → rule 1.
+  rules?: number | null;
+  // The wake-meter tuning stamped on the row beside `rules` — the band, the
+  // scope and the root tie's bonus. NULL for rule-1 rows.
+  wake_meter?: unknown;
   // The log the server holds for a still-open snout_deep row (sync_rooting).
   synced_layer?: number | null;
   synced_actions?: string[] | null;
@@ -386,7 +394,12 @@ export function useRooting() {
     RpcResult<{ session: RootingSession }>
   > => {
     const openingUid = await mirrorUid();
-    const r = await rpcAction<OpenPayload>("open_rooting");
+    // Ask for the newest rules this binary knows; the server hands back
+    // LEAST(asked, its own config) and stamps it on the row, so a rollback is
+    // one app_settings UPDATE and old phones keep the game they shipped with.
+    const r = await rpcAction<OpenPayload>("open_rooting", {
+      p_rules: SNOUT_DEEP_RULES_MAX,
+    });
     if ((await mirrorUid()) !== openingUid) {
       return { ok: false, reason: "account_changed" };
     }
@@ -425,6 +438,12 @@ export function useRooting() {
         mode: r.mode === "snout_deep" ? "snout_deep" : "classic",
         uncrewed: r.uncrewed ?? false,
         digFinds: r.dig_finds ?? null,
+        rules: r.rules === 2 ? 2 : 1,
+        // A rules-2 row always plays under a meter: the row's stamp when it
+        // sent one, the compiled default when it did not.
+        ...(r.rules === 2
+          ? { wakeMeter: r.wake_meter == null ? WAKE_METER : sanitizeWakeMeter(r.wake_meter) }
+          : {}),
         synced:
           r.mode === "snout_deep" && Array.isArray(r.synced_actions)
             ? {

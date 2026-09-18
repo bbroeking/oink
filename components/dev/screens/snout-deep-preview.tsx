@@ -1,7 +1,11 @@
 // Dev preview for Snout Deep — a full local dig on a fixed seed, no server.
 // The founder's try-out on the web target (spec §11 step 2): the reducer runs
 // under useReducer, the three sheets mount from the screen, and a dev strip
-// at the very top shows the rolls. `?seed=` (default 20260913) · `?coop=1` ·
+// at the very top shows the rolls. `?seed=` (default 20260913) · `?rules=1|2`
+// (default 2 — the wake meter; 1 is build 192's per-action roll) ·
+// `?meter=50-110` (the band his sleep depth is drawn from) · `?scope=board|dig`
+// (whether a descent quiets him and redraws it, or the meter runs the whole
+// dig) · `?coop=1` ·
 // `?uncrewed=1` · `?motion=reduced` · `?before=` (the tally's count before the
 // dig; default 0 — offline, the tally counts from DIG_FIND_TICKLES and no
 // server corrects it) · `?satchel=` what the receipt's bag beat shows: `2`
@@ -16,7 +20,7 @@ import { SnoutDeepPatch } from "@/components/mudwar/SnoutDeepPatch";
 import { DigReceiptSheet } from "@/components/mudwar/SnoutDeepSheets";
 import { Button, Label, Sticker, T } from "@/components/ui";
 import { SPACE, WHIMSY } from "@/constants/theme";
-import { WAKE_DIE } from "@/constants/dig";
+import { WAKE_DIE, WAKE_METER, type WakeMeter } from "@/constants/dig";
 import { MotionPolicyProvider } from "@/hooks/useMotionPolicy";
 import { generateLayeredBoard } from "@/utils/rooting";
 import {
@@ -60,6 +64,9 @@ function SnoutDeepPreview() {
     coop?: string | string[];
     uncrewed?: string | string[];
     motion?: string | string[];
+    rules?: string | string[];
+    meter?: string | string[];
+    scope?: string | string[];
     help?: string | string[];
     before?: string | string[];
     satchel?: string | string[];
@@ -69,6 +76,18 @@ function SnoutDeepPreview() {
     Number.isFinite(seedParam) && seedParam > 0 ? Math.trunc(seedParam) : DEFAULT_SEED,
   );
   const coop = one(params.coop) === "1";
+  // The meter is what this build plays; ?rules=1 is the old game, for a
+  // side-by-side. `?meter=lo-hi` and `?scope=` stand in for the tuning row.
+  const rules: 1 | 2 = one(params.rules) === "1" ? 1 : 2;
+  const wakeMeter: WakeMeter = useMemo(() => {
+    const band = /^(\d+)-(\d+)$/.exec(one(params.meter) ?? "");
+    const scope = one(params.scope) === "dig" ? "dig" : WAKE_METER.scope;
+    return {
+      ...WAKE_METER,
+      ...(band ? { lo: Number(band[1]), hi: Number(band[2]) } : {}),
+      scope,
+    };
+  }, [params.meter, params.scope]);
   const uncrewed = one(params.uncrewed) === "1";
   const reduceMotion = one(params.motion) === "reduced";
   const helpOnMount = one(params.help) === "1";
@@ -86,13 +105,15 @@ function SnoutDeepPreview() {
     <MotionPolicyProvider reduceMotion={reduceMotion}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Keyed on the seed: a new seed is a new dig, reducer and all. */}
-      <LocalDig key={seed} seed={seed} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} tickledBefore={tickledBefore} satchel={satchel} onDigAgain={digAgain} />
+      <LocalDig key={`${seed}:${rules}:${wakeMeter.lo}-${wakeMeter.hi}:${wakeMeter.scope}`} seed={seed} rules={rules} wakeMeter={wakeMeter} coop={coop} uncrewed={uncrewed} reduceMotion={reduceMotion} helpOnMount={helpOnMount} tickledBefore={tickledBefore} satchel={satchel} onDigAgain={digAgain} />
     </MotionPolicyProvider>
   );
 }
 
 function LocalDig({
   seed,
+  rules,
+  wakeMeter,
   coop,
   uncrewed,
   reduceMotion,
@@ -102,6 +123,8 @@ function LocalDig({
   onDigAgain,
 }: {
   seed: number;
+  rules: 1 | 2;
+  wakeMeter: WakeMeter;
   coop: boolean;
   uncrewed: boolean;
   reduceMotion: boolean;
@@ -111,7 +134,9 @@ function LocalDig({
   onDigAgain: () => void;
 }) {
   const board = useMemo(() => generateLayeredBoard(seed), [seed]);
-  const [state, dispatch] = useReducer(reduce, undefined, () => initialState(board, { coop, uncrewed }));
+  const [state, dispatch] = useReducer(reduce, undefined, () =>
+    initialState(board, { coop, uncrewed, rules, wakeMeter }),
+  );
   const [receipt, setReceipt] = useState<DigReceipt | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(PREVIEW_SECONDS_LEFT);
@@ -140,11 +165,19 @@ function LocalDig({
   const lastEntry = state.actions.length > 0 ? state.actions[state.actions.length - 1] : null;
   const last = lastEntry ? decodeAction(lastEntry) : null;
   const lastDraw = state.wakeIndex > 0 ? wakeDrawAt(seed, state.wakeIndex - 1) : null;
+  // Under the meter nothing rolls: the strip reads the bar against his sleep
+  // depth instead, and the draws it shows are the ones the stream spent.
   const lastThreshold = last ? wakeThreshold(last.layer, last.verb, state.coop) : null;
   const strip =
-    `seed ${seed} · ${state.actions.length} actions · wake ${state.wakeIndex}` +
-    (lastEntry && lastDraw != null && lastThreshold != null
-      ? ` · last ${lastEntry} drew ${lastDraw}/${WAKE_DIE} vs ${lastThreshold}${lastDraw < lastThreshold ? " WAKE" : ""}`
+    `seed ${seed} · rules ${rules}${
+      rules === 2
+        ? ` · meter ${state.attention}/${state.sleepDepth} of ${wakeMeter.lo}-${wakeMeter.hi} ${wakeMeter.scope}`
+        : ""
+    } · ${state.actions.length} actions · wake ${state.wakeIndex}` +
+    (lastEntry && lastThreshold != null
+      ? rules === 2
+        ? ` · last ${lastEntry} +${lastThreshold}`
+        : ` · last ${lastEntry} drew ${lastDraw}/${WAKE_DIE} vs ${lastThreshold}${lastDraw != null && lastDraw < lastThreshold ? " WAKE" : ""}`
       : "") +
     (coop ? " · co-op" : "") +
     (uncrewed ? " · uncrewed" : "") +

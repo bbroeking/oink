@@ -19,6 +19,8 @@ import {
 } from "@/utils/fieldGuideConfig";
 import { HAT_IMAGES } from "@/constants/hats";
 import { satchelTuning } from "@/utils/satchel";
+import { isSatchelUnbounded } from "@/constants/satchel";
+import { errandDurationLabel, errandTuning } from "@/utils/errands";
 
 const SNOUT_COIN = require("../assets/images/snout-coin.png");
 
@@ -37,11 +39,21 @@ export interface FieldGuideEntry {
 	placeholder?: boolean;
 }
 
+/** The Pen page's value line — the hours come from the live errand tuning
+ *  (Rosie's trot; every pig is the same in Build 1), the once-a-day rule is
+ *  the server's gate. */
+export function penLine(): string {
+	const hours = errandDurationLabel("rosie", errandTuning()).replace(/^about /, "");
+	return `Send a pig to look for a Find — usually the one a friend's pig is hoping for. Back in about ${hours}, with it or without it; give it or keep it. One errand a day per pig.`;
+}
+
 /** The Satchel page's value line — the bag cap and the tray size come from the
  *  live tuning (utils/satchel), the once-a-day rule is the server's gate. */
 export function satchelLine(): string {
 	const t = satchelTuning();
-	return `Holds ${t.cap} finds. Hand a friend's pig what it's hoping for and take one of ${t.options} things back. Once a day per friend, and never for sale.`;
+	// An unbounded bag (cap 9999 since 2026-09-18) never says a number.
+	const holds = isSatchelUnbounded(t.cap) ? "Holds every find you carry home" : `Holds ${t.cap} finds`;
+	return `${holds}. Hand a friend's pig what it's hoping for and take one of ${t.options} things back. Once a day per friend, and never for sale.`;
 }
 
 export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
@@ -116,5 +128,25 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		whimsy: "A little bag that gets heavier every time you dig, and lighter every time you visit.",
 		value: () => satchelLine(),
 		glyph: "digBag",
+	},
+	{
+		// The Ghost Sheep Trader (20260917170000): a hooded wanderer who turns
+		// up at the hedge at random and takes finds for applied tickles. The
+		// prices ride on trader_status, so the line stays a rule, not a number.
+		id: "trader",
+		name: "The Ghost Sheep Trader",
+		whimsy: "A hooded stranger who drifts by the hedge now and then. Never says where he's been.",
+		value: () =>
+			"Hands finds from your Satchel over for tickles while he stays — the one he fancies pays double. He comes when he comes.",
+		glyph: "trader",
+	},
+	{
+		// The Pen (20260918120000): the errand board. Hours from errand_tuning
+		// so a retune can never make the page lie.
+		id: "pen",
+		name: "The Pen",
+		whimsy: "Where the pigs wait for something to do. Point one at the hedge and it'll come back with mud on its trotters.",
+		value: () => penLine(),
+		glyph: "signPen",
 	},
 ];

@@ -3,7 +3,16 @@
 // replays its incidents. Boards are hand-built so a test names its tiles;
 // seeds are picked so the wake stream says what the test needs.
 
-import { PATCH_COLS, SNIFF_FREE_PER_DIG, SNOUT_DEEP_ACTION_CAP, TILE_DEPTH } from "../constants/dig";
+import {
+  PATCH_COLS,
+  SNIFF_FREE_PER_BOARD,
+  SNOUT_DEEP_ACTION_CAP,
+  SNOUT_DEEP_RULES_MAX,
+  TILE_DEPTH,
+  WAKE_DIE,
+  WAKE_METER,
+  type WakeMeter,
+} from "../constants/dig";
 import { generateLayeredBoard, WakeStream } from "../utils/rooting";
 import {
   decodeAction,
@@ -12,6 +21,8 @@ import {
   isNoOp,
   reduce,
   replay,
+  restore,
+  wakeDrawAt,
   revealed,
   scentAt,
   wakeThreshold,
@@ -19,6 +30,17 @@ import {
   type LayerBoard,
   type SnoutDeepBoard,
   type SnoutDeepState,
+  sniffsLeft,
+  nextSniffAttention,
+  sniffCount,
+  nextThreshold,
+  attentionOf,
+  canDescend,
+  loudness,
+  meterHazard,
+  sanitizeWakeMeter,
+  sleepDepthFrom,
+  type Layer,
 } from "../utils/snoutDeep";
 
 const TILES = 30;
@@ -61,10 +83,17 @@ const start = (seed = QUIET) => initialState(board(seed), opts);
 const act = (s: SnoutDeepState, verb: "sniff" | "rub" | "shove", tile: number) =>
   reduce(s, { type: "act", verb, tile });
 const descend = (s: SnoutDeepState) => reduce(s, { type: "descend" });
-const toLayer = (s: SnoutDeepState, l: 0 | 1 | 2) => {
-  while (s.layer < l) s = descend(s);
-  return s;
-};
+// The descent gate (2026-09-17 §4) shuts `Dig deeper` until this board's
+// truffle is out of the ground. A test that wants the board below without
+// spending draws on the truffle takes the replay's door, which descends
+// regardless — a log that reached the mud found it on the phone that wrote it.
+const sink = (s: SnoutDeepState, layer: Layer = Math.min(2, s.layer + 1) as Layer) =>
+  restore(
+    s.board,
+    { coop: s.coop, uncrewed: s.uncrewed, rules: s.rules },
+    { layer, actions: s.actions },
+  );
+const toLayer = (s: SnoutDeepState, l: 0 | 1 | 2) => sink(s, l);
 
 describe("sniff", () => {
   test("marks scent, counts one action, one log entry and one draw", () => {
@@ -79,9 +108,9 @@ describe("sniff", () => {
   test("inside the budget a topsoil sniff never ends a dig, whatever the stream says", () => {
     for (let seed = 1; seed <= 400; seed++) {
       let s = initialState(board(seed), opts);
-      for (let tile = 0; tile < SNIFF_FREE_PER_DIG; tile++) s = act(s, "sniff", tile);
+      for (let tile = 0; tile < SNIFF_FREE_PER_BOARD; tile++) s = act(s, "sniff", tile);
       expect(s.ended).toBeNull();
-      expect(s.actions).toHaveLength(SNIFF_FREE_PER_DIG);
+      expect(s.actions).toHaveLength(SNIFF_FREE_PER_BOARD);
     }
   });
 
@@ -103,6 +132,25 @@ describe("sniff", () => {
     let s2 = initialState(board(seed2), opts);
     for (let tile = 0; tile < 6; tile++) s2 = act(s2, "sniff", tile);
     expect(s2.ended).toBeNull();
+  });
+
+  test("the budget is per board: it refills on descent, and the mud's count starts at zero (2026-09-17)", () => {
+    let s = start();
+    for (let tile = 0; tile < SNIFF_FREE_PER_BOARD + 2; tile++) s = act(s, "sniff", tile);
+    expect(sniffsLeft(s)).toBe(0);
+    expect(nextSniffAttention(s)).toBe(3); // the 8th topsoil sniff would be +3
+    expect(sniffCount(s.actions, 0)).toBe(SNIFF_FREE_PER_BOARD + 2);
+    expect(sniffCount(s.actions, 1)).toBe(0);
+    s = sink(s);
+    expect(sniffsLeft(s)).toBe(SNIFF_FREE_PER_BOARD);
+    expect(nextSniffAttention(s)).toBe(0);
+    expect(nextThreshold(s, "sniff")).toBe(wakeThreshold(1, "sniff", false, 0)); // the mud's table odds, no debt carried down
+    // Two mud sniffs: the mud counts its own, topsoil's stay topsoil's.
+    s = act(s, "sniff", 0);
+    s = act(s, "sniff", 1);
+    expect(sniffCount(s.actions, 1)).toBe(2);
+    expect(sniffCount(s.actions, 0)).toBe(SNIFF_FREE_PER_BOARD + 2);
+    expect(sniffsLeft(s)).toBe(SNIFF_FREE_PER_BOARD - 2);
   });
 
   test("costs a little below topsoil: mud sniffs wake at 3/120, topsoil rubs at 1/120", () => {
@@ -279,13 +327,15 @@ describe("descend — bank on descent", () => {
   });
 
   test("a touched-but-uncollected truffle is missed; an untouched one is abandoned; things never miss", () => {
+    // The gate means a PLAYER can no longer leave this board's truffle behind
+    // — only a replay descends over it (a log from a build without the gate).
     let s = act(start(), "shove", t(0, 0)); // domino half-dug: (0,0) 0, (0,1) 1
     s = act(s, "rub", t(2, 2)); // Boom half-cleared — a thing, never missed
-    s = descend(s);
+    s = sink(s);
     expect(s.missed).toEqual(["l0:truffle_d"]);
     expect(s.banked).toEqual([]);
     expect(s.layersTied).toEqual([]);
-    const untouched = descend(start());
+    const untouched = sink(start());
     expect(untouched.missed).toEqual([]);
   });
 
@@ -299,7 +349,7 @@ describe("descend — bank on descent", () => {
     expect(s.missed).toEqual([]);
     s = act(s, "shove", t(4, 4)); // the tea joins the pouch behind the Boom
     expect(s.looseThings).toEqual(["l0:boom", "l1:tea"]);
-    s = descend(s);
+    s = sink(s); // the mud's fat one stayed buried — only a replay gets past that
     expect(s.layer).toBe(2);
     expect(s.looseThings).toEqual(["l0:boom", "l1:tea"]); // two layers' worth, still at stake
     expect(s.banked).toEqual(["l0:truffle_d"]);
@@ -318,7 +368,7 @@ describe("tie · cap · close", () => {
 
   test("tie sweeps the whole pouch into banked — the truffle first, then the things in surfacing order", () => {
     let s = act(start(), "shove", t(2, 2)); // the Boom (topsoil)
-    s = descend(s); // carried
+    s = sink(s); // carried
     s = act(s, "shove", t(4, 4)); // the tea (mud)
     s = act(act(act(s, "shove", t(1, 1)), "shove", t(2, 1)), "shove", t(2, 2)); // the fat one, loose
     expect(s.looseThings).toEqual(["l0:boom", "l1:tea"]);
@@ -333,7 +383,7 @@ describe("tie · cap · close", () => {
 
   test("close banks the pouch like a tie", () => {
     let s = act(start(), "shove", t(2, 2));
-    s = descend(s);
+    s = sink(s);
     s = reduce(s, { type: "close" });
     expect(s.ended).toEqual({ reason: "close", layer: 1 });
     expect(s.banked).toEqual(["l0:boom"]);
@@ -362,7 +412,7 @@ describe("tie · cap · close", () => {
     // 44 sniffs across three layers (sniffs never move mud, so tiles stay
     // sniffable once per layer), then the truffle on the 45th.
     for (let i = 0; i < 30 && s.actions.length < 22; i++) s = act(s, "sniff", i);
-    s = descend(s);
+    s = sink(s);
     for (let i = 0; i < 30 && s.actions.length < 42; i++) s = act(s, "sniff", i);
     s = act(act(s, "shove", t(1, 1)), "shove", t(2, 1)); // 44
     expect(s.actions).toHaveLength(44);
@@ -380,7 +430,7 @@ describe("tie · cap · close", () => {
     const seed = seedWhere(45, (d, k) => (k < 44 ? sniffRunMisses(d, k) : d < 6));
     let s = initialState(board(seed), opts);
     for (let i = 0; i < 30 && s.actions.length < 22; i++) s = act(s, "sniff", i);
-    s = descend(s);
+    s = sink(s);
     for (let i = 0; i < 30 && s.actions.length < 44; i++) s = act(s, "sniff", i);
     s = act(s, "rub", t(4, 0)); // 45: a mud rub rolls at 6; the draw is 0
     expect(s.actions).toHaveLength(45);
@@ -410,7 +460,7 @@ describe("wake", () => {
     const seed = seedWhere(5, (d, k) => (k === 4 ? d < 6 : d >= 40));
     let s = initialState(board(seed), opts);
     s = act(s, "shove", t(2, 2)); // the Boom, yours
-    s = descend(s);
+    s = sink(s);
     s = act(act(act(s, "shove", t(1, 1)), "shove", t(2, 1)), "shove", t(2, 2));
     expect(s.loose).toBe("l1:truffle_l");
     s = act(s, "rub", t(4, 0)); // the fifth draw wakes him
@@ -534,5 +584,234 @@ describe("the log and determinism (acceptance 10)", () => {
       const again = replay(b, { coop: s.coop, uncrewed: false }, s.actions);
       expect(again).toEqual(s);
     }
+  });
+});
+
+// ── The wake meter — rules 2 (2026-09-17) ──────────────────────────────────
+// docs/design/2026-09-17-cumulative-attention.md: no roll at all. Every action
+// adds its loudness — the wake table, unchanged — to the meter, and he wakes
+// on the action that carries it to the sleep depth drawn when the board was
+// entered. Below `lo` is certain sleep, `hi` is a certain wake.
+
+describe("rules 2 — the wake meter", () => {
+  const r2 = { coop: false, uncrewed: false, rules: 2 as const };
+  const start2 = (seed = QUIET, wakeMeter?: WakeMeter) =>
+    initialState(board(seed), { ...r2, ...(wakeMeter ? { wakeMeter } : {}) });
+  const sink2 = (s: SnoutDeepState, layer: Layer = Math.min(2, s.layer + 1) as Layer) =>
+    restore(s.board, { ...r2, wakeMeter: s.wakeMeter }, { layer, actions: s.actions });
+  /** The draws the seed's wake stream hands out, in order. */
+  const draws = (seed: number, n: number) => {
+    const ws = new WakeStream(seed);
+    return Array.from({ length: n }, () => ws.next());
+  };
+
+  test("this binary asks for the newest rules, and the compiled band is the contract's", () => {
+    expect(SNOUT_DEEP_RULES_MAX).toBe(2);
+    expect(WAKE_METER).toEqual({ lo: 50, hi: 110, scope: "board", digRootGt: 0 });
+  });
+
+  test("loudness IS the wake table — there is no second table", () => {
+    for (const layer of [0, 1, 2] as Layer[]) {
+      for (const verb of ["sniff", "rub", "shove"] as const) {
+        for (const coop of [false, true]) {
+          for (const prior of [0, SNIFF_FREE_PER_BOARD + 1]) {
+            expect(loudness(layer, verb, coop, prior)).toBe(
+              wakeThreshold(layer, verb, coop, prior),
+            );
+          }
+        }
+      }
+    }
+  });
+
+  test("sleepDepthFrom stays inside the band over all 120 draws, and only ever climbs", () => {
+    for (const [lo, hi] of [[50, 110], [40, 80], [1, 120], [60, 61]] as const) {
+      let last = -1;
+      for (let draw = 0; draw < WAKE_DIE; draw++) {
+        const T = sleepDepthFrom(draw, lo, hi);
+        expect(T).toBeGreaterThanOrEqual(lo);
+        expect(T).toBeLessThanOrEqual(hi);
+        expect(T).toBeGreaterThanOrEqual(last); // monotone in the draw
+        last = T;
+      }
+      // Both ends of the band are reachable: draw 0 is the floor, 119 the top.
+      expect(sleepDepthFrom(0, lo, hi)).toBe(lo);
+      expect(sleepDepthFrom(WAKE_DIE - 1, lo, hi)).toBe(hi);
+    }
+  });
+
+  test("his sleep depth comes off the stream on entry — draw 0 — so the first action reads draw 1", () => {
+    const s = start2();
+    const d = draws(QUIET, 2);
+    expect(s.sleepDepth).toBe(sleepDepthFrom(d[0], WAKE_METER.lo, WAKE_METER.hi));
+    expect(s.wakeIndex).toBe(1); // the entry draw is CONSUMED
+    // The board's first action takes draw 1, not draw 0.
+    const after = act(s, "rub", t(3, 3));
+    expect(after.wakeIndex).toBe(2);
+    expect(wakeDrawAt(QUIET, 1)).toBe(d[1]);
+    // Rule 1 draws no entry: its first action is still draw 0.
+    expect(start().wakeIndex).toBe(0);
+    expect(start().sleepDepth).toBe(0);
+  });
+
+  test("attention adds the loudness and he wakes at T — no roll, whatever the stream says", () => {
+    // Pin the sleep depth by choosing a seed whose entry draw lands it low.
+    const seed = seedWhere(1, (d) => sleepDepthFrom(d, 50, 110) === 50);
+    let s = start2(seed);
+    expect(s.sleepDepth).toBe(50);
+    expect(attentionOf(s)).toBe(0);
+    // Topsoil shoves are 10 apiece: five of them reach 50 exactly, and the
+    // fifth is the one — the compare happens AFTER the add.
+    for (let i = 0; i < 4; i++) {
+      expect(nextThreshold(s, "shove")).toBe(10); // the card's "+10"
+      s = act(s, "shove", [t(0, 0), t(0, 2), t(0, 4), t(2, 4), t(4, 4)][i]);
+      expect(s.ended).toBeNull();
+    }
+    expect(s.attention).toBe(40);
+    s = act(s, "shove", t(4, 4));
+    expect(s.attention).toBe(50);
+    expect(s.ended).toEqual({ reason: "wake", layer: 0, wokeOn: "h0:28" });
+  });
+
+  test("a meter short of T never wakes him, however loud the stream is", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const s = start2(seed);
+      // Topsoil's whole board is quieter than any band this ships with.
+      let run = s;
+      for (let tile = 0; tile < 5; tile++) run = act(run, "sniff", tile);
+      expect(run.attention).toBe(0);
+      expect(run.ended).toBeNull();
+    }
+  });
+
+  test("the card's +N is the loudness, and the hazard reads loudness over what is left of the band", () => {
+    const seed = seedWhere(1, (d) => sleepDepthFrom(d, 50, 110) >= 50);
+    let s = start2(seed);
+    expect(nextThreshold(s, "sniff")).toBe(0); // topsoil sniffs are silent
+    expect(nextThreshold(s, "rub")).toBe(1);
+    expect(nextThreshold(s, "shove")).toBe(10);
+    expect(meterHazard(s, "rub")).toBeCloseTo(1 / 110);
+    s = sink2(s, 2);
+    // The root, on a fresh board: a rub is 15 of the 110 still on the bar.
+    expect(nextThreshold(s, "rub")).toBe(15);
+    expect(meterHazard(s, "rub")).toBeCloseTo(15 / 110);
+    // Half-way up the band, the same rub is a quarter of what is left.
+    const half: SnoutDeepState = { ...s, attention: 50 };
+    expect(meterHazard(half, "rub")).toBeCloseTo(15 / 60);
+    // At `hi` he is certainly up, so the hazard is 1 — and it never exceeds it.
+    expect(meterHazard({ ...s, attention: 110 }, "rub")).toBe(1);
+    // Rule 1 has no hazard to read.
+    expect(meterHazard(start(), "rub")).toBe(0);
+  });
+
+  test("scope board: a descent empties the meter and redraws him from the next draw", () => {
+    let s = start2();
+    s = act(act(s, "shove", t(0, 0)), "shove", t(0, 1)); // the domino, up
+    expect(s.attention).toBe(20);
+    const before = s.sleepDepth;
+    const index = s.wakeIndex;
+    s = descend(s);
+    expect(s.layer).toBe(1);
+    expect(s.attention).toBe(0); // he settles again as you go down
+    expect(s.wakeIndex).toBe(index + 1); // the entry draw is spent
+    expect(s.sleepDepth).toBe(
+      sleepDepthFrom(wakeDrawAt(QUIET, index), WAKE_METER.lo, WAKE_METER.hi),
+    );
+    expect(s.sleepDepth).not.toBe(-1);
+    expect(typeof before).toBe("number");
+    // A restore derives all of it — the descent the log cannot show included.
+    const restored = restore(s.board, r2, { layer: s.layer, actions: s.actions });
+    expect(restored.attention).toBe(s.attention);
+    expect(restored.sleepDepth).toBe(s.sleepDepth);
+    expect(restored.wakeIndex).toBe(s.wakeIndex);
+    // …and once the mud has an entry in the log, the log alone is enough.
+    s = act(s, "rub", t(4, 0));
+    const again = replay(s.board, r2, s.actions);
+    expect(again.attention).toBe(s.attention);
+    expect(again.sleepDepth).toBe(s.sleepDepth);
+    expect(again.wakeIndex).toBe(s.wakeIndex);
+  });
+
+  test("scope dig: one sleep depth at open, and the meter carries all the way down", () => {
+    const carry: WakeMeter = { ...WAKE_METER, scope: "dig" };
+    let s = start2(QUIET, carry);
+    const T = s.sleepDepth;
+    const index = s.wakeIndex;
+    s = act(act(s, "shove", t(0, 0)), "shove", t(0, 1));
+    expect(s.attention).toBe(20);
+    s = descend(s);
+    expect(s.layer).toBe(1);
+    expect(s.attention).toBe(20); // nothing quiets him
+    expect(s.sleepDepth).toBe(T); // nor redraws him
+    expect(s.wakeIndex).toBe(index + 2); // two actions, no entry draw
+    expect(replay(s.board, { ...r2, wakeMeter: carry }, s.actions).attention).toBe(20);
+  });
+
+  test("rules 1 keeps build 192's game: no meter, no sleep depth, the layer's table", () => {
+    let s = act(start(), "shove", t(0, 0));
+    expect(s.attention).toBe(0);
+    expect(s.sleepDepth).toBe(0);
+    expect(attentionOf(s)).toBe(0);
+    expect(nextThreshold(s, "rub")).toBe(wakeThreshold(0, "rub", false));
+    s = descend(act(s, "shove", t(0, 1)));
+    expect(s.attention).toBe(0);
+    expect(s.wakeIndex).toBe(2); // no entry draws under rule 1
+  });
+});
+
+describe("sanitizeWakeMeter — the tuning row, made safe", () => {
+  test("the server row's keys map across, and each field falls back on its own", () => {
+    expect(sanitizeWakeMeter({ lo: 40, hi: 80, scope: "dig", dig_root_gt: 1 })).toEqual({
+      lo: 40,
+      hi: 80,
+      scope: "dig",
+      digRootGt: 1,
+    });
+    expect(sanitizeWakeMeter({ lo: 40 })).toEqual({ ...WAKE_METER, lo: 40 });
+    expect(sanitizeWakeMeter({})).toEqual(WAKE_METER);
+    expect(sanitizeWakeMeter(null)).toEqual(WAKE_METER);
+    expect(sanitizeWakeMeter("nonsense")).toEqual(WAKE_METER);
+  });
+
+  test("a band that is not a band falls back whole, and the die is the ceiling", () => {
+    expect(sanitizeWakeMeter({ lo: 90, hi: 30 })).toEqual(WAKE_METER); // inverted
+    expect(sanitizeWakeMeter({ lo: 60, hi: 60 })).toEqual(WAKE_METER); // no band
+    expect(sanitizeWakeMeter({ lo: -5, hi: 400 })).toEqual({ ...WAKE_METER, lo: 1, hi: WAKE_DIE });
+    expect(sanitizeWakeMeter({ scope: "sideways" }).scope).toBe("board");
+    expect(sanitizeWakeMeter({ dig_root_gt: 7 }).digRootGt).toBe(0);
+    expect(sanitizeWakeMeter({ lo: 50.9, hi: 110.9 })).toEqual(WAKE_METER); // truncated
+  });
+});
+
+describe("the descent gate (§4)", () => {
+  test("Dig deeper is shut until this board's truffle is up, and the reducer refuses it", () => {
+    let s = start();
+    expect(canDescend(s)).toBe(false);
+    expect(descend(s)).toBe(s); // a no-op, the same object
+    s = act(s, "shove", t(0, 0)); // half the domino is not the domino
+    expect(canDescend(s)).toBe(false);
+    expect(descend(s)).toBe(s);
+    s = act(s, "shove", t(0, 1)); // …now it is up
+    expect(canDescend(s)).toBe(true);
+    s = descend(s);
+    expect(s.layer).toBe(1);
+    expect(s.banked).toEqual(["l0:truffle_d"]);
+    // The root is never descended from, truffle or no truffle.
+    expect(canDescend(toLayer(start(), 2))).toBe(false);
+    // Neither is an ended dig.
+    expect(canDescend(reduce(s, { type: "tie" }))).toBe(false);
+  });
+
+  test("a replay still descends: a log that reached the mud found the truffle on the phone that wrote it", () => {
+    // A log with a mud entry and no topsoil truffle in it — what a build
+    // without the gate could write, and what the server may hand back.
+    const log = ["r0:24", "h1:7"];
+    const s = replay(board(QUIET), opts, log);
+    expect(s.layer).toBe(1);
+    expect(s.actions).toEqual(log);
+    expect(s.missed).toEqual([]); // the topsoil truffle was never touched
+    // …and `restore` takes a snapshot one board deeper than its own log.
+    const deeper = restore(board(QUIET), opts, { layer: 2, actions: log });
+    expect(deeper.layer).toBe(2);
   });
 });

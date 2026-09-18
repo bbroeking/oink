@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap">
+<style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; text-decoration: none; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    .phone { position: relative; overflow: hidden; background: #fbeee2; display: flex; flex-direction: column; box-sizing: border-box; }
+    .status { height: 48px; flex: none; }
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 20px; letter-spacing: .2px; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .handDisplay { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 20px; line-height: 24px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; white-space: nowrap; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; white-space: nowrap; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .body { font-weight: 700; font-size: 15px; line-height: 21px; }
+    .bodySm { font-weight: 700; font-size: 13px; line-height: 18px; }
+    .mute { color: #605449; }
+    .crown { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px; flex: none; gap: 12px; }
+    .crown .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; margin-top: 4px; }
+    .back { padding: 4px 18px 6px; }
+    .tile, .med, .homeCell, .peg, .chip, .btn, .room, .seg { color: #2a1f15; }
+    .pocket { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 10px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; box-shadow: none; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; } .tag.peach { background: #ffc8a8; }
+    .tag img { width: 13px; height: 13px; }
+    .tag.hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0; }
+    .tag.big { min-height: 32px; padding: 4px 14px; font-size: 13px; }
+    .chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 4px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .chip.on { border-width: 2px; background: #ffd87a; }
+    .chip img { width: 16px; height: 16px; }
+    .seg { display: flex; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; box-shadow: 3px 3px 0 #2a1f15; padding: 3px; gap: 2px; }
+    .seg button { flex: 1 1 0; min-height: 34px; border: 0; border-radius: 999px; background: transparent; font-weight: 800; font-size: 13px; padding: 0 8px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .seg button.on { background: #ffd87a; box-shadow: inset 0 0 0 2px #2a1f15; }
+    .seg .n { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 13px; color: #605449; }
+    .seg button.on .n { color: #2a1f15; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; font-weight: 800; font-size: 15px; color: #2a1f15; box-sizing: border-box; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.lilac { background: #d6c8f0; box-shadow: none; }
+    .btn.ghost { background: transparent; box-shadow: none; border-color: transparent; }
+    .btn.sm { min-height: 36px; padding: 6px 14px; font-size: 13px; border-radius: 18px; }
+    .btn.destructive { background: #ffd6dc; }
+    .btn.busy { background: #f6e6d4; color: #6a5c50; box-shadow: none; }
+    .btn.pressed { box-shadow: none; transform: translate(2px, 2px); }
+    .field { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border: 2px solid #2a1f15; border-radius: 12px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; color: #605449; }
+    .field img { width: 18px; height: 18px; }
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; box-sizing: border-box; }
+    .sticker.flat { box-shadow: 2px 2px 0 #2a1f15; }
+    .sticker.none { box-shadow: none; }
+    .tape { position: absolute; height: 18px; padding: 0 10px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .96; z-index: 4; font-family: "Patrick Hand", cursive; font-size: 12px; line-height: 15px; color: #2a1f15; white-space: nowrap; transform: rotate(-8deg); }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .col { display: flex; flex-direction: column; }
+    .divider { height: 2px; background: #2a1f15; opacity: .18; border-radius: 1px; }
+    .track { height: 10px; border: 1.5px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; box-sizing: border-box; flex: 1; }
+    .track .fill { height: 100%; background: #ffd87a; }
+    .grabber { width: 40px; height: 4px; border-radius: 2px; background: #8c7e71; align-self: center; }
+
+    /* ── The Pen ── */
+    .paddock { position: relative; height: 236px; border: 2px solid #2a1f15; border-radius: 14px; overflow: hidden; background: #c8e3f0; box-shadow: 4px 4px 0 #2a1f15; box-sizing: border-box; flex: none; }
+    .paddock .grass { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: linear-gradient(180deg, #cfe3bd, #b9d4a3); border-top: 2px solid #2a1f15; }
+    .paddock .rail { position: absolute; left: -4px; right: -4px; height: 8px; background: #fff3e2; border: 2px solid #2a1f15; border-radius: 4px; box-sizing: border-box; }
+    .paddock .post { position: absolute; width: 12px; height: 72px; background: #fff3e2; border: 2px solid #2a1f15; border-radius: 4px; box-sizing: border-box; }
+    .paddock .pig { position: absolute; bottom: 14px; width: 150px; height: 150px; }
+    .paddock .pig img { width: 100%; height: 100%; object-fit: contain; }
+    .paddock .note { position: absolute; left: 50%; transform: translateX(-50%) rotate(-1.5deg); top: 12px; padding: 3px 12px; background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 8px; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; }
+    .fenceRow { display: flex; justify-content: space-between; gap: 6px; padding: 0 2px; }
+    .med { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 62px; }
+    .med .face { position: relative; width: 56px; height: 56px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; overflow: visible; display: flex; align-items: flex-end; justify-content: center; box-shadow: 2px 2px 0 #2a1f15; background: #fffaf0; }
+    .med .face img.pig { width: 88%; height: 88%; object-fit: contain; border-radius: 999px; }
+    .med .face .badge { position: absolute; right: -5px; top: -5px; width: 20px; height: 20px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0 #2a1f15; background: #c9dec1; }
+    .med .face .badge img { width: 10px; height: 10px; }
+    .med.on .face { background: #fbeee2; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-1deg); border-width: 2.5px; }
+    .med.pressed .face { box-shadow: none; transform: translate(2px, 2px); }
+    .med.locked .face { box-shadow: none; background: #f6e6d4; border-style: dashed; }
+    .med .nm { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: .3px; text-align: center; white-space: nowrap; }
+    .med.locked .nm { color: #6a5c50; }
+    .motif { width: 28px; height: 28px; border-radius: 999px; border: 1.5px solid #2a1f15; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; flex: none; }
+    .motif img { width: 16px; height: 16px; }
+    .plate { display: inline-flex; align-items: center; min-height: 32px; padding: 2px 14px; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .home2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .homeCell { display: flex; flex-direction: column; gap: 2px; min-height: 52px; padding: 8px 12px; border: 2px solid #2a1f15; border-radius: 12px; background: #fbeee2; box-sizing: border-box; justify-content: center; }
+    .homeCell.on { background: #c9dec1; border-width: 3px; box-shadow: 2px 2px 0 #2a1f15; }
+    .scrim { position: absolute; inset: 0; background: rgba(42, 31, 21, .42); z-index: 30; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .dialog { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; padding: 18px; transform: rotate(-.8deg); display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box; }
+    .beat { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px; }
+    .beat .dots { display: flex; gap: 6px; }
+    .beat .dots i { width: 8px; height: 8px; border-radius: 999px; background: #2a1f15; opacity: .35; display: block; }
+    .beat .dots i:nth-child(2) { opacity: .7; } .beat .dots i:nth-child(3) { opacity: 1; }
+    .empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 16px; text-align: center; }
+    .empty img { width: 40px; height: 40px; }
+    .empty.error { background: #ffd6dc; }
+
+    /* ── Furnish ── */
+    .spots { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+    .spots .room { position: relative; width: 64px; height: 50px; border: 2px solid #2a1f15; border-radius: 10px; overflow: hidden; flex: none; box-sizing: border-box; }
+    .spots .room img { width: 100%; height: 100%; object-fit: cover; }
+    .spots .room .go { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; background: rgba(42, 31, 21, .72); color: #fff3e2; font-family: "Patrick Hand", cursive; font-size: 11px; line-height: 13px; text-align: center; }
+    .pegs { display: flex; gap: 4px; flex: 1; justify-content: space-between; }
+    .peg { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 38px; }
+    .peg .box { position: relative; width: 32px; height: 32px; border-radius: 9px; border: 2px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; }
+    .peg .box img { width: 26px; height: 26px; object-fit: contain; }
+    .peg.bare .box { border-style: dashed; box-shadow: none; background: transparent; }
+    .peg.on .box { background: #ffc8a8; box-shadow: 3px 3px 0 #2a1f15; transform: rotate(-2deg); }
+    .peg.new .box:after { content: ""; position: absolute; right: -5px; top: -5px; width: 12px; height: 12px; border-radius: 999px; background: #ffd87a; border: 1.5px solid #2a1f15; box-sizing: border-box; }
+    .peg .lbl { font-weight: 800; font-size: 7px; line-height: 10px; letter-spacing: .5px; text-transform: uppercase; color: #605449; text-align: center; white-space: nowrap; }
+    .peg.on .lbl { color: #2a1f15; }
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .tile { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 3px 3px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
+    .tile .thumb { position: relative; height: 112px; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; }
+    .tile .thumb img.art { width: 84px; height: 84px; object-fit: contain; }
+    .tile .thumb .rdot { position: absolute; left: 8px; top: 8px; width: 12px; height: 12px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; }
+    .tile .thumb .badge { position: absolute; right: 8px; top: 8px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; background: #c9dec1; box-shadow: 2px 2px 0 #2a1f15; }
+    .tile .thumb .badge img { width: 12px; height: 12px; }
+    .tile .thumb .ribbon { position: absolute; right: -22px; top: 10px; width: 90px; transform: rotate(35deg); background: #ffd87a; border-top: 1.5px solid #2a1f15; border-bottom: 1.5px solid #2a1f15; text-align: center; font-weight: 800; font-size: 10px; line-height: 16px; letter-spacing: 1.2px; text-transform: uppercase; }
+    .tile .foot { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 10px; }
+    .tile .foot .nm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 19px; letter-spacing: .2px; min-height: 38px; }
+    .tile.pressed { box-shadow: none; transform: translate(2px, 2px); }
+    .pips { display: flex; gap: 6px; }
+    .pip { position: relative; width: 30px; height: 30px; border-radius: 999px; border: 2px dashed #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: transparent; }
+    .pip img { width: 20px; height: 20px; object-fit: contain; opacity: .55; }
+    .pip.got { border-style: solid; background: #c9dec1; box-shadow: 2px 2px 0 #2a1f15; } .pip.got img { opacity: 1; }
+    .pip .n { position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%); font-weight: 800; font-size: 9px; line-height: 12px; color: #605449; white-space: nowrap; }
+
+    .med { width: 54px; } .fenceRow { gap: 4px; }
+    .listRow { min-height: 50px !important; padding: 4px 4px !important; }
+    .jobSeg { display: flex; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; padding: 3px; gap: 2px; }
+    .jobSeg span { flex: 1 1 0; min-height: 30px; border-radius: 999px; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; padding: 0 6px; }
+    .jobSeg span.on { background: #ffd87a; box-shadow: inset 0 0 0 2px #2a1f15; }
+    .jobSeg span.out { background: #d6c8f0; box-shadow: inset 0 0 0 2px #2a1f15; }
+    .med.out .face { box-shadow: none; border-style: dashed; background: #f6e6d4; }
+    .med.out .face img.pig { opacity: .45; }
+    .med.back .face:after { content: ""; position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 999px; background: #ffd87a; border: 2px solid #2a1f15; box-sizing: border-box; }
+    .findCoin { width: 44px; height: 44px; border-radius: 999px; border: 2px solid #2a1f15; background: #fffaf0; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0 #2a1f15; flex: none; box-sizing: border-box; }
+    .findCoin img { width: 30px; height: 30px; object-fit: contain; }
+    .findCoin.sm { width: 32px; height: 32px; box-shadow: none; } .findCoin.sm img { width: 22px; height: 22px; }
+    .listRow { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 4px; border-bottom: 1.5px solid rgba(42,31,21,.14); }
+    .listRow:last-child { border-bottom: 0; }
+    .listRow .who { width: 40px; height: 40px; border-radius: 999px; border: 2px solid #2a1f15; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; flex: none; box-sizing: border-box; }
+    .listRow .who img { width: 92%; height: 92%; object-fit: contain; }
+    .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fffaf0; border: 2px solid #2a1f15; border-bottom: 0; border-radius: 22px 22px 0 0; padding: 10px 18px 26px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 0 #2a1f15; z-index: 31; }
+    .ticket { border: 2px solid #2a1f15; border-radius: 14px; background: #fffaf0; box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; }
+    .ticket .stub { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 2px dashed #2a1f15; background: #fbeee2; }
+    .ticket .body { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
+    .pigPick { display: flex; gap: 8px; }
+    .pigPick a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border: 2px solid #2a1f15; border-radius: 12px; background: #fbeee2; color: #2a1f15; box-sizing: border-box; }
+    .pigPick a.on { background: #ffd87a; box-shadow: 2px 2px 0 #2a1f15; border-width: 3px; }
+    .pigPick a.away { border-style: dashed; color: #6a5c50; }
+    .pigPick .face { width: 44px; height: 44px; border-radius: 999px; border: 2px solid #2a1f15; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; box-sizing: border-box; }
+    .pigPick .face img { width: 92%; height: 92%; object-fit: contain; }
+    .cork { position: relative; border: 2px solid #2a1f15; border-radius: 14px; background: repeating-linear-gradient(45deg, #d9b27f, #d9b27f 6px, #c99c63 6px, #c99c63 7px); box-shadow: 4px 4px 0 #2a1f15; padding: 22px 12px 14px; display: flex; gap: 10px; justify-content: space-around; align-items: flex-start; min-height: 120px; }
+    .cork .lbl { position: absolute; top: -10px; left: 14px; padding: 1px 10px; background: #3a2c1e; color: #fff3e2; border: 2px solid #2a1f15; border-radius: 8px; font-weight: 800; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+    .pin { position: relative; width: 92px; padding: 14px 8px 8px; background: #fffaf0; border: 1.5px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; box-sizing: border-box; }
+    .pin:before { content: ""; position: absolute; top: -7px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 999px; background: #a03e2f; border: 1.5px solid #2a1f15; }
+    .pin img { width: 34px; height: 34px; object-fit: contain; }
+    .pin.paw { background: #f6e6d4; }
+    .yard { position: relative; flex: 1; overflow: hidden; background: linear-gradient(180deg, #c8e3f0 0%, #dceef5 55%, #cfe3bd 56%, #b9d4a3 100%); }
+    .yard .mound { position: absolute; left: 40px; bottom: 110px; width: 150px; height: 44px; border-radius: 80px 80px 10px 10px; background: #a4743f; border: 2px solid #2a1f15; }
+    .yard .gone { position: absolute; left: 50%; bottom: 200px; transform: translateX(-50%) rotate(-1.5deg); padding: 8px 14px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; text-align: center; white-space: nowrap; }
+    .corner { position: absolute; top: 16px; padding: 8px 12px; background: #ffd6dc; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; }
+    .fanRow { position: absolute; right: 16px; bottom: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .fanRow .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 999px; box-shadow: 2px 2px 0 #2a1f15; font-family: "Patrick Hand", cursive; font-size: 14px; }
+    .fanRow .pill img { width: 16px; height: 16px; }
+    .fanRow .fab { width: 64px; height: 64px; border-radius: 999px; background: #ffd87a; border: 2px solid #2a1f15; box-shadow: 4px 4px 0 #2a1f15; display: flex; align-items: center; justify-content: center; }
+    .fanRow .fab img { width: 36px; height: 36px; }
+    .toast { position: absolute; left: 18px; right: 18px; top: 64px; padding: 10px 14px; background: #3a2c1e; color: #fff3e2; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; display: flex; align-items: center; gap: 10px; z-index: 40; }
+    .push { display: flex; gap: 10px; padding: 10px 12px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 2px 2px 0 #2a1f15; align-items: center; }
+    .push img { width: 36px; height: 36px; border-radius: 8px; }
+    .pips { display: flex; gap: 3px; } .pips i { width: 10px; height: 10px; border-radius: 999px; border: 1.5px solid #2a1f15; background: #fffaf0; display: block; } .pips i.on { background: #ffd87a; }
+</style>
+</helmet>
+<div class="phone" style="width: 390px; height: 844px; background: #fbeee2;">
+<div class="status"></div><div class="back"><a href="#" class="hand">‹ back to the shop</a></div>
+<div class="crown"><div class="col"><div class="kickerPill">★ rosie’s place</div><div class="pageTitle">The Pen</div><div class="rule"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:14px;padding:14px 18px 24px">
+<div class="paddock">
+<div class="grass"></div>
+<div class="rail" style="bottom:78px"></div><div class="rail" style="bottom:48px"></div><div class="post" style="left:34px;bottom:26px"></div><div class="post" style="left:130px;bottom:26px"></div><div class="post" style="left:226px;bottom:26px"></div><div class="post" style="left:322px;bottom:26px"></div>
+<div class="pig" style="left:24px"><img src="rosie.png" alt="Rosie"></div><div class="pig" style="right:22px"><img src="bandit.png" alt=""></div>
+<div class="note hand">Bandit, in the Pen</div>
+</div><div class="fenceRow"><a href="#" class="med" aria-label="Rosie"><span class="face" style="background:#FDE4E8"><img class="pig" src="rosie.png" alt=""></span><span class="nm">Rosie</span></a><a href="#" class="med" aria-label="Copper"><span class="face" style="background:#F3DED5"><img class="pig" src="copper.png" alt=""></span><span class="nm">Copper</span></a><a href="#" class="med" aria-label="Pepper"><span class="face" style="background:#E3E2E5"><img class="pig" src="pepper.png" alt=""></span><span class="nm">Pepper</span></a><a href="#" class="med on" aria-label="Bandit"><span class="face" style="background:#DEDDE0"><img class="pig" src="bandit.png" alt=""></span><span class="nm">Bandit</span></a><a href="#" class="med" aria-label="Pickles"><span class="face" style="background:#FADFE6"><img class="pig" src="pickles.png" alt=""></span><span class="nm">Pickles</span></a><a href="#" class="med" aria-label="Biscuit"><span class="face" style="background:#F5E6D6"><img class="pig" src="biscuit.png" alt=""></span><span class="nm">Biscuit</span></a></div><div class="sticker" style="position:relative;padding:18px 16px 16px;transform:rotate(-.6deg);display:flex;flex-direction:column;gap:12px">
+<span class="tape" style="top:-9px;left:50%;margin-left:-40px">the job</span>
+<div class="row" style="gap:12px">
+  <a href="#" class="plate" style="background:#94877C;color:#2a1f15" aria-label="About Bandit"><span class="handDisplay">Bandit</span></a>
+  <div class="col" style="flex:1;min-width:0"><span class="label">Black with a cream blaze</span></div>
+  <span class="motif"><img src="g_mask.png" alt=""></span>
+</div>
+<div class="jobSeg"><span class="">At home</span><span class="on">In the Pen</span><span class="">Out looking</span></div>
+<a href="#" class="btn lilac" style="width:100%">Send Bandit to look for…</a>
+<div class="hand mute" style="text-align:center">one errand a day · back in about 4h</div>
+</div>
+</div><div class="scrim" style="align-items:flex-end;padding:0"></div><div class="sheet"><div class="grabber"></div><div class="ticket">
+<div class="stub"><span class="findCoin"><img src="f_blue_feather.png" alt="blue feather"></span><div class="col" style="flex:1"><span class="cardTitle">blue feather</span><span class="hand mute">for Maya’s Pickles</span></div></div>
+<div class="body">
+<div class="kickerPill">who goes?</div><div class="pigPick"><a href="#" class=""><span class="face" style="background:#FDE4E8"><img src="rosie.png" alt=""></span><span class="label">Rosie</span><span class="hand mute">back ~7:40</span></a><a href="#" class="on"><span class="face" style="background:#DEDDE0"><img src="bandit.png" alt=""></span><span class="label">Bandit</span><span class="hand mute">back ~7:40</span></a></div>
+<div class="row" style="justify-content:space-between"><span class="hand mute">back by 7:40pm · one errand a day</span></div>
+<a href="#" class="btn gold" style="width:100%">Send Bandit</a>
+</div></div><a href="#" class="btn ghost" style="width:100%">Not now</a></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -52,9 +52,11 @@ beforeEach(() => {
 });
 
 describe("page-id whitelist", () => {
-	it("has the 8 v1 pages plus the Satchel, Echo deliberately absent", () => {
-		expect(FIELD_GUIDE_PAGE_IDS).toHaveLength(9);
-		expect(FIELD_GUIDE_PAGE_IDS[FIELD_GUIDE_PAGE_IDS.length - 1]).toBe("satchel");
+	it("has the 8 v1 pages plus the Satchel, the Trader and the Pen, Echo deliberately absent", () => {
+		expect(FIELD_GUIDE_PAGE_IDS).toHaveLength(11);
+		expect(FIELD_GUIDE_PAGE_IDS[FIELD_GUIDE_PAGE_IDS.length - 3]).toBe("satchel");
+		expect(FIELD_GUIDE_PAGE_IDS[FIELD_GUIDE_PAGE_IDS.length - 2]).toBe("trader");
+		expect(FIELD_GUIDE_PAGE_IDS[FIELD_GUIDE_PAGE_IDS.length - 1]).toBe("pen");
 		expect(FIELD_GUIDE_PAGE_IDS).not.toContain("echo");
 	});
 
@@ -67,13 +69,24 @@ describe("page-id whitelist", () => {
 	});
 });
 
+describe("the Pen page", () => {
+	it("draws its hours from the live errand tuning", () => {
+		const { penLine, FIELD_GUIDE_ENTRIES } = require("../constants/fieldGuide");
+		const entry = FIELD_GUIDE_ENTRIES.find((e: { id: string }) => e.id === "pen");
+		expect(entry?.glyph).toBe("signPen");
+		expect(penLine()).toBe(
+			"Send a pig to look for a Find — usually the one a friend's pig is hoping for. Back in about 4h, with it or without it; give it or keep it. One errand a day per pig.",
+		);
+	});
+});
+
 describe("the Satchel page", () => {
 	it("draws its value line from the live satchel tuning", () => {
 		const { satchelLine, FIELD_GUIDE_ENTRIES } = require("../constants/fieldGuide");
 		const entry = FIELD_GUIDE_ENTRIES.find((e: { id: string }) => e.id === "satchel");
 		expect(entry?.glyph).toBe("digBag");
 		expect(satchelLine()).toBe(
-			"Holds 6 finds. Hand a friend's pig what it's hoping for and take one of 3 things back. Once a day per friend, and never for sale.",
+			"Holds every find you carry home. Hand a friend's pig what it's hoping for and take one of 3 things back. Once a day per friend, and never for sale.",
 		);
 	});
 });

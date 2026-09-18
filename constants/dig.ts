@@ -207,15 +207,65 @@ export const WAKE_TABLE: Readonly<
   1: { sniff: 3, rub: 6, shove: 20 },
   2: { sniff: 7, rub: 15, shove: 40 },
 };
-// The sniff budget (2026-09-16 ruling): the first SNIFF_FREE_PER_DIG sniffs
-// of a dig roll at the table's odds — in topsoil that is truly free. Every
-// sniff past the budget draws his attention: its threshold rises by
-// SNIFF_ATTENTION_STEP per extra sniff (the 6th sniff +1, the 7th +2 …),
-// never above the layer's shove. Rubs and shoves are untouched. Counted over
-// the whole dig, across layers, from the action log — so client and server
+// The sniff budget (2026-09-16 ruling; per BOARD 2026-09-17): the first
+// SNIFF_FREE_PER_BOARD sniffs on each layer roll at the table's odds — in
+// topsoil that is truly free. Every sniff past the budget draws his
+// attention: its threshold rises by SNIFF_ATTENTION_STEP per extra sniff (the
+// 6th sniff +1, the 7th +2 …), never above the layer's shove. Rubs and shoves
+// are untouched. The budget refills on descent — a new board's scent is
+// wiped, so the sniffs that read it come back — and is counted per layer
+// from the action log (each entry carries its layer), so client and server
 // count the same sniffs.
-export const SNIFF_FREE_PER_DIG = 5;
+export const SNIFF_FREE_PER_BOARD = 5;
 export const SNIFF_ATTENTION_STEP = 1;
+
+// ── The wake meter (rules v2, 2026-09-17) ───────────────────────────────────
+// The player's note on build 192 — "no progress bar on the guy waking up so
+// it's just random luck?" — is answered by a meter he can read. Under rules 2
+// the table above stops being a per-action roll and becomes LOUDNESS: every
+// action adds its wakeThreshold() to one running `attention`, and he wakes on
+// the action that carries it to his SLEEP DEPTH or past it. No roll. His sleep
+// depth is drawn once per board from the wake stream, uniformly over [lo, hi]
+// — so under `lo` is certain sleep, `hi` is a certain wake, and the band
+// between is where a dig is a gamble the player can see coming.
+// Contract: docs/design/2026-09-17-cumulative-attention.md §1.
+//
+// A phone that shipped before the meter keeps rule 1 (the per-action roll);
+// the row carries the rule it was opened with, so the server replays each dig
+// under its own rules. SNOUT_DEEP_RULES_MAX is what this binary asks for at
+// open — the server hands back LEAST(asked, its own config).
+export const SNOUT_DEEP_RULES_MAX = 2;
+export type SnoutDeepRules = 1 | 2;
+
+/** Where the meter resets. `"board"` — a fresh sleep depth and an empty meter
+ *  on every descent, so each layer is its own round (the DEFAULT, and what the
+ *  sim recommends: topsoil can never reach `lo`, so the tutorial layer is
+ *  truly safe). `"dig"` — one sleep depth at open, the meter carries all the
+ *  way down. */
+export type WakeMeterScope = "board" | "dig";
+
+/** The tuning the dig was STAMPED with at open (`war_rootings.wake_meter`), so
+ *  a tuning change never re-judges an open dig. `digRootGt` 0 withholds the
+ *  root tie's +1 Golden Truffle: under a per-board meter the descent is silent,
+ *  so tying on arrival would be a free truffle for walking downstairs. */
+export interface WakeMeter {
+  lo: number;
+  hi: number;
+  scope: WakeMeterScope;
+  digRootGt: 0 | 1;
+}
+
+// The compiled fallback for app_settings.snout_deep_wake_meter — the live
+// values are server config (server config over constants). 50–110 of 120:
+// topsoil's loudest board is about 15, so he sleeps through it; the mud wakes
+// a greedy nose about 7% of the time and the root is where digs end.
+export const WAKE_METER: WakeMeter = {
+  lo: 50,
+  hi: 110,
+  scope: "board",
+  digRootGt: 0,
+};
+
 // Co-op (a crewmate submitted this Feeding) halves the ROOT's sniff and rub
 // thresholds — integer floor + 1, so 7 → 4 and 15 → 8. Shove is unchanged,
 // and nothing else in the game changes with co-op (§1.4).
@@ -270,6 +320,8 @@ export function isDigConsumable(kind: DigFindKind): boolean {
 // live values are server config (`app_settings.dig_finds`); these are the
 // compiled fallbacks. A find with no entry is always present (the truffles,
 // the Boom, the junk keepsake, the stones — see DIG_LAYER_STONES).
+// Deeper pays more (2026-09-17): the mud's and the root's things come up
+// oftener, so the push past topsoil is worth its noise. Topsoil is unchanged.
 export const DIG_FINDS: Readonly<
   Partial<Record<DigFindKind, readonly [number, number]>>
 > = {
@@ -277,12 +329,12 @@ export const DIG_FINDS: Readonly<
   apple: [1, 3],
   shimmer: [1, 2],
   acorn: [1, 2],
-  tea: [1, 3],
-  scroll: [1, 3],
-  relic: [2, 5],
-  furnishing: [1, 4],
-  bow: [1, 12],
-  charm: [1, 3],
+  tea: [1, 2],
+  scroll: [1, 2],
+  relic: [1, 2],
+  furnishing: [1, 2],
+  bow: [1, 8],
+  charm: [1, 2],
 };
 // Every find pays tickles (spec §2, decision 2026-09-13): applied to the
 // player's count on the receipt, on top of whatever the find also does. The
@@ -293,21 +345,23 @@ export const DIG_FINDS: Readonly<
 // Boom's 3 is its base — the catch-up's gap (§4 boom(H)) is added server-side.
 // A truffle he took pays 0 (it reads "his" on the tally); a stone is never a
 // find.
+// Deeper pays more (2026-09-17): every mud and root find went up, topsoil's
+// stayed — the reward side of the meter, which makes the deep push louder.
 export const DIG_FIND_TICKLES: Readonly<Record<DigFindKind, number>> = {
   truffle_d: 10,
   boom: 3,
   pouch: 5,
   apple: 4,
   junk: 3,
-  truffle_l: 15,
-  shimmer: 8,
-  acorn: 12,
-  tea: 8,
-  scroll: 10,
-  relic: 15,
-  furnishing: 20,
-  bow: 25,
-  charm: 12,
+  truffle_l: 20,
+  shimmer: 10,
+  acorn: 15,
+  tea: 10,
+  scroll: 12,
+  relic: 25,
+  furnishing: 30,
+  bow: 40,
+  charm: 20,
   stone: 0,
 };
 // Stones per layer: 3 in topsoil, 2 in the mud, 1 at the root.

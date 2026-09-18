@@ -353,7 +353,9 @@ def save_placement(item_id, spec):
     except OSError:
         raise RuntimeError("placement studio (8124) isn't running — start "
                            "tools/placement_studio.py first")
-    hat_rel[item_id] = spec
+    # Merge, don't replace: the studio may have tuned a per-pose override
+    # (perAnim) for this item and a placement save here must not drop it.
+    hat_rel[item_id] = {**hat_rel.get(item_id, {}), **spec}
     req = urllib.request.Request(PLACEMENT_API + "/api/save-rel",
                                  json.dumps(hat_rel).encode(),
                                  {"Content-Type": "application/json"})

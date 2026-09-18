@@ -1,7 +1,7 @@
 // Snout Deep — the dig screen (spec §5.2). A renderer over the pure reducer
 // in utils/snoutDeep.ts: every tap is an event, every pixel is a function of
-// state. Top → bottom: the sign and the Hungerer, the layer strip, the patch,
-// the whisper, the pouch, the footer, the verb bar. Plain Views, Pressables,
+// state. Top → bottom: the rail, the sleeper strip (rules 2), the verb bar,
+// the layer strip, the patch, the whisper, the pouch, the footer. Plain Views, Pressables,
 // Animated and react-native-svg only, so the founder's try-out runs on the
 // web target; the Skia LivingMudSurface follows once the rules are settled.
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,6 +26,8 @@ import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { formatCountdownHM } from "@/utils/duration";
 import { popIn } from "@/utils/motionRecipes";
 import {
+  attentionOf,
+  canDescend,
   findAtTile,
   findCopy,
   findRevealLine,
@@ -33,9 +35,11 @@ import {
   LAYER_NAMES,
   nextSniffAttention,
   nextThreshold,
+  meterHazard,
   receipt as buildReceipt,
   shortOdds,
   sniffsLeft,
+  wakePercent,
   whisperFor,
   type DigFindTickles,
   type DigReceipt,
@@ -45,9 +49,15 @@ import {
   type SnoutDeepState,
   type Verb,
 } from "@/utils/snoutDeep";
-import { Button, Hand, IconButton, Label, Shovel, Snout, Sticker, T, Tag, Trotter } from "../ui";
+import { Button, Hand, IconButton, Label, ProgressTrack, Shovel, Snout, Sticker, T, Tag, Trotter } from "../ui";
 import { FindMark } from "./FindMark";
-import { Hungerer, HUNGERER_STATE_LABEL, hungererStateFor } from "./Hungerer";
+import {
+  Hungerer,
+  HUNGERER_METER_LABEL,
+  HUNGERER_STATE_LABEL,
+  hungererStateFor,
+  type HungererState,
+} from "./Hungerer";
 import { SnoutDeepHelpSheet } from "./SnoutDeepSheets";
 
 // --- ART -------------------------------------------------------------------
@@ -62,7 +72,8 @@ const SCENT_DISC = 20;
 const SCENT_OFFSET = -6;
 const TILE_MARK = 22;
 const POUCH_MARK = ART_SIZE.glyphSm;
-// His face at the badge step: the header is one row of 84pt, not a portrait.
+// His face at the badge step — a mark beside the rail or the bar, never a
+// portrait.
 const HUNGERER_FACE = ART_SIZE.badge;
 // How long a reveal sticker stays up: two "read one line" beats.
 const REVEAL_DWELL_MS = 1600;
@@ -85,19 +96,63 @@ function VerbMark({ verb: v, size }: { verb: Verb; size: number }) {
   return <Shovel size={size} />;
 }
 const VERB_LABEL: Readonly<Record<Verb, string>> = { sniff: "Sniff", rub: "Rub", shove: "Shove" };
-// The price under each verb: the live odds the NEXT one rolls at — "free ·
-// 3 left" while the sniff budget holds, then "1 in 120", "1 in 60" … as his
-// attention builds (2026-09-16: so the player can SEE a sniff start to cost).
-// Rub and shove read their odds the same way, so the three cards are one
-// ladder of quiet at every moment of the dig.
+// The price under each verb: the chance the NEXT one wakes him, as a percent
+// per action — "<1% he wakes", "8% he wakes" — one denominator on every card,
+// bigger is louder (2026-09-16; the "1 in N" fractions read backwards). The
+// sniff card counts its budget instead while it holds: "free · 3 left" in
+// topsoil, "3% · 3 left" below, then its own percent as his attention builds.
+// Under the METER (rules 2) a card carries no chance at all: it carries how
+// LOUD the action is — "+15" — the same 120ths the bar under his face is
+// drawn in, so the card and the bar are one unit (2026-09-17 §5).
 function verbSub(state: SnoutDeepState, v: Verb): string {
   const thr = nextThreshold(state, v);
+  if (state.rules === 2) {
+    const price = thr <= 0 ? "free" : `+${thr}`;
+    if (v === "sniff") {
+      const left = sniffsLeft(state);
+      if (left > 0) return `${price} · ${left} left`;
+    }
+    return price;
+  }
   if (v === "sniff") {
     const left = sniffsLeft(state);
     if (thr <= 0) return `free · ${left} left`;
-    if (left > 0) return `${shortOdds(thr)} · ${left} free left`;
+    if (left > 0) return `${wakePercent(thr)} · ${left} left`;
   }
   return shortOdds(thr);
+}
+// The meter's tint, by the band his face is in: asleep is sage, stirring is
+// sun, an open eye is rose. One tint, two readings — the bar and the face.
+const METER_TONE: Readonly<Record<HungererState, "sage" | "sun" | "rose">> = {
+  snoring: "sage",
+  stirring: "sun",
+  oneeye: "rose",
+  awake: "rose",
+};
+/** The card's price under the meter: how loud this verb is, as a number in
+ *  the meter's own 120ths — "+1", "+10", "free". The number IS the price; a
+ *  slice of bar at card scale (tried 2026-09-17) was two points wide for a
+ *  shove and nothing for a rub, and read as a stray tick beside the numeral.
+ *  The meter above is the one scale; the cards say how far each verb moves it. */
+function VerbPrice({
+  state,
+  verb: v,
+}: {
+  state: SnoutDeepState;
+  verb: Verb;
+}) {
+  const loud = nextThreshold(state, v);
+  const left = v === "sniff" ? sniffsLeft(state) : 0;
+  return (
+    <View style={styles.price}>
+      <T role="numeral" numberOfLines={1}>
+        {loud <= 0 ? "free" : `+${loud}`}
+      </T>
+      {left > 0 ? (
+        <Hand tone="secondary" numberOfLines={1}>{`· ${left} left`}</Hand>
+      ) : null}
+    </View>
+  );
 }
 // What the tag under his face says while his attention is up.
 const ATTENTIVE_LABEL = "noticing you";
@@ -149,7 +204,29 @@ export function SnoutDeepPatch({
   // His attention: the next sniff would cost more than the layer's table
   // says. His face lifts a step and the tag says so — the budget made visible.
   const attentive = !woke && nextSniffAttention(state) > 0;
-  const face = hungererStateFor(state.layer, woke, attentive);
+  // Rules 2: the meter is the truth about how deep he is sleeping, so the
+  // BAND picks his face and the layer no longer does (§5).
+  const metered = state.rules === 2;
+  const { lo, hi } = state.wakeMeter;
+  const meter = Math.min(hi, attentionOf(state));
+  const face = hungererStateFor(state.layer, woke, attentive, metered ? { attention: meter, lo, hi } : null);
+  // What the bar says out loud: where it stands, and — once it is inside the
+  // band — the chance the selected verb is the one that reaches him.
+  const meterLabel = !metered
+    ? undefined
+    : meter < lo
+      ? `his attention, ${meter} of ${hi}. he sleeps through the first ${lo}.`
+      : `his attention, ${meter} of ${hi}. past ${lo} — about a ${Math.round(
+          meterHazard(state, verb) * 100,
+        )}% chance the next ${VERB_LABEL[verb].toLowerCase()} is the one.`;
+  // The word under the strip: what his face is saying, or — while the sniff
+  // budget is spent — that he has noticed you, the way the rail's tag used to
+  // say it. The band's own stamps carry the numbers.
+  const sleeperWord = attentive ? ATTENTIVE_LABEL : HUNGERER_METER_LABEL[face];
+  // How much of the track the band covers; the stamps' box is exactly that wide.
+  const bandWidth = hi > 0 ? Math.min(Math.max((hi - lo) / hi, 0), 1) : 0;
+  // Deeper is shut until this board's truffle is up (§4).
+  const deeperOpen = canDescend(state);
   const gt = gtReasons(state).length;
   const gtIfTied = state.uncrewed ? 0 : gt + (state.loose ? 1 : 0) + (atRoot && state.layersTied.includes(1) ? 1 : 0);
   const allFinds = state.board.layers.flatMap((l) => l.finds);
@@ -230,7 +307,7 @@ export function SnoutDeepPatch({
   return (
     <View style={styles.page}>
       <ScrollView contentContainerStyle={styles.scroll} bounces={false} showsVerticalScrollIndicator={false}>
-        {/* HEADER: the close chip and the sign on the left, his face on the right. */}
+        {/* THE RAIL: the close chip and the sign; under rules 1, his face too. */}
         <View style={styles.header}>
           <IconButton name="x" label="Leave the patch" onPress={onExit} variant="paper" />
           {/* One line each: the sign must not wrap, or the header eats the patch. */}
@@ -249,15 +326,63 @@ export function SnoutDeepPatch({
               {closesIn ? `${closesIn} · ` : ""}how it works ›
             </Hand>
           </Sticker>
-          <View style={styles.hungerer}>
-            <Hungerer state={face} size={HUNGERER_FACE} />
-            <Tag
-              label={attentive ? ATTENTIVE_LABEL : HUNGERER_STATE_LABEL[face]}
-              tone={woke ? "roseDeep" : attentive || atRoot ? "rose" : "paper"}
-              testID="hungerer-tag"
-            />
-          </View>
+          {/* Under the meter his face leaves the rail for the strip below —
+              one sleeper on the screen, not two. Rules 1 keeps the column it
+              shipped with: the face and the tag that reads the layer. */}
+          {metered ? null : (
+            <View style={styles.hungerer}>
+              <Hungerer state={face} size={HUNGERER_FACE} />
+              {/* The tag is the face said in words. */}
+              <Tag
+                label={attentive ? ATTENTIVE_LABEL : HUNGERER_STATE_LABEL[face]}
+                tone={woke ? "roseDeep" : attentive || atRoot ? "rose" : "paper"}
+                testID="hungerer-tag"
+              />
+            </View>
+          )}
         </View>
+
+        {/* THE SLEEPER STRIP (rules 2, 2026-09-17): the whole row belongs to
+            him — his face on the left as the bar's legend, the bar filling the
+            rest. The darker stretch is the band his sleep depth was drawn
+            from: everything left of it is certain sleep, its far end a certain
+            wake, and each card's "+N" is a step along this same bar. Under it
+            one line — the word his face is saying, and the band's two ends
+            stamped where they fall, so the numbers sit under the thing they
+            number. One object, so a screen reader hears it as one. */}
+        {metered ? (
+          <View
+            testID="sleeper-strip"
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={`attention ${meter} of ${hi}, band from ${lo}; ${sleeperWord}`}
+            style={styles.sleeper}
+          >
+            <Hungerer state={face} size={HUNGERER_FACE} />
+            <View style={styles.sleeperBar}>
+              <ProgressTrack
+                value={meter}
+                max={hi}
+                band={{ from: lo, to: hi }}
+                tone={METER_TONE[face]}
+                height="md"
+                announceValue={false}
+                accessibilityLabel={meterLabel}
+              />
+              <View style={styles.sleeperLine}>
+                <Hand tone="secondary" numberOfLines={1} style={styles.sleeperWord}>
+                  {sleeperWord}
+                </Hand>
+                {/* The stamps ride a box as wide as the band, so `lo` lands on
+                    the band's left end and `hi` on the track's own edge. */}
+                <View style={[styles.sleeperStamps, { width: `${bandWidth * 100}%` }]}>
+                  <Label tone="secondary">{lo}</Label>
+                  <Label tone="secondary">{hi}</Label>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : null}
 
         {/* THE VERB BAR — at the top, where the hand reads it before the mud.
             Three picture buttons: the snout sniffs, the trotter rubs, the
@@ -282,9 +407,13 @@ export function SnoutDeepPatch({
               >
                 <VerbMark verb={v} size={VERB_ART} />
                 <Label>{VERB_LABEL[v]}</Label>
-                <Hand tone={selected ? "primary" : "secondary"} numberOfLines={1}>
-                  {verbSub(state, v)}
-                </Hand>
+                {metered ? (
+                  <VerbPrice state={state} verb={v} />
+                ) : (
+                  <Hand tone={selected ? "primary" : "secondary"} numberOfLines={1}>
+                    {verbSub(state, v)}
+                  </Hand>
+                )}
               </Pressable>
             );
           })}
@@ -390,19 +519,31 @@ export function SnoutDeepPatch({
                   Tie it off · leave
                 </Button>
               </View>
+              {/* THE DESCENT GATE (2026-09-17 §4): deeper stays shut until
+                  this board's truffle is out of the ground — the layer you
+                  are on is the one you finish. The label says which of the
+                  two acts is on offer; the reducer refuses either way. */}
               <View style={styles.footerHalf}>
                 <Button
                   variant="ghost"
                   size="sm"
                   full
-                  disabled={!!state.ended}
+                  disabled={!!state.ended || !deeperOpen}
                   onPress={() => dispatch({ type: "descend" })}
-                  accessibilityLabel={`Dig deeper, a new board in ${LAYER_NAMES[(state.layer + 1) as Layer]}${
-                    looseCount > 0 ? `, carry ${looseCount} down` : ""
-                  }`}
-                  accessibilityHint="Banks the loose truffle, carries the loose things down and opens a fresh board one layer down"
+                  accessibilityLabel={
+                    deeperOpen
+                      ? `Dig deeper, a new board in ${LAYER_NAMES[(state.layer + 1) as Layer]}${
+                          looseCount > 0 ? `, carry ${looseCount} down` : ""
+                        }`
+                      : "Dig deeper, not yet"
+                  }
+                  accessibilityHint={
+                    deeperOpen
+                      ? "Banks the loose truffle, carries the loose things down and opens a fresh board one layer down"
+                      : "Find this board's truffle first"
+                  }
                 >
-                  Dig deeper · reset
+                  {deeperOpen ? "Dig deeper · reset" : "Find the truffle first"}
                 </Button>
               </View>
             </>
@@ -421,7 +562,7 @@ export function SnoutDeepPatch({
         </View>
       ) : null}
 
-      <SnoutDeepHelpSheet visible={helpOpen} onClose={closeHelp} />
+      <SnoutDeepHelpSheet visible={helpOpen} onClose={closeHelp} rules={state.rules} />
     </View>
   );
 }
@@ -647,6 +788,15 @@ const styles = StyleSheet.create({
     ...SHADOW_SM,
   },
   whisper: { paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
+  // The sleeper strip: his face, then the bar for the rest of the row.
+  sleeper: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+  sleeperBar: { flex: 1, minWidth: 0, gap: SPACE.xxs },
+  sleeperLine: { flexDirection: "row", alignItems: "baseline", gap: SPACE.sm },
+  sleeperWord: { flex: 1, minWidth: 0 },
+  sleeperStamps: { flexDirection: "row", justifyContent: "space-between" },
+  // The card's price row: the number, then that much bar.
+  price: { flexDirection: "row", alignItems: "center", gap: SPACE.xxs, minWidth: 0 },
+  // One slice of the meter, drawn at card scale — same ink edge as the bar.
   pouch: { flexDirection: "row", gap: SPACE.md },
   well: { flex: 1, minWidth: 0, gap: SPACE.xxs, paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
   wellHead: { flexDirection: "row", alignItems: "baseline", gap: SPACE.xs, minWidth: 0 },

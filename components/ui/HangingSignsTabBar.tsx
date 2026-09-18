@@ -31,7 +31,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Ellipse } from "react-native-svg";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
-import { Icon } from "./Icon";
+import { Glyph, type GlyphName } from "./Glyph";
+
+// The sign's mark: painted glyphs carry their own outline, so they sit a
+// touch larger than the 22pt ink-line icons did.
+const SIGN_ICON = 26;
 import { WHIMSY, FONTS } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
@@ -353,13 +357,10 @@ function HangingSign({
 								)}
 							</View>
 						)}
-						<Icon
-							name={iconName as React.ComponentProps<typeof Icon>["name"]}
-							size={22}
-							color={WHIMSY.ink}
-							filled={focused}
-							strokeWidth={2}
-						/>
+						{/* A painted sticker glyph (2026-09-17): the same family as the
+						    Barn button's fan. The focused sign says "on" with its fill,
+						    so the mark itself never changes. */}
+						<Glyph name={iconName as GlyphName} size={SIGN_ICON} />
 						<Text style={styles.lbl}>{label}</Text>
 					</View>
 				</View>

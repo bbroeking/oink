@@ -64,8 +64,21 @@ export function satchelFind(id: string): SatchelFindDef | null {
 	return BY_ID.get(id) ?? null;
 }
 
+/**
+ * The cap at or above which the bag is UNBOUNDED: no "full", no "N of cap",
+ * nothing ever stays in the mud. The server row carries this value since
+ * 20260918090000_satchel_unbounded.sql (founder: "make the satchel unbounded
+ * right now"); the number is a sentinel so every `have < cap` check on the
+ * server keeps working unchanged. (2026-09-18)
+ */
+export const SATCHEL_UNBOUNDED_CAP = 9999;
+
+export function isSatchelUnbounded(cap: number | null | undefined): boolean {
+	return cap == null || cap >= SATCHEL_UNBOUNDED_CAP;
+}
+
 export interface SatchelTuning {
-	/** How many finds the bag holds. */
+	/** How many finds the bag holds; `>= SATCHEL_UNBOUNDED_CAP` means no limit. */
 	cap: number;
 	/** Odds a submitted Dig rolls 0 / 1 / 2 finds (sum ≈ 1). */
 	findOdds: { none: number; one: number; two: number };
@@ -84,7 +97,7 @@ export interface SatchelTuning {
 }
 
 export const SATCHEL_TUNING: Readonly<SatchelTuning> = Object.freeze({
-	cap: 6,
+	cap: SATCHEL_UNBOUNDED_CAP,
 	findOdds: { none: 0.3, one: 0.5, two: 0.2 },
 	wishRerollHours: 48,
 	tickles: 3,

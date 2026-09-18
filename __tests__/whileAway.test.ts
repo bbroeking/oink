@@ -25,10 +25,8 @@ describe("launchEventSourcesSucceeded — conservative away marker gate", () => 
 });
 
 describe("systemAnnouncementRoute — announcement kind → deep-link route", () => {
-	test("trough_nudge with a drive_id routes to the Shop tab", () => {
-		expect(systemAnnouncementRoute("trough_nudge", { drive_id: "drive-123" })).toBe(
-			"/shop?trough=open"
-		);
+	test("trough_nudge with a drive_id routes to the Barn tab (the fan's Trough row)", () => {
+		expect(systemAnnouncementRoute("trough_nudge", { drive_id: "drive-123" })).toBe("/");
 	});
 
 	test("trough_nudge WITHOUT a drive_id has no destination (null)", () => {
@@ -65,7 +63,7 @@ describe("toWhileAwaySystemEvent — row → While-Away system event", () => {
 			announcementId: 42,
 			title: "A friend needs your help!",
 			body: "Chip in to land the item",
-			route: "/shop?trough=open",
+			route: "/",
 			emoteId: null,
 		});
 	});

@@ -16,6 +16,9 @@ import {
 	type GestureResponderEvent
 } from "react-native";
 import { useFocusEffect } from "expo-router/react-navigation";
+import { usePigErrands } from "@/hooks/usePigErrands";
+import { backAboutLabel } from "@/utils/errands";
+import type { ErrandRow } from "@/constants/errands";
 import { supabase } from "../utils/supabase";
 import { rpcAction } from "@/utils/rpc";
 import { fetchBarnVisitStatus } from "@/utils/barnVisit";
@@ -48,6 +51,7 @@ import {
 	SegmentedControl,
 	Sticker,
 	T,
+	Tag,
 	TextField,
 	type AvatarFill,
 	type SegmentOption,
@@ -102,7 +106,7 @@ import {
 	fetchFriendVisitStreaks,
 	type FriendVisitStreak,
 } from "@/utils/visitStreaks";
-import { bagHasWishFor, fetchFriendWishes, fetchMySatchel, type FriendWish, type SatchelItem } from "@/utils/satchel";
+import { bagHasWishFor, fetchFriendWishes, fetchMySatchel, wishOpenForMe, type FriendWish, type SatchelItem } from "@/utils/satchel";
 import { satchelFind } from "@/constants/satchel";
 import { FindArt } from "./satchel/FindArt";
 
@@ -175,6 +179,11 @@ function countWord(n: number): string {
 }
 
 export default function Friends({ userId }: { userId: string }) {
+	// THE ERRAND'S DOOR (2026-09-18): a wish you cannot fill from your bag gets
+	// a "send a pig" tag that opens the Pen's ticket with the friend preset;
+	// one a pig is already out for says when it is back. Fail-soft: an
+	// un-pushed server or the flag off draws the rows as before.
+	const errands = usePigErrands();
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
 	// A null `friend_ids` is "we don't know", not "you have none" — spec §3.4.
@@ -391,6 +400,8 @@ export default function Friends({ userId }: { userId: string }) {
 				<FriendsList
 					friends={friends}
 					crewNames={crewNames}
+					errandsOn={errands.available && errands.state.enabled}
+					errandsOut={errands.state.out}
 					loaded={loaded}
 					loadFailed={loadFailed}
 					onRetry={load}
@@ -899,6 +910,15 @@ function RitualCastNotice({
 	);
 }
 
+/** The Pen's door, target-first: the ticket opens with this friend's wish
+ *  preset. The router is required lazily so the list stays renderable in the
+ *  suites that mount it without expo-router. */
+function openPenFor(friendId: string): void {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy, see above
+	const { router } = require("expo-router") as typeof import("expo-router");
+	router.push({ pathname: "/pen", params: { send: friendId } });
+}
+
 const FriendRow = React.memo(function FriendRow({
 	friend,
 	index,
@@ -912,6 +932,8 @@ const FriendRow = React.memo(function FriendRow({
 	visitStreak,
 	wish,
 	haveWish,
+	canSendPig = false,
+	errandOut,
 	isFav,
 	menuOpen,
 	onToggleMenu,
@@ -934,6 +956,10 @@ const FriendRow = React.memo(function FriendRow({
 	/** Their pig's wish, and whether my Satchel holds it (the wish mark). */
 	wish: FriendWish | undefined;
 	haveWish: boolean;
+	/** The errand's door: a wish you cannot fill can have a pig sent for it. */
+	canSendPig?: boolean;
+	/** A pig of yours is out looking for this friend's wish. */
+	errandOut?: ErrandRow;
 	isFav: boolean;
 	/** This row's panel is the one panel that's out. */
 	menuOpen: boolean;
@@ -1237,6 +1263,31 @@ const FriendRow = React.memo(function FriendRow({
 							</View>
 						</>
 					) : null}
+					{/* The errand's door (2026-09-18): a wish you cannot fill can
+					    have a pig sent for it; one a pig is out for says when. */}
+					{!haveWish && wish && wishOpenForMe(wish) && errandOut ? (
+						<>
+							<View style={styles.rowMetaDot} />
+							<View style={styles.rowMetaLine} testID="friend-wish-out">
+								<Tag tone="muted" glyph="search" label={backAboutLabel(errandOut.ends_at)} maxFontSizeMultiplier={ROW_TYPE_CAP} />
+							</View>
+						</>
+					) : !haveWish && wish && wishOpenForMe(wish) && canSendPig ? (
+						<>
+							<View style={styles.rowMetaDot} />
+							<Pressable
+								style={styles.rowMetaLine}
+								onPress={() => openPenFor(id)}
+								accessibilityRole="button"
+								accessibilityLabel={`Their pig is hoping for ${satchelFind(wish.find_id)?.withArticle ?? "a find"} — send a pig to look for it`}
+								accessibilityHint="Opens the Pen with this wish on the ticket"
+								hitSlop={SPACE.sm}
+								testID="friend-wish-send"
+							>
+								<Tag tone="sun" glyph="signPen" label="send a pig" maxFontSizeMultiplier={ROW_TYPE_CAP} />
+							</Pressable>
+						</>
+					) : null}
 					{!!wears && (
 						<>
 							<View style={styles.rowMetaDot} />
@@ -1396,6 +1447,8 @@ function RitualCountLine({
 export function FriendsList({
 	friends,
 	crewNames,
+	errandsOn = false,
+	errandsOut = [],
 	loaded,
 	loadFailed,
 	onRetry,
@@ -1412,6 +1465,10 @@ export function FriendsList({
 }: {
 	friends: Profile[];
 	crewNames: Map<string, string>;
+	/** The errand is on for this player: a wish you cannot fill gets its door. */
+	errandsOn?: boolean;
+	/** The pigs out looking right now, so a row can say "back ~7:40". */
+	errandsOut?: ErrandRow[];
 	// The first read has landed. Before it does, the list is unknown.
 	loaded: boolean;
 	// The last `friend_ids` read came back null — unknown, not empty.
@@ -1675,6 +1732,8 @@ export function FriendsList({
 						visitStreak={visitStreaks.get(f.id)}
 						wish={friendWishes.get(f.id)}
 						haveWish={bagHasWishFor(myBag, friendWishes.get(f.id))}
+						canSendPig={errandsOn}
+						errandOut={errandsOut.find((row) => row.for_user_id === f.id)}
 						isFav={favorites.has(f.id)}
 						menuOpen={openMenuFor === f.id}
 						onToggleMenu={toggleMenu}

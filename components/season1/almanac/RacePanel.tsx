@@ -1,8 +1,9 @@
 // The Race panel — this week's Dig-Off. A cream sticker with the top rows of
 // the board (rank · name · score; my herd pinned on the sun, nobody dimmed) and
-// a door to the full field, then Monday's spoils as two cards (the Barn
-// Bunting every digging snout takes, the Gold Bunting for 1st), the Monday
-// tickle-draw door when the draw is wired, and ONE gold "Oink at the herd" CTA.
+// a door to the full field, then Monday's spoils as ONE ladder sticker — the
+// bunting on one row (the Barn Bunting every digging snout takes, the Gold
+// Bunting for 1st), the Monday tickle-draw door and the Barn Draw door as
+// flat rows on the same paper (2026-09-18) — and ONE gold "Oink at the herd" CTA.
 //
 // On Monday, while last week's finals are fresh and unseen, the same panel
 // reads as the ceremony: `The race is run`, the finals, the spoils ladder (the
@@ -24,7 +25,6 @@ import {
 	LoadingBeat,
 	Sticker,
 	T,
-	Tag,
 	TickleIcon,
 } from "@/components/ui";
 import { ReclaimSlam, type ReclaimSlamHandle } from "@/components/mudwar/ReclaimSlam";
@@ -253,41 +253,34 @@ function LiveRaceView({
 				<Board rows={rows} />
 			</Sticker>
 
+			{/* ONE sticker for everything Monday pays (2026-09-18: "simplify this
+			    layout" — two prize cards plus two loose rows read as four things;
+			    they are one ladder): the bunting for all who dug, the Gold Bunting
+			    for 1st, then the two draws as flat rows on the same paper. The gap
+			    lives on the CTA alone; the head keeps only the clock. */}
 			<View style={styles.spoilsHead}>
 				<T role="sectionTitle" accessibilityRole="header">
 					Monday&apos;s spoils
 				</T>
 				<Hand tone="secondary" style={styles.spoilsMeta}>
-					{gap ? `${gap} · ${countdown}` : countdown}
+					{countdown}
 				</Hand>
 			</View>
-			<View style={styles.spoilsRow}>
-				<SpoilsCard kicker="all who dug" id={spoils.allWhoDug.id} name={spoils.allWhoDug.name} gold={false} />
-				<SpoilsCard kicker="1st place" id={spoils.first.id} name={spoils.first.name} gold />
-			</View>
-
-			{mondayDraw && (
-				<ListRow
-					tilt={false}
-					fill="paper"
-					leading={
-						<Avatar size={AVATAR_SIZE[1]} fill="rose" label="Monday tickle draw">
-							<TickleIcon size={ART_SIZE.glyphSm} />
-						</Avatar>
-					}
-					title={mondayDraw.drawn ? "Your Monday purse, drawn" : "Your Monday tickle draw"}
-					sub={drawLine(mondayDraw)}
-					trailing={
-						<Icon name="chevronRight" size={ART_SIZE.glyphSm} color={UI_COLORS.textSecondary} />
-					}
-					onPress={onOpenMondayDraw}
-					accessibilityLabel="Your Monday tickle draw"
-					accessibilityHint="Opens the Monday draw"
-					testID="race-monday-draw-row"
-				/>
-			)}
-
-			{herdPrize && <HerdPrizeRow state={herdPrize} uid={uid} onPress={onOpenHerdPrize} />}
+			<Sticker color="paper" rotate={0} radius={RADII.xl} style={styles.ladder} testID="race-spoils-ladder">
+				<BuntingRow spoils={spoils} />
+				{mondayDraw && (
+					<>
+						<View style={styles.ladderRule} />
+						<MondayDrawRow state={mondayDraw} onPress={onOpenMondayDraw} flat />
+					</>
+				)}
+				{herdPrize && (
+					<>
+						<View style={styles.ladderRule} />
+						<HerdPrizeRow state={herdPrize} uid={uid} onPress={onOpenHerdPrize} flat />
+					</>
+				)}
+			</Sticker>
 
 			<Button
 				variant="gold"
@@ -518,33 +511,6 @@ function Board({ rows }: { rows: StandingsRow[] }) {
 	);
 }
 
-function SpoilsCard({ kicker, id, name, gold }: { kicker: string; id: string; name: string; gold: boolean }) {
-	return (
-		<Sticker
-			color={gold ? "sun" : "cream"}
-			rotate={0}
-			radius={RADII.lg}
-			shadow="sm"
-			style={styles.spoilsCard}
-			accessibilityRole="text"
-			accessibilityLabel={`${kicker}: ${name}`}
-		>
-			<T role="kickerPill" tone="secondary">
-				{kicker}
-			</T>
-			<View style={styles.spoilsBody}>
-				<FurnishingWell id={id} gold={gold} />
-				<View style={styles.spoilsText}>
-					<T role="body">
-						{name}
-					</T>
-					<Tag tone="sage" label="barn" />
-				</View>
-			</View>
-		</Sticker>
-	);
-}
-
 function SpoilsLadderRow({
 	kicker,
 	id,
@@ -562,17 +528,37 @@ function SpoilsLadderRow({
 		<View style={styles.ladderRow} accessibilityLabel={`${kicker}: ${name}`}>
 			<FurnishingWell id={id} gold={gold} />
 			<View style={styles.ladderText}>
-				<View style={styles.ladderCap}>
-					<T role="kickerPill" tone="secondary">
-						{kicker}
-					</T>
-					<Tag tone="sage" label="barn" />
-				</View>
+				<T role="kickerPill" tone="secondary">
+					{kicker}
+				</T>
 				<T role="body">
 					{name}
 				</T>
 			</View>
 			{trailing}
+		</View>
+	);
+}
+
+// The week's two furnishings on ONE row (2026-09-18: the two cards, then the
+// two ladder rows, were the same fact twice over): both wells side by side,
+// one line saying who takes which. They land in the Barn at payout.
+function BuntingRow({ spoils }: { spoils: Spoils }) {
+	const line = `${spoils.allWhoDug.name} for all who dug · ${spoils.first.name} for 1st`;
+	return (
+		<View style={styles.ladderRow} accessibilityRole="text" accessibilityLabel={line}>
+			<View style={styles.wellPair}>
+				<FurnishingWell id={spoils.allWhoDug.id} gold={false} />
+				<View style={styles.wellSecond}>
+					<FurnishingWell id={spoils.first.id} gold />
+				</View>
+			</View>
+			<View style={styles.ladderText}>
+				<T role="kickerPill" tone="secondary">
+					the bunting
+				</T>
+				<T role="body">{line}</T>
+			</View>
 		</View>
 	);
 }
@@ -600,16 +586,20 @@ function HerdPrizeRow({
 	state,
 	uid,
 	onPress,
+	flat = false,
 }: {
 	state: HerdPrizeState;
 	uid?: string | null;
 	onPress?: () => void;
+	/** Inside the spoils ladder: no outline of its own. */
+	flat?: boolean;
 }) {
 	const last = state.last;
 	const art = last?.itemId ? HABITAT_THUMBNAILS[last.itemId] : undefined;
 	return (
 		<ListRow
 			tilt={false}
+			flat={flat}
 			fill="paper"
 			leading={
 				<Avatar size={AVATAR_SIZE[1]} fill="sage" label="The Barn Draw">
@@ -627,6 +617,38 @@ function HerdPrizeRow({
 			accessibilityLabel="The Barn Draw"
 			accessibilityHint="Opens the herd's Monday furnishing draw"
 			testID="race-herd-prize-row"
+		/>
+	);
+}
+
+// The Monday tickle draw's door. Undrawn it sells the odds; drawn, it is the
+// receipt (the amount is already in the snout's count).
+function MondayDrawRow({
+	state,
+	onPress,
+	flat = false,
+}: {
+	state: MondayDrawState;
+	onPress?: () => void;
+	flat?: boolean;
+}) {
+	return (
+		<ListRow
+			tilt={false}
+			flat={flat}
+			fill="paper"
+			leading={
+				<Avatar size={AVATAR_SIZE[1]} fill="rose" label="Monday tickle draw">
+					<TickleIcon size={ART_SIZE.glyphSm} />
+				</Avatar>
+			}
+			title={state.drawn ? "Your Monday purse, drawn" : "Your Monday tickle draw"}
+			sub={drawLine(state)}
+			trailing={<Icon name="chevronRight" size={ART_SIZE.glyphSm} color={UI_COLORS.textSecondary} />}
+			onPress={onPress}
+			accessibilityLabel="Your Monday tickle draw"
+			accessibilityHint="Opens the Monday draw"
+			testID="race-monday-draw-row"
 		/>
 	);
 }
@@ -699,16 +721,6 @@ const styles = StyleSheet.create({
 		gap: SPACE.sm,
 	},
 	spoilsMeta: { flexShrink: 1 },
-	spoilsRow: { flexDirection: "row", gap: SPACE.md },
-	spoilsCard: {
-		flex: 1,
-		minWidth: 0,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.md,
-		gap: SPACE.sm,
-	},
-	spoilsBody: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
-	spoilsText: { flex: 1, minWidth: 0, gap: SPACE.xs, alignItems: "flex-start" },
 	well: {
 		width: SPOILS_WELL,
 		height: SPOILS_WELL,
@@ -735,6 +747,8 @@ const styles = StyleSheet.create({
 		borderStyle: "dashed",
 	},
 	ladderText: { flex: 1, minWidth: 0, gap: SPACE.xxs },
-	ladderCap: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+	// The two wells overlap a little, like two things pinned on one nail.
+	wellPair: { flexDirection: "row", alignItems: "center" },
+	wellSecond: { marginLeft: -SPACE.md },
 	drawBlock: { gap: SPACE.xs },
 });

@@ -1,0 +1,7 @@
+Generate ONE image with the image generation tool and save it in this directory as closet_raw.png. Use a square size.
+
+The attached image is a sticker glyph from the game "Tickle the Pig": a painted storybook object with a thick warm dark-brown ink outline, soft cel shading, one small pale highlight patch, and exactly two small four-point gold sparkles floating just off the object. No 3D rendering, no drop shadow, no text, no border.
+
+Draw, in exactly that style and at exactly that level of detail, ONE glyph: a small cream-painted wooden wardrobe with one door swung open toward the viewer, and inside it a brown cowboy hat on a peg above a folded red bandana on the shelf.
+
+The object is seen straight on, centered, filling about 85% of a SQUARE image, on a solid flat MAGENTA (#FF00FF) background. No magenta anywhere on the object. Exactly two small gold sparkles, one upper-left and one lower-right. Nothing else in the picture.

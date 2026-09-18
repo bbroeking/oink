@@ -32,6 +32,12 @@ const full: TickleBreakdown = {
 };
 
 describe("tickleBreakdownRows", () => {
+	it("the trader lane is the last row, and an older server without it drops it", () => {
+		const rows = tickleBreakdownRows({ ...full, trader: 17 });
+		expect(rows[rows.length - 1]).toEqual({ lane: "trader", label: "traded to the Ghost Sheep", value: 17 });
+		expect(tickleBreakdownRows(full).map((r) => r.lane)).not.toContain("trader");
+	});
+
 	it("the swap lane sits with the other social lanes, after visiting", () => {
 		const rows = tickleBreakdownRows(full);
 		const lanes = rows.map((r) => r.lane);

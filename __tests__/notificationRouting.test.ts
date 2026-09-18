@@ -33,7 +33,7 @@ describe("routeForScreen — push deep-link map", () => {
 		// A guard on the guard: if the regex or path breaks, the loop below would
 		// vacuously pass. Anchor on the screens we know the server sends today.
 		expect(emitted).toEqual(
-			expect.arrayContaining(["account", "achievements", "friends", "season", "shop", "trade"])
+			expect.arrayContaining(["account", "achievements", "friends", "season", "shop", "trade", "pen"])
 		);
 	});
 
@@ -67,8 +67,12 @@ describe("routeForScreen — push deep-link map", () => {
 		expect(routeForScreen("account")).toBe("/account");
 	});
 
-	test("trough routes to the Shop tab (where item drives live)", () => {
-		expect(routeForScreen("trough")).toBe("/shop?trough=open");
+	test("trough routes to the Barn tab (its row is on the Barn button's fan)", () => {
+		expect(routeForScreen("trough")).toBe("/");
+	});
+
+	test("pen routes to the Pen (the errand's homecoming waits on its corkboard)", () => {
+		expect(routeForScreen("pen")).toBe("/pen");
 	});
 
 	test("unknown / missing screen → null (no navigation)", () => {

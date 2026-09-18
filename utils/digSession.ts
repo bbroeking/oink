@@ -21,6 +21,7 @@
 
 import { feedingNowMs } from "@/utils/feedingClock";
 import { dugInCurrentWindow } from "@/utils/rooting";
+import type { WakeMeter } from "@/constants/dig";
 // A crewmate who has already dug this feeding — the feeding-state read module
 // owns that shape.
 import type { CrewDug } from "@/utils/dig";
@@ -62,6 +63,14 @@ export interface RootingSession {
   uncrewed?: boolean;
   // The server's per-layer find odds (app_settings.dig_finds), or null.
   digFinds?: unknown;
+  // Which Snout Deep rule set the server stamped on this row at open
+  // (20260917160000): 1 is build 192's per-action roll, 2 the wake meter.
+  // Absent (an un-migrated server, an older row) → 1.
+  rules?: 1 | 2;
+  // The wake-meter tuning STAMPED on this row (war_rootings.wake_meter): the
+  // band his sleep depth is drawn from, where the meter resets, and whether
+  // the root tie pays. Absent under rules 1 — there is no meter to tune.
+  wakeMeter?: WakeMeter;
   // The log the server holds for an OPEN snout_deep row (sync_rooting) — the
   // restore source when the device has no local snapshot.
   synced?: { layer: number; actions: string[]; finds: string[] } | null;

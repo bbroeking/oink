@@ -16,9 +16,9 @@
 //      tossable and giveable on, and wears a small "from a friend" mark.
 import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { SATCHEL_FINDS, satchelFind, type SatchelFindId } from "@/constants/satchel";
+import { SATCHEL_FINDS, isSatchelUnbounded, satchelFind, type SatchelFindId } from "@/constants/satchel";
 import { ART_SIZE, BORDER, RADII, SPACE, TAP_MIN } from "@/constants/theme";
-import { cameFromAFriend, satchelTuning, wishHoursLeft, type SatchelState } from "@/utils/satchel";
+import { cameFromAFriend, satchelStanding, satchelTuning, wishHoursLeft, type SatchelState } from "@/utils/satchel";
 import { Button, EmptyState, Glyph, SectionHeader, Sheet, Sticker, T, Tag } from "../ui";
 import { FindArt } from "./FindArt";
 import { FindTile } from "./FindTile";
@@ -50,19 +50,16 @@ export function SatchelSheet({
 	const thresholds = satchelTuning().keepsakeThresholds;
 	const nextKeepsake = thresholds.find((t) => t > state.swapsGiven) ?? null;
 	// F10: a cap lowered under a live bag used to read "8 of 6 finds". The
-	// number the player can act on is "it's full".
-	const full = state.items.length >= state.cap;
+	// number the player can act on is "it's full" — and an unbounded bag
+	// (2026-09-18) never says either; it just counts.
+	const full = !isSatchelUnbounded(state.cap) && state.items.length >= state.cap;
 
 	return (
 		<Sheet
 			open={open}
 			onClose={onClose}
 			kicker="your satchel"
-			title={
-				full
-					? `full — ${state.items.length} finds`
-					: `${state.items.length} of ${state.cap} finds`
-			}
+			title={satchelStanding(state.items.length, state.cap) ?? `${state.items.length} finds`}
 			testID="satchel-sheet"
 		>
 			{/* ── 1. the wish ── */}

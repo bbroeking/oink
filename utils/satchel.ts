@@ -19,7 +19,9 @@
 // one of those suites.
 import {
 	SATCHEL_TUNING,
+	SATCHEL_UNBOUNDED_CAP,
 	isSatchelFindId,
+	isSatchelUnbounded,
 	satchelFind,
 	type SatchelFindId,
 	type SatchelTuning,
@@ -59,7 +61,7 @@ export function sanitizeSatchelTuning(raw: unknown): SatchelTuning | null {
 				.sort((a, b) => a - b)
 		: [];
 	return {
-		cap: Math.floor(num(r.cap, SATCHEL_TUNING.cap, 1, 24)),
+		cap: Math.floor(num(r.cap, SATCHEL_TUNING.cap, 1, SATCHEL_UNBOUNDED_CAP)),
 		findOdds: {
 			none: num(odds.none, SATCHEL_TUNING.findOdds.none, 0, 1),
 			one: num(odds.one, SATCHEL_TUNING.findOdds.one, 0, 1),
@@ -555,6 +557,16 @@ export function satchelReceiptLine(
 	return `${heavier} Satchel's full — ${joinNames(roll.lost.map(name))} stayed in the mud.`;
 }
 
+/** Where the bag stands, as a phrase: "4 finds" on an unbounded bag, "4 of 6
+ *  finds" under a cap, "full — 6 finds" at it, null when the server named
+ *  neither number. One place, so no surface can read "8 of 6". */
+export function satchelStanding(count: number | null | undefined, cap: number | null | undefined): string | null {
+	if (count == null) return null;
+	const finds = `${count} ${count === 1 ? "find" : "finds"}`;
+	if (isSatchelUnbounded(cap)) return finds;
+	return count >= (cap as number) ? `full — ${finds}` : `${count} of ${cap} finds`;
+}
+
 /** The bag block's words, in the hand voice: the kicker over the tiles and
  *  one line under them — what went in and where the bag stands, or what the
  *  full bag turned away. */
@@ -562,12 +574,7 @@ export function satchelReceiptCopy(roll: SatchelReceiptRoll): { kicker: string; 
 	const name = (id: SatchelFindId) => satchelFind(id)?.withArticle ?? id;
 	const got = joinNames(roll.found.map(name));
 	const left = joinNames(roll.lost.map(name));
-	const standing =
-		roll.count == null || roll.cap == null
-			? null
-			: roll.count >= roll.cap
-				? `full — ${roll.count} ${roll.count === 1 ? "find" : "finds"}`
-				: `${roll.count} of ${roll.cap} finds`;
+	const standing = satchelStanding(roll.count, roll.cap);
 	if (roll.found.length === 0) {
 		return {
 			kicker: "the satchel's full",

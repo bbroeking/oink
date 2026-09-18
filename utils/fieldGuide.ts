@@ -34,6 +34,12 @@ export const FIELD_GUIDE_PAGE_IDS = [
 	// The Satchel (2026-09-16): the bag, the wish, the swap. Whitelisted on the
 	// server by 20260917110000_field_guide_satchel_page.sql.
 	"satchel",
+	// The Ghost Sheep Trader (2026-09-17): a silhouette until the first sale.
+	// Whitelisted on the server by 20260917170000_ghost_sheep_trader.sql.
+	"trader",
+	// The Pen (2026-09-18): send a pig to look for a Find. A silhouette until
+	// the first send. Whitelisted on the server by 20260918120000_pig_errands.sql.
+	"pen",
 ] as const;
 
 export type FieldGuidePageId = (typeof FIELD_GUIDE_PAGE_IDS)[number];

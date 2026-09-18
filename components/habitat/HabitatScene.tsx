@@ -16,6 +16,7 @@ import {
   HABITAT_DECOR_POSITIONS,
   HABITAT_POSITION_META,
   habitatItemAsset,
+  HABITAT_PIG_WIDTH,
 } from "@/constants/habitat";
 import {
   BORDER,
@@ -59,10 +60,12 @@ const PIG_STAGE = 300;
 // close enough to be facing each other across it: 86 + 70 = the 156pt
 // between their centres, and the three-quarter facing sprites are narrower
 // than that.
+// The host's width is `HABITAT_PIG_WIDTH`, the unit the decorating spots are
+// sized in (constants/habitat), so furniture scales with her.
 const PIG_SPOTS = {
   visitor: { x: .30, y: .69, w: .36 },
-  host: { x: .70, y: .69, w: .44 },
-  owner: { x: .52, y: .69, w: .44 },
+  host: { x: .70, y: .69, w: HABITAT_PIG_WIDTH },
+  owner: { x: .52, y: .69, w: HABITAT_PIG_WIDTH },
 } as const;
 const THEME_MARKER_W = 80;
 const TOOLBAR_CLEARANCE = 56;
@@ -196,8 +199,11 @@ export function resolveHabitatCanvas(available: Size): Size {
 
 export function habitatRect(position: HabitatPosition, canvas: Size) {
   const anchor = HABITAT_POSITION_META[position].anchor;
-  const width = Math.max(MIN_TARGET, canvas.width * anchor.width);
-  const height = Math.max(MIN_TARGET, canvas.height * anchor.height);
+  // A spot's box is measured in pig widths, so it scales with the pig the
+  // room draws (one unit for both axes: the pig scales uniformly).
+  const pigWidth = canvas.width * HABITAT_PIG_WIDTH;
+  const width = Math.max(MIN_TARGET, pigWidth * anchor.width);
+  const height = Math.max(MIN_TARGET, pigWidth * anchor.height);
   return {
     left: canvas.width * anchor.x - width / 2,
     top: canvas.height * anchor.y - height / 2,

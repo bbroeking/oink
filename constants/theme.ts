@@ -90,6 +90,10 @@ export const WHIMSY = {
 	// pair (they are also the WOOD rail's two gradient stops). [C-14] (2026-09-11)
 	dirt: "#8d5a2c",
 	dirtDeep: "#74441e",
+	// The Pen's corkboard — the pinboard the errand returns wait on. A warm
+	// tan between cream2 and dirt, so paper pins read as pinned ON something
+	// rather than floating on the page. (2026-09-18)
+	cork: "#d9b27f",
 	// Pasture green + barn siding red — the two scene hues worth keeping out of
 	// the deprecated legacy COLORS ramp. (2026-09-11)
 	grass: "#8FBF6A",

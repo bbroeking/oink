@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap">
+<style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; text-decoration: none; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    .phone { position: relative; overflow: hidden; background: #fbeee2; display: flex; flex-direction: column; box-sizing: border-box; }
+    .status { height: 48px; flex: none; }
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 20px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; white-space: nowrap; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; white-space: nowrap; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .bodySm { font-weight: 700; font-size: 13px; line-height: 18px; }
+    .mute { color: #605449; }
+    .crown { display: flex; align-items: flex-end; justify-content: space-between; padding: 6px 18px 0; flex: none; }
+    .crown .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; margin-top: 4px; }
+    .pocket { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 10px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; box-shadow: none; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; }
+    .tag img { width: 13px; height: 13px; }
+    .tag.hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0; }
+    .chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 4px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .chip.on { border-width: 2px; background: #ffd87a; }
+    .chip img { width: 16px; height: 16px; }
+    .seg { display: flex; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; box-shadow: 3px 3px 0 #2a1f15; padding: 3px; gap: 2px; }
+    .seg button { flex: 1 1 0; min-height: 34px; border: 0; border-radius: 999px; background: transparent; font-weight: 800; font-size: 13px; padding: 0 8px; white-space: nowrap; }
+    .seg button.on { background: #ffd87a; box-shadow: inset 0 0 0 2px #2a1f15; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #fffaf0; box-shadow: 4px 4px 0 #2a1f15; font-weight: 800; font-size: 15px; color: #2a1f15; box-sizing: border-box; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.ghost { background: transparent; box-shadow: none; border-color: transparent; }
+    .ticket { display: flex; align-items: stretch; border: 2px solid #2a1f15; border-radius: 14px; background: linear-gradient(180deg, #F8D068, #F5C44A); box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; color: #5A3F00; min-height: 44px; }
+    .ticket .stub { display: flex; align-items: center; gap: 4px; padding: 0 10px; border-right: 2px dashed #2a1f15; background: #fffaf0; color: #2a1f15; }
+    .ticket .stub img { width: 16px; height: 16px; }
+    .ticket .face { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; padding: 0 12px; }
+    .chalk { background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; color: #fff3e2; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; transform: rotate(-1.5deg); }
+    .chalk .k { color: #ffd87a; }
+    .plank { height: 14px; background: linear-gradient(180deg, #8d5a2c, #74441e); border: 2px solid #2a1f15; border-radius: 3px; box-shadow: 2px 3px 0 #2a1f15; box-sizing: border-box; }
+    .coaster { position: relative; width: 66px; height: 66px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; flex: none; }
+    .coaster img.art { width: 50px; height: 50px; object-fit: contain; }
+    .coaster .rdot { position: absolute; left: -2px; bottom: 4px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; box-shadow: 1px 1px 0 #2a1f15; }
+    .coaster .badge { position: absolute; right: -4px; top: -4px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .coaster .badge img { width: 12px; height: 12px; }
+    .coaster.sm { width: 48px; height: 48px; } .coaster.sm img.art { width: 36px; height: 36px; } .coaster.sm .rdot { width: 11px; height: 11px; bottom: 2px; }
+    .slot { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 104px; }
+    .slot .tagWrap { margin-top: -8px; }
+    .peg { position: relative; width: 30px; height: 30px; border-radius: 8px; border: 2px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; flex: none; }
+    .peg img { width: 22px; height: 22px; object-fit: contain; }
+    .peg.empty { border-style: dashed; box-shadow: none; background: transparent; }
+    .peg.on { background: #ffc8a8; }
+    .peg .x { position: absolute; right: -7px; top: -7px; width: 14px; height: 14px; border-radius: 999px; background: #fffaf0; border: 1.5px solid #2a1f15; font-size: 9px; line-height: 11px; text-align: center; font-weight: 800; }
+    .pegLbl { font-weight: 800; font-size: 8px; line-height: 10px; letter-spacing: 1px; text-transform: uppercase; color: #605449; text-align: center; margin-top: 3px; }
+    .slotTile { position: relative; width: 44px; height: 44px; border-radius: 10px; border: 2px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; }
+    .slotTile img { width: 30px; height: 30px; object-fit: contain; }
+    .slotTile.empty { border-style: dashed; box-shadow: none; }
+    .slotTile .x { position: absolute; right: -8px; top: -8px; width: 18px; height: 18px; border-radius: 999px; background: #fffaf0; border: 1.5px solid #2a1f15; font-size: 11px; line-height: 15px; text-align: center; font-weight: 800; }
+    .slotLbl { font-weight: 800; font-size: 8px; line-height: 10px; letter-spacing: 1px; text-transform: uppercase; color: #605449; text-align: center; margin-top: 3px; }
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; box-sizing: border-box; }
+    .sticker.flat { box-shadow: 2px 2px 0 #2a1f15; }
+    .door { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; min-height: 50px; width: 60px; padding: 6px 4px; }
+    .door img { width: 22px; height: 22px; }
+    .door .lbl { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: .3px; white-space: nowrap; }
+    .hang { position: relative; padding-top: 14px; }
+    .hang:before { content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 14px; background: #2a1f15; transform: translateX(-50%); }
+    .tile { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 3px 3px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
+    .tile .thumb { position: relative; height: 84px; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; }
+    .tile .thumb img.art { width: 58px; height: 58px; object-fit: contain; }
+    .tile .thumb .rdot { position: absolute; left: 6px; top: 6px; width: 12px; height: 12px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; }
+    .tile .thumb .badge { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .tile .thumb .badge img { width: 11px; height: 11px; }
+    .tile .foot { display: flex; flex-direction: column; gap: 5px; padding: 6px 8px 8px; }
+    .tile.wearing { background: #d6c8f0; }
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 2px solid #2a1f15; z-index: 20; }
+    .tabbar:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: #2a1f15; opacity: .35; }
+    .sign { position: absolute; top: 22px; width: 64px; height: 56px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 11px; box-sizing: border-box; }
+    .sign:before { content: ""; position: absolute; top: -20px; left: 50%; width: 2px; height: 20px; background: #2a1f15; transform: translateX(-50%); }
+    .sign img { width: 24px; height: 24px; }
+    .sign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    .tape { position: absolute; height: 18px; padding: 0 10px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .96; z-index: 4; font-family: "Patrick Hand", cursive; font-size: 12px; line-height: 15px; color: #2a1f15; white-space: nowrap; }
+    .window { border-radius: 12px; border: 2px solid #2a1f15; overflow: hidden; background: #c8e3f0; flex: none; }
+    .window img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar { border-radius: 999px; border: 2px solid #2a1f15; background: #fffaf0; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; flex: none; box-sizing: border-box; }
+    .avatar img { width: 92%; height: 92%; object-fit: contain; }
+    .grabber { width: 40px; height: 4px; border-radius: 2px; background: #8c7e71; align-self: center; }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .col { display: flex; flex-direction: column; }
+    .band { background: #FFE7AD; border-radius: 12px; padding: 12px 8px 8px; position: relative; }
+    .band .bsign { position: absolute; top: -12px; right: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; background: #F5C44A; border: 2px solid #2a1f15; border-radius: 999px; box-shadow: 2px 2px 0 #2a1f15; transform: rotate(-2deg); font-weight: 800; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+    .band .bsign img { width: 12px; height: 12px; }
+    .rail { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; }
+    .rail.on { background: #ffd87a; border: 2px solid #2a1f15; box-shadow: 3px 3px 0 #2a1f15; }
+    .rail .name { flex: 1; min-width: 0; }
+    .mirror { position: relative; border: 4px solid #8d5a2c; outline: 2px solid #2a1f15; border-radius: 70px 70px 14px 14px; overflow: hidden; background: #c8e3f0; box-shadow: 4px 4px 0 #2a1f15; }
+    .mirror img { width: 100%; height: 100%; object-fit: cover; }
+    .divider { height: 2px; background: #2a1f15; opacity: .18; border-radius: 1px; }
+</style>
+</helmet>
+<div class="phone" style="width: 390px; height: 844px;">
+<div class="status"></div><div style="padding:0 18px"><a href="Main.dc.html" class="hand" style="color:#a03e2f">‹ back to the shop</a></div><div class="crown" style="padding-top:8px"><div class="col"><div class="kickerPill">★ rosie’s place</div><div class="pageTitle">The Pen</div><div class="rule"></div></div><div class="pocket"><img src="/_blob/f0b2c39654ce874cb0ba22e5807b0fc3" alt=""><span class="numeral">349</span></div></div><div style="padding:16px 18px 90px;display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;overflow:hidden">
+  <div style="position:relative;height:200px;border-radius:16px;border:2px solid #2a1f15;overflow:hidden;background:linear-gradient(180deg,#c8e3f0 0 62%,#c9dec1 62% 100%);box-shadow:4px 4px 0 #2a1f15">
+    <div style="position:absolute;left:0;right:0;top:118px;height:2px;background:#fffaf0;opacity:.9"></div>
+    <div style="position:absolute;left:0;right:0;top:140px;height:2px;background:#fffaf0;opacity:.9"></div>
+    <img src="/_blob/aeadbac0f0e33c6f49adb2a7e2a6d5bb" alt="Rosie" style="position:absolute;left:36px;bottom:10px;width:130px;height:130px;object-fit:contain">
+    <img src="/_blob/7745925179377cf4b7b1b3a8dd25c2f0" alt="Bandit" style="position:absolute;right:40px;bottom:14px;width:120px;height:120px;object-fit:contain">
+    <span class="tape" style="left:50%;bottom:10px;transform:translateX(-50%) rotate(-1deg)">previewing Bandit</span>
+  </div>
+  <div class="col" style="gap:4px;align-items:center;text-align:center"><div class="sectionTitle">Rosie has room for a friend.</div><div class="bodySm mute" style="max-width:300px">Slop Club members choose one long-term companion, and pick who greets them at Home.</div></div>
+  <div style="display:flex;gap:8px;justify-content:space-between"><a href="#" class="col" style="align-items:center;gap:4px" aria-label="Copper"><div class="avatar" style="width:56px;height:56px;"><img src="/_blob/9c3de40f786e2530373d9a7bf89eaca7" alt=""></div><span class="label">Copper</span></a><a href="#" class="col" style="align-items:center;gap:4px" aria-label="Pepper"><div class="avatar" style="width:56px;height:56px;"><img src="/_blob/ac9ee4810cbfb82a1e8680357770ad0d" alt=""></div><span class="label">Pepper</span></a><a href="#" class="col" style="align-items:center;gap:4px" aria-label="Bandit"><div class="avatar" style="width:56px;height:56px;background:#ffc8a8;box-shadow:3px 3px 0 #2a1f15"><img src="/_blob/7745925179377cf4b7b1b3a8dd25c2f0" alt=""></div><span class="label">Bandit</span></a><a href="#" class="col" style="align-items:center;gap:4px" aria-label="Pickles"><div class="avatar" style="width:56px;height:56px;"><img src="/_blob/aeadbac0f0e33c6f49adb2a7e2a6d5bb" alt=""></div><span class="label">Pickles</span></a><a href="#" class="col" style="align-items:center;gap:4px" aria-label="Biscuit"><div class="avatar" style="width:56px;height:56px;"><img src="/_blob/aeadbac0f0e33c6f49adb2a7e2a6d5bb" alt=""></div><span class="label">Biscuit</span></a></div>
+  <a href="#" class="ticket" aria-label="Join the Slop Club"><span class="stub"><img src="/_blob/f45de07801cb927d430b3d5011789b98" alt=""><span class="label">Slop Club</span></span><span class="face">Join and bring Bandit home</span></a>
+  <div class="hand mute" style="text-align:center">one companion, for keeps · the members’ shelf opens with it</div>
+</div><div class="tabbar"><div class="sign" style="left: 18px;"><img src="/_blob/5ce49510ab96f1c61c95b18fb288a8bc" alt=""><span>Barn</span></div><div class="sign" style="left: 92px;"><img src="/_blob/82ea7cf4e968cf759d211d5159999747" alt=""><span>Friends</span></div><div class="sign" style="left: 166px;"><img src="/_blob/c65b13877a6ffab163a6b344845b625d" alt=""><span>Season</span></div><div class="sign on" style="left: 240px;"><img src="/_blob/61a624353c5e789830f2b3ec94aa7d13" alt=""><span>Shop</span></div><div class="sign" style="left: 314px;"><img src="/_blob/510751759403d649f69e29bf94655575" alt=""><span>Me</span></div></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

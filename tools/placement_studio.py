@@ -7,8 +7,11 @@ members cosmetics show up), renders a live on-pig preview using the exact
 PigStage.resolveSlot math, and persists with the safe rebuild-all strategy:
 
   GET  /                  the studio (tools/placement_studio.html)
-  GET  /api/data          items (+ current RelSpec) + REST_ANCHORS + categories
+  GET  /api/data          items (+ RelSpec, side sprite) + REST_ANCHORS +
+                          categories + the PigAnimationKey list + every pig's
+                          sprite frame counts + the renderer's turn constants
   GET  /api/anchors       parsed PIG_FRAME_ANCHORS (all anims/frames) + REST
+  GET  /api/rig-candidate the auto-rig proposal (docs/rig-candidate.json) or {}
   POST /api/save-rel      full HAT_REL_DATA map -> rewrite hat_rel.generated.ts
   POST /api/save-anchors  full PIG_FRAME_ANCHORS -> rewrite the sentinel block
   GET  /img/<path>        serve an asset (assets/ only)
@@ -28,25 +31,82 @@ ANIM_SCALE_FILE = os.path.join(ROOT, "constants", "animScale.generated.ts")
 # Recorded for future generations — the art pipeline reads this to know which
 # items to regenerate and WHY (build_strip_prompts.py surfaces it).
 ART_REJECTIONS = os.path.join(ROOT, "docs", "art-rejections.json")
+# Candidate rig written by scripts/auto_rig.py — a full PIG_FRAME_ANCHORS-shaped
+# proposal the studio compares against the live rig and accepts piecewise.
+# Never applied on its own; nothing here writes it.
+RIG_CANDIDATE = os.path.join(ROOT, "docs", "rig-candidate.json")
 HATS_DIR = os.path.join(ROOT, "assets", "images", "hats")
-ANIMS = ["idle", "walk", "jump", "happy", "sad", "tired", "surprise", "wave", "face", "face_sit"]
+SPRITES_DIR = os.path.join(ROOT, "assets", "images", "sprites")
+TYPES_TS = os.path.join(ROOT, "constants", "hat_overlay_types.ts")
 HTML = os.path.join(os.path.dirname(__file__), "placement_studio.html")
 PORT = 8124
 
-REL_RE = re.compile(
-    r'(\w+):\s*\{\s*pivot:\s*\{\s*x:\s*([\d.]+),\s*y:\s*([\d.]+)\s*\},'
+# Compiled fallback, used only if the union below can't be parsed.
+DEFAULT_ANIMS = ["idle", "walk", "jump", "happy", "sad", "tired", "surprise",
+                 "wave", "face", "face_sit"]
+
+
+def parse_anims():
+    """The PigAnimationKey union, in source order — the studio's pose list.
+
+    Parsed rather than hardcoded so a new animation family shows up in the pose
+    bar, the anchor writer and the anim-scale writer the moment it's declared in
+    constants/hat_overlay_types.ts.
+    """
+    try:
+        src = open(TYPES_TS).read()
+    except OSError:
+        return list(DEFAULT_ANIMS)
+    # Stop at the `;` that closes the union — a doc comment inside it may well
+    # contain one of its own, so terminate on a quoted member instead.
+    m = re.search(r'export type PigAnimationKey\s*=(.*?"\s*;)', src, re.S)
+    if not m:
+        return list(DEFAULT_ANIMS)
+    names = re.findall(r'\|\s*"(\w+)"', m.group(1))
+    return names or list(DEFAULT_ANIMS)
+
+
+ANIMS = parse_anims()
+
+# One item per LINE in hat_rel.generated.ts / membersRel.generated.ts. The
+# anchor at `^\t` matters: a per-pose override is written inline on the same
+# line, and an unanchored pattern would happily read `face: { pivot: … }` out of
+# the nested perAnim block and invent an item called "face".
+SPEC_BODY = (
+    r'\{\s*pivot:\s*\{\s*x:\s*(-?[\d.]+),\s*y:\s*(-?[\d.]+)\s*\},'
     r'\s*widthFrac:\s*([\d.]+),\s*anchor:\s*"(\w+)"(?:,\s*behind:\s*(true|false))?'
 )
+REL_RE = re.compile(r'^\t(\w+):\s*' + SPEC_BODY, re.M)
+PERANIM_TAIL_RE = re.compile(r'perAnim:\s*\{(.*)\}\s*\}\s*,?\s*$')
+PERANIM_ENTRY_RE = re.compile(r'(\w+):\s*' + SPEC_BODY)
 ANCHOR_RE = re.compile(r'(\w+):\s*\{\s*x:\s*(-?[\d.]+),\s*y:\s*(-?[\d.]+)\s*\}')
+
+
+def _spec_from(groups):
+    px, py, wf, anch, behind = groups
+    return {"pivot": {"x": float(px), "y": float(py)}, "widthFrac": float(wf),
+            "anchor": anch, "behind": behind == "true"}
 
 
 def parse_rel(path):
     out = {}
-    if os.path.isfile(path):
-        for m in REL_RE.finditer(open(path).read()):
-            i, px, py, wf, anch, behind = m.groups()
-            out[i] = {"pivot": {"x": float(px), "y": float(py)}, "widthFrac": float(wf),
-                      "anchor": anch, "behind": behind == "true"}
+    if not os.path.isfile(path):
+        return out
+    src = open(path).read()
+    for m in REL_RE.finditer(src):
+        spec = _spec_from(m.groups()[1:])
+        # Everything after the base spec on THIS line — where a perAnim block
+        # lives when the studio wrote one.
+        eol = src.find("\n", m.end())
+        tail = src[m.end():eol if eol != -1 else len(src)]
+        tm = PERANIM_TAIL_RE.search(tail)
+        if tm:
+            per = {}
+            for pm in PERANIM_ENTRY_RE.finditer(tm.group(1)):
+                per[pm.group(1)] = _spec_from(pm.groups()[1:])
+            if per:
+                spec["perAnim"] = per
+        out[m.group(1)] = spec
     return out
 
 
@@ -80,6 +140,20 @@ def parse_frame_anchors():
         if frames:
             out[anim] = frames
     return out
+
+
+def parse_rig_candidate():
+    """docs/rig-candidate.json, re-read every request (the script regenerates it).
+
+    Missing or unreadable is not an error — the studio degrades to "no
+    candidate" and the compare UI simply stays hidden.
+    """
+    try:
+        with open(RIG_CANDIDATE) as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def parse_rejections():
@@ -178,9 +252,13 @@ def build_items():
             continue
         meta = cats.get(iid, {})
         eff = hat_rel.get(iid) or members_rel.get(iid)
+        side = f"assets/images/hats/side/{iid}.png"
         items.append({
             "id": iid,
             "image": f"assets/images/hats/{iid}.png",
+            # The three-quarter sprite the turned families swap in
+            # (HAT_SIDE_IMAGES / tools/gen_side_items.py), or null.
+            "side": side if os.path.isfile(os.path.join(ROOT, side)) else None,
             "category": meta.get("category"),
             "members": meta.get("members", False),
             "rel": eff,                       # effective current spec (for preview)
@@ -190,24 +268,87 @@ def build_items():
     return items, hat_rel
 
 
+SPRITE_RE = re.compile(r"^([a-z_]+)_(\d+)\.png$")
+
+
+def sprite_pigs():
+    """{pig: {anim: frame count}} straight off disk — every renderable pig.
+
+    Anchors are shared by every pig (PIG_FRAME_ANCHORS isn't per pig); this is
+    purely so the studio can preview a placement on Copper or Bandit. Dirs
+    starting with "_" are sources, not pigs; `lounge/` subdirs are a different
+    rig entirely and are ignored (only files directly in the pig's dir count).
+    """
+    out = {}
+    if not os.path.isdir(SPRITES_DIR):
+        return out
+    for pig in sorted(os.listdir(SPRITES_DIR)):
+        if pig.startswith("_") or not os.path.isdir(os.path.join(SPRITES_DIR, pig)):
+            continue
+        counts = {}
+        for fn in os.listdir(os.path.join(SPRITES_DIR, pig)):
+            m = SPRITE_RE.match(fn)
+            if m and m.group(1) in ANIMS:
+                counts[m.group(1)] = max(counts.get(m.group(1), 0), int(m.group(2)))
+        if counts:
+            out[pig] = counts
+    # Rosie is the reference pig — the one every anchor was authored against.
+    return {k: out[k] for k in sorted(out, key=lambda p: (p != "rosie", p))}
+
+
+def parse_turned_eye_shift():
+    try:
+        m = re.search(r"TURNED_EYE_SHIFT\s*=\s*(-?[\d.]+)", open(HATS_TS).read())
+        if m:
+            return float(m.group(1))
+    except OSError:
+        pass
+    return 16.0
+
+
+def parse_wearable_clamp():
+    """The [min, max] apparent-scale clamp in hats.ts resolveWearablePose."""
+    try:
+        src = open(HATS_TS).read()
+        m = re.search(r"Math\.max\(([\d.]+),\s*Math\.min\(([\d.]+),", src)
+        if m:
+            return [float(m.group(1)), float(m.group(2))]
+    except OSError:
+        pass
+    return [0.72, 1.18]
+
+
 def write_hat_rel(data):
     """Rebuild-all: rewrite hat_rel.generated.ts sorted (safe, deterministic)."""
     g = lambda v, p=4: "%g" % round(float(v), p)  # drop trailing zeros (1.0 -> 1)
+
+    def body(s):
+        p = s["pivot"]
+        return ('pivot: { x: %s, y: %s }, widthFrac: %s, anchor: "%s", behind: %s'
+                % (g(p["x"]), g(p["y"]), g(s["widthFrac"]), s["anchor"],
+                   "true" if s.get("behind") else "false"))
+
     lines = []
     for iid in sorted(data):
-        s = data[iid]; p = s["pivot"]
-        lines.append(
-            '\t%s: { pivot: { x: %s, y: %s }, widthFrac: %s, anchor: "%s", behind: %s },'
-            % (iid, g(p["x"]), g(p["y"]), g(s["widthFrac"]), s["anchor"],
-               "true" if s.get("behind") else "false"))
-    body = (
+        s = data[iid]
+        # A per-pose override rides inline on the item's own line, in
+        # PigAnimationKey order, complete (the studio copies the effective spec
+        # when it creates one) so there's no "which field wins" bookkeeping.
+        per = s.get("perAnim") or {}
+        tail = ""
+        poses = [a for a in ANIMS if a in per]
+        if poses:
+            tail = ", perAnim: { %s }" % ", ".join(
+                "%s: { %s }" % (a, body(per[a])) for a in poses)
+        lines.append("\t%s: { %s%s }," % (iid, body(s), tail))
+    text = (
         "// AUTO-GENERATED by tools/placement_studio — do not edit by hand.\n"
         "// The studio writes this live as you tune item attach points.\n"
         'import type { RelSpec } from "./hat_overlay_types";\n\n'
         "export const HAT_REL_DATA: Record<string, RelSpec> = {\n"
         + "\n".join(lines) + ("\n" if lines else "") + "};\n"
     )
-    open(HAT_REL, "w").write(body)
+    open(HAT_REL, "w").write(text)
 
 
 def write_frame_anchors(data):
@@ -329,9 +470,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             # save would silently drop them.
             self._json(200, {"items": items, "rest": parse_rest_anchors(),
                              "hatRel": hat_rel, "animScale": parse_anim_scale(),
-                             "rejections": parse_rejections()})
+                             "rejections": parse_rejections(),
+                             "anims": ANIMS, "pigs": sprite_pigs(),
+                             "turnedEyeShift": parse_turned_eye_shift(),
+                             "wearableClamp": parse_wearable_clamp()})
         elif path == "/api/anchors":
             self._json(200, {"rest": parse_rest_anchors(), "frames": parse_frame_anchors()})
+        elif path == "/api/rig-candidate":
+            self._json(200, parse_rig_candidate())
         elif path.startswith("/img/"):
             full = safe_asset(path[len("/img/"):])
             if not full:

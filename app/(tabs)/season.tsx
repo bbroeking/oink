@@ -1601,13 +1601,18 @@ export default function SeasonScreen() {
 					right={
 						s1 ? (
 							<>
-								{selectedTab !== "feed" && (
+								{selectedTab !== "feed" ? (
 									<Image
 										source={HUNGERER_SPRITE}
 										style={styles.titleSprite}
 										resizeMode="contain"
 										accessibilityIgnoresInvertColors
 									/>
+								) : (
+									// The Feed panel's hero carries him instead — but his slot
+									// keeps its size, or the whole crown drops 6pt (the sprite
+									// is taller than the door) every time the tab changes.
+									<View style={styles.titleSprite} accessible={false} />
 								)}
 								<HeaderDoor
 									label="How the season works"
@@ -2298,7 +2303,9 @@ function PassTrackBody({
 // ───────────────────────────────────────────────────────────────
 // Reward dialog shown after a successful claim_tier_reward RPC.
 // Shows the item the user just won and (for wearables) offers a
-// "Show in wardrobe" button that deep-links to shop?view=wardrobe.
+// "Show in closet" button that deep-links to shop?view=wardrobe — an old link
+// name the Shop still honours by landing on the store and scrolling down to
+// "Your closet" (utils/shopNav, 2026-09-17).
 // ───────────────────────────────────────────────────────────────
 function ClaimRewardDialog({
 	reward,

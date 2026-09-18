@@ -253,7 +253,15 @@ export function resolveSlot(
 	// Anchor-RELATIVE placement (the new model). If the item has a
 	// rel spec, size + position it so its pivot point lands on the
 	// resolved pig anchor for the current frame.
-	const relSpec = relOverrides[itemId] || HAT_REL[itemId];
+	// A RelSpec may carry a per-pose override (tools/placement_studio): a side
+	// sprite's own pivot on the turn, a one-eyed item's near-eye lens. Merge it
+	// shallowly over the base — the base stays the front truth. `anchorAnim` has
+	// already resolved the render-only variants to their source family, so an
+	// override written for `happy` also drives `sit`.
+	const relBase = relOverrides[itemId] || HAT_REL[itemId];
+	const relSpec: RelSpec | undefined = relBase
+		? { ...relBase, ...(relBase.perAnim?.[anchorAnim] ?? {}) }
+		: relBase;
 	// Backgrounds always own the full stage. Auras may use a RelSpec so each
 	// aura can be sized/positioned in the Placement Studio; an untuned aura
 	// still falls through to the legacy category-sized box below.

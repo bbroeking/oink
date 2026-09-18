@@ -25,11 +25,26 @@ export const HABITAT_DECOR_POSITIONS = HABITAT_POSITIONS.filter(
     position !== "interior_background",
 );
 
+/**
+ * The host pig's drawn width in the room, as a fraction of the canvas width.
+ * The room is the one owner of pig size (HabitatScene's PIG_SPOTS), and this
+ * is the unit every decorating spot is sized in: a spot's `width` / `height`
+ * are multiples of the pig's drawn width, so furniture keeps its proportion
+ * to Rosie on any canvas rather than tracking the canvas on its own.
+ * (2026-09-17)
+ */
+export const HABITAT_PIG_WIDTH = 0.44;
+
 export type HabitatPositionMeta = {
   label: string;
   category: HabitatCategory;
   accessibilityHint: string;
-  /** Normalized center and size in the 390 x 844 scene canvas. */
+  /**
+   * Where the spot sits and how big it is. `x` / `y` are the normalized
+   * centre in the 390 x 844 scene canvas; `width` / `height` are in PIG
+   * WIDTHS (multiples of `HABITAT_PIG_WIDTH` x canvas width), so a spot's
+   * box scales with the pig, not the canvas.
+   */
   anchor: { x: number; y: number; width: number; height: number };
   layer: number;
 };
@@ -42,49 +57,52 @@ export const HABITAT_POSITION_META: Record<
     label: "Room",
     category: "interior_background",
     accessibilityHint: "Choose the room walls and floor",
-    anchor: { x: 0.5, y: 0.5, width: 1, height: 1 },
+    // The whole canvas (drawn by the theme layer, never through habitatRect).
+    anchor: { x: 0.5, y: 0.5, width: 2.27, height: 4.92 },
     layer: 0,
   },
   wall: {
     label: "Back wall",
     category: "wall_decor",
     accessibilityHint: "Choose decoration for the back wall",
-    anchor: { x: 0.5, y: 0.35, width: 0.32, height: 0.22 },
+    anchor: { x: 0.5, y: 0.35, width: 0.73, height: 1.08 },
     layer: 10,
   },
   ceiling: {
     label: "Rafters",
     category: "ceiling_decor",
     accessibilityHint: "Choose decoration hanging from the rafters",
-    anchor: { x: 0.5, y: 0.19, width: 0.48, height: 0.16 },
+    anchor: { x: 0.5, y: 0.19, width: 1.09, height: 0.79 },
     layer: 20,
   },
   floor_centerpiece: {
     label: "Center floor",
     category: "floor_centerpiece",
     accessibilityHint: "Choose a centerpiece under the pigs",
-    anchor: { x: 0.5, y: 0.76, width: 0.68, height: 0.16 },
+    anchor: { x: 0.5, y: 0.76, width: 1.55, height: 0.79 },
     layer: 30,
   },
   floor_left: {
     label: "Left floor",
     category: "floor_decor",
     accessibilityHint: "Choose furniture for the left floor",
-    anchor: { x: 0.2, y: 0.7, width: 0.28, height: 0.3 },
+    // Floor furniture stands as wide as the seated pig: a chair she could sit
+    // in, not a toy beside her. (Was .64 pig widths, 2026-09-17.)
+    anchor: { x: 0.24, y: 0.7, width: 1, height: 1.15 },
     layer: 40,
   },
   floor_right: {
     label: "Right floor",
     category: "floor_decor",
     accessibilityHint: "Choose furniture for the right floor",
-    anchor: { x: 0.8, y: 0.7, width: 0.28, height: 0.3 },
+    anchor: { x: 0.76, y: 0.7, width: 1, height: 1.15 },
     layer: 40,
   },
   surface: {
     label: "Shelf",
     category: "surface_decor",
     accessibilityHint: "Choose a small object for the shelf",
-    anchor: { x: 0.18, y: 0.47, width: 0.24, height: 0.15 },
+    anchor: { x: 0.18, y: 0.47, width: 0.55, height: 0.74 },
     layer: 60,
   },
 };

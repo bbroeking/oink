@@ -143,7 +143,9 @@ import { openOwnHabitatCollection } from "@/utils/habitatNavigation";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { trackInteraction } from "@/utils/interactionAnalytics";
 import { recordPorchStop } from "@/utils/porchRound";
-import { isPigId, type PigId } from "@/utils/pigs";
+import { isPigId, pigDefinition, pigPronouns, type PigId } from "@/utils/pigs";
+import { fetchHostPigAway } from "@/utils/errands";
+import { EmptyYard } from "./pen/EmptyYard";
 
 // ── drawing constants ──────────────────────────────────────────────────────
 // Values the scene is DRAWN from rather than spaced by: art sizes, the two
@@ -409,6 +411,10 @@ function BarnVisitSession({
 	const [hostPigId, setHostPigId] = useState<PigId>(
 		previewingTickledOut ? "biscuit" : "rosie",
 	);
+	// THE ERRAND (2026-09-18, R12): the host's greeter is out looking. The
+	// yard is empty — the same sticker Home draws — you can bless and wish
+	// (the bubble stays), you cannot tickle, and the visit still counts.
+	const [hostAway, setHostAway] = useState<{ pig: PigId; endsAt: string | null } | null>(null);
 	const [myPigId, setMyPigId] = useState<PigId>(
 		previewingTickledOut ? "pickles" : "rosie",
 	);
@@ -602,6 +608,11 @@ function BarnVisitSession({
 			setHostPigId(
 				d.is_vip && isPigId(d.active_pig_id) ? d.active_pig_id : "rosie",
 			);
+			// Fail-soft: an un-pushed server answers nothing and the pig is home.
+			void fetchHostPigAway(targetUserId).then((away) => {
+				if (cancelled) return;
+				setHostAway(away.away ? { pig: away.away, endsAt: away.endsAt } : null);
+			});
 			// This-season tally: the Barn race counts THIS season's tickles only.
 			setFriendHearts(d.tickles_earned ?? 0); // HOST tally base
 
@@ -743,6 +754,16 @@ function BarnVisitSession({
 	};
 
 	const tickle = async () => {
+		if (hostAway) {
+			// Nobody to tickle: the greeter is out. Bless and wish still work.
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+			showToast({
+				tone: "info",
+				title: `${pigDefinition(hostAway.pig).name}'s out looking`,
+				text: `Come back when ${pigPronouns(hostAway.pig).subject}'s home — or leave a blessing.`,
+			});
+			return;
+		}
 		if (hostSpent) {
 			nudgeSpent();
 			return;
@@ -1220,6 +1241,18 @@ function BarnVisitSession({
 									  its guest (the turn is mirrored). The one pig you tickle;
 									  its chip counts the visit and becomes the "tickled out"
 									  tag. */}
+								{hostAway ? (
+									<View style={[styles.pigSlot, styles.pigSlotHost, styles.awaySlot]} testID="visit-host-away">
+										<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!swapped} />
+										<EmptyYard
+											pig={hostAway.pig}
+											endsAt={hostAway.endsAt}
+											line={`${pigPronouns(hostAway.pig).subject}'s out`}
+											size={HOST_BOX}
+											testID="visit-empty-yard"
+										/>
+									</View>
+								) : (
 								<TapPig
 									slotStyle={[styles.pigSlot, styles.pigSlotHost]}
 									squishTransform={squishTransform}
@@ -1241,7 +1274,8 @@ function BarnVisitSession({
 									onReactionDone={() => setHostReaction(null)}
 									floats={floats}
 								/>
-								{greeted && !hostSpent && (
+								)}
+								{greeted && !hostSpent && !hostAway && (
 									<View pointerEvents="none" style={styles.guestHint}>
 										<T role="hand" tone="secondary" align="center" maxFontSizeMultiplier={VISIT_TYPE_CAP}>
 											{`You're the guest — tickle ${hostName}'s pig.`}
@@ -1654,6 +1688,18 @@ function BarnVisitSession({
 						/>
 					}
 					hostPig={
+						hostAway ? (
+							<View style={[styles.roomPigSlot, styles.awaySlot]}>
+								<WishBubble wish={hostWish} hostName={hostName} givenThisVisit={!!swapped} />
+								<EmptyYard
+									pig={hostAway.pig}
+									endsAt={hostAway.endsAt}
+									line={`${pigPronouns(hostAway.pig).subject}'s out`}
+									size={ROOM_PIG_BOX}
+									testID="visit-empty-yard-room"
+								/>
+							</View>
+						) : (
 						<TapPig
 							slotStyle={styles.roomPigSlot}
 							stage="room"
@@ -1677,6 +1723,7 @@ function BarnVisitSession({
 							onReactionDone={() => setHostReaction(null)}
 							floats={floats}
 						/>
+						)
 					}
 				/>
 			) : (
@@ -1994,6 +2041,9 @@ const styles = StyleSheet.create({
 	pigSlot: { position: "absolute", left: 0, right: 0, alignItems: "center" },
 	pigSlotVisitor: { bottom: "9%", transform: [{ translateX: -PIG_SIDE_SHIFT }] },
 	pigSlotHost: { bottom: "9%", transform: [{ translateX: PIG_SIDE_SHIFT }] },
+	// The empty yard stands where the host would; the wish bubble keeps its
+	// place above it so the swap still has its door.
+	awaySlot: { alignItems: "center", justifyContent: "flex-end" },
 	// The guest hint, once, under the pair.
 	guestHint: {
 		position: "absolute",

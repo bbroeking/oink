@@ -78,9 +78,11 @@ describe("satchel tuning — server row → config, compiled fallback", () => {
 	});
 
 	it("reads the seeded row exactly as the compiled fallback", () => {
+		// The seeded row's cap is the unbounded sentinel since
+		// 20260918090000_satchel_unbounded.sql.
 		expect(
 			sanitizeSatchelTuning({
-				cap: 6,
+				cap: 9999,
 				find_odds: { none: 0.3, one: 0.5, two: 0.2 },
 				rarity_weights: { common: 70, uncommon: 25, rare: 5 },
 				wish_reroll_hours: 48,
@@ -536,5 +538,25 @@ describe("useSatchel — the bag a server answer installs", () => {
 		});
 		expect(h.api.state.items.map((i) => i.id)).toEqual([1, 2, 3]);
 		h.unmount();
+	});
+});
+
+describe("an unbounded satchel (2026-09-18)", () => {
+	const { SATCHEL_UNBOUNDED_CAP, isSatchelUnbounded } = require("@/constants/satchel");
+	const { satchelStanding } = require("@/utils/satchel");
+
+	it("the compiled fallback is unbounded and the sanitizer keeps a server row at the sentinel", () => {
+		expect(isSatchelUnbounded(SATCHEL_TUNING.cap)).toBe(true);
+		expect(sanitizeSatchelTuning({ cap: SATCHEL_UNBOUNDED_CAP })?.cap).toBe(SATCHEL_UNBOUNDED_CAP);
+		expect(isSatchelUnbounded(6)).toBe(false);
+		expect(isSatchelUnbounded(null)).toBe(true);
+	});
+
+	it("an unbounded bag only counts — never 'full', never 'of'", () => {
+		expect(satchelStanding(4, SATCHEL_UNBOUNDED_CAP)).toBe("4 finds");
+		expect(satchelStanding(1, null)).toBe("1 find");
+		expect(satchelStanding(9, 6)).toBe("full — 9 finds");
+		expect(satchelStanding(3, 6)).toBe("3 of 6 finds");
+		expect(satchelStanding(null, 6)).toBeNull();
 	});
 });

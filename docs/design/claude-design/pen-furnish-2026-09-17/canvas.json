@@ -1,0 +1,160 @@
+{
+ "pages": [
+  {
+   "id": "pen",
+   "name": "The Pen"
+  },
+  {
+   "id": "furnish",
+   "name": "Furnish"
+  }
+ ],
+ "artboards": [
+  {
+   "file": "Main.dc.html",
+   "title": "Pen \u00b7 not a member",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "pen"
+  },
+  {
+   "file": "Pen_Member_Choosing.dc.html",
+   "title": "Pen \u00b7 member, choosing",
+   "x": 480,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "pen"
+  },
+  {
+   "file": "Pen_Confirm.dc.html",
+   "title": "Pen \u00b7 the one confirm",
+   "x": 960,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "pen"
+  },
+  {
+   "file": "Pen_Lives_Here.dc.html",
+   "title": "Pen \u00b7 Bandit lives here",
+   "x": 1440,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "pen"
+  },
+  {
+   "file": "Pen_In_The_Field.dc.html",
+   "title": "Pen \u00b7 looking at another pig",
+   "x": 1920,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "pen"
+  },
+  {
+   "file": "Pen_States.dc.html",
+   "title": "Pen \u00b7 states",
+   "x": 0,
+   "y": 1000,
+   "w": 1160,
+   "h": 1010,
+   "page": "pen"
+  },
+  {
+   "file": "Furnish.dc.html",
+   "title": "Furnish \u00b7 the top",
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "furnish"
+  },
+  {
+   "file": "Furnish_Scrolled.dc.html",
+   "title": "Furnish \u00b7 scrolled (bar sticks)",
+   "x": 480,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "furnish"
+  },
+  {
+   "file": "Furnish_Spot.dc.html",
+   "title": "Furnish \u00b7 a spot picked",
+   "x": 960,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "furnish"
+  },
+  {
+   "file": "Furnish_Mine.dc.html",
+   "title": "Furnish \u00b7 Mine",
+   "x": 1440,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "furnish"
+  },
+  {
+   "file": "Furnish_Wallow.dc.html",
+   "title": "Furnish \u00b7 Wallow gifts section",
+   "x": 1920,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "page": "furnish"
+  },
+  {
+   "file": "Furnish_States.dc.html",
+   "title": "Furnish \u00b7 states",
+   "x": 0,
+   "y": 1000,
+   "w": 1160,
+   "h": 1130,
+   "page": "furnish"
+  }
+ ],
+ "annotations": [
+  {
+   "id": "pen-idea",
+   "page": "pen",
+   "x": 2400,
+   "y": 0,
+   "w": 320,
+   "text": "THE PADDOCK IS THE PICKER.\n\nOne living scene (Rosie + the friend you are looking at, both breathing on PigStage), five medallions hung on the fence under it, and ONE card that speaks for the pig you picked. The five-card grid, its orphan fifth card, the three repeats of \"this cannot be changed\" and the four \"Tap to preview\" lines go away.\n\nThe card carries the one action the roster allows: Join (gold) \u00b7 Recruit (lilac, then the one confirm) \u00b7 the home toggle (once recruited) \u00b7 a state line (for the others, after). Nothing else on the page."
+  },
+  {
+   "id": "pen-why",
+   "page": "pen",
+   "x": 2400,
+   "y": 330,
+   "w": 320,
+   "text": "WHY \u00b7 Collect: companions are the membership's hook (2026-07-25) \u2014 the pig should be the biggest thing on the page, not a 2-col card. Connect: the paddock IS what a visiting friend sees at your Barn.\n\nTradeoff: coat + motif are only shown for the picked pig, one at a time. If flipping through five to compare coats matters, the medallion could grow a second line.\n\nDraft copy: each pig's hand line (\"keeps whatever he finds\") is new \u2014 utils/pigs.ts has no such line yet."
+  },
+  {
+   "id": "fur-idea",
+   "page": "furnish",
+   "x": 2400,
+   "y": 0,
+   "w": 320,
+   "text": "THE ROOM ABOVE THE RACKS.\n\nThe Shop's rule was \"the pig you dress is pinned above the shelf\". Furnish gets its twin: a sticky SPOTS BAR \u2014 your Barn (a window, tap to decorate) and the six spots as pegs showing what hangs there now. Tap a peg \u2192 the catalog is what fits that spot. It replaces the sky Wallow card, the 4-way segment and half the chips, and puts furniture above the fold.\n\nUnder it: search \u00b7 Everything / Mine / Wishes \u00b7 a jump rail of collections (a chip stays on the page \u2014 it scrolls, never filters). Sections carry the progress track + reward pips; the Wallow ladder is a section like any other, last, \"earned, never bought\"."
+  },
+  {
+   "id": "fur-grammar",
+   "page": "furnish",
+   "x": 2400,
+   "y": 360,
+   "w": 320,
+   "text": "ONE TILE GRAMMAR \u2014 the Shop's (2026-09-17 ruling: one catalog, one grammar). The capsule is the action's face: sun price = buy, grey price = not yet, Place = yours, In room = placed, gift/lock = a readout. No per-card Button, no state Tag + Button pair, so a tile is ~40pt shorter and three rows fit a screen instead of two.\n\nNew is a ribbon on the tile and a sun dot on the peg it fits \u2014 never a filter. \"New\" as a segment left the page.\n\nTradeoff: the crown's kicker \"always available\" and the wallet sentence become the sun pocket the Shop already wears."
+  }
+ ],
+ "launch": {
+  "view": "canvas",
+  "page": "pen"
+ }
+}

@@ -1011,7 +1011,7 @@ export function Account({ session }: { session: Session }) {
 												variant="ghost"
 												full
 												style={styles.slopBtn}
-												onPress={() => router.push("/(tabs)/shop?view=pen" as Href)}
+												onPress={() => router.push("/pen" as Href)}
 												accessibilityLabel="Visit the Pen"
 												accessibilityHint="Opens the Pen, where you choose your companion"
 											>
@@ -1272,6 +1272,32 @@ export function Account({ session }: { session: Session }) {
 									)}
 								</Sticker>
 							)}
+
+							{/* Redeem a Golden Ticket — the code scanner's one door.
+							    It used to ride the Shop's crown on every scroll of the
+							    shelves; redemption is a Me thing, so it sits beside the
+							    other code you can type in. (2026-09-17) */}
+							<Sticker
+								color="sun"
+								rotate={-TILT.card}
+								radius={RADII.xl}
+								pad
+								onPress={() => router.push("/scan-code" as Href)}
+								accessibilityLabel="Redeem a Golden Ticket"
+								accessibilityHint="Opens the code scanner"
+								style={styles.ticketRow}
+							>
+								<Glyph name="gift" size={ART_SIZE.glyph} />
+								<View style={styles.ticketCopy}>
+									<T role="cardTitleSm">Redeem a Golden Ticket</T>
+									<Hand tone="secondary">scan or type a code</Hand>
+								</View>
+								<Icon
+									name="chevronRight"
+									size={LABEL_MARK}
+									color={UI_COLORS.textSecondary}
+								/>
+							</Sticker>
 
 							{/* Settings — three groups, not eight flat rows: what's
 							    yours, what you've bought, and the two ways out. [E25] */}
@@ -1814,7 +1840,7 @@ function WallowWall({
 						})
 					}
 					accessibilityLabel={`Prestige gear, ${rank} earned`}
-					accessibilityHint="Opens the wardrobe filtered to prestige gear"
+					accessibilityHint="Opens your closet, filtered to prestige gear"
 				>
 					prestige gear · {rank} earned ›
 				</Button>
@@ -1940,6 +1966,15 @@ const styles = StyleSheet.create({
 	codePillValue: { flex: 1, letterSpacing: CODE_TRACKING },
 	referralShare: { marginTop: SPACE.md, marginBottom: SPACE.card },
 	referralFine: { marginTop: SPACE.xs },
+	// The Golden Ticket row: a full-width tap with the gift on its left and
+	// the chevron that says it leaves for the scanner.
+	ticketRow: {
+		minHeight: TAP_MIN,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.md,
+	},
+	ticketCopy: { flex: 1, minWidth: 0 },
 	milestoneWrap: { marginBottom: SPACE.md },
 	milestoneHeader: {
 		flexDirection: "row",

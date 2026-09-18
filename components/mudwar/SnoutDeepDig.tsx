@@ -29,8 +29,8 @@ import {
   initialState,
   reconcileReceipt,
   reduce,
-  replay,
   resolveDigFindTickles,
+  restore,
   type DigReceipt,
   type SnoutDeepEvent,
   type SnoutDeepState,
@@ -81,9 +81,18 @@ export function SnoutDeepDig({
     () => generateLayeredBoard(session.seed, session.uniqueId),
     [session.seed, session.uniqueId],
   );
+  // The rule set the SERVER stamped on this row — the dig plays (and replays)
+  // under the rules it was opened with, so a rollback never re-scores a row.
   const opts = useMemo(
-    () => ({ coop: session.coop, uncrewed: session.uncrewed ?? false }),
-    [session.coop, session.uncrewed],
+    () => ({
+      coop: session.coop,
+      uncrewed: session.uncrewed ?? false,
+      rules: session.rules ?? 1,
+      // The meter the row was STAMPED with — a tuning change mid-dig never
+      // re-judges the dig the player is standing in.
+      ...(session.wakeMeter ? { wakeMeter: session.wakeMeter } : {}),
+    }),
+    [session.coop, session.uncrewed, session.rules, session.wakeMeter],
   );
   // The find tickle table: the server's (open_rooting's dig_finds) over the
   // compiled fallback — what the tally counts with until the receipt lands.
@@ -134,10 +143,10 @@ export function SnoutDeepDig({
       }
       if (!alive) return;
       if (snapshot) {
-        let next = replay(board, opts, snapshot.actions);
-        while (next.layer < snapshot.layer && !next.ended) {
-          next = reduce(next, { type: "descend" });
-        }
+        // `restore` replays the log and forces any descent the log cannot
+        // show — the descent gate never blocks a replay of a dig that already
+        // happened (2026-09-17 §4).
+        const next = restore(board, opts, snapshot);
         lastSyncedRef.current = next.actions.length;
         setState(next);
       }

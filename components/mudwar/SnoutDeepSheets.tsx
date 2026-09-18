@@ -65,6 +65,12 @@ export const FIND_DROP_MS = ROW_STAGGER_MS / 2;
 const COUNT_TICK_MS = 40;
 const COUNT_ROLL_DIVISOR = 4;
 
+// The bag beat when the server's receipt names no roll at all: the block still
+// lands, with the bag and the plain truth (2026-09-17 §5) — a silent bag reads
+// as a defect, not as "nothing happened".
+const EMPTY_ROLL: SatchelReceiptRoll = { found: [], lost: [], count: null, cap: null };
+const EMPTY_BAG_COPY = { kicker: "the satchel", line: "nothing for the bag this dig" };
+
 const TONE_FILL: Readonly<Record<FindTone, string>> = {
   paper: WHIMSY.paper,
   sun: WHIMSY.sun,
@@ -333,7 +339,7 @@ function SatchelDrop({
     return () => clearTimeout(id);
   }, [landed, policy.reduceMotion, hurried, dropped, tiles.length]);
 
-  const copy = satchelReceiptCopy(roll);
+  const copy = tiles.length === 0 ? EMPTY_BAG_COPY : satchelReceiptCopy(roll);
   return (
     <Animated.View
       style={[styles.bagWrap, { opacity, transform: [{ scale }] }]}
@@ -422,7 +428,9 @@ function TallyBody({
   // are present. The bag is one more slot after the rows — a slot that
   // appears when the server's receipt names the roll, which may be after
   // every row has landed: the effect re-arms on `slots` and lands it then.
-  const roll = receipt.satchel ?? null;
+  // The bag beat shows whenever the server's receipt has landed: with the
+  // roll it names, or — when it names none — with the empty bag saying so.
+  const roll = receipt.satchel ?? (receipt.satchelKnown ? EMPTY_ROLL : null);
   const slots = rows.length + (roll ? 1 : 0);
   const [landed, setLanded] = useState(() => (policy.reduceMotion ? rows.length : 0));
   useEffect(() => {
@@ -529,6 +537,11 @@ function TallyBody({
           +{total}
         </T>
       </View>
+      {receipt.herdLine ? (
+        <Hand tone={receipt.gt.length > 0 ? "accent" : "secondary"} testID="dig-herd-line">
+          {receipt.herdLine}
+        </Hand>
+      ) : null}
       {roll ? (
         <SatchelDrop roll={roll} line={receipt.satchelLine ?? null} landed={bagLanded} hurried={hurried} />
       ) : null}
@@ -606,10 +619,11 @@ export function DigReceiptSheet({
 // and what he can and cannot eat. Opens from the sign, and once by itself on
 // a player's first Snout Deep dig.
 
-export const HELP_ROWS: readonly { mark: "sniff" | "rub" | "shove" | "layers" | "tie" | "wake" | "things"; title: string; sub: string; value?: string }[] = [
-  { mark: "sniff", title: "Sniff", sub: "marks a tile with how many finds touch it. moves no mud. free in topsoil; a whisper of risk below", value: "quietest" },
+export const HELP_ROWS: readonly { mark: "sniff" | "rub" | "shove" | "meter" | "layers" | "tie" | "wake" | "things"; title: string; sub: string; value?: string }[] = [
+  { mark: "sniff", title: "Sniff", sub: "marks a tile with how many finds touch it. moves no mud. five free on every board; past that he starts to notice", value: "quietest" },
   { mark: "rub", title: "Rub", sub: "clears a little on a tile and half on its neighbours. a half-cleared tile shows the shape underneath", value: "quiet" },
   { mark: "shove", title: "Shove", sub: "clears a tile and half the four around it. holding any tile shoves. fast, and he hears it", value: "loud" },
+  { mark: "meter", title: "How deep he sleeps", sub: "the bar under his face is every action you have taken on this board — each card's +N is its step along it. the darker stretch is where he might wake: short of it he sleeps through anything, at the far end he is certainly up. dig deeper and he settles again", value: "the meter" },
   { mark: "layers", title: "Three layers", sub: "topsoil · the mud · the root. deeper is richer — relics and Barn pieces live at the root — and he sleeps lighter", value: "deeper" },
   { mark: "tie", title: "Tie it off", sub: "banks the loose truffle and everything loose in the pouch, and ends the dig. Dig deeper banks the truffle only — the pouch rides down with you", value: "bank" },
   { mark: "wake", title: "If he wakes", sub: "he takes the loose truffle — it comes back gilded next Feeding — and the whole loose pouch, every layer's worth. nothing tied is ever touched", value: "his" },
@@ -620,18 +634,34 @@ function HelpMark({ mark }: { mark: (typeof HELP_ROWS)[number]["mark"] }) {
   if (mark === "sniff") return <MarkDisc tone="paper"><Snout size={MARK_ART} /></MarkDisc>;
   if (mark === "rub") return <MarkDisc tone="paper"><Trotter size={MARK_ART} /></MarkDisc>;
   if (mark === "shove") return <MarkDisc tone="sun"><Shovel size={MARK_ART} /></MarkDisc>;
+  if (mark === "meter") return <MarkDisc tone="sun"><Hungerer state="stirring" size={MARK_ART} /></MarkDisc>;
   if (mark === "layers") return <MarkDisc tone="sage"><Icon name="chevronDown" size={MARK_ART} color={WHIMSY.ink} /></MarkDisc>;
   if (mark === "tie") return <MarkDisc tone="sage"><Icon name="check" size={MARK_ART} color={WHIMSY.ink} /></MarkDisc>;
   if (mark === "wake") return <MarkDisc tone="rose"><Hungerer state="awake" size={MARK_ART} /></MarkDisc>;
   return <MarkDisc tone="lilac"><FindMark kind="boom" size={MARK_ART} /></MarkDisc>;
 }
 
-export function SnoutDeepHelpSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+/** The ledger a dig under `rules` reads: the meter's row belongs to rules 2,
+ *  where there is a meter to explain. */
+export function helpRows(rules: 1 | 2): typeof HELP_ROWS {
+  return rules === 2 ? HELP_ROWS : HELP_ROWS.filter((r) => r.mark !== "meter");
+}
+
+export function SnoutDeepHelpSheet({
+  visible,
+  onClose,
+  rules = 2,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  /** Which dig this explains — rules 1 has no meter to name. */
+  rules?: 1 | 2;
+}) {
   return (
     <LedgerSheet visible={visible} onClose={onClose} closeLabel="Back to the patch" kicker="how it works" title="Snout Deep">
       <Hand tone="secondary">sniff to know, rub to take, dig as deep as you dare — tie off before he wakes.</Hand>
       <Ledger>
-        {HELP_ROWS.map((row, i) => (
+        {helpRows(rules).map((row, i) => (
           <LedgerRow key={row.mark} first={i === 0} mark={<HelpMark mark={row.mark} />} title={row.title} sub={row.sub} value={row.value} clampSub={false} />
         ))}
       </Ledger>

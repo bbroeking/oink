@@ -5,36 +5,50 @@
 // show — no mystery empty slots, no horizontal scroll), then left-aligned
 // by-category grids of owned items. Tap an item to wear it; tap a slot's ✕ to take
 // it off. Tiles carry a rarity stripe + tinted swatch and a clear lilac "ON" state.
-// A title chip under the pig + a TitlesSection at the bottom make the Closet the
-// canonical place to equip titles (the Shop's Titles tab stays for buying).
+// A title chip under the pig opens the Titles picker — the Closet is where a
+// title is worn (titles are earned, never sold). The old Titles footer at the
+// bottom of the catalog went with it (the shop-IA pass, 2026-09-17).
 //
 // Rebuilt on the design system (2026-09-11, wave 3 · area D): every surface is a
 // `Sticker`, every capsule a `Chip`, every category crown a `SectionHeader`, and
 // every string a text role. The living pig surface keeps its frame-sync per the
 // 2026-07-16 ruling.
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+	forwardRef,
+	useCallback,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 import {
 	View,
 	Image,
 	FlatList,
 	StyleSheet,
-	useWindowDimensions
+	useWindowDimensions,
+	type LayoutChangeEvent,
+	type NativeScrollEvent,
+	type NativeSyntheticEvent,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import type { PigId } from "@/utils/pigs";
 import {
 	Button,
-	Chip,
 	EmptyState,
 	Glyph,
 	Icon,
 	IconButton,
 	PigStage,
 	SectionHeader,
+	SegmentedControl,
 	Sticker,
 	T,
+	Tag,
 } from "./ui";
-import { TitlesSection } from "./TitlesSection";
+import { TitlesPickerSheet } from "./TitlesPickerSheet";
+import { useTitles } from "@/hooks/useTitles";
 import {
 	HAT_IMAGES,
 	HAT_THUMBNAILS_128,
@@ -43,7 +57,7 @@ import {
 	PIG_CANVAS
 } from "@/constants/hats";
 import { categoryIcon } from "@/constants/emojiArt";
-import type { TitleRow } from "@/constants/title_types";
+import { cardBadge, cardTag, cardTagFace } from "@/utils/shopShelves";
 import {
 	SLOT_ORDER,
 	SLOT_LABEL,
@@ -79,16 +93,45 @@ interface Props {
 	onEquip: (id: string | null, category: string | null | undefined) => void;
 	onPreview: (item: HatRow) => void;
 	isEquipped: (id: string, category: string | null | undefined) => boolean;
-	// Titles wiring — state lives in shop.tsx (same source the Titles tab
-	// reads); this view just renders TitlesSection + the preview chip.
+	// Titles wiring — the equipped id lives in shop.tsx (the same source the
+	// profile read fills); this view owns the nameplate chip and the picker
+	// behind it.
 	userId: string | null;
 	activeTitleId: string | null;
 	onTitleChange: (next: string | null) => void;
 	// Kept in the public component contract while the Shop owns membership
 	// state; the Closet itself has no member-only controls.
 	isVip?: boolean;
+	// What a catalog tile needs to wear the SHELF's tag (the one card grammar,
+	// 2026-09-17): which items are on a shelf today, and what is in the pocket
+	// to pay with.
+	buyableIds?: ReadonlySet<string>;
+	counter?: number;
 	prestigeOnly?: boolean;
 	onClearPrestigeFilter?: () => void;
+	// The store, rendered INSIDE this list's header — between the fitting room
+	// and the closet's own body (the hero fitting room, 2026-09-17). The Shop
+	// tab has one scroller now; this is it. When present the header also grows
+	// the "Your closet" crown, and the prestige banner moves under it (it
+	// belongs to the closet section, not to the page).
+	storeContent?: ReactNode;
+	// Fires when the fitting room scrolls off the top (and back on). The store
+	// shows its folded strip on this.
+	onFoldChange?: (folded: boolean) => void;
+	// Fires when the "Your closet" crown reaches the top (and when it leaves).
+	// The store hides its folded strip on this: the strip is an overlay with no
+	// layout height, so inside the catalog it simply sat on the top row of
+	// tiles (the shop-IA pass, 2026-09-17).
+	onClosetReached?: (reached: boolean) => void;
+	// How much of the top of this list something else is sitting on — the
+	// store's folded strip. `scrollToCloset` lands the crown just under it.
+	closetScrollInset?: number;
+}
+
+/** What the store drives from outside: one scroll, one destination. */
+export interface ClosetViewHandle {
+	/** Scroll this list to the "Your closet" crown. */
+	scrollToCloset: () => void;
 }
 
 // Owned items hidden from the closet until art ships (orphans with no
@@ -202,6 +245,18 @@ const CHECK_ICON = 11;
 const BADGE_STROKE = 2.6;
 const CHECK_STROKE = 2.8;
 const SLOT_REMOVE_STROKE = 2.6;
+// The list's own top inset. Named because the imperative scroll has to add it
+// back: `onLayout` inside `ListHeaderComponent` measures from the header's
+// wrapper, which starts one content-padding down.
+const CONTENT_TOP = SPACE.sm;
+/** One frame at 60fps — the fold reads the offset, it does not animate on it. */
+const SCROLL_THROTTLE = 16;
+/**
+ * The fold's hysteresis band: it takes this much scrolling back UP to unfold
+ * again, so a one-pixel rubber-band wobble at the seam can never flicker the
+ * store's folded strip in and out.
+ */
+const FOLD_BAND = SPACE.xl;
 
 type ClosetListRow =
 	| {
@@ -209,53 +264,70 @@ type ClosetListRow =
 			key: string;
 			category: string;
 			ownedCount: number;
-			missingCount: number;
+			/** Every design in this category, owned or not — the crown reads "4 of 21". */
+			totalCount: number;
 	  }
 	| { kind: "items"; key: string; category: string; items: HatRow[] };
 
-type ClosetFilter = "all" | "owned" | "unowned" | "member" | "non-member";
+// The catalog opens on what is YOURS (the shop-IA pass, 2026-09-17): "Your
+// closet" used to crown 127 items behind five chips, so the number on the sign
+// and the contents of the section disagreed. Three segments now, Owned first —
+// the closet IS the Owned segment.
+type ClosetFilter = "owned" | "all" | "member";
 
-const CLOSET_FILTERS: { value: ClosetFilter; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "owned", label: "Owned" },
-	{ value: "unowned", label: "Unowned" },
-	{ value: "member", label: "Member" },
-	{ value: "non-member", label: "Non-member" },
-];
+const CLOSET_FILTER_LABEL: Record<ClosetFilter, string> = {
+	owned: "Owned",
+	all: "All",
+	member: "Members",
+};
+const CLOSET_FILTER_ORDER: ClosetFilter[] = ["owned", "all", "member"];
+/** What the crown's right slot says about the segment you are standing in. */
+const CLOSET_FILTER_CROWN: Record<ClosetFilter, (n: number) => string> = {
+	owned: (n) => `${n} owned`,
+	all: (n) => `${n} in all`,
+	member: (n) => `${n} for members`,
+};
 
-export function ClosetView({
-	pigId = "rosie",
-	active = true,
-	ownedItems,
-	allItems,
-	activeIds,
-	onEquip,
-	onPreview,
-	isEquipped,
-	userId,
-	activeTitleId,
-	onTitleChange,
-	isVip = false,
-	prestigeOnly = false,
-	onClearPrestigeFilter,
-}: Props) {
+export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetView(
+	{
+		pigId = "rosie",
+		active = true,
+		ownedItems,
+		allItems,
+		activeIds,
+		onEquip,
+		onPreview,
+		isEquipped,
+		userId,
+		activeTitleId,
+		onTitleChange,
+		isVip = false,
+		buyableIds,
+		counter = 0,
+		prestigeOnly = false,
+		onClearPrestigeFilter,
+		storeContent,
+		closetScrollInset = 0,
+		onFoldChange,
+		onClosetReached,
+	}: Props,
+	ref,
+) {
 	const { width: windowWidth } = useWindowDimensions();
 	const tileWidth = Math.floor((windowWidth - SPACE.lg * 2 - TILE_GAP * 2) / 3);
 	const thumbArt = Math.max(TILE_ART_MIN, tileWidth - TILE_ART_INSET);
 	const listRef = useRef<FlatList<ClosetListRow>>(null);
-	// Owned title rows, fed back by TitlesSection's load — the preview
-	// chip resolves the active title's display name from here.
-	const [ownedTitles, setOwnedTitles] = useState<TitleRow[]>([]);
+	// The one titles read: the nameplate chip resolves the worn title's name
+	// from it, and the picker it opens lists from the same rows.
+	const titles = useTitles(userId);
+	const [titlesOpen, setTitlesOpen] = useState(false);
 	// Living mood surface: track the live sprite frame so equipped items ride
 	// along with the breathing pig (same wiring as SwipeElement).
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
-	const [filter, setFilter] = useState<ClosetFilter>("all");
+	const [filter, setFilter] = useState<ClosetFilter>("owned");
 	const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
 		() => new Set(),
 	);
-	const handleTitlesLoaded = useCallback((rows: TitleRow[]) => {
-		setOwnedTitles(rows);
-	}, []);
 	const toggleCategory = useCallback((category: string) => {
 		setCollapsedCategories((current) => {
 			const next = new Set(current);
@@ -281,7 +353,7 @@ export function ClosetView({
 	// Display name on the preview chip: resolved name, "…" while the owned
 	// rows are still loading, or the pick prompt when nothing is equipped.
 	const activeTitleName = activeTitleId
-		? (ownedTitles.find((t) => t.id === activeTitleId)?.name ?? "…")
+		? (titles.owned.find((t) => t.id === activeTitleId)?.name ?? "…")
 		: null;
 
 	const ownedIds = useMemo(
@@ -309,12 +381,30 @@ export function ClosetView({
 				const owned = ownedIds.has(item.id);
 				if (prestigeOnly) return owned && !!item.prestige_exclusive;
 				if (filter === "owned") return owned;
-				if (filter === "unowned") return !owned;
 				if (filter === "member") return !!item.members_only;
-				if (filter === "non-member") return !item.members_only;
 				return true;
 			}),
 		[closetItems, filter, ownedIds, prestigeOnly],
+	);
+	// Each segment wears its own count, so the word and the number in the crown
+	// can never disagree with the tiles underneath them.
+	const filterCounts = useMemo<Record<ClosetFilter, number>>(
+		() => ({
+			owned: closetItems.filter((item) => ownedIds.has(item.id)).length,
+			all: closetItems.length,
+			member: closetItems.filter((item) => !!item.members_only).length,
+		}),
+		[closetItems, ownedIds],
+	);
+	const filterOptions = useMemo(
+		() =>
+			CLOSET_FILTER_ORDER.map((value) => ({
+				value,
+				label: `${CLOSET_FILTER_LABEL[value]} · ${filterCounts[value].toLocaleString()}`,
+				accessibilityLabel: `${CLOSET_FILTER_LABEL[value]}, ${filterCounts[value]} items`,
+				accessibilityHint: "Filters the catalog",
+			})),
+		[filterCounts],
 	);
 	const ownedClosetItems = useMemo(
 		() =>
@@ -333,6 +423,16 @@ export function ClosetView({
 		});
 		return next;
 	}, [visibleItems]);
+	const categoryTotals = useMemo(() => {
+		const next: Record<string, { owned: number; total: number }> = {};
+		for (const item of closetItems) {
+			const c = item.category ?? "hat";
+			const row = (next[c] ??= { owned: 0, total: 0 });
+			row.total += 1;
+			if (ownedIds.has(item.id)) row.owned += 1;
+		}
+		return next;
+	}, [closetItems, ownedIds]);
 	const { closetRows, categoryIndex } = useMemo(() => {
 		const rows: ClosetListRow[] = [];
 		const indices: Record<string, number> = {};
@@ -344,8 +444,10 @@ export function ClosetView({
 				kind: "section",
 				key: `section-${category}`,
 				category,
-				ownedCount: items.filter((item) => ownedIds.has(item.id)).length,
-				missingCount: items.filter((item) => !ownedIds.has(item.id)).length,
+				// Counted against the whole category, not the segment's slice: under
+				// Owned every tile is owned, and "4 owned · 0 missing" said nothing.
+				ownedCount: categoryTotals[category]?.owned ?? 0,
+				totalCount: categoryTotals[category]?.total ?? 0,
 			});
 			for (let index = 0; index < items.length; index += 3) {
 				rows.push({
@@ -357,7 +459,7 @@ export function ClosetView({
 			}
 		});
 		return { closetRows: rows, categoryIndex: indices };
-	}, [groups, ownedIds]);
+	}, [groups, categoryTotals]);
 
 	const scrollToCategory = useCallback(
 		(slotKey: EquipSlotKey) => {
@@ -381,9 +483,76 @@ export function ClosetView({
 		[categoryIndex]
 	);
 
-	const scrollToTitles = useCallback(() => {
-		listRef.current?.scrollToEnd({ animated: true });
+	/** Back to the top of the one scroll — the shelves, from the bare rack. */
+	const scrollToTop = useCallback(() => {
+		listRef.current?.scrollToOffset({ offset: 0, animated: true });
 	}, []);
+
+	// ── The one scroll's two measurements (the hero fitting room, 2026-09-17)
+	// The fitting room's height decides when the folded strip appears; the
+	// closet crown's offset is where "Closet" scrolls to. Both are measured off
+	// blocks inside `ListHeaderComponent`, so both add the content's top inset.
+	const fittingRoomH = useRef(0);
+	const closetAnchorY = useRef(0);
+	const folded = useRef(false);
+	// A scroll asked for before the crown has laid out (a deep link landing on
+	// a cold list) waits for the measurement rather than scrolling to nowhere.
+	const closetPending = useRef(false);
+	const inCloset = useRef(false);
+
+	const scrollToClosetOffset = useCallback(() => {
+		listRef.current?.scrollToOffset({
+			offset: Math.max(
+				0,
+				CONTENT_TOP + closetAnchorY.current - closetScrollInset,
+			),
+			animated: true,
+		});
+	}, [closetScrollInset]);
+	const scrollToCloset = useCallback(() => {
+		if (closetAnchorY.current > 0) scrollToClosetOffset();
+		else closetPending.current = true;
+	}, [scrollToClosetOffset]);
+	useImperativeHandle(ref, () => ({ scrollToCloset }), [scrollToCloset]);
+
+	const handleFittingRoomLayout = useCallback((e: LayoutChangeEvent) => {
+		fittingRoomH.current = e.nativeEvent.layout.height;
+	}, []);
+	const handleClosetAnchorLayout = useCallback(
+		(e: LayoutChangeEvent) => {
+			closetAnchorY.current = e.nativeEvent.layout.y;
+			if (closetPending.current && closetAnchorY.current > 0) {
+				closetPending.current = false;
+				requestAnimationFrame(scrollToClosetOffset);
+			}
+		},
+		[scrollToClosetOffset],
+	);
+	const handleScroll = useCallback(
+		(e: NativeSyntheticEvent<NativeScrollEvent>) => {
+			const y = e.nativeEvent.contentOffset.y;
+			if (onFoldChange && fittingRoomH.current > 0) {
+				const foldAt = CONTENT_TOP + fittingRoomH.current;
+				// A band, not a line: a one-pixel rubber-band wobble at the seam
+				// must not flicker the strip in and out.
+				const next = folded.current ? y > foldAt - FOLD_BAND : y >= foldAt;
+				if (next !== folded.current) {
+					folded.current = next;
+					onFoldChange(next);
+				}
+			}
+			if (onClosetReached && closetAnchorY.current > 0) {
+				// Same band, same reason — the crown's top edge is the seam.
+				const closetAt = CONTENT_TOP + closetAnchorY.current - FOLD_BAND;
+				const next = y >= closetAt;
+				if (next !== inCloset.current) {
+					inCloset.current = next;
+					onClosetReached(next);
+				}
+			}
+		},
+		[onClosetReached, onFoldChange],
+	);
 
 	// Slot chips map 1:1 to the sections below: show a chip only for a slot you
 	// own items in (so there's a section to fill it) or are currently wearing (so
@@ -469,12 +638,44 @@ export function ClosetView({
 		);
 	};
 
+	// The prestige banner belongs to the closet catalog, so in the store it
+	// rides UNDER the "Your closet" crown rather than at the top of the page.
+	const prestigeBanner = prestigeOnly ? (
+		<Sticker
+			color="sun"
+			rotate={0}
+			radius={RADII.md}
+			shadow="sm"
+			style={styles.prestigeFilter}
+		>
+			<View style={styles.prestigeFilterCopy}>
+				<Glyph name="crown" size={ART_SIZE.glyphSm} />
+				<T role="bodySm" style={styles.prestigeFilterText}>
+					prestige gear earned from your Wallows
+				</T>
+			</View>
+			<Button
+				variant="ghost"
+				size="sm"
+				onPress={() => onClearPrestigeFilter?.()}
+				disabled={!onClearPrestigeFilter}
+				accessibilityLabel="Show all Closet items"
+				accessibilityHint="Clears the prestige-only filter"
+			>
+				Show all
+			</Button>
+		</Sticker>
+	) : null;
+
 	return (
+		<>
 		<FlatList
 			ref={listRef}
 			style={styles.root}
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
+			onScroll={onFoldChange || onClosetReached ? handleScroll : undefined}
+			scrollEventThrottle={SCROLL_THROTTLE}
 			data={closetRows}
 			keyExtractor={(row) => row.key}
 			initialNumToRender={10}
@@ -488,35 +689,12 @@ export function ClosetView({
 				});
 			}}
 			ListHeaderComponent={
-				<>
-					{prestigeOnly && (
-						<Sticker
-							color="sun"
-							rotate={0}
-							radius={RADII.md}
-							shadow="sm"
-							style={styles.prestigeFilter}
-						>
-							<View style={styles.prestigeFilterCopy}>
-								<Glyph name="crown" size={ART_SIZE.glyphSm} />
-								<T role="bodySm" style={styles.prestigeFilterText}>
-									prestige gear earned from your Wallows
-								</T>
-							</View>
-							<Button
-								variant="ghost"
-								size="sm"
-								onPress={() => onClearPrestigeFilter?.()}
-								disabled={!onClearPrestigeFilter}
-								accessibilityLabel="Show all Closet items"
-								accessibilityHint="Clears the prestige-only filter"
-							>
-								Show all
-							</Button>
-						</Sticker>
-					)}
+				<View>
+					<View onLayout={handleFittingRoomLayout}>
+					{storeContent ? null : prestigeBanner}
 			{/* Paper-doll fitting room: Rosie centred, equip slots flank her,
-			    then her nameplate. */}
+			    then her nameplate. In the store this is the page's hero, and it
+			    folds to a strip once it scrolls off (2026-09-17). */}
 			<Sticker color="cream" rotate={0} radius={RADII.xl} pad style={styles.previewCard}>
 				<View style={styles.paperDoll}>
 					<View style={styles.slotCol}>{leftSlots.map((s) => renderSlot(s))}</View>
@@ -556,13 +734,13 @@ export function ClosetView({
 								rotate={0}
 								radius={RADII.md}
 								shadow="none"
-								onPress={scrollToTitles}
+								onPress={() => setTitlesOpen(true)}
 								accessibilityLabel={
 									activeTitleName
 										? `Title: ${activeTitleName}`
 										: "No title chosen"
 								}
-								accessibilityHint="Scrolls to your titles"
+								accessibilityHint="Opens your titles"
 								style={styles.titleChip}
 							>
 						<T role="kickerPillSm" tone="secondary">title</T>
@@ -577,43 +755,36 @@ export function ClosetView({
 					</Sticker>
 				)}
 			</Sticker>
+					</View>
 
-				<Sticker
-					color="cream"
-					rotate={0}
-					radius={RADII.md}
-					border={BORDER.thin}
-					borderStyle="dashed"
-					shadow="none"
-					style={styles.hint}
-				>
-					<T role="hand">
-						★ Owned items dress Rosie. Unowned items open a preview.
-					</T>
-				</Sticker>
-				{!prestigeOnly && (
-					<FlatList
-						horizontal
-						data={CLOSET_FILTERS}
-						keyExtractor={(item) => item.value}
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={styles.filterRow}
-						renderItem={({ item }) => {
-							const selected = filter === item.value;
-							return (
-								<Chip
-									label={item.label}
-									tone={selected ? "sun" : "paper"}
-									selected={selected}
-									onPress={() => setFilter(item.value)}
-									accessibilityLabel={`${item.label} items`}
-									accessibilityHint="Filters the Closet catalog"
-								/>
-							);
-						}}
-					/>
-				)}
-					</>
+					{/* The store — the doorway, the shelves, the members' shelf and
+					    the counter on their own wall — between the fitting room
+					    above and the closet catalog below (2026-09-17). */}
+					{storeContent ? (
+						<View style={styles.storeBleed}>{storeContent}</View>
+					) : null}
+
+					<View onLayout={handleClosetAnchorLayout}>
+						{storeContent ? (
+							<SectionHeader
+								kicker="the whole rack"
+								title="Everything"
+								right={CLOSET_FILTER_CROWN[filter](filterCounts[filter])}
+							/>
+						) : null}
+						{storeContent ? prestigeBanner : null}
+					{!prestigeOnly && (
+						<SegmentedControl
+							options={filterOptions}
+							value={filter}
+							onChange={setFilter}
+							label="Catalog filter"
+							layout="row"
+							style={styles.filterRow}
+						/>
+					)}
+					</View>
+				</View>
 				}
 			renderItem={({ item: row }) => {
 				if (row.kind === "section") {
@@ -626,7 +797,7 @@ export function ClosetView({
 							shadow="none"
 							onPress={() => toggleCategory(row.category)}
 							accessibilityState={{ expanded: !collapsed }}
-							accessibilityLabel={`${CAT_LABEL[row.category] ?? row.category}, ${row.ownedCount} owned, ${row.missingCount} missing`}
+							accessibilityLabel={`${CAT_LABEL[row.category] ?? row.category}, ${row.ownedCount} of ${row.totalCount} owned`}
 							accessibilityHint={
 								collapsed ? "Opens this category" : "Collapses this category"
 							}
@@ -636,7 +807,7 @@ export function ClosetView({
 								title={CAT_LABEL[row.category] ?? row.category}
 								right={
 									<>
-										<T role="kickerPillSm" tone="secondary">{row.ownedCount} owned · {row.missingCount} missing</T>
+										<T role="kickerPillSm" tone="secondary">{row.ownedCount} of {row.totalCount}</T>
 										<Icon
 											name="chevronDown"
 											size={ART_SIZE.glyphSm}
@@ -660,6 +831,17 @@ export function ClosetView({
 							const owned = ownedIds.has(item.id);
 							const src = HAT_THUMBNAILS_256[item.id] ?? HAT_IMAGES[item.id];
 							const thumbSrc = src ?? categoryIcon(item.category);
+							// The tile wears the shelf's tag and the shelf's badge — the same
+							// Wizard Hat upstairs and down (utils/shopShelves, 2026-09-17).
+							const cardState = {
+								owned,
+								active,
+								inDrop: !!buyableIds?.has(item.id),
+								canAfford: counter >= item.cost,
+								locked: !!item.members_only && !isVip,
+							};
+							const face = cardTagFace(cardTag(item, cardState));
+							const badge = cardBadge(cardState);
 								return (
 									<Sticker
 										key={item.id}
@@ -719,17 +901,19 @@ export function ClosetView({
 													<Icon name="check" size={CHECK_ICON} color={WHIMSY.paper} strokeWidth={CHECK_STROKE} />
 											</View>
 										)}
-										{!active && (
+										{/* The lock means MEMBERS and only that; an item you have
+										    simply not bought yet wears no badge at all. */}
+										{!active && badge && (
 											<View
 												style={[
 													styles.ownershipBadge,
-													owned
+													badge === "check"
 														? styles.ownershipBadgeOwned
-														: styles.ownershipBadgeMissing,
+														: styles.ownershipBadgeLocked,
 												]}
 											>
 												<Icon
-													name={owned ? "check" : "lock"}
+													name={badge}
 													size={BADGE_ICON}
 													color={WHIMSY.ink}
 													strokeWidth={BADGE_STROKE}
@@ -752,18 +936,13 @@ export function ClosetView({
 										>
 											{item.name}
 										</T>
-										<T
-											role="label"
-											tone={owned ? "primary" : "secondary"}
-											align="center"
-											style={styles.itemStatus}
-										>
-											{active
-												? "Wearing"
-												: owned
-													? "Owned"
-													: "Not owned"}
-										</T>
+										<Tag
+											tone={face.tone}
+											icon={face.icon}
+											coin={face.coin}
+											label={face.label}
+											style={styles.itemTag}
+										/>
 										</View>
 									</Sticker>
 								);
@@ -772,43 +951,60 @@ export function ClosetView({
 				);
 					}}
 			ListEmptyComponent={
-				<EmptyState
-					glyph="search"
-					title="No items match this filter"
-					sub="Try another Closet filter."
-					action={
-						filter === "all" ? undefined : (
+				filter === "owned" && !prestigeOnly ? (
+					// Nothing yours yet: the rack is bare, and the only useful door
+					// out of it is back up to what is on the shelves today.
+					<EmptyState
+						glyph="star"
+						title="Nothing on the rack yet"
+						sub="Buy something from today's drop and it hangs here."
+						action={
 							<Button
 								variant="handLink"
 								size="sm"
-								onPress={() => setFilter("all")}
-								accessibilityLabel="Show every Closet item"
-								accessibilityHint="Clears the Closet filter"
+								onPress={scrollToTop}
+								accessibilityLabel="Today's drop"
+								accessibilityHint="Scrolls back up to the shelves"
 							>
-								Show every item ›
+								Today&apos;s drop ›
 							</Button>
-						)
-					}
-				/>
-			}
-			ListFooterComponent={
-				<>
-					{userId != null && (
-						<View style={styles.section}>
-					<TitlesSection
-						userId={userId}
-						activeTitleId={activeTitleId}
-						onChange={onTitleChange}
-						onTitlesLoaded={handleTitlesLoaded}
+						}
 					/>
-				</View>
-			)}
-			<View style={styles.tabSpacer} />
-				</>
+				) : (
+					<EmptyState
+						glyph="search"
+						title="No items match this filter"
+						sub="Try another part of the catalog."
+						action={
+							filter === "all" || prestigeOnly ? undefined : (
+								<Button
+									variant="handLink"
+									size="sm"
+									onPress={() => setFilter("all")}
+									accessibilityLabel="Show every item"
+									accessibilityHint="Clears the catalog filter"
+								>
+									Show every item ›
+								</Button>
+							)
+						}
+					/>
+				)
 			}
+			ListFooterComponent={<View style={styles.tabSpacer} />}
 		/>
+		{/* The nameplate's picker — one sheet over the page, instead of the
+		    ~3,000pt jump to a Titles footer (2026-09-17). */}
+		<TitlesPickerSheet
+			open={titlesOpen}
+			onClose={() => setTitlesOpen(false)}
+			titles={titles}
+			activeTitleId={activeTitleId}
+			onChange={onTitleChange}
+		/>
+		</>
 	);
-}
+});
 
 const styles = StyleSheet.create({
 	prestigeFilter: {
@@ -831,7 +1027,15 @@ const styles = StyleSheet.create({
 	},
 	prestigeFilterText: { flex: 1 },
 	root: { flex: 1 },
-	content: { paddingHorizontal: SPACE.lg, paddingTop: SPACE.sm },
+	content: { paddingHorizontal: SPACE.lg, paddingTop: CONTENT_TOP },
+	// The store's wall runs edge to edge: it bleeds back out through the list's
+	// own gutter so the plank grain reaches both screen edges, while the fitting
+	// room above it and the closet below it keep the page's cream margins.
+	storeBleed: {
+		marginHorizontal: -SPACE.lg,
+		marginTop: SPACE.md,
+		marginBottom: SPACE.lg,
+	},
 	previewCard: {
 		alignItems: "center",
 		gap: SPACE.sm,
@@ -935,17 +1139,9 @@ const styles = StyleSheet.create({
 	titleChipName: {
 		marginTop: 1
 	},
-	hint: {
-		paddingVertical: SPACE.sm,
-		paddingHorizontal: SPACE.card,
-		marginVertical: SPACE.md,
-		borderColor: UI_COLORS.uiMuted,
-	},
 	filterRow: {
-		gap: SPACE.sm,
-		paddingBottom: SPACE.md,
+		marginBottom: SPACE.md,
 	},
-	section: { marginBottom: SPACE.lg },
 	sectionHead: {
 		minHeight: TAP_MIN,
 		justifyContent: "center",
@@ -1008,7 +1204,10 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream2,
 	},
 	itemFootActive: { backgroundColor: WHIMSY.lilac },
-	itemStatus: {
+	// The foot's tag spans the tile, so a price, "Wear" and "Wearing" all share
+	// one footprint and the grid never reflows between states.
+	itemTag: {
+		alignSelf: "stretch",
 		marginTop: SPACE.xxs,
 	},
 	ownershipBadge: {
@@ -1027,8 +1226,9 @@ const styles = StyleSheet.create({
 	ownershipBadgeOwned: {
 		backgroundColor: WHIMSY.sage,
 	},
-	ownershipBadgeMissing: {
-		backgroundColor: WHIMSY.cream2,
+	// The gold lock: members only, and you are not a member yet.
+	ownershipBadgeLocked: {
+		backgroundColor: WHIMSY.slopGold,
 	},
 	check: {
 		position: "absolute",

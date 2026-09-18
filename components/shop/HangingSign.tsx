@@ -31,6 +31,14 @@ const ACTIVE_TILT = TILT.reveal;
 /** The count badge on a sign's corner ("Closet" with 12 owned). */
 const BADGE_MIN_W = 22;
 const BADGE_H = 22;
+/**
+ * A sign's own width. Fixed, not `flex: 1`: the doorway row is a chalkboard
+ * that shrinks beside signs that do not, so the signs state their footprint and
+ * the board takes what is left. Three of these plus their gaps is the rail's
+ * whole width. (2026-09-17 — the row used to overlap the card above it because
+ * nothing in it could give.)
+ */
+export const SIGN_W = 60;
 
 export function HangingSign({
 	label,
@@ -39,6 +47,7 @@ export function HangingSign({
 	glyph,
 	art,
 	active = false,
+	labelHidden = false,
 	onPress,
 	accessibilityLabel,
 	accessibilityHint,
@@ -52,6 +61,11 @@ export function HangingSign({
 	/** Bespoke art in the icon slot (the barn door), sized by the caller. */
 	art?: ReactNode;
 	active?: boolean;
+	/**
+	 * Drop the word and keep the glyph — the narrow-phone tier for the signs
+	 * that are only doors (Pen, Furnish). The screen reader keeps the name.
+	 */
+	labelHidden?: boolean;
 	onPress: () => void;
 	accessibilityLabel?: string;
 	accessibilityHint?: string;
@@ -76,7 +90,8 @@ export function HangingSign({
 				{art ? (
 					art
 				) : glyph ? (
-					<Glyph name={glyph} size={ART_SIZE.glyphSm} />
+					// A painted sign glyph sits at the fan-mark size, not the row size.
+					<Glyph name={glyph} size={ART_SIZE.glyphMd} />
 				) : icon ? (
 					<Icon
 						name={icon}
@@ -84,9 +99,11 @@ export function HangingSign({
 						color={UI_COLORS.textPrimary}
 					/>
 				) : null}
-				<T role="label" numberOfLines={1}>
-					{label}
-				</T>
+				{labelHidden ? null : (
+					<T role="label" numberOfLines={1}>
+						{label}
+					</T>
+				)}
 				{count !== undefined && count > 0 ? (
 					<View style={styles.badge} pointerEvents="none">
 						<T role="numeral" style={styles.badgeText}>
@@ -101,7 +118,7 @@ export function HangingSign({
 
 const styles = StyleSheet.create({
 	hanger: {
-		flex: 1,
+		width: SIGN_W,
 		minWidth: 0,
 		alignItems: "stretch",
 	},

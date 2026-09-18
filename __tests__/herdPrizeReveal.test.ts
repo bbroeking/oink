@@ -45,6 +45,7 @@ describe("herdPrizeLine", () => {
 describe("the reveal is wired", () => {
 	const season = read("app/(tabs)/season.tsx");
 	const shop = read("app/(tabs)/shop.tsx");
+	const barn = read("components/Barn.tsx");
 	const trough = read("components/TroughSection.tsx");
 	const sheet = read("components/season1/DrawRevealSheet.tsx");
 	const hook = read("hooks/useHerdPrize.ts");
@@ -60,11 +61,12 @@ describe("the reveal is wired", () => {
 		expect(hook).toContain('const SEEN_KEY = "herd_prize_seen";');
 		expect(hook).toContain("seen && last && uid && last.winnerUserId === uid && !seen.has(last.cycleKey)");
 	});
-	it("the Trough reports the quarter's prize and the Shop folds the trough before the reveal", () => {
+	it("the Trough reports the quarter's prize and the Barn folds the trough before the reveal (the fan is the Trough's only door, 2026-09-17)", () => {
 		expect(trough).toContain("if (prize) onPrize?.(prize);");
-		expect(shop).toContain("setTroughOpen(false);");
-		expect(shop).toContain("prizeHandoff.current = setTimeout(() => setPrizeOpen(true), POPUP_HANDOFF_GAP_MS);");
-		expect(shop).toContain('kicker="the trough · past your quarter"');
+		expect(barn).toContain("setTroughOpen(false);");
+		expect(barn).toContain("prizeHandoff.current = setTimeout(() => setTroughPrizeOpen(true), POPUP_HANDOFF_GAP_MS);");
+		expect(barn).toContain('kicker="the trough · past your quarter"');
+		expect(shop).not.toContain("TroughSheet");
 	});
 	it("the sheet shows, never claims — the Barn door hands the item over after the modal's gap", () => {
 		expect(sheet).not.toMatch(/claim_tier_reward|onClaim/);

@@ -83,7 +83,10 @@ describe("habitat pig presentation bridge", () => {
       path.join(process.cwd(), "components/Barn.tsx"),
       "utf8",
     );
-    expect(source).toContain("const interiorPigContent = renderPigContent(true)");
+    // (Since the errand, 2026-09-18, the empty yard stands in for the pig
+    // while the greeter is out — the Interior copy falls through to the same
+    // background-free render otherwise.)
+    expect(source).toContain("const interiorPigContent = awayContent ?? renderPigContent(true)");
     expect(source).toContain("equippedBackground={forInterior ? null : stats.activeBackground}");
     expect(source).toContain("{pigPresentedInHabitat ? null : pigContent}");
     expect(source).not.toContain("bridgedPigHidden");

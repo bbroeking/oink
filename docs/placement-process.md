@@ -18,7 +18,8 @@ defaults for members items). `resolveSlot` (in `components/ui/PigStage.tsx`) use
 the RelSpec whenever one exists; an item's pivot point lands on its pig anchor,
 sized to `widthFrac × 300`. An item without a RelSpec — an aura until it is
 deliberately tuned — renders from its category preset; see "Items without a
-RelSpec" below.
+RelSpec" below. A RelSpec may also carry a **per-pose override** (`perAnim`) —
+see "Per-pose overrides" below.
 
 ---
 
@@ -45,10 +46,87 @@ RelSpec" below.
      300px canvas).
    - **Render behind** — for items that sit behind the pig (on by default for
      auras).
-   The on-pig preview updates live and matches the app exactly.
+   The on-pig preview updates live and matches the app exactly — same anchors,
+   same side sprite on the turn, same eye shift, same head tilt (see "What the
+   preview mirrors").
 
 4. **It autosaves** to `constants/hat_rel.generated.ts` (full rebuild, sorted).
-   Metro hot-reloads it. Use **Next untuned →** to walk the backlog.
+   Metro hot-reloads it. Use **Next untuned →** to walk the backlog, or
+   **Next in list →** to walk the filtered list you're looking at.
+
+### The pose bar
+
+Above the pig: **Pose** (every family in `PigAnimationKey` — `idle`, `walk`,
+`jump`, `happy`, `sad`, `tired`, `surprise`, `wave`, `face`, `face_sit`),
+**Pig** (rosie, copper, pepper, bandit, pickles, biscuit — *preview only*;
+anchors are shared by every pig), the frame buttons for that pose (idle has
+**12**), ▶ to play, and the per-pose render **Scale**.
+
+Anchor arrays are 4 frames long even where the sprite has more; the app clamps
+a frame index past the array to the last frame, and so does the studio. Frame 5
+of idle therefore shows frame 4's anchors — that is what ships.
+
+### What the preview mirrors
+
+One function (`layoutItem`) draws the stage and the Sheet, and it is a direct
+port of `resolveSlot`:
+
+- **Side sprites.** On `face` / `face_sit` an item with
+  `assets/images/hats/side/<id>.png` is drawn with that sprite and its own
+  aspect. A small tag under the stage says *front sprite* / *side sprite*.
+- **Eye shift.** An item anchored exactly on `eyes` sits back `TURNED_EYE_SHIFT`
+  (16 canvas px) on the turn so its bridge lands over the nose.
+- **Head tilt + apparent scale.** `resolveWearablePose`: head/face anchors take
+  the eye-line angle delta as a rotation and the eye-distance ratio as a scale
+  (clamped 0.72–1.18); on the turn a non-eye anchor keeps scale 1 — the head
+  turned, it didn't shrink.
+
+## Per-pose overrides
+
+One RelSpec normally serves every pose. Two cases break that:
+
+- a **side sprite** is a different silhouette, so it often wants its own pivot
+  and width on the turn;
+- a **one-eyed item** (monocle, lorgnette, signet crest) lands on the far eye
+  when the head turns and needs the near one.
+
+For those, the studio writes `perAnim` — a complete copy of the spec, scoped to
+one animation family, merged shallowly over the base at render time. **The base
+spec stays the front truth**; removing the override always returns the item to
+it.
+
+In the panel, under the sliders:
+
+1. On the pose you want to fix, press **Override for `<pose>`**. The header
+   turns gold and reads *Editing override: `<pose>`* — from here every edit
+   (dragging on the pig, the pivot marker, the sliders, an anchor dot, the
+   behind toggle) writes to that pose only.
+2. Tune it.
+3. Press **Copy to…** with `face_sit` selected. The seated turn is the same
+   camera as the standing one, so the standing fix is nearly always the seated
+   fix too. (Nothing copies automatically — poses stay independent.)
+4. **Remove override** drops it.
+
+Poses that carry an override show as gold chips under the item name; click one
+to jump the scrubber there. The list badges an item `±N poses`, and the filter
+chip **Overridden** collects them all (**Side art** collects items with a side
+sprite).
+
+The render-only variants resolve through `pigAnchorAnimation`: `sit` reads
+`happy`'s override, `bounce` reads `jump`'s. There is no `sit` or `bounce` row
+to write.
+
+## The Sheet tab
+
+A contact sheet of every item on the pig at one pose/frame/pig, drawn with the
+same `layoutItem` — the surface for reviewing a whole queue after a batch of
+side sprites lands. Same search and filter chips as the Items rail; click a cell
+to jump to that item in Items mode at the same pose, frame and pig.
+
+Cells draw the 300 card at 82% with the headroom **above** and no clipping: a
+hat on the turn rides above the canvas top, and the first pass of the
+2026-09-15 angle audit reported every hat as "squashed" purely because its cells
+clipped to the canvas box. A review surface must show the whole stage.
 
 ## Edit the pig's anatomy anchors
 
@@ -56,7 +134,64 @@ Switch to **Pig anatomy** mode. Drag the 11 body anchors for the selected
 animation + frame (onion-skin toggle to check across frames). Autosaves
 `PIG_FRAME_ANCHORS` in `constants/hats.ts` **and** keeps `REST_ANCHORS` in sync
 with `idle[0]` — no manual copy step. `eyes`/`feet` are computed midpoints and
-aren't directly editable.
+aren't directly editable. The **Pig** picker here is preview only, same as in
+Items mode — the anchors are shared by every pig.
+
+Frame buttons cover the **sprite** count, so idle offers 12 while its anchor
+array holds 4. A frame past the array is dimmed and the panel says *"no anchors
+of its own — clamped from frame N"*; it draws the clamped anchors, exactly like
+the app. Dragging a dot there materialises the array up to that index, filling
+the gap with copies of the last authored frame — nothing moves except what you
+drag. Match-prev, Freeze, Scale ±, Pin and ⇉ all then operate over the new
+length.
+
+## Auto rig
+
+`scripts/auto_rig.py` proposes a whole anchor rig from the sprites and writes it
+to `docs/rig-candidate.json` (every `PigAnimationKey`, one entry per **sprite**
+frame — idle has 12 — plus a per-anchor confidence of `detected` / `derived` /
+`prior`):
+
+```bash
+.venv-tools/bin/python scripts/auto_rig.py
+```
+
+The studio reads that file on every request and **never applies it**. Nothing
+changes until you accept a scope by hand.
+
+**Compare.** In **Pig anatomy**, press **Auto rig: off** to flip it to *show*.
+The candidate draws as orange dots with a white ring beside the green live
+anchors, with a thin orange line from each green dot to its orange partner so
+the delta reads at a glance. The orange dots are not draggable. A caption under
+the toolbar names the run: *auto rig from `<source>` · `<generatedAt>`*.
+
+**Accept, smallest scope first.**
+
+| Control | Scope |
+|---|---|
+| **← auto** (per anchor row) | that one anchor, this frame |
+| **Accept auto: this frame** | all 11 anchors, this frame |
+| **Accept auto: this animation** | every frame of this animation |
+| **Accept auto: all animations** | the whole rig |
+
+Each accept materialises the anchor array the same way dragging does (a clamped
+frame gets a row of its own first; an animation grows to the candidate's frame
+count) and autosaves through the usual `PIG_FRAME_ANCHORS` write. There is no
+undo, so **all animations** is a two-step: the button turns into *Really replace
+every animation?* and only the second click does it; clicking anywhere else
+resets it.
+
+Each anchor row also shows the candidate's value, the delta in px (Δx, Δy) and
+its confidence tag, so a `prior` anchor that moved 40px is easy to spot before
+accepting it.
+
+**Preview it on the items first.** Items mode's pose bar and the Sheet toolbar
+gain a **Rig: current | auto** segmented control (one shared selection — both
+tabs agree). On *auto*, the whole preview — `layoutItem`, the head tilt, the
+rest eye-line, the anchor dots — resolves from the candidate's frames instead of
+the live rig, including idle frames 5–12, which the candidate authors for real
+where the live rig clamps. This writes nothing; it answers "would the items
+still sit right if I accepted this?" before you do.
 
 ---
 
@@ -107,6 +242,9 @@ category defaults the studio seeds from.
 | `tools/placement_studio.py` / `.html` | The placement tool (items + pig anatomy). |
 | `assets/images/hats/<id>.png` | The artwork. |
 | `constants/hats.ts` | `HAT_IMAGES`, `REST_ANCHORS`, `PIG_FRAME_ANCHORS`, category defaults, `resolveSlot` data. |
-| `constants/hat_rel.generated.ts` | Hand-tuned RelSpecs (studio writes these). |
+| `constants/hat_rel.generated.ts` | Hand-tuned RelSpecs, incl. `perAnim` overrides (studio writes these). |
+| `constants/hat_side.generated.ts` | Side sprites for the turned families (`tools/gen_side_items.py` writes it). |
 | `constants/membersRel.generated.ts` | Members category-default RelSpecs. |
 | `scripts/pig_preview.py` | Bakes on-pig preview PNGs for the review gallery. |
+| `scripts/auto_rig.py` | Proposes an anchor rig; writes `docs/rig-candidate.json`. |
+| `docs/rig-candidate.json` | The auto-rig candidate the studio compares against (read-only to the studio). |

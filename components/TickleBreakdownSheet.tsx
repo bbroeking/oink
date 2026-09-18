@@ -69,6 +69,8 @@ const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
 	pass_tiers: require("../assets/images/glyphs/receipt/pass.png"),
 	trades: RECEIPT_EXCHANGE,
 	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
+	// The trader is a third exchange at a third stake; the label names him.
+	trader: RECEIPT_EXCHANGE,
 };
 
 // The art in the receipt's icon column.

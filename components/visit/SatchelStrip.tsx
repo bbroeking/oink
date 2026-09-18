@@ -22,7 +22,7 @@
 import { StyleSheet, View } from "react-native";
 import { satchelFind, type SatchelFindId } from "@/constants/satchel";
 import { ART_SIZE, BORDER, OPACITY, PAGE_PAD, RADII, SPACE, TAP_MIN } from "@/constants/theme";
-import { matchingItems, wishOpenForMe, type FriendWish, type SatchelItem } from "@/utils/satchel";
+import { matchingItems, satchelStanding, wishOpenForMe, type FriendWish, type SatchelItem } from "@/utils/satchel";
 import { Glyph, Sticker, T } from "../ui";
 import { FindArt } from "../satchel/FindArt";
 import { VISIT_TYPE_CAP } from "./chrome";
@@ -70,7 +70,7 @@ export function SatchelStrip({
 	} else if (wishName) {
 		line = `nothing here is ${wishName}`;
 	} else {
-		line = `${items.length} of ${cap} in your Satchel`;
+		line = `${satchelStanding(items.length, cap) ?? `${items.length} finds`} in your Satchel`;
 	}
 
 	return (

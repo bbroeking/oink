@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap">
+<style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; text-decoration: none; } a:hover { color: #2a1f15; }
+    img { display: block; } svg { display: block; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    .phone { position: relative; overflow: hidden; background: #fbeee2; display: flex; flex-direction: column; box-sizing: border-box; }
+    .status { height: 48px; flex: none; }
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 20px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; white-space: nowrap; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; white-space: nowrap; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .bodySm { font-weight: 700; font-size: 13px; line-height: 18px; }
+    .mute { color: #605449; }
+    .crown { display: flex; align-items: flex-end; justify-content: space-between; padding: 6px 18px 0; flex: none; }
+    .crown .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; margin-top: 4px; }
+    .pocket { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 10px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; box-shadow: none; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; }
+    .tag img { width: 13px; height: 13px; }
+    .tag.hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; letter-spacing: 0; }
+    .chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 4px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; box-sizing: border-box; }
+    .chip.on { border-width: 2px; background: #ffd87a; }
+    .chip img { width: 16px; height: 16px; }
+    .seg { display: flex; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; box-shadow: 3px 3px 0 #2a1f15; padding: 3px; gap: 2px; }
+    .seg button { flex: 1 1 0; min-height: 34px; border: 0; border-radius: 999px; background: transparent; font-weight: 800; font-size: 13px; padding: 0 8px; white-space: nowrap; }
+    .seg button.on { background: #ffd87a; box-shadow: inset 0 0 0 2px #2a1f15; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #fffaf0; box-shadow: 4px 4px 0 #2a1f15; font-weight: 800; font-size: 15px; color: #2a1f15; box-sizing: border-box; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.ghost { background: transparent; box-shadow: none; border-color: transparent; }
+    .ticket { display: flex; align-items: stretch; border: 2px solid #2a1f15; border-radius: 14px; background: linear-gradient(180deg, #F8D068, #F5C44A); box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; color: #5A3F00; min-height: 44px; }
+    .ticket .stub { display: flex; align-items: center; gap: 4px; padding: 0 10px; border-right: 2px dashed #2a1f15; background: #fffaf0; color: #2a1f15; }
+    .ticket .stub img { width: 16px; height: 16px; }
+    .ticket .face { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; padding: 0 12px; }
+    .chalk { background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; color: #fff3e2; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; transform: rotate(-1.5deg); }
+    .chalk .k { color: #ffd87a; }
+    .plank { height: 14px; background: linear-gradient(180deg, #8d5a2c, #74441e); border: 2px solid #2a1f15; border-radius: 3px; box-shadow: 2px 3px 0 #2a1f15; box-sizing: border-box; }
+    .coaster { position: relative; width: 66px; height: 66px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; flex: none; }
+    .coaster img.art { width: 50px; height: 50px; object-fit: contain; }
+    .coaster .rdot { position: absolute; left: -2px; bottom: 4px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; box-shadow: 1px 1px 0 #2a1f15; }
+    .coaster .badge { position: absolute; right: -4px; top: -4px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .coaster .badge img { width: 12px; height: 12px; }
+    .coaster.sm { width: 48px; height: 48px; } .coaster.sm img.art { width: 36px; height: 36px; } .coaster.sm .rdot { width: 11px; height: 11px; bottom: 2px; }
+    .slot { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 104px; }
+    .slot .tagWrap { margin-top: -8px; }
+    .peg { position: relative; width: 30px; height: 30px; border-radius: 8px; border: 2px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; flex: none; }
+    .peg img { width: 22px; height: 22px; object-fit: contain; }
+    .peg.empty { border-style: dashed; box-shadow: none; background: transparent; }
+    .peg.on { background: #ffc8a8; }
+    .peg .x { position: absolute; right: -7px; top: -7px; width: 14px; height: 14px; border-radius: 999px; background: #fffaf0; border: 1.5px solid #2a1f15; font-size: 9px; line-height: 11px; text-align: center; font-weight: 800; }
+    .pegLbl { font-weight: 800; font-size: 8px; line-height: 10px; letter-spacing: 1px; text-transform: uppercase; color: #605449; text-align: center; margin-top: 3px; }
+    .slotTile { position: relative; width: 44px; height: 44px; border-radius: 10px; border: 2px solid #2a1f15; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; }
+    .slotTile img { width: 30px; height: 30px; object-fit: contain; }
+    .slotTile.empty { border-style: dashed; box-shadow: none; }
+    .slotTile .x { position: absolute; right: -8px; top: -8px; width: 18px; height: 18px; border-radius: 999px; background: #fffaf0; border: 1.5px solid #2a1f15; font-size: 11px; line-height: 15px; text-align: center; font-weight: 800; }
+    .slotLbl { font-weight: 800; font-size: 8px; line-height: 10px; letter-spacing: 1px; text-transform: uppercase; color: #605449; text-align: center; margin-top: 3px; }
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; box-sizing: border-box; }
+    .sticker.flat { box-shadow: 2px 2px 0 #2a1f15; }
+    .door { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; min-height: 50px; width: 60px; padding: 6px 4px; }
+    .door img { width: 22px; height: 22px; }
+    .door .lbl { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: .3px; white-space: nowrap; }
+    .hang { position: relative; padding-top: 14px; }
+    .hang:before { content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 14px; background: #2a1f15; transform: translateX(-50%); }
+    .tile { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 3px 3px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box; }
+    .tile .thumb { position: relative; height: 84px; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; }
+    .tile .thumb img.art { width: 58px; height: 58px; object-fit: contain; }
+    .tile .thumb .rdot { position: absolute; left: 6px; top: 6px; width: 12px; height: 12px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; }
+    .tile .thumb .badge { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .tile .thumb .badge img { width: 11px; height: 11px; }
+    .tile .foot { display: flex; flex-direction: column; gap: 5px; padding: 6px 8px 8px; }
+    .tile.wearing { background: #d6c8f0; }
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 2px solid #2a1f15; z-index: 20; }
+    .tabbar:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: #2a1f15; opacity: .35; }
+    .sign { position: absolute; top: 22px; width: 64px; height: 56px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 11px; box-sizing: border-box; }
+    .sign:before { content: ""; position: absolute; top: -20px; left: 50%; width: 2px; height: 20px; background: #2a1f15; transform: translateX(-50%); }
+    .sign img { width: 24px; height: 24px; }
+    .sign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    .tape { position: absolute; height: 18px; padding: 0 10px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .96; z-index: 4; font-family: "Patrick Hand", cursive; font-size: 12px; line-height: 15px; color: #2a1f15; white-space: nowrap; }
+    .window { border-radius: 12px; border: 2px solid #2a1f15; overflow: hidden; background: #c8e3f0; flex: none; }
+    .window img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar { border-radius: 999px; border: 2px solid #2a1f15; background: #fffaf0; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; flex: none; box-sizing: border-box; }
+    .avatar img { width: 92%; height: 92%; object-fit: contain; }
+    .grabber { width: 40px; height: 4px; border-radius: 2px; background: #8c7e71; align-self: center; }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .col { display: flex; flex-direction: column; }
+    .band { background: #FFE7AD; border-radius: 12px; padding: 12px 8px 8px; position: relative; }
+    .band .bsign { position: absolute; top: -12px; right: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; background: #F5C44A; border: 2px solid #2a1f15; border-radius: 999px; box-shadow: 2px 2px 0 #2a1f15; transform: rotate(-2deg); font-weight: 800; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+    .band .bsign img { width: 12px; height: 12px; }
+    .rail { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; }
+    .rail.on { background: #ffd87a; border: 2px solid #2a1f15; box-shadow: 3px 3px 0 #2a1f15; }
+    .rail .name { flex: 1; min-width: 0; }
+    .mirror { position: relative; border: 4px solid #8d5a2c; outline: 2px solid #2a1f15; border-radius: 70px 70px 14px 14px; overflow: hidden; background: #c8e3f0; box-shadow: 4px 4px 0 #2a1f15; }
+    .mirror img { width: 100%; height: 100%; object-fit: cover; }
+    .divider { height: 2px; background: #2a1f15; opacity: .18; border-radius: 1px; }
+</style>
+</helmet>
+<div class="phone" style="width: 390px; height: 844px;">
+<div class="status"></div>
+<div class="crown"><div class="col"><div class="kickerPill">★ the shop</div><div class="pageTitle">Shop</div><div class="rule"></div></div><div class="pocket"><img src="/_blob/f0b2c39654ce874cb0ba22e5807b0fc3" alt=""><span class="numeral">349</span></div></div><div class="sticker flat" style="margin:10px 18px 0;padding:8px 10px;display:flex;flex-direction:column;gap:8px;position:relative;z-index:5;background:#fffaf0">
+  <div class="row" style="gap:10px">
+    <a href="A_FittingRoom.dc.html" class="window" style="width:56px;height:56px" aria-label="Open the fitting room"><img src="/_blob/eb85f2649fde22f604572cfe7e91fff1" alt="Rosie"></a>
+    <div class="col" style="flex:1;min-width:0;gap:2px"><div class="kicker">wearing 8 of 8</div><div class="hand mute" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Mud Baron Rosie</div></div>
+    <a href="A_FittingRoom.dc.html" class="chip" style="min-height:30px;padding:2px 10px"><img src="/_blob/28f3952312f5aa0bd95a50b936aa4a82" alt="">Fitting room</a>
+  </div>
+  <div style="display:flex;gap:4px;justify-content:space-between"><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="HAT slot"><img src="/_blob/240020be47dfb7ad6b3a43be96bc0895" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="BOW slot"><img src="/_blob/aa6831b19d4deb68e7448676596076cf" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="FACE slot"><img src="/_blob/bf01b45462018bcd5963b8807d666258" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="NECK slot"><img src="/_blob/08d307e77192a237bc0bd9f75adb31cb" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="HELD slot"><img src="/_blob/8238d7466af34b96a8f929be79cb5b9d" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="TICKLES slot"><img src="/_blob/29aa88c84423617595f79a0681aef6b9" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="AURA slot"><img src="/_blob/67a862fc016a7357cbab96d3ce6e2831" alt=""><span class="x">×</span></a></div><div style="display:flex;flex-direction:column;align-items:center"><a href="#" class="peg" style="width:30px;height:30px" aria-label="BG slot"><img src="/_blob/390877264f2bb86ba76f0f199274faae" alt=""><span class="x">×</span></a></div></div>
+</div><div style="position:relative;flex:1;min-height:0;margin-top:12px;padding:14px 18px 90px;display:flex;flex-direction:column;gap:12px;overflow:hidden"><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px"><div class="col"><div class="kicker">the whole rack</div><div class="sectionTitle">Everything</div><div style="height:2px;width:56px;background:#2a1f15;opacity:.3;border-radius:1px;margin-top:4px"></div></div><div class="kickerPill" style="padding-bottom:6px">13 owned</div></div><div class="seg"><button class="on">Owned · 13</button><button>All · 127</button><button>Members</button></div><div style="display:flex;gap:6px;overflow:hidden"><a href="#" class="chip" style="min-height:30px;padding:2px 10px;background:#ffc8a8">Hats</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">Bows</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">Face</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">Neck</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">Held</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">Aura</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">Tickles</a><a href="#" class="chip" style="min-height:30px;padding:2px 10px">BG</a></div><div style="display:flex;align-items:baseline;justify-content:space-between"><div class="sectionTitle">Hats</div><div class="kickerPill">4 of 21 ⌄</div></div><div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px"><a href="#" class="tile wearing" style="width:104px" aria-label="Cowboy Hat"><div class="thumb" style="background:#E8F5E0"><span class="rdot" style="background:#7ba868"></span><span class="badge" style="background:#d6c8f0"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt=""></span><img class="art" src="/_blob/240020be47dfb7ad6b3a43be96bc0895" alt=""></div><div class="foot"><div class="cardTitleSm">Cowboy Hat</div><span class="tag sage"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt="">Wearing</span></div></a><a href="#" class="tile" style="width:104px" aria-label="Party Hat"><div class="thumb" style="background:#FAF7F3"><span class="rdot" style="background:#cdbfae"></span><span class="badge" style="background:#c9dec1"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt=""></span><img class="art" src="/_blob/02253f397abfc98ed86b2a010e7c0c07" alt=""></div><div class="foot"><div class="cardTitleSm">Party Hat</div><span class="tag sun">Wear</span></div></a><a href="#" class="tile" style="width:104px" aria-label="Beanie"><div class="thumb" style="background:#FAF7F3"><span class="rdot" style="background:#cdbfae"></span><span class="badge" style="background:#c9dec1"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt=""></span><img class="art" src="/_blob/e4e16e8f0bf2c6948f161e9aa527ea48" alt=""></div><div class="foot"><div class="cardTitleSm">Beanie</div><span class="tag sun">Wear</span></div></a><a href="#" class="tile" style="width:104px" aria-label="Leaf Crown"><div class="thumb" style="background:#FAF7F3"><span class="rdot" style="background:#cdbfae"></span><span class="badge" style="background:#c9dec1"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt=""></span><img class="art" src="/_blob/c5a199f0b22c0398e93c7abf352aea97" alt=""></div><div class="foot"><div class="cardTitleSm">Leaf Crown</div><span class="tag sun">Wear</span></div></a></div><div style="display:flex;align-items:baseline;justify-content:space-between"><div class="sectionTitle">Bows</div><div class="kickerPill">1 of 20 ⌄</div></div><div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px"><a href="#" class="tile wearing" style="width:104px" aria-label="Acorn Bow"><div class="thumb" style="background:#FAF7F3"><span class="rdot" style="background:#cdbfae"></span><span class="badge" style="background:#d6c8f0"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt=""></span><img class="art" src="/_blob/aa6831b19d4deb68e7448676596076cf" alt=""></div><div class="foot"><div class="cardTitleSm">Acorn Bow</div><span class="tag sage"><img src="/_blob/94c9f4aa24dfaf8a8b130fa64bd8529f" alt="">Wearing</span></div></a></div></div><div class="tabbar"><div class="sign" style="left: 18px;"><img src="/_blob/5ce49510ab96f1c61c95b18fb288a8bc" alt=""><span>Barn</span></div><div class="sign" style="left: 92px;"><img src="/_blob/82ea7cf4e968cf759d211d5159999747" alt=""><span>Friends</span></div><div class="sign" style="left: 166px;"><img src="/_blob/c65b13877a6ffab163a6b344845b625d" alt=""><span>Season</span></div><div class="sign on" style="left: 240px;"><img src="/_blob/61a624353c5e789830f2b3ec94aa7d13" alt=""><span>Shop</span></div><div class="sign" style="left: 314px;"><img src="/_blob/510751759403d649f69e29bf94655575" alt=""><span>Me</span></div></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

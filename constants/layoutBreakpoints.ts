@@ -31,6 +31,14 @@ export const PHONE_NARROW_MAX = 390;
 /** The wide tier starts here (Plus / Pro Max). Kept for callers that want it. */
 export const PHONE_WIDE_MIN = 430;
 
+/**
+ * Below this the storefront's doorway row drops the words off the two signs
+ * that are only doors — Pen and Furnish keep their painted glyph, which is
+ * what the eye reads anyway, and their screen-reader name. Closet keeps its
+ * word because it carries a count. (2026-09-17, the hero fitting room.)
+ */
+export const SHOP_SIGN_LABELS_MIN = 360;
+
 export type RowDensity = "narrow" | "regular";
 
 /** Which type tier this window width gets. */

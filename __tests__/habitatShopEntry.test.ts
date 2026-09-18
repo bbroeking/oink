@@ -16,7 +16,9 @@ describe("Shop Barn furnishings entry", () => {
     expect(sign).toBeGreaterThan(0);
     const route = source.indexOf('router.push("/barn-collection")', sign);
     expect(route).toBeGreaterThan(sign);
-    expect(source).toContain("HABITAT_CHROME_ASSETS.barnDoor");
+    // The sign wears the painted barn-door glyph (the sign glyphs, 2026-09-17)
+    // rather than reaching into the Habitat's chrome assets.
+    expect(source).toContain('glyph="barnDoor"');
     expect(source).not.toContain('title="Barn Furnishings"');
     expect(source).not.toContain("<HabitatEntry");
     // Housing is always on — no flag gate around the entry (2026-09-12).

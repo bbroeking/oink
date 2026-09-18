@@ -54,6 +54,15 @@ interface Props {
 	 */
 	announceValue?: boolean;
 	/**
+	 * A stretch of the track painted darker than the rest — the bit that
+	 * MEANS something, drawn behind the fill. Snout Deep's wake meter (rules 2,
+	 * 2026-09-17) paints the band his sleep depth is drawn from, so a player
+	 * reads "safe until here, a gamble after" off the bar itself. `from`/`to`
+	 * are in the same units as `value`; an inverted or out-of-range pair is
+	 * clamped, never drawn wrong.
+	 */
+	band?: { from: number; to: number };
+	/**
 	 * Tick marks dividing the track into this many equal parts — the Trough's
 	 * notched track (Storefront 2026-09-16): four quarters, three ticks, each
 	 * lit in sun once the fill has passed it. Ticks are decoration; the value
@@ -72,12 +81,23 @@ export function ProgressTrack({
 	label,
 	accessibilityLabel,
 	announceValue = true,
+	band,
 	notches,
 	style,
 }: Props) {
 	const safeMax = Math.max(max, 0);
 	const now = Math.min(Math.max(value, 0), safeMax);
 	const fraction = safeMax > 0 ? now / safeMax : 0;
+	// The band, as a left offset and a width in percent. A zero-width band is
+	// no band: nothing is drawn rather than a hairline nobody can read.
+	const bandAt =
+		band && safeMax > 0
+			? (() => {
+					const from = Math.min(Math.max(Math.min(band.from, band.to), 0), safeMax);
+					const to = Math.min(Math.max(Math.max(band.from, band.to), 0), safeMax);
+					return to > from ? { left: from / safeMax, width: (to - from) / safeMax } : null;
+				})()
+			: null;
 	const ticks =
 		notches && notches > 1
 			? Array.from({ length: notches - 1 }, (_, i) => (i + 1) / notches)
@@ -99,6 +119,15 @@ export function ProgressTrack({
 					announceValue ? { min: 0, max: safeMax, now } : undefined
 				}
 			>
+				{bandAt ? (
+					<View
+						pointerEvents="none"
+						style={[
+							styles.band,
+							{ left: `${bandAt.left * 100}%`, width: `${bandAt.width * 100}%` },
+						]}
+					/>
+				) : null}
 				{fraction > 0 ? (
 					<View
 						style={[
@@ -147,6 +176,15 @@ const styles = StyleSheet.create({
 		borderColor: UI_COLORS.border,
 		backgroundColor: UI_COLORS.surface,
 		overflow: "hidden",
+	},
+	// The band: the same paper, shaded — an ink wash at the rule opacity, so it
+	// reads as a marked stretch of the track and never as a second fill.
+	band: {
+		position: "absolute",
+		top: 0,
+		bottom: 0,
+		backgroundColor: UI_COLORS.uiMuted,
+		opacity: OPACITY.rule,
 	},
 	fill: {
 		height: "100%",

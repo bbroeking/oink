@@ -40,7 +40,9 @@ import { RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 // Barn's own chrome uses — a step above the 18pt Icon default so they read
 // against the art behind them. (2026-09-11)
 const CONTROL_ICON = 22;
-const TOOLTIP_CLEARANCE = 64;
+// Room for the Decorate dock: the item tooltip and the notice dock both stop
+// this far above the safe area so they never sit under the gold button.
+const DOCK_CLEARANCE = 64;
 
 // The doors the interior can be reached through. `structure` is the barn on the
 // Exterior's ground plane, `shop` the purchase hand-off, `visit` a friend's
@@ -415,64 +417,74 @@ export function BarnInterior({
             </View>
           </>
         )}
-        {habitat.dirty && !editing ? (
-          <Sticker
-            color="paper"
-            rotate={0}
-            radius={RADII.md}
-            shadow="sm"
-            pad
-            style={styles.strip}
-          >
-            <BodySm>
-              You have an unsaved arrangement. Decorate to continue.
-            </BodySm>
-          </Sticker>
-        ) : null}
-        {habitat.offline || habitat.data.snapshot.themeRecovered ? (
-          <Sticker
-            color={UI_COLORS.warningSurface}
-            rotate={0}
-            radius={RADII.md}
-            shadow="sm"
-            pad
-            style={styles.strip}
-          >
-            <BodySm accessibilityRole="alert" tone="warning">
-              {habitat.offline
-                ? `Offline copy — changes will stay here until you reconnect.${habitat.data.snapshot.themeRecovered ? " Your saved room theme was unavailable, so Warm Plank Barn is shown." : ""}`
-                : "Your saved room theme was unavailable, so Warm Plank Barn is shown. Choose a room theme and save to update your Barn."}
-            </BodySm>
-          </Sticker>
-        ) : null}
-        {message || habitat.error ? (
-          <Sticker
-            color="sky"
-            rotate={0}
-            radius={RADII.md}
-            shadow="sm"
-            pad
-            accessibilityLabel={
-              message === "Barn saved."
-                ? "Dismiss saved confirmation"
-                : "Check connection and retry pending change"
-            }
-            accessibilityHint={
-              message === "Barn saved."
-                ? "Hides this confirmation"
-                : "Reconnects and retries the change that did not save"
-            }
-            onPress={() => {
-              setMessage(null);
-              if (message !== "Barn saved.") void habitat.refresh();
-            }}
-            style={styles.strip}
-          >
-            <Body tone="secondary">
-              {message ?? `Barn error: ${habitat.error?.replaceAll("_", " ")}`}
-            </Body>
-          </Sticker>
-        ) : null}
+        {/* Notices pop over the room. The dock is absolute, so a strip
+            appearing (Barn saved, offline, an error) never takes layout
+            space and never shoves the scene up; it clears the Decorate
+            dock instead. (2026-09-17) */}
+        <View
+          pointerEvents="box-none"
+          testID="barn-notice-dock"
+          style={[styles.noticeDock, { bottom: insets.bottom + DOCK_CLEARANCE }]}
+        >
+          {habitat.dirty && !editing ? (
+            <Sticker
+              color="paper"
+              rotate={0}
+              radius={RADII.md}
+              shadow="sm"
+              pad
+              style={styles.strip}
+            >
+              <BodySm>
+                You have an unsaved arrangement. Decorate to continue.
+              </BodySm>
+            </Sticker>
+          ) : null}
+          {habitat.offline || habitat.data.snapshot.themeRecovered ? (
+            <Sticker
+              color={UI_COLORS.warningSurface}
+              rotate={0}
+              radius={RADII.md}
+              shadow="sm"
+              pad
+              style={styles.strip}
+            >
+              <BodySm accessibilityRole="alert" tone="warning">
+                {habitat.offline
+                  ? `Offline copy — changes will stay here until you reconnect.${habitat.data.snapshot.themeRecovered ? " Your saved room theme was unavailable, so Warm Plank Barn is shown." : ""}`
+                  : "Your saved room theme was unavailable, so Warm Plank Barn is shown. Choose a room theme and save to update your Barn."}
+              </BodySm>
+            </Sticker>
+          ) : null}
+          {message || habitat.error ? (
+            <Sticker
+              color="sky"
+              rotate={0}
+              radius={RADII.md}
+              shadow="sm"
+              pad
+              accessibilityLabel={
+                message === "Barn saved."
+                  ? "Dismiss saved confirmation"
+                  : "Check connection and retry pending change"
+              }
+              accessibilityHint={
+                message === "Barn saved."
+                  ? "Hides this confirmation"
+                  : "Reconnects and retries the change that did not save"
+              }
+              onPress={() => {
+                setMessage(null);
+                if (message !== "Barn saved.") void habitat.refresh();
+              }}
+              style={styles.strip}
+            >
+              <Body tone="secondary">
+                {message ?? `Barn error: ${habitat.error?.replaceAll("_", " ")}`}
+              </Body>
+            </Sticker>
+          ) : null}
+        </View>
         <HabitatGiftReveal
           accountId={completionAccountId}
           catalog={habitat.data.catalog}
@@ -612,13 +624,21 @@ const styles = StyleSheet.create({
     backgroundColor: WHIMSY.cream,
   },
   errorActions: { gap: SPACE.sm, alignItems: "center" },
-  strip: { marginHorizontal: SPACE.sm, marginBottom: SPACE.sm },
+  noticeDock: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 95,
+    gap: SPACE.sm,
+    paddingHorizontal: SPACE.sm,
+  },
+  strip: {},
   tooltip: {
     position: "absolute",
     left: SPACE.xl,
     right: SPACE.xl,
     maxHeight: "35%",
-    marginBottom: TOOLTIP_CLEARANCE,
+    marginBottom: DOCK_CLEARANCE,
   },
   tooltipScroll: { flexShrink: 1 },
   tooltipClose: { alignSelf: "flex-end" },

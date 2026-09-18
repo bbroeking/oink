@@ -40,9 +40,14 @@ CATEGORY_REL = {
 }
 FULL_CANVAS = {"aura", "background"}
 
+# One item per LINE — anchored at the leading tab so the per-pose override the
+# placement studio writes inline (`perAnim: { face: { pivot: … } }`) can't be
+# read as an item of its own. This renderer previews the FRONT pose only, so the
+# override itself is ignored.
 REL_RE = re.compile(
-    r'(\w+):\s*\{\s*pivot:\s*\{\s*x:\s*([\d.]+),\s*y:\s*([\d.]+)\s*\},'
-    r'\s*widthFrac:\s*([\d.]+),\s*anchor:\s*"(\w+)"(?:,\s*behind:\s*(true|false))?'
+    r'^\t(\w+):\s*\{\s*pivot:\s*\{\s*x:\s*(-?[\d.]+),\s*y:\s*(-?[\d.]+)\s*\},'
+    r'\s*widthFrac:\s*([\d.]+),\s*anchor:\s*"(\w+)"(?:,\s*behind:\s*(true|false))?',
+    re.M,
 )
 
 

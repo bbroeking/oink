@@ -14,13 +14,18 @@ import {
   oddsPhrase,
   receipt,
   reconcileReceipt,
+  nextThreshold,
   reduce,
+  replay,
   resolveDigFindTickles,
+  restore,
+  wakePercent,
   whisperFor,
   type Find,
   type LayerBoard,
   type SnoutDeepBoard,
   type SnoutDeepState,
+  herdLine,
 } from "../utils/snoutDeep";
 
 const TILES = 30;
@@ -55,6 +60,11 @@ const QUIET = seedWhere(20, (d) => d >= 40);
 const act = (s: SnoutDeepState, verb: "sniff" | "rub" | "shove", tile: number) =>
   reduce(s, { type: "act", verb, tile });
 const descend = (s: SnoutDeepState) => reduce(s, { type: "descend" });
+// The descent gate (§4) shuts `Dig deeper` until this board's truffle is up;
+// a fixture that wants the board below without spending draws on the truffle
+// takes the replay's door, which descends regardless.
+const sink = (s: SnoutDeepState, layer: 0 | 1 | 2 = Math.min(2, s.layer + 1) as 0 | 1 | 2) =>
+  restore(s.board, { coop: s.coop, uncrewed: s.uncrewed, rules: s.rules }, { layer, actions: s.actions });
 
 /** Topsoil truffle + Boom + keepsake, descend; mud L + scroll, descend. */
 function fullRunToRoot(s: SnoutDeepState): SnoutDeepState {
@@ -83,8 +93,10 @@ describe("receipt — tied (the tally, §5.7)", () => {
     expect(r.rows.map((row) => row.id)).toEqual([
       "l0:truffle_d", "l0:boom", "l0:junk", "l1:truffle_l", "l1:scroll", "l2:relic", "xp",
     ]);
-    expect(r.rows.map((row) => row.tickles)).toEqual([10, 3, 3, 15, 10, 15, undefined]);
-    expect(r.rows.map((row) => row.value)).toEqual(["+10", "+3", "+3", "+15", "+10", "+15", "+60 XP"]);
+    // Deeper pays more (2026-09-17): the mud's fat one 20, the scroll 12, the
+    // root's relic 25; topsoil's are what they were.
+    expect(r.rows.map((row) => row.tickles)).toEqual([10, 3, 3, 20, 12, 25, undefined]);
+    expect(r.rows.map((row) => row.value)).toEqual(["+10", "+3", "+3", "+20", "+12", "+25", "+60 XP"]);
     const domino = r.rows[0];
     expect(domino.title).toBe("a truffle");
     expect(domino.sub).toBe("the herd's too — +1 Golden Truffle");
@@ -102,10 +114,10 @@ describe("receipt — tied (the tally, §5.7)", () => {
     expect(xp.value).toBe("+60 XP"); // +20 the dig, +40 the scroll
     expect(xp.tickles).toBeUndefined();
     expect(r.xp).toBe(60);
-    // The tally: 10 + 3 + 3 + 15 + 10 + 15.
-    expect(r.ticklesTotal).toBe(56);
+    // The tally: 10 + 3 + 3 + 20 + 12 + 25.
+    expect(r.ticklesTotal).toBe(73);
     expect(r.tickledBefore).toBe(38);
-    expect(r.tickledNow).toBe(94);
+    expect(r.tickledNow).toBe(111);
     expect(r.primary).toBe("Back to the Barn");
     expect(r.secondary).toBe("share the dig ›");
     expect(r.joinLine).toBeUndefined();
@@ -157,7 +169,7 @@ describe("receipt — tied (the tally, §5.7)", () => {
   test("a truffle left in the ground is not a row; the root pays 'dig_root' only when the mud truffle banked", () => {
     let s = initialState(board(QUIET), { coop: false, uncrewed: false });
     s = act(act(s, "shove", t(0, 0)), "shove", t(0, 1));
-    s = descend(descend(s)); // the mud left unfound
+    s = sink(s, 2); // the mud left unfound — only a replay gets past the gate
     s = reduce(s, { type: "tie" });
     const r = receipt(s);
     expect(r.gt).toEqual(["dig"]);
@@ -187,12 +199,13 @@ describe("receipt — woke (the same tally, §5.8)", () => {
     expect(r.kind).toBe("woke");
     expect(r.title).toBe("He woke. Still worth it.");
     expect(r.kicker).toBe("the truffle patch · he woke at the root");
-    expect(r.wokeLine).toBe("pushed the root on a rub. one in eight — this was the one.");
+    expect(r.wokeLine).toBe("pushed the root on a rub. a 13% chance — this was the one.");
     expect(r.nextTimeLine).toBe("next time — tie it at the mud?");
     // No truffle was loose at the root (it has none), so no "his" row; the
     // two banked truffles still pay, but the root's own bonus does not — and
     // the Boom and the scroll, never tied, went with the pouch.
     expect(r.countLine).toBe("what you'd tied is yours. the loose pouch was his.");
+    expect(r.herdLine).toBe("the herd's board: +2 Golden Truffles. things you found are yours alone.");
     expect(r.gt).toEqual(["dig", "dig_deep"]);
     expect(r.rows.map((row) => row.id)).toEqual(["l0:truffle_d", "l0:boom", "l0:junk", "l1:truffle_l", "l1:scroll", "xp"]);
     expect(r.rows.find((row) => row.id === "l1:truffle_l")!.sub).toBe("the herd's too — +1 Golden Truffle");
@@ -214,9 +227,9 @@ describe("receipt — woke (the same tally, §5.8)", () => {
     expect(junk.sub).toBe("kept — its tickles went with the pouch");
     // The lost scroll pays no XP either: the dig's +20 alone.
     expect(r.xp).toBe(20);
-    // The foot sums only the paid rows: 10 + 15.
-    expect(r.ticklesTotal).toBe(25);
-    expect(r.tickledNow).toBe(63);
+    // The foot sums only the paid rows: 10 + 20.
+    expect(r.ticklesTotal).toBe(30);
+    expect(r.tickledNow).toBe(68);
     expect(r.primary).toBe("Back to the Barn");
     expect(r.secondary).toBeUndefined();
   });
@@ -234,7 +247,7 @@ describe("receipt — woke (the same tally, §5.8)", () => {
     const r = receipt(s, { tickledBefore: 38 });
     expect(r.kicker).toBe("the truffle patch · he woke at the mud");
     expect(r.countLine).toBe("what you'd tied is yours. the loose truffle and the pouch were his.");
-    expect(r.wokeLine).toBe("worked the mud on a rub. one in twenty — this was the one.");
+    expect(r.wokeLine).toBe("worked the mud on a rub. a 5% chance — this was the one.");
     expect(r.nextTimeLine).toBe("next time — tie it in topsoil?");
     const his = r.rows[0];
     expect(his.id).toBe("l1:truffle_l");
@@ -272,7 +285,7 @@ describe("receipt — woke (the same tally, §5.8)", () => {
     let s = fullRunToRoot(initialState(board(seed), { coop: true, uncrewed: false }));
     s = act(s, "sniff", t(4, 4));
     expect(s.ended?.reason).toBe("wake");
-    expect(receipt(s).wokeLine).toBe("pushed the root on a sniff. one in thirty — this was the one.");
+    expect(receipt(s).wokeLine).toBe("pushed the root on a sniff. a 3% chance — this was the one.");
   });
 });
 
@@ -291,7 +304,7 @@ describe("receipt — uncrewed (acceptance 9)", () => {
       expect(row.tickles).toBeGreaterThan(0);
     }
     expect(r.rows.find((x) => x.id === "l0:boom")!.join).toBeUndefined();
-    expect(r.ticklesTotal).toBe(41);
+    expect(r.ticklesTotal).toBe(48);
     // The rows carry the door, so the foot does not repeat it.
     expect(r.joinLine).toBeUndefined();
     expect(r.secondary).toBeUndefined();
@@ -405,9 +418,10 @@ describe("reconcileReceipt — the server's numbers re-aim the tally", () => {
 
 describe("resolveDigFindTickles — the server's table over the compiled one", () => {
   test("the compiled table matches the migration's values (spec §2)", () => {
+    // Deeper pays more (2026-09-17 §3): every mud and root find went up.
     expect(DIG_FIND_TICKLES).toEqual({
-      truffle_d: 10, boom: 3, pouch: 5, apple: 4, junk: 3, truffle_l: 15, shimmer: 8, acorn: 12,
-      tea: 8, scroll: 10, relic: 15, furnishing: 20, bow: 25, charm: 12, stone: 0,
+      truffle_d: 10, boom: 3, pouch: 5, apple: 4, junk: 3, truffle_l: 20, shimmer: 10, acorn: 15,
+      tea: 10, scroll: 12, relic: 25, furnishing: 30, bow: 40, charm: 20, stone: 0,
     });
     expect(BOOM_BASE_TICKLES).toBe(3);
   });
@@ -420,7 +434,7 @@ describe("resolveDigFindTickles — the server's table over the compiled one", (
     expect(t.boom).toBe(19);
     expect(t.junk).toBe(DIG_FIND_TICKLES.junk);
     expect(t.tea).toBe(DIG_FIND_TICKLES.tea);
-    expect(t.relic).toBe(15);
+    expect(t.relic).toBe(25);
   });
 });
 
@@ -434,12 +448,13 @@ describe("copy", () => {
   });
 
   test("odds phrases", () => {
-    expect(oddsPhrase(20)).toBe("one in six");
-    expect(oddsPhrase(6)).toBe("one in twenty");
-    expect(oddsPhrase(7)).toBe("one in seventeen");
-    expect(oddsPhrase(15)).toBe("one in eight");
+    expect(oddsPhrase(20)).toBe("a 17% chance");
+    expect(oddsPhrase(6)).toBe("a 5% chance");
+    expect(oddsPhrase(7)).toBe("a 6% chance");
+    expect(oddsPhrase(15)).toBe("a 13% chance");
+    expect(oddsPhrase(1)).toBe("less than a 1% chance");
     expect(oddsPhrase(0)).toBe("never");
-    expect(oddsPhrase(11)).toBe("one in 11");
+    expect(oddsPhrase(11)).toBe("a 9% chance");
   });
 
   test("whispers say that something is near, never what (§5.4)", () => {
@@ -448,11 +463,13 @@ describe("copy", () => {
     s = act(s, "sniff", t(1, 1)); // 3
     s = act(s, "sniff", t(3, 3)); // 1 (the Boom)
     expect(whisperFor(s)).toBe("a 3 beside a 1 — the truffle runs one way. follow the bigger number.");
-    s = descend(s);
+    s = sink(s); // the topsoil truffle stayed buried, so only a replay goes down
     expect(whisperFor(s)).toMatch(/^the mud\. fatter down here/);
-    s = descend(s);
+    s = sink(s);
+    // A board introduces itself in both rule sets; the odds live on the cards
+    // and every whisper fits two lines of hand type (2026-09-17).
     expect(whisperFor(s)).toBe(
-      "the root. a 1 on its own is usually a thing, not a truffle. one rub in eight wakes him now. one sniff in seventeen.",
+      "the root. a 1 on its own is usually a thing, not a truffle. loudest ground there is.",
     );
     for (const line of [whisperFor(s)]) {
       for (const name of ["Boom", "acorn", "relic", "scroll", "tea"]) expect(line).not.toContain(name);
@@ -471,7 +488,7 @@ describe("copy", () => {
     s = act(s, "sniff", t(0, 0));
     s = act(s, "shove", t(4, 4)); // the scroll joins it
     expect(whisperFor(s)).toBe("two things loose in the pouch. tie it off to keep them, or carry them down.");
-    s = descend(s);
+    s = sink(s); // the mud's fat one is still buried — the gate holds, the replay does not
     s = act(s, "sniff", t(3, 3));
     expect(whisperFor(s)).toBe("two things loose in the pouch. tie it off to keep them — nothing carries deeper than the root.");
     for (const name of ["Boom", "scroll"]) expect(whisperFor(s)).not.toContain(name);
@@ -509,5 +526,162 @@ describe("digLayerLine", () => {
     expect(digLayerLine(null, false)).toBeNull();
     expect(digLayerLine(undefined, undefined)).toBeNull();
     expect(digLayerLine(3, false)).toBeNull();
+  });
+});
+
+describe("the herd line — what went on the Sounder's board (2026-09-17)", () => {
+  const start = (uncrewed = false) => initialState(board(QUIET), { coop: false, uncrewed });
+
+  test("a tie with no truffle says plainly that nothing went to the herd, and why", () => {
+    let s = start();
+    s = act(s, "shove", t(2, 2)); // the Boom, a thing — yours, not the herd's
+    s = reduce(s, { type: "tie" });
+    const r = receipt(s);
+    expect(r.gt).toEqual([]);
+    expect(r.herdLine).toBe(
+      "nothing for the herd this dig — only a tied truffle is a Golden Truffle. things you found are yours alone.",
+    );
+  });
+
+  test("a banked truffle names the herd's Golden Truffle", () => {
+    let s = start();
+    for (const tile of [t(0, 0), t(0, 1)]) s = act(s, "shove", tile);
+    s = reduce(s, { type: "tie" });
+    const r = receipt(s);
+    expect(r.gt).toEqual(["dig"]);
+    expect(r.herdLine).toBe("the herd's board: +1 Golden Truffle. things you found are yours alone.");
+  });
+
+  test("uncrewed: no herd line — the join line speaks instead", () => {
+    let s = start(true);
+    s = reduce(s, { type: "tie" });
+    expect(receipt(s).herdLine).toBeUndefined();
+    expect(receipt(s).joinLine).toBe("truffles are for herds — find yours ›");
+  });
+
+  test("the herd line's three shapes", () => {
+    expect(herdLine(2, false, false)).toBe("the herd's board: +2 Golden Truffles. things you found are yours alone.");
+    expect(herdLine(0, true, true)).toBe("nothing for the herd — the truffle was his. things you found are yours alone.");
+    expect(herdLine(0, true, false)).toBe(
+      "nothing for the herd this dig — only a tied truffle is a Golden Truffle. things you found are yours alone.",
+    );
+  });
+});
+
+// ── The receipt under the meter (rules 2, 2026-09-17) ───────────────────────
+
+describe("receipt — rules 2", () => {
+  const r2 = { coop: false, uncrewed: false, rules: 2 as const };
+
+  test("the woke line names where the meter got to, not a chance", () => {
+    // Stand him at the root on a meter of 69 with a sleep depth of 84: the
+    // next rub is +15, which carries it to exactly 84 — the one.
+    const base = restore(board(QUIET), r2, { layer: 2, actions: [] });
+    const s = act({ ...base, attention: 69, sleepDepth: 84 }, "rub", t(0, 5));
+    expect(s.ended?.reason).toBe("wake");
+    expect(s.attention).toBe(84);
+    const r = receipt(s);
+    expect(r.kind).toBe("woke");
+    expect(r.wokeLine).toBe("pushed the root on a rub at 84 — this was the one.");
+    expect(r.meter).toEqual({ attention: 84, sleepDepth: 84 });
+  });
+
+  test("rule 1 keeps build 192's sentence, and carries no meter on the receipt", () => {
+    const r = receipt(reduce(fullRunToRoot(initialState(board(QUIET), { coop: false, uncrewed: false })), { type: "tie" }));
+    expect(r.meter).toBeUndefined();
+  });
+
+  test("the server's replay can re-aim the number, and agreement changes nothing", () => {
+    const base = restore(board(QUIET), r2, { layer: 2, actions: [] });
+    const s = act({ ...base, attention: 69, sleepDepth: 84 }, "rub", t(0, 5));
+    const r = receipt(s);
+    const agreed = reconcileReceipt(r, { attention: 84, sleep_depth: 84 });
+    expect(agreed.wokeLine).toBe(r.wokeLine);
+    const corrected = reconcileReceipt(r, { attention: 86, sleep_depth: 85 });
+    expect(corrected.wokeLine).toBe("pushed the root on a rub at 86 — this was the one.");
+    expect(corrected.meter).toEqual({ attention: 86, sleepDepth: 85 });
+    // A server that says nothing about the meter leaves the client's alone.
+    expect(reconcileReceipt(r, { ticklesTotal: 3 }).meter).toEqual(r.meter);
+  });
+
+  test("the cards wear the loudness — the wake table, unchanged", () => {
+    let s = initialState(board(QUIET), r2);
+    expect(nextThreshold(s, "sniff")).toBe(0); // topsoil sniffs are silent
+    expect(nextThreshold(s, "rub")).toBe(1);
+    expect(nextThreshold(s, "shove")).toBe(10);
+    s = act(s, "shove", t(3, 3));
+    expect(s.attention).toBe(10);
+    expect(nextThreshold(s, "shove")).toBe(10); // the card does not climb — the bar does
+    expect(wakePercent(60)).toBe("50%");
+  });
+
+  test("dig_root is withheld under the stamp, and paid when the stamp says so", () => {
+    const tieAtRoot = (digRootGt: 0 | 1) => {
+      let s = initialState(board(QUIET), {
+        ...r2,
+        wakeMeter: { lo: 50, hi: 110, scope: "board", digRootGt },
+      });
+      s = act(act(s, "shove", t(0, 0)), "shove", t(0, 1)); // topsoil's domino
+      s = reduce(s, { type: "descend" });
+      for (const tile of [t(1, 1), t(2, 1), t(2, 2)]) s = act(s, "shove", tile); // the mud's L
+      s = reduce(s, { type: "descend" });
+      return receipt(reduce(s, { type: "tie" }));
+    };
+    // The default stamp: a root tie pays for the two truffles, and no more —
+    // under a per-board meter the descent was silent, so there is nothing to
+    // buy the third with.
+    expect(tieAtRoot(0).gt).toEqual(["dig", "dig_deep"]);
+    expect(tieAtRoot(1).gt).toEqual(["dig", "dig_deep", "dig_root"]);
+    // Rule 1 is untouched by the stamp: it always paid the root's bonus.
+    let one = initialState(board(QUIET), { coop: false, uncrewed: false });
+    one = act(act(one, "shove", t(0, 0)), "shove", t(0, 1));
+    one = reduce(one, { type: "descend" });
+    for (const tile of [t(1, 1), t(2, 1), t(2, 2)]) one = act(one, "shove", tile);
+    one = reduce(one, { type: "descend" });
+    expect(receipt(reduce(one, { type: "tie" })).gt).toEqual(["dig", "dig_deep", "dig_root"]);
+  });
+
+  test("the whisper speaks the band, then says so out loud inside it", () => {
+    const s = initialState(board(QUIET), r2);
+    // How deep he sleeps is the sleeper strip's job now — the band is painted
+    // there and stamped with its own lo and hi — so the whisper is the board's
+    // introduction and nothing more.
+    expect(whisperFor(s)).toBe(
+      "topsoil. a sniff counts what touches a tile. a rub moves a little, a shove a lot.",
+    );
+    const root = restore(board(QUIET), r2, { layer: 2, actions: [] });
+    expect(whisperFor(root)).toMatch(/^the root\./);
+    // Inside the band there is nothing safe left to promise.
+    const inBand = act({ ...root, attention: 44, sleepDepth: 110 }, "rub", t(4, 0)); // 44 + 15 = 59
+    expect(inBand.ended).toBeNull();
+    expect(whisperFor(inBand)).toBe("he could wake on any of these now.");
+    // …and none of it names a find.
+    for (const name of ["Boom", "relic", "scroll", "tea"]) {
+      expect(whisperFor(inBand)).not.toContain(name);
+    }
+  });
+});
+
+describe("reconcileReceipt — the bag's truth (2026-09-17 §5)", () => {
+  const tied = () => {
+    let s = initialState(board(QUIET), { coop: false, uncrewed: false });
+    s = act(act(s, "shove", t(0, 0)), "shove", t(0, 1));
+    return reduce(s, { type: "tie" });
+  };
+
+  test("a client-built receipt knows nothing about the bag; the server's answer settles it either way", () => {
+    const r = receipt(tied(), { tickledBefore: 0 });
+    expect(r.satchelKnown).toBeUndefined();
+    expect(r.satchel).toBeUndefined();
+    // The server answered and named no roll: the bag beat may now say so.
+    const empty = reconcileReceipt(r, { ticklesTotal: 10 });
+    expect(empty.satchelKnown).toBe(true);
+    expect(empty.satchel).toBeNull();
+    // …and when it names one, the roll rides in with it.
+    const full = reconcileReceipt(r, {
+      satchel: { found: ["clover"], lost: [], count: 2, cap: 6 },
+    });
+    expect(full.satchelKnown).toBe(true);
+    expect(full.satchel?.found).toEqual(["clover"]);
   });
 });

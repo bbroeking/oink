@@ -2,7 +2,14 @@
 // shelf with a short last shelf, and the members' shelf as a daily pick that
 // every member sees alike and that rolls with the shelves at UTC midnight.
 
-import { chunkShelves, dailyPick, dropDateKey } from "@/utils/shopShelves";
+import {
+	cardBadge,
+	cardTag,
+	cardTapAction,
+	chunkShelves,
+	dailyPick,
+	dropDateKey,
+} from "@/utils/shopShelves";
 
 describe("chunkShelves", () => {
 	it("lays eight items out as 3 · 3 · 2", () => {
@@ -58,5 +65,80 @@ describe("dailyPick", () => {
 		expect(dailyPick(catalog.slice(0, 2), "2026-09-16", 3)).toHaveLength(2);
 		expect(dailyPick([], "2026-09-16", 3)).toEqual([]);
 		expect(dailyPick(catalog, "2026-09-16", 0)).toEqual([]);
+	});
+});
+
+describe("cardTapAction", () => {
+	it("opens the sheet for anything not owned", () => {
+		expect(cardTapAction("cowboy", { owned: false, active: false })).toEqual({ kind: "preview" });
+	});
+	it("wears an owned item and takes off a worn one", () => {
+		expect(cardTapAction("cowboy", { owned: true, active: false })).toEqual({ kind: "equip", itemId: "cowboy" });
+		expect(cardTapAction("cowboy", { owned: true, active: true })).toEqual({ kind: "equip", itemId: null });
+	});
+});
+
+// ONE card grammar (the shop-IA pass, 2026-09-17). The coaster said price /
+// Wear / Wearing and the closet tile said Owned / Not owned, so the same hat
+// was a price upstairs and a padlock downstairs. Both ask these two now.
+describe("cardTag", () => {
+	const hat = { cost: 349 };
+	const rest = { inDrop: true, canAfford: true, locked: false };
+
+	it("says what she is wearing before anything else", () => {
+		expect(cardTag(hat, { ...rest, owned: true, active: true })).toEqual({
+			kind: "wearing",
+		});
+	});
+
+	it("offers to wear what is already yours", () => {
+		expect(cardTag(hat, { ...rest, owned: true, active: false })).toEqual({
+			kind: "wear",
+		});
+	});
+
+	it("names a free item as earned, never sold", () => {
+		expect(
+			cardTag({ cost: 0 }, { ...rest, owned: false, active: false }),
+		).toEqual({ kind: "seasonPass" });
+	});
+
+	it("puts an affordable price on today's shelf in the sun", () => {
+		expect(cardTag(hat, { ...rest, owned: false, active: false })).toEqual({
+			kind: "price",
+			cost: 349,
+			tone: "sun",
+		});
+	});
+
+	it("mutes a price you cannot meet, and one that is not today's", () => {
+		expect(
+			cardTag(hat, { ...rest, canAfford: false, owned: false, active: false }),
+		).toEqual({ kind: "price", cost: 349, tone: "muted" });
+		expect(
+			cardTag(hat, { ...rest, inDrop: false, owned: false, active: false }),
+		).toEqual({ kind: "price", cost: 349, tone: "muted" });
+	});
+
+	it("mutes a members' piece for a non-member and lights it for a member", () => {
+		const members = { cost: 900, members_only: true };
+		expect(
+			cardTag(members, { ...rest, locked: true, owned: false, active: false }),
+		).toEqual({ kind: "price", cost: 900, tone: "muted" });
+		expect(
+			cardTag(members, { ...rest, owned: false, active: false }),
+		).toEqual({ kind: "price", cost: 900, tone: "sun" });
+	});
+});
+
+describe("cardBadge", () => {
+	it("checks what is yours", () => {
+		expect(cardBadge({ owned: true, locked: false })).toBe("check");
+		expect(cardBadge({ owned: true, locked: true })).toBe("check");
+	});
+
+	it("locks members' pieces only, and badges nothing else", () => {
+		expect(cardBadge({ owned: false, locked: true })).toBe("lock");
+		expect(cardBadge({ owned: false, locked: false })).toBeNull();
 	});
 });

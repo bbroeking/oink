@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	StyleSheet,
 	Animated,
@@ -6,12 +6,9 @@ import {
 	View,
 	Easing,
 } from "react-native";
-import { useFocusEffect } from "expo-router/react-navigation";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { ANIM_SCALE } from "../constants/animScale.generated";
-import type { RelSpec } from "../constants/hat_overlay_types";
 import type { PigAnimation, PigFacing, PigMood, PigReaction, PigReactionKind } from "./ui/pigRendererContract";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import type { PigFx } from "@/constants/ritualFx";
@@ -108,21 +105,10 @@ export default function SwipeElement({
 		setSixSevenActive(false);
 		setReaction(null);
 	};
-	// Mirror the placement studio's live rel-placement overrides (dev-only).
-	const [relOverrides, setRelOverrides] = useState<
-		Record<string, RelSpec>
-	>({});
-	useFocusEffect(
-		useCallback(() => {
-			if (!__DEV__) return;
-			(async () => {
-				try {
-					const rel = await AsyncStorage.getItem("item_anchor_rel_v1");
-					if (rel) setRelOverrides(JSON.parse(rel) as Record<string, RelSpec>);
-				} catch {}
-			})();
-		}, [])
-	);
+	// (The dev-only AsyncStorage mirror of the retired anchor-editor's live
+	// overrides — `item_anchor_rel_v1` — left here 2026-09-17: the placement
+	// studio writes hat_rel.generated.ts directly, and a stale stored override
+	// was silently floating the cowboy hat on the dev client.)
 
 	// Weighted reaction pool — jump is the default vibe, others are "spice".
 	// 3/6 = 50% jump, 1/6 each of happy/surprise/wave.
@@ -319,7 +305,6 @@ export default function SwipeElement({
 						equippedNeck={equippedNeck}
 						equippedAura={equippedAura}
 						equippedHeld={equippedHeld}
-						relOverrides={relOverrides}
 						prestigeLevel={prestigeLevel}
 						ritual={ritual}
 						facing={facing}

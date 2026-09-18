@@ -1,0 +1,7 @@
+Generate exactly ONE square image, 1024 x 1024.
+Use case: style-transfer. Asset type: painted storybook game sticker glyph for Tickle the Pig.
+Input image: the supplied bag glyph is a STYLE REFERENCE ONLY. Replace the bag subject completely with a single little shop front. Match the reference's exact painted storybook style and level of detail: thick warm dark-brown ink outline, soft cel shading, subtly painted surfaces, chunky readable shapes, and one small pale highlight patch.
+Subject: ONE little shop front, seen straight on, with a red-and-cream striped canvas awning over a small wooden counter window. Place one round jar of sweets on the sill and one tiny wooden blank shingle hanging from the awning's edge. The shingle must have NO readable letters, no marks resembling writing; it is blank wood.
+Composition: centered, entire shop glyph fully visible, filling about 85% of a SQUARE canvas. Exactly TWO small four-point gold sparkles floating just off the shop: one upper-left and one lower-right, matching the two sparkles in the style reference.
+Background: solid flat MAGENTA, exact #FF00FF, edge to edge. No magenta anywhere on the object, including jar and sweets.
+No 3D rendering, no drop shadow, no ground or cast shadow, no text, no border, no scenery, no additional objects or decorations, no extra sparkles. Nothing else in the picture.

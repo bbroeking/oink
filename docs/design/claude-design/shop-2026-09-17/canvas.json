@@ -1,0 +1,289 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "A1_Closet.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "A1 \u00b7 scrolled to the closet",
+   "w": 390,
+   "x": 450,
+   "y": 0
+  },
+  "A2_Closet.dc.html": {
+   "h": 844,
+   "page": "r1",
+   "title": "A \u00b7 scrolled to the closet",
+   "w": 390,
+   "x": 470,
+   "y": 0
+  },
+  "A2_Hero.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "A2 \u00b7 the hero fitting room",
+   "w": 390,
+   "x": 980,
+   "y": 0
+  },
+  "A2_Hero_Closet.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "A2 \u00b7 scrolled, hero folded",
+   "w": 390,
+   "x": 1430,
+   "y": 0
+  },
+  "B1_Rail.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "B1 \u00b7 rail of signs, try-on under the shelf",
+   "w": 390,
+   "x": 0,
+   "y": 1300
+  },
+  "B1_Rail_Closet.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "B1 \u00b7 the Closet room",
+   "w": 390,
+   "x": 450,
+   "y": 1300
+  },
+  "B1_Store.dc.html": {
+   "h": 844,
+   "page": "r1",
+   "title": "B \u00b7 the store, try-on under the shelf",
+   "w": 390,
+   "x": 0,
+   "y": 1144
+  },
+  "B2_Closet.dc.html": {
+   "h": 844,
+   "page": "r1",
+   "title": "B \u00b7 the closet, same rail",
+   "w": 390,
+   "x": 470,
+   "y": 1144
+  },
+  "B2_Tabs.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "B2 \u00b7 folder tabs, fixed try-on bar",
+   "w": 390,
+   "x": 980,
+   "y": 1300
+  },
+  "B2_Tabs_Closet.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "B2 \u00b7 the Closet tab",
+   "w": 390,
+   "x": 1430,
+   "y": 1300
+  },
+  "C1_Store.dc.html": {
+   "h": 844,
+   "page": "r1",
+   "title": "C \u00b7 shelves + the drawer",
+   "w": 390,
+   "x": 0,
+   "y": 2288
+  },
+  "C2_Drawer.dc.html": {
+   "h": 844,
+   "page": "r1",
+   "title": "C \u00b7 the drawer pulled up",
+   "w": 390,
+   "x": 470,
+   "y": 2288
+  },
+  "Main.dc.html": {
+   "h": 1000,
+   "page": "r2",
+   "title": "A1 \u00b7 the strip",
+   "w": 390,
+   "x": 0,
+   "y": 0
+  },
+  "R1_Main.dc.html": {
+   "h": 844,
+   "page": "r1",
+   "title": "A \u00b7 One aisle (r1)",
+   "w": 390,
+   "x": 0,
+   "y": 0
+  },
+  "V1_Flanked.dc.html": {
+   "h": 1000,
+   "page": "r3",
+   "title": "A2\u00b7V1 flanked \u2014 CHOSEN",
+   "w": 390,
+   "x": 0,
+   "y": 0
+  },
+  "V1_Flanked_Scrolled.dc.html": {
+   "h": 1000,
+   "page": "r3",
+   "title": "A2\u00b7V1 scrolled, trying on \u2014 CHOSEN",
+   "w": 390,
+   "x": 450,
+   "y": 0
+  },
+  "V2_Wide.dc.html": {
+   "h": 1000,
+   "page": "r3",
+   "title": "A2\u00b7V2 wide hero + peg rail",
+   "w": 390,
+   "x": 940,
+   "y": 0
+  },
+  "V2_Wide_Scrolled.dc.html": {
+   "h": 1000,
+   "page": "r3",
+   "title": "A2\u00b7V2 scrolled, peg rail pinned",
+   "w": 390,
+   "x": 1390,
+   "y": 0
+  },
+  "V3_Floor.dc.html": {
+   "h": 1000,
+   "page": "r3",
+   "title": "A2\u00b7V3 in the store",
+   "w": 390,
+   "x": 1880,
+   "y": 0
+  },
+  "V3_Floor_Scrolled.dc.html": {
+   "h": 1000,
+   "page": "r3",
+   "title": "A2\u00b7V3 scrolled, she follows",
+   "w": 390,
+   "x": 2330,
+   "y": 0
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-09-17T15:54:06Z",
+  "v": 1
+ },
+ "designSystems": [],
+ "launch": {
+  "page": "r3",
+  "view": "canvas"
+ },
+ "notes": {
+  "s3": {
+   "maxH": 260,
+   "page": "r3",
+   "text": "V1 is the one to build. It keeps the Closet's own layout intact \u2014 the pig in the middle, her slots down both sides \u2014 so dressing her works exactly as it does today, just at the top of the store instead of in a separate room. It also keeps the shop's two modes distinct: the cosmetics shop lives on this page (shelves under the fitting room, the Closet grid further down the same scroll); the furnishings shop stays its own place behind the Furnish door beside the chalkboard, because it dresses the Barn, not the pig. V2 gives the outfit a wide card and a pinned peg rail; V3 puts her on the store floor. Both set aside.",
+   "w": 830,
+   "x": 0,
+   "y": 1120
+  },
+  "sA": {
+   "page": "r1",
+   "text": "What jumps today: Store \u2192 sign \u2192 Closet (new page, scroll lost) \u2192 back via a Store sign that only exists away from the store; buying and wearing each open a sheet. A removes the rooms: one scroll, the pig pinned at the top, Wear tags on every card, the Closet grid a section further down. Pen and Furnish stay as small doors.",
+   "w": 300,
+   "x": 960,
+   "y": 0
+  },
+  "sB": {
+   "page": "r1",
+   "text": "B keeps the rooms (least code moved) but fixes the two things that read as jumping: the sign rail is identical in every room, and a tapped coaster opens a try-on strip under its own shelf instead of a sheet. Only buying confirms in a sheet. Each room keeps its scroll.",
+   "w": 300,
+   "x": 960,
+   "y": 1144
+  },
+  "sC": {
+   "page": "r1",
+   "text": "C makes the tab one place: shelves fill it; your pig waits in a drawer that peeks above the tab bar. Tap a coaster and the drawer tries it on. Pull the drawer up and it is the Closet, with Pen and Furnish as doors in its head. Nothing navigates.",
+   "w": 300,
+   "x": 960,
+   "y": 2288
+  },
+  "t3": {
+   "kind": "title1",
+   "maxW": 2900,
+   "page": "r3",
+   "text": "A2 \u00b7 the hero fitting room \u2014 V1 (flanked) is the build. V2 and V3 kept for the record.",
+   "w": 240,
+   "x": 0,
+   "y": -250
+  },
+  "tA": {
+   "kind": "title1",
+   "maxW": 860,
+   "page": "r1",
+   "text": "A \u00b7 One aisle \u2014 no rooms. The fitting room is pinned; the closet is further down the same scroll.",
+   "w": 240,
+   "x": 0,
+   "y": -250
+  },
+  "tB": {
+   "kind": "title1",
+   "maxW": 860,
+   "page": "r1",
+   "text": "B \u00b7 Signs that stay put \u2014 rooms stay, the rail never moves; try-on happens under the shelf.",
+   "w": 240,
+   "x": 0,
+   "y": 894
+  },
+  "tC": {
+   "kind": "title1",
+   "maxW": 860,
+   "page": "r1",
+   "text": "C \u00b7 The fitting-room drawer \u2014 one screen; your pig lives in a drawer over the shelves.",
+   "w": 240,
+   "x": 0,
+   "y": 2038
+  },
+  "m3": {
+   "x": 940,
+   "y": 1120,
+   "w": 420,
+   "maxH": 220,
+   "page": "r3",
+   "size": "s",
+   "color": "green",
+   "text": "Two modes, one rule: what dresses the PIG is sold and worn here (shelves, fitting room, Closet grid, the Pen's companions). What dresses the BARN is sold in the furnishings shop \u2014 Furnish is a door out, never a room in. The Store sign is gone: this page is the store."
+  }
+ },
+ "order": [
+  "V1_Flanked.dc.html",
+  "V1_Flanked_Scrolled.dc.html",
+  "V2_Wide.dc.html",
+  "V2_Wide_Scrolled.dc.html",
+  "V3_Floor.dc.html",
+  "V3_Floor_Scrolled.dc.html",
+  "Main.dc.html",
+  "A1_Closet.dc.html",
+  "A2_Hero.dc.html",
+  "A2_Hero_Closet.dc.html",
+  "B1_Rail.dc.html",
+  "B1_Rail_Closet.dc.html",
+  "B2_Tabs.dc.html",
+  "B2_Tabs_Closet.dc.html",
+  "R1_Main.dc.html",
+  "A2_Closet.dc.html",
+  "B1_Store.dc.html",
+  "B2_Closet.dc.html",
+  "C1_Store.dc.html",
+  "C2_Drawer.dc.html"
+ ],
+ "pages": [
+  {
+   "id": "r3",
+   "name": "Round 3 \u00b7 A2 layouts"
+  },
+  {
+   "id": "r2",
+   "name": "Round 2 \u00b7 A and B"
+  },
+  {
+   "id": "r1",
+   "name": "Round 1"
+  }
+ ],
+ "title": "Storefront, less jumping"
+}
