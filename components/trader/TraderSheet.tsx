@@ -40,9 +40,11 @@ import { FindArt } from "../satchel/FindArt";
 import { TraderArt, TraderSprite } from "./TraderArt";
 
 // An offer tile: three across a phone with the gaps, and a short last row
-// keeps the same tile width rather than stretching to fill.
+// keeps the same tile width rather than stretching to fill — the empty places
+// are dashed "not yet" slots, so the grid stays three-up (2026-09-20).
 const OFFER_MIN_W = 96;
 const OFFER_MAX_W = "32%";
+const OFFER_COLUMNS = 3;
 // The speech bubble leans the other way from the sheet's stickers.
 const BUBBLE_TILT = 1.5;
 
@@ -272,6 +274,23 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onRe
 							</Sticker>
 						);
 					})}
+					{/* Room for more finds: the dashed slots that square off a short
+					    last row. Empty, so VoiceOver has nothing to read there. */}
+					{Array.from(
+						{ length: (OFFER_COLUMNS - (items.length % OFFER_COLUMNS)) % OFFER_COLUMNS },
+						(_, i) => (
+							<Sticker
+								key={`empty-${i}`}
+								color="cream"
+								radius={RADII.lg}
+								borderStyle="dashed"
+								shadow="none"
+								rotate={0}
+								style={styles.offer}
+								testID="trader-offer-empty"
+							/>
+						),
+					)}
 				</View>
 			)}
 		</Sheet>

@@ -192,6 +192,10 @@ describe("TraderSheet", () => {
 		expect(text).toContain("the river pebble went into his satchel · +3");
 		expect(text).toContain("takes 5 more finds");
 		expect(r.root.findAllByType(Sticker).filter((n) => n.props.testID === "trader-offer")).toHaveLength(2);
+		// Two offers leave one place in the three-up row: a dashed slot squares it off.
+		const empties = r.root.findAllByType(Sticker).filter((n) => n.props.testID === "trader-offer-empty");
+		expect(empties).toHaveLength(1);
+		expect(empties[0].props.borderStyle).toBe("dashed");
 	});
 
 	it("a refusal reaches the caller in his voice and tallies nothing", async () => {
