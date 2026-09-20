@@ -313,6 +313,7 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		supabase/migrations/20260917130000_snout_deep_sniff_attention.sql \
 		scripts/db-harness/97_snout_deep_sniff_attention_smoke.sql \
 		supabase/migrations/20260917170000_ghost_sheep_trader.sql \
+		supabase/migrations/20260920100000_trader_pays_tickles_not_snouts.sql \
 		scripts/db-harness/98_ghost_sheep_trader_smoke.sql \
 		supabase/migrations/20260917150000_snout_deep_sniff_budget_per_board.sql \
 		scripts/db-harness/98_snout_deep_sniff_budget_per_board_smoke.sql \

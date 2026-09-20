@@ -11,8 +11,9 @@
 --      nothing moved.
 --   3. While he is here: a common pays the common price, the fancied find the
 --      multiplier, an uncommon the uncommon price; each sale deletes exactly
---      one bag row, writes one ledger row, applies tickles (tickles_earned AND
---      counter, never the bank), answers before/after and the WHOLE bag.
+--      one bag row, writes one ledger row, pays the count (tickles_earned
+--      only — never snouts, never the bank; 20260920100000), answers
+--      before/after and the WHOLE bag.
 --   4. The nonce replay: the ORIGINAL receipt with replay:true, nothing sold
 --      twice. Someone else's find → not_in_bag; a stranger's nonce → bad_nonce.
 --   5. The per-visit cap → had_enough with leaves_at.
@@ -150,8 +151,9 @@ BEGIN
 	IF (res->>'finds_left')::int <> 2 THEN RAISE EXCEPTION 'sale 1 finds_left: %', res; END IF;
 	IF jsonb_array_length(res->'bag') <> 5 THEN RAISE EXCEPTION 'sale 1 must answer the whole bag: %', res->'bag'; END IF;
 	IF EXISTS (SELECT 1 FROM public.satchel_items WHERE id = pebble_id) THEN RAISE EXCEPTION 'the pebble must be gone'; END IF;
+	-- Tickles, never Snouts (20260920100000): the count moves, the snouts don't.
 	SELECT tickles_earned, counter INTO earned, cnt FROM public.profiles WHERE id = p;
-	IF earned <> 103 OR cnt <> 103 THEN RAISE EXCEPTION 'apply_tickles: earned=% counter=%', earned, cnt; END IF;
+	IF earned <> 103 OR cnt <> 100 THEN RAISE EXCEPTION 'trader pays the count only: earned=% counter=%', earned, cnt; END IF;
 	SELECT COUNT(*)::int INTO n FROM public.trader_sales WHERE user_id = p;
 	IF n <> 1 THEN RAISE EXCEPTION 'one ledger row expected, got %', n; END IF;
 
