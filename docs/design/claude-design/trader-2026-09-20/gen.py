@@ -56,7 +56,7 @@ EXTRA_CSS = """
 .tile img{width:52px;height:52px}
 .tile .nm{font-family:"Patrick Hand",cursive;font-size:14px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tile .pr{display:flex;align-items:center;gap:3px;font-family:"Caprasimo",Georgia,serif;font-size:17px}
-.tile .pr i{width:14px;height:14px;border-radius:50%;background:var(--rose-deep);border:1.5px solid var(--ink);display:inline-block}
+.tile .pr svg{width:16px;height:16px;display:inline-block}
 .tile.empty{border-style:dashed;box-shadow:none;background:var(--cream)}
 .ticket{margin-top:4px;display:flex;align-items:stretch;border:2px solid var(--ink);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;background:var(--slop-band)}
 .ticket .stub{width:96px;border-right:2px dashed var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;background:var(--cream2)}
@@ -93,10 +93,17 @@ EXTRA_CSS = """
 .moves .mv{max-width:1000px}
 """
 
+# The app's tickle mark — components/ui/TickleIcon.tsx, verbatim: a pink snout.
+TICKLE_SVG = ('<svg class="tk" viewBox="0 0 24 24" width="16" height="16" aria-label="Tickles"><defs>'
+              '<radialGradient id="tickle_reward" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#FFD0DC"/>'
+              '<stop offset="0.7" stop-color="#F0B8C8"/><stop offset="1" stop-color="#C47A8E"/></radialGradient></defs>'
+              '<ellipse cx="12" cy="13" rx="9" ry="7" fill="url(#tickle_reward)" stroke="#A05A72" stroke-width="1.4"/>'
+              '<ellipse cx="9" cy="13" rx="1.3" ry="1.8" fill="#1A1A1A"/><ellipse cx="15" cy="13" rx="1.3" ry="1.8" fill="#1A1A1A"/></svg>')
+
 def tile(art, name, price, sel=False, fancied=False, extra=""):
     cls = "sticker sm tile" + (" sun" if sel else " cream" if fancied else " paper")
     ex = f'<div class="kickerPill" style="color:var(--accent);font-size:9px">{extra}</div>' if extra else ""
-    return f'<div class="{cls}"><img src="{A(art)}" alt=""><div class="nm">{name}</div><div class="pr"><i></i>+{price}</div>{ex}</div>'
+    return f'<div class="{cls}"><img src="{A(art)}" alt=""><div class="nm">{name}</div><div class="pr">{TICKLE_SVG}+{price}</div>{ex}</div>'
 
 def sheet(bubble, count, mid="", tiles=None, ticket=("?", "pick one", "Pick a find to hand over", True), tally=False):
     tiles = tiles or [tile("feather","blue feather",3), tile("whistle","tin whistle",20), tile("pebble","river pebble",3)]
