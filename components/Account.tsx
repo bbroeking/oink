@@ -519,12 +519,12 @@ export function Account({ session }: { session: Session }) {
 	const visibleWallowCount = __DEV__ && devWallowPreview ? 5 : wallowCount;
 	// The row shows the real rank; the dev preview only reaches the sheet.
 	const wallowRank = Math.max(0, Math.floor(wallowCount));
-	// "PIGGY-1234 · 1 of 3 to the Messenger Hat" — the code and the next rung,
-	// on one line. Once the ladder is capped it says so.
+	// "PIGGY-1234 · 1/3 · Messenger Hat" — the code, the next rung, its reward,
+	// on one line at 390pt. Once the ladder is capped it says so.
 	const referralRowSub = referral?.code
 		? referral.next_milestone_at == null
 			? `${referral.code} · every reward earned`
-			: `${referral.code} · ${referral.referrals_completed} of ${referral.next_milestone_at} to ${rewardNameForMilestone(referral.next_milestone_at)}`
+			: `${referral.code} · ${referral.referrals_completed}/${referral.next_milestone_at} · ${rewardNameForMilestone(referral.next_milestone_at).replace(/^the /, "")}`
 		: undefined;
 	const visibleRegenSeconds = __DEV__ && devWallowPreview
 		? compiledWallowRegenSeconds(5)
