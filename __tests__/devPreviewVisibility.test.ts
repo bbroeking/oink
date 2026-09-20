@@ -25,8 +25,9 @@ describe("development-only previews", () => {
 		const account = source("components/Account.tsx");
 		const leaderboard = source("components/Leaderboard.tsx");
 
-		expect(account).toContain(
-			"onTogglePreview={__DEV__ ? () => setDevWallowPreview",
+		// The Wallow preview chip sits in the rank sheet, inside a __DEV__ branch.
+		expect(account).toMatch(
+			/\{__DEV__ && \(\s*<View[^>]*>\s*<Chip[\s\S]*?Preview Wallow rank 5/,
 		);
 		expect(leaderboard).toMatch(
 			/\{__DEV__ && \(\s*<Chip[\s\S]*?Preview Wallow ranks/,

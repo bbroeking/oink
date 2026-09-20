@@ -108,6 +108,17 @@ export default function SounderProgressScreen() {
 					kicker="referrals"
 					title="Referral Rewards"
 					onBack={() => router.back()}
+					right={
+						<Button
+							variant="handLink"
+							size="sm"
+							onPress={() => router.push("/recruits")}
+							accessibilityLabel="Referral board"
+							accessibilityHint="Opens Your Recruits"
+						>
+							the board ›
+						</Button>
+					}
 					below={
 						status === "ready" ? (
 							<View style={styles.statsLine}>

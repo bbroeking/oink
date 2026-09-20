@@ -1,5 +1,14 @@
 // The Me tab — identity, prestige, membership, referrals, settings.
 //
+// Simplified 2026-09-20 (design round "Me, simplified", direction A — the
+// passport): one identity card, then every big surface is a door. Wallow rank,
+// Achievements and Prestige gear are rows under "Your story"; the referral code
+// rides its row with Share on it and the ladder lives on Referral Rewards; the
+// redeem box and Settings are sheets behind their rows; a member's Slop Club
+// is a row and a non-member's is one band with the gold CTA. What left the
+// page (the Wallow deltas, the referral ladder + pending list, the membership
+// "also included" row) already had a home elsewhere.
+//
 // Wave-3 conformance pass (2026-09-11, section E). The screen is unchanged; it
 // is spoken in the design system instead of hand-drawn:
 //   · the crown is `PageHeader variant="tab"`, and the tab sign, page title and
@@ -54,16 +63,13 @@ import {
 	Glyph,
 	Hand,
 	Icon,
-	Kicker,
 	KickerPill,
-	Label,
 	LoadingBeat,
 	NavRow,
 	PageHeader,
 	PigPortrait,
 	PrestigeAvatar,
 	ProfileIdentity,
-	ProgressTrack,
 	Ribbon,
 	SectionHeader,
 	Sheet,
@@ -81,6 +87,7 @@ import Constants from "expo-constants";
 import {
 	ART_SIZE,
 	BORDER,
+	MOTION,
 	PAGE_PAD,
 	RADII,
 	SPACE,
@@ -109,7 +116,6 @@ import {
 	PENDING_REFERRAL_CODE_KEY,
 	REFERRAL_CODE_PATTERN,
 	type ReferralSummary,
-	type ReferralFriend,
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 import { isUsernameAllowed } from "@/constants/bannedWords";
@@ -145,12 +151,6 @@ const SLOP_PAIR_H = 100;
 const PORTRAIT_SIZE = 82; // the companion portraits inside that frame
 // The inline mark beside a button label (copy / check).
 const LABEL_MARK = ART_SIZE.mark;
-// How far a referred friend has to get before the referral counts.
-const REFERRAL_TICKLE_GOAL = 100;
-// A referral code is read one character at a time, so it is set wide. Tracking
-// is a property of THIS string, not a step on a scale — named here rather than
-// inlined, the way `Chip`'s RIBBON_ANGLE is. (2026-09-11)
-const CODE_TRACKING = 1.2;
 
 // The profile read is the screen's spine: five other fetches decorate it, so it
 // alone decides whether the Me tab is waiting, broken, or ready. [E7]
@@ -192,21 +192,11 @@ export function Account({ session }: { session: Session }) {
 	// breaks. [E6]
 	const [signOutOpen, setSignOutOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
-	// Legacy `my_sounder` RPC, now used only for recruiter/referral standing.
-	// "Sounder" is reserved in player-facing copy for the eight-pig crew.
-	const [recruiterStats, setRecruiterStats] = useState<{
-		engaged_count: number;
-		signup_count: number;
-		rank: number | null;
-		next_threshold: number | null;
-		next_title: string | null;
-	} | null>(null);
 	// Code-based referral state (per docs/referrals.md). The
 	// "Refer friends" card hydrates from my_referral_summary on focus
 	// so the milestone progress bar advances live as friends cross
 	// the engagement gate.
 	const [referral, setReferral] = useState<ReferralSummary | null>(null);
-	const [referralCodeCopied, setReferralCodeCopied] = useState(false);
 	// "Have a code?" entry — the Me-page home for redeeming a friend's
 	// referral code (the onboarding step was bypassed in build 89, which
 	// left the flow with no UI at all). Hidden once this account has
@@ -287,23 +277,6 @@ export function Account({ session }: { session: Session }) {
 			});
 		}, [])
 	);
-	useFocusEffect(
-		useCallback(() => {
-			// The recruiter leaderboard's RPC still uses the old `sounder`
-			// name internally.
-			rpc<
-				| { ok: false; reason?: string }
-				| ({ ok: true } & NonNullable<typeof recruiterStats>)
-			>("my_sounder").then((r) => {
-				// my_sounder RPC returns jsonb: { ok: false, reason } when
-				// unauthenticated, otherwise { ok: true, ...sounder fields }.
-				if (r?.ok) {
-					const { ok: _ok, ...stats } = r;
-					setRecruiterStats(stats);
-				}
-			});
-		}, [])
-	);
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
 	// All-time tickles across archived seasons (migration 20260737). Displayed
 	// lifetime = this base + the live-season tickles_earned. 0 until the column
@@ -332,6 +305,11 @@ export function Account({ session }: { session: Session }) {
 	// __DEV__ only: the storefront-missing shortcut that flips is_vip locally.
 	// Never reachable in a production build (see handleUnlockPro).
 	const [devUnlockOpen, setDevUnlockOpen] = useState(false);
+	// The three sheets the simplified page opens from its rows: the Wallow rank
+	// card, the redeem-a-code box, and Settings. (direction A, 2026-09-20)
+	const [wallowOpen, setWallowOpen] = useState(false);
+	const [redeemOpen, setRedeemOpen] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	// The Me tab's sheets/dialogs are all unmanaged native Modals (direct-tap,
 	// outside the popup queue): the release notes, delete-account confirm, paid
 	// rename, feedback whisper, and the long-story ledger. Hold the queue while any
@@ -346,8 +324,19 @@ export function Account({ session }: { session: Session }) {
 			renameOpen ||
 			feedbackOpen ||
 			longStoryOpen ||
-			devUnlockOpen
+			devUnlockOpen ||
+			wallowOpen ||
+			redeemOpen ||
+			settingsOpen
 	);
+	// A Settings row that opens another modal (a dialog, the blocked list, the
+	// customer center, a route) dismisses the sheet FIRST and runs a beat later
+	// — a second native modal presented in the same frame as the first one's
+	// dismissal is the iOS wedge ActionSheet already sidesteps.
+	const runAfterSheet = (close: () => void, action: () => void) => {
+		close();
+		setTimeout(action, MOTION.modalHandoff);
+	};
 	const [lifetimeAgg, setLifetimeAgg] = useState<LifetimeAgg | null>(null);
 	const [lifetimeAggBusy, setLifetimeAggBusy] = useState(false);
 	const openLongStory = () => {
@@ -528,6 +517,15 @@ export function Account({ session }: { session: Session }) {
 	const renameCostCopy =
 		renameCost === 0 ? "First rename is free." : `${renameCost.toLocaleString()} snouts.`;
 	const visibleWallowCount = __DEV__ && devWallowPreview ? 5 : wallowCount;
+	// The row shows the real rank; the dev preview only reaches the sheet.
+	const wallowRank = Math.max(0, Math.floor(wallowCount));
+	// "PIGGY-1234 · 1 of 3 to the Messenger Hat" — the code and the next rung,
+	// on one line. Once the ladder is capped it says so.
+	const referralRowSub = referral?.code
+		? referral.next_milestone_at == null
+			? `${referral.code} · every reward earned`
+			: `${referral.code} · ${referral.referrals_completed} of ${referral.next_milestone_at} to ${rewardNameForMilestone(referral.next_milestone_at)}`
+		: undefined;
 	const visibleRegenSeconds = __DEV__ && devWallowPreview
 		? compiledWallowRegenSeconds(5)
 		: wallowRegenSeconds ?? Math.round(3600 * (1 - wallowRegenPercent(visibleWallowCount) / 100));
@@ -710,16 +708,6 @@ export function Account({ session }: { session: Session }) {
 
 	const handleManage = async () => {
 		await presentCustomerCenter();
-	};
-
-	// Copy the player's REFERRAL CODE to the clipboard. Distinct from
-	// handleCopyCode (which copies their friend code for in-app friend-add)
-	// — different purpose, different target, different noun. [E11]
-	const handleCopyReferralCode = async () => {
-		if (!referral?.code) return;
-		await Clipboard.setStringAsync(referral.code);
-		setReferralCodeCopied(true);
-		setTimeout(() => setReferralCodeCopied(false), 1800);
 	};
 
 	// Open the system share sheet with the pre-filled invite message
@@ -919,343 +907,111 @@ export function Account({ session }: { session: Session }) {
 								</Sticker>
 							</View>
 
-							<WallowWall
-								count={visibleWallowCount}
-								regenSeconds={visibleRegenSeconds}
-								previewing={__DEV__ && devWallowPreview}
-								onTogglePreview={__DEV__ ? () => setDevWallowPreview((shown) => !shown) : undefined}
-							/>
-
-							{/* The achievements grid sits with the progress surfaces
-							    (above the membership card), not down in Settings. [E18] */}
-							<NavRow
-								icon="trophy"
-								label="Achievements"
-								sub="Track your devotion, generous + greedy ladders."
-								badge={
-									unclaimedAchv > 0 ? (
-										<Tag
-											label={unclaimedAchv > 99 ? "99+" : String(unclaimedAchv)}
-											tone="sun"
-											accessibilityLabel={`${unclaimedAchv} ready to claim`}
-										/>
-									) : undefined
-								}
-								onPress={() => router.push("/achievements")}
-								accessibilityHint="Opens the achievements grid"
-							/>
-
-							{/* Slop Club membership card — perks, Join CTA (→ RevenueCat
-							    hosted paywall for plan/price), fine-print. */}
-							{IAP_ENABLED && (
-								<Sticker
-									color="slopBand"
-									rotate={TILT.card}
-									radius={RADII.xl}
-									pad
-									style={styles.slopWrap}
-								>
-									<Ribbon
-										label={isVip ? "ACTIVE" : "ONE FRIEND"}
-										tone={isVip ? "slopGold" : "sun"}
+							{/* Your story — the three prestige doors, one row each. The
+							    Wallow rank card became a row with the one number that
+							    matters; its next-rank deltas live in the rank sheet.
+							    (Me simplified, direction A, 2026-09-20) */}
+							<View style={styles.groupWrap}>
+								<SectionHeader kicker="your prestige" title="Your story" />
+								<View style={styles.group}>
+									<NavRow
+										icon="crown"
+										label={`Wallow rank W${wallowRank}`}
+										sub={`${wallowRankLabel(wallowRank)} · W${wallowRank + 1} refills faster`}
+										badge={<Tag label={`W${wallowRank}`} tone="rose" />}
+										onPress={() => setWallowOpen(true)}
+										accessibilityHint="Opens your Wallow rank and what the next one unlocks"
 									/>
-									<View style={styles.slopHeader}>
-										<CardTitle>Slop Club</CardTitle>
-										<KickerPill star={false} tone="secondary">
-											membership
-										</KickerPill>
-									</View>
-
-									<View style={styles.slopHero}>
-										<View style={styles.slopPigPair} accessibilityElementsHidden>
-											<View style={styles.slopPigRosie}>
-												<PigPortrait pigId="rosie" size={PORTRAIT_SIZE} />
-											</View>
-											<View style={styles.slopPigFriend}>
-												<PigPortrait pigId="bandit" size={PORTRAIT_SIZE} />
-											</View>
-										</View>
-										<View style={styles.slopHeroCopy}>
-											<CardTitle>
-												{isVip ? "Rosie has company." : "Give Rosie a friend."}
-											</CardTitle>
-											<Hand style={styles.slopTagline}>
-												{hasReferralOnlySlopClub
-													? `Your companion access is active through ${referralGrantDateLabel}.`
-													: "Choose one long-term companion in the Pen, then decide who greets you at home."}
-											</Hand>
-										</View>
-									</View>
-
-									<View style={styles.slopSeasonRow}>
-										<Image
-											source={require("@/assets/images/perks/members_drops.png")}
-											style={styles.slopSeasonArt}
-											resizeMode="contain"
-											accessible={false}
-										/>
-										<View style={styles.slopSeasonCopy}>
-											<KickerPill star={false} tone="secondary">
-												Also included
-											</KickerPill>
-											<T role="cardTitleSm">Premium season collectibles</T>
-											<Hand>
-												Earn cosmetic rewards as you play—never a gameplay advantage.
-											</Hand>
-										</View>
-									</View>
-
-									{isVip ? (
-										<>
-											<Button
-												variant="ghost"
-												full
-												style={styles.slopBtn}
-												onPress={() => router.push("/pen" as Href)}
-												accessibilityLabel="Visit the Pen"
-												accessibilityHint="Opens the Pen, where you choose your companion"
-											>
-												Visit the Pen
-											</Button>
-											{!hasReferralOnlySlopClub ? (
-												<Button
-													variant="link"
-													size="sm"
-													full
-													onPress={handleManage}
-													accessibilityLabel="Manage subscription"
-													accessibilityHint="Opens the App Store subscription settings"
-												>
-													Manage subscription
-												</Button>
-											) : (
-												<BodySm align="center" style={styles.slopGrantFinePrint}>
-													No subscription needed. You won’t be charged.
-												</BodySm>
-											)}
-										</>
-									) : (
-										<Button
-											variant="gold"
-											full
-											style={styles.slopBtn}
-											onPress={handleUnlockPro}
-											loading={busy}
-											accessibilityLabel="Join the Slop Club"
-											accessibilityHint="Opens the subscription plans and prices"
-										>
-											Join the Slop Club
-										</Button>
-									)}
-
-									{!isVip && (
-										<BodySm
-											tone="secondary"
-											align="center"
-											style={styles.slopFinePrint}
-										>
-											Auto-renews. Cancel anytime in Settings.
-										</BodySm>
-									)}
-									{/* Terms + Privacy on the purchase surface — Apple review
-									    expects both linked where a subscription is sold. Ink,
-									    not an opacity crush, and a full 44pt target. [E4] */}
-									{!isVip && (
-										<View style={styles.slopLegal}>
-											<Button
-												variant="link"
-												size="sm"
-												onPress={() =>
-													Linking.openURL("https://ticklethepig.com/terms")
-												}
-												accessibilityLabel="Terms of service"
-												accessibilityHint="Opens ticklethepig.com/terms in your browser"
-											>
-												Terms
-											</Button>
-											<BodySm tone="secondary">·</BodySm>
-											<Button
-												variant="link"
-												size="sm"
-												onPress={() =>
-													Linking.openURL("https://ticklethepig.com/privacy")
-												}
-												accessibilityLabel="Privacy policy"
-												accessibilityHint="Opens ticklethepig.com/privacy in your browser"
-											>
-												Privacy
-											</Button>
-										</View>
-									)}
-								</Sticker>
-							)}
-
-							{/* Refer friends — code-based invite card. Drops between
-							    Slop Club and Settings per docs/referrals.md. Shows
-							    the player's persistent referral code + Copy + Share +
-							    a milestone progress bar toward the Messenger Hat. */}
-							{referral?.code && (
-								<Sticker
-									color="rose"
-									rotate={TILT.card}
-									radius={RADII.xl}
-									pad
-								>
-									<Kicker>referrals</Kicker>
-									<CardTitle>Invite new pigs</CardTitle>
-									<BodySm tone="secondary" style={styles.referralIntro}>
-										Share your code with a new player. When they join and play, you both earn rewards.
-									</BodySm>
-									<Hand tone="secondary">Your referral code</Hand>
-									<View style={styles.codePill}>
-										<T role="sectionTitle" style={styles.codePillValue}>
-											{referral.code}
-										</T>
-										<Button
-											variant="ghost"
-											size="sm"
-											icon={
-												<Icon
-													name={referralCodeCopied ? "check" : "copy"}
-													size={LABEL_MARK}
-													color={UI_COLORS.textPrimary}
-													strokeWidth={2.2}
+									<NavRow
+										icon="trophy"
+										label="Achievements"
+										sub="Devotion, generous + greedy ladders."
+										badge={
+											unclaimedAchv > 0 ? (
+												<Tag
+													label={unclaimedAchv > 99 ? "99+" : String(unclaimedAchv)}
+													tone="sun"
+													accessibilityLabel={`${unclaimedAchv} ready to claim`}
 												/>
-											}
-											onPress={handleCopyReferralCode}
-											accessibilityLabel={
-												referralCodeCopied
-													? "Referral code copied"
-													: "Copy your referral code"
-											}
-											accessibilityHint="Copies your referral code to the clipboard"
-										>
-											{referralCodeCopied ? "Copied" : "Copy"}
-										</Button>
-									</View>
-									<Button
-										variant="lilac"
-										full
-										style={styles.referralShare}
-										onPress={handleShareReferral}
-										accessibilityLabel="Share your referral code"
-										accessibilityHint="Opens the share sheet with your invite message"
-									>
-										Share your referral code
-									</Button>
-									<ReferralMilestoneRow
-										completed={referral.referrals_completed}
-										goal={referral.next_milestone_at ?? 3}
-										capped={referral.next_milestone_at == null}
+											) : undefined
+										}
+										onPress={() => router.push("/achievements")}
+										accessibilityHint="Opens the achievements grid"
 									/>
-
-									{/* Recruiter standing. The backing RPC/route keep their
-									    legacy names, but player-facing language stays firmly
-									    in the referral model; Sounder means the eight-pig crew. */}
-									{recruiterStats && (
-										<View style={styles.downlineStrip}>
-											<View style={styles.downlineTextCol}>
-												<BodySm>
-													{recruiterStats.engaged_count} completed{" "}
-													{recruiterStats.engaged_count === 1 ? "referral" : "referrals"}
-												</BodySm>
-												{recruiterStats.next_title && recruiterStats.next_threshold !== null && (
-													<Hand tone="secondary">
-														{recruiterStats.next_threshold - recruiterStats.engaged_count} more to
-														unlock{" "}
-														<T role="hand" tone="accent">
-															{recruiterStats.next_title}
-														</T>
-													</Hand>
-												)}
-											</View>
-											<Button
-												variant="handLink"
-												size="sm"
-												onPress={() => router.push("/recruits" as Href)}
-												accessibilityLabel="Referral board"
-												accessibilityHint="Opens Your Recruits"
-											>
-												referral board →
-											</Button>
-										</View>
+									<NavRow
+										glyph="sparkles"
+										label="Prestige gear"
+										sub={`${wallowRank} earned · in your closet`}
+										onPress={() =>
+											router.push({
+												pathname: "/(tabs)/shop",
+												params: { view: "wardrobe", filter: "prestige" },
+											})
+										}
+										accessibilityHint="Opens your closet, filtered to prestige gear"
+									/>
+									{/* A member's Slop Club is a row here, not a pitch — the
+									    pitch is for pigs who haven't joined (below). */}
+									{IAP_ENABLED && isVip && (
+										<NavRow
+											glyph="crown"
+											label="Slop Club"
+											sub={
+												hasReferralOnlySlopClub
+													? `Companion access through ${referralGrantDateLabel}`
+													: "Your companion is waiting in the Pen."
+											}
+											badge={<Tag label="ACTIVE" tone="sun" />}
+											onPress={() => router.push("/pen" as Href)}
+											accessibilityHint="Opens the Pen, where you choose your companion"
+										/>
 									)}
-									{/* Recent referrals + how close each is to counting
-									    (100 tickles). Replaces the bare
-									    "{N} on the way" aggregate. */}
-									{(referral.recent_friends ?? []).length > 0 && (
-										<View style={styles.friendList}>
-											<Label tone="secondary">Recent referrals</Label>
-											{(referral.recent_friends ?? []).slice(0, 3).map((f, i) => (
-												<ReferralFriendRow key={(f.username ?? "pig") + i} friend={f} />
-											))}
-										</View>
-									)}
+								</View>
+							</View>
 
-									{/* Full referral progress + reward ladder. */}
-									{(referral.referrals_completed > 0 ||
-										referral.referrals_pending > 0) && (
-										<Button
-											variant="handLink"
-											size="sm"
+							{/* Invite & redeem — the referral code rides its row with the
+							    Share on it; the ladder and the pending list live on
+							    Referral Rewards. The redeem box is a sheet, shown only to
+							    accounts the server would let redeem. */}
+							<View style={styles.groupWrap}>
+								<SectionHeader kicker="grow the herd" title="Invite & redeem" />
+								<View style={styles.group}>
+									{referral?.code && (
+										<NavRow
+											icon="friends"
+											label="Invite new pigs"
+											sub={referralRowSub}
+											badge={
+												<Button
+													variant="ghost"
+													size="xs"
+													icon={
+														<Icon
+															name="share"
+															size={LABEL_MARK}
+															color={UI_COLORS.textPrimary}
+															strokeWidth={2.2}
+														/>
+													}
+													onPress={handleShareReferral}
+													accessibilityLabel="Share your referral code"
+													accessibilityHint="Opens the share sheet with your invite message"
+												>
+													Share
+												</Button>
+											}
 											onPress={() => router.push("/recruits-progress" as Href)}
-											accessibilityLabel="Referral details and rewards"
-											accessibilityHint="Opens Referral Rewards"
-										>
-											Referral details + rewards ›
-										</Button>
+											accessibilityHint="Opens Referral Rewards — who's on the way and the reward ladder"
+										/>
 									)}
-
-									<BodySm style={styles.referralFine}>
-										Each completed referral earns you 100 tickles.
-									</BodySm>
-									<Hand tone="secondary">
-										A referral counts as soon as the new player reaches 100 tickles.
-									</Hand>
-
-									{/* Have a code? — redeem a friend's referral code right
-									    here. Shown only to accounts the server would actually
-									    let redeem: never-redeemed AND < 24h old AND
-									    < 5 tickles (canRedeemCode mirrors the server
-									    gate). An old/active account never sees a box it
-									    can't use; a genuinely-eligible new player still
-									    gets specific refusal copy on any edge case. */}
 									{canRedeemCode && (
-										<View style={styles.haveWrap}>
-											<View style={styles.haveDivider} />
-											<Body style={styles.haveLabel}>
-												Got a friend&apos;s referral code?
-											</Body>
-											<TextField
-												label="Friend's referral code"
-												labelHidden
-												variant="code"
-												value={codeInput}
-												onChangeText={(t) => {
-													setCodeInput(t.toUpperCase());
-													if (codeError) setCodeError(null);
-												}}
-												placeholder="PIGGY-1234"
-												autoCapitalize="characters"
-												autoCorrect={false}
-												maxLength={10}
-												editable={!codeBusy}
-												state={codeError ? "error" : "default"}
-												errorText={codeError ?? undefined}
-											/>
-											<Button
-												variant="ghost"
-												full
-												style={styles.applyBtn}
-												onPress={handleApplyCode}
-												disabled={!codeInput.trim()}
-												loading={codeBusy}
-												accessibilityLabel="Apply this referral code"
-												accessibilityHint="Credits your friend and pays you 50 snouts"
-											>
-												Apply
-											</Button>
-										</View>
+										<NavRow
+											icon="gift"
+											label="Got a friend's referral code?"
+											sub="New pigs only · +50 snouts"
+											onPress={() => setRedeemOpen(true)}
+											accessibilityHint="Opens the box to type a friend's referral code"
+										/>
 									)}
 									{codeInviter && (
 										<View style={styles.successRow}>
@@ -1270,51 +1026,106 @@ export function Account({ session }: { session: Session }) {
 											/>
 										</View>
 									)}
+									<NavRow
+										glyph="gift"
+										label="Redeem a Golden Ticket"
+										sub="Scan or type a code."
+										onPress={() => router.push("/scan-code" as Href)}
+										accessibilityHint="Opens the code scanner"
+									/>
+								</View>
+							</View>
+
+							{/* Slop Club — one band for pigs who haven't joined: the pig
+							    pair, one line, the gold CTA. Plans and prices are the
+							    paywall's; the legal links stay because a subscription is
+							    sold from here. [E4] */}
+							{IAP_ENABLED && !isVip && (
+								<Sticker
+									color="slopBand"
+									rotate={TILT.card}
+									radius={RADII.xl}
+									pad
+									style={styles.slopWrap}
+								>
+									<Ribbon label="ONE FRIEND" tone="sun" />
+									<View style={styles.slopHero}>
+										<View style={styles.slopPigPair} accessibilityElementsHidden>
+											<View style={styles.slopPigRosie}>
+												<PigPortrait pigId="rosie" size={PORTRAIT_SIZE} />
+											</View>
+											<View style={styles.slopPigFriend}>
+												<PigPortrait pigId="bandit" size={PORTRAIT_SIZE} />
+											</View>
+										</View>
+										<View style={styles.slopHeroCopy}>
+											<KickerPill star={false} tone="secondary">
+												Slop Club
+											</KickerPill>
+											<CardTitle>Give Rosie a friend.</CardTitle>
+											<Hand style={styles.slopTagline}>
+												A companion in the Pen, the members band, monthly drops.
+											</Hand>
+										</View>
+									</View>
+									<Button
+										variant="gold"
+										full
+										style={styles.slopBtn}
+										onPress={handleUnlockPro}
+										loading={busy}
+										accessibilityLabel="Join the Slop Club"
+										accessibilityHint="Opens the subscription plans and prices"
+									>
+										Join the Slop Club
+									</Button>
+									<BodySm
+										tone="secondary"
+										align="center"
+										style={styles.slopFinePrint}
+									>
+										Auto-renews. Cancel anytime in Settings.
+									</BodySm>
+									<View style={styles.slopLegal}>
+										<Button
+											variant="link"
+											size="sm"
+											onPress={() =>
+												Linking.openURL("https://ticklethepig.com/terms")
+											}
+											accessibilityLabel="Terms of service"
+											accessibilityHint="Opens ticklethepig.com/terms in your browser"
+										>
+											Terms
+										</Button>
+										<BodySm tone="secondary">·</BodySm>
+										<Button
+											variant="link"
+											size="sm"
+											onPress={() =>
+												Linking.openURL("https://ticklethepig.com/privacy")
+											}
+											accessibilityLabel="Privacy policy"
+											accessibilityHint="Opens ticklethepig.com/privacy in your browser"
+										>
+											Privacy
+										</Button>
+									</View>
 								</Sticker>
 							)}
 
-							{/* Redeem a Golden Ticket — the code scanner's one door.
-							    It used to ride the Shop's crown on every scroll of the
-							    shelves; redemption is a Me thing, so it sits beside the
-							    other code you can type in. (2026-09-17) */}
-							<Sticker
-								color="sun"
-								rotate={-TILT.card}
-								radius={RADII.xl}
-								pad
-								onPress={() => router.push("/scan-code" as Href)}
-								accessibilityLabel="Redeem a Golden Ticket"
-								accessibilityHint="Opens the code scanner"
-								style={styles.ticketRow}
-							>
-								<Glyph name="gift" size={ART_SIZE.glyph} />
-								<View style={styles.ticketCopy}>
-									<T role="cardTitleSm">Redeem a Golden Ticket</T>
-									<Hand tone="secondary">scan or type a code</Hand>
-								</View>
-								<Icon
-									name="chevronRight"
-									size={LABEL_MARK}
-									color={UI_COLORS.textSecondary}
-								/>
-							</Sticker>
-
-							{/* Settings — three groups, not eight flat rows: what's
-							    yours, what you've bought, and the two ways out. [E25] */}
-							<View style={styles.settingsWrap}>
-								<SectionHeader kicker="settings" title="Settings" />
-								<View style={styles.settingsGroup}>
+							{/* The back door — one Settings door (name, blocked pigs,
+							    purchases, the two ways out) plus the two rows that are
+							    content, not settings. */}
+							<View style={styles.groupWrap}>
+								<SectionHeader kicker="settings" title="The back door" />
+								<View style={styles.group}>
 									<NavRow
-										icon="edit"
-										label="Change your name"
-										onPress={openRename}
-										accessibilityHint="Opens the rename dialog and its cost"
-									/>
-									<NavRow
-										icon="lock"
-										label="Blocked users"
-										onPress={() => setBlockedUsersOpen(true)}
-										accessibilityHint="Opens the list of pigs you've blocked"
+										icon="gear"
+										label="Settings"
+										sub="Name, blocked pigs, purchases, sign out."
+										onPress={() => setSettingsOpen(true)}
+										accessibilityHint="Opens your account settings"
 									/>
 									<NavRow
 										icon="scroll"
@@ -1323,46 +1134,10 @@ export function Account({ session }: { session: Session }) {
 										accessibilityHint="Opens the release notes"
 									/>
 									<NavRow
-										icon="refresh"
-										label="Barn introduction"
-										onPress={() => showHabitatIntro(session.user.id)}
-										accessibilityHint="Replays the barn introduction"
-									/>
-									{/* Report a bug / idea — the single quiet door into the
-									    in-app Den whisper, grouped with the rest of "your
-									    pig" rather than orphaned below the card. [E25] */}
-									<NavRow
 										icon="bell"
-										label="Found a bug or have an idea? Report it"
+										label="Found a bug or have an idea?"
 										onPress={openFeedback}
 										accessibilityHint="Opens the whisper dialog"
-									/>
-								</View>
-
-								{IAP_ENABLED && (
-									<View style={styles.settingsGroup}>
-										<NavRow
-											icon="refresh"
-											label="Restore purchases"
-											onPress={handleRestore}
-											accessibilityHint="Re-checks this Apple ID for a Slop Club subscription"
-										/>
-									</View>
-								)}
-
-								<View style={styles.settingsGroup}>
-									<NavRow
-										icon="exit"
-										label="Sign out"
-										onPress={() => setSignOutOpen(true)}
-										accessibilityHint="Asks before signing this device out"
-									/>
-									<NavRow
-										icon="x"
-										label="Delete account"
-										tone="danger"
-										onPress={() => setDeleteOpen(true)}
-										accessibilityHint="Asks before permanently erasing your account"
 									/>
 								</View>
 
@@ -1644,79 +1419,161 @@ export function Account({ session }: { session: Session }) {
 					<LoadingBeat label="tallying it up" />
 				)}
 			</Sheet>
-		</View>
-	);
-}
-
-// One recent referred friend on the Account card: name + progress toward
-// counting (tickles/100), or a "counted" tag once complete.
-function ReferralFriendRow({ friend }: { friend: ReferralFriend }) {
-	const done = !!friend.completed;
-	const name = friend.username ?? "a new pig";
-	return (
-		<View style={styles.friendRow}>
-			<View style={styles.friendTop}>
-				<BodySm numberOfLines={1} style={styles.friendName}>
-					{name}
-				</BodySm>
-				{done ? (
-					<Tag label="counted" icon="check" tone="sage" />
-				) : (
-					<Hand tone="secondary">
-						{friend.tickles}/{REFERRAL_TICKLE_GOAL} tickles
-					</Hand>
+			{/* Wallow rank — the card that used to sit on the page, now a sheet
+			    behind its row: current rank, the next one, the deltas, the gear
+			    link. The dev preview chip rides along in __DEV__. */}
+			<Sheet
+				open={wallowOpen}
+				onClose={() => setWallowOpen(false)}
+				kicker="your prestige"
+				title="Wallow rank"
+				subtitle={`W${wallowRank} · ${wallowRankLabel(wallowRank)}`}
+			>
+				{__DEV__ && (
+					<View style={wallowWallStyles.devRow}>
+						<Chip
+							label={devWallowPreview ? "W5 preview" : "Preview W5"}
+							icon="flame"
+							tone={devWallowPreview ? "sun" : "paper"}
+							selected={devWallowPreview}
+							onPress={() => setDevWallowPreview((shown) => !shown)}
+							accessibilityLabel="Preview Wallow rank 5"
+							accessibilityHint="Shows what rank 5 would look like"
+						/>
+					</View>
 				)}
-			</View>
-			{!done && (
-				<ProgressTrack
-					value={friend.tickles}
-					max={REFERRAL_TICKLE_GOAL}
-					tone="lilac"
-					height="sm"
-					accessibilityLabel={`${name}'s progress toward counting`}
+				<WallowRankBody
+					count={visibleWallowCount}
+					regenSeconds={visibleRegenSeconds}
+					onOpenGear={() =>
+						runAfterSheet(() => setWallowOpen(false), () =>
+							router.push({
+								pathname: "/(tabs)/shop",
+								params: { view: "wardrobe", filter: "prestige" },
+							}),
+						)
+					}
 				/>
-			)}
-		</View>
-	);
-}
+			</Sheet>
 
-// Milestone progress row for the "Refer friends" card. Renders the
-// "Completed referrals: N / 3" line + the meter + a "Rewards earned" tag
-// once capped. Pure presentational — caller computes completed / goal
-// from my_referral_summary.
-function ReferralMilestoneRow({
-	completed,
-	goal,
-	capped,
-}: {
-	completed: number;
-	goal: number;
-	capped: boolean;
-}) {
-	// The bar tracks whichever ladder rung is next (3/5/10/25/100/500/1000).
-	const reward = rewardNameForMilestone(goal);
-	const max = capped ? Math.max(completed, 1) : goal;
-	const value = capped ? max : completed;
-	return (
-		<View style={styles.milestoneWrap}>
-			<View style={styles.milestoneHeader}>
-				<Label>
-					Completed referrals: {completed} / {capped ? completed : goal}
-				</Label>
-				{capped && <Tag label="Rewards earned" icon="check" tone="sage" />}
-			</View>
-			<ProgressTrack
-				value={value}
-				max={max}
-				tone="sun"
-				height="sm"
-				accessibilityLabel="Completed referrals"
-			/>
-			{!capped && (
-				<Hand tone="secondary" style={styles.milestoneFoot}>
-					{goal - completed} more for {reward}
-				</Hand>
-			)}
+			{/* Got a friend's referral code? — the redeem box, shown only to
+			    accounts the server would actually let redeem (canRedeemCode
+			    mirrors the server gate); an old/active account never sees it. */}
+			<Sheet
+				open={redeemOpen}
+				onClose={() => {
+					if (!codeBusy) setRedeemOpen(false);
+				}}
+				kicker="referrals"
+				title="Got a friend's referral code?"
+				subtitle="Credits your friend and pays you 50 snouts."
+				keyboardAware
+			>
+				<TextField
+					label="Friend's referral code"
+					labelHidden
+					variant="code"
+					value={codeInput}
+					onChangeText={(t) => {
+						setCodeInput(t.toUpperCase());
+						if (codeError) setCodeError(null);
+					}}
+					placeholder="PIGGY-1234"
+					autoCapitalize="characters"
+					autoCorrect={false}
+					maxLength={10}
+					editable={!codeBusy}
+					state={codeError ? "error" : "default"}
+					errorText={codeError ?? undefined}
+				/>
+				<Button
+					variant="ghost"
+					full
+					style={styles.applyBtn}
+					onPress={handleApplyCode}
+					disabled={!codeInput.trim()}
+					loading={codeBusy}
+					accessibilityLabel="Apply this referral code"
+					accessibilityHint="Credits your friend and pays you 50 snouts"
+				>
+					Apply
+				</Button>
+			</Sheet>
+
+			{/* Settings — the rows that used to end the page. Each one that opens
+			    another modal dismisses this sheet first and runs a beat later
+			    (the iOS nested-modal handoff gap ActionSheet works around). */}
+			<Sheet
+				open={settingsOpen}
+				onClose={() => setSettingsOpen(false)}
+				kicker="settings"
+				title="Settings"
+			>
+				<View style={styles.group}>
+					<NavRow
+						icon="edit"
+						label="Change your name"
+						sub={renameCostCopy}
+						onPress={() => runAfterSheet(() => setSettingsOpen(false), openRename)}
+						accessibilityHint="Opens the rename dialog and its cost"
+					/>
+					<NavRow
+						icon="lock"
+						label="Blocked users"
+						onPress={() =>
+							runAfterSheet(() => setSettingsOpen(false), () => setBlockedUsersOpen(true))
+						}
+						accessibilityHint="Opens the list of pigs you've blocked"
+					/>
+					<NavRow
+						icon="refresh"
+						label="Barn introduction"
+						onPress={() =>
+							runAfterSheet(() => setSettingsOpen(false), () =>
+								showHabitatIntro(session.user.id),
+							)
+						}
+						accessibilityHint="Replays the barn introduction"
+					/>
+				</View>
+				{IAP_ENABLED && (
+					<View style={[styles.group, styles.groupGap]}>
+						{isVip && !hasReferralOnlySlopClub && (
+							<NavRow
+								glyph="crown"
+								label="Manage subscription"
+								onPress={() => runAfterSheet(() => setSettingsOpen(false), handleManage)}
+								accessibilityHint="Opens the App Store subscription settings"
+							/>
+						)}
+						<NavRow
+							icon="refresh"
+							label="Restore purchases"
+							onPress={handleRestore}
+							accessibilityHint="Re-checks this Apple ID for a Slop Club subscription"
+						/>
+					</View>
+				)}
+				<View style={[styles.group, styles.groupGap]}>
+					<NavRow
+						icon="exit"
+						label="Sign out"
+						onPress={() =>
+							runAfterSheet(() => setSettingsOpen(false), () => setSignOutOpen(true))
+						}
+						accessibilityHint="Asks before signing this device out"
+					/>
+					<NavRow
+						icon="x"
+						label="Delete account"
+						tone="danger"
+						onPress={() =>
+							runAfterSheet(() => setSettingsOpen(false), () => setDeleteOpen(true))
+						}
+						accessibilityHint="Asks before permanently erasing your account"
+					/>
+				</View>
+			</Sheet>
 		</View>
 	);
 }
@@ -1747,16 +1604,17 @@ function formatRegenInterval(seconds: number): string {
 	return `${Math.round(safe / 60)}m`;
 }
 
-function WallowWall({
+// The Wallow rank sheet's body: the current rank, the next one and what it
+// changes, then the door to prestige gear. It was the page's second card until
+// the Me tab was simplified (direction A, 2026-09-20); the drawing is the same.
+function WallowRankBody({
 	count,
 	regenSeconds,
-	previewing,
-	onTogglePreview,
+	onOpenGear,
 }: {
 	count: number;
 	regenSeconds: number;
-	previewing: boolean;
-	onTogglePreview?: () => void;
+	onOpenGear: () => void;
 }) {
 	const rank = Math.max(0, Math.floor(count));
 	const nextRank = rank + 1;
@@ -1765,86 +1623,62 @@ function WallowWall({
 	const currentVisitHours = wallowVisitCooldownHours(rank);
 	const nextVisitHours = wallowVisitCooldownHours(nextRank);
 	return (
-		<View style={wallowWallStyles.wrap}>
-			<SectionHeader
-				kicker="your prestige"
-				title="Wallow rank"
-				right={
-					onTogglePreview ? (
-						<Chip
-							label={previewing ? "W5 preview" : "Preview W5"}
-							icon="flame"
-							tone={previewing ? "sun" : "paper"}
-							selected={previewing}
-							onPress={onTogglePreview}
-							accessibilityLabel="Preview Wallow rank 5"
-							accessibilityHint="Shows what rank 5 would look like"
-						/>
-					) : undefined
-				}
-			/>
-			<Sticker color="paper" rotate={0.4} radius={RADII.xl} pad style={wallowWallStyles.card}>
-				<View style={wallowWallStyles.currentRow}>
-					<View style={wallowWallStyles.currentDecal}>
-						<T role="cardTitle">W{rank}</T>
-					</View>
-					<View style={wallowWallStyles.currentCopy}>
-						<T role="kickerPill" tone="accent">CURRENT</T>
-						<T role="cardTitleSm">{wallowRankLabel(rank)}</T>
-						<BodySm tone="secondary">
-							1 tickle / {formatRegenInterval(regenSeconds)} · visits every {currentVisitHours}h
-						</BodySm>
-					</View>
+		<View style={wallowWallStyles.body}>
+			<View style={wallowWallStyles.currentRow}>
+				<View style={wallowWallStyles.currentDecal}>
+					<T role="cardTitle">W{rank}</T>
 				</View>
+				<View style={wallowWallStyles.currentCopy}>
+					<T role="kickerPill" tone="accent">CURRENT</T>
+					<T role="cardTitleSm">{wallowRankLabel(rank)}</T>
+					<BodySm tone="secondary">
+						1 tickle / {formatRegenInterval(regenSeconds)} · visits every {currentVisitHours}h
+					</BodySm>
+				</View>
+			</View>
 
-				<View style={wallowWallStyles.stepConnector}>
-					<View style={wallowWallStyles.stepConnectorLine} />
-					<Icon name="chevronDown" size={LABEL_MARK} color={UI_COLORS.uiMuted} strokeWidth={2.4} />
-				</View>
+			<View style={wallowWallStyles.stepConnector}>
+				<View style={wallowWallStyles.stepConnectorLine} />
+				<Icon name="chevronDown" size={LABEL_MARK} color={UI_COLORS.uiMuted} strokeWidth={2.4} />
+			</View>
 
-				<View style={wallowWallStyles.nextStep}>
-					<View style={wallowWallStyles.nextHeading}>
-						<View>
-							<T role="kickerPill" tone="accent">NEXT WALLOW</T>
-							<T role="cardTitleSm">Reach W{nextRank}</T>
-						</View>
-						<View style={wallowWallStyles.nextDecal}>
-							<T role="cardTitleSm">W{nextRank}</T>
-						</View>
+			<View style={wallowWallStyles.nextStep}>
+				<View style={wallowWallStyles.nextHeading}>
+					<View>
+						<T role="kickerPill" tone="accent">NEXT WALLOW</T>
+						<T role="cardTitleSm">Reach W{nextRank}</T>
 					</View>
-					<View style={wallowWallStyles.deltaRow}>
-						<BodySm tone="secondary">Tickle refill</BodySm>
-						<BodySm>
-							{currentBaseInterval} → {nextBaseInterval}
-						</BodySm>
+					<View style={wallowWallStyles.nextDecal}>
+						<T role="cardTitleSm">W{nextRank}</T>
 					</View>
-					<View style={wallowWallStyles.deltaRow}>
-						<BodySm tone="secondary">Friend visits</BodySm>
-						<BodySm>
-							{currentVisitHours}h → {nextVisitHours}h
-						</BodySm>
-					</View>
-					<Hand tone="accent" style={wallowWallStyles.unlockLine}>
-						+ exclusive W{nextRank} wearable
-					</Hand>
 				</View>
-				<Button
-					variant="ghost"
-					full
-					style={wallowWallStyles.gearLink}
-					icon={<Glyph name="crown" size={LABEL_MARK} />}
-					onPress={() =>
-						router.push({
-							pathname: "/(tabs)/shop",
-							params: { view: "wardrobe", filter: "prestige" },
-						})
-					}
-					accessibilityLabel={`Prestige gear, ${rank} earned`}
-					accessibilityHint="Opens your closet, filtered to prestige gear"
-				>
-					prestige gear · {rank} earned ›
-				</Button>
-			</Sticker>
+				<View style={wallowWallStyles.deltaRow}>
+					<BodySm tone="secondary">Tickle refill</BodySm>
+					<BodySm>
+						{currentBaseInterval} → {nextBaseInterval}
+					</BodySm>
+				</View>
+				<View style={wallowWallStyles.deltaRow}>
+					<BodySm tone="secondary">Friend visits</BodySm>
+					<BodySm>
+						{currentVisitHours}h → {nextVisitHours}h
+					</BodySm>
+				</View>
+				<Hand tone="accent" style={wallowWallStyles.unlockLine}>
+					+ exclusive W{nextRank} wearable
+				</Hand>
+			</View>
+			<Button
+				variant="ghost"
+				full
+				style={wallowWallStyles.gearLink}
+				icon={<Glyph name="crown" size={LABEL_MARK} />}
+				onPress={onOpenGear}
+				accessibilityLabel={`Prestige gear, ${rank} earned`}
+				accessibilityHint="Opens your closet, filtered to prestige gear"
+			>
+				prestige gear · {rank} earned ›
+			</Button>
 		</View>
 	);
 }
@@ -1897,15 +1731,18 @@ const styles = StyleSheet.create({
 		backgroundColor: UI_COLORS.uiMuted,
 		marginVertical: SPACE.xs,
 	},
-	// ── Slop Club membership card ──────────────────────────────────
+	// A titled group of rows: the section header (it owns the gap below
+	// itself), then the NavRow stack.
+	groupWrap: {},
+	group: { gap: SPACE.sm },
+	groupGap: { marginTop: SPACE.md },
+	// ── Slop Club band (non-members) ──────────────────────────────
 	// The Ribbon crosses the corner, so the card clips.
 	slopWrap: { overflow: "hidden" },
-	slopHeader: { gap: SPACE.xxs },
 	slopHero: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm,
-		marginTop: SPACE.md,
 	},
 	slopPigPair: {
 		width: SLOP_PAIR_W,
@@ -1927,19 +1764,7 @@ const styles = StyleSheet.create({
 	},
 	slopHeroCopy: { flex: 1, minWidth: 0 },
 	slopTagline: { marginTop: SPACE.xs },
-	slopSeasonRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginTop: SPACE.md,
-		paddingTop: SPACE.md,
-		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.border,
-	},
-	slopSeasonArt: { width: ART_SIZE.glyph, height: ART_SIZE.glyph },
-	slopSeasonCopy: { flex: 1, minWidth: 0 },
 	slopBtn: { marginTop: SPACE.card },
-	slopGrantFinePrint: { marginTop: SPACE.card },
 	slopLegal: {
 		flexDirection: "row",
 		justifyContent: "center",
@@ -1948,83 +1773,16 @@ const styles = StyleSheet.create({
 		marginTop: SPACE.sm,
 	},
 	slopFinePrint: { marginTop: SPACE.sm },
-	// ── Refer friends card ─────────────────────────────────────────
-	referralIntro: { marginTop: SPACE.xs, marginBottom: SPACE.card },
-	codePill: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginTop: SPACE.xs,
-		backgroundColor: UI_COLORS.surface,
-		borderWidth: BORDER.thin,
-		borderColor: UI_COLORS.border,
-		borderRadius: RADII.md,
-		paddingLeft: SPACE.md,
-		paddingRight: SPACE.xs,
-		paddingVertical: SPACE.xs,
-	},
-	codePillValue: { flex: 1, letterSpacing: CODE_TRACKING },
-	referralShare: { marginTop: SPACE.md, marginBottom: SPACE.card },
-	referralFine: { marginTop: SPACE.xs },
-	// The Golden Ticket row: a full-width tap with the gift on its left and
-	// the chevron that says it leaves for the scanner.
-	ticketRow: {
-		minHeight: TAP_MIN,
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-	},
-	ticketCopy: { flex: 1, minWidth: 0 },
-	milestoneWrap: { marginBottom: SPACE.md },
-	milestoneHeader: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginBottom: SPACE.sm,
-	},
-	milestoneFoot: { marginTop: SPACE.xs },
-	friendList: { marginTop: SPACE.md, gap: SPACE.sm },
-	friendRow: { gap: SPACE.xs },
-	friendTop: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: SPACE.sm,
-	},
-	friendName: { flex: 1, minWidth: 0 },
-	// Recruiter-standing strip — a quiet dashed-top-divided row: count +
-	// next-title on the left, board link on the right.
-	downlineStrip: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: SPACE.md,
-		marginBottom: SPACE.md,
-		paddingTop: SPACE.sm,
-		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.uiMuted,
-		borderStyle: "dashed",
-	},
-	downlineTextCol: { flex: 1, minWidth: 0 },
-	haveWrap: { marginTop: SPACE.sm, gap: SPACE.sm },
-	haveDivider: {
-		borderBottomWidth: BORDER.thin,
-		borderColor: UI_COLORS.uiMuted,
-		borderStyle: "dashed",
-	},
-	haveLabel: { marginTop: SPACE.xs },
-	applyBtn: { marginTop: SPACE.xs },
+	// ── Redeem a code ──────────────────────────────────────────────
+	applyBtn: { marginTop: SPACE.sm },
 	successRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.xs,
-		marginTop: SPACE.sm,
+		paddingHorizontal: SPACE.card,
 	},
 	successPig: { width: ART_SIZE.mark, height: ART_SIZE.mark },
 	// ── Settings ───────────────────────────────────────────────────
-	settingsWrap: { gap: SPACE.md },
-	settingsGroup: { gap: SPACE.sm },
 	footer: { marginTop: SPACE.md },
 	// ── Dialog shells ──────────────────────────────────────────────
 	// The sticker tilts and wears the hard shadow; give both room inside the
@@ -2062,8 +1820,8 @@ const styles = StyleSheet.create({
 });
 
 const wallowWallStyles = StyleSheet.create({
-	wrap: { gap: SPACE.sm },
-	card: { overflow: "hidden" },
+	body: { paddingBottom: SPACE.sm },
+	devRow: { flexDirection: "row", justifyContent: "flex-end", marginBottom: SPACE.sm },
 	currentRow: {
 		minHeight: RANK_DECAL,
 		flexDirection: "row",
