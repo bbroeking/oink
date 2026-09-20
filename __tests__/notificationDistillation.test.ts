@@ -24,7 +24,7 @@ describe("notification distillation", () => {
 		const account = read("components/Account.tsx");
 		const barn = read("components/Barn.tsx");
 		expect(account).toContain('label="What\'s new"');
-		expect(account).toContain("Found a bug or have an idea? Report it");
+		expect(account).toContain('label="Found a bug or have an idea?"');
 		expect(account).toContain("onPress={openFeedback}");
 		expect(barn).not.toContain("ReleaseNotesModal");
 		expect(barn).not.toContain("shouldShowReleaseNotes");
