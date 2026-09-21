@@ -118,6 +118,8 @@ interface QueueApi {
 	hold: () => void;
 	unhold: () => void;
 	activeId: string | null;
+	/** True while any hold is active (see usePopupHeld). */
+	held: boolean;
 }
 
 const PopupCtx = createContext<QueueApi | null>(null);
@@ -154,6 +156,9 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 	// account's schism/finale/achievements all want at once) put a modal
 	// fight on top of a gate screen the player can't leave.
 	const holdsRef = useRef(0);
+	// Render mirror of holdsRef for usePopupHeld — the ref serves the machine's
+	// timers and callbacks; readers outside the queue need a state to re-render on.
+	const [held, setHeld] = useState(false);
 
 	// The single writer: every machine transition goes through here so the
 	// ref mirror (read by callbacks/timers) can never lag the render state.
@@ -199,11 +204,13 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 
 	const hold = useCallback(() => {
 		holdsRef.current += 1;
+		setHeld(true);
 		setVersion((v) => v + 1);
 	}, []);
 
 	const unhold = useCallback(() => {
 		holdsRef.current = Math.max(0, holdsRef.current - 1);
+		setHeld(holdsRef.current > 0);
 		setVersion((v) => v + 1);
 	}, []);
 
@@ -262,8 +269,8 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 
 	const activeId = machine.phase === "presenting" ? machine.presentedId : null;
 	const value = useMemo<QueueApi>(
-		() => ({ request, drop, release, hold, unhold, activeId }),
-		[request, drop, release, hold, unhold, activeId]
+		() => ({ request, drop, release, hold, unhold, activeId, held }),
+		[request, drop, release, hold, unhold, activeId, held]
 	);
 
 	return <PopupCtx.Provider value={value}>{children}</PopupCtx.Provider>;
@@ -292,8 +299,22 @@ export function usePopupHold(active: boolean) {
 // re-admit after the handoff gap. Mechanically a usePopupHold; named for intent
 // so future unmanaged sheets adopt the latch in one line instead of being
 // converted to slots.
+//
+// The hold OUTLIVES `open` by the gap: the sheet's native dismissal starts in
+// the commit `open` flips false, and an unhold in that same commit admitted a
+// queued popup straight into it — the wedge the latch exists to prevent, on
+// the way out instead of the way in (the dig, 2026-09-20).
 export function useUnmanagedModalHold(open: boolean) {
-	usePopupHold(open);
+	const [held, setHeld] = useState(open);
+	useEffect(() => {
+		if (open) {
+			setHeld(true);
+			return;
+		}
+		const id = setTimeout(() => setHeld(false), POPUP_HANDOFF_GAP_MS);
+		return () => clearTimeout(id);
+	}, [open]);
+	usePopupHold(open || held);
 }
 
 // True while any popup is currently PRESENTED. Lets a caller OUTSIDE the queue
@@ -303,6 +324,17 @@ export function useUnmanagedModalHold(open: boolean) {
 export function usePopupActive(): boolean {
 	const ctx = useContext(PopupCtx);
 	return !!ctx?.activeId;
+}
+
+// True while any HOLD is active — a pre-shell gate or an unmanaged native
+// Modal on the useUnmanagedModalHold latch (the Snout Deep dig, a tab sheet).
+// The root layout's push-tap routing reads it: replacing the Stack under such
+// a Modal hides it while a sheet nested inside may still be presented, and iOS
+// then dismisses the nested sheet and strands the host — invisible, eating
+// every touch (the 2026-09-20 dig freeze). The tap waits for the hold to lift.
+export function usePopupHeld(): boolean {
+	const ctx = useContext(PopupCtx);
+	return !!ctx?.held;
 }
 
 export function usePopupSlot(id: string, want: boolean, priority = 100) {

@@ -97,6 +97,11 @@ export function responseConsumeKey(
 //   - "ignore": unknown/absent screen — no route, no-op cleanly.
 //   - "navigate": router is ready — route now.
 //   - "defer": router not ready — stash the path and flush when the shell mounts.
+//   - "defer" (modalHeld): an UNMANAGED native Modal holds the popup queue (the
+//     Snout Deep dig, a tab sheet). Replacing the Stack under it hides its host
+//     Modal while a sheet nested inside is still presented — iOS dismisses the
+//     nested sheet instead and strands the host, invisible over the whole app,
+//     eating every touch (the 2026-09-20 dig freeze). Route once the hold lifts.
 export type TapRoutePlan = {
 	action: "navigate" | "defer" | "ignore";
 	path: string | null;
@@ -104,9 +109,10 @@ export type TapRoutePlan = {
 
 export function planTapRoute(
 	screen: string | null | undefined,
-	routerReady: boolean
+	routerReady: boolean,
+	modalHeld = false
 ): TapRoutePlan {
 	const path = routeForScreen(screen);
 	if (!path) return { action: "ignore", path: null };
-	return { action: routerReady ? "navigate" : "defer", path };
+	return { action: routerReady && !modalHeld ? "navigate" : "defer", path };
 }

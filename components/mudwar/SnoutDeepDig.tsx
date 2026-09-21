@@ -19,6 +19,7 @@ import { router } from "expo-router";
 import type { DeepSubmission, RootingOutcome, RootingSession } from "@/hooks/useRooting";
 import type { RpcResult } from "@/utils/rpc";
 import { feedingNowMs } from "@/utils/feedingClock";
+import { MOTION_DURATION } from "@/hooks/useMotionPolicy";
 import { generateLayeredBoard } from "@/utils/rooting";
 import {
   clearSnoutDeepProgress,
@@ -42,6 +43,16 @@ import { DigReceiptSheet } from "./SnoutDeepSheets";
 export const SNOUT_DEEP_SYNC_EVERY = 5;
 // Where the uncrewed receipt's "truffles are for herds — find yours ›" goes.
 const JOIN_PATH = "/(tabs)/season";
+// The receipt sheet is a SECOND native Modal, presented from the dig's own
+// full-screen one. iOS dismisses the topmost presented controller first, so
+// closing the dig while the sheet was up dismissed the SHEET and left the
+// dig's controller presented — emptied of its React tree, invisible, over the
+// whole app, eating every touch ("my app freezes after I close out of dig",
+// 2026-09-20; build 192+, where the tally became a sheet and the dig started
+// riding its own slide-out). Leaving from the receipt therefore hides the
+// sheet FIRST and closes the dig only once the sheet reports its dismissal —
+// or after this fallback, for a host that never reports it.
+const RECEIPT_RELEASE_MS = MOTION_DURATION.modal * 3;
 
 export interface SnoutDeepDigProps {
   session: RootingSession;
@@ -51,6 +62,11 @@ export interface SnoutDeepDigProps {
   onSync: (layer: number, actions: string[], finds: string[]) => Promise<void>;
   /** Leave the patch (the close chip, the receipt's primary). */
   onClose: () => void;
+  /**
+   * The host's own close (accessibility escape, hardware back) goes through
+   * the registered leave, so it too lets the receipt sheet go first.
+   */
+  registerLeave?: (leave: (() => Promise<void>) | null) => void;
   /** A real (non-practice) dig landed on the server. */
   onDug?: () => void;
   onBusyChange?: (busy: boolean) => void;
@@ -70,6 +86,7 @@ export function SnoutDeepDig({
   onSubmit,
   onSync,
   onClose,
+  registerLeave,
   onDug,
   onBusyChange,
   phaseCountdown,
@@ -257,10 +274,49 @@ export function SnoutDeepDig({
     [onSubmit, onDug, session.userId, session.windowIndex],
   );
 
-  const join = useCallback(() => {
-    onClose();
-    router.push(JOIN_PATH);
-  }, [onClose]);
+  // ── Leaving: the receipt sheet goes first, then the dig (see RECEIPT_RELEASE_MS)
+  const [leaving, setLeaving] = useState(false);
+  const afterLeaveRef = useRef<(() => void) | null>(null);
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishLeave = useCallback(() => {
+    const after = afterLeaveRef.current;
+    if (!after) return;
+    afterLeaveRef.current = null;
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+    after();
+  }, []);
+  useEffect(
+    () => () => {
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    },
+    [],
+  );
+  const leave = useCallback(
+    (then?: () => void) => {
+      if (afterLeaveRef.current) return; // a leave is already on its way
+      const done = () => {
+        onClose();
+        then?.();
+      };
+      if (!receipt) {
+        done(); // no sheet up (the X mid-dig): the dig closes directly
+        return;
+      }
+      afterLeaveRef.current = done;
+      setLeaving(true);
+      leaveTimerRef.current = setTimeout(finishLeave, RECEIPT_RELEASE_MS);
+    },
+    [receipt, onClose, finishLeave],
+  );
+  useEffect(() => {
+    registerLeave?.(async () => leave());
+    return () => registerLeave?.(null);
+  }, [leave, registerLeave]);
+  const exit = useCallback(() => leave(), [leave]);
+  const join = useCallback(() => leave(() => router.push(JOIN_PATH)), [leave]);
 
   return (
     <>
@@ -271,18 +327,21 @@ export function SnoutDeepDig({
         phaseCountdown={phaseCountdown}
         helpOnMount={helpOnMount}
         onHelpSeen={onHelpSeen}
-        onExit={onClose}
+        onExit={exit}
         onDone={onDone}
         tickles={tickles}
         tickledBefore={tickledBefore}
       />
       {receipt ? (
         <DigReceiptSheet
-          visible
+          visible={!leaving}
+          // Vanishes on the way out: the dig's own slide is the one exit motion.
+          animationType={leaving ? "none" : "slide"}
           receipt={receipt}
-          onPrimary={onClose}
+          onPrimary={exit}
           onJoin={join}
-          onClose={onClose}
+          onClose={exit}
+          onDismiss={finishLeave}
         />
       ) : null}
     </>

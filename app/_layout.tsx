@@ -79,6 +79,7 @@ import {
   usePopupSlot,
   usePopupHold,
   usePopupActive,
+  usePopupHeld,
   useUnmanagedModalHold,
   POPUP_TEARDOWN_MS,
   POPUP_HANDOFF_GAP_MS,
@@ -844,6 +845,14 @@ function RootLayoutInner() {
   usePopupHold(tapRoutingHold);
   const popupActiveRef = useRef(false);
   popupActiveRef.current = usePopupActive();
+  // An unmanaged native Modal (the Snout Deep dig, a tab sheet) holds the
+  // queue. Replacing the Stack under it hides its host Modal while a sheet
+  // nested inside may still be presented — iOS dismisses the sheet and strands
+  // the host, invisible, eating every touch (the 2026-09-20 dig freeze). A tap
+  // that lands during a hold is deferred and flushed once the hold lifts.
+  const popupHeld = usePopupHeld();
+  const popupHeldRef = useRef(false);
+  popupHeldRef.current = popupHeld;
 
   const routeToPath = useCallback((path: string) => {
     if (!popupActiveRef.current) {
@@ -863,10 +872,14 @@ function RootLayoutInner() {
 
   const routeForTap = useCallback(
     (screen: string | undefined) => {
-      const plan = planTapRoute(screen, routerReadyRef.current);
+      const plan = planTapRoute(
+        screen,
+        routerReadyRef.current,
+        popupHeldRef.current,
+      );
       if (plan.action === "ignore") return; // unknown/absent screen — no-op
       if (plan.action === "defer") {
-        pendingRouteRef.current = plan.path; // fire once the shell mounts
+        pendingRouteRef.current = plan.path; // fire once the shell mounts / the hold lifts
         return;
       }
       routeToPath(plan.path as string);
@@ -874,14 +887,16 @@ function RootLayoutInner() {
     [routeToPath],
   );
 
-  // Flush a deferred tap once the router shell is up.
+  // Flush a deferred tap once the router shell is up and no unmanaged Modal
+  // holds the queue (the latch outlives the Modal's close by the handoff gap,
+  // so the flush lands after its native dismissal has begun).
   useEffect(() => {
-    if (loaded && authChecked && pendingRouteRef.current) {
+    if (loaded && authChecked && !popupHeld && pendingRouteRef.current) {
       const path = pendingRouteRef.current;
       pendingRouteRef.current = null;
       routeToPath(path);
     }
-  }, [loaded, authChecked, routeToPath]);
+  }, [loaded, authChecked, popupHeld, routeToPath]);
 
   useEffect(() => {
     // The notifications native module may be absent on a build without it

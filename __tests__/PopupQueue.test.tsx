@@ -420,8 +420,9 @@ describe("usePopupHold (pre-shell gate)", () => {
 // re-firing on AppState "active") can present a queued popup OVER them — the
 // #50152 wedge, outside the queue's control (#4). The hold gives them the queue's
 // mutual exclusion: while open, nothing admits and anything presented drains; on
-// close the hold lifts and queued popups re-admit.
-import { useUnmanagedModalHold } from "../components/ui/PopupQueue";
+// close the hold lifts — a handoff gap AFTER the close, so the queued popup never
+// presents into the sheet's own native dismissal — and queued popups re-admit.
+import { useUnmanagedModalHold, usePopupHeld } from "../components/ui/PopupQueue";
 
 let setSheetOpen: React.Dispatch<React.SetStateAction<boolean>> = () => {};
 
@@ -431,6 +432,39 @@ function UnmanagedSheetProbe({ initialOpen }: { initialOpen: boolean }) {
 	useUnmanagedModalHold(open);
 	return null;
 }
+
+let heldSeen = false;
+function HeldProbe() {
+	heldSeen = usePopupHeld();
+	return null;
+}
+
+// usePopupHeld — the root layout's push-tap routing reads it: a tap that lands
+// while an unmanaged Modal holds the queue is deferred (replacing the Stack
+// under the dig with its receipt sheet up strands the dig's controller — the
+// 2026-09-20 freeze) and flushed once the hold lifts, which is the handoff gap
+// AFTER the sheet closes.
+describe("usePopupHeld (the hold, readable outside the queue)", () => {
+	it("is true while an unmanaged sheet is open and until its handoff gap elapses", () => {
+		act(() => {
+			renderer = TestRenderer.create(
+				<PopupQueueProvider>
+					<UnmanagedSheetProbe initialOpen={true} />
+					<HeldProbe />
+				</PopupQueueProvider>
+			);
+		});
+		expect(heldSeen).toBe(true);
+		act(() => setSheetOpen(false));
+		expect(heldSeen).toBe(true); // the sheet's native dismissal is running
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS);
+		});
+		expect(heldSeen).toBe(false);
+		act(() => setSheetOpen(true));
+		expect(heldSeen).toBe(true);
+	});
+});
 
 describe("useUnmanagedModalHold (unmanaged native Modal latch)", () => {
 	it("blocks admission while open, admits the queued popup after the sheet closes", () => {
@@ -448,9 +482,19 @@ describe("useUnmanagedModalHold (unmanaged native Modal latch)", () => {
 			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS * 3);
 		});
 		expect(reg.achievements.visible).toBe(false);
-		// Sheet closes (UserSheet dismissed): the hold lifts and the still-wanting
-		// achievement admits — the spec's "queued achievement fires after closing".
+		// Sheet closes (UserSheet dismissed): the hold outlives the close by the
+		// handoff gap (the sheet's native dismissal is running), THEN the
+		// still-wanting achievement admits — the spec's "queued achievement fires
+		// after closing".
 		act(() => setSheetOpen(false));
+		expect(reg.achievements.visible).toBe(false);
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS - 1);
+		});
+		expect(reg.achievements.visible).toBe(false);
+		act(() => {
+			jest.advanceTimersByTime(1);
+		});
 		expect(reg.achievements.visible).toBe(true);
 	});
 
@@ -474,8 +518,12 @@ describe("useUnmanagedModalHold (unmanaged native Modal latch)", () => {
 		});
 		expect(reg.finale.visible).toBe(false); // still held while the sheet is open
 
-		// Sheet closes: the still-wanting popup re-presents.
+		// Sheet closes: the still-wanting popup re-presents after the gap.
 		act(() => setSheetOpen(false));
+		expect(reg.finale.visible).toBe(false);
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS);
+		});
 		expect(reg.finale.visible).toBe(true);
 	});
 });

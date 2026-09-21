@@ -166,6 +166,8 @@ function Ledger({ children }: { children: ReactNode }) {
 function LedgerSheet({
   visible,
   onClose,
+  onDismiss,
+  animationType = "slide",
   closeLabel,
   kicker,
   title,
@@ -173,6 +175,10 @@ function LedgerSheet({
 }: {
   visible: boolean;
   onClose: () => void;
+  /** The native Modal finished dismissing (see DigReceiptSheet). */
+  onDismiss?: () => void;
+  /** "none" to vanish instead of slide — the way OUT when the dig itself is next. */
+  animationType?: "slide" | "none";
   closeLabel: string;
   kicker: string;
   title: string;
@@ -195,7 +201,8 @@ function LedgerSheet({
     <AdaptiveModalScaffold
       visible={visible}
       onRequestClose={onClose}
-      animationType="slide"
+      onDismiss={onDismiss}
+      animationType={animationType}
       sheet
       showCloseButton
       closeLabel={closeLabel}
@@ -556,6 +563,8 @@ export function DigReceiptSheet({
   onSecondary,
   onJoin,
   onClose,
+  onDismiss,
+  animationType,
 }: {
   visible: boolean;
   receipt: DigReceipt;
@@ -565,11 +574,23 @@ export function DigReceiptSheet({
   /** The uncrewed join line's destination. */
   onJoin?: () => void;
   onClose: () => void;
+  /**
+   * The sheet's native Modal has finished dismissing. This sheet is presented
+   * FROM the dig's own full-screen Modal, and iOS dismisses the topmost
+   * presented controller first — so a host that closes the dig while the
+   * sheet is still up dismisses the SHEET and strands the dig's controller,
+   * invisible over the whole app (2026-09-20). The host hides the sheet
+   * first and closes the dig from here.
+   */
+  onDismiss?: () => void;
+  animationType?: "slide" | "none";
 }) {
   return (
     <LedgerSheet
       visible={visible}
       onClose={onClose}
+      onDismiss={onDismiss}
+      animationType={animationType}
       closeLabel={receipt.primary}
       kicker={receipt.kicker}
       title={receipt.title}

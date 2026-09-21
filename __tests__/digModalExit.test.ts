@@ -63,3 +63,51 @@ describe("a surfaced thing's reveal never enters the patch's scroll flow", () =>
 		expect(patch).toMatch(/revealOverlay: \{\s*position: "absolute",/);
 	});
 });
+
+// The receipt sheet is a SECOND native Modal, presented from the dig's own.
+// iOS dismisses the topmost presented controller first: closing the dig while
+// the sheet was up dismissed the SHEET and stranded the dig's controller —
+// invisible over the whole app, eating every touch ("the app freezes after I
+// close out of dig", 2026-09-20). Leaving now hides the sheet first and closes
+// the dig from the sheet's onDismiss (or a fallback timer).
+describe("leaving from the receipt lets the sheet go before the dig", () => {
+	const dig = read("components/mudwar/SnoutDeepDig.tsx");
+	const sheets = read("components/mudwar/SnoutDeepSheets.tsx");
+
+	it("hides the sheet, then closes the dig on its dismissal or the fallback", () => {
+		expect(dig).toMatch(/const RECEIPT_RELEASE_MS = MOTION_DURATION\.modal \* 3;/);
+		expect(dig).toMatch(/const \[leaving, setLeaving\] = useState\(false\);/);
+		// A leave with a sheet up parks the close and hides the sheet.
+		const leaveAt = dig.indexOf("const leave = useCallback(");
+		expect(dig.indexOf("afterLeaveRef.current = done;", leaveAt)).toBeGreaterThan(leaveAt);
+		expect(dig.indexOf("setLeaving(true);", leaveAt)).toBeGreaterThan(leaveAt);
+		expect(dig).toMatch(/setTimeout\(finishLeave, RECEIPT_RELEASE_MS\)/);
+		// The sheet reports its dismissal into the same release.
+		expect(dig).toMatch(/<DigReceiptSheet[\s\S]{0,400}onDismiss=\{finishLeave\}/);
+		expect(dig).toMatch(/<DigReceiptSheet[\s\S]{0,200}visible=\{!leaving\}/);
+	});
+
+	it("every way out of a finished dig goes through leave — never onClose directly", () => {
+		expect(dig).toMatch(/onExit=\{exit\}/);
+		expect(dig).toMatch(/onPrimary=\{exit\}/);
+		expect(dig).toMatch(/onClose=\{exit\}/);
+		expect(dig).toMatch(/const join = useCallback\(\(\) => leave\(\(\) => router\.push\(JOIN_PATH\)\), \[leave\]\);/);
+		// The host's own close (accessibility escape) is routed through it too.
+		expect(dig).toMatch(/registerLeave\?\.\(async \(\) => leave\(\)\);/);
+		expect(read("components/mudwar/useFeedingCta.tsx")).toMatch(
+			/<SnoutDeepDig[\s\S]{0,400}registerLeave=\{registerLeave\}/,
+		);
+	});
+
+	it("the receipt sheet forwards the native dismissal", () => {
+		expect(sheets).toMatch(/<AdaptiveModalScaffold[\s\S]{0,200}onDismiss=\{onDismiss\}/);
+		expect(sheets).toMatch(/animationType=\{animationType\}/);
+	});
+
+	it("the unmanaged-modal hold outlives the close by the handoff gap", () => {
+		const queue = read("components/ui/PopupQueue.tsx");
+		const at = queue.indexOf("export function useUnmanagedModalHold(");
+		expect(queue.indexOf("setTimeout(() => setHeld(false), POPUP_HANDOFF_GAP_MS)", at)).toBeGreaterThan(at);
+		expect(queue.indexOf("usePopupHold(open || held);", at)).toBeGreaterThan(at);
+	});
+});

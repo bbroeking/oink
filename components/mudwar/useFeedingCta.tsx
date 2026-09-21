@@ -302,6 +302,7 @@ export function useFeedingCta(
           onSubmit={submitDeep}
           onSync={syncRooting}
           onClose={close}
+          registerLeave={registerLeave}
           onDug={onDug}
           onBusyChange={setBusy}
           phaseCountdown={phaseOpen ? countdown : undefined}

@@ -144,4 +144,25 @@ describe("planTapRoute — router-ready deferral (spec-18 suspect 3)", () => {
 			path: "/friends",
 		});
 	});
+
+	// An unmanaged native Modal (the Snout Deep dig, a tab sheet) holds the
+	// popup queue. Replacing the Stack under it hides its host Modal while a
+	// sheet nested inside may still be presented — iOS dismisses the sheet and
+	// strands the host, invisible over the whole app (the 2026-09-20 freeze).
+	test("known screen + router ready + an unmanaged Modal held → defer until the hold lifts", () => {
+		expect(planTapRoute("season", true, true)).toEqual({
+			action: "defer",
+			path: "/season",
+		});
+		expect(planTapRoute("season", true, false)).toEqual({
+			action: "navigate",
+			path: "/season",
+		});
+	});
+
+	test("the root layout routes a tap through the hold and flushes on its lift", () => {
+		const layout = fs.readFileSync(path.join(__dirname, "..", "app", "_layout.tsx"), "utf8");
+		expect(layout).toMatch(/planTapRoute\(\s*screen,\s*routerReadyRef\.current,\s*popupHeldRef\.current,?\s*\)/);
+		expect(layout).toMatch(/if \(loaded && authChecked && !popupHeld && pendingRouteRef\.current\)/);
+	});
 });
