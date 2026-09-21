@@ -1,9 +1,9 @@
-// Season-tab reference sheets — the season story ("The Season of the Hunger")
-// and the spoils shelf ("What you can earn"), lifted off the tab's scroll into
-// tap-to-open modals so the tab itself stays the playable path (boss → your
-// Sounder → pass). Opened from the two icon buttons in the page header:
-// scroll = the tale, gift = the earnables. One modal, two topics — the chrome
-// (backdrop, card, dismiss) is identical, only the content swaps.
+// The Season tab's reference sheet — the season story ("The Season of the
+// Hunger"), lifted off the tab's scroll into a tap-to-open modal so the tab
+// itself stays the playable path (Feed · Draw · Pass). Opened from the `?`
+// door's chooser. The spoils shelf ("What you can earn") retired with the herd
+// race on 2026-09-21 — the drum pays tickles and the pass pays the rest, and
+// each says so where it is played.
 //
 // The chrome is `AdaptiveModalScaffold` + `Sticker` + `DialogCloseRow` [C-09,
 // spec §3.4]: the scaffold owns the Modal, the scrim, the safe-area frame and
@@ -20,14 +20,12 @@ import {
 	useUnmanagedModalHold,
 } from "@/components/ui";
 import { SeasonStory } from "./SeasonStory";
-import { SpoilsShowcase } from "./SpoilsShowcase";
 import { RADII, SPACE, TILT } from "@/constants/theme";
 
-export type SeasonInfoTopic = "story" | "spoils";
+export type SeasonInfoTopic = "story";
 
 const COPY: Record<SeasonInfoTopic, { kicker: string; title: string }> = {
 	story: { kicker: "what's happening", title: "The Season of the Hunger" },
-	spoils: { kicker: "the truffle exchange", title: "What you can earn" },
 };
 
 export function SeasonInfoModal({
@@ -71,7 +69,6 @@ export function SeasonInfoModal({
 					</>
 				)}
 				{topic === "story" && <SeasonStory />}
-				{topic === "spoils" && <SpoilsShowcase />}
 				<Button
 					size="md"
 					variant="primary"

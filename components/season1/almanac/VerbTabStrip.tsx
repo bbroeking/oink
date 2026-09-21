@@ -1,10 +1,10 @@
-// The Almanac's verb tab strip — Feed · Herd · Race · Pass, four compact
-// Sticker cells in one row. Each carries a kickerPill label and ONE nowrap
-// Caprasimo value; the Pass cell adds a thin XP bar. Every cell is the same
-// height: each Sticker fills its flex column, and the three cells without an
-// XP bar reserve the bar's slot invisibly, so no cell runs taller or shorter
-// than its neighbours and the label / value / bar rhythm is identical across
-// the strip. (2026-09-17)
+// The Almanac's verb tab strip — Feed · Draw · Pass, three compact Sticker
+// cells in one row (Herd and Race retired with the herd race, 2026-09-21).
+// Each carries a kickerPill label and ONE nowrap Caprasimo value; the Pass cell
+// adds a thin XP bar. Every cell is the same height: each Sticker fills its
+// flex column, and the cells without an XP bar reserve the bar's slot
+// invisibly, so no cell runs taller or shorter than its neighbours and the
+// label / value / bar rhythm is identical across the strip. (2026-09-17)
 //
 // Three states, all drawn from tokens: selected = blush cream, the full 4pt
 // sticker shadow and a −1° lean; unselected = flat paper with the value in
@@ -180,6 +180,6 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.lilac,
 	},
 	// The same slot on the cells without an XP bar — takes the height, draws
-	// nothing — so all four cells share one vertical rhythm.
+	// nothing — so all three cells share one vertical rhythm.
 	barSlot: { opacity: 0 },
 });

@@ -3,14 +3,15 @@
 //
 // Ratified 2026-09-16. Design: docs/design/2026-09-16-barn-prize-draw.md, with
 // the founder's ratification correction: there is no "everyone's draw" layer.
-// Server: 20260916120000_barn_draw_and_trough_quarter_reward.sql. Two prizes
-// land, both furnishings out of the catalog:
-//   • the HERD PRIZE — every Monday, when the race cycle resolves, each crew
-//     draws one winner among the members who dug that week, off a seed
-//     committed a week in advance (herd_prize_state → `week.seed_hash` before,
-//     `last.seed` after, so a player can recompute the draw by hand);
+// Server: 20260916120000_barn_draw_and_trough_quarter_reward.sql. ONE prize
+// lands here, a furnishing out of the catalog:
 //   • the TROUGH GIVER'S REWARD — reaching a quarter of a friend's Trough
 //     draws one design from the week's featured collection, once a week.
+//
+// The HERD PRIZE (a per-crew Monday furnishing draw) retired with the herd race
+// on 2026-09-21 (docs/design/2026-09-21-season-page-rewrite.md §4). The Trough
+// giver's reward is now the only random furnishing lane, and it never touched
+// the crew.
 //
 // SERVER CONFIG OVER CONSTANTS: the tier weights live in app_settings.barn_draw.
 // BARN_DRAW_TUNING is the compiled fallback for a pre-push server and MUST
@@ -60,7 +61,7 @@ const DAY_MS = 86_400_000;
 
 /**
  * The 0-based position of the week's featured collection on the display_order
- * ladder, for a race cycle_key ("YYYYMMDD", always a Monday). The server's
+ * ladder, for a week key ("YYYYMMDD", always a Monday). The server's
  * _barn_featured_collection() uses the 1-based position, so this + 1 is the
  * row it picks.
  *
@@ -88,34 +89,6 @@ export function featuredCollectionIndex(cycleKey: string): number {
 
 export type BarnPrizeKind = "habitat" | "tickles";
 
-export interface HerdPrizeWeek {
-	/** The cycle now being run — the week the sealed seed belongs to. */
-	cycleKey: string;
-	/** sha256 of the sealed seed, publishable before the draw. */
-	seedHash: string | null;
-}
-
-export interface HerdPrizeDraw {
-	cycleKey: string;
-	/** Readable once the week has drawn — recompute the winner from it. */
-	seed: string | null;
-	crewId: string | null;
-	winnerUserId: string | null;
-	winnerName: string | null;
-	kind: BarnPrizeKind | null;
-	itemId: string | null;
-	itemName: string | null;
-	amount: number;
-	/** The user ids the draw ran over, in winner-key order. */
-	entrants: string[];
-}
-
-export interface HerdPrizeState {
-	week: HerdPrizeWeek;
-	/** The caller's crew's last draw, or null (crewless, or never drawn). */
-	last: HerdPrizeDraw | null;
-}
-
 export interface BarnPrize {
 	kind: BarnPrizeKind;
 	itemId: string | null;
@@ -124,7 +97,7 @@ export interface BarnPrize {
 }
 
 export interface TroughRewardState {
-	/** The CURRENT race cycle — the week being lived, not the ended one. */
+	/** The CURRENT week — the one being lived, not the ended one. */
 	cycleKey: string;
 	/** This week's one giver reward is already drawn. */
 	taken: boolean;
@@ -175,34 +148,6 @@ export function parseBarnPrize(raw: unknown): BarnPrize | null {
 	};
 }
 
-export function parseHerdPrizeState(raw: unknown): HerdPrizeState {
-	const s = obj(raw);
-	const w = obj(s.week);
-	const l = s.last == null ? null : obj(s.last);
-	return {
-		week: { cycleKey: str(w.cycle_key) ?? "", seedHash: str(w.seed_hash) },
-		last:
-			l == null || str(l.cycle_key) == null
-				? null
-				: {
-						cycleKey: str(l.cycle_key) ?? "",
-						seed: str(l.seed),
-						crewId: str(l.crew_id),
-						winnerUserId: str(l.winner_user_id),
-						winnerName: str(l.winner_name),
-						kind: isKind(l.kind) ? l.kind : null,
-						itemId: str(l.item_id),
-						itemName: str(l.item_name),
-						amount: Math.max(0, Math.floor(num(l.amount))),
-						entrants: Array.isArray(l.entrants)
-							? (l.entrants as unknown[]).filter(
-									(e): e is string => typeof e === "string",
-								)
-							: [],
-					},
-	};
-}
-
 export function parseTroughRewardState(raw: unknown): TroughRewardState {
 	const s = obj(raw);
 	return {
@@ -222,30 +167,9 @@ function rpcAction<T = Record<string, never>>(
 	return call<T>(name, params);
 }
 
-/** herd_prize_state() — the caller's crew's draw. `ok:false` pre-push. */
-export async function fetchHerdPrizeState(): Promise<RpcResult<{ state: HerdPrizeState }>> {
-	const r = await rpcAction<Record<string, unknown>>("herd_prize_state");
-	if (!r.ok) return { ok: false, reason: r.reason };
-	return { ok: true, state: parseHerdPrizeState(r) };
-}
-
 /** trough_reward_state() — has this week's giver reward been drawn yet? */
 export async function fetchTroughRewardState(): Promise<RpcResult<{ state: TroughRewardState }>> {
 	const r = await rpcAction<Record<string, unknown>>("trough_reward_state");
 	if (!r.ok) return { ok: false, reason: r.reason };
 	return { ok: true, state: parseTroughRewardState(r) };
-}
-
-/**
- * The Race panel's Barn Draw row, in one line. Before a crew has ever drawn,
- * the rule; after, the last result — mine as "you", a crewmate's by name; a
- * purse (the winner owned every design) says so. Never names who slept.
- */
-export function herdPrizeLine(state: HerdPrizeState, uid?: string | null): string {
-	const last = state.last;
-	if (!last || !last.kind) return "one furnishing per herd, every Monday · dig once to be in";
-	const mine = !!uid && last.winnerUserId === uid;
-	const who = mine ? "you" : (last.winnerName ?? "a crewmate");
-	if (last.kind === "tickles") return `${who} drew a purse of ${last.amount} tickles last Monday`;
-	return `${who} drew the ${last.itemName ?? "new design"} last Monday`;
 }

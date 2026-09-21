@@ -5,7 +5,7 @@
 //
 // Graduated out of `components/CrewRow.tsx` into the system 2026-09-11 (wave 4):
 // five surfaces (SounderCard, FriendInvitePicker, PlayerInvitePicker,
-// JoinableSounders, TransferLeadershipSheet) plus SounderHomeCard consume these,
+// JoinableSounders, TransferLeadershipSheet) consume these,
 // which is the definition of a primitive. `CrewRow` itself lives next door in
 // `./CrewRow`, built from `DashedRule` and `textOf` below.
 // Mockup: docs/design/claude-design/sounder/invite-matchmaking.html.

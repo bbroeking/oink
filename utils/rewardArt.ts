@@ -1,7 +1,7 @@
 // ONE reward-art resolver — the single owner of the reward jsonb shape and the
 // reward_type → art-source mapping that used to be hand-copied across the season
 // tab's StoneThumb, YourTakeStrip's RewardArt, the ClaimRewardDialog preview, and
-// (for the plain-id variants) SpoilsShowcase + RaceSection.
+// (for the plain-id variants) the Barn's reveal sheets.
 //
 // PURE: the shape resolution lives here so it can't drift between renderers and
 // is unit-testable. RENDERING stays in each component — resolveRewardArt returns
@@ -69,13 +69,13 @@ export function rewardHabitatItemId(reward: RewardArtInput): string | null {
 }
 
 // A resolved cosmetic sprite by bundled id, or undefined when the id has no art.
-// The plain-id surfaces (SpoilsShowcase's shelf, RaceSection's last-race art) that
+// The plain-id surfaces (a reveal sheet's art, a catalog row) that
 // carry a bare cosmetic id — not a reward_value — resolve through this.
 export function cosmeticImage(id: string): ImageSourcePropType | undefined {
 	return HAT_IMAGES[id];
 }
 
-// Humanize a cosmetic id ("mud_derby_bg" → "Mud Derby Bg"). The dig's race
+// Humanize a cosmetic id ("mud_derby_bg" → "Mud Derby Bg"). The dig's
 // rewards resolve their art through HAT_IMAGES; the id is the only name carried,
 // so title-case it rather than ship a raw slug.
 export function cosmeticName(id: string): string {

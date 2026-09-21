@@ -1,12 +1,20 @@
+// The Barn Draw's one surviving lane — the Trough giver's weekly reward. The
+// per-crew herd prize retired with the herd race on 2026-09-21
+// (docs/design/2026-09-21-season-page-rewrite.md §4); the reveal assertions it
+// used to carry for the Trough moved here, where the Trough's own draw lives.
+import fs from "node:fs";
+import path from "node:path";
 import {
 	BARN_DRAW_TUNING,
 	FEATURED_COLLECTION_COUNT,
 	featuredCollectionIndex,
 	parseBarnDrawTuning,
 	parseBarnPrize,
-	parseHerdPrizeState,
 	parseTroughRewardState,
 } from "@/utils/barnDraw";
+
+const ROOT = path.join(__dirname, "..");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
 describe("Barn draw — the featured-collection rotation", () => {
 	it("starts the ladder at the 2026-09-14 epoch and steps one collection a week", () => {
@@ -71,39 +79,6 @@ describe("Barn draw — the compiled tuning fallback", () => {
 });
 
 describe("Barn draw — payload parsing", () => {
-	it("reads a herd prize with its seed and entrant list", () => {
-		const state = parseHerdPrizeState({
-			ok: true,
-			week: { cycle_key: "20260413", seed_hash: "abc123" },
-			last: {
-				cycle_key: "20260406",
-				seed: "seed-value",
-				crew_id: "crew-1",
-				winner_user_id: "user-2",
-				winner_name: "Rosie",
-				kind: "habitat",
-				item_id: "cider_jug_lamp",
-				item_name: "Cider Jug Lamp",
-				amount: 0,
-				entrants: ["user-1", "user-2"],
-			},
-		});
-		expect(state.week).toEqual({ cycleKey: "20260413", seedHash: "abc123" });
-		expect(state.last?.winnerName).toBe("Rosie");
-		expect(state.last?.entrants).toEqual(["user-1", "user-2"]);
-		expect(state.last?.kind).toBe("habitat");
-	});
-
-	it("carries a null last draw for a crewless caller", () => {
-		const state = parseHerdPrizeState({
-			ok: true,
-			week: { cycle_key: "20260413", seed_hash: null },
-			last: null,
-		});
-		expect(state.last).toBeNull();
-		expect(state.week.seedHash).toBeNull();
-	});
-
 	it("reads the Trough giver's weekly state, taken and untaken", () => {
 		expect(
 			parseTroughRewardState({ ok: true, cycle_key: "20260406", taken: false, reward: null }),
@@ -127,5 +102,29 @@ describe("Barn draw — payload parsing", () => {
 			itemName: "X",
 			amount: 0,
 		});
+	});
+});
+
+// ── The Trough reveal is wired (moved from herdPrizeReveal.test.ts, 2026-09-21) ──
+// The Trough's quarter prize opens the shared furnishing reveal after the
+// trough folds away — the fan is the Trough's only door (2026-09-17).
+describe("the Trough reveal is wired", () => {
+	const shop = read("app/(tabs)/shop.tsx");
+	const barn = read("components/Barn.tsx");
+	const trough = read("components/TroughSection.tsx");
+	const sheet = read("components/season1/DrawRevealSheet.tsx");
+
+	it("the Trough reports the quarter's prize and the Barn folds the trough before the reveal", () => {
+		expect(trough).toContain("if (prize) onPrize?.(prize);");
+		expect(barn).toContain("setTroughOpen(false);");
+		expect(barn).toContain("prizeHandoff.current = setTimeout(() => setTroughPrizeOpen(true), POPUP_HANDOFF_GAP_MS);");
+		expect(barn).toContain('kicker="the trough · past your quarter"');
+		expect(shop).not.toContain("TroughSheet");
+	});
+
+	it("the sheet shows, never claims — the Barn door hands the item over after the modal's gap", () => {
+		expect(sheet).not.toMatch(/claim_tier_reward|onClaim/);
+		expect(sheet).toContain('router.push({ pathname: "/barn-interior", params: { handItemId: prize.itemId } })');
+		expect(sheet).toContain("POPUP_HANDOFF_GAP_MS");
 	});
 });

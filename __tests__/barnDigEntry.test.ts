@@ -14,10 +14,6 @@ const feedingCta = fs.readFileSync(
   path.join(ROOT, "components/mudwar/useFeedingCta.tsx"),
   "utf8",
 );
-const seasonFeeding = fs.readFileSync(
-  path.join(ROOT, "components/season1/SounderHomeCard.tsx"),
-  "utf8",
-);
 // The after-dig payoff copy lives on the receipt the patch renders once a dig
 // banks (LivingMudReceipt), not in TrufflePatch itself.
 const receipt = fs.readFileSync(
@@ -87,10 +83,6 @@ describe("Barn Truffle Patch entry", () => {
     expect(digEntry).toContain('"Dig for Golden Truffles"');
     expect(digEntry).toContain(
       "Golden Truffles · +20 Pass XP · Sounder spoils",
-    );
-    expect(seasonFeeding).toContain("Golden Truffles + relics · +20 Pass XP");
-    expect(seasonFeeding).toContain(
-      "15-Truffle stage reward and your Sounder's Monday payout",
     );
     expect(receipt).toContain(
       "Your finds helped your Sounder and weakened the Hungerer.",

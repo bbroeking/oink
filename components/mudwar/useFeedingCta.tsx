@@ -3,7 +3,7 @@
 // `useFeedingCta` is the reusable core: it owns the current-feeding countdown,
 // the "already rooted" state, and the Truffle Patch modal (open/submit) — so any
 // surface can render its OWN trigger (a Button, a line) and drop the returned
-// `modal` element beside it. The SounderHomeCard consumes the hook directly for
+// `modal` element beside it. The Season page's Feed panel consumes it directly for
 // its play/cooldown line.
 //
 // Digging is crew-gated and purely co-op vs the Great Hungerer: one rooting per

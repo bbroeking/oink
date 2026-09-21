@@ -6,7 +6,8 @@
 // in hooks/useRooting.ts; the pure board math in utils/rooting.ts.
 //
 // The global-race half of this module — standings reads, cycle math, and the
-// pinned-row selectors — now lives in utils/race.ts (this file was ~90% race).
+// pinned-row selectors — moved out to utils/race.ts in 2026-07 and retired with
+// the herd race on 2026-09-21 (docs/design/2026-09-21-season-page-rewrite.md §4).
 
 import { rpc } from "./rpc";
 import { MILESTONE_THRESHOLDS } from "@/constants/dig";

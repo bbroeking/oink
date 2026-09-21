@@ -40,8 +40,6 @@ import {
 	SectionHeader,
 	SegmentedControl,
 	Sheet,
-	SpotlightOverlay,
-	SpotlightProvider,
 	Sticker,
 	T,
 	Tag,
@@ -66,28 +64,20 @@ import {
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
 import { TickleBreakdownSheet } from "../../components/TickleBreakdownSheet";
-import { SounderStepCard } from "../../components/season1/SounderStepCard";
 import { MoteRewardDialog } from "@/components/season1/MoteRewardDialog";
 import { MoteMachineCard } from "../../components/season1/MoteMachineCard";
-import { SounderOinkSheet } from "@/components/SounderOinkSheet";
-import { UserSheet } from "@/components/UserSheet";
 import { HabitatGiftReveal } from "@/components/habitat/HabitatGiftReveal";
 import { HABITAT_CATALOG } from "@/constants/habitat";
 import { useHabitatJournal } from "@/hooks/useHabitatJournal";
 import { useFeedingCta } from "../../components/mudwar/useFeedingCta";
 import { seasonHeroSurface, seasonPrimaryAction } from "@/utils/seasonHero";
-import { useSounderPath } from "../../hooks/useSounderPath";
-import {
-	useJoinSpotlight,
-	JOIN_SPOTLIGHT_TARGET_ID,
-} from "../../hooks/useJoinSpotlight";
 import { DevSeasonStatesSheet } from "../../components/season1/DevSeasonStatesSheet";
 import { SeasonGuideModal } from "../../components/season1/SeasonGuideModal";
 import {
 	SeasonInfoModal,
 	type SeasonInfoTopic,
 } from "../../components/season1/SeasonInfoModal";
-// The Almanac — the four verb panels and their pure state.
+// The Almanac — the three verb panels and their pure state.
 import {
 	almanacInitialTab,
 	almanacTodo,
@@ -98,11 +88,8 @@ import {
 } from "@/components/season1/almanac/almanacState";
 import { VerbTabStrip } from "@/components/season1/almanac/VerbTabStrip";
 import { FeedPanel } from "@/components/season1/almanac/FeedPanel";
-import { HerdPanel } from "@/components/season1/almanac/HerdPanel";
-import { RacePanel } from "@/components/season1/almanac/RacePanel";
+import { DrawPanel } from "@/components/season1/almanac/DrawPanel";
 import { PassPanel } from "@/components/season1/almanac/PassPanel";
-import { useHerdFeeding } from "@/components/season1/almanac/useHerdFeeding";
-import { useRaceRun } from "@/components/season1/almanac/useRaceRun";
 import { useWeeklyQuests } from "@/components/season1/almanac/useWeeklyQuests";
 import {
 	HUNGER_LEVEL_NAME,
@@ -152,16 +139,11 @@ import {
 } from "../../constants/featureFlags";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import {
-	patchDevSeasonOverrides,
-	useDevSeasonOverrides,
-} from "@/utils/devSeasonOverrides";
+import { useDevSeasonOverrides } from "@/utils/devSeasonOverrides";
 
 import { BarnRewardClaimSheet } from "@/components/season1/BarnRewardClaimSheet";
 import { MondayDrawSheet } from "@/components/season1/MondayDrawSheet";
 import { useMondayDraw } from "@/hooks/useMondayDraw";
-import { DrawRevealSheet } from "@/components/season1/DrawRevealSheet";
-import { useHerdPrize } from "@/hooks/useHerdPrize";
 import type { ClaimResult } from "@/hooks/useSeason";
 
 const claimSound = require("../../assets/sounds/claim.mp3");
@@ -220,13 +202,12 @@ const CHIP_BTN_HIT = (TAP_MIN - CHIP_BTN) / 2;
  * WHICH one is derived here, once, never decided per card.
  *
  * Order of precedence: the dig (the thing to do right now) > a claimable
- * reward > joining a Sounder > browsing.
+ * reward > an undrawn Monday purse > browsing.
  *
  * In the Almanac the same derivation picks the verb panel that opens FIRST
- * (`almanacInitialTab`): dig → Feed, claim → Pass, join → Herd, browse → Feed.
+ * (`almanacInitialTab`): dig → Feed, claim → Pass, draw → Draw, browse → Feed.
  * The strip's golds are a separate, per-cell fact (`almanacTodo`) — several
- * doors may be gold, but only one panel opens. The onboarding step card still
- * takes `hero` as a prop and never decides it from its own state.
+ * doors may be gold, but only one panel opens.
  */
 // The type + the derivation live in `utils/seasonHero.ts` so the invariant is
 // a unit test, not a reading of four JSX props.
@@ -1035,55 +1016,35 @@ export default function SeasonScreen() {
 	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
 	// re-opens any time from the title row's `?` door.
 	const [introOpen, setIntroOpen] = useState(false);
-	// Sounder state drives the walkthrough stepper (join → dig).
+	// Crew state, for the guide dialog's "leave your Sounder" footer. The page
+	// itself never shows the herd — the Sounder lives on the Friends tab
+	// (docs/design/2026-09-21-season-page-rewrite.md §1).
 	const crewHook = useCrew(s1);
-	// The onboarding funnel step — DERIVED from server/client state (never stored),
-	// so the "do this now" slot always shows the right next move and retires itself
-	// at DONE. Re-reads on focus; we also refresh() it after a dig / crew change.
-	const sounderPath = useSounderPath(s1);
 	const devSeason = useDevSeasonOverrides();
 	const [devSeasonSheetOpen, setDevSeasonSheetOpen] = useState(false);
-	const visibleSounderStep =
-		__DEV__ && devSeason.step ? devSeason.step : sounderPath.step;
-	// The "join a Sounder" coach-mark gate — lights once, on the `join` step.
-	// The step card nests the SpotlightTarget around just its join door; we only
-	// pass `joinSpotlight.show` down as the active gate.
-	const joinSpotlight = useJoinSpotlight(sounderPath.step);
 	// Bumped after every real dig submit — the patch modal never blurs this
-	// screen, so the meter / herd presence / milestones need an explicit tick
-	// to leave their pre-dig numbers behind (stale-cards bug, 2026-07-07).
+	// screen, so the meter and the drum's ball count need an explicit tick to
+	// leave their pre-dig numbers behind (stale-cards bug, 2026-07-07).
 	const [digTick, setDigTick] = useState(0);
+	// The tab's ONE feeding CTA — every dig surface reads THIS instance, and its
+	// modal renders exactly once below the panel. Two independent hooks each held
+	// their own dugThisWindow, so digging via one left the other's button lying
+	// until window rollover (the stale-dig-button class, fixed twice on
+	// 2026-07-12) — one instance makes disagreement impossible.
 	const handleDug = useCallback(() => {
 		setDigTick((t) => t + 1);
 		crewHook.refresh?.().catch?.(() => {});
-		// A real dig may have crossed FIRST_DIG → DONE; re-derive the step so the
-		// onboarding card retires this frame instead of on the next focus.
-		sounderPath.refresh();
-	}, [crewHook.refresh, sounderPath.refresh]);
-	// The tab's ONE feeding CTA — every dig surface (the Feed panel's hero, the
-	// onboarding step card) reads THIS instance, and its modal renders exactly
-	// once below the panel. Two independent hooks each held their own
-	// dugThisWindow, so digging via one left the other's button lying until
-	// window rollover (the stale-dig-button class, fixed twice on 2026-07-12) —
-	// one instance makes disagreement impossible.
+	}, [crewHook.refresh]);
 	const feedingCta = useFeedingCta(handleDug, ticklesEarned);
 	// Leaving your Sounder now lives in the season-guide dialog's footer.
 	const handleLeave = useCallback(() => {
 		crewHook.leave().catch(() => {});
 	}, [crewHook.leave]);
 	// The Almanac's reads — the Hungerer's stage (the title row's kicker and the
-	// Feed panel's meter), the herd's feeding snapshot (the Feed + Herd panels
-	// and the strip's `4 of 6`), the race with its Monday beat (the Race panel
-	// and the strip's `3rd` / `Run`), and this week's quests (the Pass panel).
+	// Feed panel's meter) and this week's quests (the Pass panel). The drum's own
+	// read is `useMondayDraw` below; it feeds the Draw panel, the Draw cell and
+	// the Feed panel's ball counter, so the three can never disagree.
 	const hunger = useHungerMeter(digTick);
-	const herd = useHerdFeeding(crewHook, uid, digTick, feedingCta.dugThisWindow);
-	const myCrewId = crewHook.crew.crew?.id ?? null;
-	const raceRun = useRaceRun(
-		s1 && !!myCrewId,
-		digTick,
-		devSeason.ceremony,
-		() => patchDevSeasonOverrides({ ceremony: undefined })
-	);
 	const quests = useWeeklyQuests(s1);
 	// Season-end reveal — the beta Founding Herd recap. Live path: season1_finale
 	// flag (legacy key name — it means the SEASON-0 finale; the key shipped in
@@ -1131,9 +1092,8 @@ export default function SeasonScreen() {
 	// The tickle breakdown receipt (spec 17) — your own count decomposed. Opened
 	// from the `?` door's chooser.
 	const [breakdownOpen, setBreakdownOpen] = useState(false);
-	// The Almanac's own doors: the `?` chooser, the full pass track, the herd
-	// Oink, a crewmate's profile (its Visit is the door to their Barn), and
-	// which verb panel is open (null = the one-hero rule's pick).
+	// The Almanac's own doors: the `?` chooser, the full pass track, and which
+	// verb panel is open (null = the one-hero rule's pick).
 	const [doorsOpen, setDoorsOpen] = useState(false);
 	const [trackOpen, setTrackOpen] = useState(false);
 	// The Barn-furnishing claim sheet (a `habitat` rung on the ladder) and the
@@ -1142,20 +1102,14 @@ export default function SeasonScreen() {
 	const [habitatClaimTier, setHabitatClaimTier] = useState<number | null>(null);
 	const [drawOpen, setDrawOpen] = useState(false);
 	const mondayDraw = useMondayDraw(s1);
-	// The Barn Draw: the crew's Monday furnishing draw. A win of mine opens the
-	// reveal once (the hook remembers the week); the Race panel's row opens the
-	// last result for anyone, any time.
-	const herdPrize = useHerdPrize(uid, s1);
-	const [herdPrizeOpen, setHerdPrizeOpen] = useState(false);
-	useEffect(() => {
-		if (herdPrize.unseenWin) setHerdPrizeOpen(true);
-	}, [herdPrize.unseenWin]);
-	const closeHerdPrize = useCallback(() => {
-		setHerdPrizeOpen(false);
-		if (herdPrize.unseenWin) herdPrize.dismissWin();
-	}, [herdPrize]);
-	const [oinkOpen, setOinkOpen] = useState(false);
-	const [memberSheet, setMemberSheet] = useState<string | null>(null);
+	// The drum's sheet opens two ways: the panel's gold button already SAID it
+	// draws (so the sheet turns the drum on open), and the drawn purse's receipt
+	// door only shows what was drawn.
+	const [drawAuto, setDrawAuto] = useState(false);
+	const openDrawSheet = useCallback((auto: boolean) => {
+		setDrawAuto(auto);
+		setDrawOpen(true);
+	}, []);
 	const [pickedTab, setPickedTab] = useState<AlmanacTab | null>(null);
 	// Reward dialog: set after a successful claim_tier_reward RPC so the
 	// user gets a beat to read what they got and (for wearables) jump
@@ -1519,34 +1473,24 @@ export default function SeasonScreen() {
 	// The one-hero derivation. Every surface this tab draws asks THIS, not its
 	// own state, before it reaches for the sun — and in the Almanac the rule
 	// also decides which verb tab opens first.
-	const inCrew = !!crewHook.crew.crew;
 	const digAvailable =
 		!feedingCta.noCrew && feedingCta.phaseOpen && !feedingCta.dugThisWindow;
+	const drawState = mondayDraw.state;
+	const drawReady = !!drawState && drawState.eligible && !drawState.drawn;
 	const primaryAction = seasonPrimaryAction({
 		digAvailable,
 		readyTierCount: readyTiers.length,
-		inCrew,
+		drawReady,
 	});
 	const heroSurface = seasonHeroSurface(primaryAction);
-	const feedingIsHero = heroSurface === "feeding";
-	const sounderIsHero = heroSurface === "sounder";
-	// The onboarding step card stands in for whichever surface it is currently
-	// drawing: the dig CTA on `first_dig`, the join door on taste / join.
-	const stepCardIsHero =
-		visibleSounderStep === "first_dig" ? feedingIsHero : sounderIsHero;
 	const selectedTab: AlmanacTab = pickedTab ?? almanacInitialTab(heroSurface);
 
-	// The strip's four values and its golds, from the same facts every panel reads.
+	// The strip's three values and its golds, from the same facts every panel reads.
 	const facts: AlmanacFacts = {
-		inCrew,
 		phaseOpen: feedingCta.phaseOpen,
-		dugThisWindow: feedingCta.dugThisWindow || herd.meDug,
+		dugThisWindow: feedingCta.dugThisWindow,
 		countdown: feedingCta.countdown,
-		dugCount: herd.dugCount,
-		herdSize: herd.members.length,
-		raceRank: raceRun.rank,
-		raceRun: raceRun.run != null,
-		mondayDraw: mondayDraw.state ?? undefined,
+		draw: drawState,
 		currentTier: tier,
 		readyTierCount: readyTiers.length,
 	};
@@ -1560,28 +1504,8 @@ export default function SeasonScreen() {
 		__DEV__ && devSeason.hungerStage != null ? devSeason.hungerStage : hunger.stageIndex;
 	const stageName = HUNGER_LEVEL_NAME[HUNGER_STAGES[Math.max(0, Math.min(HUNGER_STAGES.length - 1, stageIndex))]];
 	const { day, total: totalDays } = seasonDay(season.starts_at, season.ends_at);
-	// Herdless and mid-funnel: the step card IS the Herd panel.
-	const stepCard =
-		!inCrew && visibleSounderStep && visibleSounderStep !== "done" && visibleSounderStep !== "hook" ? (
-			<SounderStepCard
-				step={visibleSounderStep}
-				stalled={sounderPath.stalled}
-				leaver={sounderPath.leaver}
-				joinSpotlightActive={joinSpotlight.show}
-				crewHook={crewHook}
-				uid={uid}
-				cta={feedingCta}
-				refreshKey={digTick}
-				onAdvance={sounderPath.refresh}
-				hero={stepCardIsHero}
-			/>
-		) : undefined;
-
-	const openOink = () => setOinkOpen(true);
-	const goHerd = () => setPickedTab("herd");
 
 	return (
-		<SpotlightProvider>
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				{/* The title row. Season 1 wears the Hungerer's name; Season 0 keeps
@@ -1668,7 +1592,7 @@ export default function SeasonScreen() {
 
 				{s1 ? (
 					<>
-						{/* The verb tab strip — Feed · Herd · Race · Pass. */}
+						{/* The verb tab strip — Feed · Draw · Pass. */}
 						<View style={styles.strip}>
 							<VerbTabStrip
 								values={almanacValues(facts)}
@@ -1699,37 +1623,17 @@ export default function SeasonScreen() {
 									cta={feedingCta}
 									stageIndex={stageIndex}
 									seasonDays={totalDays}
-									herd={herd}
-									inCrew={inCrew}
-									onOinkHerd={openOink}
-									onOpenMember={setMemberSheet}
-									onGoHerd={goHerd}
+									draw={drawState}
 									testID="almanac-feed"
 								/>
 							)}
-							{selectedTab === "herd" && (
-								<HerdPanel
-									crewHook={crewHook}
-									cta={feedingCta}
-									herd={herd}
-									onOinkHerd={openOink}
-									onOpenMember={setMemberSheet}
-									stepCard={stepCard}
-									testID="almanac-herd"
-								/>
-							)}
-							{selectedTab === "race" && (
-								<RacePanel
-									raceRun={raceRun}
-									myCrewId={myCrewId}
-									onOinkHerd={openOink}
-									onGoHerd={goHerd}
-									mondayDraw={mondayDraw.state ?? undefined}
-									onOpenMondayDraw={() => setDrawOpen(true)}
-									herdPrize={herdPrize.state ?? undefined}
-									uid={uid}
-									onOpenHerdPrize={herdPrize.state?.last ? () => setHerdPrizeOpen(true) : undefined}
-									testID="almanac-race"
+							{selectedTab === "draw" && (
+								<DrawPanel
+									state={drawState}
+									onDraw={() => openDrawSheet(true)}
+									onOpenSheet={() => openDrawSheet(false)}
+									hero={heroSurface === "draw"}
+									testID="almanac-draw"
 								/>
 							)}
 							{selectedTab === "pass" && (
@@ -1854,7 +1758,6 @@ export default function SeasonScreen() {
 					{ label: "How the season works", onPress: () => setGuideOpen(true) },
 					{ label: "The season's story", onPress: () => setInfoTopic("story") },
 					{ label: "Hear the tale again", onPress: () => setIntroOpen(true) },
-					{ label: "What you can earn", onPress: () => setInfoTopic("spoils") },
 					...(uid ? [{ label: "Your tickle receipt", onPress: () => setBreakdownOpen(true) }] : []),
 				]}
 			/>
@@ -1891,12 +1794,6 @@ export default function SeasonScreen() {
 					/>
 				</Sheet>
 			)}
-
-			{/* Oink at the herd — the Sounder coordination sheet. */}
-			{s1 && <SounderOinkSheet visible={oinkOpen} onDismiss={() => setOinkOpen(false)} />}
-
-			{/* A crewmate's door — their profile sheet, whose Visit walks into their Barn. */}
-			<UserSheet targetUserId={memberSheet} onDismiss={() => setMemberSheet(null)} />
 
 			{alignmentExplainerOpen && (
 				<AlignmentExplainerModal
@@ -1981,17 +1878,6 @@ export default function SeasonScreen() {
 					/>
 				) : null}
 
-			{/* The "join a Sounder" coach-mark — dims the tab, cuts a bright hole
-			    around the join step card, and forces the tap. Only lit once (the
-			    seen-stamp), on the `join` step. Tapping through the hole OR the
-			    "maybe later" skip stamps it seen. */}
-			<SpotlightOverlay
-				activeId={joinSpotlight.show ? JOIN_SPOTLIGHT_TARGET_ID : null}
-				caption="join a Sounder — dig after a crewmate for up to 5 more rubs ›"
-				onTargetPress={joinSpotlight.dismiss}
-				onDismiss={joinSpotlight.dismiss}
-			/>
-
 			{/* The header-icon reference sheets — story (scroll) / earnables (gift). */}
 			<SeasonInfoModal topic={infoTopic} onDismiss={() => setInfoTopic(null)} />
 
@@ -2052,28 +1938,9 @@ export default function SeasonScreen() {
 			onClose={() => setDrawOpen(false)}
 			state={mondayDraw.state}
 			onDraw={mondayDraw.draw}
-		/>
-		<DrawRevealSheet
-			open={herdPrizeOpen}
-			prize={
-				herdPrize.state?.last?.kind
-					? {
-							kind: herdPrize.state.last.kind,
-							itemId: herdPrize.state.last.itemId,
-							itemName: herdPrize.state.last.itemName,
-							amount: herdPrize.state.last.amount,
-						}
-					: null
-			}
-			kicker="the barn draw · monday"
-			mine={!!uid && herdPrize.state?.last?.winnerUserId === uid}
-			winnerName={herdPrize.state?.last?.winnerName}
-			seed={herdPrize.state?.last?.seed}
-			onClose={closeHerdPrize}
-			testID="herd-prize-reveal"
+			autoDraw={drawAuto}
 		/>
 		</View>
-		</SpotlightProvider>
 	);
 }
 

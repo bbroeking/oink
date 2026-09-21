@@ -1,17 +1,22 @@
-// The Monday tickle draw — typed wrappers over the two RPCs plus the pure
-// rules the sheet needs synchronously (the "1 in N", the verdict, the warming
-// sentence).
+// The Monday drum — typed wrappers over the two RPCs plus the pure rules the
+// sheet and the Draw panel need synchronously (the "1 in N", the verdict).
 //
-// Spec: docs/design/season-almanac-2026-09-16/SPEC.md ("Monday draw" sheet,
-// "Economy (server)"). Server: 20260916110000_monday_tickle_draw.sql. The
-// draw is per snout, participation-gated (dug ≥1 feeding in the week that
-// just ended), one per ISO week, rolled and minted server-side; the client
-// only asks and shows.
+// Spec: docs/design/2026-09-21-season-page-rewrite.md §2 ("The drum — Monday's
+// randomization"). One ball per submitted dig in the week (cap = the snout's
+// own feeding windows, 21 on the default schedule); on Monday the server rolls
+// the tier table once PER BALL and pays the best tier rolled. The whole
+// mechanism is best-of-N: no streak, no herd flag, no rank, no other pig.
 //
-// SERVER CONFIG OVER CONSTANTS: the tier amounts, base weights and catch-up
-// curve ride on every state payload (`tiers`, `catchup`). MONDAY_DRAW_TUNING
-// is the compiled fallback for a pre-push server and MUST mirror the
-// app_settings.monday_draw row. All numbers are tuning placeholders.
+// SERVER CONFIG OVER CONSTANTS: the tier amounts and weights ride on every
+// state payload (`tiers`). MONDAY_DRAW_TUNING is the compiled fallback for a
+// pre-push server and MUST mirror the app_settings.monday_draw row. All
+// numbers are tuning placeholders.
+//
+// STALE SERVER: the parser also reads the pre-drum payload (mondays_since_rare
+// / next_rare_odds_one_in / catchup, no balls) and maps what exists, so a
+// client that ships ahead of the migration still renders a sheet rather than
+// an empty one. What it cannot know (the ball counts) it says it cannot know
+// (`cap: 0` — the copy then drops the "of N").
 //
 // DEPENDENCY NOTE: the rpc chain is require()d lazily inside the async paths
 // (the satchel idiom) so the pure helpers stay importable by any test without
@@ -34,20 +39,8 @@ export interface MondayDrawTierSpec {
 	weight: number;
 }
 
-export interface MondayDrawCatchup {
-	/** The streak length at which the first raise lands. */
-	afterMondays: number;
-	/** The raise per further Monday. */
-	step: number;
-	/** The ceiling multiplier. */
-	cap: number;
-	/** Extra steps a bottom-half herd finish adds. */
-	bottomHalfStep: number;
-}
-
 export interface MondayDrawTuning {
 	tiers: MondayDrawTierSpec[];
-	catchup: MondayDrawCatchup;
 }
 
 /** Compiled fallback — mirrors app_settings.monday_draw (placeholders). */
@@ -58,22 +51,34 @@ export const MONDAY_DRAW_TUNING: MondayDrawTuning = {
 		{ tier: "rare", amount: 150, weight: 10 },
 		{ tier: "jackpot", amount: 400, weight: 2 },
 	],
-	catchup: { afterMondays: 2, step: 0.5, cap: 3, bottomHalfStep: 1 },
 };
 
 export interface MondayDrawState {
-	/** The race cycle_key of the week the purse is for (its Monday, YYYYMMDD). */
+	/** The DRAWABLE week — the one that just ended (its Monday, YYYYMMDD). */
 	week: string;
-	/** Dug ≥1 feeding in that week. */
+	/** The drawable week held at least one ball, so a purse exists. */
 	eligible: boolean;
 	drawn: boolean;
 	amount: number | null;
 	tier: MondayDrawTier | null;
-	/** Consecutive prior draws below rare (this week's included once drawn). */
-	mondaysSinceRare: number;
-	herdBottomHalf: boolean;
-	/** "1 in N" for rare-or-better on the next undrawn purse. */
-	nextRareOddsOneIn: number;
+	/** Balls in the drawable week's drum. */
+	balls: number;
+	/** That week's cap — the snout's own feeding windows. 0 = the server didn't say. */
+	cap: number;
+	/** The tier rolled per ball, best-of-N. Null until the purse is drawn. */
+	rolls: MondayDrawTier[] | null;
+	/** "1 in N" for rare-or-better at the drawable week's balls; null at 0 balls. */
+	purseOddsOneIn: number | null;
+	/** The week in progress (its Monday, YYYYMMDD). */
+	runningWeek: string;
+	/** Balls minted so far this week. */
+	runningBalls: number;
+	/** This week's cap. 0 = the server didn't say. */
+	runningCap: number;
+	/** "1 in N" for rare-or-better at max(1, runningBalls) — always a number. */
+	runningOddsOneIn: number;
+	/** ISO time of the next Monday 00:00 UTC, when the server says. */
+	nextTurnAt: string | null;
 	tuning: MondayDrawTuning;
 }
 
@@ -90,44 +95,47 @@ function finite(v: unknown, fallback: number): number {
 	return typeof v === "number" && Number.isFinite(v) ? v : fallback;
 }
 
+function count(v: unknown, fallback = 0): number {
+	return Math.max(0, Math.floor(finite(v, fallback)));
+}
+
 function obj(v: unknown): Record<string, unknown> {
 	return v != null && typeof v === "object" ? (v as Record<string, unknown>) : {};
 }
 
 // ── Pure rules ───────────────────────────────────────────────────────────────
 
-/**
- * The catch-up multiplier for a number of steps: LEAST(cap, 1 + step ×
- * max(0, steps − afterMondays + 1)). With the placeholders: ×1 for 0–1
- * steps, ×1.5 after two, ×2 after three, ×2.5, then capped at ×3. Mirrors
- * _monday_draw_multiplier.
- */
-export function catchupMultiplier(
-	steps: number,
-	catchup: MondayDrawCatchup = MONDAY_DRAW_TUNING.catchup,
-): number {
-	const raised = Math.max(0, Math.floor(steps) - catchup.afterMondays + 1);
-	return Math.min(catchup.cap, 1 + catchup.step * raised);
+/** The chance of rare-or-better on ONE ball, straight off the weights. */
+export function rarePerBall(tuning: MondayDrawTuning = MONDAY_DRAW_TUNING): number {
+	let hot = 0;
+	let total = 0;
+	for (const t of tuning.tiers) {
+		total += t.weight;
+		if (RARE_OR_BETTER.has(t.tier)) hot += t.weight;
+	}
+	if (total <= 0) return 0;
+	return Math.min(1, Math.max(0, hot / total));
 }
 
 /**
- * "1 in N" for rare-or-better when the rare + jackpot weights carry
- * `multiplier`: the boosted hot weight over the boosted total, rounded to
- * the nearest whole N (never below 1). Mirrors _monday_draw_odds_one_in.
+ * "1 in N" for rare-or-better with `balls` in the drum. Best-of-N: every ball
+ * is an independent roll of the same table, so the chance is
+ * `1 − (1 − p)^n` with `p` the per-ball chance. Printed as `1 in
+ * round(1 / that)`, never below 1. Mirrors _monday_draw_odds_one_in — the
+ * server clamps `n` to at least 1, so an empty drum quotes a one-ball spin.
+ *
+ * At the placeholder weights (p = 12/100): 1 → 8, 3 → 3, 7 → 2, 21 → 1.
  */
 export function oddsOneIn(
-	weights: readonly Pick<MondayDrawTierSpec, "tier" | "weight">[],
-	multiplier: number,
+	balls: number,
+	tuning: MondayDrawTuning = MONDAY_DRAW_TUNING,
 ): number {
-	let hot = 0;
-	let cold = 0;
-	for (const w of weights) {
-		if (RARE_OR_BETTER.has(w.tier)) hot += w.weight;
-		else cold += w.weight;
-	}
-	const boosted = hot * multiplier;
-	if (boosted <= 0) return Number.MAX_SAFE_INTEGER;
-	return Math.max(1, Math.round((cold + boosted) / boosted));
+	const p = rarePerBall(tuning);
+	if (p <= 0) return Number.MAX_SAFE_INTEGER;
+	const n = Math.max(1, Math.floor(finite(balls, 1)));
+	const chance = 1 - Math.pow(1 - p, n);
+	if (chance <= 0) return Number.MAX_SAFE_INTEGER;
+	return Math.max(1, Math.round(1 / chance));
 }
 
 /** The verdict under the disc — one short sentence per tier. */
@@ -144,35 +152,18 @@ export function verdictFor(tier: MondayDrawTier): string {
 	}
 }
 
-const MONDAY_WORDS = [
-	"No",
-	"One",
-	"Two",
-	"Three",
-	"Four",
-	"Five",
-	"Six",
-	"Seven",
-	"Eight",
-	"Nine",
-	"Ten",
-];
-
-function mondaysWord(n: number): string {
-	return n < MONDAY_WORDS.length ? MONDAY_WORDS[n] : String(n);
+/** `1 ball` / `7 balls` — the drum's one count, spelled the same everywhere. */
+export function ballsWord(balls: number): string {
+	const n = Math.max(0, Math.floor(finite(balls, 0)));
+	return `${n} ${n === 1 ? "ball" : "balls"}`;
 }
 
 /**
- * The warming row's sentence. Every Monday without a rare warms the next one
- * — the streak is told as a promise, never as a loss.
+ * The odds line the Draw panel and the draw sheet both print. Never a
+ * percentage — "1 in N" is the form a player can check against the drum.
  */
-export function warmingLine(mondaysSinceRare: number, oneIn: number): string {
-	const n = Math.max(0, Math.floor(mondaysSinceRare));
-	if (n === 0) {
-		return `Every Monday without a rare warms the next: 1 in ${oneIn} for rare or better.`;
-	}
-	const mondays = n === 1 ? "One Monday" : `${mondaysWord(n)} Mondays`;
-	return `${mondays} without a rare, so next Monday's warmer: 1 in ${oneIn} for rare or better.`;
+export function oddsLine(oneIn: number): string {
+	return `rare or better: 1 in ${Math.max(1, Math.round(finite(oneIn, 1)))}`;
 }
 
 /** The tier a purse of `amount` sits on, by the tuning table. */
@@ -198,42 +189,57 @@ export function parseMondayDrawTuning(raw: unknown): MondayDrawTuning {
 			weight: Math.max(0, finite(o.weight, 0)),
 		});
 	}
-	const c = obj(s.catchup);
-	const fb = MONDAY_DRAW_TUNING.catchup;
 	return {
 		tiers: tiers.length === MONDAY_DRAW_TIERS.length ? tiers : MONDAY_DRAW_TUNING.tiers,
-		catchup: {
-			afterMondays: Math.max(0, Math.floor(finite(c.after_mondays, fb.afterMondays))),
-			step: Math.max(0, finite(c.step, fb.step)),
-			cap: Math.max(1, finite(c.cap, fb.cap)),
-			bottomHalfStep: Math.max(0, Math.floor(finite(c.bottom_half_step, fb.bottomHalfStep))),
-		},
 	};
+}
+
+function parseRolls(raw: unknown): MondayDrawTier[] | null {
+	if (!Array.isArray(raw)) return null;
+	const out: MondayDrawTier[] = [];
+	for (const r of raw) if (isTier(r)) out.push(r);
+	return out.length > 0 ? out : null;
 }
 
 export function parseMondayDrawState(raw: unknown): MondayDrawState {
 	const s = obj(raw);
-	const tuning = parseMondayDrawTuning({ tiers: s.tiers, catchup: s.catchup });
+	const tuning = parseMondayDrawTuning({ tiers: s.tiers });
 	const tier = isTier(s.tier) ? s.tier : null;
 	const amount = typeof s.amount === "number" && Number.isFinite(s.amount) ? s.amount : null;
-	const streak = Math.max(0, Math.floor(finite(s.mondays_since_rare, 0)));
+	const eligible = s.eligible === true;
+
+	// A pre-drum server sends no `balls`. An eligible week held at least one
+	// ball by definition, so map that much and leave the cap unknown (0), which
+	// the copy reads as "don't print the `of N`".
+	const balls = count(s.balls, eligible ? 1 : 0);
+	const cap = count(s.cap, 0);
+	const runningBalls = count(s.running_balls, 0);
+	const runningCap = count(s.running_cap, 0);
+
+	const week = typeof s.week === "string" ? s.week : "";
+	const purseOdds =
+		balls > 0
+			? Math.max(1, Math.round(finite(s.purse_odds_one_in, oddsOneIn(balls, tuning))))
+			: null;
+
 	return {
-		week: typeof s.week === "string" ? s.week : "",
-		eligible: s.eligible === true,
+		week,
+		eligible,
 		drawn: s.drawn === true,
 		amount,
 		tier,
-		mondaysSinceRare: streak,
-		herdBottomHalf: s.herd_bottom_half === true,
-		nextRareOddsOneIn: Math.max(
+		balls,
+		cap,
+		rolls: parseRolls(s.rolls),
+		purseOddsOneIn: purseOdds,
+		runningWeek: typeof s.running_week === "string" ? s.running_week : week,
+		runningBalls,
+		runningCap,
+		runningOddsOneIn: Math.max(
 			1,
-			Math.round(
-				finite(
-					s.next_rare_odds_one_in,
-					oddsOneIn(tuning.tiers, catchupMultiplier(streak, tuning.catchup)),
-				),
-			),
+			Math.round(finite(s.running_odds_one_in, oddsOneIn(runningBalls, tuning))),
 		),
+		nextTurnAt: typeof s.next_turn_at === "string" ? s.next_turn_at : null,
 		tuning,
 	};
 }
@@ -256,8 +262,10 @@ export async function fetchMondayDrawState(): Promise<RpcResult<{ state: MondayD
 }
 
 /**
- * draw_monday_purse() — the write. One purse per snout per week; a second
- * call echoes the first. `reason: "not_eligible"` when the snout didn't dig.
+ * draw_monday_purse() — the write. One purse per snout per week; a second call
+ * echoes the first. The settled snapshot carries `rolls`, so the reveal can
+ * drop exactly the balls that were rolled. `reason: "not_eligible"` when the
+ * week held no balls.
  */
 export async function drawMondayPurse(): Promise<RpcResult<{ state: MondayDrawState }>> {
 	const r = await rpcAction<Record<string, unknown>>("draw_monday_purse");

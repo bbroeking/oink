@@ -12,7 +12,7 @@
 // mirror with the server, so it works against today's prod schema.
 //
 // Route/file is technical (dig-collection); player copy says "Burrow Book" /
-// "Field Guide". Standalone-page conventions mirror app/race-standings.tsx.
+// "Field Guide". Standalone-page conventions: PageHeader crown, cream ground.
 
 import { useEffect, useState } from "react";
 import {

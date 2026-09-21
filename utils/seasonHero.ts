@@ -2,11 +2,15 @@
 //
 // Audit finding C-26: eleven decision surfaces stack in the season scroll, and
 // on a "rewards ready" load six of them wore the sun-yellow full-card highlight
-// at once — so nothing was the one thing. Wave 3 fixed it for the cards
-// `season.tsx` draws itself; wave 4 carries it across the whole scroll by
-// giving `HungerHero`, `FeedingAction`, `SounderHomeCard` and `SounderStepCard`
-// a `hero` prop. No card decides its own loudness: the screen derives the
-// primary action once, maps it to exactly ONE surface here, and hands that down.
+// at once — so nothing was the one thing. No card decides its own loudness: the
+// screen derives the primary action once, maps it to exactly ONE surface here,
+// and hands that down.
+//
+// Rewritten 2026-09-21 (docs/design/2026-09-21-season-page-rewrite.md §1): the
+// herd race and the Sounder door leave the page, so the rule shrinks to three
+// verbs and four surfaces — the dig, a ready claim, Monday's drum, the story.
+// `inCrew` is no longer an input: nothing on this page asks a snout to belong
+// to anything first.
 //
 // Living in utils (not in the route module) so the rule is testable without
 // mounting a 2,500-line screen — and so the invariant "exactly one hero, in
@@ -14,53 +18,53 @@
 
 /**
  * What the tab is asking the player to do right now, in precedence order:
- * the dig (open now, not yet taken) > a claimable reward > finding a herd >
- * nothing urgent.
+ * the dig (open now, not yet taken) > a claimable reward > an undrawn Monday
+ * purse > nothing urgent.
  */
-export type PrimaryAction = "dig" | "claim" | "join" | "browse";
+export type PrimaryAction = "dig" | "claim" | "draw" | "browse";
 
 /**
- * The season scroll's four candidate hero surfaces.
- *   feeding — the Feeding card's dig CTA (or the funnel's `first_dig` step card,
- *             which draws that same CTA while onboarding runs)
- *   claim   — the pass track's "N rewards ready" claim bar
- *   sounder — the Sounder join door (framed by the step card pre-DONE)
- *   hunger  — the Great Hungerer banner: with nothing to do, the season's own
- *             story is the one thing worth looking at
+ * The season page's four candidate hero surfaces.
+ *   feeding — the Feed panel's dig CTA
+ *   claim   — the Pass panel's ready rung / claim bar
+ *   draw    — the Draw panel's "Draw your Monday purse"
+ *   hunger  — the Great Hungerer's own story: with nothing to do, the season's
+ *             arc is the one thing worth looking at
  */
-export type HeroSurface = "feeding" | "claim" | "sounder" | "hunger";
+export type HeroSurface = "feeding" | "claim" | "draw" | "hunger";
 
 export const HERO_SURFACES: readonly HeroSurface[] = [
 	"feeding",
 	"claim",
-	"sounder",
+	"draw",
 	"hunger",
 ];
 
 export const PRIMARY_ACTIONS: readonly PrimaryAction[] = [
 	"dig",
 	"claim",
-	"join",
+	"draw",
 	"browse",
 ];
 
 /**
  * The one derivation. `digAvailable` is the shared feeding CTA's own truth
- * (in a crew · window open · not yet dug this feeding), so no surface can
- * disagree with the patch about whether it is open.
+ * (window open · not yet dug this feeding), so no surface can disagree with the
+ * patch about whether it is open. `drawReady` is the drum's own truth (a purse
+ * exists for the ended week and has not been drawn).
  */
 export function seasonPrimaryAction({
 	digAvailable,
 	readyTierCount,
-	inCrew,
+	drawReady,
 }: {
 	digAvailable: boolean;
 	readyTierCount: number;
-	inCrew: boolean;
+	drawReady: boolean;
 }): PrimaryAction {
 	if (digAvailable) return "dig";
 	if (readyTierCount > 0) return "claim";
-	if (!inCrew) return "join";
+	if (drawReady) return "draw";
 	return "browse";
 }
 
@@ -71,8 +75,8 @@ export function seasonHeroSurface(action: PrimaryAction): HeroSurface {
 			return "feeding";
 		case "claim":
 			return "claim";
-		case "join":
-			return "sounder";
+		case "draw":
+			return "draw";
 		case "browse":
 			return "hunger";
 	}

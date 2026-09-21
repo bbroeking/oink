@@ -56,23 +56,6 @@ export const PATCH_ROWS = 5;
 // Hungerer. MUST match the migration's milestone table (finds-denominated).
 export const MILESTONE_THRESHOLDS = [150, 600, 1800];
 
-// ── The Dig-Off, now a GLOBAL RACE — client mirror. ───────────────────────────
-// Every Sounder races every other Sounder in weekly-anchored cycles (a new race
-// every Mon + Thu 00:00 UTC; 3-day / 4-day alternate). Score is finds per
-// digging snout; QUORUM diggers are needed to be ranked. Rank-scaled truffle
-// spoils pay at cycle end. Draining is instant always — no banked pot anymore.
-// Rank-scaled truffle payout per crew member at cycle end. Keys 1/2/3 are the
-// podium; `topHalf` covers every other ranked crew in the top 50%; `ranked` is
-// the floor for any remaining ranked crew.
-// MUST match supabase/migrations/20260719000000.
-export const RACE_TRUFFLE_TABLE = {
-  1: 6,
-  2: 5,
-  3: 4,
-  topHalf: 3,
-  ranked: 2,
-} as const;
-
 // ── The Truffle Exchange (Season 1 P4) — client mirror. ──────────────────────
 // MUST MATCH supabase/migrations/20260704300000_truffle_exchange.sql:
 // exchange_week_stock()'s tier arrays (alphabetic within tier) + token_cost

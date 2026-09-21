@@ -1,38 +1,40 @@
-// The Monday draw — every snout that dug draws its own purse.
+// The Monday drum — every snout that dug turns its own drum.
 //
-// Spec: docs/design/season-almanac-2026-09-16/SPEC.md ("Monday draw" sheet;
-// render: screens/MondayDraw.png). One Sheet: the kicker, a 148pt pink disc
-// with the amount in TYPE.hero, the verdict, the four tier tiles with a hand
-// `you` over the hit, the warming row, and one gold button.
+// Spec: docs/design/2026-09-21-season-page-rewrite.md §2 ("The drum"). One
+// ball per submitted dig in the week that just ended; on Monday the server
+// rolls the tier table once per ball and pays the best. The sheet is that
+// drum: the balls, the printed odds, the 148pt pink disc with the amount, the
+// four tier tiles with a hand `you` over the hit, and one gold button.
 //
-// Three states on an eligible week:
-//   · PEEK — undrawn. The odds door on the Race panel opens here: the tiles
-//     (no `you`), the warming row, and the gold `Draw your Monday purse`.
-//     Peeking never rolls; only that button (or `autoDraw`, which the
-//     race-run view's own "Draw your Monday purse" CTA passes) asks the
-//     server, so looking at the odds can't spend the one draw.
-//   · DRAWING — the purse is rolling server-side (draw_monday_purse); the
-//     button waits.
-//   · DRAWN — the disc reveals the amount (a spring in; a cut under Reduce
-//     Motion), the hit tile wears `you`, and `Pocket N tickles` closes the
-//     sheet (the tickles are already in the snout's count — pocketing is the
-//     snout's beat, not a second write).
-//   · POCKETED — the week was already drawn when this open began (the Race
-//     panel's row reopens the result any time). The disc holds the amount,
-//     the title is a receipt (`60 tickles, pocketed.`) and the button is
-//     `Back to the race` — never a second `Pocket`, which read as a claim
-//     that hadn't cleared (2026-09-17).
+// Three states, and the copy for each:
+//   · UNDRAWN PURSE — `Your purse is waiting.`, `7 of 21 balls in the drum`,
+//     `rare or better: 1 in 2`, and the gold `Draw your Monday purse`.
+//     Peeking never rolls; only that button (or `autoDraw`) asks the server,
+//     so looking at the odds can't spend the one draw. DRAWING sits between,
+//     with the button waiting.
+//   · DRAWN — the drum turns (the balls drop in, the winner comes up, the
+//     amount lands), the hit tile wears `you`, and `Pocket N tickles` closes
+//     the sheet (the tickles are already in the snout's count — pocketing is
+//     the snout's beat, not a second write). Reopened later it is a receipt:
+//     `60 tickles, pocketed.` and a plain door back, never a second `Pocket`,
+//     which read as a claim that hadn't cleared (2026-09-17).
+//   · NO PURSE (0 balls) — the invitation: `No purse this Monday.` /
+//     `Dig once this week and you're in Monday's drum.` A door, not a verdict.
 //
-// No shame: a week without a dig is `No purse this Monday. Dig any feeding
-// and next one's yours.` — a door, not a verdict. The warming row tells the
-// streak as a promise (a warmer next Monday), never as a loss. Nothing here
-// names another snout.
+// The result is written server-side BEFORE the animation starts, so a killed
+// app reopens onto the receipt — state is the truth, the drum is only its
+// telling. Reduce Motion cuts straight to the result with no drop, no lift,
+// no spring. Nothing here names another snout, a streak, or a herd.
+//
+// It rides the shared `Sheet`, which takes the `useUnmanagedModalHold` latch
+// for us (the popup queue admits nothing while it is open).
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import {
 	ART_SIZE,
 	BORDER,
+	MOTION,
 	MOTION_SPRING,
 	RADII,
 	SPACE,
@@ -43,7 +45,6 @@ import {
 import {
 	Button,
 	EmptyState,
-	Glyph,
 	Hand,
 	KickerPill,
 	LoadingBeat,
@@ -54,28 +55,52 @@ import {
 } from "@/components/ui";
 import {
 	MONDAY_DRAW_TUNING,
+	RARE_OR_BETTER,
+	ballsWord,
+	oddsLine,
 	verdictFor,
-	warmingLine,
 	type MondayDrawState,
 	type MondayDrawTier,
 } from "@/utils/mondayDraw";
 
 // The disc's scale before the amount lands.
 const DISC_FROM = 0.6;
+// A ball's drop: how far above its seat it starts, and the gap between drops.
+const BALL_DROP = 14;
+const BALL_STAGGER_MS = 40;
+// The winning ball's lift once the drum stops.
+const BALL_LIFT = 6;
+const BALL_LIFT_SCALE = 1.5;
+// A drum never draws more pips than this — past it the row is a texture, not
+// a count, and the line above says the number anyway.
+const MAX_BALLS_DRAWN = 21;
 
 const KICKER = "monday · every snout that dug draws its own purse";
 const NOT_ELIGIBLE_TITLE = "No purse this Monday.";
-const NOT_ELIGIBLE_SUB = "Dig any feeding and next one's yours.";
+const NOT_ELIGIBLE_SUB = "Dig once this week and you're in Monday's drum.";
 const PEEK_TITLE = "Your purse is waiting.";
 const DRAWING_TITLE = "Drawing your purse…";
 const FAILED_TITLE = "The purse slipped — try again.";
 const DRAW_LABEL = "Draw your Monday purse";
 const DRAWING_LABEL = "drawing your purse";
-const POCKETED_LABEL = "Back to the race";
+const DONE_LABEL = "Back to the season";
 
 /** The receipt title for a reopened, already-pocketed purse. */
 export function pocketedTitle(amount: number): string {
 	return `${amount} tickles, pocketed.`;
+}
+
+/**
+ * `7 of 21 balls in the drum` — the sheet's ball line. The cap comes from the
+ * server (the snout's own feeding windows); a server that didn't say drops the
+ * "of N" rather than invent one, and a full drum earns the perfect-week words.
+ */
+export function drumBallsLine(balls: number, cap: number): string {
+	const n = Math.max(0, Math.floor(balls));
+	const c = Math.max(0, Math.floor(cap));
+	if (c <= 0) return `${ballsWord(n)} in the drum`;
+	if (n >= c) return `${c} of ${c} balls in the drum · every last feeding`;
+	return `${n} of ${c} balls in the drum`;
 }
 
 interface Props {
@@ -87,8 +112,7 @@ interface Props {
 	onDraw: () => Promise<MondayDrawState | null> | void;
 	/**
 	 * Roll on open instead of peeking. Only for a door that already SAID it
-	 * draws (the race-run view's "Draw your Monday purse" CTA); the odds door
-	 * opens the peek.
+	 * draws; the Draw panel's own odds door opens the peek.
 	 */
 	autoDraw?: boolean;
 	testID?: string;
@@ -166,7 +190,7 @@ export function MondayDrawSheet({
 	if (state && !state.eligible) {
 		footer = (
 			<Button variant="lilac" full onPress={close} testID="monday-draw-done">
-				Back to the race
+				{DONE_LABEL}
 			</Button>
 		);
 	} else if (pocketed) {
@@ -178,7 +202,7 @@ export function MondayDrawSheet({
 				accessibilityHint="Closes the sheet; this week's purse is already in your count"
 				testID="monday-draw-done"
 			>
-				{POCKETED_LABEL}
+				{DONE_LABEL}
 			</Button>
 		);
 	} else if (peeking || failed) {
@@ -187,7 +211,7 @@ export function MondayDrawSheet({
 				variant="gold"
 				full
 				onPress={fire}
-				accessibilityHint="Rolls this week's purse — one per snout, yours to keep"
+				accessibilityHint="Turns the drum — one purse per snout, yours to keep"
 				testID="monday-draw-draw"
 			>
 				{DRAW_LABEL}
@@ -219,7 +243,7 @@ export function MondayDrawSheet({
 			footer={footer}
 		>
 			{!state ? (
-				<LoadingBeat label="finding your purse" />
+				<LoadingBeat label="finding your drum" />
 			) : !state.eligible ? (
 				<EmptyState
 					glyph="sleepyface"
@@ -229,6 +253,11 @@ export function MondayDrawSheet({
 				/>
 			) : (
 				<View style={styles.body}>
+					<BallRow
+						balls={state.balls}
+						rolls={revealed ? state.rolls : null}
+						winner={revealed ? state.tier : null}
+					/>
 					<PurseDisc amount={revealed ? state.amount : null} />
 					<PageTitle align="center" accessibilityRole="header" testID="monday-draw-verdict">
 						{pocketed && state.amount != null
@@ -236,10 +265,10 @@ export function MondayDrawSheet({
 							: revealed && state.tier
 								? verdictFor(state.tier)
 								: failed
-								? FAILED_TITLE
-								: drawing
-									? DRAWING_TITLE
-									: PEEK_TITLE}
+									? FAILED_TITLE
+									: drawing
+										? DRAWING_TITLE
+										: PEEK_TITLE}
 					</PageTitle>
 					<View style={styles.tiles} accessibilityRole="list">
 						{tiers.map((t) => (
@@ -259,20 +288,133 @@ export function MondayDrawSheet({
 						borderStyle="dashed"
 						shadow="none"
 						pad
-						style={styles.warming}
+						style={styles.drumCard}
 						accessibilityRole="text"
-						testID="monday-draw-warming"
+						testID="monday-draw-drum"
 					>
-						<View style={styles.emberBox}>
-							<Glyph name="flame" size={ART_SIZE.glyphSm} />
-						</View>
-						<Hand style={styles.warmingLine}>
-							{warmingLine(state.mondaysSinceRare, state.nextRareOddsOneIn)}
+						<Hand align="center">{drumBallsLine(state.balls, state.cap)}</Hand>
+						<Hand tone="secondary" align="center">
+							{oddsLine(state.purseOddsOneIn ?? 1)}
 						</Hand>
 					</Sticker>
 				</View>
 			)}
 		</Sheet>
+	);
+}
+
+// The drum's balls. One pip per ball (capped at MAX_BALLS_DRAWN — past that
+// the line under the disc carries the count). Undrawn, they sit still. When
+// the purse lands they drop in on a stagger and the winning ball — the first
+// pip that rolled the paying tier — comes up on the sun. Reduce Motion places
+// every pip at rest, already lifted: the result, with no telling.
+function BallRow({
+	balls,
+	rolls,
+	winner,
+}: {
+	balls: number;
+	rolls: readonly MondayDrawTier[] | null;
+	winner: MondayDrawTier | null;
+}) {
+	const motion = useMotionPolicy();
+	const count = Math.min(MAX_BALLS_DRAWN, Math.max(0, Math.floor(rolls?.length ?? balls)));
+	const winnerIndex = winner && rolls ? rolls.indexOf(winner) : -1;
+	const revealed = winner != null;
+	const [drop] = useState(() => new Animated.Value(revealed ? 1 : 0));
+	const [lift] = useState(() => new Animated.Value(revealed ? 1 : 0));
+
+	useEffect(() => {
+		if (!revealed) {
+			drop.setValue(0);
+			lift.setValue(0);
+			return;
+		}
+		if (motion.reduceMotion) {
+			drop.setValue(1);
+			lift.setValue(1);
+			return;
+		}
+		drop.setValue(0);
+		lift.setValue(0);
+		const run = Animated.sequence([
+			Animated.timing(drop, {
+				toValue: 1,
+				duration: MOTION.fade + BALL_STAGGER_MS * count,
+				useNativeDriver: true,
+			}),
+			Animated.spring(lift, { toValue: 1, useNativeDriver: true, ...MOTION_SPRING.overshoot }),
+		]);
+		run.start();
+		return () => run.stop();
+	}, [revealed, motion.reduceMotion, count, drop, lift]);
+
+	if (count <= 0) return null;
+
+	return (
+		<View
+			style={styles.balls}
+			accessibilityRole="text"
+			accessibilityLabel={
+				revealed
+					? `${ballsWord(count)} turned, one paid`
+					: `${ballsWord(count)} in the drum`
+			}
+			testID="monday-draw-balls"
+		>
+			{Array.from({ length: count }, (_, i) => {
+				const isWinner = i === winnerIndex;
+				// Each pip lands on its own beat: its slice of the drop ramp.
+				const from = count <= 1 ? 0 : i / count;
+				const stage = drop.interpolate({
+					inputRange: [from, Math.min(1, from + 1 / Math.max(1, count))],
+					outputRange: [0, 1],
+					extrapolate: "clamp",
+				});
+				const roll = rolls?.[i];
+				const hot = roll != null && RARE_OR_BETTER.has(roll);
+				// Two translateYs compose: the drop into the seat, then the
+				// winner's lift out of the row.
+				const transform = revealed
+					? [
+							{
+								translateY: stage.interpolate({
+									inputRange: [0, 1],
+									outputRange: [-BALL_DROP, 0],
+								}),
+							},
+							...(isWinner
+								? [
+										{
+											translateY: lift.interpolate({
+												inputRange: [0, 1],
+												outputRange: [0, -BALL_LIFT],
+											}),
+										},
+										{
+											scale: lift.interpolate({
+												inputRange: [0, 1],
+												outputRange: [1, BALL_LIFT_SCALE],
+											}),
+										},
+									]
+								: []),
+						]
+					: [];
+				return (
+					<Animated.View
+						key={i}
+						testID={isWinner ? "monday-draw-ball-winner" : undefined}
+						style={[
+							styles.ball,
+							hot && styles.ballHot,
+							isWinner && styles.ballWinner,
+							{ opacity: revealed ? stage : 1, transform },
+						]}
+					/>
+				);
+			})}
+		</View>
 	);
 }
 
@@ -378,6 +520,31 @@ const styles = StyleSheet.create({
 		gap: SPACE.lg,
 		paddingTop: SPACE.sm,
 	},
+	balls: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		alignItems: "center",
+		gap: SPACE.xs,
+		alignSelf: "stretch",
+		// The winner's lift and scale overhang the row; give it the room.
+		paddingVertical: SPACE.sm,
+	},
+	ball: {
+		width: ART_SIZE.mark,
+		height: ART_SIZE.mark,
+		borderRadius: RADII.pill,
+		borderWidth: BORDER.thin,
+		borderColor: UI_COLORS.border,
+		backgroundColor: WHIMSY.cream,
+	},
+	ballHot: {
+		backgroundColor: WHIMSY.rose,
+	},
+	ballWinner: {
+		backgroundColor: WHIMSY.sun,
+		borderWidth: BORDER.ink,
+	},
 	disc: {
 		width: ART_SIZE.reveal,
 		height: ART_SIZE.reveal,
@@ -410,24 +577,8 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.xxs,
 	},
-	warming: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
+	drumCard: {
 		alignSelf: "stretch",
-	},
-	emberBox: {
-		width: ART_SIZE.glyphMd,
-		height: ART_SIZE.glyphMd,
-		borderRadius: RADII.sm,
-		borderWidth: BORDER.ink,
-		borderColor: UI_COLORS.border,
-		backgroundColor: WHIMSY.rose,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	warmingLine: {
-		flex: 1,
-		minWidth: 0,
+		gap: SPACE.xxs,
 	},
 });

@@ -1,12 +1,13 @@
-// The Monday tickle draw for a screen: the state (eligible / drawn / amount /
-// the warming odds) and the one write, `draw()`.
+// The Monday drum for a screen: the state (this week's balls and odds, the
+// drawable week's purse) and the one write, `draw()`.
 //
 // FAIL-SOFT: a pre-push server (monday_draw_state missing) leaves `state`
-// null and `available` false — the Race panel's draw door renders nothing.
-// `draw()` is optimistic about `drawn` (the disc can start its reveal the
-// frame the snout taps) and settles on the server's purse; a refusal snaps
-// back and a refetch reconciles. One fetch per focus; nothing polls — the
-// purse doesn't move until the snout draws it.
+// null and `available` false — the Draw panel shows its loading beat and the
+// strip cell prints nothing. `draw()` is optimistic about `drawn` (the drum
+// can start its turn the frame the snout taps) and settles on the server's
+// purse — the settled snapshot carries `rolls`, which is what the reveal
+// drops. A refusal snaps back and a refetch reconciles. One fetch per focus;
+// nothing polls — the purse doesn't move until the snout draws it.
 import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router/react-navigation";
 import {
@@ -25,9 +26,10 @@ export interface UseMondayDraw {
 	drawing: boolean;
 	refresh: () => Promise<void>;
 	/**
-	 * Draw this week's purse. Resolves the settled state (drawn, with the
-	 * amount) or null when the server refused / is dark. Calling it on a
-	 * drawn week just re-reads the stored purse.
+	 * Draw the drawable week's purse. Resolves the settled state (drawn, with
+	 * the amount, the tier and the per-ball `rolls` the reveal animates) or
+	 * null when the server refused / is dark. Calling it on a drawn week just
+	 * re-reads the stored purse.
 	 */
 	draw: () => Promise<MondayDrawState | null>;
 }
@@ -62,7 +64,8 @@ export function useMondayDraw(enabled = true): UseMondayDraw {
 		const run = (async () => {
 			let previous: MondayDrawState | null = null;
 			setDrawing(true);
-			// Optimistic: the disc may begin its reveal now.
+			// Optimistic: the drum may begin its turn now (the balls are
+			// already known; only the winning tier waits on the server).
 			setState((s) => {
 				previous = s;
 				return s && !s.drawn ? { ...s, drawn: true } : s;

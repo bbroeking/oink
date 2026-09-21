@@ -116,20 +116,22 @@ describe("currentRelease — the drip", () => {
 
 // ── The one-hero rule (C-26) ────────────────────────────────────────────────
 // At most one surface per screen wears the full sun highlight (design-system
-// spec §3.4). The Season scroll stacks eleven decision surfaces, so wave 4 gave
-// HungerHero / FeedingAction / SounderHomeCard / SounderStepCard a `hero` prop
-// fed from ONE derivation. These pin both halves: the precedence, and the
+// spec §3.4). The Season page stacks several decision surfaces, so the
+// derivation lives in ONE place and every surface takes `hero` as a prop.
+// Rewritten 2026-09-21 with the page (docs/design/2026-09-21-season-page-rewrite.md
+// §1): the Sounder join door left the page, and Monday's drum took its rung —
+// dig > claim > draw > browse. These pin both halves: the precedence, and the
 // invariant that every state elects exactly one surface — never zero, never two.
 describe("the season tab's one hero", () => {
 	const state = (
 		digAvailable: boolean,
 		readyTierCount: number,
-		inCrew: boolean,
-	) => seasonPrimaryAction({ digAvailable, readyTierCount, inCrew });
+		drawReady: boolean,
+	) => seasonPrimaryAction({ digAvailable, readyTierCount, drawReady });
 
 	test("an open, untaken dig outranks everything else", () => {
 		expect(state(true, 3, true)).toBe("dig");
-		expect(state(true, 0, false)).toBe("dig");
+		expect(state(true, 0, true)).toBe("dig");
 	});
 
 	test("a ready reward wins once the patch is closed or already dug", () => {
@@ -137,12 +139,19 @@ describe("the season tab's one hero", () => {
 		expect(state(false, 1, false)).toBe("claim");
 	});
 
-	test("a herdless pig with nothing ready is asked to join", () => {
-		expect(state(false, 0, false)).toBe("join");
+	test("an undrawn Monday purse is the next thing to do", () => {
+		expect(state(false, 0, true)).toBe("draw");
 	});
 
-	test("a crewed pig with nothing to do lands on browse", () => {
-		expect(state(false, 0, true)).toBe("browse");
+	test("nothing to do lands on browse", () => {
+		expect(state(false, 0, false)).toBe("browse");
+	});
+
+	test("the drum never outranks the dig or a claim, and never shouts on its own once drawn", () => {
+		// A drawn (or ball-less) week is not an act-now — the page falls through
+		// to the season's own story rather than inventing urgency.
+		expect(state(false, 0, false)).toBe("browse");
+		expect(seasonHeroSurface(state(false, 0, false))).toBe("hunger");
 	});
 
 	test("every primary action elects exactly one hero surface", () => {

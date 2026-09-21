@@ -1,7 +1,12 @@
-// Season 1 guide — "how the season works" in five steps + the Hunger level
-// ladder. Pops on EVERY Season-tab visit for now (see season.tsx's
-// GUIDE_EVERY_VISIT) so the flow can be tested repeatedly; before public S1
-// it flips to a once-per-user AsyncStorage stamp like the intro storybook.
+// Season 1 guide — "how the season works" in three steps + the Hunger level
+// ladder. Rewritten 2026-09-21 with the page itself
+// (docs/design/2026-09-21-season-page-rewrite.md §1, §4): the herd race and the
+// herd-milestone pages left with the race, and Monday's drum took the one slot
+// they held — three verbs on the page, three steps in the guide.
+//
+// Pops on EVERY Season-tab visit for now (see season.tsx's GUIDE_EVERY_VISIT)
+// so the flow can be tested repeatedly; before public S1 it flips to a
+// once-per-user AsyncStorage stamp like the intro storybook.
 //
 // The ladder shows named LEVELS with big hunger-credit numbers — the
 // obfuscation layer from hooks/useHungerMeter: display numbers are the raw
@@ -31,7 +36,6 @@ import {
 	useUnmanagedModalHold,
 	type GlyphName,
 } from "@/components/ui";
-import { CREW_CAP_WORD } from "@/constants/crews";
 import {
 	useHungerMeter,
 	HUNGER_STAGES,
@@ -43,24 +47,14 @@ import { AVATAR_SIZE, RADII, SPACE, TILT } from "@/constants/theme";
 
 const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
-		g: "friends",
-		title: "Join a Sounder",
-		line: `${CREW_CAP_WORD} snouts, one banner. Ask into an open Sounder, answer a friend's invite, or found your own — the dig needs a herd.`,
-	},
-	{
 		g: "gem",
 		title: "Dig every feeding",
 		line: "Every 8 hours the Hungerer gorges — dig the Truffle Patch open through his first four hours, then he guards it the next four while he digests. Every truffle is yours to keep.",
 	},
 	{
-		g: "trophy",
-		title: "Earn herd milestones",
-		line: "Your Sounder's finds add up for good. Cross a milestone and every member earns a title and a snout purse.",
-	},
-	{
-		g: "star",
-		title: "Race the week",
-		line: "Every find counts forever on the season board. Each week the best diggers take spoils — the standings settle every Monday.",
+		g: "gift",
+		title: "Draw on Monday",
+		line: "Every dig drops a ball in Monday's drum. On Monday the drum turns once for you, and the more balls you hold the better your purse tends to be — nobody else's week changes yours.",
 	},
 	{
 		g: "ogre",
@@ -123,7 +117,7 @@ export function SeasonGuideModal({
 			>
 				<DialogCloseRow onPress={onDismiss} label="To the patch" />
 				<Kicker align="center" style={styles.kicker}>
-					the season, in five steps ★
+					the season, in three steps ★
 				</Kicker>
 				<PageTitle align="center" style={styles.headline}>
 					The Season of the Hunger

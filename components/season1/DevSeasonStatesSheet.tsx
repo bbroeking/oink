@@ -1,5 +1,6 @@
 // Dev-only presentation overrides for the Season tab — force a feeding phase, a
-// ceremony, a funnel step or a hunger stage without waiting for the server.
+// funnel step or a hunger stage without waiting for the server. (The race
+// ceremony state retired with the herd race, 2026-09-21.)
 //
 // It is a `Sheet` like every other bottom panel in the app: the primitive owns
 // the Modal, the scrim, the grabber, the title row and the close affordance, so
@@ -15,7 +16,6 @@ import {
 } from "@/utils/devSeasonOverrides";
 
 const PHASES = [undefined, "open", "guarded"] as const;
-const CEREMONIES = [undefined, "podium", "mid", "subquorum"] as const;
 const STEPS = [undefined, "taste", "join", "first_dig"] as const;
 const HUNGER_STAGES = [undefined, 0, 1, 2, 3, 4, 5] as const;
 
@@ -99,15 +99,6 @@ export function DevSeasonStatesSheet({
 				onPress={() =>
 					patchDevSeasonOverrides({
 						phase: nextValue(PHASES, overrides.phase),
-					})
-				}
-			/>
-			<Cycler
-				name="ceremony"
-				value={overrides.ceremony}
-				onPress={() =>
-					patchDevSeasonOverrides({
-						ceremony: nextValue(CEREMONIES, overrides.ceremony),
 					})
 				}
 			/>

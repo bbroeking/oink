@@ -1,39 +1,26 @@
 // The Feed panel — the feeding, now. A cream hero sticker (the Hungerer at 84pt
 // beside the next-feeding readout), the six-stage meter with its one sentence,
-// the panel's single gold CTA, and a second sticker for this / last feeding's
-// herd: the avatar row, one line, and — when a crewmate's dig carries a story —
-// a 44pt door row to their Barn. Every clock string comes from the tab's ONE
-// shared feeding CTA, so this panel can never tick a minute apart from the dig.
+// the panel's single gold CTA, and under it the week's ball counter. Every clock
+// string comes from the tab's ONE shared feeding CTA, so this panel can never
+// tick a minute apart from the dig.
+//
+// Rewritten 2026-09-21 (docs/design/2026-09-21-season-page-rewrite.md §1): the
+// this-feeding herd avatar row is gone with the rest of the page's group-shaped
+// parts, and the ball counter took its place — one dig, one ball in Monday's
+// drum, and the number is the snout's own.
 
 import { useCallback, useEffect, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import {
-	Button,
-	CrewPortrait,
-	Hand,
-	Icon,
-	ListRow,
-	Sticker,
-	T,
-} from "@/components/ui";
+import { Button, Hand, Sticker, T } from "@/components/ui";
 import type { FeedingCta } from "@/components/mudwar/useFeedingCta";
 import {
 	getFeedingPushPreference,
 	setFeedingPushPreference,
 } from "@/utils/pushNotifications";
-import {
-	ART_SIZE,
-	AVATAR_SIZE,
-	BORDER,
-	RADII,
-	SPACE,
-	TILT,
-	UI_COLORS,
-} from "@/constants/theme";
-import { AvatarRow } from "./AvatarRow";
+import { RADII, SPACE, TILT } from "@/constants/theme";
+import { ballsWord, type MondayDrawState } from "@/utils/mondayDraw";
 import { StageMeter } from "./StageMeter";
-import type { HerdFeeding } from "./useHerdFeeding";
 
 const HUNGERER = require("../../../assets/images/hunger/great_hungerer_chip.png");
 
@@ -49,6 +36,16 @@ const DIG_PASS_XP_FALLBACK = 20;
 const meterLine = (lastDay: number) =>
 	`Every find starves him a little — the herd wants him Famished by day ${lastDay}.`;
 
+/**
+ * `3 balls this week · +1 if you dig now` while the patch is open and untaken,
+ * `3 balls this week` otherwise. The count is the server's (`runningBalls`);
+ * the `+1` is the promise the dig keeps, not a number the client invented.
+ */
+export function ballCounterLine(runningBalls: number, digNow: boolean): string {
+	const line = `${ballsWord(runningBalls)} this week`;
+	return digNow ? `${line} · +1 if you dig now` : line;
+}
+
 export interface FeedPanelProps {
 	cta: FeedingCta;
 	/** 0 (Gorged) … 5 (Famished). */
@@ -57,14 +54,8 @@ export interface FeedPanelProps {
 	seasonDays: number;
 	/** Pass XP per banked dig, when the server reports it; else the compiled fallback. */
 	digPassXp?: number;
-	herd: HerdFeeding;
-	inCrew: boolean;
-	/** Opens the Sounder Oink sheet — the herd nudge. */
-	onOinkHerd: () => void;
-	/** A crewmate's door row — opens their profile sheet (with its Visit). */
-	onOpenMember?: (userId: string) => void;
-	/** Herdless: the Feed CTA walks the player over to the Herd panel. */
-	onGoHerd: () => void;
+	/** The drum, for the ball counter. Null before the first read lands. */
+	draw: MondayDrawState | null;
 	testID?: string;
 }
 
@@ -73,36 +64,29 @@ export function FeedPanel({
 	stageIndex,
 	seasonDays,
 	digPassXp,
-	herd,
-	inCrew,
-	onOinkHerd,
-	onOpenMember,
-	onGoHerd,
+	draw,
 	testID,
 }: FeedPanelProps) {
 	const open = cta.phaseOpen;
 	const xp = digPassXp ?? DIG_PASS_XP_FALLBACK;
-	const dug = inCrew && (cta.dugThisWindow || herd.meDug);
-	const seatsOpen = Math.max(0, herd.members.length - herd.dugCount);
-	const me = herd.members.find((m) => m.me);
+	const dug = cta.dugThisWindow;
 
+	// The kicker never contradicts the clock: a snout who dug and is watching the
+	// patch close still reads "feeding open"; once it is shut, the same line names
+	// the next one. (The old copy said "feeding open" for the whole window.)
 	const kicker = dug
-		? `feeding open · ${cta.countdown} left`
+		? open
+			? `feeding open · ${cta.countdown} left`
+			: `next feeding in ${cta.countdown}`
 		: open
 			? "feeding open"
 			: "next feeding";
 	const title = dug ? "Rosie dug." : open ? "The patch is open" : `Opens in ${cta.countdown}`;
 	const sub = dug
-		? me?.finds != null
-			? `${me.finds} ${me.finds === 1 ? "find" : "finds"} this week. +${xp} Pass XP banked.`
-			: `+${xp} Pass XP banked.`
+		? `+${xp} Pass XP banked.`
 		: open
 			? `${cta.countdown} left. +${xp} Pass XP for the dig.`
 			: `Dig while it's open. +${xp} Pass XP for the dig.`;
-
-	// The one crewmate whose dig carries a story this feeding — a door to their
-	// Barn. Never the caller, never anyone who slept.
-	const story = herd.members.find((m) => !m.me && m.dug && m.layerLine);
 
 	return (
 		<View style={styles.panel} testID={testID}>
@@ -128,29 +112,7 @@ export function FeedPanel({
 				<Hand tone="secondary" align="center" style={styles.meterLine}>
 					{meterLine(seasonDays)}
 				</Hand>
-				{!inCrew ? (
-					<Button
-						variant="lilac"
-						size="lg"
-						full
-						onPress={onGoHerd}
-						accessibilityLabel="Rosie digs with a herd"
-						accessibilityHint="Opens the Herd panel to join or start a Sounder"
-					>
-						Rosie digs with a herd
-					</Button>
-				) : dug ? (
-					<Button
-						variant="gold"
-						size="lg"
-						full
-						onPress={onOinkHerd}
-						accessibilityLabel={`Oink at the herd, ${seatsOpen} seats still open`}
-						accessibilityHint="Opens the Sounder Oink sheet"
-					>
-						{`Oink at the herd — ${seatsOpen} ${seatsOpen === 1 ? "seat" : "seats"} still open`}
-					</Button>
-				) : open ? (
+				{open && !dug ? (
 					<Button
 						variant="gold"
 						size="lg"
@@ -162,7 +124,12 @@ export function FeedPanel({
 						Dig the Truffle Patch
 					</Button>
 				) : (
-					<RemindButton />
+					<RemindButton nextFeeding={dug && open} />
+				)}
+				{draw && (
+					<Hand tone="secondary" align="center" testID="feed-ball-counter">
+						{ballCounterLine(draw.runningBalls, open && !dug)}
+					</Hand>
 				)}
 				{!!cta.note && (
 					<Hand tone="accent" align="center" style={styles.note}>
@@ -180,61 +147,6 @@ export function FeedPanel({
 					</Button>
 				)}
 			</Sticker>
-
-			{inCrew && (
-				<Sticker
-					color="paper"
-					rotate={0}
-					radius={RADII.xl}
-					title={open ? "This feeding" : "Last feeding"}
-					right={
-						<Hand tone="secondary">
-							{open ? `${cta.countdown} left` : `next in ${cta.countdown}`}
-						</Hand>
-					}
-					style={styles.herdCard}
-				>
-					<AvatarRow
-						members={herd.members}
-						profiles={herd.profiles}
-						testID="feed-avatar-row"
-					/>
-					<Hand tone="secondary" style={styles.totals}>
-						{herd.dugCount > 0
-							? `${herd.dugCount} ${herd.dugCount === 1 ? "snout" : "snouts"} dug · +${xp} Pass XP each`
-							: open
-								? `first dig takes the lead · +${xp} Pass XP`
-								: `the patch opens in ${cta.countdown}`}
-					</Hand>
-					{story && (
-						<View style={styles.storyRow}>
-							<ListRow
-								tilt={false}
-								fill="cream"
-								leading={
-									<CrewPortrait
-										size={AVATAR_SIZE[1]}
-										hatId={herd.profiles.get(story.user_id)?.hatId ?? null}
-										bowId={herd.profiles.get(story.user_id)?.bowId ?? null}
-										prestigeLevel={herd.profiles.get(story.user_id)?.wallowCount ?? 0}
-									/>
-								}
-								title={
-									<Hand>
-										{`${story.username} ${story.layerLine} — visit their Barn.`}
-									</Hand>
-								}
-								trailing={
-									<Icon name="chevronRight" size={ART_SIZE.glyphSm} color={UI_COLORS.textSecondary} />
-								}
-								onPress={onOpenMember ? () => onOpenMember(story.user_id) : undefined}
-								accessibilityLabel={`${story.username} ${story.layerLine}`}
-								accessibilityHint="Opens their profile, with a door to their Barn"
-							/>
-						</View>
-					)}
-				</Sticker>
-			)}
 		</View>
 	);
 }
@@ -242,10 +154,17 @@ export function FeedPanel({
 // "Remind me when it opens" — the account-level feeding push preference as a
 // gold CTA. Once on, the same control reads as the soft lilac "we'll oink you"
 // and taps off again. The server is the truth; nothing is inferred locally.
-function RemindButton() {
+//
+// A snout who has already dug is looking at a patch that IS open, so the label
+// names the feeding the reminder is actually for — the next one. Same control,
+// same preference; only the words move.
+function RemindButton({ nextFeeding = false }: { nextFeeding?: boolean }) {
 	const [enabled, setEnabled] = useState<boolean | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
+	const offLabel = nextFeeding
+		? "Remind me next feeding"
+		: "Remind me when it opens";
 	useEffect(() => {
 		let alive = true;
 		getFeedingPushPreference()
@@ -284,11 +203,11 @@ function RemindButton() {
 				full
 				onPress={toggle}
 				loading={busy}
-				accessibilityLabel={enabled ? "Reminder set — tap to turn it off" : "Remind me when it opens"}
+				accessibilityLabel={enabled ? "Reminder set — tap to turn it off" : offLabel}
 				accessibilityHint="Oinks you when the patch opens, on every device you're signed in on"
 				accessibilityState={{ checked: !!enabled }}
 			>
-				{enabled ? "Reminder set — we'll oink you" : "Remind me when it opens"}
+				{enabled ? "Reminder set — we'll oink you" : offLabel}
 			</Button>
 			{!!note && (
 				<Hand tone="accent" align="center" style={styles.note}>
@@ -316,16 +235,4 @@ const styles = StyleSheet.create({
 	meterLine: { marginBottom: SPACE.xs },
 	note: { marginTop: SPACE.xs },
 	remind: { gap: SPACE.xs },
-	herdCard: {
-		paddingHorizontal: SPACE.card,
-		paddingVertical: SPACE.card,
-	},
-	totals: { marginTop: SPACE.sm },
-	storyRow: {
-		marginTop: SPACE.sm,
-		paddingTop: SPACE.sm,
-		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.uiMuted,
-		borderStyle: "dashed",
-	},
 });

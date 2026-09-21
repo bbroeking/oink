@@ -1,71 +1,42 @@
-// The Almanac's pure state — which of the four verb tabs is selected first,
+// The Almanac's pure state — which of the three verb tabs is selected first,
 // which ones wear the act-now sun, and the one nowrap value each cell prints.
 // No React, no fetch: every function is a plain map over facts the screen
 // already holds, so the strip's logic is a unit test rather than a reading of
-// four JSX props (the same seam `utils/seasonHero.ts` cut for the one-hero
-// rule). See docs/design/season-almanac-2026-09-16/SPEC.md.
+// three JSX props (the same seam `utils/seasonHero.ts` cut for the one-hero
+// rule). See docs/design/season-almanac-2026-09-16/SPEC.md and, for the
+// rewrite that retired the Herd and Race cells,
+// docs/design/2026-09-21-season-page-rewrite.md §1.
+//
+// The Draw cell's two readings live with the panel that prints them
+// (`DrawPanel.drawCellValue` / `drawCellTodo`) so a cell and its panel can
+// never disagree about what the drum is doing.
 
+import { drawCellTodo, drawCellValue } from "./DrawPanel";
 import type { HeroSurface } from "@/utils/seasonHero";
 import type { PassTrack, TierRow, TierState } from "@/utils/seasonPass";
 import type { MondayDrawState } from "@/utils/mondayDraw";
 
-export type AlmanacTab = "feed" | "herd" | "race" | "pass";
+export type AlmanacTab = "feed" | "draw" | "pass";
 
-export const ALMANAC_TABS: readonly AlmanacTab[] = ["feed", "herd", "race", "pass"];
+export const ALMANAC_TABS: readonly AlmanacTab[] = ["feed", "draw", "pass"];
 
 /** The cozy label each cell wears — the code stays technical, the screen cozy. */
 export const ALMANAC_TAB_LABEL: Record<AlmanacTab, string> = {
 	feed: "Feed",
-	herd: "Herd",
-	race: "Race",
+	draw: "Draw",
 	pass: "Pass",
 };
 
-/** The two Monday-draw facts the strip reads (undefined until the state lands). */
-export type MondayDrawFacts = Pick<MondayDrawState, "eligible" | "drawn">;
-
-/** Everything the strip needs to print its four values and pick its golds. */
+/** Everything the strip needs to print its three values and pick its golds. */
 export interface AlmanacFacts {
-	inCrew: boolean;
 	phaseOpen: boolean;
 	dugThisWindow: boolean;
 	/** The feeding clock's own number — closes-in while open, opens-in while guarded. */
 	countdown: string;
-	/** Snouts that dug this feeding, and the herd's size. */
-	dugCount: number;
-	herdSize: number;
-	/** My herd's rank on this week's board, or null before its first find. */
-	raceRank: number | null;
-	/** The "race is run" beat is showing (last week's finals, fresh + unseen). */
-	raceRun: boolean;
-	mondayDraw?: MondayDrawFacts;
+	/** The drum, or null before the first read lands. */
+	draw: MondayDrawState | null;
 	currentTier: number;
 	readyTierCount: number;
-}
-
-// "3rd of 12" — ordinal placement. The one copy; RaceSection imports it too.
-export function ordinal(n: number): string {
-	const v = Math.max(1, Math.floor(n));
-	const rem100 = v % 100;
-	if (rem100 >= 11 && rem100 <= 13) return `${v}th`;
-	switch (v % 10) {
-		case 1:
-			return `${v}st`;
-		case 2:
-			return `${v}nd`;
-		case 3:
-			return `${v}rd`;
-		default:
-			return `${v}th`;
-	}
-}
-
-// Small counts read as words in the hand voice ("two behind", "four Mondays");
-// bigger ones stay digits so the line never balloons.
-const SMALL_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-export function countWord(n: number): string {
-	const v = Math.max(0, Math.floor(n));
-	return SMALL_WORDS[v] ?? String(v);
 }
 
 /**
@@ -73,22 +44,9 @@ export function countWord(n: number): string {
  * open — the hero says which), `Dug` once this feeding is taken. The sun fill,
  * not a verb, is what says "dig now".
  */
-export function feedCellValue(f: Pick<AlmanacFacts, "inCrew" | "dugThisWindow" | "countdown">): string {
-	if (f.inCrew && f.dugThisWindow) return "Dug";
+export function feedCellValue(f: Pick<AlmanacFacts, "dugThisWindow" | "countdown">): string {
+	if (f.dugThisWindow) return "Dug";
 	return f.countdown;
-}
-
-/** Herd: `4 of 6` dug, or `Join` while herdless. */
-export function herdCellValue(f: Pick<AlmanacFacts, "inCrew" | "dugCount" | "herdSize">): string {
-	if (!f.inCrew) return "Join";
-	return `${f.dugCount} of ${f.herdSize}`;
-}
-
-/** Race: `3rd`, `Run` on Monday while the finals are fresh, `—` with no rank. */
-export function raceCellValue(f: Pick<AlmanacFacts, "inCrew" | "raceRank" | "raceRun">): string {
-	if (!f.inCrew) return "—";
-	if (f.raceRun) return "Run";
-	return f.raceRank != null && f.raceRank >= 1 ? ordinal(f.raceRank) : "—";
 }
 
 /** Pass: `2 ready` when a claim waits, else `Tier 4`. */
@@ -100,37 +58,35 @@ export function passCellValue(f: Pick<AlmanacFacts, "currentTier" | "readyTierCo
 export function almanacValues(f: AlmanacFacts): Record<AlmanacTab, string> {
 	return {
 		feed: feedCellValue(f),
-		herd: herdCellValue(f),
-		race: raceCellValue(f),
+		draw: drawCellValue(f.draw),
 		pass: passCellValue(f),
 	};
 }
 
 /**
  * Which cells wear the sun. Gold means act-now and nothing else: Feed while
- * the feeding is open and untaken, Pass while a claim is ready, Race on Monday
- * until the purse is drawn. Several may be gold at once — the strip is a row of
- * doors, not the one-hero surface; the one-hero rule decides which opens FIRST
- * (`almanacInitialTab`).
+ * the feeding is open and untaken, Draw while a purse is drawable and undrawn,
+ * Pass while a claim is ready. Several may be gold at once — the strip is a row
+ * of doors, not the one-hero surface; the one-hero rule decides which opens
+ * FIRST (`almanacInitialTab`).
  */
 export function almanacTodo(f: AlmanacFacts): Record<AlmanacTab, boolean> {
 	return {
-		feed: f.inCrew && f.phaseOpen && !f.dugThisWindow,
-		herd: false,
-		race: !!f.mondayDraw && f.mondayDraw.eligible && !f.mondayDraw.drawn,
+		feed: f.phaseOpen && !f.dugThisWindow,
+		draw: drawCellTodo(f.draw),
 		pass: f.readyTierCount > 0,
 	};
 }
 
-/** The one-hero rule picks the tab that opens first: dig → Feed, claim → Pass, join → Herd, browse → Feed. */
+/** The one-hero rule picks the tab that opens first: dig → Feed, claim → Pass, draw → Draw, browse → Feed. */
 export function almanacInitialTab(hero: HeroSurface): AlmanacTab {
 	switch (hero) {
 		case "feeding":
 			return "feed";
 		case "claim":
 			return "pass";
-		case "sounder":
-			return "herd";
+		case "draw":
+			return "draw";
 		case "hunger":
 			return "feed";
 	}
@@ -224,22 +180,4 @@ export function barnRewardsAhead(
 		.map(Number)
 		.filter((t) => tiersByNumber[t]?.[track]?.reward_type === "habitat")
 		.filter((t) => !claimedSet.has(`${t}:${track}`)).length;
-}
-
-// ── The race ─────────────────────────────────────────────────────────────────
-
-/** "two behind" / "out in front" — my herd's gap to the herd above it. */
-export function raceGapLine(
-	ranked: readonly { crew_id: string; rank: number; total_finds: number }[],
-	myCrewId: string | null
-): string | null {
-	if (!myCrewId) return null;
-	const mine = ranked.find((r) => r.crew_id === myCrewId);
-	if (!mine) return null;
-	if (mine.rank <= 1) return "out in front";
-	const above = ranked.find((r) => r.rank === mine.rank - 1);
-	if (!above) return null;
-	const gap = Math.max(0, above.total_finds - mine.total_finds);
-	if (gap === 0) return "neck and neck";
-	return `${countWord(gap)} behind`;
 }

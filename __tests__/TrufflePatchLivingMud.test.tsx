@@ -88,9 +88,6 @@ jest.mock("@/components/ui", () => {
     Tag: passthrough,
   };
 });
-jest.mock("@/components/season1/GuardedCtaExtras", () => ({
-  NotifyChip: () => null,
-}));
 jest.mock("@/components/mudwar/DigPostcardComposer", () => ({
   DigPostcardComposer: () => null,
 }));
