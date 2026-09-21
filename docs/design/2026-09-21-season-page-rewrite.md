@@ -2,6 +2,8 @@
 
 > Status: **proposal, not built.** Founder brief (2026-09-21): raising a Wallow rank seems to get stuck; the Season page is crowded, hard to read, has too many moving parts; it should be simpler and more deterministic. Three orders: (1) remove the herd race entirely; (2) Monday's randomization scales with digging — the more you dig, the more lotto balls you hold; (3) nothing about the randomization references the Sounder or any group.
 >
+> Resolved 2026-09-21 (the four questions at the end, answered at the founder's request; rationale in §8): **no Sounder door on the page · the drum pays tickles only · best-of-N · one dig number, the drum's.**
+>
 > Charter note: this retires the current reading of **Contend** in `SKILL.md` ("gives the herd a race to run — together"). Under this spec Contend is **the drum**: every snout's own week of digging against the odds, printed before Monday, no other pig in the formula. A `SKILL.md` decision-log entry is drafted at the end of this document and is appended only when this spec is accepted.
 
 ## One sentence
@@ -24,7 +26,7 @@ One-hero rule (`utils/seasonHero.ts`) shrinks to three surfaces: `dig > claim > 
 
 **Gone from the page.** The Herd cell and `HerdPanel` (roster rows, "Oink at the herd", `JoinableSounders`, the `SounderStepCard` funnel); the Race cell and `RacePanel` (the weekly Dig-Off board, the Monday spoils ladder, the herd-prize door, the "race is run" beat); the Feed panel's this-feeding avatar row (`useHerdFeeding` → `race_crew_detail`); the season-cumulative board; `SpoilsShowcase`; the Alignment placard's Season-0 path is untouched (it is not on this page in Season 1).
 
-**Where the Sounder still lives.** The Friends tab's Sounder segment (roster, oink, join, leave, invites) is not this spec's subject and stays. The one Sounder-shaped fact that keeps touching the dig is invisible: crewed pigs still receive the same base board per window (`docs/specs/08-seeded-crew-boards.md`). Nothing on the Season page and nothing in the draw reads it.
+**Where the Sounder still lives.** Nowhere on this page — not a cell, not a row, not a one-line door (resolved, §8 Q1). The Friends tab's Sounder segment (roster, oink, join, leave, invites) is not this spec's subject and stays. The one Sounder-shaped fact that keeps touching the dig is invisible: crewed pigs still receive the same base board per window (`docs/specs/08-seeded-crew-boards.md`). Nothing on the Season page and nothing in the draw reads it.
 
 ## 2 · The drum — Monday's randomization
 
@@ -33,12 +35,13 @@ One-hero rule (`utils/seasonHero.ts`) shrinks to three surfaces: `dig > claim > 
 - **One ball per dug feeding.** A dig is one `rooting_receipts` row (every submitted dig, since 2026-09-13; one per `(user, window_index)`, so one per feeding at most). What the dig found is irrelevant: a tied-off topsoil with nothing loose is a ball; an abandoned board with no submit is not. Practice digs never reach the server and never mint a ball.
 - **No other source.** Not Troughs, not visits, not blessings, not membership, not rank, not the herd. The formula is `balls = digs this week`, and the page says it in those words.
 - **The week.** Monday 00:00 UTC to the next Monday 00:00 UTC. The race's `race_cycle_at` was the clock; the draw gets its own copy, `draw_week_at(p_at)` (same math, owned by the draw, so the race can be dropped). A receipt belongs to the week its `created_at` falls in.
-- **Cap.** `min(digs, windows_in_week)`. With today's schedule (8h feedings, three a day) that is **21**. The cap is derived from the live feeding schedule, never a bare constant; a schedule change mid-week never truncates balls already minted.
+- **Cap.** `min(digs, my_windows_in_week)`. Feedings are player-local (`user_feeding_cycle_zones`, 2026-09-13), so the cap is **the snout's own** expected windows for the week — `user_draw_week_feeding_windows(user, week)`, the renamed `user_race_cycle_feeding_windows` — which is **21** on the default schedule (8h feedings, three a day). Derived from the live schedule, never a bare constant; a schedule change mid-week never truncates balls already minted.
+- **The one dig number** (resolved, §8 Q4). The drum's `n of 21` is the week's only dig counter on the page and in the data. There is no "dig N feedings" weekly bounty to fold (the pool is `generous_hoof … curse_distinct`; none counts digs), so nothing is retired there. The one other weekly dig reader, the **`every_last_feeding` achievement** (`award_perfect_feeding_week`), today counts `race_digs` joined to non-bot crews on the race cycle; it is re-pointed to *balls == cap* on the draw week, so a perfect week is exactly a full drum, and the drum panel says so (`21 of 21 · every last feeding`).
 - **Printed live.** `monday_draw_state()` returns `balls` for the running week and the drawable week; the client never counts locally. After a submitted dig the Feed panel may show `+1` optimistically until the next read.
 
 ### The turn
 
-The purse tiers stay exactly as tuned in `app_settings.monday_draw` (placeholders today):
+The drum pays **tickles only** (resolved, §8 Q2). Furnishings keep their two lanes — bought in the shop, or the Trough giver's weekly reward — and never ride the drum. The purse tiers stay exactly as tuned in `app_settings.monday_draw` (placeholders today):
 
 | tier | tickles | base weight |
 | --- | --- | --- |
@@ -47,7 +50,7 @@ The purse tiers stay exactly as tuned in `app_settings.monday_draw` (placeholder
 | rare | 150 | 10 |
 | jackpot | 400 | 2 |
 
-**Model: best of N.** On Monday the server rolls the tier table once **per ball** and pays the **best** tier rolled. Every ball is an independent draw of the same wheel; you keep the highest. That is the whole mechanism.
+**Model: best of N** (resolved, §8 Q3). On Monday the server rolls the tier table once **per ball** and pays the **best** tier rolled. Every ball is an independent draw of the same wheel; you keep the highest. That is the whole mechanism. The alternative — keeping `_monday_draw_multiplier` and scaling the rare + jackpot weights by balls — is not taken: it needs a cap and a step to tune, its odds line is a formula nobody can check in their head, and it is the pity machinery under a new name.
 
 - With `p` = the base chance of rare-or-better per ball (12 / 100 today), the chance for `n` balls is `1 − (1 − p)^n`. Printed as `1 in N` where `N = round(1 / (1 − (1 − p)^n))`.
 - The client mirror (`utils/mondayDraw.ts oddsOneIn(balls)`) and the server (`_monday_draw_odds_one_in(p_balls)`) compute the same closed form from the same tuning row, so the sheet can never quote odds the server won't honour.
@@ -94,6 +97,8 @@ The brief's first pain is "when I raise my Wallow rank, it seems to get stuck." 
 
 **UI (client).** `components/season1/almanac/RacePanel.tsx`, `useRaceRun.ts` (+ the `race_seen` AsyncStorage key), `HerdPanel` and `useHerdFeeding.ts`'s `race_crew_detail` read, the `herd` and `race` members of `ALMANAC_TABS` with their `almanacValues` / `almanacTodo` branches and `AlmanacFacts.inCrew / dugCount / herdSize / raceRank / raceRun`, `components/season1/RaceSection.tsx`, `SpoilsShowcase.tsx`, `SounderHomeCard.tsx` (dead already), `app/race-standings.tsx`, `hooks/useRace.ts`, `utils/race.ts`, `hooks/useHerdPrize.ts`, `utils/barnDraw.ts`'s herd-prize half and `BarnRewardClaimSheet`'s herd-prize branch, `constants/dig.ts` `RACE_TRUFFLE_TABLE` + the quorum note, the race art in `utils/rewardArt.ts`, the `seasonHero` `join` branch and `sounder` surface, the Season guide's race pages (`SeasonGuideModal`), the "Race: Run" / bunting copy in `constants/release_notes.ts` is history and stays.
 
+**Server (rewritten, not removed).** `award_perfect_feeding_week(p_cycle)` → reads `rooting_receipts` against `user_draw_week_feeding_windows` (no `race_digs`, no `crews` join — a crewless snout can earn it); `user_race_cycle_feeding_windows` → `user_draw_week_feeding_windows`, on `draw_week_at`.
+
 **Server.** Tables `race_digs`, `cycle_payouts`, `cycle_notices`, `race_podium_queue`, `dig_offs`, `dig_off_digs`, `digoff_queue`, `herd_prize_seeds`, `herd_prize_draws`; functions `race_cycle_at`, `race_current_cycle`, `_race_table`, `_race_truffles_for_rank`, `race_standings`, `_race_pay_cycle`, `sweep_race`, `race_crew_detail`, `_herd_prize_resolve`, `herd_prize_state`, `_monday_draw_streak_before`, `_monday_draw_herd_bottom_half`, `_monday_draw_multiplier`; pg_cron jobs `race-sweep` and `digoff-sweep`; the race and herd-prize announcements (`20260767…`, `20260793…`, `20260917120000`); `submit_rooting*`'s `race_digs` insert; `_monday_draw_eligible`'s `race_digs` fallback. Golden Truffle and bunting payouts that rode `_race_pay_cycle` end with it (bunting already owned stays owned).
 
 **Config.** `app_settings.monday_draw.catchup` (all four keys); `app_settings.barn_draw`'s herd-prize keys; the race's tuning rows. The Sounder League migration (`20260707000000`) and its cron are a separate legacy and are listed for a follow-up audit, not removed here.
@@ -107,14 +112,15 @@ The brief's first pain is "when I raise my Wallow rank, it seems to get stuck." 
 - The Great Hunger arc, the header, the stage meter, and every Feed mechanic (`useFeedingCta`, Snout Deep, the classic patch, receipts, the feeding schedule from server config).
 - The Monday tickle draw as a system: `app_settings.monday_draw` (tiers + weights, now plus `balls_cap_source: "schedule"`), `monday_draws`, `monday_draw_state()`, `draw_monday_purse()`, `MondayDrawSheet`, `DrawRevealSheet`, `hooks/useMondayDraw.ts`, `utils/mondayDraw.ts`.
 - The Pass panel whole: the ladder, claims, weekly quests (`my_weekly_bounties`), the Wallow (`wallow()`, the Prestige Path, the gifts and keepsakes — the *content* of a rank is the subject of `docs/design/2026-09-21-wallow-rethink.md`, not this spec), the Mote Machine card behind `MOTE_MACHINE_VISIBLE`.
-- The Trough giver's weekly reward (`_barn_draw_pick`, the quarter rule) — it never touched the crew.
+- The Trough giver's weekly reward (`_barn_draw_pick`, the quarter rule) — it never touched the crew. It stays the only random furnishing lane.
+- The `every_last_feeding` achievement, on the drum's count.
 - The Sounder itself on the Friends tab, seeded shared boards, the Sounder Bonus on the dig. Out of scope here; nothing on the Season page references them.
 
 ## 6 · Edge cases
 
-1. **Counting balls.** `balls(user, week) = min(cap, count(rooting_receipts where user_id = u and created_at ∈ [week.starts, week.ends)))`. `rooting_receipts` is unique per `(user, window_index)`, so a replayed or retried submit cannot double-count. `cap = windows_in_week` from the feeding schedule row at the week's start.
+1. **Counting balls.** `balls(user, week) = min(cap, count(rooting_receipts where user_id = u and created_at ∈ [week.starts, week.ends)))`. `rooting_receipts` is unique per `(user, window_index)`, so a replayed or retried submit cannot double-count. `cap = count(user_draw_week_feeding_windows(u, week))` — the snout's own windows in their feeding time zone, computed at the week's open.
 2. **A window straddling Monday.** The receipt's `created_at` decides the week. The Feed panel's `+1 if you dig now` uses the same clock, so a dig at 23:50 UTC Sunday shows as this week's ball, and one at 00:10 Monday as next week's.
-3. **Schedule shift mid-week.** The cap for a week is computed once at the week's open and stored with the draw row; balls already minted are never cut. The client prints `n of 21` only from the server's `cap` field.
+3. **Schedule or time-zone shift mid-week.** The cap for a week is computed once at the week's open and stored with the draw row; balls already minted are never cut. The client prints `n of 21` only from the server's `cap` field. A snout whose zone change *adds* windows can dig them; the perfect-week test uses the stored cap.
 4. **Zero balls.** No purse, no row, no push. The Draw cell prints `0 balls`; the panel is the invitation.
 5. **Late claim.** Drawable until the next Monday 00:00 UTC; then gone. The reveal never shows two weeks; `drawn` for a lapsed week is neither true nor false — the week is simply not returned.
 6. **Concurrent draws.** Per-user advisory lock inside `draw_monday_purse()`; the second caller reads the first's row. Two devices see the same receipt.
@@ -135,14 +141,15 @@ The brief's first pain is "when I raise my Wallow rank, it seems to get stuck." 
 3. A second, later migration drops the race and herd-prize tables once a week of `monday_draws.balls` rows exists and nothing reads them.
 4. Flip nothing: there is no flag; the page is the build.
 
-## 8 · Open questions (for the founder)
+## 8 · Resolved questions (2026-09-21)
 
-1. **Does the Sounder keep any presence on the Season page** — a one-line door to the Friends tab's Sounder segment — or none at all? (This spec: none.)
-2. **The herd prize furnishing draw** (per-crew, Monday) is removed with the race. Should a furnishing ever ride the drum — say, the jackpot tier pays a featured-collection rare instead of 400 tickles — or is the drum tickles only? (This spec: tickles only.)
-3. **Best-of-N vs. a weight multiplier.** Best-of-N is the literal lotto: each ball a spin, keep the best. The alternative keeps the current machinery and scales the rare+jackpot weights by balls. Both are one tuning row; best-of-N is recommended because its odds line is the one players already understand ("more tickets, more chances").
-4. **The Snout Deep depth** (topsoil / mud / root) — should digging deeper add a ball? Recommended no: one dig, one ball keeps the counter honest and the formula one line.
-5. **Weekly quests** stay on Pass today. Should the "dig N feedings this week" quest become the drum's own line so the page has one counter for digs, not two?
+Answered by Claude at the founder's request; each answer is applied above.
+
+1. **Does the Sounder keep a door on the Season page?** **No.** The brief says the Sounder is conceptually gone from this page; a door is one more moving part that points at a concept the page no longer explains, and the Friends tab already owns the roster, oinks and joining. A newcomer reads three verbs and none of them asks them to belong to anything first.
+2. **Tickles only, or a furnishing on the jackpot?** **Tickles only.** A furnishing prize drags in ownership re-rolls, a "you own the whole pool" fallback and a rotating collection — the moving parts the per-crew prize needed. One currency keeps the odds table one table and keeps the shop as the way a collection gets finished; the Trough reward already gives furnishings a random lane that never touches the crew.
+3. **Best-of-N or a balls-scaled multiplier?** **Best-of-N.** It is the lotto the brief asked for, literally: each ball a spin, keep the best. Its odds are one closed form a player can check (`1 − (1 − p)^n`), it rises with every dig with no cap to tune, and it drops the multiplier/pity code instead of renaming it.
+4. **Fold the "dig N feedings" quest into the drum's counter?** **One number, yes — and the premise was wrong.** No such weekly bounty exists (the pool counts blessings, curses, trades and visits, never digs), so nothing folds. The one weekly dig reader that does exist, the `every_last_feeding` achievement, is re-pointed from the race tables to the drum: a perfect week is a full drum, and the page prints one dig count.
 
 ## Draft decision-log entry for `SKILL.md` (append on acceptance)
 
-- **2026-09-21 — The herd race retires; Contend is the drum.** The Season page keeps three verbs — Feed · Draw · Pass — and drops Herd and Race. Monday's purse is drawn from a drum of lotto balls, one ball per submitted dig that week (cap = the schedule's windows, 21 today), best-of-N over the same tier table; no streak, no herd flag, no rank, no other pig in the formula. The odds are printed before Monday from the player's own count. The per-crew herd prize retires with the race. Serves **Contend** (a week you can win by digging, legible to the number) and **comprehension** (three lines that move, all yours); the Sounder stays a Connect surface on the Friends tab. Spec: `docs/design/2026-09-21-season-page-rewrite.md`.
+- **2026-09-21 — The herd race retires; Contend is the drum.** The Season page keeps three verbs — Feed · Draw · Pass — and drops Herd and Race. Monday's purse is drawn from a drum of lotto balls, one ball per submitted dig that week (cap = the schedule's windows, 21 today), best-of-N over the same tier table, tickles only; no streak, no herd flag, no rank, no other pig in the formula. The odds are printed before Monday from the player's own count, which is also the page's one dig number (the perfect-week achievement reads it). The per-crew herd prize retires with the race; the Sounder keeps no door on the page. Serves **Contend** (a week you can win by digging, legible to the number) and **comprehension** (three lines that move, all yours); the Sounder stays a Connect surface on the Friends tab. Spec: `docs/design/2026-09-21-season-page-rewrite.md`.
