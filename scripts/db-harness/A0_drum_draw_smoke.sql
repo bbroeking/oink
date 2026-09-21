@@ -313,7 +313,15 @@ BEGIN
 	IF NOT (st->>'ok')::boolean OR st->>'last' IS NOT NULL THEN
 		RAISE EXCEPTION 'herd_prize_state should answer empty: %', st; END IF;
 
+	-- ── the sweeps are no-ops: nobody wins the race this week ─────────────
+	st := public.sweep_race();
+	IF NOT (st->>'retired')::boolean OR (st->>'paid')::int <> 0 THEN
+		RAISE EXCEPTION 'sweep_race should be a retired no-op: %', st; END IF;
+	st := public.sweep_digoffs();
+	IF NOT (st->>'retired')::boolean OR (st->>'paid')::int <> 0 THEN
+		RAISE EXCEPTION 'sweep_digoffs should be a retired no-op: %', st; END IF;
+
 	PERFORM set_config('ttp.fake_now','',true);
-	RAISE NOTICE 'chk drum: balls + cap + best-of-N + odds + perfect week + the Monday push OK';
+	RAISE NOTICE 'chk drum: balls + cap + best-of-N + odds + perfect week + the Monday push + the silent sweeps OK';
 END
 $drum_draw$;

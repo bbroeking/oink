@@ -703,6 +703,23 @@ DO $unschedule_race$ BEGIN
 	BEGIN PERFORM cron.unschedule('digoff-sweep'); EXCEPTION WHEN OTHERS THEN NULL; END;
 EXCEPTION WHEN OTHERS THEN NULL; END $unschedule_race$;
 
+-- Founder's call (2026-09-21): nobody wins the race this week. The running
+-- cycle is not settled, and the sweeps become no-ops so a stray manual call
+-- cannot pay it either. Both keep their signatures; both answer honestly.
+CREATE OR REPLACE FUNCTION public.sweep_race()
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+	SELECT jsonb_build_object('ok', true, 'retired', true, 'paid', 0);
+$function$;
+REVOKE ALL ON FUNCTION public.sweep_race() FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.sweep_digoffs()
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+	SELECT jsonb_build_object('ok', true, 'retired', true, 'paid', 0);
+$function$;
+REVOKE ALL ON FUNCTION public.sweep_digoffs() FROM PUBLIC, anon, authenticated;
+
 -- ── 14. The dig stops feeding the race ───────────────────────────────────────
 -- CARRY-LATEST-DEF. Both functions are their newest live definitions, verbatim
 -- but for ONE delta each: the race-attribution INSERT (and the race_cycle_at
