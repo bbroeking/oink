@@ -1,6 +1,6 @@
 # The Season page, rewritten — no herd race, a Monday drum of lotto balls (spec, 2026-09-21)
 
-> Status: **proposal, not built.** Founder brief (2026-09-21): raising a Wallow rank seems to get stuck; the Season page is crowded, hard to read, has too many moving parts; it should be simpler and more deterministic. Three orders: (1) remove the herd race entirely; (2) Monday's randomization scales with digging — the more you dig, the more lotto balls you hold; (3) nothing about the randomization references the Sounder or any group.
+> Status: **built 2026-09-21** (client on `main`; migration `20260921150000_drum_draw.sql` authored and harness-validated, **not pushed** — the founder's go). Originally a proposal from the same day's brief. Founder brief (2026-09-21): raising a Wallow rank seems to get stuck; the Season page is crowded, hard to read, has too many moving parts; it should be simpler and more deterministic. Three orders: (1) remove the herd race entirely; (2) Monday's randomization scales with digging — the more you dig, the more lotto balls you hold; (3) nothing about the randomization references the Sounder or any group.
 >
 > Resolved 2026-09-21 (the four questions at the end, answered at the founder's request; rationale in §8): **no Sounder door on the page · the drum pays tickles only · best-of-N · one dig number, the drum's.**
 >
@@ -74,7 +74,7 @@ Tuning lives entirely in the row; if 21 balls should not reach a 35 % jackpot, t
 - `balls ≥ 1` in the ended week ⇒ a purse exists for that week; `balls = 0` ⇒ no purse, no row. The sheet for a ball-less week reads as an invitation ("dig once this week and you're in Monday's drum"), never as a loss.
 - The purse is **drawable all the following week** (opening the app Wednesday is fine); after that it lapses with no back-pay, and the sheet only ever shows the current drawable week.
 - `draw_monday_purse()` stays: one row per `(user, iso_week)`, per-user lock, server-side random, minted through `apply_tickles`, re-call returns the stored draw. It now records `balls` on the row.
-- The reveal (`DrawRevealSheet`) animates the drum: the balls drop, one comes up, the tier and amount land. The result is written before the animation starts, so a killed app re-opens onto the receipt.
+- The reveal lives inside `MondayDrawSheet` (the purse disc; `DrawRevealSheet` is the Barn's shared *furnishing* reveal and stays with the Trough reward) and animates the drum: the balls drop, one comes up, the tier and amount land. The result is written before the animation starts, so a killed app re-opens onto the receipt.
 
 ### Determinism, stated for the player
 
@@ -110,7 +110,7 @@ The brief's first pain is "when I raise my Wallow rank, it seems to get stuck." 
 ## 5 · What remains
 
 - The Great Hunger arc, the header, the stage meter, and every Feed mechanic (`useFeedingCta`, Snout Deep, the classic patch, receipts, the feeding schedule from server config).
-- The Monday tickle draw as a system: `app_settings.monday_draw` (tiers + weights, now plus `balls_cap_source: "schedule"`), `monday_draws`, `monday_draw_state()`, `draw_monday_purse()`, `MondayDrawSheet`, `DrawRevealSheet`, `hooks/useMondayDraw.ts`, `utils/mondayDraw.ts`.
+- The Monday tickle draw as a system: `app_settings.monday_draw` (tiers + weights; the `catchup` key removed), `monday_draws` (+ `balls`, `cap`, `rolls`), `monday_draw_state()`, `draw_monday_purse()`, `MondayDrawSheet`, `hooks/useMondayDraw.ts`, `utils/mondayDraw.ts`, `almanac/DrawPanel.tsx`. `DrawRevealSheet` stays as the Barn's furnishing reveal.
 - The Pass panel whole: the ladder, claims, weekly quests (`my_weekly_bounties`), the Wallow (`wallow()`, the Prestige Path, the gifts and keepsakes — the *content* of a rank is the subject of `docs/design/2026-09-21-wallow-rethink.md`, not this spec), the Mote Machine card behind `MOTE_MACHINE_VISIBLE`.
 - The Trough giver's weekly reward (`_barn_draw_pick`, the quarter rule) — it never touched the crew. It stays the only random furnishing lane.
 - The `every_last_feeding` achievement, on the drum's count.
@@ -137,9 +137,10 @@ The brief's first pain is "when I raise my Wallow rank, it seems to get stuck." 
 ## 7 · Migration order
 
 1. Ship the client that never renders Herd/Race and reads `balls` when present (tolerates its absence: prints the old odds line until the server lands).
-2. Push one migration: `draw_week_at`, `balls` on `monday_draws`, the new `_monday_draw_odds_one_in(p_balls)`, `monday_draw_state()` + `draw_monday_purse()` rewritten to best-of-N, the crew and streak functions dropped, the race crons unscheduled, the race announcements retired. Carry-latest-def rule applies to every `CREATE OR REPLACE` (the 2026-09 footgun).
-3. A second, later migration drops the race and herd-prize tables once a week of `monday_draws.balls` rows exists and nothing reads them.
-4. Flip nothing: there is no flag; the page is the build.
+2. **Settle the last race week first:** run `SELECT public.sweep_race();` once, immediately before the push, so the final week's truffles, bunting and result announcement pay out — unscheduling `race-sweep` ends `_race_pay_cycle` and `_herd_prize_resolve`, and a week left unswept never pays.
+3. Push one migration (`20260921150000_drum_draw.sql`, harness-validated 2026-09-21): `draw_week_at`, `balls` / `cap` / `rolls` on `monday_draws`, the new `_monday_draw_odds_one_in(p_balls)`, `monday_draw_state()` + `draw_monday_purse()` rewritten to best-of-N, the crew and streak functions dropped, the race crons unscheduled, the race announcements retired with them, the perfect-week award re-pointed and on its own cron, the Monday drum push on its own cron. One seam the removal exposed: the only writer of `user_feeding_cycle_zones` (the per-player window slate the cap needs) was a trigger on `race_digs` that never fired for uncrewed diggers; the migration adds the same fail-soft capture on `rooting_receipts`, backfills existing receipts, and falls back to the live zone when no snapshot exists. Carry-latest-def rule applies to every `CREATE OR REPLACE` (the 2026-09 footgun); the two real `race_digs` writers were `_submit_rooting_reward_v1` and `_submit_rooting_deep_core`.
+4. A second, later migration drops the race and herd-prize tables (and `_race_pay_cycle`, `_herd_prize_resolve`, the dead `user_race_cycle_feeding_windows`) once a week of `monday_draws.balls` rows exists and no shipped binary still calls the stub RPCs.
+5. Flip nothing: there is no flag; the page is the build. Purses drawn before the push read `balls 0 · cap 0` in their receipt (history only).
 
 ## 8 · Resolved questions (2026-09-21)
 
