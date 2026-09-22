@@ -26,9 +26,11 @@ describe("development-only previews", () => {
 		const leaderboard = source("components/Leaderboard.tsx");
 
 		// The Wallow preview chip sits in the rank sheet, inside a __DEV__ branch.
+		// It cycles the four shapes the ladder takes rather than one rank.
 		expect(account).toMatch(
-			/\{__DEV__ && \(\s*<View[^>]*>\s*<Chip[\s\S]*?Preview Wallow rank 5/,
+			/\{__DEV__ && \(\s*<View[^>]*>\s*<Chip[\s\S]*?Preview Wallow rank \$\{nextDevWallowRank\}/,
 		);
+		expect(account).toContain("const DEV_WALLOW_CYCLE = [0, 1, 6, 11] as const;");
 		expect(leaderboard).toMatch(
 			/\{__DEV__ && \(\s*<Chip[\s\S]*?Preview Wallow ranks/,
 		);
@@ -48,15 +50,41 @@ describe("development-only previews", () => {
 	});
 });
 
-describe("Me-page Wallow progression", () => {
-	test("shows only the current and next incremental step", () => {
-		const account = source("components/Account.tsx");
+// The rank sheet is the ladder's ONE home (the endless ladder, 2026-09-22):
+// the rung you stand on, the next rung and its prize, every later rung locked,
+// and how to wallow. The old "current + next step, then a door to the closet"
+// card is gone, and so is the closet door.
+describe("the Wallow rank sheet is the ladder", () => {
+	const account = source("components/Account.tsx");
 
-		expect(account).toContain("CURRENT");
-		expect(account).toContain("NEXT WALLOW");
-		expect(account).toContain("Reach W{nextRank}");
+	test("draws four rungs: here, next, later, and how to wallow", () => {
+		expect(account).toContain("you're here");
+		expect(account).toContain("W{nextRank} · one pass away");
+		expect(account).toContain("then, forever");
+		expect(account).toContain("how to wallow");
+		expect(account).toContain("XP into this pass");
+	});
+
+	test("states the clock as a struck-through delta, never an arrow", () => {
 		expect(account).toContain("currentBaseInterval");
 		expect(account).toContain("nextBaseInterval");
-		expect(account).not.toContain("const rows = Array.from");
+		expect(account).toContain('struck: { textDecorationLine: "line-through" }');
+		expect(account).not.toContain("{currentBaseInterval} → {nextBaseInterval}");
+		expect(account).not.toContain("{currentVisitHours}h → {nextVisitHours}h");
+	});
+
+	test("says plainly when the clock has capped rather than showing a dead step", () => {
+		expect(account).toContain("WALLOW_CLOCK_CAP_NOTE");
+		expect(account).toContain("nextRank <= WALLOW_CLOCK_CAP_RANK");
+	});
+
+	test("wears the regalia from the sheet, through the Closet's own equip RPC", () => {
+		expect(account).toContain('import { equipCosmetic } from "@/utils/cosmetics";');
+		expect(account).toContain('label={wearing ? "wearing" : "wear it"}');
+	});
+
+	test("keeps no door to a prestige-filtered closet", () => {
+		expect(account).not.toContain("prestige gear ·");
+		expect(account).not.toContain("onOpenGear");
 	});
 });

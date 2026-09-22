@@ -46,12 +46,19 @@ describe("habitat contract", () => {
   it("preserves permanent prestige rank and gifts in server and cached owner data", () => {
     const parsed = parseHabitatOwnerData(ownerPayload());
     expect(parsed?.wallowRank).toBe(4);
+    // Only the inscribed keepsakes are rank gifts since 2026-09-22 — the six
+    // decor designs ranks 1-6 used to grant are bought, never ranked.
     expect(
       parsed?.catalog
         .filter((i) => i.prestigeRank)
         .map((i) => i.prestigeRank!)
         .sort((a, b) => a - b),
-    ).toEqual([1, 1, 2, 3, 3, 4, 5, 6, 6, 10]);
+    ).toEqual([1, 3, 6, 10]);
+    expect(
+      parsed?.catalog.filter(
+        (i) => i.prestigeRank !== undefined && !i.prestigeKeepsake,
+      ),
+    ).toEqual([]);
     const legacy = {
       ...ownerPayload(),
       wallowRank: undefined,

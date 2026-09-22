@@ -1,4 +1,4 @@
-# Conformance scorecard — 2026-09-21
+# Conformance scorecard — 2026-09-22
 
 Per-file `eslint-plugin-ttp` warn counts, grouped by audit area. A file is **conformant** when every count is 0 and its lint flips to error. Within each area, files are sorted by total debt; the section-by-section passes (waves 3–4) start at the top of each table.
 

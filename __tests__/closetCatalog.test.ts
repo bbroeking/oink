@@ -11,20 +11,35 @@ const closet = fs.readFileSync(
 	"utf8",
 );
 
-describe("Closet prestige deep link", () => {
-	test("consumes the one-shot route filter and gives the player a Show all escape", () => {
-		expect(shop).toContain(
-			'const [prestigeOnly, setPrestigeOnly] = useState(false);',
-		);
-		expect(shop).toContain("setPrestigeOnly(target.prestigeOnly);");
+// The prestige-only filter is GONE (the endless ladder, 2026-09-22). The
+// regalia has one home — the Wallow rank sheet — so the Closet no longer
+// carries a filter that put earned status inside the shop, and an old
+// `?filter=prestige` link simply opens the closet.
+describe("no prestige filter anywhere", () => {
+	const account = fs.readFileSync(
+		path.join(ROOT, "components/Account.tsx"),
+		"utf8",
+	);
+	const shopNav = fs.readFileSync(path.join(ROOT, "utils/shopNav.ts"), "utf8");
+
+	test("leaves no prestigeOnly prop, state or banner behind", () => {
+		expect(closet).not.toContain("prestigeOnly");
+		expect(closet).not.toContain("onClearPrestigeFilter");
+		expect(closet).not.toContain("prestige gear earned from your Wallows");
+		expect(shop).not.toContain("prestigeOnly");
+		expect(shopNav).not.toContain("prestigeOnly");
+	});
+
+	test("stops sending anyone to a filtered closet, and drops the Me row", () => {
+		expect(account).not.toContain('filter: "prestige"');
+		expect(account).not.toContain('label="Prestige gear"');
+	});
+
+	test("still lands an old prestige link on the closet rather than nowhere", () => {
+		expect(shopNav).toContain('if (prestige) return { scrollToCloset: true };');
 		expect(shop).toContain(
 			"router.setParams({ view: undefined, filter: undefined });",
 		);
-		expect(shop).toContain(
-			"onClearPrestigeFilter={() => setPrestigeOnly(false)}",
-		);
-		expect(closet).toContain("onClearPrestigeFilter");
-		expect(closet).toContain("Show all");
 	});
 });
 

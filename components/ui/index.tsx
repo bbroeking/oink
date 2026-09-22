@@ -143,7 +143,7 @@ export {
 } from "./PigStage";
 export { PigAvatar } from "./PigAvatar";
 export { PigPortrait } from "./PigPortrait";
-export { PrestigeAvatar } from "./PrestigeAvatar";
+export { PrestigeAvatar, wallowAuraArt } from "./PrestigeAvatar";
 export { ProfileIdentity, type ProfileIdentityTitle } from "./ProfileIdentity";
 export {
 	PigRenderer,

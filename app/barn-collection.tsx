@@ -677,6 +677,10 @@ export function BarnCollection({
   // stick: ScrollView only pins direct children.
   const stickyIndices: number[] = [];
   const scrollChildren: React.ReactNode[] = [];
+  // The Wallow gifts section — and the filter chip below — are the keepsake
+  // shelf now: since 2026-09-22 only the inscribed keepsakes carry a
+  // `prestigeRank`, so `prestigeRewards` is exactly the keepsakes and the
+  // "n of m" counts them. Decor is bought, never ranked.
   if (prestigeRewards.length > 0)
     scrollChildren.push(
       <Sticker
@@ -698,7 +702,7 @@ export function BarnCollection({
           {h.data?.wallowRank !== undefined
             ? `Wallow Rank ${h.data.wallowRank} · `
             : ""}
-          Wallow ranks unlock lasting Barn gifts automatically.
+          Wallow ranks earn inscribed keepsakes for your shelf.
         </Body>
         {nextPrestigeReward ? (
           <Body tone="secondary">{`Next: Rank ${nextPrestigeReward.prestigeRank} · ${nextPrestigeReward.name}`}</Body>
@@ -756,7 +760,7 @@ export function BarnCollection({
       {prestigeRewards.length > 0 ? (
         <Chip
           accessibilityLabel="Filter by Wallow gifts"
-          accessibilityHint="Shows only the designs Wallow ranks award"
+          accessibilityHint="Shows only the inscribed keepsakes Wallow ranks award"
           selected={collectionFilter === "prestige"}
           onPress={() => setCollectionFilter("prestige")}
           label="Wallow gifts"

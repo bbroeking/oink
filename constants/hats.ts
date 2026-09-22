@@ -299,10 +299,15 @@ export const Z_BEHIND_PIG: Record<string, boolean> = {
 // or skeletal rigging to look right. Placement-friendly categories are
 // still shown. Re-enable per-category once placement is solved.
 // scarf + cape: front-only art looks broken when the pig leans.
-// necklace: didn't read as "around the neck" given how the pig art
-// covers the chest area — removed product-side rather than try to
-// rescue the placement.
-export const HIDDEN_CATEGORIES = new Set<string>(["scarf", "cape", "necklace"]);
+// NECKLACE CAME BACK 2026-09-22. The 2026-05 batch was hidden because that
+// art never read as "around the neck"; those rows were deleted from `hats`
+// (20260531000000_remove_necklaces) and never came back. The neck slot's two
+// pieces now are grant-only and placed by hand against the `neck` anchor —
+// the Marsh Wreath (Wallow rank 3) and the Founder's Mud Ribbon — so the
+// category is shown again. The shop RPCs still exclude 'necklace' from what
+// is FOR SALE (20260761000000, the mystery box denylist), so unhiding it here
+// only lets a pig wear what it was granted.
+export const HIDDEN_CATEGORIES = new Set<string>(["scarf", "cape"]);
 
 // PigAnimationKey moved to hat_overlay_types.ts so HatOverlay.perAnim
 // can reference it without forming a circular import. Re-export so

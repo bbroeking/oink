@@ -34,7 +34,11 @@ export type HabitatCatalogItem = HabitatPlacedItem & {
   displayOrder: number;
   collectionId?: string;
   rewardThreshold?: 4 | 8;
-  /** Permanent Wallow rank that gifts this design; it can still be bought early. */
+  /**
+   * Permanent Wallow rank that gifts this design. Since 2026-09-22 only the
+   * inscribed keepsakes carry one — decor is bought, never ranked — but the
+   * field stays open so a historic grant receipt still parses.
+   */
   prestigeRank?: number;
   /** Exclusive permanent Wallow keepsake; never sold. */
   prestigeKeepsake?: boolean;

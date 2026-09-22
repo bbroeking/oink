@@ -1062,6 +1062,9 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			? pickedKey
 			: defaultKey;
 
+	// NO `prestigeLevel` HERE. Rosie wears no rank aura or ring on Home — the
+	// Wallow mark is the coin's gilt tag, and the aura belongs to portraits
+	// (docs/prestige-wallow-spec.md, "The marks: where rank shows", 2026-09-22).
 	const renderPigContent = (forInterior: boolean) => (
 		<>
 			<SwipeElement
@@ -1079,7 +1082,6 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 							equippedAura={stats.activeAura}
 								equippedBackground={forInterior ? null : stats.activeBackground}
 							equippedHeld={stats.activeHeld}
-							prestigeLevel={wallowCount}
 							ritual={presentation.pig}
 							facing={pigFacing}
 						/>
@@ -1249,9 +1251,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				{/* TWO CORNERS. Earned on the left — the permanent number, a rose
 				    heart stamp — and to-spend on the right — the coin, which carries
 				    everything live: the streak on its shoulder, the regen clock as
-				    one hand line, a lucky / wallow ribbon under that. The corners
-				    answer each other across the sky and the middle stays empty for
-				    Rosie. (decided 2026-09-13; docs/design/claude-design/barn) */}
+				    one hand line, a lucky ribbon under that, and the Wallow rank as
+				    a gilt tag tucked behind the count. The corners answer each
+				    other across the sky and the middle stays empty for Rosie.
+				    (decided 2026-09-13; docs/design/claude-design/barn. The rank
+				    joined the counter — and left Rosie — 2026-09-22, per
+				    docs/prestige-wallow-spec.md.) */}
 				<View style={styles.corners}>
 					<EarnedStamp total={stats.ticklesEarned} />
 					<TickleCoin
@@ -1268,10 +1273,9 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 						ribbon={
 							luckyPig.luckyTicklesLeft > 0
 								? `Lucky pig · ${luckyPig.luckyTicklesLeft} left`
-								: wallowCount > 0
-									? `Wallow Rank ${wallowCount}`
-									: undefined
+								: undefined
 						}
+						wallowRank={wallowCount}
 					/>
 				</View>
 

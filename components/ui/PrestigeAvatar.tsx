@@ -3,6 +3,7 @@ import { Image, StyleSheet, View, type ViewStyle } from "react-native";
 import { BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import { PigAvatar } from "./PigAvatar";
 import { staticPigFx, type PigFx } from "@/constants/ritualFx";
+import { wallowAuraArtStage } from "@/utils/wallow";
 import { T } from "./Text";
 
 const AURAS = {
@@ -12,6 +13,17 @@ const AURAS = {
 	4: require("../../assets/images/prestige/wallow_aura_w4.png"),
 	5: require("../../assets/images/prestige/wallow_aura_w5.png"),
 } as const;
+
+/**
+ * The ring drawn for a rank. The aura advances by RULE and the ladder has no
+ * last rank, so a stage past the last drawn ring holds it (utils/wallow owns
+ * the rule); the `W<n>` badge below keeps counting. Exported because the rank
+ * sheet draws the same ring as a prize. (the endless ladder, 2026-09-22)
+ */
+export function wallowAuraArt(rank: number) {
+	const stage = wallowAuraArtStage(rank);
+	return stage > 0 ? AURAS[stage as keyof typeof AURAS] : null;
+}
 
 // Drawing geometry. The core pig is inset inside the aura ring; the rank badge
 // tucks under it and narrows once the frame drops below a sheet-header size.
@@ -59,7 +71,7 @@ export function PrestigeAvatar({
 			/>
 		);
 
-	const visualStage = Math.min(5, rank) as keyof typeof AURAS;
+	const visualStage = wallowAuraArtStage(rank) as keyof typeof AURAS;
 	const coreSize = Math.round(size * CORE_FRAC);
 	const small = size < SMALL_FRAME;
 	return (

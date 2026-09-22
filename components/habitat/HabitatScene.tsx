@@ -82,6 +82,9 @@ const SHELF_PLANK_W = 1.35;
 const SHELF_PLANK_ASPECT = 279 / 1428;
 const SHELF_PLANK_RISE = 6;
 // Centers of the blank plaques in the authored square keepsake sprites.
+// How far the inscription rides above its plaque centre, in canvas points —
+// the numeral's own half-height, so one and two digits sit on the same line.
+const KEEPSAKE_RANK_RISE = 8;
 const KEEPSAKE_PLAQUE_Y: Record<string, number> = {
   wallow_keepsake_bronze: .825,
   wallow_keepsake_silver: .775,
@@ -172,7 +175,11 @@ function HabitatPositionLayer({ position, placed, canvas, editing, selected, wal
     )}
     <Animated.View pointerEvents="none" style={[styles.positionArt, rect, { zIndex: meta.layer, transform: [{ scale: flourish }] }, editing && styles.editPosition, selected && styles.selectedPosition]}>
       {placed && <HabitatImage source={habitatItemAsset(placed.assetKey)} style={styles.itemArt} resizeMode="contain" testID={`habitat-item-${placed.id}`} onSettled={onSettled} />}
-      {rank !== null && <Text accessible={false} style={[styles.keepsakeRank, { top: (rect.height - artSize) / 2 + artSize * plaqueY! - 8 }]} testID="habitat-keepsake-rank">{rank}</Text>}
+      {/* The inscription. One line, never scaled: it is engraved on the
+          plaque in the artwork, and the rank is spoken by the spot's own
+          label and the room summary. Two digits (W10 and up) centre on the
+          same plaque as one. */}
+      {rank !== null && <Text accessible={false} allowFontScaling={false} numberOfLines={1} style={[styles.keepsakeRank, { top: (rect.height - artSize) / 2 + artSize * plaqueY! - KEEPSAKE_RANK_RISE }]} testID="habitat-keepsake-rank">{rank}</Text>}
     </Animated.View>
     <Pressable
       style={({ pressed }) => [styles.positionControl, { left: rect.left + rect.width / 2 - MIN_TARGET / 2, top: rect.top + rect.height / 2 - MIN_TARGET / 2 }, editing && styles.visibleControl, selected && styles.selectedControl, pressed && styles.pressed]}

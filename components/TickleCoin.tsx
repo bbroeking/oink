@@ -1,9 +1,11 @@
 // The Barn's top-right corner: the coin. It is the LIVE number — how many
 // tickles you can spend right now, out of how many — and it carries every
 // other live thing with it: the streak stamped on its shoulder, the regen clock
-// as one hand line under it, and (only while one is running) a lucky-pig or
-// wallow ribbon hanging under that line. The permanent total lives across the
-// sky on `EarnedStamp` and never comes over here.
+// as one hand line under it, and (only while one is running) a lucky-pig ribbon
+// hanging under that line. The permanent Wallow rank is a gilt tag tucked
+// behind the count — part of the counter, never a layer on Rosie (the prestige
+// spec, 2026-09-22). The permanent tickle total lives across the sky on
+// `EarnedStamp` and never comes over here.
 //
 // The rule this sets (taste-standard, 2026-09-13): a transient state joins the
 // coin's corner as a line or a tag — it never gets a sticker of its own.
@@ -38,6 +40,18 @@ const CHIP_GLYPH = 18;
 const STAMP_OVERLAP = -14;
 const STAMP_RIGHT = 10;
 const STREAK_GLYPH = 16;
+// The Wallow-rank tag, tucked BEHIND the count on the coin's left shoulder —
+// the rank mark is part of the counter, never a layer on Rosie (the prestige
+// spec, 2026-09-22). It is drawn before the coin so the rim laps over its
+// right end; the gilt edge and `W<n>` are what peek out. `RANK_TUCK` is how
+// far its right edge runs under the rim, and the tag's own right padding
+// clears that tuck so the numeral itself never slides under the coin.
+// `RANK_TOP` rides it on the shoulder, clear of the sparkle chip above.
+const RANK_TUCK = 14;
+// The tag's right padding: the tuck plus a hair, so `W<n>` stops before the
+// rim. Drawing geometry like the rest of this block, not a spacing step.
+const RANK_PAD_UNDER = 18;
+const RANK_TOP = 40;
 // The room the coin keeps under itself for the stamp's overhang plus its hard
 // shadow, so the clock line and the ribbon start BELOW the flame instead of
 // under it. Reserved whether or not a streak is running, so nothing below the
@@ -48,6 +62,7 @@ const STAMP_ROOM = -STAMP_OVERLAP + SHADOW_SM.shadowOffset.height;
 const COIN_TILT = "4deg";
 const CHIP_TILT = "-8deg";
 const STAMP_TILT = "-3deg";
+const RANK_TILT = "-5deg";
 const RIBBON_TILT = "-1.5deg";
 // The clock line is hand ink on the sky, so it wears a hairline of ink shadow
 // to stay legible on a bright background — a text shadow, not a pill.
@@ -71,6 +86,8 @@ interface Props {
 	onRegenElapsed?: () => void;
 	/** A live window on the bank ("Lucky pig · 3 left"), or nothing. */
 	ribbon?: string;
+	/** Permanent Wallow rank. 0 (or absent) shows the counter alone. */
+	wallowRank?: number;
 	/** Tap on the coin: the bank's own explanation (a toast). */
 	onPress: () => void;
 	/** Tap on the streak stamp: the share sheet. */
@@ -126,10 +143,12 @@ export function TickleCoin({
 	fetchedAtMs,
 	onRegenElapsed,
 	ribbon,
+	wallowRank = 0,
 	onPress,
 	onShareStreak,
 	loaded = true,
 }: Props) {
+	const rank = Math.max(0, Math.floor(wallowRank));
 	const full = count >= cap;
 	const remaining = useRegenCountdown(
 		nextRegenSeconds,
@@ -151,6 +170,18 @@ export function TickleCoin({
 	return (
 		<View style={styles.corner}>
 			<View style={styles.coinWrap}>
+				{/* THE RANK IS A TAG BEHIND THE COUNT. Drawn first so the rim
+				    laps over its right end — the gilt edge and `W<n>` are all
+				    that show. Nothing at W0. */}
+				{rank > 0 ? (
+					<View
+						accessible
+						accessibilityLabel={`Wallow Rank ${rank}`}
+						style={styles.rankTag}
+					>
+						<Label numberOfLines={1}>W{rank}</Label>
+					</View>
+				) : null}
 				<Pressable
 					onPress={onPress}
 					accessibilityRole="button"
@@ -287,6 +318,23 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
 		transform: [{ rotate: STAMP_TILT }],
+		...SHADOW_SM,
+	},
+	// The gilt rank tag: paper-craft ink border, hard small shadow, and the
+	// right padding that keeps its label clear of the rim it slides under.
+	rankTag: {
+		position: "absolute",
+		top: RANK_TOP,
+		right: COIN - RANK_TUCK,
+		paddingLeft: SPACE.xs,
+		paddingRight: RANK_PAD_UNDER,
+		paddingVertical: SPACE.xxs,
+		borderRadius: RADII.sm,
+		borderWidth: BORDER.ink,
+		borderColor: WHIMSY.ink,
+		// The Wallow-rank gilt, the same token the portrait badge wears.
+		backgroundColor: WHIMSY.prestige,
+		transform: [{ rotate: RANK_TILT }],
 		...SHADOW_SM,
 	},
 	stampPressed: {

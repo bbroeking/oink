@@ -183,3 +183,139 @@ export function wallowVisitCooldownHours(wallowCount: number): number {
 		tuning.visitBaseHours - rank * tuning.visitStepHours,
 	);
 }
+
+// ---------------------------------------------------------------------------
+// The ladder — what a rank GRANTS, as rules over an unbounded integer.
+//
+// `docs/prestige-wallow-spec.md` (rewritten 2026-09-22): ranks 1–6 are the
+// first chapter (one regalia piece and one clock step each, the set complete
+// and the clock capped at W6); from rank 7 every rank still pays, by the rule
+// below. Nothing here is a finite table of ranks — the tables are of ART, and
+// a rank past the last drawn frame falls through to a rule that always holds.
+//
+// The SAME rule runs in the `wallow()` migration. Keep the two in step: this
+// module is the client's statement of the server contract, not a second one.
+// ---------------------------------------------------------------------------
+
+/** Past this rank the clock never changes again (spec, invariant 4). */
+export const WALLOW_CLOCK_CAP_RANK = 6;
+
+/** What the W6 rung says instead of a clock delta, so no later rank reads as a missing step. */
+export const WALLOW_CLOCK_CAP_NOTE = "your clock is at full blaze";
+
+/** The catalog categories the regalia equips into (constants/slots routes them to columns). */
+export type WallowRegaliaSlot = "hat" | "glasses" | "necklace" | "bow" | "held";
+
+export interface WallowRegaliaPiece {
+	/** The catalog item id — the same id `equip_cosmetic` takes. */
+	hatId: string;
+	name: string;
+	slot: WallowRegaliaSlot;
+}
+
+// One outfit, five slots plus the aura: a W6 pig wears the whole set. The
+// Sovereign Crown replaces the Rookie Cap on the head; both stay owned.
+export const WALLOW_REGALIA: Readonly<Record<number, WallowRegaliaPiece>> =
+	Object.freeze({
+		1: { hatId: "wallow_rookie_cap", name: "Rookie Wallow Cap", slot: "hat" },
+		2: { hatId: "wallow_bronze_specs", name: "Bronze Wallow Specs", slot: "glasses" },
+		3: { hatId: "wallow_marsh_crown", name: "Marsh Wreath", slot: "necklace" },
+		4: { hatId: "wallow_gilded_bow", name: "Gilded Wallow Bow", slot: "bow" },
+		5: { hatId: "wallow_golden_trowel", name: "Golden Wallow Trowel", slot: "held" },
+		6: { hatId: "wallow_sovereign_crown", name: "Wallow Sovereign Crown", slot: "hat" },
+	});
+
+/** How many pieces the first chapter holds — the "k of 6" every rank line counts against. */
+export const WALLOW_REGALIA_COUNT = 6;
+
+/** The regalia piece a rank granted, or null for W0 and for every rank past the set. */
+export function wallowRegaliaFor(rank: number): WallowRegaliaPiece | null {
+	return WALLOW_REGALIA[Math.max(0, Math.floor(rank))] ?? null;
+}
+
+/** Pieces of the set a rank owns: 0 at W0, every piece from W6 up. */
+export function wallowRegaliaOwned(rank: number): number {
+	return Math.min(WALLOW_REGALIA_COUNT, Math.max(0, Math.floor(rank)));
+}
+
+/** Aura ring stages that have art today. Past this the latest drawn ring holds. */
+export const WALLOW_AURA_STAGES_DRAWN = 5;
+
+/**
+ * The aura stage a rank stands at. One stage per rank through W5, then one
+ * every third rank forever: W6 and W7 hold stage 5, W8 is 6, W11 is 7, W14 is
+ * 8. The badge numeral is the rank itself and is never capped.
+ */
+export function wallowAuraStage(rank: number): number {
+	const r = Math.max(0, Math.floor(rank));
+	if (r === 0) return 0;
+	if (r <= WALLOW_AURA_STAGES_DRAWN) return r;
+	return WALLOW_AURA_STAGES_DRAWN + Math.floor((r - WALLOW_AURA_STAGES_DRAWN) / 3);
+}
+
+/** The stage whose ring is actually DRAWN — a stage past the last one holds it. */
+export function wallowAuraArtStage(rank: number): number {
+	return Math.min(WALLOW_AURA_STAGES_DRAWN, wallowAuraStage(rank));
+}
+
+/** The inscribed Barn frames that have art, by the rank that grants them. */
+export const WALLOW_KEEPSAKE_FRAMES: Readonly<Record<number, string>> =
+	Object.freeze({ 1: "Bronze", 3: "Silver", 6: "Gold", 10: "Celestial" });
+
+/** The same set as a sorted list — the "is this keepsake rank drawn yet?" gate. */
+export const WALLOW_KEEPSAKE_RANKS_DRAWN: readonly number[] = Object.freeze([
+	1, 3, 6, 10,
+]);
+
+/** The consolation every other rank past the set pays, minted through the audited grant paths. */
+export const WALLOW_RANK_TRUFFLES = 2;
+export const WALLOW_RANK_MOTES = 1;
+
+export type WallowRankPrize =
+	| ({ kind: "regalia"; label: string; note?: string } & WallowRegaliaPiece)
+	| { kind: "keepsake"; label: string; frame: string; frameRank: number }
+	| { kind: "aura"; label: string; stage: number }
+	| { kind: "truffles"; label: string; truffles: number; motes: number };
+
+/**
+ * The one prize a rank grants, checked in the server's order:
+ *
+ *   1–6  · the regalia piece (and, at W6, the note that the clock has capped);
+ *   ≥10 on a fifth rank WITH a drawn frame · a keepsake (only W10 today);
+ *   ≥8 on every third rank · a new aura stage;
+ *   everything else · two Golden Truffles and one Mote.
+ *
+ * A keepsake rank with no frame drawn yet (W15, W20 …) falls THROUGH to the
+ * later rules rather than paying nothing — the ladder never has a dead rung.
+ */
+export function wallowRankPrize(rank: number): WallowRankPrize | null {
+	const r = Math.floor(rank);
+	if (r <= 0) return null;
+	const piece = WALLOW_REGALIA[r];
+	if (piece) {
+		return {
+			kind: "regalia",
+			label: piece.name,
+			...piece,
+			...(r === WALLOW_CLOCK_CAP_RANK ? { note: WALLOW_CLOCK_CAP_NOTE } : null),
+		};
+	}
+	const frame = WALLOW_KEEPSAKE_FRAMES[r];
+	if (r >= 10 && r % 5 === 0 && frame) {
+		return { kind: "keepsake", label: `${frame} keepsake`, frame, frameRank: r };
+	}
+	if (r >= 8 && (r - WALLOW_AURA_STAGES_DRAWN) % 3 === 0) {
+		return { kind: "aura", label: "a new aura stage", stage: wallowAuraStage(r) };
+	}
+	return {
+		kind: "truffles",
+		label: `${WALLOW_RANK_TRUFFLES} Golden Truffles · ${WALLOW_RANK_MOTES} Mote`,
+		truffles: WALLOW_RANK_TRUFFLES,
+		motes: WALLOW_RANK_MOTES,
+	};
+}
+
+/** What the next rank pays, for the rows that name it in one line. */
+export function wallowNextPrizeLabel(rank: number): string {
+	return wallowRankPrize(Math.max(0, Math.floor(rank)) + 1)?.label ?? "";
+}

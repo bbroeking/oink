@@ -384,7 +384,6 @@ export default function ShopScreen() {
   };
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
-  const [prestigeOnly, setPrestigeOnly] = useState(false);
   // The store's one scroller, and the two things the screen drives on it: the
   // fold (the hero fitting room scrolled off — the hero pig rests while it is
   // off screen) and the imperative jump to "Your closet" that every Closet
@@ -418,7 +417,10 @@ export default function ShopScreen() {
   useEffect(() => {
     // One rule, in one place: utils/shopNav. `?view=wardrobe` / `browse` and
     // `?filter=prestige` are old links to a room that no longer exists — they
-    // land on the store and scroll to the closet section instead.
+    // land on the store and scroll to the closet section instead. The
+    // prestige-only filter went with the Me "Prestige gear" row (2026-09-22):
+    // the regalia's one home is the Wallow rank sheet, so an old
+    // `?filter=prestige` link simply opens the closet.
     const target = resolveShopParams({
       view: params.view,
       filter: params.filter,
@@ -430,7 +432,6 @@ export default function ShopScreen() {
       router.replace(target.redirect);
       return;
     }
-    setPrestigeOnly(target.prestigeOnly);
     if (target.scrollToCloset) setClosetPending(true);
   }, [params.filter, params.view]);
   // The jump waits for the list: ClosetView mounts with the store, and its own
@@ -836,8 +837,6 @@ export default function ShopScreen() {
               isVip={isVip}
               buyableIds={buyableIds}
               counter={counter}
-              prestigeOnly={prestigeOnly}
-              onClearPrestigeFilter={() => setPrestigeOnly(false)}
               storeContent={storeWall}
               onFoldChange={setFolded}
             />

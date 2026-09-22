@@ -130,7 +130,7 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	wallow_bronze_specs: { pivot: { x: 0.4779, y: 0.4902 }, widthFrac: 0.56, anchor: "eyes", behind: false },
 	wallow_gilded_bow: { pivot: { x: 0.484, y: 0.4093 }, widthFrac: 0.42, anchor: "neck", behind: false },
 	wallow_golden_trowel: { pivot: { x: 0.4229, y: 0.6153 }, widthFrac: 0.42, anchor: "hand_r", behind: false },
-	wallow_marsh_crown: { pivot: { x: 0.5114, y: 0.7026 }, widthFrac: 0.56, anchor: "head", behind: false },
+	wallow_marsh_crown: { pivot: { x: 0.4961, y: 0.4922 }, widthFrac: 0.48, anchor: "neck", behind: false },
 	wallow_rookie_cap: { pivot: { x: 0.5682, y: 0.6706 }, widthFrac: 0.44, anchor: "head", behind: false },
 	watering_can_hat: { pivot: { x: 0.5, y: 0.86 }, widthFrac: 0.42, anchor: "head", behind: false },
 	winter_scarf: { pivot: { x: 0.5, y: 0 }, widthFrac: 0.4, anchor: "neck", behind: false },

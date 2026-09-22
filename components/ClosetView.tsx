@@ -107,13 +107,10 @@ interface Props {
 	// to pay with.
 	buyableIds?: ReadonlySet<string>;
 	counter?: number;
-	prestigeOnly?: boolean;
-	onClearPrestigeFilter?: () => void;
 	// The store, rendered INSIDE this list's header — between the fitting room
 	// and the closet's own body (the hero fitting room, 2026-09-17). The Shop
 	// tab has one scroller now; this is it. When present the header also grows
-	// the "Your closet" crown, and the prestige banner moves under it (it
-	// belongs to the closet section, not to the page).
+	// the "Your closet" crown.
 	storeContent?: ReactNode;
 	// Fires when the fitting room scrolls off the top (and back on). The store
 	// rests the hero pig on this.
@@ -300,8 +297,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		isVip = false,
 		buyableIds,
 		counter = 0,
-		prestigeOnly = false,
-		onClearPrestigeFilter,
 		storeContent,
 		closetScrollInset = 0,
 		onFoldChange,
@@ -374,12 +369,11 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		() =>
 			closetItems.filter((item) => {
 				const owned = ownedIds.has(item.id);
-				if (prestigeOnly) return owned && !!item.prestige_exclusive;
 				if (filter === "owned") return owned;
 				if (filter === "member") return !!item.members_only;
 				return true;
 			}),
-		[closetItems, filter, ownedIds, prestigeOnly],
+		[closetItems, filter, ownedIds],
 	);
 	// Each segment wears its own count, so the word and the number in the crown
 	// can never disagree with the tiles underneath them.
@@ -623,34 +617,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		);
 	};
 
-	// The prestige banner belongs to the closet catalog, so in the store it
-	// rides UNDER the "Your closet" crown rather than at the top of the page.
-	const prestigeBanner = prestigeOnly ? (
-		<Sticker
-			color="sun"
-			rotate={0}
-			radius={RADII.md}
-			shadow="sm"
-			style={styles.prestigeFilter}
-		>
-			<View style={styles.prestigeFilterCopy}>
-				<Glyph name="crown" size={ART_SIZE.glyphSm} />
-				<T role="bodySm" style={styles.prestigeFilterText}>
-					prestige gear earned from your Wallows
-				</T>
-			</View>
-			<Button
-				variant="ghost"
-				size="sm"
-				onPress={() => onClearPrestigeFilter?.()}
-				disabled={!onClearPrestigeFilter}
-				accessibilityLabel="Show all Closet items"
-				accessibilityHint="Clears the prestige-only filter"
-			>
-				Show all
-			</Button>
-		</Sticker>
-	) : null;
 
 	return (
 		<>
@@ -676,7 +642,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 			ListHeaderComponent={
 				<View>
 					<View onLayout={handleFittingRoomLayout}>
-					{storeContent ? null : prestigeBanner}
 			{/* Paper-doll fitting room: Rosie centred, equip slots flank her,
 			    then her nameplate. In the store this is the page's hero, and it
 			    folds to a strip once it scrolls off (2026-09-17). */}
@@ -757,8 +722,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 								right={CLOSET_FILTER_CROWN[filter](filterCounts[filter])}
 							/>
 						) : null}
-						{storeContent ? prestigeBanner : null}
-					{!prestigeOnly && (
 						<SegmentedControl
 							options={filterOptions}
 							value={filter}
@@ -767,7 +730,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 							layout="row"
 							style={styles.filterRow}
 						/>
-					)}
 					</View>
 				</View>
 				}
@@ -936,7 +898,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 				);
 					}}
 			ListEmptyComponent={
-				filter === "owned" && !prestigeOnly ? (
+				filter === "owned" ? (
 					// Nothing yours yet: the rack is bare, and the only useful door
 					// out of it is back up to what is on the shelves today.
 					<EmptyState
@@ -961,7 +923,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 						title="No items match this filter"
 						sub="Try another part of the catalog."
 						action={
-							filter === "all" || prestigeOnly ? undefined : (
+							filter === "all" ? undefined : (
 								<Button
 									variant="handLink"
 									size="sm"
@@ -992,25 +954,6 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 });
 
 const styles = StyleSheet.create({
-	prestigeFilter: {
-		minHeight: TAP_MIN,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: SPACE.sm,
-		marginBottom: SPACE.md,
-		paddingLeft: SPACE.md,
-		paddingRight: SPACE.xs,
-		paddingVertical: SPACE.xs,
-	},
-	prestigeFilterCopy: {
-		flex: 1,
-		minWidth: 0,
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.xs,
-	},
-	prestigeFilterText: { flex: 1 },
 	root: { flex: 1 },
 	content: { paddingHorizontal: SPACE.lg, paddingTop: CONTENT_TOP },
 	// The store's wall runs edge to edge: it bleeds back out through the list's

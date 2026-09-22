@@ -93,6 +93,29 @@ describe("Habitat scene contract", () => {
     renderer.unmount();
   });
 
+  test("every keepsake in the catalog carries its inscription", () => {
+    // The plaque centres are a per-asset table inside the scene; a keepsake
+    // added without one would silently lose its rank. Two digits included.
+    const keepsakes = HABITAT_CATALOG.filter((item) => item.prestigeKeepsake);
+    expect(keepsakes.length).toBeGreaterThan(0);
+    for (const keepsake of keepsakes) {
+      const renderer = TestRenderer.create(
+        <HabitatScene
+          snapshot={{ ...snapshot({ surface: keepsake.id }), wallowRank: 12 }}
+          onInspect={jest.fn()}
+        />,
+      );
+      const inscription = renderer.root.findByProps({
+        testID: "habitat-keepsake-rank",
+      });
+      expect(inscription.props.children).toBe(12);
+      // One line, unscaled: it is engraved on the plaque in the artwork.
+      expect(inscription.props.numberOfLines).toBe(1);
+      expect(inscription.props.allowFontScaling).toBe(false);
+      renderer.unmount();
+    }
+  });
+
   test("every position accepts exactly its declared category", () => {
     for (const position of HABITAT_POSITIONS) {
       for (const category of [

@@ -16,8 +16,6 @@ export interface ShopNavTarget {
 	redirect?: "/pen";
 	/** Whether to scroll the store's one list down to the catalog. */
 	scrollToCloset: boolean;
-	/** Whether the catalog opens filtered to prestige gear. */
-	prestigeOnly: boolean;
 }
 
 /**
@@ -28,7 +26,9 @@ export interface ShopNavTarget {
  * The rules, in one place:
  *   · `view=wardrobe` / `view=browse` → the store, scrolled to the catalog
  *     (both are old links to rooms that no longer exist);
- *   · `filter=prestige` → the catalog, filtered, scrolled to;
+ *   · `filter=prestige` → the catalog, scrolled to. The prestige-only filter
+ *     was cut 2026-09-22 (the regalia's one home is the rank sheet), so an old
+ *     link simply opens the closet;
  *   · `view=pen` → out to `/pen` (Account and the paywall still send it);
  *   · `view=daily` / `view=trough` → the store's front (the Trough moved to
  *     the Barn button's fan, 2026-09-17).
@@ -41,14 +41,14 @@ export function resolveShopParams(params: {
 	switch (params.view) {
 		case "wardrobe":
 		case "browse":
-			return { scrollToCloset: true, prestigeOnly: prestige };
+			return { scrollToCloset: true };
 		case "pen":
-			return { redirect: "/pen", scrollToCloset: false, prestigeOnly: false };
+			return { redirect: "/pen", scrollToCloset: false };
 		case "daily":
 		case "trough":
-			return { scrollToCloset: false, prestigeOnly: false };
+			return { scrollToCloset: false };
 		default:
-			if (prestige) return { scrollToCloset: true, prestigeOnly: true };
+			if (prestige) return { scrollToCloset: true };
 			return null;
 	}
 }

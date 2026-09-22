@@ -125,14 +125,26 @@ describe("BarnCollection confirmed purchase feedback", () => {
       target.props.onPress();
     });
   const sheet = () => tree.root.findByType(HabitatItemPreviewModal);
-  it("shows rank gifts and filters them while respecting the decorating position", async () => {
+  it("filters to the keepsakes alone, and still respects the decorating position", async () => {
+    // The shelf: the Wallow gifts are the inscribed keepsakes and nothing else
+    // — the decor designs ranks 1-6 once granted are ordinary purchases now.
+    mockParams.position = "surface";
     await act(async () => {
       tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
     });
     press("Filter by Wallow gifts");
-    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Dried Herb Garland in your room" }).length).toBeGreaterThan(0);
-    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Firefly Lantern in your room" })).toHaveLength(0);
-    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Reading Chair in your room" })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Bronze Wallow Keepsake in your room" }).length).toBeGreaterThan(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Tiny Radio in your room" })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Apple Basket in your room" })).toHaveLength(0);
+    // The ceiling holds no keepsake, so the same filter shows nothing there.
+    act(() => tree.unmount());
+    mockParams.position = "ceiling";
+    await act(async () => {
+      tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
+    });
+    press("Filter by Wallow gifts");
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Bronze Wallow Keepsake in your room" })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Preview Dried Herb Garland in your room" })).toHaveLength(0);
     expect(mockBuy).not.toHaveBeenCalled();
   });
   it("keeps the Wallow roadmap compact until explicitly expanded", async () => {

@@ -17,24 +17,23 @@ describe("resolveShopParams", () => {
 	it("lands an old wardrobe link on the store, scrolled to the catalog", () => {
 		expect(resolveShopParams({ view: "wardrobe" })).toEqual({
 			scrollToCloset: true,
-			prestigeOnly: false,
 		});
 	});
 
 	it("lands the retired Collectibles link the same way", () => {
 		expect(resolveShopParams({ view: "browse" })).toEqual({
 			scrollToCloset: true,
-			prestigeOnly: false,
 		});
 	});
 
-	it("keeps the prestige filter and scrolls to it, with or without a view", () => {
+	// The prestige-only filter was cut 2026-09-22 — the regalia's one home is
+	// the Wallow rank sheet. An old link still has somewhere to land.
+	it("lands an old prestige link on the plain catalog, with or without a view", () => {
 		expect(
 			resolveShopParams({ view: "wardrobe", filter: "prestige" }),
-		).toEqual({ scrollToCloset: true, prestigeOnly: true });
+		).toEqual({ scrollToCloset: true });
 		expect(resolveShopParams({ filter: "prestige" })).toEqual({
 			scrollToCloset: true,
-			prestigeOnly: true,
 		});
 	});
 
@@ -42,7 +41,6 @@ describe("resolveShopParams", () => {
 		expect(resolveShopParams({ view: "pen" })).toEqual({
 			redirect: "/pen",
 			scrollToCloset: false,
-			prestigeOnly: false,
 		});
 	});
 
@@ -50,7 +48,6 @@ describe("resolveShopParams", () => {
 		for (const view of ["daily", "trough"]) {
 			expect(resolveShopParams({ view })).toEqual({
 				scrollToCloset: false,
-				prestigeOnly: false,
 			});
 		}
 	});
@@ -97,9 +94,6 @@ describe("the store is one scroll", () => {
 	it("gives the catalog its own crown inside the store's list", () => {
 		expect(closet).toContain('kicker="the whole rack"');
 		expect(closet).toContain('title="Everything"');
-		// The prestige banner belongs to the catalog, not the page.
-		expect(closet).toContain("{storeContent ? prestigeBanner : null}");
-		expect(closet).toContain("{storeContent ? null : prestigeBanner}");
 	});
 
 	it("exposes the scroll-to-closet handle and the fold callback (the crown callback went with the strip)", () => {

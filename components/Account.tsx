@@ -36,6 +36,7 @@ import {
 	Image,
 	Linking,
 	Share,
+	type ImageSourcePropType,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
@@ -58,18 +59,22 @@ import {
 	CardTitle,
 	Chip,
 	ConfirmDialog,
+	DashedRule,
 	DialogButtonRow,
 	EmptyState,
 	Glyph,
 	Hand,
+	HandLink,
 	Icon,
 	KickerPill,
+	ListRow,
 	LoadingBeat,
 	NavRow,
 	PageHeader,
 	PigPortrait,
 	PrestigeAvatar,
 	ProfileIdentity,
+	ProgressTrack,
 	Ribbon,
 	SectionHeader,
 	Sheet,
@@ -81,6 +86,7 @@ import {
 	Tape,
 	TextField,
 	useUnmanagedModalHold,
+	wallowAuraArt,
 } from "@/components/ui";
 import type { TitlePlacement } from "@/constants/title_types";
 import Constants from "expo-constants";
@@ -95,7 +101,6 @@ import {
 	TAP_MIN,
 	TILT,
 	UI_COLORS,
-	WHIMSY,
 } from "@/constants/theme";
 import {
 	IAP_ENABLED,
@@ -121,12 +126,26 @@ import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications"
 import { isUsernameAllowed } from "@/constants/bannedWords";
 import { showHabitatIntro } from "@/utils/habitatIntro";
 import {
+	WALLOW_CLOCK_CAP_NOTE,
+	WALLOW_CLOCK_CAP_RANK,
+	WALLOW_REGALIA_COUNT,
 	refreshWallowTuning,
+	wallowCycleXp,
+	wallowNextPrizeLabel,
 	wallowRankLabel,
+	wallowRankPrize,
+	wallowRegaliaFor,
+	wallowRegaliaOwned,
 	wallowRegenPercent,
 	wallowRegenSeconds as compiledWallowRegenSeconds,
 	wallowVisitCooldownHours,
+	type WallowRankPrize,
+	type WallowRegaliaPiece,
 } from "@/utils/wallow";
+import { equipCosmetic } from "@/utils/cosmetics";
+import { columnForCategory } from "@/constants/slots";
+import { HAT_IMAGES, HAT_THUMBNAILS_256 } from "@/constants/hats";
+import { MOTE_IMAGE } from "@/constants/motes";
 
 // Aggregate counts from me_lifetime_stats() — the social tallies the "long
 // story" sheet lists beneath the scalar lifetime figures.
@@ -144,13 +163,24 @@ type LifetimeAgg = {
 // rather than laid out. Named here the way `Chip`'s RIBBON_WIDTH and
 // `PageHeader`'s PLAQUE_WIDTH are, so no raw number sits in a StyleSheet.
 // (2026-09-11)
-const RANK_DECAL = 54; // the square W-rank stamp
-const STEP_DROP = 28; // the connector between the two rank steps
+const RANK_PORTRAIT = 64; // the current rung's pig, ring and numeral badge
+const STEP_DROP = 28; // the rail between two rungs
+const PRIZE_ART = 64; // the next rung's prize, in its own frame
+const PIECE_ART = 48; // the regalia piece on the rung that granted it
+const LATER_ART = 40; // a locked rung's dim decal
+// How much of a prize frame its picture fills, and how much of THAT each mark
+// takes when the prize is a pair (two truffles and a mote).
+const PRIZE_ART_FRAC = 0.78;
+const PRIZE_PAIR_FRAC = 0.56;
 const SLOP_PAIR_W = 126; // the overlapping Rosie + companion portrait frame
 const SLOP_PAIR_H = 100;
 const PORTRAIT_SIZE = 82; // the companion portraits inside that frame
 // The inline mark beside a button label (copy / check).
 const LABEL_MARK = ART_SIZE.mark;
+// __DEV__ only: the four shapes the rank sheet can take — unwallowed, the
+// first chapter, the set complete, and long past it — so all four are
+// checkable without a database. (the endless ladder, 2026-09-22)
+const DEV_WALLOW_CYCLE = [0, 1, 6, 11] as const;
 
 // The profile read is the screen's spine: five other fetches decorate it, so it
 // alone decides whether the Me tab is waiting, broken, or ready. [E7]
@@ -212,7 +242,20 @@ export function Account({ session }: { session: Session }) {
 	const [unclaimedAchv, setUnclaimedAchv] = useState(0);
 	const [wallowCount, setWallowCount] = useState(0);
 	const [wallowRegenSeconds, setWallowRegenSeconds] = useState<number | null>(null);
-	const [devWallowPreview, setDevWallowPreview] = useState(false);
+	// The lap-local XP and the pass length the rank sheet's "how to wallow"
+	// band draws — both off the same season_state read that already fed the
+	// clock. The pass is `total_tiers × xp_per_tier`, the one number a Wallow
+	// costs (utils/wallow owns the arithmetic). (the endless ladder, 2026-09-22)
+	const [seasonXp, setSeasonXp] = useState<number | null>(null);
+	const [passXp, setPassXp] = useState<number | null>(null);
+	// What the pig is wearing, per slot column — so an earned regalia piece can
+	// say "wearing" or "wear it" without the Closet's whole catalog.
+	const [activeSlotIds, setActiveSlotIds] = useState<Record<string, string | null>>({});
+	const [wearBusy, setWearBusy] = useState<string | null>(null);
+	// __DEV__ only: the rank the sheet PRETENDS to be at, cycling through the
+	// four shapes the ladder can take (unwallowed, first chapter, the set
+	// complete, long past it). null is the live rank.
+	const [devWallowRank, setDevWallowRank] = useState<number | null>(null);
 	const [, setWallowTuningVersion] = useState(0);
 	useFocusEffect(
 		useCallback(() => {
@@ -365,7 +408,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, vip_until, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, active_glasses_id, active_neck_id, active_bow_id, active_held_id, is_vip, vip_until, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -378,6 +421,10 @@ export function Account({ session }: { session: Session }) {
 						counter?: number;
 						renames_used?: number;
 						active_hat_id?: string | null;
+						active_glasses_id?: string | null;
+						active_neck_id?: string | null;
+						active_bow_id?: string | null;
+						active_held_id?: string | null;
 						is_vip?: boolean;
 						vip_until?: string | null;
 						referred_by?: string | null;
@@ -409,6 +456,13 @@ export function Account({ session }: { session: Session }) {
 					setTicklesLifetimeBase(row.tickles_lifetime_base ?? 0);
 					setSnouts(row.counter ?? 0);
 					setActiveHat(row.active_hat_id ?? null);
+					setActiveSlotIds({
+						active_hat_id: row.active_hat_id ?? null,
+						active_glasses_id: row.active_glasses_id ?? null,
+						active_neck_id: row.active_neck_id ?? null,
+						active_bow_id: row.active_bow_id ?? null,
+						active_held_id: row.active_held_id ?? null,
+					});
 					setIsVip(row.is_vip ?? false);
 					setVipUntil(row.vip_until ?? null);
 					setActiveDays(row.distinct_active_days ?? 0);
@@ -453,6 +507,11 @@ export function Account({ session }: { session: Session }) {
 			rpc<SeasonState>("season_state").then((state) => {
 				if (typeof state?.wallow_regen_seconds === "number") {
 					setWallowRegenSeconds(state.wallow_regen_seconds);
+				}
+				if (typeof state?.xp === "number") setSeasonXp(state.xp);
+				const season = state?.season;
+				if (season) {
+					setPassXp(wallowCycleXp(season.total_tiers, season.xp_per_tier));
 				}
 			});
 	}, [session.user.id]);
@@ -516,7 +575,8 @@ export function Account({ session }: { session: Session }) {
 	const renameCost = renamesUsed === 0 ? 0 : renamesUsed === 1 ? 1000 : 10000;
 	const renameCostCopy =
 		renameCost === 0 ? "First rename is free." : `${renameCost.toLocaleString()} snouts.`;
-	const visibleWallowCount = __DEV__ && devWallowPreview ? 5 : wallowCount;
+	const visibleWallowCount =
+		__DEV__ && devWallowRank !== null ? devWallowRank : wallowCount;
 	// The row shows the real rank; the dev preview only reaches the sheet.
 	const wallowRank = Math.max(0, Math.floor(wallowCount));
 	// "PIGGY-1234 · 1/3 · Messenger Hat" — the code, the next rung, its reward,
@@ -526,9 +586,47 @@ export function Account({ session }: { session: Session }) {
 			? `${referral.code} · every reward earned`
 			: `${referral.code} · ${referral.referrals_completed}/${referral.next_milestone_at} · ${rewardNameForMilestone(referral.next_milestone_at).replace(/^the /, "")}`
 		: undefined;
-	const visibleRegenSeconds = __DEV__ && devWallowPreview
-		? compiledWallowRegenSeconds(5)
-		: wallowRegenSeconds ?? Math.round(3600 * (1 - wallowRegenPercent(visibleWallowCount) / 100));
+	const visibleRegenSeconds =
+		__DEV__ && devWallowRank !== null
+			? compiledWallowRegenSeconds(devWallowRank)
+			: wallowRegenSeconds ??
+				Math.round(3600 * (1 - wallowRegenPercent(visibleWallowCount) / 100));
+	// Untouched, the sheet shows the live rank; the first press jumps to the
+	// first previewed rank that is not W0, then cycles.
+	const nextDevWallowRank =
+		devWallowRank === null
+			? DEV_WALLOW_CYCLE[1]
+			: DEV_WALLOW_CYCLE[
+					(DEV_WALLOW_CYCLE.indexOf(
+						devWallowRank as (typeof DEV_WALLOW_CYCLE)[number],
+					) +
+						1) %
+						DEV_WALLOW_CYCLE.length
+				];
+
+	// Wearing a rank's regalia from the sheet. The RPC is the Closet's — one
+	// equip rule, one server write (utils/cosmetics) — and the local slot map
+	// takes the server's own column patch so the chip flips with it. Tapping
+	// the piece you are already wearing takes it off, as a Closet tile does.
+	const wearRegalia = async (piece: WallowRegaliaPiece) => {
+		if (wearBusy) return;
+		const column = columnForCategory(piece.slot);
+		const worn = activeSlotIds[column] === piece.hatId;
+		setWearBusy(piece.hatId);
+		try {
+			const patch = await equipCosmetic(worn ? null : piece.hatId, piece.slot);
+			setActiveSlotIds((current) => ({ ...current, ...patch }));
+			if (patch.active_hat_id !== undefined) setActiveHat(patch.active_hat_id);
+		} catch {
+			showToast({
+				tone: "fail",
+				title: "Couldn't change that",
+				text: "Give it another tap in a moment.",
+			});
+		} finally {
+			setWearBusy(null);
+		}
+	};
 
 	const openRename = () => {
 		setRenameInput(username ?? "");
@@ -907,17 +1005,18 @@ export function Account({ session }: { session: Session }) {
 								</Sticker>
 							</View>
 
-							{/* Your story — the three prestige doors, one row each. The
-							    Wallow rank card became a row with the one number that
-							    matters; its next-rank deltas live in the rank sheet.
-							    (Me simplified, direction A, 2026-09-20) */}
+							{/* Your story — the prestige doors, one row each. The Wallow
+							    rank card became a row with the one number that matters;
+							    the ladder itself lives in the rank sheet. (Me simplified,
+							    direction A, 2026-09-20.) "Prestige gear" left 2026-09-22:
+							    the regalia has ONE home, and it is that sheet. */}
 							<View style={styles.groupWrap}>
 								<SectionHeader kicker="your prestige" title="Your story" />
 								<View style={styles.group}>
 									<NavRow
 										icon="crown"
 										label={`Wallow rank W${wallowRank}`}
-										sub={`${wallowRankLabel(wallowRank)} · W${wallowRank + 1} refills faster`}
+										sub={`${wallowRegaliaOwned(wallowRank)} of ${WALLOW_REGALIA_COUNT} regalia · next: ${wallowNextPrizeLabel(wallowRank)}`}
 										badge={<Tag label={`W${wallowRank}`} tone="rose" />}
 										onPress={() => setWallowOpen(true)}
 										accessibilityHint="Opens your Wallow rank and what the next one unlocks"
@@ -937,18 +1036,6 @@ export function Account({ session }: { session: Session }) {
 										}
 										onPress={() => router.push("/achievements")}
 										accessibilityHint="Opens the achievements grid"
-									/>
-									<NavRow
-										glyph="sparkles"
-										label="Prestige gear"
-										sub={`${wallowRank} earned · in your closet`}
-										onPress={() =>
-											router.push({
-												pathname: "/(tabs)/shop",
-												params: { view: "wardrobe", filter: "prestige" },
-											})
-										}
-										accessibilityHint="Opens your closet, filtered to prestige gear"
 									/>
 									{/* A member's Slop Club is a row here, not a pitch — the
 									    pitch is for pigs who haven't joined (below). */}
@@ -1419,38 +1506,42 @@ export function Account({ session }: { session: Session }) {
 					<LoadingBeat label="tallying it up" />
 				)}
 			</Sheet>
-			{/* Wallow rank — the card that used to sit on the page, now a sheet
-			    behind its row: current rank, the next one, the deltas, the gear
-			    link. The dev preview chip rides along in __DEV__. */}
+			{/* Wallow rank — the ladder's ONE home (the endless ladder,
+			    2026-09-22): the rung you stand on with its regalia worn from
+			    here, the next rung and its prize, every later rung locked, then
+			    how to wallow. The dev preview chip walks the four shapes. */}
 			<Sheet
 				open={wallowOpen}
 				onClose={() => setWallowOpen(false)}
 				kicker="your prestige"
 				title="Wallow rank"
-				subtitle={`W${wallowRank} · ${wallowRankLabel(wallowRank)}`}
+				subtitle={`W${visibleWallowCount} · ${wallowRegaliaOwned(visibleWallowCount)} of ${WALLOW_REGALIA_COUNT} regalia`}
 			>
 				{__DEV__ && (
 					<View style={wallowWallStyles.devRow}>
 						<Chip
-							label={devWallowPreview ? "W5 preview" : "Preview W5"}
+							label={`Preview W${nextDevWallowRank}`}
 							icon="flame"
-							tone={devWallowPreview ? "sun" : "paper"}
-							selected={devWallowPreview}
-							onPress={() => setDevWallowPreview((shown) => !shown)}
-							accessibilityLabel="Preview Wallow rank 5"
-							accessibilityHint="Shows what rank 5 would look like"
+							tone={devWallowRank !== null ? "sun" : "paper"}
+							selected={devWallowRank !== null}
+							onPress={() => setDevWallowRank(nextDevWallowRank)}
+							accessibilityLabel={`Preview Wallow rank ${nextDevWallowRank}`}
+							accessibilityHint="Cycles the rank sheet through W0, W1, W6 and W11"
 						/>
 					</View>
 				)}
 				<WallowRankBody
 					count={visibleWallowCount}
 					regenSeconds={visibleRegenSeconds}
-					onOpenGear={() =>
-						runAfterSheet(() => setWallowOpen(false), () =>
-							router.push({
-								pathname: "/(tabs)/shop",
-								params: { view: "wardrobe", filter: "prestige" },
-							}),
+					xp={seasonXp}
+					passXp={passXp}
+					wornIds={activeSlotIds}
+					wearBusy={wearBusy}
+					onWear={wearRegalia}
+					onOpenSeason={() =>
+						runAfterSheet(
+							() => setWallowOpen(false),
+							() => router.push("/(tabs)/season" as Href),
 						)
 					}
 				/>
@@ -1604,81 +1695,338 @@ function formatRegenInterval(seconds: number): string {
 	return `${Math.round(safe / 60)}m`;
 }
 
-// The Wallow rank sheet's body: the current rank, the next one and what it
-// changes, then the door to prestige gear. It was the page's second card until
-// the Me tab was simplified (direction A, 2026-09-20); the drawing is the same.
+// ── The rank sheet's body: the ladder ───────────────────────────────────────
+//
+// Direction D off the 2026-09-21 canvas, built as four rungs down one rail:
+// the rung you stand on (with the piece it granted, worn from here), the rung
+// one pass away and its prize, every later rung locked, and how to wallow.
+// It is the ONE place the ladder is explained — the Barn keepsakes and the
+// Season tab's Wallow card are doors, not copies.
+//
+// Nothing here stops at six. The rungs past the set are drawn from the same
+// unbounded rule `utils/wallow` states and the server applies, so a W40 pig
+// reads a real next rung rather than an ending.
+
+// The inscribed Barn frames, by the name `wallowRankPrize` hands back.
+const WALLOW_KEEPSAKE_ART: Record<string, ImageSourcePropType> = {
+	Bronze: require("@/assets/images/habitat/prestige/wallow_keepsake_bronze.png"),
+	Silver: require("@/assets/images/habitat/prestige/wallow_keepsake_silver.png"),
+	Gold: require("@/assets/images/habitat/prestige/wallow_keepsake_gold.png"),
+	Celestial: require("@/assets/images/habitat/prestige/wallow_keepsake_celestial.png"),
+};
+
+/** A prize's picture: the regalia's product shot, a keepsake frame, the aura ring, or the pair of marks. */
+function WallowPrizeArt({
+	prize,
+	rank,
+	size,
+	dim = false,
+}: {
+	prize: WallowRankPrize;
+	rank: number;
+	size: number;
+	dim?: boolean;
+}) {
+	const art = Math.round(size * PRIZE_ART_FRAC);
+	let inner: React.ReactNode = null;
+	if (prize.kind === "regalia") {
+		const src = HAT_THUMBNAILS_256[prize.hatId] ?? HAT_IMAGES[prize.hatId];
+		inner = src ? (
+			<Image source={src} style={{ width: art, height: art }} resizeMode="contain" />
+		) : (
+			<Glyph name="sparkle" size={art} />
+		);
+	} else if (prize.kind === "keepsake") {
+		inner = (
+			<Image
+				source={WALLOW_KEEPSAKE_ART[prize.frame]}
+				style={{ width: art, height: art }}
+				resizeMode="contain"
+			/>
+		);
+	} else if (prize.kind === "aura") {
+		const ring = wallowAuraArt(rank);
+		inner = ring ? (
+			<Image source={ring} style={{ width: art, height: art }} resizeMode="contain" />
+		) : (
+			<Glyph name="halo" size={art} />
+		);
+	} else {
+		// Two Golden Truffles and one Mote — the two marks side by side, each
+		// the thing it already is everywhere else in the game.
+		const mark = Math.round(art * PRIZE_PAIR_FRAC);
+		inner = (
+			<View style={wallowWallStyles.prizePair}>
+				<Glyph name="truffle" size={mark} />
+				<Image source={MOTE_IMAGE} style={{ width: mark, height: mark }} resizeMode="contain" />
+			</View>
+		);
+	}
+	return (
+		<Sticker
+			color={dim ? "cream2" : "paper"}
+			rotate={0}
+			radius={RADII.md}
+			shadow={dim ? "none" : "sm"}
+			style={[wallowWallStyles.prizeArt, { width: size, height: size }]}
+		>
+			{inner}
+		</Sticker>
+	);
+}
+
+/** The quiet line under a prize's name — what KIND of mark it is. */
+function prizeSubline(prize: WallowRankPrize, rank: number): string {
+	switch (prize.kind) {
+		case "regalia":
+			return `${prize.slot} · regalia ${rank} of ${WALLOW_REGALIA_COUNT}`;
+		case "keepsake":
+			return `inscribed W${rank} · on your Barn shelf`;
+		case "aura":
+			return `aura stage ${prize.stage} · on every portrait`;
+		default:
+			return "minted to your stash";
+	}
+}
+
 function WallowRankBody({
 	count,
 	regenSeconds,
-	onOpenGear,
+	xp,
+	passXp,
+	wornIds,
+	wearBusy,
+	onWear,
+	onOpenSeason,
 }: {
 	count: number;
 	regenSeconds: number;
-	onOpenGear: () => void;
+	xp: number | null;
+	passXp: number | null;
+	wornIds: Record<string, string | null>;
+	wearBusy: string | null;
+	onWear: (piece: WallowRegaliaPiece) => void;
+	onOpenSeason: () => void;
 }) {
 	const rank = Math.max(0, Math.floor(count));
 	const nextRank = rank + 1;
+	// The piece on the rung you stand on. Past the set the crown stays there —
+	// a W40 pig still wears her regalia from here, and the rung never goes
+	// blank just because the first chapter is behind her.
+	const pieceRank = Math.min(rank, WALLOW_REGALIA_COUNT);
+	const earned = wallowRegaliaFor(pieceRank);
+	const nextPrize = wallowRankPrize(nextRank);
+	const currentInterval = formatRegenInterval(regenSeconds);
 	const currentBaseInterval = formatRegenInterval(compiledWallowRegenSeconds(rank));
 	const nextBaseInterval = formatRegenInterval(compiledWallowRegenSeconds(nextRank));
 	const currentVisitHours = wallowVisitCooldownHours(rank);
 	const nextVisitHours = wallowVisitCooldownHours(nextRank);
+	// The clock is a perk of the first chapter only; past the cap the rung says
+	// so, so no later rank reads as a step that went missing. A step that does
+	// not actually move (the visit floor is already 3h at W5) is left out
+	// rather than drawn as a strike through its own value.
+	const refillMoves =
+		nextRank <= WALLOW_CLOCK_CAP_RANK && currentBaseInterval !== nextBaseInterval;
+	const visitsMove =
+		nextRank <= WALLOW_CLOCK_CAP_RANK && currentVisitHours !== nextVisitHours;
+	const clockStillMoves = refillMoves || visitsMove;
+	// Always four rungs of horizon, and never fewer than the set's last one.
+	const laterFrom = rank + 2;
+	const laterTo = Math.max(WALLOW_CLOCK_CAP_RANK, rank + 4);
+	const later: number[] = [];
+	for (let r = laterFrom; r <= laterTo; r += 1) later.push(r);
+	const wornColumn = earned ? columnForCategory(earned.slot) : null;
+	const wearing = !!earned && wornColumn !== null && wornIds[wornColumn] === earned.hatId;
+
 	return (
 		<View style={wallowWallStyles.body}>
-			<View style={wallowWallStyles.currentRow}>
-				<View style={wallowWallStyles.currentDecal}>
-					<T role="cardTitle">W{rank}</T>
-				</View>
-				<View style={wallowWallStyles.currentCopy}>
-					<T role="kickerPill" tone="accent">CURRENT</T>
-					<T role="cardTitleSm">{wallowRankLabel(rank)}</T>
-					<BodySm tone="secondary">
-						1 tickle / {formatRegenInterval(regenSeconds)} · visits every {currentVisitHours}h
-					</BodySm>
-				</View>
-			</View>
-
-			<View style={wallowWallStyles.stepConnector}>
-				<View style={wallowWallStyles.stepConnectorLine} />
-				<Icon name="chevronDown" size={LABEL_MARK} color={UI_COLORS.uiMuted} strokeWidth={2.4} />
-			</View>
-
-			<View style={wallowWallStyles.nextStep}>
-				<View style={wallowWallStyles.nextHeading}>
-					<View>
-						<T role="kickerPill" tone="accent">NEXT WALLOW</T>
-						<T role="cardTitleSm">Reach W{nextRank}</T>
-					</View>
-					<View style={wallowWallStyles.nextDecal}>
-						<T role="cardTitleSm">W{nextRank}</T>
-					</View>
-				</View>
-				<View style={wallowWallStyles.deltaRow}>
-					<BodySm tone="secondary">Tickle refill</BodySm>
-					<BodySm>
-						{currentBaseInterval} → {nextBaseInterval}
-					</BodySm>
-				</View>
-				<View style={wallowWallStyles.deltaRow}>
-					<BodySm tone="secondary">Friend visits</BodySm>
-					<BodySm>
-						{currentVisitHours}h → {nextVisitHours}h
-					</BodySm>
-				</View>
-				<Hand tone="accent" style={wallowWallStyles.unlockLine}>
-					+ exclusive W{nextRank} wearable
-				</Hand>
-			</View>
-			<Button
-				variant="ghost"
-				full
-				style={wallowWallStyles.gearLink}
-				icon={<Glyph name="crown" size={LABEL_MARK} />}
-				onPress={onOpenGear}
-				accessibilityLabel={`Prestige gear, ${rank} earned`}
-				accessibilityHint="Opens your closet, filtered to prestige gear"
+			{/* The rung you stand on. */}
+			<Sticker
+				color="sun"
+				rotate={TILT.card}
+				radius={RADII.xl}
+				pad
+				style={wallowWallStyles.rungCard}
 			>
-				prestige gear · {rank} earned ›
-			</Button>
+				<Tag label="you're here" tone="paper" style={wallowWallStyles.hereTag} />
+				<View style={wallowWallStyles.rungHead}>
+					<View style={rank === 0 ? wallowWallStyles.auraGhost : undefined}>
+						<PrestigeAvatar size={RANK_PORTRAIT} prestigeLevel={rank} />
+					</View>
+					<View style={wallowWallStyles.rungCopy}>
+						<T role="kickerPill" tone="secondary">W{rank} · now</T>
+						<CardTitle>{wallowRankLabel(rank)}</CardTitle>
+						<BodySm tone="secondary">
+							tickle every {currentInterval} · visits every {currentVisitHours}h
+						</BodySm>
+					</View>
+				</View>
+				<DashedRule style={wallowWallStyles.rungRule} />
+				{earned ? (
+					<View style={wallowWallStyles.pieceRow}>
+						<WallowPrizeArt
+							prize={{ kind: "regalia", label: earned.name, ...earned }}
+							rank={pieceRank}
+							size={PIECE_ART}
+						/>
+						<View style={wallowWallStyles.rungCopy}>
+							<T role="label">{earned.name}</T>
+							<T role="kicker" tone="secondary">
+								{earned.slot} · regalia {pieceRank} of {WALLOW_REGALIA_COUNT}
+							</T>
+						</View>
+						<Chip
+							label={wearing ? "wearing" : "wear it"}
+							tone={wearing ? "sun" : "paper"}
+							selected={wearing}
+							disabled={wearBusy !== null}
+							onPress={() => onWear(earned)}
+							accessibilityLabel={
+								wearing ? `Wearing the ${earned.name}` : `Wear the ${earned.name}`
+							}
+							accessibilityHint={
+								wearing
+									? "Takes it off your pig"
+									: "Puts it on your pig"
+							}
+						/>
+					</View>
+				) : (
+					// W0 keeps direction C's ghost ring: a fresh pig sees the shape
+					// the first aura will fill rather than an empty card.
+					<Hand tone="secondary">
+						your first aura lands the moment you wallow
+					</Hand>
+				)}
+			</Sticker>
+
+			<View style={wallowWallStyles.rail} />
+
+			{/* One pass away. */}
+			{nextPrize && (
+				<Sticker
+					color="paper"
+					rotate={0}
+					radius={RADII.xl}
+					pad
+					style={wallowWallStyles.nextCard}
+				>
+					<Ribbon label="next" tone="sun" />
+					<View style={wallowWallStyles.rungHead}>
+						<WallowPrizeArt prize={nextPrize} rank={nextRank} size={PRIZE_ART} />
+						<View style={wallowWallStyles.rungCopy}>
+							<T role="kickerPill" tone="accent">W{nextRank} · one pass away</T>
+							<CardTitle>{nextPrize.label}</CardTitle>
+							<T role="kicker" tone="secondary">
+								{prizeSubline(nextPrize, nextRank)}
+							</T>
+						</View>
+					</View>
+					{clockStillMoves ? (
+						<View style={wallowWallStyles.ledger}>
+							{refillMoves && (
+								<View style={wallowWallStyles.deltaRow}>
+									<BodySm tone="secondary">Tickle refill</BodySm>
+									<View style={wallowWallStyles.deltaPair}>
+										<BodySm tone="secondary" style={wallowWallStyles.struck}>
+											{currentBaseInterval}
+										</BodySm>
+										<BodySm>{nextBaseInterval}</BodySm>
+									</View>
+								</View>
+							)}
+							{visitsMove && (
+								<View style={wallowWallStyles.deltaRow}>
+									<BodySm tone="secondary">Friend visits</BodySm>
+									<View style={wallowWallStyles.deltaPair}>
+										<BodySm tone="secondary" style={wallowWallStyles.struck}>
+											{currentVisitHours}h
+										</BodySm>
+										<BodySm>{nextVisitHours}h</BodySm>
+									</View>
+								</View>
+							)}
+						</View>
+					) : (
+						<Hand tone="accent" style={wallowWallStyles.capNote}>
+							{WALLOW_CLOCK_CAP_NOTE}
+						</Hand>
+					)}
+				</Sticker>
+			)}
+
+			<View style={wallowWallStyles.rail} />
+
+			{/* Every later rung. Past the set the group says so in its kicker:
+			    the ladder keeps paying, it just stops being a set. */}
+			<View style={wallowWallStyles.laterGroup}>
+				{laterFrom > WALLOW_CLOCK_CAP_RANK && (
+					<KickerPill>then, forever</KickerPill>
+				)}
+				<Sticker color="paper" rotate={0} radius={RADII.xl} pad>
+					{later.map((r) => {
+						const prize = wallowRankPrize(r);
+						if (!prize) return null;
+						const clockLine =
+							r <= WALLOW_CLOCK_CAP_RANK
+								? `tickle every ${formatRegenInterval(compiledWallowRegenSeconds(r))} · visits every ${wallowVisitCooldownHours(r)}h`
+								: prizeSubline(prize, r);
+						return (
+							<ListRow
+								key={r}
+								flat
+								leading={
+									<WallowPrizeArt prize={prize} rank={r} size={LATER_ART} dim />
+								}
+								title={`W${r} · ${prize.label}`}
+								sub={clockLine}
+								trailing={<Glyph name="lock" size={ART_SIZE.glyphSm} />}
+								accessibilityLabel={`Wallow rank ${r}, locked: ${prize.label}`}
+							/>
+						);
+					})}
+				</Sticker>
+			</View>
+
+			{/* How to wallow — the one door out, and the pass it is measured in. */}
+			<Sticker
+				color="cream2"
+				rotate={0}
+				radius={RADII.lg}
+				shadow="none"
+				pad
+				style={wallowWallStyles.howBand}
+			>
+				<View style={wallowWallStyles.howHead}>
+					<KickerPill tone="accent">how to wallow</KickerPill>
+					<HandLink
+						accent
+						glyph="arrowRight"
+						onPress={onOpenSeason}
+						accessibilityLabel="Open the Season tab"
+						accessibilityHint="Closes this sheet and opens the season pass"
+					>
+						Season tab
+					</HandLink>
+				</View>
+				{passXp ? (
+					<>
+						<ProgressTrack
+							value={xp ?? 0}
+							max={passXp}
+							tone="sun"
+							accessibilityLabel="XP into this pass"
+						/>
+						<Hand tone="secondary">
+							{(xp ?? 0).toLocaleString()} / {passXp.toLocaleString()} XP into this pass
+						</Hand>
+					</>
+				) : (
+					<Hand tone="secondary">
+						Earn one whole pass of season XP, then wallow from the Season tab.
+					</Hand>
+				)}
+			</Sticker>
 		</View>
 	);
 }
@@ -1822,62 +2170,48 @@ const styles = StyleSheet.create({
 const wallowWallStyles = StyleSheet.create({
 	body: { paddingBottom: SPACE.sm },
 	devRow: { flexDirection: "row", justifyContent: "flex-end", marginBottom: SPACE.sm },
-	currentRow: {
-		minHeight: RANK_DECAL,
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-	},
-	currentDecal: {
-		width: RANK_DECAL,
-		height: RANK_DECAL,
-		borderRadius: RADII.lg,
-		borderWidth: BORDER.ink,
-		borderColor: UI_COLORS.border,
-		backgroundColor: WHIMSY.sun,
-		alignItems: "center",
-		justifyContent: "center",
-		transform: [{ rotate: "-2deg" }],
-	},
-	currentCopy: { flex: 1, minWidth: 0 },
-	stepConnector: {
-		width: RANK_DECAL,
-		height: STEP_DROP,
-		alignItems: "center",
-		justifyContent: "flex-end",
-	},
-	stepConnectorLine: {
+	// ── a rung ───────────────────────────────────────────────────────────
+	// The tape label overhangs the card's top-left corner, so the rung does
+	// not clip; the NEXT card does, because its ribbon crosses a corner.
+	rungCard: { marginTop: SPACE.sm, gap: SPACE.sm },
+	hereTag: {
 		position: "absolute",
-		top: 0,
-		bottom: SPACE.sm,
-		width: BORDER.ink,
-		backgroundColor: UI_COLORS.uiMuted,
+		top: -SPACE.sm,
+		left: SPACE.md,
+		transform: [{ rotate: `${TILT.tape}deg` }],
 	},
-	nextStep: {
-		borderRadius: RADII.md,
-		backgroundColor: UI_COLORS.surfaceMuted,
-		padding: SPACE.md,
-		gap: SPACE.xs,
+	rungHead: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
+	rungCopy: { flex: 1, minWidth: 0 },
+	rungRule: { marginTop: SPACE.xs },
+	// W0's dashed "your first aura" ring (direction C) — the shape the ring
+	// will fill, drawn around the bare portrait.
+	auraGhost: {
+		borderWidth: BORDER.ink,
+		borderStyle: "dashed",
+		borderColor: UI_COLORS.uiMuted,
+		borderRadius: RADII.pill,
+		padding: SPACE.xs,
 	},
-	nextHeading: {
+	pieceRow: {
 		minHeight: TAP_MIN,
 		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "space-between",
 		gap: SPACE.sm,
-		marginBottom: SPACE.xs,
 	},
-	nextDecal: {
-		minWidth: TAP_MIN,
-		height: TAP_MIN,
-		paddingHorizontal: SPACE.xs,
-		borderRadius: RADII.md,
-		borderWidth: BORDER.ink,
-		borderColor: UI_COLORS.border,
-		backgroundColor: UI_COLORS.surface,
-		alignItems: "center",
-		justifyContent: "center",
+	// The prize's frame: one square of paper, the picture centred in it.
+	prizeArt: { alignItems: "center", justifyContent: "center" },
+	prizePair: { flexDirection: "row", alignItems: "center", gap: SPACE.xxs },
+	// ── the rail between rungs ───────────────────────────────────────────
+	rail: {
+		width: BORDER.ink,
+		height: STEP_DROP,
+		marginLeft: RANK_PORTRAIT / 2,
+		backgroundColor: UI_COLORS.uiMuted,
 	},
+	// ── one pass away ────────────────────────────────────────────────────
+	// The Ribbon crosses the corner, so the card clips.
+	nextCard: { overflow: "hidden", gap: SPACE.sm },
+	ledger: { gap: SPACE.xxs },
 	deltaRow: {
 		minHeight: SPACE.xl,
 		flexDirection: "row",
@@ -1885,6 +2219,18 @@ const wallowWallStyles = StyleSheet.create({
 		justifyContent: "space-between",
 		gap: SPACE.sm,
 	},
-	unlockLine: { marginTop: SPACE.xs },
-	gearLink: { marginTop: SPACE.md },
+	// The old value, then the new one. No arrow: the strike says which is which.
+	deltaPair: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+	struck: { textDecorationLine: "line-through" },
+	capNote: { marginTop: SPACE.xxs },
+	// ── the rungs after that ─────────────────────────────────────────────
+	laterGroup: { gap: SPACE.xs },
+	// ── how to wallow ────────────────────────────────────────────────────
+	howBand: { marginTop: SPACE.lg, gap: SPACE.xs },
+	howHead: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: SPACE.sm,
+	},
 });

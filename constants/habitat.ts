@@ -114,6 +114,12 @@ const item = (seed: CatalogSeed, displayOrder: number): HabitatCatalogItem => ({
   displayOrder,
 });
 
+// A `prestigeRank` marks a Wallow-rank GIFT, and since 2026-09-22 only the
+// inscribed keepsakes carry one (1 / 3 / 6 / 10). The six purchasable designs
+// that ranks 1–6 used to grant — Dried Herb Garland, Barn Bunting, Muddy Paw
+// Rug, Reading Chair, Tiny Radio, Midnight Rafters — stay for sale and are no
+// longer rank grants; pigs already granted one keep it through their receipts
+// (docs/prestige-wallow-spec.md, "Where prestige lives").
 export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
@@ -146,7 +152,6 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
       id: "midnight_rafters",
-      prestigeRank: 6,
       assetKey: "midnight_rafters",
       name: "Midnight Rafters",
       description:
@@ -187,7 +192,6 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
       id: "barn_bunting",
-      prestigeRank: 2,
       assetKey: "barn_bunting",
       name: "Barn Bunting",
       description: "Five soft-colored pennants strung across the back wall.",
@@ -214,7 +218,6 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
       id: "dried_herb_garland",
-      prestigeRank: 1,
       assetKey: "dried_herb_garland",
       name: "Dried Herb Garland",
       description: "Bundles of sage leaves hanging from a curved barn cord.",
@@ -241,7 +244,6 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
       id: "reading_chair",
-      prestigeRank: 4,
       assetKey: "reading_chair",
       name: "Reading Chair",
       description: "A soft lilac armchair with a comfortably rumpled seat.",
@@ -307,7 +309,6 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
       id: "muddy_paw_rug",
-      prestigeRank: 3,
       assetKey: "muddy_paw_rug",
       name: "Muddy Paw Rug",
       description: "A sky-blue rug proudly stamped with one muddy paw.",
@@ -347,7 +348,6 @@ export const HABITAT_CATALOG: readonly HabitatCatalogItem[] = [
   item(
     {
       id: "tiny_radio",
-      prestigeRank: 5,
       assetKey: "tiny_radio",
       name: "Tiny Radio",
       description: "A rosy barn radio with a golden speaker and blue dial.",
