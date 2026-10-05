@@ -112,9 +112,30 @@ async function doEnsure(): Promise<string | null> {
 	return tokenString;
 }
 
-/** Clears the cached token. Call on sign-out. */
-export async function clearPushToken() {
-	await rpcAction("set_push_token", { token: null });
+/**
+ * Clears the account's push token and this device's cached copy. Call on
+ * sign-out, while still authenticated.
+ *
+ * The account holds ONE token (`profiles.expo_push_token`): whichever device
+ * registered last. A sign-out that means "this device" passes `accountToken`,
+ * the token the account holds right now, and the account's token is cleared
+ * only while it is still the one THIS device registered; a token another
+ * device registered since is left alone, so that phone keeps its
+ * notifications (signing out the SE used to silence the 17 Pro, while the
+ * dialog promised "this device"; 2026-10-04). Without it (an account being
+ * deleted, or a read that failed) the token is cleared outright, as before:
+ * leaving this device subscribed to an account it left is the worse failure.
+ */
+export async function clearPushToken(accountToken?: string | null) {
+	let mine: string | null = null;
+	try {
+		mine = await AsyncStorage.getItem(PUSH_TOKEN_CACHE_KEY);
+	} catch {}
+	// Known, and not this device's (another phone's, or none at all): leave it.
+	const notMine = accountToken !== undefined && accountToken !== mine;
+	if (!notMine) {
+		await rpcAction("set_push_token", { token: null });
+	}
 	try {
 		await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY);
 	} catch {}

@@ -12,7 +12,7 @@
 // a free colour axis.
 import React from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { SPACE, TYPE, UI_COLORS, WHIMSY } from "@/constants/theme";
+import { CHROME_TYPE_CAP, SPACE, TYPE, UI_COLORS, WHIMSY } from "@/constants/theme";
 import { Glyph, type GlyphName } from "./Glyph";
 import { T } from "./Text";
 
@@ -40,7 +40,22 @@ interface Props {
 	glyph?: GlyphName;
 	/** Container style override. */
 	style?: StyleProp<ViewStyle>;
+	/**
+	 * A Dynamic Type ceiling for the numeral, for a readout in a fixed-width
+	 * band (the passport's three columns, ~94pt of text on an SE). Undefined by
+	 * default: spec §1.2's 200 % still rules. The caption is capped regardless
+	 * (see below), and at this value when it is the lower one. (2026-10-04)
+	 */
+	maxFontSizeMultiplier?: number;
 }
+
+// The caption is compact chrome: a 10pt tracked-caps word under a numeral, in
+// a band of two or three columns. Its tracking makes its words the first to
+// outgrow a column, and a word never breaks mid-word, so it states its ceiling
+// (taste standard 2026-10-04): at accessibility-large "LIFETIME" measured
+// ~123pt against the passport column's 103pt and broke as "LIFETIM / E"
+// (after/107); at the cap it is ~75pt, inside the SE's ~94pt.
+const CAPTION_TYPE_CAP = CHROME_TYPE_CAP;
 
 export function Stat({
 	value,
@@ -49,8 +64,14 @@ export function Stat({
 	tone = "primary",
 	glyph,
 	style,
+	maxFontSizeMultiplier,
 }: Props) {
 	const role = SIZE_ROLE[size];
+	// React Native reads a multiplier below 1 as "no cap", and so does this.
+	const captionCap =
+		maxFontSizeMultiplier !== undefined && maxFontSizeMultiplier >= 1
+			? Math.min(maxFontSizeMultiplier, CAPTION_TYPE_CAP)
+			: CAPTION_TYPE_CAP;
 	return (
 		<View
 			style={[styles.wrap, style]}
@@ -60,7 +81,11 @@ export function Stat({
 		>
 			<View style={styles.row}>
 				{glyph ? <Glyph name={glyph} size={TYPE[role].fontSize} /> : null}
-				<T role={role} style={{ color: TONE_COLOR[tone] }}>
+				<T
+					role={role}
+					maxFontSizeMultiplier={maxFontSizeMultiplier}
+					style={{ color: TONE_COLOR[tone] }}
+				>
 					{value}
 				</T>
 			</View>
@@ -68,6 +93,7 @@ export function Stat({
 				role="kickerPillSm"
 				tone={tone === "onDark" ? "onDarkMute" : "secondary"}
 				align="center"
+				maxFontSizeMultiplier={captionCap}
 			>
 				{label}
 			</T>

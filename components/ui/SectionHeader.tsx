@@ -13,7 +13,7 @@
 import React from "react";
 import { View, StyleSheet, type ViewStyle, type StyleProp } from "react-native";
 import { RULE_WIDTH, SPACE } from "@/constants/theme";
-import { Kicker, Label, SectionTitle } from "./Text";
+import { CardTitle, Kicker, Label, SectionTitle } from "./Text";
 import { TitleRule } from "./Divider";
 
 interface Props {
@@ -27,6 +27,13 @@ interface Props {
 	ruleWidth?: number;
 	/** Container style override. */
 	style?: StyleProp<ViewStyle>;
+	/**
+	 * `sm` speaks in `cardTitle` — for a section INSIDE a sheet, whose own title
+	 * is already `sectionTitle`: a sheet's title and its sections shared one
+	 * role, so the hierarchy flattened. Default `md` (unchanged). (2026-10-04,
+	 * Barn ask 4)
+	 */
+	size?: "md" | "sm";
 }
 
 /**
@@ -39,14 +46,16 @@ export function SectionHeader({
 	right,
 	ruleWidth = RULE_WIDTH,
 	style,
+	size = "md",
 }: Props) {
+	const Title = size === "sm" ? CardTitle : SectionTitle;
 	return (
 		<View style={[styles.wrap, style]}>
 			{kicker ? <Kicker style={styles.kicker}>{kicker}</Kicker> : null}
 			<View style={styles.row}>
-				<SectionTitle accessibilityRole="header" style={styles.title}>
+				<Title accessibilityRole="header" style={styles.title}>
 					{title}
-				</SectionTitle>
+				</Title>
 				{right ? (
 					typeof right === "string" ? (
 						<Label tone="secondary" style={styles.right}>

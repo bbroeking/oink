@@ -41,7 +41,14 @@ type StickerColor =
 interface Props
 	extends Pick<
 		PressableProps,
-		"accessibilityHint" | "accessibilityLabel" | "accessibilityRole" | "accessibilityValue" | "accessibilityState" | "testID"
+		| "accessibilityHint"
+		| "accessibilityLabel"
+		| "accessibilityRole"
+		| "accessibilityValue"
+		| "accessibilityState"
+		| "accessibilityActions"
+		| "onAccessibilityAction"
+		| "testID"
 	> {
 	children?: React.ReactNode;
 	// A named theme token OR a raw color string. `string & {}` keeps the token
@@ -83,6 +90,16 @@ interface Props
 	 * (2026-09-14)
 	 */
 	webAria?: Record<`aria-${string}`, string>;
+	/**
+	 * Whether this sticker is ONE accessibility element. A pressable sticker
+	 * always is. A plain one becomes one whenever it is given a label — on iOS
+	 * a label or role on a view that is not `accessible` is silently ignored,
+	 * so "Preview Wallow ranks"-style labels were never spoken (Barn ask 1) —
+	 * except a `summary` sticker, a labelled GROUP whose own controls must stay
+	 * reachable (an element hides its children from VoiceOver). Pass it to
+	 * decide explicitly. (2026-10-04)
+	 */
+	accessible?: boolean;
 	style?: StyleProp<ViewStyle>;
 }
 
@@ -134,6 +151,9 @@ export const Sticker = React.forwardRef<View, Props>(function Sticker(
 	accessibilityState,
 	accessibilityLabel,
 	accessibilityRole,
+	accessibilityActions,
+	onAccessibilityAction,
+	accessible,
 	testID,
 	webAria,
 	style,
@@ -199,13 +219,23 @@ export const Sticker = React.forwardRef<View, Props>(function Sticker(
 	);
 
 	if (!interactive) {
+		const isElement =
+			accessible ??
+			(accessibilityLabel !== undefined && accessibilityRole !== "summary"
+				? true
+				: undefined);
 		return (
 			<View
 				ref={ref}
 				{...webAria}
+				accessible={isElement}
 				accessibilityHint={accessibilityHint}
 				accessibilityLabel={accessibilityLabel}
 				accessibilityRole={accessibilityRole}
+				accessibilityValue={accessibilityValue}
+				accessibilityState={accessibilityState}
+				accessibilityActions={accessibilityActions}
+				onAccessibilityAction={onAccessibilityAction}
 				testID={testID}
 				style={[
 					styles.base,
@@ -234,6 +264,11 @@ export const Sticker = React.forwardRef<View, Props>(function Sticker(
 			accessibilityHint={accessibilityHint}
 			accessibilityValue={accessibilityValue}
 			accessibilityState={{ ...accessibilityState, disabled: !!disabled }}
+			// A pressable sticker can offer its nested control (the Satchel's
+			// toss) as a VoiceOver custom action. (2026-10-04, Shop ask b)
+			accessibilityActions={accessibilityActions}
+			onAccessibilityAction={onAccessibilityAction}
+			accessible={accessible}
 			testID={testID}
 			style={({ pressed }) => [
 				styles.base,

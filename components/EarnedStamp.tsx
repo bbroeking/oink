@@ -6,7 +6,7 @@
 // (2026-09-13)
 import { StyleSheet, View } from "react-native";
 import { Glyph, KickerPill, Sticker, T } from "./ui";
-import { RADII, SPACE } from "@/constants/theme";
+import { CHROME_TYPE_CAP, RADII, SPACE } from "@/constants/theme";
 import { formatBarnTickleTotal } from "@/utils/tickleDisplay";
 
 // The heart is art, so it takes a picture size rather than a spacing step.
@@ -14,26 +14,37 @@ const HEART = 26;
 // The stamp's scrapbook lean, mirroring the coin's own (`TickleCoin`).
 const STAMP_TILT = -3;
 
-export function EarnedStamp({ total }: { total: number }) {
+export function EarnedStamp({ total, loaded = true }: { total: number; loaded?: boolean }) {
 	const value = formatBarnTickleTotal(total);
 	return (
+		// ONE ELEMENT. VoiceOver used to read the stamp as two fragments, "452"
+		// then "TICKLED": a label on a plain View is inert on iOS. A labelled
+		// Sticker is an accessibility element now, so the stamp is spoken as the
+		// sentence it is. (polish 2026-10-04, B-03)
 		<Sticker
 			color="rose"
 			rotate={STAMP_TILT}
 			radius={RADII.xl}
 			accessibilityRole="text"
-			accessibilityLabel={`${value} tickles earned`}
+			accessibilityLabel={loaded ? `${value} tickles earned` : "Tickles earned, still loading"}
 			style={styles.stamp}
 		>
 			<Glyph name="heart" size={HEART} />
 			<View>
 				{/* The total never truncates and never shrinks-to-fit: the
 				    format steps it down to "1.3M" before it could outgrow the
-				    numeral role. */}
-				<T role="numeralLg" numberOfLines={1}>
-					{value}
+				    numeral role. While the bank is still loading it reads "·"
+				    — the coin's placeholder — never a "0" that fills in under
+				    the thumb. Chrome on the scene: it states its type ceiling. */}
+				<T
+					role="numeralLg"
+					tone={loaded ? "primary" : "secondary"}
+					numberOfLines={1}
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
+				>
+					{loaded ? value : "·"}
 				</T>
-				<KickerPill star={false} style={styles.cap}>
+				<KickerPill star={false} maxFontSizeMultiplier={CHROME_TYPE_CAP} style={styles.cap}>
 					tickled
 				</KickerPill>
 			</View>

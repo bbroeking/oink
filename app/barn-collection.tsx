@@ -5,6 +5,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { POPUP_HANDOFF_GAP_MS } from "@/components/ui/PopupQueue";
@@ -17,10 +19,20 @@ import { EmptyState, LoadingBeat } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressTrack } from "@/components/ui/ProgressTrack";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { StackPage } from "@/components/ui/StackPage";
+import { SnoutCoin } from "@/components/ui/SnoutCoin";
+import {
+  STACK_SCROLL_EDGES,
+  StackPage,
+  useStackScrollPad,
+} from "@/components/ui/StackPage";
+import {
+  SCROLL_EDGE_EPSILON,
+  ScrollEdge,
+  useScrollEdge,
+} from "@/components/ui/ScrollEdge";
 import { Sticker } from "@/components/ui/Sticker";
 import { TextField } from "@/components/ui/TextField";
-import { Body, Hand, Label, T } from "@/components/ui/Text";
+import { Body, Hand, Label, Numeral, T } from "@/components/ui/Text";
 import { HabitatScene } from "@/components/habitat/HabitatScene";
 import { HabitatItemPreviewModal } from "@/components/habitat/HabitatItemPreviewModal";
 import { habitatAcquisitionPaths } from "@/components/habitat/HabitatInspectionSheet";
@@ -53,6 +65,7 @@ import {
 } from "@/utils/habitat";
 import {
   BORDER,
+  CHROME_TYPE_CAP,
   PAGE_PAD,
   RADII,
   RARITY_BG_SOLID,
@@ -60,7 +73,7 @@ import {
   ROW_TILTS,
   SHADOW_SM,
   SPACE,
-  TAB_SAFE,
+  TILE_TYPE_CAP,
   TILT,
   UI_COLORS,
   WHIMSY,
@@ -79,6 +92,12 @@ const GRID_COLUMNS = 2;
 const RARITY_DOT = 12;
 const OWNED_BADGE = 24;
 const CHECK_MARK = 14;
+// The balance rides the crown's right slot as the Shop crown's own pill — the
+// same coin, the same lean — so the furnishings shop and the Shop read as one
+// hand, and the crown loses the stats line it used to spend on "N Snouts
+// available." (polish 2026-10-04).
+const BALANCE_COIN = 20;
+const BALANCE_TILT = 2;
 
 type OwnershipFilter = "all" | "owned" | "new" | "wishlist";
 const OWNERSHIP_OPTIONS = [
@@ -232,6 +251,31 @@ export function BarnCollection({
   const navigationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeAccount = useRef(accountId);
   activeAccount.current = accountId;
+  // THE SCROLL EDGE sits under whatever is pinned at the top of the list: the
+  // crown while the shop's head (the Wallow card, the search, the filters)
+  // scrolls under it, then the set header that has pinned once tiles run
+  // under it — so the tiles never vanish at a bare straight cut (005/006).
+  // Each set header reports where it starts in the content; the scroll says
+  // which one is pinned. (polish 2026-10-04)
+  const scrollPad = useStackScrollPad();
+  const setHeaderTops = useRef(new Map<string, number>());
+  const [pinnedSet, setPinnedSet] = useState<string | null>(null);
+  const trackPinnedSet = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      let next: string | null = null;
+      let nextTop = -Infinity;
+      for (const [id, top] of setHeaderTops.current) {
+        if (y > top + SCROLL_EDGE_EPSILON && top > nextTop) {
+          next = id;
+          nextTop = top;
+        }
+      }
+      setPinnedSet((current) => (current === next ? current : next));
+    },
+    [],
+  );
+  const edge = useScrollEdge({ onScroll: trackPinnedSet });
   const refreshProgress = useCallback(async () => {
     const expected = accountId;
     if (!expected) return null;
@@ -614,7 +658,7 @@ export function BarnCollection({
               />
             </View>
           ) : isNew ? (
-            <Ribbon tone="sun" label="New" />
+            <Ribbon tone="sun" label="New" clipRadius={RADII.xl} />
           ) : null}
           <Image
             source={habitatItemAsset(item.assetKey)}
@@ -624,13 +668,30 @@ export function BarnCollection({
           />
         </View>
         <View style={styles.tileFoot}>
-          <T role="cardTitleSm" numberOfLines={2}>
+          {/* A name that matters never ends in "…": it wraps whole, three
+              lines at most ("Cocoa / Marshmallow Mug" needed three on a 375pt
+              SE, and the old two-line limit cut it). It states the 2-up tile's
+              ceiling, TILE_TYPE_CAP, at which the catalogue's longest word
+              ("Cloudspotter’s") still fits half a 375pt phone — uncapped, five
+              names broke mid-word at large text. (polish 2026-10-04) */}
+          <T role="cardTitleSm" maxFontSizeMultiplier={TILE_TYPE_CAP}>
             {item.name}
           </T>
           {placed ? (
-            <Tag tone="sage" icon="check" label="In room" style={styles.stateTag} />
+            <Tag
+              tone="sage"
+              icon="check"
+              label="In room"
+              maxFontSizeMultiplier={CHROME_TYPE_CAP}
+              style={styles.stateTag}
+            />
           ) : owned ? (
-            <Tag tone="sage" label="Owned" style={styles.stateTag} />
+            <Tag
+              tone="sage"
+              label="Owned"
+              maxFontSizeMultiplier={CHROME_TYPE_CAP}
+              style={styles.stateTag}
+            />
           ) : !item.isForSale || item.prestigeRank !== undefined ? (
             // A gift says so even when it can also be bought — the player
             // may rather wait for the rank.
@@ -639,14 +700,24 @@ export function BarnCollection({
               glyph="gift"
               label={giftLabel(item)}
               accessibilityLabel={itemEarnCopy(item)}
+              maxFontSizeMultiplier={CHROME_TYPE_CAP}
               style={styles.stateTag}
             />
           ) : null}
-          {owned || item.isForSale ? (
+          {/* One action, and only one that does something. A design already
+              in the room offers none — "Place" on it re-placed it into its own
+              spot (or quietly moved a chair to the other floor spot); its
+              capsule says "In room" and the tile's tap still previews it. The
+              action stands on the tile's floor (`marginTop: auto`), so a row's
+              two buttons line up — on a gradient Button that style used to
+              land inside the Pressable and never reach the layout. */}
+          {!placed && (owned || item.isForSale) ? (
             <Button
               variant={owned ? "primary" : "gold"}
               size="sm"
               full
+              style={styles.action}
+              maxFontSizeMultiplier={CHROME_TYPE_CAP}
               accessibilityLabel={
                 owned
                   ? `Place ${item.name} in my Barn`
@@ -662,7 +733,6 @@ export function BarnCollection({
               accessibilityState={{ disabled: actionLocked }}
               disabled={actionLocked}
               onPress={() => (owned ? placeItem(item) : openItem(item))}
-              style={styles.action}
             >
               {/* The price is the action's face; a price you can't meet
                   wears the locked chrome rather than a second sentence. */}
@@ -699,17 +769,29 @@ export function BarnCollection({
         style={styles.progress}
       >
         <Body tone="secondary">
-          {h.data?.wallowRank !== undefined
-            ? `Wallow Rank ${h.data.wallowRank} · `
-            : ""}
           Wallow ranks earn inscribed keepsakes for your shelf.
         </Body>
-        {nextPrestigeReward ? (
-          <Body tone="secondary">{`Next: Rank ${nextPrestigeReward.prestigeRank} · ${nextPrestigeReward.name}`}</Body>
+        {h.data?.wallowRank !== undefined || nextPrestigeReward ? (
+          <Body tone="secondary">
+            {[
+              h.data?.wallowRank !== undefined
+                ? `You're at Rank ${h.data.wallowRank}.`
+                : null,
+              nextPrestigeReward
+                ? `Next: Rank ${nextPrestigeReward.prestigeRank} · ${nextPrestigeReward.name}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          </Body>
         ) : null}
+        {/* The toggle starts on the copy's left edge: a link is text that
+            happens to be tappable, so it drops the pill padding it has no
+            pill to fill (its 44pt frame stays). */}
         <Button
           variant="link"
           size="sm"
+          style={styles.wallowToggle}
           accessibilityState={{ expanded: wallowExpanded }}
           accessibilityLabel={
             wallowExpanded ? "Hide Wallow gifts" : "See Wallow gifts"
@@ -719,13 +801,37 @@ export function BarnCollection({
         >
           {wallowExpanded ? "Hide Wallow gifts" : "See Wallow gifts"}
         </Button>
-        {wallowExpanded
-          ? prestigeRewards.map((reward) => (
-              <Label key={reward.id} tone="secondary">
-                {`Rank ${reward.prestigeRank} · ${reward.name} · ${ownedIds.has(reward.id) ? "Owned" : "Unlocks at this rank"}`}
-              </Label>
-            ))
-          : null}
+        {/* One row per gift: its name, and one capsule that says its rank
+            and its state in the collection's own gift grammar — muted with
+            the gift mark until it is yours, sage with the check after. The
+            rows used to repeat "Unlocks at this rank" nine times and wrap an
+            orphan "rank" (polish 2026-10-04, 068). Each row is one element
+            to a screen reader, because the state is a colour and a mark. */}
+        {wallowExpanded ? (
+          <View style={styles.wallowList}>
+            {prestigeRewards.map((reward) => {
+              const mine = ownedIds.has(reward.id);
+              return (
+                <View
+                  key={reward.id}
+                  accessible
+                  accessibilityRole="text"
+                  accessibilityLabel={`Rank ${reward.prestigeRank}, ${reward.name}, ${mine ? "yours" : "not yet yours"}`}
+                  testID="wallow-gift-row"
+                  style={styles.wallowRow}
+                >
+                  <Body style={styles.wallowName}>{reward.name}</Body>
+                  <Tag
+                    tone={mine ? "sage" : "muted"}
+                    icon={mine ? "check" : undefined}
+                    glyph={mine ? undefined : "gift"}
+                    label={`Rank ${reward.prestigeRank}`}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
       </Sticker>,
     );
   scrollChildren.push(
@@ -803,14 +909,21 @@ export function BarnCollection({
     ).length;
     stickyIndices.push(scrollChildren.length);
     scrollChildren.push(
-      <SectionHeader
+      <View
         key={`${groupId}-header`}
-        title={
-          groupId === "classic" ? "Starter & classics" : collectionName(groupId)
-        }
-        right={`${ownedInGroup} of ${groupItems.length} owned`}
-        style={styles.sectionHeader}
-      />,
+        style={styles.sectionPin}
+        onLayout={(e) => setHeaderTops.current.set(groupId, e.nativeEvent.layout.y)}
+      >
+        <SectionHeader
+          title={
+            groupId === "classic" ? "Starter & classics" : collectionName(groupId)
+          }
+          right={`${ownedInGroup} of ${groupItems.length} owned`}
+          style={styles.sectionHeader}
+        />
+        {/* The pinned header owns its bottom edge while tiles run under it. */}
+        <ScrollEdge visible={pinnedSet === groupId} overlay="bottom" />
+      </View>,
     );
     if (collectionProgress)
       scrollChildren.push(
@@ -826,10 +939,11 @@ export function BarnCollection({
             value={collectionProgress.ownedPaidCount}
             max={collectionProgress.paidCount}
           />
+          {/* The count, once. The thresholds are the gift capsules under it
+              — the line used to say "Bonus designs unlock automatically at 4
+              and 8" right above two tags saying the same. */}
           <Hand tone="secondary">
-            {collectionProgress.ownedPaidCount} of{" "}
-            {collectionProgress.paidCount} purchasable designs owned. Bonus
-            designs unlock automatically at 4 and 8.
+            {`${collectionProgress.ownedPaidCount} of ${collectionProgress.paidCount} purchasable designs owned`}
           </Hand>
           <View style={styles.rewardRow}>
             {collectionProgress.rewards.map((reward) => (
@@ -839,7 +953,7 @@ export function BarnCollection({
                 icon={reward.earned ? "check" : undefined}
                 glyph={reward.earned ? undefined : "gift"}
                 label={`Gift at ${reward.threshold}`}
-                accessibilityLabel={`${reward.threshold}: ${reward.earned ? "earned" : "not earned"}`}
+                accessibilityLabel={`Gift at ${reward.threshold} designs, ${reward.earned ? "earned" : "not yet"}`}
               />
             ))}
           </View>
@@ -877,7 +991,12 @@ export function BarnCollection({
       ),
     );
   return (
-    <StackPage>
+    // The list runs to the screen's foot: the page pads top and sides only,
+    // and the scroller ends on the one stack padding (a loose step plus the
+    // home indicator) instead of the tab bar's TAB_SAFE — a stack screen has
+    // no tab bar, and the two together clipped the grid 34pt above the edge
+    // and left ~108pt of dead paper after the last set (004/007).
+    <StackPage edges={STACK_SCROLL_EDGES}>
       <PageHeader
         kicker="always available"
         title="Barn Collection"
@@ -886,13 +1005,29 @@ export function BarnCollection({
           (() =>
             router.canGoBack() ? router.back() : router.replace("/(tabs)/shop"))
         }
+        right={
+          h.data ? (
+            // A picture of the balance, spoken with the word the coin stands
+            // for (a labelled Sticker is one element).
+            <Sticker
+              color="sun"
+              radius={RADII.md}
+              rotate={BALANCE_TILT}
+              accessibilityRole="text"
+              accessibilityLabel={`${h.data.currentSnouts.toLocaleString()} Snouts available`}
+              style={styles.balance}
+            >
+              <SnoutCoin size={BALANCE_COIN} />
+              <Numeral>{h.data.currentSnouts.toLocaleString()}</Numeral>
+            </Sticker>
+          ) : undefined
+        }
         below={
-          <Body tone="secondary">
-            {position
-              ? `Showing designs for ${HABITAT_POSITION_META[position].label}. `
-              : ""}
-            {h.data ? `${h.data.currentSnouts} Snouts available.` : ""}
-          </Body>
+          position ? (
+            <Body tone="secondary">
+              {`Showing designs for ${HABITAT_POSITION_META[position].label}.`}
+            </Body>
+          ) : undefined
         }
       />
       {h.error ? (
@@ -916,12 +1051,19 @@ export function BarnCollection({
       {h.loading ? (
         <LoadingBeat label="opening the collection" />
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          stickyHeaderIndices={stickyIndices}
-        >
-          {scrollChildren}
-        </ScrollView>
+        <>
+          {/* The crown's edge: shown while the head scrolls under it and no
+              set header has pinned (a pinned header carries its own). */}
+          <ScrollEdge visible={edge.edgeVisible && pinnedSet === null} />
+          <ScrollView
+            contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
+            stickyHeaderIndices={stickyIndices}
+            onScroll={edge.onScroll}
+            scrollEventThrottle={edge.scrollEventThrottle}
+          >
+            {scrollChildren}
+          </ScrollView>
+        </>
       )}
       <HabitatItemPreviewModal
         item={previewAccountId === accountId ? previewItem : null}
@@ -979,7 +1121,6 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: PAGE_PAD,
     paddingTop: SPACE.sm,
-    paddingBottom: TAB_SAFE,
     gap: SPACE.md,
   },
   // The chip rail bleeds to the screen edge so the last chip can peek in from
@@ -988,17 +1129,39 @@ const styles = StyleSheet.create({
   filters: { gap: SPACE.sm, paddingHorizontal: PAGE_PAD },
   progress: { gap: SPACE.xs },
   rewardRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm },
+  balance: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACE.sm,
+    paddingHorizontal: SPACE.md,
+    paddingVertical: SPACE.sm,
+  },
+  wallowToggle: { alignSelf: "flex-start", paddingHorizontal: 0 },
+  wallowList: { gap: SPACE.sm },
+  wallowRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+  // The name takes the row and wraps as a whole; the capsule never shrinks.
+  wallowName: { flex: 1, minWidth: 0 },
   // Pinned headers paint the page's own cream, bled to the screen edge so a
   // tilted tile's corner never peeks out beside them as it slides under.
-  sectionHeader: {
+  // The pinned set header: the page's own cream, bled to the screen edge so a
+  // tilted tile's corner never peeks out beside it as it slides under, and the
+  // scroll edge's rule spans the phone.
+  sectionPin: {
     backgroundColor: WHIMSY.cream,
     marginHorizontal: -PAGE_PAD,
     paddingHorizontal: PAGE_PAD,
     paddingTop: SPACE.sm,
     paddingBottom: SPACE.xs,
   },
+  // The header's own bottom margin goes: the scroll's gap already separates it
+  // from the tiles, and a margin inside a pinned header is cream that pins
+  // too (12pt of the ~270 the fixed chrome used to take).
+  sectionHeader: { marginBottom: 0 },
   row: { flexDirection: "row", gap: SPACE.md },
-  tile: { flex: 1, overflow: "hidden" },
+  // No `overflow: hidden`: on iOS it clipped the sticker's own hard shadow, so
+  // the tiles sat flat on the page. The well clips itself to the tile's top
+  // corners instead, and the New ribbon clips itself (clipRadius).
+  tile: { flex: 1 },
   tileSpacer: { flex: 1 },
   // A square well: aspectRatio is safe on a View, and the art inside gets
   // explicit insets rather than a percentage size (the Yoga-quirk cure).
@@ -1006,6 +1169,8 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderBottomWidth: BORDER.ink,
     borderColor: UI_COLORS.border,
+    borderTopLeftRadius: RADII.xl,
+    borderTopRightRadius: RADII.xl,
     overflow: "hidden",
   },
   art: {
@@ -1045,9 +1210,14 @@ const styles = StyleSheet.create({
     ...SHADOW_SM,
   },
   // The foot fills the tile so the action sits on the floor and a row's two
-  // buttons line up whatever the names above them do.
-  tileFoot: { flex: 1, padding: SPACE.md, gap: SPACE.sm },
+  // buttons line up whatever the names above them do. Its side inset matches
+  // the rarity dot's above it (SPACE.sm), which is also what lets the longest
+  // words — "Dreamcatcher", "Constellation" — keep a line to themselves at the
+  // chrome ceiling on a 375pt phone.
+  tileFoot: { flex: 1, padding: SPACE.sm, gap: SPACE.sm },
   stateTag: { alignSelf: "flex-start" },
+  // The tile's one action stands on its floor (the Button now hands placement
+  // keys like this to its Pressable, so `marginTop: auto` reaches the layout).
   action: { marginTop: "auto" },
   strip: { marginHorizontal: PAGE_PAD, marginBottom: SPACE.sm },
 });

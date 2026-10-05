@@ -6,7 +6,11 @@ import * as Haptics from "expo-haptics";
 import { createMoteGameAcceptanceClient } from "@/utils/moteGameAcceptance";
 import { LoadingBeat } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { StackPage } from "@/components/ui/StackPage";
+import {
+  STACK_SCROLL_EDGES,
+  StackPage,
+  useStackScrollPad,
+} from "@/components/ui/StackPage";
 import { Sticker } from "@/components/ui/Sticker";
 import { Button } from "@/components/ui/Button";
 import { T } from "@/components/ui/Text";
@@ -16,7 +20,6 @@ import {
   PAGE_PAD,
   RADII,
   SPACE,
-  TAB_SAFE,
   UI_COLORS,
   WHIMSY,
 } from "@/constants/theme";
@@ -54,6 +57,9 @@ function ContraptionInventoryScreen() {
   );
   const fetchInventory = client?.fetchInventory ?? fetchContraptionInventory;
   const inFlight = useRef(false);
+  // A stack screen has no tab bar: the page pads top and sides, and the
+  // scroller ends on one loose step plus the home indicator. (2026-10-04)
+  const scrollPad = useStackScrollPad();
   const [items, setItems] = useState<ContraptionInventoryItem[]>([]);
   const [events, setEvents] = useState<ContraptionServiceEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +143,7 @@ function ContraptionInventoryScreen() {
   );
 
   return (
-    <StackPage>
+    <StackPage edges={STACK_SCROLL_EDGES}>
       <PageHeader
         kicker="workshop shelf"
         title="Contraptions"
@@ -145,7 +151,7 @@ function ContraptionInventoryScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: scrollPad }]}
         showsVerticalScrollIndicator={false}
       >
         <T role="bodySm" tone="secondary" align="center" style={styles.intro}>
@@ -329,7 +335,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: PAGE_PAD,
     paddingTop: SPACE.lg,
-    paddingBottom: TAB_SAFE,
   },
   intro: {
     marginBottom: SPACE.lg,

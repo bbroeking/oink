@@ -326,6 +326,29 @@ describe("the friend row's actions menu", () => {
 		act(() => r.unmount());
 	});
 
+	test("VoiceOver reaches the trigger and every cell: none sits inside the row's button (after/017)", async () => {
+		// An accessibility element hides everything inside it. The trigger used to
+		// ride the row's `trailing` rail, inside the one row button, so "Actions
+		// for alice", the panel and its Pin cell were unreachable.
+		const insideAnElement = (node: TestRenderer.ReactTestInstance) => {
+			for (let p = node.parent; p; p = p.parent) {
+				if (p.props.accessible === true) return true;
+			}
+			return false;
+		};
+		const r = await mountList();
+		expect(insideAnElement(triggerFor(r, "f1"))).toBe(false);
+		// The identity is still one button: the name and code, opening the profile.
+		expect(rowFor(r, "f1").props.accessibilityRole).toBe("button");
+		expect(rowFor(r, "f1").props.accessibilityLabel).toBe("alice #0001");
+		await openMenu(r, "f1");
+		for (const key of ["visit", "bless", "curse", "pin", "profile"] as const) {
+			expect(insideAnElement(cellFor(r, key, "f1"))).toBe(false);
+		}
+		expect(cellFor(r, "pin", "f1").props.accessibilityLabel).toBe("Pin alice to the top");
+		act(() => r.unmount());
+	});
+
 	test("the trigger closes its own panel", async () => {
 		const r = await mountList();
 		await openMenu(r, "f1");
@@ -708,7 +731,7 @@ describe("the menu's rituals", () => {
 		act(() => r.unmount());
 	});
 
-	test("tapping a capsule opens that ritual's sheet; Done closes it", async () => {
+	test("tapping a capsule opens that ritual's sheet; Close closes it", async () => {
 		const r = await mountList();
 		const sheetOpen = (mode: string) =>
 			r.root.findAll((n) => n.props.testID === `ritual-explain-${mode}`).length > 0;
@@ -724,12 +747,14 @@ describe("the menu's rituals", () => {
 		const allowance = sheet.findAll(
 			(n) => n.props.testID === "ritual-explain-allowance" && typeof n.type === "string"
 		)[0];
-		expect(textOf(allowance)).toMatch(/^3 of 3 left today · resets in /);
+		// The sheet counts the allowance in the line's own words (2026-10-04).
+		expect(textOf(allowance)).toMatch(/^Three truffle left today · resets in /);
 		expect(textOf(sheet)).toContain(dailyRitual("curse").name);
-		const done = sheet.findAll(
-			(n) => n.props.accessibilityLabel === "Done" && !!n.props.accessibilityRole
+		// The X is a button named "Close" (the 2026-10-04 polish rule).
+		const close = sheet.findAll(
+			(n) => n.props.accessibilityLabel === "Close" && !!n.props.accessibilityRole
 		)[0];
-		await tap(done);
+		await tap(close);
 		expect(sheetOpen("curse")).toBe(false);
 		act(() => r.unmount());
 	});

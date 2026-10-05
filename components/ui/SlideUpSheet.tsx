@@ -53,6 +53,15 @@ export function SlideUpSheet({
 	// Escape hatch for a sheet that must hide its Modal without closing (so a
 	// nested native Modal can present over it) — defaults to visible.
 	modalVisible?: boolean;
+	/**
+	 * Opt-in: names the scrim as a VoiceOver button, for a panel with no close
+	 * control of its own. Omitted (the default, and what `Sheet` does: its
+	 * header's × is the one "Close"), the scrim still dismisses on a tap but
+	 * is hidden from VoiceOver, whose escape gesture closes the panel. Before
+	 * 2026-10-04 every sheet exposed its full-screen scrim as a second "Close"
+	 * (402 x 874 on the 17 Pro), and an unnamed scrim was a nameless element
+	 * covering the whole screen.
+	 */
 	backdropLabel?: string;
 	children: ReactNode;
 	// Rendered as a SIBLING of the panel, still inside this Modal — for a nested
@@ -97,13 +106,18 @@ export function SlideUpSheet({
 
 	const layers = (
 		<>
-			{/* Scrim — its OWN layer, fading in place. Tapping it dismisses. */}
+			{/* Scrim — its OWN layer, fading in place. Tapping it dismisses; a
+			    screen reader meets it only when a caller names it. */}
 			<Animated.View style={[styles.backdrop, { opacity: anim }]}>
 				<Pressable
 					style={StyleSheet.absoluteFill}
 					onPress={onClose}
+					accessible={!!backdropLabel}
 					accessibilityRole={backdropLabel ? "button" : undefined}
 					accessibilityLabel={backdropLabel}
+					accessibilityElementsHidden={!backdropLabel}
+					importantForAccessibility={backdropLabel ? "auto" : "no-hide-descendants"}
+					testID="sheet-backdrop"
 				/>
 			</Animated.View>
 			{/* Panel — slides up over the static scrim. box-none lets taps above

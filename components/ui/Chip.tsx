@@ -259,6 +259,13 @@ export interface TagProps {
 	// See ChipProps.maxFontSizeMultiplier. The visit screen's status row is the
 	// caller that needs it: three capsules on one wrapping line. (2026-09-12)
 	maxFontSizeMultiplier?: number;
+	/**
+	 * Drop the lift. A tag is read-only, and on a surface where its press-able
+	 * neighbours wear SHADOW_SM a lifted status reads as one more thing to tap
+	 * (the Me rows' rank chip). Default false: every existing tag is unchanged.
+	 * (2026-10-04, Me ask M-06)
+	 */
+	flat?: boolean;
 }
 
 /**
@@ -278,17 +285,22 @@ export function Tag({
 	testID,
 	style,
 	maxFontSizeMultiplier,
+	flat = false,
 }: TagProps) {
 	const ink = inkOverride ?? TONE_INK[tone];
 	return (
 		<View
+			// One element: on iOS the role and label are ignored on a view that
+			// is not accessible, and VoiceOver read the bare text ("W0") instead
+			// of the tag's label. (2026-10-04, Barn ask 1)
+			accessible
 			accessibilityRole="text"
 			accessibilityLabel={accessibilityLabel ?? label}
 			testID={testID}
 			style={[
 				styles.capsule,
 				{ backgroundColor: TONE_FILL[tone] },
-				SHADOW_SM,
+				flat ? null : SHADOW_SM,
 				style,
 			]}
 		>
@@ -332,11 +344,21 @@ export interface RibbonProps {
 	icon?: IconName;
 	style?: StyleProp<ViewStyle>;
 	testID?: string;
+	/**
+	 * The radius of the card the ribbon crosses. Given, the ribbon draws inside
+	 * a clip layer of its own (absolute over the card, that radius,
+	 * pointer-transparent), so the card keeps `overflow: visible` and with it
+	 * the hard sticker shadow an `overflow: hidden` card loses on iOS. Omitted,
+	 * the parent clips as before. (2026-10-04, Me ask M-09; the Me rank sheet's
+	 * `CornerRibbon` was the reference.)
+	 */
+	clipRadius?: number;
 }
 
 /**
- * The corner marker — MEMBERS, NEW, GATED. Absolutely positioned, so the parent
- * it crosses must be `overflow: "hidden"`. (2026-09-11)
+ * The corner marker — MEMBERS, NEW, GATED. Absolutely positioned: either pass
+ * `clipRadius` (the ribbon clips itself and the card keeps its shadow) or make
+ * the parent it crosses `overflow: "hidden"`. (2026-09-11; clipRadius 2026-10-04)
  */
 export function Ribbon({
 	label,
@@ -345,9 +367,11 @@ export function Ribbon({
 	icon,
 	style,
 	testID,
+	clipRadius,
 }: RibbonProps) {
-	return (
+	const band = (
 		<View
+			accessible
 			accessibilityRole="text"
 			accessibilityLabel={label}
 			testID={testID}
@@ -364,6 +388,16 @@ export function Ribbon({
 				) : null}
 				<Text style={styles.ribbonLabel}>{label}</Text>
 			</View>
+		</View>
+	);
+	if (clipRadius === undefined) return band;
+	return (
+		<View
+			pointerEvents="none"
+			style={[styles.ribbonClip, { borderRadius: clipRadius }]}
+			testID={testID ? `${testID}-clip` : undefined}
+		>
+			{band}
 		</View>
 	);
 }
@@ -414,6 +448,17 @@ const styles = StyleSheet.create({
 		borderBottomWidth: BORDER.thin,
 		borderColor: UI_COLORS.border,
 		transform: [{ rotate: RIBBON_ANGLE }],
+		zIndex: 2,
+	},
+	// The ribbon's own clip layer: the card's box and corners, above its content
+	// like the band always was, never in the way of a tap.
+	ribbonClip: {
+		position: "absolute",
+		top: 0,
+		right: 0,
+		bottom: 0,
+		left: 0,
+		overflow: "hidden",
 		zIndex: 2,
 	},
 	ribbonLeft: {

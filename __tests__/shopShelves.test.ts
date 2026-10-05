@@ -3,12 +3,15 @@
 // every member sees alike and that rolls with the shelves at UTC midnight.
 
 import {
+	buyableNow,
 	cardBadge,
 	cardTag,
 	cardTapAction,
 	chunkShelves,
+	countWord,
 	dailyPick,
 	dropDateKey,
+	shopKicker,
 } from "@/utils/shopShelves";
 
 describe("chunkShelves", () => {
@@ -140,5 +143,64 @@ describe("cardBadge", () => {
 	it("locks members' pieces only, and badges nothing else", () => {
 		expect(cardBadge({ owned: false, locked: true })).toBe("lock");
 		expect(cardBadge({ owned: false, locked: false })).toBeNull();
+	});
+});
+
+// The crown's kicker carries the day (polish pass, 2026-10-04): "★ THE SHOP"
+// over "Shop" said nothing twice.
+describe("countWord", () => {
+	it("speaks counts in words to ten, then numerals", () => {
+		expect(countWord(0)).toBe("no");
+		expect(countWord(3)).toBe("three");
+		expect(countWord(10)).toBe("ten");
+		expect(countWord(11)).toBe("11");
+	});
+});
+
+describe("buyableNow", () => {
+	const state = {
+		owned: new Set(["owned"]),
+		buyableIds: new Set(["drop", "owned", "pricey", "members"]),
+		counter: 500,
+		isVip: false,
+	};
+
+	it("is a sun price tag: on a shelf today, not yours, affordable, not locked", () => {
+		expect(buyableNow({ id: "drop", cost: 200 }, state)).toBe(true);
+		expect(buyableNow({ id: "owned", cost: 200 }, state)).toBe(false);
+		expect(buyableNow({ id: "pricey", cost: 900 }, state)).toBe(false);
+		expect(buyableNow({ id: "members", cost: 200, members_only: true }, state)).toBe(false);
+		expect(buyableNow({ id: "members", cost: 200, members_only: true }, { ...state, isVip: true })).toBe(true);
+		expect(buyableNow({ id: "elsewhere", cost: 200 }, state)).toBe(false);
+		expect(buyableNow({ id: "drop", cost: 0 }, state)).toBe(false);
+	});
+});
+
+describe("shopKicker", () => {
+	it("counts what a tap can buy right now", () => {
+		expect(shopKicker({ loading: false, failed: false, shelfCount: 11, inReach: 3 })).toBe(
+			"three you can buy today",
+		);
+		expect(shopKicker({ loading: false, failed: false, shelfCount: 11, inReach: 1 })).toBe(
+			"one you can buy today",
+		);
+	});
+
+	it("falls back to the size of the shelves when nothing is in reach", () => {
+		expect(shopKicker({ loading: false, failed: false, shelfCount: 11, inReach: 0 })).toBe(
+			"11 on the shelves today",
+		);
+	});
+
+	it("never states a fact it does not have", () => {
+		expect(shopKicker({ loading: true, failed: false, shelfCount: 0, inReach: 0 })).toBe(
+			"stocking the shelves",
+		);
+		expect(shopKicker({ loading: false, failed: false, shelfCount: 0, inReach: 0 })).toBe(
+			"sold out till sunrise",
+		);
+		expect(shopKicker({ loading: false, failed: true, shelfCount: 0, inReach: 0 })).toBe(
+			"can't reach the shelves",
+		);
 	});
 });

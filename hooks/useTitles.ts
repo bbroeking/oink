@@ -14,25 +14,46 @@ import { useFocusEffect } from "expo-router/react-navigation";
 import { supabase } from "@/utils/supabase";
 import type { TitleRow } from "@/constants/title_types";
 
+/**
+ * Where a title comes from (`titles.source`, 20260519 → 20260647). The picker
+ * draws it as the row's mark, so the mark says something: a trophy for an
+ * achievement, a clover for a lucky drop, a ball for the World Cup. `null` is
+ * the founding set and the old pass titles. (polish pass, 2026-10-04)
+ */
+export type TitleSource =
+	| "battle_pass"
+	| "shop"
+	| "lucky"
+	| "sounder"
+	| "achievement"
+	| "season"
+	| "world_cup"
+	| "mud_war";
+
+/** A title row as the picker reads it: the shared row, plus its source. */
+export interface PickerTitleRow extends TitleRow {
+	source?: TitleSource | null;
+}
+
 interface OwnedRow {
 	title_id: string;
-	titles: TitleRow;
+	titles: PickerTitleRow;
 }
 
 export interface UseTitles {
 	/** The titles this player has earned. */
-	owned: TitleRow[];
+	owned: PickerTitleRow[];
 	/** Every title there is — the "Not yet" tab subtracts `owned` from it. */
-	catalog: TitleRow[];
+	catalog: PickerTitleRow[];
 	loading: boolean;
 	refresh: () => Promise<void>;
 }
 
 /** Worn first, then A–Z. The one you are wearing is the one you look for. */
-export function sortTitles(
-	rows: readonly TitleRow[],
+export function sortTitles<T extends TitleRow>(
+	rows: readonly T[],
 	activeId: string | null,
-): TitleRow[] {
+): T[] {
 	return [...rows].sort((a, b) => {
 		if (a.id === activeId) return -1;
 		if (b.id === activeId) return 1;
@@ -41,27 +62,27 @@ export function sortTitles(
 }
 
 /** Search by name only — a title's how-earned line is prose, not an index. */
-export function filterTitles(
-	rows: readonly TitleRow[],
+export function filterTitles<T extends TitleRow>(
+	rows: readonly T[],
 	query: string,
-): TitleRow[] {
+): T[] {
 	const needle = query.trim().toLowerCase();
 	if (!needle) return [...rows];
 	return rows.filter((row) => row.name.toLowerCase().includes(needle));
 }
 
 /** The titles still out there: the board minus what you already wear. */
-export function unearnedTitles(
-	catalog: readonly TitleRow[],
+export function unearnedTitles<T extends TitleRow>(
+	catalog: readonly T[],
 	owned: readonly TitleRow[],
-): TitleRow[] {
+): T[] {
 	const mine = new Set(owned.map((row) => row.id));
 	return catalog.filter((row) => !mine.has(row.id));
 }
 
 export function useTitles(userId: string | null): UseTitles {
-	const [owned, setOwned] = useState<TitleRow[]>([]);
-	const [catalog, setCatalog] = useState<TitleRow[]>([]);
+	const [owned, setOwned] = useState<PickerTitleRow[]>([]);
+	const [catalog, setCatalog] = useState<PickerTitleRow[]>([]);
 	const [loading, setLoading] = useState(false);
 
 	const refresh = useCallback(async () => {
@@ -77,22 +98,22 @@ export function useTitles(userId: string | null): UseTitles {
 		const [mine, board] = await Promise.all([
 			supabase
 				.from("user_titles")
-				.select("title_id, titles(id, name, placement, description)")
+				.select("title_id, titles(id, name, placement, description, source)")
 				// A nested-join select makes PostgREST infer a parser-error row
 				// shape; declare the known row type through the builder instead.
 				.eq("user_id", userId)
 				.returns<OwnedRow[]>(),
 			supabase
 				.from("titles")
-				.select("id, name, placement, description")
-				.returns<TitleRow[]>(),
+				.select("id, name, placement, description, source")
+				.returns<PickerTitleRow[]>(),
 		]);
 		setOwned(
 			mine.error
 				? []
 				: (mine.data ?? [])
 						.map((row) => row.titles)
-						.filter((row): row is TitleRow => !!row),
+						.filter((row): row is PickerTitleRow => !!row),
 		);
 		setCatalog(board.error ? [] : (board.data ?? []));
 		setLoading(false);

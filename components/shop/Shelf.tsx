@@ -4,7 +4,7 @@
 // action's face — and a tap opens the same preview sheet a grid card opens.
 // The members' shelf is the same shelf under the Slop Club sign, on the band
 // tint. Everything here is a token; the painted plank wall is build 3.
-import { useRef, type ReactNode } from "react";
+import { Children, useRef, type ReactNode } from "react";
 import {
 	Pressable,
 	StyleSheet,
@@ -18,6 +18,7 @@ import { cosmeticAccessibility } from "@/utils/cosmetics";
 import { cardBadge, cardTag, cardTagFace } from "@/utils/shopShelves";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	PRESSED_FLAT,
 	RADII,
 	RARITY_BG_SOLID,
@@ -161,6 +162,7 @@ export function ShelfItem({
 					icon={face.icon}
 					coin={face.coin}
 					label={face.label}
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
 					style={styles.tag}
 				/>
 			</View>
@@ -168,11 +170,30 @@ export function ShelfItem({
 	);
 }
 
-/** One plank with up to three items standing on it. */
-export function Shelf({ children }: { children: ReactNode }) {
+/**
+ * One plank with up to `slots` items standing on it. A short last shelf keeps
+ * the shelves' columns: its items stand in the first places and the rest of
+ * the plank is bare, instead of spreading two items into halves that line up
+ * with nothing above them (056-shop-storefront-shelves, polish pass
+ * 2026-10-04).
+ */
+export function Shelf({
+	children,
+	slots,
+}: {
+	children: ReactNode;
+	/** Places on the plank; omitted, the items share it evenly. */
+	slots?: number;
+}) {
+	const empty = slots ? Math.max(0, slots - Children.count(children)) : 0;
 	return (
 		<View style={styles.shelf}>
-			<View style={styles.row}>{children}</View>
+			<View style={styles.row}>
+				{children}
+				{Array.from({ length: empty }, (_, i) => (
+					<View key={`empty-${i}`} style={styles.slot} accessible={false} />
+				))}
+			</View>
 			<Plank style={styles.shelfPlank} />
 		</View>
 	);
@@ -185,9 +206,14 @@ export function Shelf({ children }: { children: ReactNode }) {
 export function SlopClubShelf({
 	children,
 	onPressSign,
+	member = false,
+	slots,
 }: {
 	children: ReactNode;
 	onPressSign: () => void;
+	/** A member is already in: the sign is a door to the Pen, not to joining. */
+	member?: boolean;
+	slots?: number;
 }) {
 	return (
 		<View style={styles.band}>
@@ -200,13 +226,19 @@ export function SlopClubShelf({
 				hitSlop={SPACE.sm}
 				accessibilityRole="button"
 				accessibilityLabel="Slop Club shelf"
-				accessibilityHint="Opens the Pen, where you can join the Slop Club"
+				accessibilityHint={
+					member
+						? "Opens the Pen, where Rosie's friends live"
+						: "Opens the Pen, where you can join the Slop Club"
+				}
 				style={styles.sign}
 			>
 				<Glyph name="crown" size={SIGN_MARK} />
-				<T role="kickerPillSm">Slop Club</T>
+				<T role="kickerPillSm" maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+					Slop Club
+				</T>
 			</Sticker>
-			<Shelf>{children}</Shelf>
+			<Shelf slots={slots}>{children}</Shelf>
 		</View>
 	);
 }

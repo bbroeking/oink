@@ -155,3 +155,70 @@ export function cardBadge(
 	if (state.owned) return "check";
 	return state.locked ? "lock" : null;
 }
+
+/** Counts in words to ten, the house voice for a count in a kicker line (the
+ *  Friends allowance line's rule, 2026-09-14); a numeral past ten. */
+const COUNT_WORDS = [
+	"no",
+	"one",
+	"two",
+	"three",
+	"four",
+	"five",
+	"six",
+	"seven",
+	"eight",
+	"nine",
+	"ten",
+] as const;
+
+export function countWord(n: number): string {
+	const whole = Math.max(0, Math.floor(n));
+	return whole < COUNT_WORDS.length ? COUNT_WORDS[whole] : whole.toLocaleString();
+}
+
+/** Can a tap buy this item right now: on a shelf today, not yours, paid for
+ *  in snouts you have, and not a members' piece behind the lock. The same
+ *  test that paints a card's price on the sun (`cardTag`), as a yes/no. */
+export function buyableNow(
+	item: { id: string; cost: number; members_only?: boolean | null },
+	state: {
+		owned: ReadonlySet<string>;
+		buyableIds: ReadonlySet<string>;
+		counter: number;
+		isVip: boolean;
+	},
+): boolean {
+	return (
+		item.cost > 0 &&
+		state.buyableIds.has(item.id) &&
+		!state.owned.has(item.id) &&
+		state.counter >= item.cost &&
+		!(item.members_only && !state.isVip)
+	);
+}
+
+/**
+ * The Shop crown's kicker (polish pass, 2026-10-04). "★ THE SHOP" over a title
+ * that says "Shop" said nothing; the page's one kicker pill now carries the
+ * day. It counts the sun price tags on the page (what a tap can buy right
+ * now), falls back to the size of today's shelves when nothing is in reach,
+ * and never leaves the crown on a placeholder that reads as a fact: loading
+ * and failure each say what they are. On a small phone, where no shelf is
+ * above the fold, it is the line that says the store has stock below.
+ */
+export function shopKicker(state: {
+	loading: boolean;
+	failed: boolean;
+	/** Items on today's shelves: the drop plus the members' shelf. */
+	shelfCount: number;
+	/** How many of those (and the counter's) a tap can buy right now. */
+	inReach: number;
+}): string {
+	if (state.shelfCount === 0) {
+		if (state.failed) return "can't reach the shelves";
+		return state.loading ? "stocking the shelves" : "sold out till sunrise";
+	}
+	if (state.inReach > 0) return `${countWord(state.inReach)} you can buy today`;
+	return `${countWord(state.shelfCount)} on the shelves today`;
+}

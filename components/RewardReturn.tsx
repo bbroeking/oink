@@ -51,7 +51,7 @@ import {
 } from "@/constants/theme";
 import { useRewardReturn } from "@/hooks/useRewardReturn";
 import { MOTION_DURATION } from "@/hooks/useMotionPolicy";
-import type { PigId } from "@/utils/pigs";
+import { pigDefinition, type PigId } from "@/utils/pigs";
 import { flyKeyframes, grantFailureLine, type GrantResult, type Point, type RewardItem } from "@/utils/rewardReturn";
 
 // ── Drawing constants ───────────────────────────────────────────────────────
@@ -177,6 +177,11 @@ export function RewardReturn({
 	const failure = state.phase === "failed" ? state.failure : null;
 	const busy = state.phase === "granting";
 	const landed = state.phase === "granted";
+	// One fact, stated once: a lone item the title already names ("a blue
+	// feather") does not take its name again under its coin. Two items keep
+	// both names; the title only names the first. (polish pass, 2026-10-04)
+	const coinNamed =
+		items.length !== 1 || !title.toLowerCase().includes(items[0].name.toLowerCase());
 
 	return (
 		<AdaptiveModalScaffold
@@ -187,7 +192,7 @@ export function RewardReturn({
 			animationType="fade"
 			testID={testID}
 		>
-			<View style={styles.root} accessibilityLabel={`${title}: ${pigId} is back`}>
+			<View style={styles.root} accessibilityLabel={`${title}: ${pigDefinition(pigId).name} is back`}>
 				{/* ── the paddock strip ── */}
 				<View style={styles.stage} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
 					<View style={styles.sky} />
@@ -200,6 +205,12 @@ export function RewardReturn({
 						))}
 					</View>
 					<Animated.View style={[styles.pigWrap, { transform: [{ translateX: walkX }] }]}>
+						{/* The confetti bursts from BEHIND the pig: from in front,
+						    its first frames were a pastel clump on her snout that
+						    read as a smudge (101, polish pass 2026-10-04). Drawn
+						    first, so the pig covers the burst's centre and the
+						    bits fly out around her. */}
+						<ConfettiBurst ref={confetti} size={PIG_SIZE} style={styles.confetti} />
 						<View style={[styles.pigCanvas, { transform: [{ scale: pigScale }] }]}>
 							<PigStage
 								pigId={pigId}
@@ -219,7 +230,6 @@ export function RewardReturn({
 								</View>
 							) : null}
 						</View>
-						<ConfettiBurst ref={confetti} size={PIG_SIZE} style={styles.confetti} />
 					</Animated.View>
 				</View>
 
@@ -259,9 +269,11 @@ export function RewardReturn({
 									>
 										<Coin item={item} />
 									</Animated.View>
-									<Hand tone="secondary" align="center" style={styles.coinName} numberOfLines={1}>
-										{item.name}
-									</Hand>
+									{coinNamed ? (
+										<Hand tone="secondary" align="center" style={styles.coinName} numberOfLines={1}>
+											{item.name}
+										</Hand>
+									) : null}
 								</View>
 							))}
 						</View>

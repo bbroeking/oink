@@ -39,8 +39,17 @@ export {
 } from "./Text";
 export { Divider, TitleRule } from "./Divider";
 export { PageHeader, type PageHeaderVariant } from "./PageHeader";
-export { StackPage } from "./StackPage";
+export { StackPage, STACK_SCROLL_EDGES, useStackScrollPad } from "./StackPage";
 export { SectionHeader } from "./SectionHeader";
+export { DynamicTypeText, useIconScale } from "./DynamicTypeText";
+export {
+	ScrollEdge,
+	useScrollEdge,
+	useScrollEdgeBelow,
+	SCROLL_EDGE_EPSILON,
+	type ScrollEdgeBelowState,
+	type ScrollEdgeState,
+} from "./ScrollEdge";
 
 // ── surfaces ───────────────────────────────────────────────────────────────
 export { Sticker, Tape } from "./Sticker";
@@ -144,7 +153,8 @@ export {
 export { PigAvatar } from "./PigAvatar";
 export { PigPortrait } from "./PigPortrait";
 export { PrestigeAvatar, wallowAuraArt } from "./PrestigeAvatar";
-export { ProfileIdentity, type ProfileIdentityTitle } from "./ProfileIdentity";
+export { ProfileIdentity, profileIdentityText, type ProfileIdentityTitle } from "./ProfileIdentity";
+export { TAB_LIST_ROLE, TAB_ROLE } from "./tabRoles";
 export {
 	PigRenderer,
 	shouldUseRiveRenderer,

@@ -118,7 +118,17 @@ export function TextField({
 					value={value}
 					onChangeText={onChangeText}
 					placeholder={placeholder}
-					placeholderTextColor={UI_COLORS.textPlaceholder}
+					// A code well writes in the 26pt numeral face, so its example
+					// ("PIG-XXXX-XXXX") read like an entered value at the body
+					// placeholder's 6.2:1. It drops to uiMuted, which still clears
+					// the large-text 3:1 on the paper well (3.78:1), but not on
+					// the rose error well (2.98:1), which keeps the stronger ink.
+					// (2026-10-04, Me ask M-04)
+					placeholderTextColor={
+						variant === "code" && !invalid
+							? UI_COLORS.uiMuted
+							: UI_COLORS.textPlaceholder
+					}
 					secureTextEntry={secure}
 					autoCapitalize={autoCapitalize}
 					keyboardType={keyboardType}

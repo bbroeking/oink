@@ -3,11 +3,14 @@ import {
 	Pressable,
 	StyleSheet,
 	View,
+	useWindowDimensions,
+	type PressableProps,
 	type StyleProp,
 	type ViewStyle,
 } from "react-native";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	PRESSED_FLAT,
 	RADII,
 	ROW_TILTS,
@@ -20,6 +23,7 @@ import { ListRowSkeleton } from "./Skeleton";
 import { Icon, type IconName } from "./Icon";
 import { Glyph, type GlyphName } from "./Glyph";
 import { T } from "./Text";
+import { useIconScale } from "./DynamicTypeText";
 
 export interface ListRowProps {
 	leading?: React.ReactNode;
@@ -44,6 +48,22 @@ export interface ListRowProps {
 	after?: React.ReactNode;
 	/** In-flow details below the identity; action controls remain separate accessibility targets. */
 	footer?: React.ReactNode;
+	/**
+	 * A control that must stay its OWN accessibility target — the Share pill on
+	 * a navigation row. Inside the row it was part of one grouped button, so
+	 * VoiceOver could never reach it. Given, the row splits the way the
+	 * `footer` variant does: the identity (leading + text) is the row's button,
+	 * `action` sits outside it, and the trailing rail (a chevron) still answers
+	 * the row's tap but stays out of the tree, the identity already carrying the
+	 * name. (2026-10-04, Me ask M-02)
+	 *
+	 * The split row carries `overlay` and `after` too, in the same paint and
+	 * focus order (identity → overlay → action → rail → after), so a row whose
+	 * trigger opens a slide-over panel puts the trigger HERE: in `trailing` it
+	 * was inside the row's one button, and VoiceOver could reach neither the
+	 * trigger nor the panel (the friend row's "Actions for …"). (2026-10-04)
+	 */
+	action?: React.ReactNode;
 	onPress?: () => void;
 	// Pinned / current row. `BORDER.heavy` and a straightened tilt — selection is
 	// never a color change alone (spec §3.3).
@@ -73,6 +93,13 @@ export interface ListRowProps {
 	expanded?: boolean;
 	accessibilityLabel?: string;
 	accessibilityHint?: string;
+	/**
+	 * VoiceOver custom actions on the row's button: how a small control drawn
+	 * INSIDE the identity (the friend row's "send a pig" tag) stays reachable,
+	 * since an accessibility element hides everything inside it. (2026-10-04)
+	 */
+	accessibilityActions?: PressableProps["accessibilityActions"];
+	onAccessibilityAction?: PressableProps["onAccessibilityAction"];
 	testID?: string;
 	style?: StyleProp<ViewStyle>;
 }
@@ -89,6 +116,7 @@ export function ListRow({
 	overlay,
 	after,
 	footer,
+	action,
 	onPress,
 	selected,
 	muted,
@@ -101,9 +129,12 @@ export function ListRow({
 	expanded,
 	accessibilityLabel,
 	accessibilityHint,
+	accessibilityActions,
+	onAccessibilityAction,
 	testID,
 	style,
 }: ListRowProps) {
+	const { fontScale } = useWindowDimensions();
 	if (loading) return <ListRowSkeleton />;
 
 	// A selected row sits straight — the pin reads as deliberate, not as one
@@ -120,6 +151,92 @@ export function ListRow({
 			</View>
 		</>
 	);
+
+	// The split row: identity button · action · a rail that answers the tap.
+	if (action !== undefined && footer === undefined) {
+		// Past the chrome ceiling the action moves under the identity, the way a
+		// table cell stacks its accessory at the accessibility sizes: a Share
+		// pill keeps its width as the type grows, and beside it "Invite new
+		// pigs" broke letter by letter on an SE ("In / vi / te", after round
+		// 2026-10-04). A row carrying an overlay or an after panel keeps its one
+		// line, because the panel is laid against it (the friend row).
+		const stacked = fontScale > CHROME_TYPE_CAP && overlay === undefined && after === undefined;
+		const identityButton = (
+			<Pressable
+				onPress={onPress}
+				disabled={disabled}
+				// The card's own pad still answers the row's tap, as it did when
+				// the whole card was the button.
+				hitSlop={flat ? IDENTITY_SLOP_FLAT : IDENTITY_SLOP}
+				accessibilityRole="button"
+				accessibilityLabel={accessibilityLabel ?? (typeof title === "string" ? title : undefined)}
+				accessibilityHint={accessibilityHint}
+				accessibilityState={{ selected: !!selected, disabled: !!disabled, expanded }}
+				accessibilityActions={accessibilityActions}
+				onAccessibilityAction={onAccessibilityAction}
+				testID={testID}
+				style={({ pressed }) => [
+					styles.identity,
+					styles.identityFill,
+					pressed && !disabled && PRESSED_FLAT,
+				]}
+			>
+				{identity}
+			</Pressable>
+		);
+		const rail =
+			trailing !== undefined ? (
+				// The chevron is the row's own door, drawn: a tap on it is a tap
+				// on the row, and a screen reader already met the row by name.
+				<Pressable
+					onPress={onPress}
+					disabled={disabled}
+					accessible={false}
+					importantForAccessibility="no-hide-descendants"
+					style={styles.rail}
+				>
+					{trailing}
+				</Pressable>
+			) : null;
+		return (
+			<Sticker
+				color={muted ? UI_COLORS.surfaceStrong : (fill ?? "paper")}
+				shadow={flat ? "none" : "sm"}
+				radius={RADII.md}
+				border={selected ? BORDER.heavy : flat ? 0 : BORDER.ink}
+				rotate={flat ? 0 : rotate}
+				pad
+				disabled={disabled}
+				style={[
+					styles.row,
+					stacked && styles.rowStacked,
+					flat && styles.flat,
+					(overlay !== undefined || after !== undefined) && styles.clipped,
+					style,
+				]}
+			>
+				{stacked ? (
+					// Focus order is unchanged: identity, then the action (the rail
+					// stays out of the tree).
+					<>
+						<View style={styles.stackLine}>
+							{identityButton}
+							{rail}
+						</View>
+						<View style={styles.actionStacked}>{action}</View>
+					</>
+				) : (
+					<>
+						{identityButton}
+						{overlay}
+						<View>{action}</View>
+						{rail}
+						{after}
+					</>
+				)}
+			</Sticker>
+		);
+	}
 
 	if (footer !== undefined) {
 		return (
@@ -140,6 +257,8 @@ export function ListRow({
 						accessibilityLabel={accessibilityLabel ?? (typeof title === "string" ? title : undefined)}
 						accessibilityHint={accessibilityHint}
 						accessibilityState={{ selected: !!selected, disabled: !!disabled, expanded }}
+						accessibilityActions={accessibilityActions}
+						onAccessibilityAction={onAccessibilityAction}
 						testID={testID}
 						style={({ pressed }) => [styles.identity, pressed && !disabled && PRESSED_FLAT]}
 					>
@@ -171,6 +290,8 @@ export function ListRow({
 				(typeof title === "string" ? title : undefined)
 			}
 			accessibilityHint={accessibilityHint}
+			accessibilityActions={accessibilityActions}
+			onAccessibilityAction={onAccessibilityAction}
 			testID={testID}
 			style={[
 				styles.row,
@@ -200,6 +321,19 @@ export interface NavRowProps {
 	label: string;
 	sub?: string;
 	badge?: React.ReactNode;
+	/**
+	 * What the badge says, when it is art rather than words (a rank disc, a
+	 * dot). Omitted, the row reads the badge's own label or text. (2026-10-04)
+	 */
+	badgeLabel?: string;
+	/**
+	 * A control that is its own accessibility target, drawn before the chevron
+	 * and OUTSIDE the row's button (a Share pill) — see `ListRow.action`.
+	 * (2026-10-04, Me ask M-02)
+	 */
+	action?: React.ReactNode;
+	/** Overrides the spoken name. By default: label, sub line, badge. */
+	accessibilityLabel?: string;
 	onPress: () => void;
 	// "danger" tints the row on dangerSurface with dangerText — the delete-
 	// account door. Never opacity, never a lone color change: the row keeps
@@ -220,6 +354,9 @@ export function NavRow({
 	label,
 	sub,
 	badge,
+	badgeLabel,
+	action,
+	accessibilityLabel,
 	onPress,
 	tone = "default",
 	accessibilityHint,
@@ -228,38 +365,86 @@ export function NavRow({
 }: NavRowProps) {
 	const danger = tone === "danger";
 	const ink = danger ? UI_COLORS.dangerText : UI_COLORS.textPrimary;
+	// The bubble and its mark grow with the words beside them, up to 2x (the
+	// 200% rule), so the row's art never shrinks to a speck next to large
+	// text. At the default size nothing moves. (2026-10-04, Me ask M-05)
+	const scale = useIconScale();
+	const bubbleSize = BUBBLE_SIZE * scale;
+	const iconSize = BUBBLE_ICON * scale;
+	// The name a screen reader hears is everything the row SAYS: the label, the
+	// sub line and the badge (the Me rows' "0 of 6 regalia · next: …" and their
+	// rank chip were silent). (2026-10-04, Me ask M-03)
+	const spoken =
+		accessibilityLabel ??
+		[label, sub, badgeLabel ?? spokenText(badge)].filter(Boolean).join(", ");
 	return (
 		<ListRow
 			fill={danger ? UI_COLORS.dangerSurface : undefined}
 			leading={
-				<View style={styles.bubble}>
+				<View
+					style={[
+						styles.bubble,
+						{ width: bubbleSize, height: bubbleSize },
+					]}
+				>
 					{icon ? (
-						<Icon name={icon} size={BUBBLE_ICON} color={ink} />
+						<Icon name={icon} size={iconSize} color={ink} />
 					) : glyph ? (
-						<Glyph name={glyph} size={BUBBLE_ICON} />
+						<Glyph name={glyph} size={iconSize} />
 					) : null}
 				</View>
 			}
 			title={danger ? <T role="body" tone="danger">{label}</T> : label}
 			sub={sub}
+			action={action}
 			trailing={
 				<View style={styles.trailing}>
 					{badge}
 					<Icon
 						name="chevronRight"
-						size={BUBBLE_ICON}
+						size={iconSize}
 						color={danger ? UI_COLORS.dangerText : UI_COLORS.textSecondary}
 					/>
 				</View>
 			}
 			onPress={onPress}
-			accessibilityLabel={label}
+			accessibilityLabel={spoken}
 			accessibilityHint={accessibilityHint}
 			testID={testID}
 			style={style}
 		/>
 	);
 }
+
+/**
+ * The words a badge node says: a plain string or number, else the element's
+ * own `accessibilityLabel`, else its `label` prop (a `Tag`), else its text
+ * children. Art with none of those says nothing — pass `badgeLabel`.
+ */
+function spokenText(node: React.ReactNode): string {
+	if (node === null || node === undefined || typeof node === "boolean") return "";
+	if (typeof node === "string" || typeof node === "number") return String(node);
+	if (Array.isArray(node)) return node.map(spokenText).filter(Boolean).join(" ");
+	if (React.isValidElement(node)) {
+		const props = node.props as {
+			accessibilityLabel?: unknown;
+			label?: unknown;
+			children?: React.ReactNode;
+		};
+		if (typeof props.accessibilityLabel === "string") return props.accessibilityLabel;
+		if (typeof props.label === "string") return props.label;
+		return spokenText(props.children);
+	}
+	return "";
+}
+
+// The row's own pad (styles.row), which the split row's identity reaches into
+// with its hit frame so the card's edge is still the row's door. A flat row
+// has no side pad, so its frame grows only up and down.
+const ROW_PAD_V = SPACE.sm;
+const ROW_PAD_H = SPACE.md;
+const IDENTITY_SLOP = { top: ROW_PAD_V, bottom: ROW_PAD_V, left: ROW_PAD_H, right: 0 };
+const IDENTITY_SLOP_FLAT = { top: ROW_PAD_V, bottom: ROW_PAD_V, left: 0, right: 0 };
 
 // The bubble's contents. 18pt reads at the same weight as a row's `body` title
 // without crowding the 44pt frame the row already clears.
@@ -279,14 +464,18 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.md,
 	},
+	// The split row's identity takes the row's whole height (a row with a
+	// floor taller than its content, the friend row), so its hit frame plus the
+	// pad covers the card edge to edge.
+	identityFill: { alignSelf: "stretch" },
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.md,
 		// `pad` lays down the sanctioned card inset; a row is tighter top-to-bottom
 		// and wider side-to-side than a card, so it restates both axes.
-		paddingVertical: SPACE.sm,
-		paddingHorizontal: SPACE.md,
+		paddingVertical: ROW_PAD_V,
+		paddingHorizontal: ROW_PAD_H,
 	},
 	// A row inside a card: the card owns the side inset; the row keeps its
 	// vertical rhythm and its 44pt frame.
@@ -313,8 +502,6 @@ const styles = StyleSheet.create({
 		gap: SPACE.xxs,
 	},
 	bubble: {
-		width: BUBBLE_SIZE,
-		height: BUBBLE_SIZE,
 		borderRadius: RADII.pill,
 		borderWidth: BORDER.ink,
 		borderColor: UI_COLORS.border,
@@ -327,4 +514,22 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.sm,
 	},
+	// The split row's chevron answers taps on a full-height frame.
+	rail: {
+		minHeight: TAP_MIN,
+		justifyContent: "center",
+	},
+	// The stacked split row (text past the chrome ceiling): the identity and
+	// its rail on one line, the action under them at its own width.
+	rowStacked: {
+		flexDirection: "column",
+		alignItems: "stretch",
+		gap: SPACE.sm,
+	},
+	stackLine: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.md,
+	},
+	actionStacked: { alignSelf: "flex-start" },
 });

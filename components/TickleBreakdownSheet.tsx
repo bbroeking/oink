@@ -23,6 +23,7 @@ import {
 	type ImageSourcePropType,
 } from "react-native";
 import {
+	glyphSource,
 	LoadingBeat,
 	ReceiptNote,
 	ReceiptRow,
@@ -50,27 +51,31 @@ interface Props {
 	onClose: () => void;
 }
 
-// Receipt-specific art keeps every lane at the same optical scale. These are
-// separate from the general Glyph set because this compact family was drawn
-// together for this compact ledger and should stay visually coherent here.
+// Receipt-specific art keeps every lane at the same optical scale. Most lanes
+// wear the compact family drawn together for this ledger; the two lanes that
+// family never drew (swaps, the trader) borrow the painted sticker the rest of
+// the app already uses for that thing, at the same 26pt box.
 const RECEIPT_HEART = require("../assets/images/glyphs/receipt/heart.png");
-// Two lanes share the exchange mark: a tickle trade and a Satchel swap are the
-// same gesture at different stakes, and the label beside it names which. (The
-// `ads`/`heart` pair sets the precedent — the receipt family is drawn for this
-// ledger, and no new art is owed for a lane that already has its drawing.)
-const RECEIPT_EXCHANGE = require("../assets/images/glyphs/receipt/trades.png");
 
+// One lane, one drawing (polish pass 2026-10-04). The handshake used to stand
+// for three lanes at once — tickle trades, Satchel swaps and the Ghost Sheep —
+// so two rows on one receipt wore the same mark with different words beside
+// it. Each now wears the mark the app already gives that thing: the handshake
+// stays the tickle trade, a swap is a find out of your Satchel (the bag the
+// Satchel and the dig receipt draw), and the trader is the Ghost Sheep himself
+// (his own sticker from the Barn button's fan). No new art is owed.
 const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
 	home_taps: require("../assets/images/glyphs/receipt/home.png"),
+	// Ad refills pour tickles straight into the bank — the tickle heart the
+	// total wears is the one honest mark for them.
 	ads: RECEIPT_HEART,
 	visit_taps: require("../assets/images/glyphs/receipt/friends.png"),
-	swaps: RECEIPT_EXCHANGE,
+	swaps: glyphSource("digBag"),
 	dig_finds: require("../assets/images/glyphs/receipt/truffle.png"),
 	pass_tiers: require("../assets/images/glyphs/receipt/pass.png"),
-	trades: RECEIPT_EXCHANGE,
+	trades: require("../assets/images/glyphs/receipt/trades.png"),
 	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
-	// The trader is a third exchange at a third stake; the label names him.
-	trader: RECEIPT_EXCHANGE,
+	trader: glyphSource("trader"),
 };
 
 // The art in the receipt's icon column.

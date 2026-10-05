@@ -41,6 +41,7 @@ export function PrestigeAvatar({
 	showRank = true,
 	style,
 	ritual,
+	mode: modeProp,
 }: {
 	size?: number;
 	hatId?: string | null;
@@ -52,13 +53,20 @@ export function PrestigeAvatar({
 	 *  keeps only the static channels (weekday rituals, 2026-09-14). The aura
 	 *  ring is the Wallow rank and is never a ritual. */
 	ritual?: PigFx;
+	/**
+	 * Forwarded to `PigAvatar`: `icon` lets a worn item stand in for the pig,
+	 * `worn` always draws the pig wearing it. Omitted, the portrait keeps its
+	 * old rule (a ritual draws the pig worn, otherwise the item icon), so every
+	 * existing caller is unchanged. (2026-10-04, Me ask M-01)
+	 */
+	mode?: "icon" | "worn";
 }) {
 	const rank = Math.max(0, Math.floor(prestigeLevel ?? 0));
 	// A ritual is worn by the PIG. The default `icon` path swaps the pig out for
 	// its hat art, and a hat has nowhere to put a bacon stripe — so a portrait
 	// with a ritual on it draws the pig WEARING the hat instead. No ritual, no
 	// change: the leaderboard's hat-first icon is untouched.
-	const mode = staticPigFx(ritual) ? ("worn" as const) : undefined;
+	const mode = modeProp ?? (staticPigFx(ritual) ? ("worn" as const) : undefined);
 	if (rank === 0)
 		return (
 			<PigAvatar

@@ -15,6 +15,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Glyph, Hand, Label, T, Tag } from "./ui";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	OPACITY,
 	PRESSED,
 	RADII,
@@ -179,7 +180,9 @@ export function TickleCoin({
 						accessibilityLabel={`Wallow Rank ${rank}`}
 						style={styles.rankTag}
 					>
-						<Label numberOfLines={1}>W{rank}</Label>
+						<Label numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+							W{rank}
+						</Label>
 					</View>
 				) : null}
 				<Pressable
@@ -193,15 +196,26 @@ export function TickleCoin({
 					<View style={styles.chip}>
 						<Glyph name="sparkle" size={CHIP_GLYPH} />
 					</View>
+					{/* THE COIN IS A DRAWING. Its face holds the count at the size the
+					    coin was cut for; past CHROME_TYPE_CAP the "25" overflowed the rim
+					    and "of 25" fell behind the streak stamp (accessibility-large,
+					    2026-10-04). Every word on the coin states the chrome ceiling;
+					    the spoken label carries the whole sentence at any size. */}
 					<T
 						role="displayLg"
 						tone={loaded && count > 0 ? "primary" : "secondary"}
 						numberOfLines={1}
+						maxFontSizeMultiplier={CHROME_TYPE_CAP}
 						style={styles.numeral}
 					>
 						{loaded ? count : "·"}
 					</T>
-					<Hand tone="secondary" numberOfLines={1} style={styles.cap}>
+					<Hand
+						tone="secondary"
+						numberOfLines={1}
+						maxFontSizeMultiplier={CHROME_TYPE_CAP}
+						style={styles.cap}
+					>
 						{capLine}
 					</Hand>
 				</Pressable>
@@ -219,19 +233,30 @@ export function TickleCoin({
 						style={({ pressed }) => [styles.stamp, pressed && styles.stampPressed]}
 					>
 						<Glyph name="flame" size={STREAK_GLYPH} />
-						<Label>{streak}</Label>
+						<Label maxFontSizeMultiplier={CHROME_TYPE_CAP}>{streak}</Label>
 					</Pressable>
 				) : null}
 			</View>
 			{/* The regen clock: one hand line, nothing to tap. Gone while the bank
 			    is full — a full bank has nothing to count down to. */}
 			{remaining != null ? (
-				<Hand tone="onDark" numberOfLines={1} style={styles.clock}>
+				<Hand
+					tone="onDark"
+					numberOfLines={1}
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
+					style={styles.clock}
+				>
 					+1 in {formatClockMS(remaining)}
 				</Hand>
 			) : null}
 			{ribbon ? (
-				<Tag label={ribbon} tone="sun" glyph="sparkle" style={styles.ribbon} />
+				<Tag
+					label={ribbon}
+					tone="sun"
+					glyph="sparkle"
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
+					style={styles.ribbon}
+				/>
 			) : null}
 		</View>
 	);

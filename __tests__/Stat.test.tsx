@@ -4,7 +4,7 @@ import { StyleSheet, Text as RNText, View } from "react-native";
 
 import { Stat } from "../components/ui/Stat";
 import { Glyph } from "../components/ui/Glyph";
-import { TYPE, UI_COLORS, WHIMSY } from "../constants/theme";
+import { CHROME_TYPE_CAP, TYPE, UI_COLORS, WHIMSY } from "../constants/theme";
 
 function render(node: React.ReactElement) {
 	let renderer!: TestRenderer.ReactTestRenderer;
@@ -63,6 +63,31 @@ describe("Stat progression readout", () => {
 		expect(label.textTransform).toBe("uppercase");
 		expect(label.color).toBe(UI_COLORS.textSecondary);
 		act(() => renderer.unmount());
+	});
+
+	test("the caption states the chrome ceiling, so a word never breaks mid-word (after/107)", () => {
+		// "LIFETIME" in the passport's 103pt column broke as "LIFETIM / E" at
+		// accessibility-large; at the cap it is ~75pt.
+		const renderer = render(<Stat value={453} label="lifetime tickles" />);
+		const [numeral, caption] = renderer.root.findAllByType(RNText);
+		expect(caption.props.maxFontSizeMultiplier).toBe(CHROME_TYPE_CAP);
+		// The numeral keeps spec §1.2's full scale unless the caller asks.
+		expect(numeral.props.maxFontSizeMultiplier).toBeUndefined();
+		act(() => renderer.unmount());
+	});
+
+	test("a fixed-width band caps the numeral too; the caption takes the lower ceiling", () => {
+		const capped = render(
+			<Stat value="12,345" label="lifetime tickles" maxFontSizeMultiplier={CHROME_TYPE_CAP} />,
+		);
+		const [numeral, caption] = capped.root.findAllByType(RNText);
+		expect(numeral.props.maxFontSizeMultiplier).toBe(CHROME_TYPE_CAP);
+		expect(caption.props.maxFontSizeMultiplier).toBe(CHROME_TYPE_CAP);
+		act(() => capped.unmount());
+
+		const tighter = render(<Stat value={10} label="active days" maxFontSizeMultiplier={1.1} />);
+		expect(tighter.root.findAllByType(RNText)[1].props.maxFontSizeMultiplier).toBe(1.1);
+		act(() => tighter.unmount());
 	});
 
 	test("sizes an optional glyph to the numeral it sits beside", () => {

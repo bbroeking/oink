@@ -44,6 +44,8 @@ jest.mock("@/hooks/useHabitatJournal", () => ({
 }));
 jest.mock("react-native-safe-area-context", () => ({
   SafeAreaView: ({ children }: any) => children,
+  // The scroller ends on the stack padding, which reads the home indicator.
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
 }));
 jest.mock("@/components/ui/PageHeader", () => ({ PageHeader: () => null }));
 jest.mock("@/components/habitat/HabitatScene", () => ({
@@ -151,12 +153,23 @@ describe("BarnCollection confirmed purchase feedback", () => {
     await act(async () => {
       tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
     });
-    const roadmapRows = () => tree.root.findAllByType(require("react-native").Text)
-      // The roadmap rows read "Rank N · name · state"; a tile's "Rank N gift" capsule is not one.
-      .filter((node) => typeof node.props.children === "string" && /^Rank \d+ · /.test(node.props.children));
+    // One row per gift — its name and a "Rank N" capsule, read as one element
+    // ("Rank 1, Bronze Wallow Keepsake, not yet yours"); no row repeats
+    // "Unlocks at this rank" any more (2026-10-04).
+    const roadmapRows = () =>
+      tree.root.findAll(
+        (node) =>
+          node.props.testID === "wallow-gift-row" && node.props.accessible === true,
+      );
     expect(roadmapRows()).toHaveLength(0);
     press("See Wallow gifts");
     expect(roadmapRows().length).toBeGreaterThan(0);
+    expect(roadmapRows()[0].props.accessibilityLabel).toMatch(/^Rank \d+, .+, (yours|not yet yours)$/);
+    expect(
+      tree.root.findAll(
+        (node) => typeof node.props.children === "string" && node.props.children.includes("Unlocks at this rank"),
+      ),
+    ).toHaveLength(0);
   });
   it("does not advertise gifts before the server supports prestige rewards", async () => {
     mockHabitat.data.catalog = HABITAT_CATALOG.map(({ prestigeRank, ...entry }) => entry);
@@ -200,8 +213,11 @@ describe("BarnCollection confirmed purchase feedback", () => {
     expect(tags(tileFor(placed.name))).toContain("In room");
     expect(tags(tileFor(stored.name))).toContain("Owned");
     expect(tags(tileFor(stored.name))).not.toContain("In room");
-    // Both keep the Place action; a gift the player does not own has no inert button.
+    // A stored design keeps its Place action; a design already in the room has
+    // none (Place re-placed it into its own spot, 2026-10-04); and a gift the
+    // player does not own has no inert button.
     expect(tree.root.findAllByProps({ accessibilityLabel: `Place ${stored.name} in my Barn` }).length).toBeGreaterThan(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: `Place ${placed.name} in my Barn` })).toHaveLength(0);
     expect(tree.root.findAll((n) => n.props.accessibilityRole === "button" && /earned reward$/.test(n.props.accessibilityLabel ?? ""))).toHaveLength(0);
   });
   it("groups by collection with a sticky header that counts what is owned", async () => {
@@ -472,14 +488,15 @@ describe("BarnCollection confirmed purchase feedback", () => {
     expect(
       tree.root.findByProps({ accessibilityLabel: "Search Barn furnishings" }),
     ).toBeTruthy();
+    // The count once; the thresholds are the gift capsules under it.
     expect(
-      tree.root.find(
-        (node) =>
-          Array.isArray(node.props.children) &&
-          node.props.children.join("") ===
-            "4 of 8 purchasable designs owned. Bonus designs unlock automatically at 4 and 8.",
-      ),
-    ).toBeTruthy();
+      tree.root.findAllByProps({ children: "4 of 8 purchasable designs owned" })
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      tree.root.findAllByProps({ accessibilityLabel: "Gift at 4 designs, earned" })
+        .length,
+    ).toBeGreaterThan(0);
     act(() =>
       tree.root
         .findByProps({ accessibilityLabel: `Filter by ${orchard.name}` })

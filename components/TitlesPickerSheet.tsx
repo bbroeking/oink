@@ -14,11 +14,14 @@ import {
 	filterTitles,
 	sortTitles,
 	unearnedTitles,
+	type PickerTitleRow,
+	type TitleSource,
 	type UseTitles,
 } from "@/hooks/useTitles";
 import {
 	ART_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	OPACITY,
 	RADII,
 	SPACE,
@@ -29,6 +32,7 @@ import { showAppToast } from "./PurchaseToast";
 import {
 	EmptyState,
 	Glyph,
+	type GlyphName,
 	LoadingBeat,
 	SegmentedControl,
 	Sheet,
@@ -39,9 +43,29 @@ import {
 } from "./ui";
 
 // ── Drawing constants ───────────────────────────────────────────────────────
-/** The crown standing in for a title's face, in its own round window. */
+/** The mark standing in for a title's face, in its own round window. */
 const AVATAR = 40;
 const AVATAR_MARK = ART_SIZE.glyphSm;
+
+/**
+ * A title's mark says where it came from (polish pass, 2026-10-04). Every row
+ * wore the same crown, so the column of marks said nothing; the painted glyph
+ * family already has a mark for each way a title is come by. The founding set
+ * and the old pass titles (no source) keep the crown.
+ */
+const SOURCE_GLYPH: Record<TitleSource, GlyphName> = {
+	world_cup: "soccer",
+	achievement: "trophy",
+	sounder: "friends",
+	lucky: "findClover",
+	season: "star",
+	mud_war: "truffle",
+	battle_pass: "crown",
+	shop: "crown",
+};
+
+const titleGlyph = (title: PickerTitleRow): GlyphName =>
+	(title.source && SOURCE_GLYPH[title.source]) || "crown";
 
 type TitlesTab = "earned" | "unearned";
 
@@ -49,13 +73,21 @@ type TitlesTab = "earned" | "unearned";
 const placementLine = (placement: TitleRow["placement"]) =>
 	placement === "pre" ? "before her name" : "after her name";
 
-function TitleAvatar({ ghost }: { ghost?: boolean }) {
+function TitleAvatar({ glyph, ghost }: { glyph: GlyphName; ghost?: boolean }) {
 	return (
-		<View style={[styles.avatar, ghost && styles.avatarGhost]}>
-			<Glyph name="crown" size={AVATAR_MARK} />
+		<View
+			style={[styles.avatar, ghost && styles.avatarGhost]}
+			accessible={false}
+			importantForAccessibility="no-hide-descendants"
+		>
+			<Glyph name={glyph} size={AVATAR_MARK} />
 		</View>
 	);
 }
+
+/** The row's second line, and the end of its spoken name. */
+const howLine = (title: TitleRow) =>
+	`${placementLine(title.placement)}${title.description ? ` · ${title.description}` : ""}`;
 
 /** One earned title: tap it and she wears it. */
 function TitleRowCard({
@@ -63,7 +95,7 @@ function TitleRowCard({
 	worn,
 	onPress,
 }: {
-	title: TitleRow;
+	title: PickerTitleRow;
 	worn: boolean;
 	onPress: () => void;
 }) {
@@ -76,20 +108,28 @@ function TitleRowCard({
 			onPress={onPress}
 			accessibilityRole="radio"
 			accessibilityState={{ selected: worn }}
-			accessibilityLabel={`${title.name}, ${placementLine(title.placement)}`}
+			// The how-line is drawn, so it is spoken too: the row's label used
+			// to stop at "before her name".
+			accessibilityLabel={`${title.name}, ${howLine(title)}`}
 			accessibilityHint={
 				worn ? "Takes this title off her name" : "Wears this title"
 			}
 			style={styles.row}
 		>
-			<TitleAvatar />
+			<TitleAvatar glyph={titleGlyph(title)} />
 			<View style={styles.rowCopy}>
-				<T role="cardTitleSm" numberOfLines={1}>
+				{/* A name wraps once before it ends in "…"; like every compact
+				    row (ListRow), it stops growing at the chrome ceiling so a
+				    long word never breaks. The how-line is prose and wraps. */}
+				<T
+					role="cardTitleSm"
+					numberOfLines={2}
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
+				>
 					{title.name}
 				</T>
-				<T role="hand" tone="secondary" numberOfLines={2}>
-					{placementLine(title.placement)}
-					{title.description ? ` · ${title.description}` : ""}
+				<T role="hand" tone="secondary">
+					{howLine(title)}
 				</T>
 			</View>
 			{worn ? <Tag tone="sage" icon="check" label="Wearing" /> : null}
@@ -98,7 +138,7 @@ function TitleRowCard({
 }
 
 /** One title still out there: the how-line, and nothing to press. */
-function UnearnedRow({ title }: { title: TitleRow }) {
+function UnearnedRow({ title }: { title: PickerTitleRow }) {
 	return (
 		<Sticker
 			color="cream"
@@ -107,14 +147,18 @@ function UnearnedRow({ title }: { title: TitleRow }) {
 			shadow="none"
 			style={styles.row}
 		>
-			<TitleAvatar ghost />
+			<TitleAvatar glyph={titleGlyph(title)} ghost />
 			<View style={styles.rowCopy}>
-				<T role="cardTitleSm" tone="secondary" numberOfLines={1}>
+				<T
+					role="cardTitleSm"
+					tone="secondary"
+					numberOfLines={2}
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
+				>
 					{title.name}
 				</T>
-				<T role="hand" tone="secondary" numberOfLines={2}>
-					{placementLine(title.placement)}
-					{title.description ? ` · ${title.description}` : ""}
+				<T role="hand" tone="secondary">
+					{howLine(title)}
 				</T>
 			</View>
 		</Sticker>
@@ -187,8 +231,7 @@ export function TitlesPickerSheet({
 			keyboardAware
 			kicker="earned, never sold"
 			title="Titles"
-			subtitle={`${owned.length} of ${catalog.length || owned.length}`}
-			closeLabel="Close titles"
+			closeLabel="Close"
 		>
 			<View style={styles.controls}>
 				<TextField
@@ -241,9 +284,14 @@ export function TitlesPickerSheet({
 						accessibilityHint="Shows her name on its own"
 						style={styles.row}
 					>
-						<TitleAvatar ghost />
+						{/* Her own face, no title over it: "just Rosie" drawn. */}
+						<TitleAvatar glyph="pigface" />
 						<View style={styles.rowCopy}>
-							<T role="cardTitleSm" numberOfLines={1}>
+							<T
+								role="cardTitleSm"
+								numberOfLines={1}
+								maxFontSizeMultiplier={CHROME_TYPE_CAP}
+							>
 								No title
 							</T>
 							<T role="hand" tone="secondary">

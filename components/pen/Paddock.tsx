@@ -6,7 +6,7 @@
 import { StyleSheet, View } from "react-native";
 import { Hand, PigStage, Sticker } from "@/components/ui";
 import { PIG_CANVAS } from "@/constants/hats";
-import { BORDER, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
+import { BORDER, CHROME_TYPE_CAP, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import type { PigId } from "@/utils/pigs";
 
@@ -44,10 +44,14 @@ export function Paddock({ pigs, out, note, accessibilityLabel }: Props) {
 					<View key={post} style={styles.fencePost} />
 				))}
 			</View>
+			{/* A pig that is out keeps its place, empty (its absence is the
+			    news); a companion slot with nobody in it takes no place at all,
+			    so a lone Rosie stands in the middle of her yard instead of in
+			    its left half (064, polish pass 2026-10-04). */}
 			<View style={styles.heroPigs} pointerEvents="none">
-				{pigs.map((pigId, i) => (
+				{pigs.filter((pigId): pigId is PigId => pigId != null).map((pigId, i) => (
 					<View key={i} style={styles.heroPig}>
-						{pigId && !out.includes(pigId) ? (
+						{!out.includes(pigId) ? (
 							<View style={styles.pigBox} testID={`paddock-pig-${pigId}`}>
 								<View style={[styles.pigCanvas, { transform: [{ scale }] }]}>
 									<PigStage
@@ -62,8 +66,12 @@ export function Paddock({ pigs, out, note, accessibilityLabel }: Props) {
 					</View>
 				))}
 			</View>
+			{/* The note hangs in the sky, over the yard: at the paddock's foot it
+			    sat on Rosie's hooves ("Rosie at home" over her leg, 064). */}
 			<Sticker color="paper" rotate={0} radius={RADII.sm} shadow="sm" border={BORDER.thin} style={styles.heroNote}>
-				<Hand testID="paddock-note">{note}</Hand>
+				<Hand testID="paddock-note" maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+					{note}
+				</Hand>
 			</Sticker>
 		</Sticker>
 	);
@@ -140,7 +148,7 @@ const styles = StyleSheet.create({
 	heroNote: {
 		position: "absolute",
 		alignSelf: "center",
-		bottom: SPACE.sm,
+		top: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.xs,
 	},

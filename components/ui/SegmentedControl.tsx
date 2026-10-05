@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	DISABLED_TEXT,
 	OPACITY,
 	RADII,
@@ -46,10 +47,17 @@ interface Props<T extends string> {
 	// a tracked pill kicker for hub navigation. [B-06, C-05] (2026-09-11)
 	layout?: Layout;
 	// A ceiling on Dynamic Type for the segment labels, forwarded to each
-	// <Text>. Undefined by default — the control normally scales the whole 200%
-	// and the two-line labels grow the track with it. Pass 1.3 where the control
-	// FLOATS over a fixed stage and has no room to grow (the visit screen's
-	// Outside/Inside toggle), so the words stay whole. (2026-09-12)
+	// <Text>. The `row` layout has none by default — a filter control normally
+	// scales the whole 200% and its two-line labels grow the track with it. Pass
+	// 1.3 where a row control FLOATS over a fixed stage or pins as chrome and has
+	// no room to grow (the visit screen's Outside/Inside toggle), so the words
+	// stay whole. (2026-09-12)
+	//
+	// The `icon-over-label` layout is hub NAVIGATION — fixed chrome by
+	// definition, four tracked-caps words side by side — so it states its
+	// ceiling itself: `CHROME_TYPE_CAP` unless the caller passes one. Uncapped,
+	// accessibility-large broke every word mid-way ("FRIE/NDS", "RANKI/NGS")
+	// and grew the nav into the list it sits over. (2026-10-04)
 	maxFontSizeMultiplier?: number;
 	style?: StyleProp<ViewStyle>;
 }
@@ -73,6 +81,12 @@ export function SegmentedControl<T extends string>({
 	style,
 }: Props<T>) {
 	const stacked = layout === "icon-over-label";
+	const typeCap = maxFontSizeMultiplier ?? (stacked ? CHROME_TYPE_CAP : undefined);
+	// A capped label is one a large-text reader may not get at full size, so
+	// the segment offers iOS's Large Content Viewer — long-press shows the word
+	// large, the way the system tab bar and segmented control do. It only ever
+	// appears at the accessibility sizes. (2026-10-04)
+	const capped = typeCap !== undefined;
 	return (
 		<View
 			accessibilityRole="radiogroup"
@@ -94,6 +108,8 @@ export function SegmentedControl<T extends string>({
 							selected,
 							...(disabled ? { disabled: true } : null),
 						}}
+						accessibilityShowsLargeContentViewer={capped || undefined}
+						accessibilityLargeContentTitle={capped ? option.label : undefined}
 						style={({ pressed }) => [
 							styles.segment,
 							stacked && styles.segmentStacked,
@@ -115,7 +131,7 @@ export function SegmentedControl<T extends string>({
 							/>
 						) : null}
 						<Text
-							maxFontSizeMultiplier={maxFontSizeMultiplier}
+							maxFontSizeMultiplier={typeCap}
 							style={[
 								stacked ? styles.labelStacked : styles.label,
 								selected && styles.labelSelected,
@@ -172,6 +188,14 @@ const styles = StyleSheet.create({
 	segmentStacked: {
 		flexDirection: "column",
 		gap: SPACE.xxs,
+		// The MINIMUM side pad, not the drawn one. Every segment grows into the
+		// track's leftover (`flexGrow: 1` on an `auto` basis), so while the four
+		// labels fit, a segment's width is its label plus an equal share of the
+		// spare — the pad cancels out and nothing moves. It only decides how much
+		// room the labels have before a word would have to break: at the 1.3 cap
+		// on a 375pt phone the four hub words need 303pt of the 315pt the track
+		// leaves them, which SPACE.sm a side (+32pt) would overrun. (2026-10-04)
+		paddingHorizontal: SPACE.xxs,
 	},
 	segmentSelected: {
 		backgroundColor: WHIMSY.sun,

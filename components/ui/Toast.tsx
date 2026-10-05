@@ -21,7 +21,7 @@
 // Reduce Motion: the drop-from-the-top translate is dropped entirely — the card
 // cross-fades in place. The announcement is NOT motion, so it always fires.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AccessibilityInfo, Animated, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -98,8 +98,9 @@ export function showToast(opts: ToastOpts): void {
 
 export function ToastHost({ top }: { top?: number } = {}) {
 	const [toast, setToast] = useState<Toast | null>(null);
-	const opacity = useRef(new Animated.Value(0)).current;
-	const ty = useRef(new Animated.Value(DROP)).current;
+	// Lazy state, not refs: both are render inputs (RitualBubble's idiom).
+	const [opacity] = useState(() => new Animated.Value(0));
+	const [ty] = useState(() => new Animated.Value(DROP));
 	const insets = useSafeAreaInsets();
 	const { reduceMotion } = useMotionPolicy();
 	// The toast line: just under the safe area by default; a scene with its
@@ -194,9 +195,11 @@ export function ToastHost({ top }: { top?: number } = {}) {
 						/>
 					</View>
 					<View style={styles.copy}>
-						<T role="cardTitleSm" numberOfLines={1}>
-							{toast.title ?? tone.fallbackTitle}
-						</T>
+						{/* The title wraps rather than clamping: it is often a name
+						    ("Bought the Wallow Sovereign Crown", a furnishing's own
+						    name), and a name never ends in "…" — on a 375pt phone the
+						    one-line clamp cut anything past ~270pt. (2026-10-04) */}
+						<T role="cardTitleSm">{toast.title ?? tone.fallbackTitle}</T>
 						{!!toast.text && (
 							<Hand tone="secondary" numberOfLines={2} style={styles.text}>
 								{toast.text}

@@ -7,13 +7,19 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { Glyph, Hand, Sticker, T } from "@/components/ui";
 import { FindArt } from "@/components/satchel/FindArt";
 import type { ErrandRow } from "@/constants/errands";
-import { ART_SIZE, BORDER, RADII, SPACE, TILT, WHIMSY } from "@/constants/theme";
+import { ART_SIZE, BORDER, CHROME_TYPE_CAP, RADII, SPACE, TILT, WHIMSY } from "@/constants/theme";
 import { pinKicker, type ErrandFriend } from "@/utils/errands";
 import { pigDefinition } from "@/utils/pigs";
 
 /** A pin's paper and the red pin-head on it. */
 const PIN_W = 92;
 const PIN_HEAD = 10;
+/**
+ * A pin's two words may wrap once rather than end in "…": "muddy trotters" in
+ * the hand voice is 77pt against the pin's 72pt inside, and a friend's name
+ * after "for" runs as long as the name. (polish pass, 2026-10-04)
+ */
+const PIN_LINES = 2;
 
 interface Props {
 	board: ErrandRow[];
@@ -28,7 +34,7 @@ export function Corkboard({ board, cap, friendFor, onOpen }: Props) {
 	return (
 		<Sticker color={WHIMSY.cork} rotate={0} radius={RADII.md} shadow="sm" style={styles.board} testID="corkboard">
 			<View style={styles.label}>
-				<T role="kickerPill" tone="onDark">
+				<T role="kickerPill" tone="onDark" maxFontSizeMultiplier={CHROME_TYPE_CAP}>
 					{`the board · ${n} waiting${n >= cap ? " · full" : ""}`}
 				</T>
 			</View>
@@ -52,13 +58,24 @@ export function Corkboard({ board, cap, friendFor, onOpen }: Props) {
 							style={styles.pin}
 						>
 							<View style={styles.pinHead} />
-							<T role="kickerPillSm" tone="secondary" numberOfLines={1}>
+							<T
+								role="kickerPillSm"
+								tone="secondary"
+								align="center"
+								numberOfLines={PIN_LINES}
+								maxFontSizeMultiplier={CHROME_TYPE_CAP}
+							>
 								{pinKicker(row, friend)}
 							</T>
 							<View style={styles.art}>
 								{find ? <FindArt id={find} size={ART_SIZE.glyph} /> : <Glyph name="dizzy" size={ART_SIZE.glyph} />}
 							</View>
-							<Hand tone="secondary" align="center" numberOfLines={1}>
+							<Hand
+								tone="secondary"
+								align="center"
+								numberOfLines={PIN_LINES}
+								maxFontSizeMultiplier={CHROME_TYPE_CAP}
+							>
 								{line}
 							</Hand>
 						</Sticker>

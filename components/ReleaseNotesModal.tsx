@@ -1,5 +1,5 @@
-// "What's new" modal. Opened manually from Me → Settings so release notes
-// remain available without interrupting a login.
+// "What's new" modal. Opened manually from the Me tab's What's new row, so
+// release notes remain available without interrupting a login.
 //
 // Rebuilt on the dialog shell (design-system spec §2 row 05, audit E22): the
 // hand-rolled Modal + backdrop + `maxHeight: 380` scroll is now
@@ -11,6 +11,12 @@
 // scrapbook rather than as a bulleted spec.
 //
 // Account.tsx drives `visible` / `onClose`.
+//
+// Polish 2026-10-04: the date line printed the note's INTERNAL id ("v1.15.0")
+// while the Me footer printed the app's real version ("v1.3"), so the two
+// disagreed one tap apart. The line is the note's date now; the footer is the
+// app's one version. And a note carries its own drawn mark (`glyph`), so a
+// release's rows stop wearing three identical fallback sparkles.
 import React from "react";
 import { Image, StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,11 +24,13 @@ import {
 	AdaptiveModalScaffold,
 	Avatar,
 	Button,
+	Glyph,
 	Icon,
 	Kicker,
 	ListRow,
 	SectionTitle,
 	T,
+	type GlyphName,
 	type IconName,
 } from "./ui";
 import { releaseIcon, releaseIconName } from "../constants/emojiArt";
@@ -50,15 +58,39 @@ interface Props {
 // rather than rendering the authored emoji.
 const PRINT_GLYPHS = ["★", "✦", "♥", "✓", "✕", "•", "→"];
 
-// The mark on a note's row: art PNG first, then a fitting vector Icon, then a
-// print glyph — never a raw emoji codepoint.
-function NoteMark({ emoji, title }: { emoji?: string; title: string }) {
+// "2026-09-22" → "Sep 22, 2026", read as a LOCAL calendar date: `new Date`
+// on a bare ISO date is UTC midnight, which is the day before west of
+// Greenwich.
+function noteDate(iso: string): string {
+	const [y, m, d] = iso.split("-").map(Number);
+	if (!y || !m || !d) return iso;
+	return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
+// The mark on a note's row: the note's own drawn glyph first, then the legacy
+// emoji key's art PNG, then a fitting vector Icon, then a print glyph — never
+// a raw emoji codepoint.
+function NoteMark({
+	glyph,
+	emoji,
+	title,
+}: {
+	glyph?: GlyphName;
+	emoji?: string;
+	title: string;
+}) {
 	const art = releaseIcon(emoji);
 	const iconName = releaseIconName(emoji) as IconName | null;
 	const printGlyph = emoji && PRINT_GLYPHS.includes(emoji) ? emoji : "✦";
 	return (
 		<Avatar size={AVATAR_SIZE[0]} fill="paper" label={title}>
-			{art ? (
+			{glyph ? (
+				<Glyph name={glyph} size={ART_SIZE.glyphSm} />
+			) : art ? (
 				<Image source={art} style={styles.mark} resizeMode="contain" />
 			) : iconName ? (
 				<Icon
@@ -89,7 +121,7 @@ export function ReleaseNotesModal({
 			visible={visible}
 			onRequestClose={handleClose}
 			showCloseButton
-			closeLabel="Close what's new"
+			closeLabel="Close"
 			dismissOnBackdrop
 			testID="release-notes"
 			contentContainerStyle={styles.content}
@@ -97,14 +129,14 @@ export function ReleaseNotesModal({
 			<Kicker>what's new</Kicker>
 			<SectionTitle accessibilityRole="header">{release.headline}</SectionTitle>
 			<T role="kicker" tone="secondary" style={styles.dateLine}>
-				v{release.version} · {release.date}
+				{noteDate(release.date)}
 			</T>
 			<View style={styles.items}>
 				{release.items.map((it, i) => (
 					<ListRow
 						key={i}
 						index={i}
-						leading={<NoteMark emoji={it.emoji} title={it.title} />}
+						leading={<NoteMark glyph={it.glyph} emoji={it.emoji} title={it.title} />}
 						title={it.title}
 						sub={it.body}
 					/>

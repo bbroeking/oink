@@ -94,6 +94,11 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.xs,
 	},
 	// The total, set off by a dashed rule above it so it reads as the sum.
+	// The colour goes on EVERY side (`borderColor`), the width on the top only:
+	// iOS draws a dashed border only when all four colours agree — with a
+	// `borderTopColor` alone the other three default to black, React Native
+	// logs "Unsupported dashed / dotted border style" and draws NO rule at all.
+	// Unequal widths are fine (it clips to the top band). (2026-10-04)
 	totalRow: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -101,7 +106,7 @@ const styles = StyleSheet.create({
 		marginTop: SPACE.md,
 		paddingTop: SPACE.md,
 		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.uiMuted,
+		borderColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	totalLabel: {

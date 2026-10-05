@@ -86,9 +86,12 @@ describe("the store is one scroll", () => {
 		expect(shop).not.toContain('label="Closet"');
 		expect(shop).toContain('onPress={() => router.push("/pen")}');
 		expect(shop).toContain('onPress={() => router.push("/barn-collection")}');
-		expect(shop).toContain(
-			'<SlopClubShelf onPressSign={() => router.push("/pen")}>',
+		// The members' shelf's sign leaves for the Pen too; it also says, to a
+		// member, that the Pen is not where they join (polish pass, 2026-10-04).
+		expect(shop).toMatch(
+			/<SlopClubShelf\s+onPressSign=\{\(\) => router\.push\("\/pen"\)\}/,
 		);
+		expect(shop).toContain("member={isVip}");
 	});
 
 	it("gives the catalog its own crown inside the store's list", () => {

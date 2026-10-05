@@ -1,8 +1,8 @@
 // Dev preview for the "while you were away" recap — the reveal family's
 // sheet with a scrolling list of tilted rows. The real modal only presents
 // when the server reports events since the last launch, so this mounts it on
-// a fixture: enough rows to scroll (the bleed gutter's whole reason), one of
-// each event class, a two-line headline. `?motion=reduced` for Reduce Motion.
+// a fixture: four plain Barn visits (one visitor twice) that fold into one
+// row, then one of each other event class. `?motion=reduced` for Reduce Motion.
 import { useState } from "react";
 import { Redirect, Stack, useLocalSearchParams } from "expo-router";
 import { WhileAwayModal, type WhileAwayEvent } from "@/components/WhileAwayModal";
@@ -14,10 +14,10 @@ export default function WhileAwayPreviewScreen() {
 }
 
 const EVENTS: WhileAwayEvent[] = [
-  { source: "system", announcementId: 1, title: "Someone visited your Barn!", body: "the piggler came by and tickled your pig!", route: "/(tabs)/friends" },
-  { source: "system", announcementId: 2, title: "Someone visited your Barn!", body: "tegdirB came by and tickled your pig!", route: "/(tabs)/friends" },
-  { source: "system", announcementId: 3, title: "Someone visited your Barn!", body: "the piggler came by and tickled your pig!", route: "/(tabs)/friends" },
-  { source: "system", announcementId: 4, title: "Someone visited your Barn!", body: "coopatroopa came by and tickled your pig!", route: "/(tabs)/friends" },
+  { source: "system", announcementId: 1, kind: "barn_visit", title: "Someone visited your Barn!", body: "the piggler came by and tickled your pig!", route: "/(tabs)/friends" },
+  { source: "system", announcementId: 2, kind: "barn_visit", title: "Someone visited your Barn!", body: "tegdirB came by and tickled your pig!", route: "/(tabs)/friends" },
+  { source: "system", announcementId: 3, kind: "barn_visit", title: "Someone visited your Barn!", body: "the piggler came by and tickled your pig!", route: "/(tabs)/friends" },
+  { source: "system", announcementId: 4, kind: "barn_visit", title: "Someone visited your Barn!", body: "coopatroopa came by and tickled your pig!", route: "/(tabs)/friends" },
   { source: "blessing", kind: "golden_hour", from: "Jen" },
   { source: "curse", kind: "bacon_bits", from: "Marco" },
   { source: "trade_fulfilled", amount: 3, from: "Pip" },

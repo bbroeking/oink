@@ -41,7 +41,15 @@ export function Ceremony({
 			onRequestClose={onRequestClose}
 			testID={testID}
 		>
-			<View style={styles.ground} accessibilityViewIsModal>
+			<View
+				style={styles.ground}
+				accessibilityViewIsModal
+				// The scene draws its own exit (a Leave, a Got it), but VoiceOver's
+				// escape gesture (the two-finger Z) must reach the same door: a
+				// ceremony a screen-reader player cannot back out of is a trap.
+				// (2026-10-04)
+				onAccessibilityEscape={onRequestClose}
+			>
 				{/* A native Modal paints over the root ToastHost, so the ceremony
 				    carries a host of its own. It comes BEFORE the children in
 				    tree order: effects run in tree order, and a scene that mounts

@@ -44,9 +44,16 @@ describe("no prestige filter anywhere", () => {
 });
 
 describe("Closet section density", () => {
-	test("uses compact BG copy, removes the redundant header, and exposes collapsible sections", () => {
-		expect(closet).toContain('background: "BG"');
-		expect(closet).toContain('s === "background" ? "BG"');
+	// "BG" was dev shorthand (polish pass, 2026-10-04): a background is the
+	// scenery behind the pig, a Scene in the slot and Scenes in the catalog.
+	// The slot words are one line each at the chrome ceiling (constants/slots).
+	test("names backgrounds Scenes, removes the redundant header, and exposes collapsible sections", () => {
+		const slots = fs.readFileSync(path.join(ROOT, "constants/slots.ts"), "utf8");
+		expect(closet).toContain('background: "Scenes"');
+		expect(closet).not.toContain('"BG"');
+		expect(slots).toContain('background: "Scene"');
+		expect(slots).toContain('tickle: "Tickle"');
+		expect(closet).toContain("const slotName = SLOT_LABEL[s];");
 		expect(closet).not.toContain(">dress up rosie<");
 		expect(closet).not.toContain("<SnoutCoin");
 		expect(closet).toContain("collapsedCategories");

@@ -20,9 +20,12 @@ import {
 	RADII,
 	SHADOW_SM,
 	SPACE,
+	STICKER_SHADOW,
+	TILT,
 	UI_COLORS,
 } from "@/constants/theme";
 import { DialogCloseRow } from "./DialogCloseRow";
+import { ScrollEdge, useScrollEdge } from "./ScrollEdge";
 
 interface Props {
 	visible: boolean;
@@ -50,6 +53,17 @@ interface Props {
 	 * centred card would clip or scroll a short list. Slides up. (2026-09-14)
 	 */
 	sheet?: boolean;
+	/**
+	 * The sanctioned STICKER-CARD frame: the dialog is a paper card with the
+	 * heavy ink border, the dialog lean (TILT.dialog) and the hard sticker
+	 * shadow, its × pinned on the card above the scroller (`showCloseButton`
+	 * defaults on). The frame does not clip — a clip would erase the shadow —
+	 * so the scroller clips the words itself, and the side inset belongs to
+	 * the scrolling body, where a tilted sticker inside keeps its overhang.
+	 * Folds the Season's tale / guide / story card (seasonCard.ts) into the
+	 * primitive. (2026-10-04, Season ask 4)
+	 */
+	card?: boolean;
 	frameStyle?: StyleProp<ViewStyle>;
 	contentContainerStyle?: StyleProp<ViewStyle>;
 	scrollViewProps?: Omit<
@@ -85,12 +99,13 @@ export function AdaptiveModalScaffold({
 	maxWidth = 430,
 	animationType = "fade",
 	keyboardAware = false,
-	showCloseButton = false,
+	showCloseButton,
 	closeLabel = "Close",
 	closeRowContent,
 	bare = false,
 	fullScreen = false,
 	sheet = false,
+	card = false,
 	frameStyle,
 	contentContainerStyle,
 	scrollViewProps,
@@ -107,6 +122,8 @@ export function AdaptiveModalScaffold({
 		240,
 		height - insets.top - insets.bottom - gutter * 2,
 	);
+	// A card's × is part of the card; every other frame opts in.
+	const showClose = showCloseButton ?? card;
 
 	const body = (
 		<View
@@ -119,9 +136,11 @@ export function AdaptiveModalScaffold({
 					? styles.fullFrame
 					: sheet
 						? styles.sheetFrame
-						: bare
-							? styles.bareFrame
-							: styles.paperFrame,
+						: card
+							? styles.cardFrame
+							: bare
+								? styles.bareFrame
+								: styles.paperFrame,
 				fullScreen
 					? { width, height, paddingTop: insets.top, paddingBottom: insets.bottom }
 					: sheet
@@ -137,24 +156,16 @@ export function AdaptiveModalScaffold({
 				frameStyle,
 			]}
 		>
-			{showCloseButton && (
-				<DialogCloseRow onPress={onRequestClose} label={closeLabel}>
-					{closeRowContent}
-				</DialogCloseRow>
-			)}
-			<ScrollView
-				bounces={false}
-				showsVerticalScrollIndicator={false}
-				keyboardShouldPersistTaps="handled"
-				contentInsetAdjustmentBehavior="automatic"
-				{...scrollViewProps}
-				contentContainerStyle={[
-					styles.content,
-					contentContainerStyle,
-				]}
+			<RailAndScroll
+				showCloseButton={showClose}
+				onRequestClose={onRequestClose}
+				closeLabel={closeLabel}
+				closeRowContent={closeRowContent}
+				scrollViewProps={scrollViewProps}
+				contentContainerStyle={[card && styles.cardBody, contentContainerStyle]}
 			>
 				{children}
-			</ScrollView>
+			</RailAndScroll>
 		</View>
 	);
 
@@ -203,6 +214,65 @@ export function AdaptiveModalScaffold({
 	);
 }
 
+/**
+ * The pinned close rail and the one scroller under it. When the rail is shown
+ * it owns the scroller's top edge the way `Sheet`'s header does: the app's
+ * scroll-edge rule lies on the rail's bottom edge while a row has scrolled
+ * under it, so dialog content never slides up into the × with nothing between
+ * them. Its own component so the edge state lives inside the Modal and is
+ * fresh on every opening. (2026-10-04)
+ */
+function RailAndScroll({
+	showCloseButton,
+	onRequestClose,
+	closeLabel,
+	closeRowContent,
+	scrollViewProps,
+	contentContainerStyle,
+	children,
+}: {
+	showCloseButton: boolean;
+	onRequestClose: () => void;
+	closeLabel: string;
+	closeRowContent?: React.ReactNode;
+	scrollViewProps?: Props["scrollViewProps"];
+	contentContainerStyle?: StyleProp<ViewStyle>;
+	children: React.ReactNode;
+}) {
+	const callerOnScroll = scrollViewProps?.onScroll;
+	const edge = useScrollEdge({ onScroll: callerOnScroll });
+	return (
+		<>
+			{showCloseButton && (
+				<View>
+					<DialogCloseRow onPress={onRequestClose} label={closeLabel}>
+						{closeRowContent}
+					</DialogCloseRow>
+					{/* On the rail's own bottom edge, taking no room. */}
+					<ScrollEdge visible={edge.edgeVisible} overlay="bottom" testID="dialog-edge-top" />
+				</View>
+			)}
+			<ScrollView
+				bounces={false}
+				showsVerticalScrollIndicator={false}
+				keyboardShouldPersistTaps="handled"
+				contentInsetAdjustmentBehavior="automatic"
+				{...scrollViewProps}
+				// Only a dialog with a pinned rail listens; the caller's own
+				// handler (if any) still runs.
+				onScroll={showCloseButton ? edge.onScroll : callerOnScroll}
+				scrollEventThrottle={
+					scrollViewProps?.scrollEventThrottle ??
+					(showCloseButton ? edge.scrollEventThrottle : undefined)
+				}
+				contentContainerStyle={[styles.content, contentContainerStyle]}
+			>
+				{children}
+			</ScrollView>
+		</>
+	);
+}
+
 const styles = StyleSheet.create({
 	backdrop: {
 		flex: 1,
@@ -231,6 +301,26 @@ const styles = StyleSheet.create({
 	},
 	bareFrame: {
 		overflow: "visible",
+	},
+	// The sticker card: paper, the heavy ink border, the dialog lean, the hard
+	// sticker shadow. Unclipped (the shadow lives outside the box); a small
+	// paper strip under a line the scroller cuts mid-scroll. (Season's card,
+	// tokens unchanged.)
+	cardFrame: {
+		overflow: "visible",
+		backgroundColor: UI_COLORS.surface,
+		borderWidth: BORDER.heavy,
+		borderColor: UI_COLORS.border,
+		borderRadius: RADII.xxl,
+		paddingBottom: SPACE.sm,
+		transform: [{ rotate: `${TILT.dialog}deg` }],
+		...STICKER_SHADOW,
+	},
+	// The card's side inset rides the scrolling body, so tilted stickers in it
+	// keep their overhang inside the clip.
+	cardBody: {
+		paddingHorizontal: SPACE.lg,
+		paddingBottom: SPACE.sm,
 	},
 	// The full-screen mode: the page's own cream, edge to edge.
 	fullFrame: {

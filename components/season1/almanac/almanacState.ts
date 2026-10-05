@@ -1,5 +1,5 @@
 // The Almanac's pure state — which of the three verb tabs is selected first,
-// which ones wear the act-now sun, and the one nowrap value each cell prints.
+// which ones wear the act-now badge, and the one nowrap value each cell prints.
 // No React, no fetch: every function is a plain map over facts the screen
 // already holds, so the strip's logic is a unit test rather than a reading of
 // three JSX props (the same seam `utils/seasonHero.ts` cut for the one-hero
@@ -41,8 +41,8 @@ export interface AlmanacFacts {
 
 /**
  * Feed: the phase's own countdown (opens-in while guarded, closes-in while
- * open — the hero says which), `Dug` once this feeding is taken. The sun fill,
- * not a verb, is what says "dig now".
+ * open — the hero says which), `Dug` once this feeding is taken. The act-now
+ * badge, not a verb, is what says "dig now".
  */
 export function feedCellValue(f: Pick<AlmanacFacts, "dugThisWindow" | "countdown">): string {
 	if (f.dugThisWindow) return "Dug";
@@ -64,11 +64,12 @@ export function almanacValues(f: AlmanacFacts): Record<AlmanacTab, string> {
 }
 
 /**
- * Which cells wear the sun. Gold means act-now and nothing else: Feed while
- * the feeding is open and untaken, Draw while a purse is drawable and undrawn,
- * Pass while a claim is ready. Several may be gold at once — the strip is a row
- * of doors, not the one-hero surface; the one-hero rule decides which opens
- * FIRST (`almanacInitialTab`).
+ * Which cells wear the act-now badge (the pass track's rose "!" corner badge):
+ * Feed while the feeding is open and untaken, Draw while a purse is drawable
+ * and undrawn, Pass while a claim is ready. Several may wear it at once — the
+ * strip is a row of doors, not the one-hero surface; the one-hero rule decides
+ * which opens FIRST (`almanacInitialTab`). The badge never touches the fill:
+ * the sun on the strip means "this panel is open" (VerbTabStrip, 2026-10-04).
  */
 export function almanacTodo(f: AlmanacFacts): Record<AlmanacTab, boolean> {
 	return {

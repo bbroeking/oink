@@ -4,7 +4,8 @@
 // cursor state behind them.
 //
 // One entry point drives four scopes off `scope`:
-//   • global    — the paginated profiles board (Load-more cursor + row cap);
+//   • global    — the paginated profiles board (Load-more cursor + row cap),
+//                 plus the caller's own row and true rank (`you`);
 //   • friends   — one bounded read (the 100-friend cap, no pagination);
 //   • pairs     — both pair-board RPCs (Strongest + Enemies, each fail-soft);
 //   • alignment — the two-sided alignment RPC (season-0 internal).
@@ -105,9 +106,23 @@ function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
 	}));
 }
 
+/** The caller's own row on the global board, and the rank it holds there. */
+export interface YouOnBoard {
+	entry: LeaderboardEntry;
+	rank: number;
+}
+
 export interface UseLeaderboard {
 	/** The ranked list for the global / friends / alignment scopes. */
 	rows: LeaderboardEntry[];
+	/**
+	 * The caller's own standing on the GLOBAL board — their row and its true
+	 * rank — so the board can pin "your rank" under the list the way the Pairs
+	 * board pins your strongest pair. Null on every other scope, while loading,
+	 * on any failed read, and for an account the global board never shows
+	 * (test or hidden): such a pig has no rank to pin. (2026-10-04)
+	 */
+	you: YouOnBoard | null;
 	/** Strongest-pairs board (pairs scope only). */
 	pairs: PairBondRow[];
 	/** The caller's own best pair, pinned below when outside the top slice. */
@@ -134,6 +149,39 @@ export interface UseLeaderboard {
 // the placement-aware title, wallow_count drives the prestige frame.
 const RANKED_PROFILE_SELECT =
 	"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
+
+// The caller's own row, plus the two columns that decide whether the global
+// board shows them at all.
+type OwnRow = RawRow & {
+	is_test?: boolean | null;
+	hide_from_leaderboard?: boolean | null;
+};
+
+// Where the caller stands on the global board: their own row, and one plus the
+// number of ranked pigs above them under the board's own order (tickles
+// descending, id ascending on a tie) and the board's own filters. Fail-soft to
+// null on any miss — a pinned rank that might be wrong is worse than none.
+async function fetchYouOnGlobal(uid: string): Promise<YouOnBoard | null> {
+	const own = await supabase
+		.from("profiles")
+		.select(`${RANKED_PROFILE_SELECT}, is_test, hide_from_leaderboard`)
+		.eq("id", uid)
+		.returns<OwnRow[]>();
+	const row = own.error ? null : (own.data?.[0] ?? null);
+	if (!row || !row.username || row.is_test || row.hide_from_leaderboard) return null;
+	const tickles = row.tickles_earned ?? 0;
+	const above = await supabase
+		.from("profiles")
+		.select("id", { count: "exact", head: true })
+		.not("username", "is", null)
+		.neq("username", "")
+		.eq("is_test", false)
+		.eq("hide_from_leaderboard", false)
+		.or(`tickles_earned.gt.${tickles},and(tickles_earned.eq.${tickles},id.lt.${uid})`);
+	if (above.error || typeof above.count !== "number") return null;
+	const [entry] = await withSwaps(normalize([row]));
+	return entry ? { entry, rank: above.count + 1 } : null;
+}
 
 // Merge each row's swap count in. Fail-soft: no RPC, no rows, no change.
 // Both field names are written for one build — an older reader of the row type
@@ -166,6 +214,8 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 	const [youPair, setYouPair] = useState<PairBondRow | null>(null);
 	const [enemies, setEnemies] = useState<EnemyPairRow[]>([]);
 	const [youEnemy, setYouEnemy] = useState<EnemyPairRow | null>(null);
+	// The caller's own global standing (see `UseLeaderboard.you`).
+	const [you, setYou] = useState<YouOnBoard | null>(null);
 
 	// Fetches `count` rows starting at `from` from profiles, ordered
 	// by tickles_earned desc.
@@ -210,6 +260,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 		setLoading(true);
 		setHasMore(false);
 		setError(false);
+		setYou(null);
 		try {
 			const {
 				data: { user },
@@ -292,8 +343,14 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 			// Global scope — paginated. Pull the first page (PAGE_SIZE +
 			// 1 so the champion poster doesn't eat a slot from the rest
 			// list) and seed hasMore on whether the page came back full.
-			const firstPage = await withSwaps(await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE));
+			// The caller's own standing reads beside it, fail-soft: a miss
+			// pins nothing and never fails the board.
+			const [firstPage, mine] = await Promise.all([
+				fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE).then(withSwaps),
+				user ? fetchYouOnGlobal(user.id).catch(() => null) : Promise.resolve(null),
+			]);
 			setLeaderboard(firstPage);
+			setYou(mine);
 			setHasMore(
 				firstPage.length === LEADERBOARD_PAGE_SIZE &&
 					firstPage.length < LEADERBOARD_MAX_ROWS,
@@ -348,6 +405,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 
 	return {
 		rows: leaderboard,
+		you,
 		pairs,
 		youPair,
 		enemies,

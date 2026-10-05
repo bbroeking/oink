@@ -6,15 +6,20 @@
 // (`?send=<friendId>` opens the ticket with their wish preset) and from the
 // "{Pig}'s back" push. Old `?view=pen` links still land here (utils/shopNav).
 import { useCallback, useState } from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { PageHeader } from "@/components/ui/PageHeader";
+import {
+	PageHeader,
+	ScrollEdge,
+	STACK_SCROLL_EDGES,
+	StackPage,
+	useScrollEdge,
+} from "@/components/ui";
 import { PigPenView } from "@/components/PigPenView";
 import { usePigRoster } from "@/hooks/usePigRoster";
 import { usePigErrands } from "@/hooks/usePigErrands";
 import { useFriendWishTargets } from "@/hooks/useFriendWishTargets";
 import { useJoinSlopClub } from "@/hooks/useJoinSlopClub";
-import { WHIMSY } from "@/constants/theme";
+import { CHROME_TYPE_CAP } from "@/constants/theme";
 
 export default function PenScreen() {
 	const pigRoster = usePigRoster();
@@ -29,15 +34,23 @@ export default function PenScreen() {
 	// whole of what a fresh membership has to make true again (the errand
 	// state re-reads on focus, and the card derives "resting" from the roster).
 	const joinSlopClub = useJoinSlopClub(pigRoster.refresh);
+	// The crown's scroll edge, as on the Shop: drawn once the board has slid
+	// under the crown, so the paddock is not cut by an invisible line.
+	const edge = useScrollEdge();
 
+	// A scrolling stack screen: the page pads the top and sides, and the board
+	// runs to the screen's foot, clearing the home indicator by its own pad
+	// (PigPenView, useStackScrollPad) instead of clipping at a line above it.
 	return (
-		<SafeAreaView style={styles.page}>
+		<StackPage edges={STACK_SCROLL_EDGES}>
 			<PageHeader
 				kicker="rosie’s place"
 				title="The Pen"
 				backLabel="back to the shop"
 				onBack={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/shop"))}
+				maxFontSizeMultiplier={CHROME_TYPE_CAP}
 			/>
+			<ScrollEdge visible={edge.edgeVisible} />
 			<PigPenView
 				roster={pigRoster.roster}
 				loading={pigRoster.loading}
@@ -57,11 +70,8 @@ export default function PenScreen() {
 				loadTargets={wishes.load}
 				sendFor={sendFor}
 				onSendForConsumed={consumeSendFor}
+				onScroll={edge.onScroll}
 			/>
-		</SafeAreaView>
+		</StackPage>
 	);
 }
-
-const styles = StyleSheet.create({
-	page: { flex: 1, backgroundColor: WHIMSY.cream },
-});

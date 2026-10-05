@@ -1,5 +1,5 @@
 import React from "react";
-import { DynamicTypeText as Text } from "./DynamicTypeText";
+import { DynamicTypeText as Text, useIconScale } from "./DynamicTypeText";
 import {
 	Pressable,
 	ViewStyle,
@@ -155,6 +155,63 @@ const FLAT_VARIANTS: Partial<
 	},
 };
 
+// A gradient button is ONE box, like the flat variants: the Pressable carries
+// everything that places and sizes it (margins, `full`'s alignSelf, `flex: 1`
+// in a pair, padding, minHeight, the label row), and the LinearGradient is its
+// PAINT, an absolutely positioned layer that fills whatever size the box ends
+// up and never takes part in sizing it. (2026-10-04)
+//
+// Why not a pill that flex-grows inside the Pressable (the morning's routing)?
+// React Native runs Yoga with its legacy stretch errata on (`YGErrataAll` is
+// the default), and under it a `flexGrow` child of an auto-height node grows
+// to fill whatever height that node is MEASURED against. A button its parent
+// does not stretch (a centred card, `alignSelf: "flex-end"`, a row centred on
+// a taller sibling) is measured against the parent's whole height, so the pill
+// grew to fill it: the Redeem card's "Open the camera" became a 166 x 456pt
+// column over the code field (after/083). An absolute layer cannot do that.
+//
+// The outline is the paint's too, so the box reserves its width with a
+// transparent border: the label sits exactly where it sat inside the old
+// outlined pill, for any padding a caller passes, and the paint reaches back
+// over that border (OUTLINE_REACH) to cover the whole box.
+const OUTLINE_ROOM: ViewStyle = {
+	borderWidth: BORDER.ink,
+	borderColor: "transparent",
+};
+const OUTLINE_REACH = -BORDER.ink;
+const PAINT_LAYER: ViewStyle = {
+	position: "absolute",
+	top: OUTLINE_REACH,
+	right: OUTLINE_REACH,
+	bottom: OUTLINE_REACH,
+	left: OUTLINE_REACH,
+};
+
+// The style keys that paint a gradient button rather than lay it out: the
+// corner radius the paint rounds to, and the colours and shadow (the outline
+// and the shadow are COZY_GRADIENT's, which wins over a caller's, as it always
+// has). Everything else belongs to the box.
+function isPaintKey(key: string): boolean {
+	return (
+		key.endsWith("Radius") ||
+		key.endsWith("Color") ||
+		key.startsWith("shadow") ||
+		key === "borderStyle" ||
+		key === "borderCurve" ||
+		key === "elevation" ||
+		key === "boxShadow"
+	);
+}
+
+function splitPaint(style: ViewStyle): { box: ViewStyle; paint: ViewStyle } {
+	const box: Record<string, unknown> = {};
+	const paint: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(style)) {
+		(isPaintKey(key) ? paint : box)[key] = value;
+	}
+	return { box: box as ViewStyle, paint: paint as ViewStyle };
+}
+
 const TEXT_COLORS: Record<Variant, string> = {
 	primary: UI_COLORS.textPrimary,
 	purple: UI_COLORS.textOnDark,
@@ -210,10 +267,30 @@ export function Button({
 		disabled: inert,
 		...(loading ? { busy: true } : null),
 	};
+	// The mark grows with the word beside it (up to 2x, or the label's own cap)
+	// so a 16pt icon never sits beside a 34pt word. Any mark that takes a
+	// numeric `size` (Icon, Glyph, SnoutCoin) scales; art without one is left
+	// as drawn. (2026-10-04, Me ask M-05)
+	const iconScale = useIconScale(maxFontSizeMultiplier);
+	const mark =
+		iconScale !== 1 &&
+		React.isValidElement<{ size?: unknown }>(icon) &&
+		typeof icon.props.size === "number"
+			? React.cloneElement(icon as React.ReactElement<{ size: number }>, {
+					size: icon.props.size * iconScale,
+				})
+			: icon;
 
+	// The label NEVER truncates a verb. No `numberOfLines`, no shrink-to-fit:
+	// a label longer than its pill wraps to two (or more) centred lines and the
+	// pill grows with it (`minHeight`, never `height`), at every size and in
+	// every variant — `full` buttons included, which is where a long verb
+	// usually lands. A visible "…" on a Button is therefore always the caller's
+	// copy, never this primitive (the 2026-10-04 polish's "Send Rosie to look
+	// for…" was the string itself). Pinned by Button.test.tsx.
 	const inner = (
 		<>
-			{loading ? null : icon}
+			{loading ? null : mark}
 			<Text
 				maxFontSizeMultiplier={maxFontSizeMultiplier}
 				style={
@@ -266,6 +343,8 @@ export function Button({
 	};
 
 	if (gradient) {
+		// The box sizes; the paint fills it (see OUTLINE_ROOM above).
+		const { box, paint } = splitPaint(baseStyle);
 		return (
 			<Pressable
 				onPress={onPress}
@@ -278,18 +357,19 @@ export function Button({
 				accessibilityValue={accessibilityValue}
 				accessibilityState={a11yState}
 				testID={testID}
-				style={({ pressed }) => ({
-					opacity: pressed ? OPACITY.pressed : 1,
-				})}
+				style={({ pressed }) => [
+					box,
+					OUTLINE_ROOM,
+					{ opacity: pressed ? OPACITY.pressed : 1 },
+				]}
 			>
 				<LinearGradient
 					colors={gradient}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 0, y: 1 }}
-					style={[baseStyle, COZY_GRADIENT]}
-				>
-					{inner}
-				</LinearGradient>
+					style={[PAINT_LAYER, paint, COZY_GRADIENT]}
+				/>
+				{inner}
 			</Pressable>
 		);
 	}

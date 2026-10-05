@@ -74,7 +74,8 @@ export function HabitatPresetSheet({ accountId, visible, onClose, positions, roo
               rotate={ROW_TILTS[(slot - 1) % ROW_TILTS.length]}
               shadow="sm"
               title={`Room ${slot}`}
-              right={active ? <Tag label="ACTIVE" tone="sun" /> : undefined}
+              // Sentence case: UPPERCASE is kicker-pill typography [D-17].
+              right={active ? <Tag label="Active" tone="sun" /> : undefined}
               style={styles.card}
             >
               <TextField

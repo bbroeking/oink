@@ -12,6 +12,7 @@ import { counterTag, type CounterBuy } from "@/utils/shopCounter";
 import {
 	AVATAR_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	PRESSED_FLAT,
 	RADII,
 	SPACE,
@@ -35,6 +36,12 @@ const LIP_BOTTOM = 60;
 const FIGURE_PIG = AVATAR_SIZE[1];
 const HELD_ART = 24;
 const FIGURE_W = 88;
+/**
+ * A tag is a crewmate and the thing they bought ("Maya · Sovereign Jewel
+ * Crown"): two names, and a name never ends in "…". Three hand lines hold the
+ * longest catalog name beside a short pig name in the figure's 68pt.
+ */
+const TAG_LINES = 3;
 
 function CounterFigure({
 	buy,
@@ -96,7 +103,12 @@ function CounterFigure({
 				rotate={TILT.row[index % TILT.row.length]}
 				style={styles.tag}
 			>
-				<T role="hand" numberOfLines={2} align="center">
+				<T
+					role="hand"
+					numberOfLines={TAG_LINES}
+					align="center"
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
+				>
 					{tag}
 				</T>
 			</Sticker>
@@ -129,7 +141,12 @@ export function Counter({
 				pointerEvents="none"
 			/>
 			<Plank style={styles.lip} />
-			<T role="kickerPillSm" tone="secondary" style={styles.kicker}>
+			<T
+				role="kickerPillSm"
+				tone="secondary"
+				maxFontSizeMultiplier={CHROME_TYPE_CAP}
+				style={styles.kicker}
+			>
 				at the counter today
 			</T>
 			<ScrollView

@@ -131,8 +131,22 @@ describe("polish control primitives", () => {
 			(node) => node.props.accessibilityLabel === "Back",
 		)[0];
 		expect(back?.props.accessibilityRole).toBe("button");
-		const style = StyleSheet.flatten(back?.props.style);
-		expect(style.minHeight).toBeGreaterThanOrEqual(44);
+		// A back link names where the tap leads, not just what it is.
+		expect(back?.props.accessibilityHint).toBe("Returns to the previous screen");
+		// The style is the pressed-state function (the link answers a tap now).
+		const rest = StyleSheet.flatten(back?.props.style({ pressed: false }));
+		expect(rest.minHeight).toBeGreaterThanOrEqual(44);
+		expect(rest.minWidth).toBeGreaterThanOrEqual(44);
+		const pressed = StyleSheet.flatten(back?.props.style({ pressed: true }));
+		expect(pressed.opacity).toBeLessThan(1);
+		// The "‹ back" line is the drawing; the label above is the name, so the
+		// glyph line stays out of the accessibility tree.
+		const line = back?.find(
+			(node) =>
+				typeof node.type !== "string" &&
+				node.props.accessibilityElementsHidden === true,
+		);
+		expect(line).toBeDefined();
 		act(() => renderer.unmount());
 	});
 

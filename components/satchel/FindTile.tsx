@@ -4,7 +4,7 @@
 // the catalog's never-carried grammar — cream, dashed, the mark as a
 // silhouette. A tap-minimum square, so six fit a phone with the gaps.
 import type { ReactNode } from "react";
-import type { StyleProp, ViewStyle } from "react-native";
+import type { AccessibilityActionEvent, AccessibilityActionInfo, StyleProp, ViewStyle } from "react-native";
 import { StyleSheet } from "react-native";
 import type { SatchelFindId } from "@/constants/satchel";
 import { ART_SIZE, BORDER, RADII, TAP_MIN } from "@/constants/theme";
@@ -20,6 +20,8 @@ export function FindTile({
 	accessibilityLabel,
 	accessibilityHint,
 	accessibilityState,
+	accessibilityActions,
+	onAccessibilityAction,
 	testID,
 	style,
 	children,
@@ -32,6 +34,9 @@ export function FindTile({
 	accessibilityLabel?: string;
 	accessibilityHint?: string;
 	accessibilityState?: { selected?: boolean; disabled?: boolean };
+	/** A gesture a screen reader can't make (the bag's hold-to-toss), offered as a named action. */
+	accessibilityActions?: readonly AccessibilityActionInfo[];
+	onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
 	testID?: string;
 	style?: StyleProp<ViewStyle>;
 	children?: ReactNode;
@@ -50,6 +55,8 @@ export function FindTile({
 			accessibilityLabel={accessibilityLabel}
 			accessibilityHint={accessibilityHint}
 			accessibilityState={accessibilityState}
+			accessibilityActions={accessibilityActions}
+			onAccessibilityAction={onAccessibilityAction}
 			testID={testID}
 			style={[styles.tile, style]}
 		>

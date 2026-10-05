@@ -7,7 +7,7 @@
 import { StyleSheet, View } from "react-native";
 import { Hand, Kicker, RitualIconWell, Sheet, T } from "./ui";
 import { SPACE } from "@/constants/theme";
-import { RITUAL_DOOR } from "@/hooks/useRitualDoor";
+import { RITUAL_DOOR, allowanceLine } from "@/hooks/useRitualDoor";
 import type { UseRitualCaster } from "@/hooks/useRitualCaster";
 import { castBlurb, untilDailyReset, type RitualMode } from "@/utils/rituals";
 
@@ -29,19 +29,16 @@ export function RitualExplainSheet({
 	const ritual = caster.today(mode);
 	const usage = caster.usage(mode);
 	const door = RITUAL_DOOR[mode];
+	// The line this sheet was opened from says "Three glimmer left"; the sheet
+	// counts the same allowance in the same words, never "3 of 3".
 	const left =
-		usage === null
-			? null
-			: usage.remaining === 0
-				? "none left today"
-				: `${usage.remaining} of ${usage.cap} left today`;
+		usage === null ? null : `${allowanceLine(mode, usage.remaining)} today`;
 	return (
 		<Sheet
 			open
 			onClose={onClose}
 			kicker={`today's ${door.word}`}
 			title={ritual.name}
-			closeLabel="Done"
 			// A one-paragraph panel: it never needs the 85% default.
 			maxHeightFrac={0.6}
 			testID={`ritual-explain-${mode}`}

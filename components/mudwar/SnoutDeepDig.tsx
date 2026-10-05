@@ -20,6 +20,7 @@ import type { DeepSubmission, RootingOutcome, RootingSession } from "@/hooks/use
 import type { RpcResult } from "@/utils/rpc";
 import { feedingNowMs } from "@/utils/feedingClock";
 import { MOTION_DURATION } from "@/hooks/useMotionPolicy";
+import { POPUP_HANDOFF_GAP_MS } from "@/components/ui";
 import { generateLayeredBoard } from "@/utils/rooting";
 import {
   clearSnoutDeepProgress,
@@ -41,8 +42,11 @@ import { DigReceiptSheet } from "./SnoutDeepSheets";
 
 // The log syncs to the server every this-many actions (spec §6).
 export const SNOUT_DEEP_SYNC_EVERY = 5;
-// Where the uncrewed receipt's "truffles are for herds — find yours ›" goes.
-const JOIN_PATH = "/(tabs)/season";
+// Where the uncrewed receipt's "truffles are for herds · find yours ›" goes:
+// Friends ▸ Sounder, where herds are found and joined. It used to be the
+// Season tab, which has held no herd door since the 2026-09-21 rewrite — the
+// link landed on a page with nothing about herds on it. (2026-10-04)
+const JOIN_PATH = { pathname: "/(tabs)/friends", params: { seg: "sounder" } } as const;
 // The receipt sheet is a SECOND native Modal, presented from the dig's own
 // full-screen one. iOS dismisses the topmost presented controller first, so
 // closing the dig while the sheet was up dismissed the SHEET and left the
@@ -316,7 +320,14 @@ export function SnoutDeepDig({
     return () => registerLeave?.(null);
   }, [leave, registerLeave]);
   const exit = useCallback(() => leave(), [leave]);
-  const join = useCallback(() => leave(() => router.push(JOIN_PATH)), [leave]);
+  // The push waits out the dig's own slide: closing the dig queues its return
+  // to the Barn tab (useFeedingCta's close), and a push sent in the same beat
+  // ran first and was bounced straight back to the Barn. The popup hand-off
+  // gap is the app's one wait between a closing modal and a route.
+  const join = useCallback(
+    () => leave(() => setTimeout(() => router.push(JOIN_PATH), POPUP_HANDOFF_GAP_MS)),
+    [leave],
+  );
 
   return (
     <>

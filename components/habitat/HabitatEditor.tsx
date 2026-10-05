@@ -19,7 +19,7 @@ import type {
   HabitatPosition,
   HabitatSnapshot,
 } from "@/utils/habitat";
-import { BORDER, RADII, SPACE, UI_COLORS } from "@/constants/theme";
+import { BORDER, CHROME_TYPE_CAP, RADII, SPACE, UI_COLORS } from "@/constants/theme";
 
 // The status pill never claims more than half the toolbar row, so the cancel
 // and more controls flanking it keep their full targets. A proportion of the
@@ -192,26 +192,32 @@ export function HabitatEditor({
             pointerEvents="box-none"
             style={[styles.toolbar, styles.toolbarTop, { top: insets.top }]}
           >
-            {compact ? (
-              <IconButton
-                name="x"
-                label="Cancel decorating"
-                accessibilityHint="Discards this draft and restores the last saved Barn"
-                disabled={saving}
-                onPress={onCancel}
-              />
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                accessibilityLabel="Cancel decorating"
-                accessibilityHint="Discards this draft and restores the last saved Barn"
-                disabled={saving}
-                onPress={onCancel}
-              >
-                Cancel
-              </Button>
-            )}
+            {/* Two equal flanks, so the status pill sits on the room's centre
+                line whatever the controls either side of it measure (Cancel
+                is wider than "…", and pushed the pill ~14pt right). */}
+            <View pointerEvents="box-none" style={styles.flankStart}>
+              {compact ? (
+                <IconButton
+                  name="x"
+                  label="Cancel decorating"
+                  accessibilityHint="Discards this draft and restores the last saved Barn"
+                  disabled={saving}
+                  onPress={onCancel}
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  maxFontSizeMultiplier={CHROME_TYPE_CAP}
+                  accessibilityLabel="Cancel decorating"
+                  accessibilityHint="Discards this draft and restores the last saved Barn"
+                  disabled={saving}
+                  onPress={onCancel}
+                >
+                  Cancel
+                </Button>
+              )}
+            </View>
             <View pointerEvents="none" style={styles.statusSlot}>
               <Sticker
                 color="paper"
@@ -223,19 +229,21 @@ export function HabitatEditor({
                 <Label
                   align="center"
                   accessibilityLabel="Editing. Place items by selecting a decorating spot."
-                  maxFontSizeMultiplier={compact ? 1.3 : undefined}
+                  maxFontSizeMultiplier={CHROME_TYPE_CAP}
                   numberOfLines={compact ? 1 : undefined}
                 >
                   {compact ? "Editing" : "Editing · Place items"}
                 </Label>
               </Sticker>
             </View>
-            <IconButton
-              name="more"
-              label="More decorating actions"
-              accessibilityHint="Opens list, collection, and decorating controls"
-              onPress={() => setToolsOpen(true)}
-            />
+            <View pointerEvents="box-none" style={styles.flankEnd}>
+              <IconButton
+                name="more"
+                label="More decorating actions"
+                accessibilityHint="Opens list, collection, and decorating controls"
+                onPress={() => setToolsOpen(true)}
+              />
+            </View>
           </View>
           <View
             pointerEvents="box-none"
@@ -257,6 +265,7 @@ export function HabitatEditor({
               <Button
                 variant="ghost"
                 size="sm"
+                maxFontSizeMultiplier={CHROME_TYPE_CAP}
                 icon={
                   <Icon
                     name="undo"
@@ -275,6 +284,7 @@ export function HabitatEditor({
             <Button
               variant="gold"
               size="md"
+              maxFontSizeMultiplier={CHROME_TYPE_CAP}
               icon={
                 <Icon
                   name="save"
@@ -440,6 +450,9 @@ const styles = StyleSheet.create({
   toolbarTop: { paddingTop: SPACE.xs },
   toolbarBottom: { paddingBottom: SPACE.sm },
   statusSlot: { flexShrink: 1, maxWidth: STATUS_MAX_WIDTH },
+  // The flanks split what the pill leaves, equally, and each hugs its own edge.
+  flankStart: { flex: 1, alignItems: "flex-start" },
+  flankEnd: { flex: 1, alignItems: "flex-end" },
   status: {
     justifyContent: "center",
     paddingHorizontal: SPACE.sm,

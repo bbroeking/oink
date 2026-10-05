@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { Sheet } from "../components/ui/Sheet";
 import { ActionSheet } from "../components/ui/ActionSheet";
+import { SlideUpSheet } from "../components/ui/SlideUpSheet";
 import { MOTION, RADII, SPACE, TAP_MIN } from "../constants/theme";
 
 const metrics = {
@@ -89,6 +90,63 @@ describe("Sheet", () => {
 		expect(style.height).toBe(TAP_MIN);
 		act(() => close.props.onPress());
 		expect(onClose).toHaveBeenCalledTimes(1);
+		act(() => renderer.unmount());
+	});
+
+	test("the scrim closes on a tap but is never a second \"Close\" for VoiceOver (after index, P3)", () => {
+		const onClose = jest.fn();
+		let renderer!: TestRenderer.ReactTestRenderer;
+		act(() => {
+			renderer = TestRenderer.create(
+				inSafeArea(
+					<Sheet open onClose={onClose} title="Pick a place">
+						<Text>body</Text>
+					</Sheet>,
+				),
+			);
+		});
+		// Exactly one "Close" a screen reader can reach: the header's ×.
+		const closes = renderer.root.findAll(
+			(node) =>
+				typeof node.type === "string" &&
+				node.props.accessibilityLabel === "Close" &&
+				node.props.accessible !== false,
+		);
+		expect(closes).toHaveLength(1);
+		// The scrim is hidden from VoiceOver…
+		const scrim = renderer.root.findAll(
+			(node) => node.props.testID === "sheet-backdrop" && typeof node.props.onPress === "function",
+		)[0];
+		expect(scrim.props.accessible).toBe(false);
+		expect(scrim.props.accessibilityElementsHidden).toBe(true);
+		expect(scrim.props.importantForAccessibility).toBe("no-hide-descendants");
+		expect(scrim.props.accessibilityLabel).toBeUndefined();
+		// …and still dismisses on a tap.
+		act(() => scrim.props.onPress());
+		expect(onClose).toHaveBeenCalledTimes(1);
+		// VoiceOver's escape gesture is the other way out.
+		const panel = renderer.root.findAll((node) => node.props.accessibilityViewIsModal === true)[0];
+		expect(typeof panel.props.onAccessibilityEscape).toBe("function");
+		act(() => renderer.unmount());
+	});
+
+	test("a panel with no close of its own can still name its scrim (SlideUpSheet backdropLabel)", () => {
+		let renderer!: TestRenderer.ReactTestRenderer;
+		act(() => {
+			renderer = TestRenderer.create(
+				inSafeArea(
+					<SlideUpSheet open onClose={() => {}} backdropLabel="Close the note">
+						<Text>a note</Text>
+					</SlideUpSheet>,
+				),
+			);
+		});
+		const scrim = renderer.root.findAll(
+			(node) => node.props.testID === "sheet-backdrop" && typeof node.props.onPress === "function",
+		)[0];
+		expect(scrim.props.accessible).toBe(true);
+		expect(scrim.props.accessibilityRole).toBe("button");
+		expect(scrim.props.accessibilityLabel).toBe("Close the note");
 		act(() => renderer.unmount());
 	});
 

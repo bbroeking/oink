@@ -193,17 +193,23 @@ export function PassPanel({
 
 const styles = StyleSheet.create({
 	panel: { gap: SPACE.md },
+	// One row while it fits; at large text the XP line wraps under the title
+	// instead of running off the right edge ("34 XP to ti…", 2026-10-04).
 	head: {
 		flexDirection: "row",
+		flexWrap: "wrap",
 		alignItems: "baseline",
 		justifyContent: "space-between",
-		gap: SPACE.sm,
+		columnGap: SPACE.sm,
+		rowGap: SPACE.xxs,
 	},
 	// The rungs fill to the sticker's edge (a ready rung is a full sun band).
 	ladder: { overflow: "hidden", paddingVertical: SPACE.xs },
+	// A one-sided dashed rule sets its colour on every side (`borderColor`):
+	// iOS never draws a dashed border coloured on one side only.
 	rule: {
 		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.uiMuted,
+		borderColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	empty: { paddingVertical: SPACE.md },

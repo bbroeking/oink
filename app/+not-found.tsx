@@ -1,4 +1,7 @@
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+// The context's safe view: React Native 0.86 deprecates its own. Same four
+// edges by default, and this one has no author padding to treat differently.
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 
 import { Button } from "@/components/ui/Button";

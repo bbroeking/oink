@@ -262,14 +262,16 @@ describe("the fan row", () => {
 		await act(async () => {
 			r = TestRenderer.create(<BarnButton options={[barn, trader]} armedKey="barn" onArm={jest.fn()} />);
 		});
-		// Fan it open from the "+".
-		await act(async () => r.root.findByProps({ accessibilityLabel: "More" }).props.onPress());
-		expect(r.root.findByProps({ accessibilityLabel: "Trader" })).toBeTruthy();
+		// Fan it open from the "+" — its own button since 2026-10-04 ("More
+		// actions"), and a row's spoken name carries the line it draws.
+		await act(async () => r.root.findByProps({ accessibilityLabel: "More actions" }).props.onPress());
+		const row = "Trader, the Ghost Sheep · 5h 59m left";
+		expect(r.root.findByProps({ accessibilityLabel: row })).toBeTruthy();
 		expect(textOf(r.root)).toContain("the Ghost Sheep · 5h 59m left");
 
 		await act(async () => {
 			r.update(<BarnButton options={[barn]} armedKey="barn" onArm={jest.fn()} />);
 		});
-		expect(r.root.findAllByProps({ accessibilityLabel: "Trader" })).toHaveLength(0);
+		expect(r.root.findAllByProps({ accessibilityLabel: row })).toHaveLength(0);
 	});
 });

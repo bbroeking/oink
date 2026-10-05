@@ -10,6 +10,12 @@
 // Items dismiss FIRST and run a beat later — a router.push in the same frame as
 // the native dismissal is the same modal wedge UserSheet's story links avoid.
 // (`Sheet` carries the useUnmanagedModalHold latch, spec 02.)
+//
+// One way out, not two: the panel's own × (plus the scrim and VoiceOver's
+// escape) is the dismissal, so the list holds destinations only. A trailing
+// "Close" button repeated the × as a fifth full-width pill, and a screen
+// reader heard two "Close" buttons in one sheet. (2026-10-04 polish, the
+// season guide menu.)
 
 import { StyleSheet, View } from "react-native";
 import { MOTION, SPACE } from "@/constants/theme";
@@ -23,6 +29,8 @@ const DISMISS_BEAT_MS = MOTION.modalHandoff;
 export interface ActionSheetItem {
 	label: string;
 	onPress: () => void;
+	/** Spoken consequence ("Opens the season's story"), when the label alone doesn't say where it goes. */
+	accessibilityHint?: string;
 }
 
 interface Props {
@@ -48,18 +56,11 @@ export function ActionSheet({ open, onClose, title, subtitle, items }: Props) {
 						full
 						onPress={() => choose(item)}
 						accessibilityLabel={item.label}
+						accessibilityHint={item.accessibilityHint}
 					>
 						{item.label}
 					</Button>
 				))}
-				<Button
-					variant="ghost"
-					full
-					onPress={onClose}
-					accessibilityLabel="Close"
-				>
-					Close
-				</Button>
 			</View>
 		</Sheet>
 	);

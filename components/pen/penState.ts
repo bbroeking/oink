@@ -29,6 +29,15 @@ export interface PigCardState {
 	job: "home" | "pen" | "out";
 	/** Whether the segment may be changed (owned, awake, not out). */
 	jobEditable: boolean;
+	/**
+	 * Whether "In the Pen" means anything for this pig. For the pig at Home it
+	 * means "the other pig comes home", so it needs an other pig who can: owned,
+	 * awake (a lapsed member's companion rests) and not out looking. A lone
+	 * Rosie's "In the Pen" was a live segment that did nothing on a tap
+	 * (polish pass, 2026-10-04). For a pig already in the Pen it is the
+	 * current value.
+	 */
+	penChoosable: boolean;
 	action: PigCardAction;
 	outRow: ErrandRow | null;
 	backRow: ErrandRow | null;
@@ -74,6 +83,14 @@ export function pigCardState(
 
 	const job: PigCardState["job"] = outRow ? "out" : active ? "home" : "pen";
 	const jobEditable = pig.owned && !resting && !outRow;
+	const otherCanComeHome = roster.pigs.some(
+		(p) =>
+			p.id !== pigId &&
+			p.owned &&
+			!(p.id !== "rosie" && !roster.isMember) &&
+			!outRowFor(errands, p.id),
+	);
+	const penChoosable = job !== "home" || otherCanComeHome;
 
 	let action: PigCardAction;
 	if (!pig.owned) {
@@ -94,7 +111,7 @@ export function pigCardState(
 		action = { kind: "send" };
 	}
 
-	return { pig, medallion, job, jobEditable, action, outRow, backRow };
+	return { pig, medallion, job, jobEditable, penChoosable, action, outRow, backRow };
 }
 
 /** The paddock note's hand line. */

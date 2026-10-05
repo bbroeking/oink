@@ -143,7 +143,8 @@ export function wallowProgress({
 
 	return {
 		fraction: Math.max(0, Math.min(1, intoTier / perTier)),
-		label: `${intoTier} / ${perTier} XP to Tier ${currentTier + 1}`,
+		// Lowercase "tier", as the Pass panel's own "34 XP to tier 8" says it.
+		label: `${intoTier} / ${perTier} XP to tier ${currentTier + 1}`,
 	};
 }
 

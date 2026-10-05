@@ -1079,6 +1079,10 @@ function RootLayoutInner() {
       {hungerIntro && (
         <GreatHungerIntroModal
           visible={hungerIntroSlot.visible}
+          // The login tale plays over the Barn and only closes, so its button
+          // names where the player already is (the Season replay says "Back to
+          // the season").
+          ctaLabel="Back to the Barn"
           onDone={() => {
             hungerIntroSlot.release();
             if (hungerIntroUid) {

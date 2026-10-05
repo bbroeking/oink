@@ -609,6 +609,28 @@ export const PIG_ACCENT: Record<string, { solid: string; tint: string }> = {
 	biscuit: { solid: "#D8A36E", tint: "#F5E6D6" },
 };
 
+// Compact chrome caps Dynamic Type at this multiplier (taste standard
+// 2026-09-12): fixed-height chrome around a flex stage clips past one step,
+// so controls, chips, board tiles and labels on a scene state their ceiling
+// rather than truncating. Body text in a scroller keeps the full 200 % rule.
+export const CHROME_TYPE_CAP = 1.3;
+
+// A name on a 2-up grid tile (the Barn collection, any half-width card) has
+// half a phone to hold its longest WORD, and a word may never break mid-way.
+// At `cardTitleSm` (15pt Caprasimo) the catalogue's longest unbreakable word,
+// "Cloudspotter’s", measures 112.9pt; a 375pt phone's tile leaves 143.5pt of
+// text box, so 1.27 is the most it can take — 1.3 broke it ("Cloudspotte/r’s").
+// Tile names state this lower ceiling instead, keeping ~8pt of slack; a
+// hyphenated name may still wrap at its hyphen. (2026-10-04, Barn ask 5)
+export const TILE_TYPE_CAP = 1.2;
+
+// Matchmade play: one fill per seat (0–3), so a pig's fences, chips, barn and
+// pouch read as theirs at a glance on every game board. Fills only, on the
+// usual ink outline; ink text clears AA on all four. Ownership is always ALSO
+// drawn (the owner's pig-face stamp or portrait), so no board depends on hue
+// alone. Seat order is shuffled per table, so no hue means "you". (2026-10-04)
+export const SEAT_TINTS: readonly string[] = [WHIMSY.sky, WHIMSY.rose, WHIMSY.sage, WHIMSY.sun];
+
 // The ten members-catalog theme hues — the glow/accent an animated cosmetic
 // burns in, keyed by its theme name. Read by constants/cosmeticFx.ts. [F-7]
 // (2026-09-11)

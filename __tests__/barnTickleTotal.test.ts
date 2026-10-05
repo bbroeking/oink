@@ -28,7 +28,9 @@ describe("Barn Tickle total", () => {
 			path.join(__dirname, "..", "components", "Barn.tsx"),
 			"utf8",
 		);
-		expect(barn).toContain("<EarnedStamp total={stats.ticklesEarned} />");
+		// The stamp is told when the bank is still loading, so it never shows a
+		// "0" that fills in under the thumb (polish 2026-10-04).
+		expect(barn).toContain("<EarnedStamp total={stats.ticklesEarned} loaded={statsLoaded} />");
 	});
 
 	it("leaves the exact lifetime value on the Me surface", () => {
@@ -36,9 +38,14 @@ describe("Barn Tickle total", () => {
 			path.join(__dirname, "..", "components", "Account.tsx"),
 			"utf8",
 		);
-		expect(account).toMatch(
-			/lifetimeTickles\(\s*ticklesLifetimeBase,\s*ticklesEarned\s*\)\.toLocaleString\(\)/,
+		// The exact figure, through one local since the Me pass (2026-10-04):
+		// the count is computed once and every Me surface prints it in full.
+		const local = account.match(
+			/const (\w+) = lifetimeTickles\(\s*ticklesLifetimeBase,\s*ticklesEarned\s*\);/,
 		);
+		const inline =
+			/lifetimeTickles\(\s*ticklesLifetimeBase,\s*ticklesEarned\s*\)\.toLocaleString\(\)/.test(account);
+		expect(inline || (local !== null && account.includes(`${local[1]}.toLocaleString()`))).toBe(true);
 		expect(account).not.toContain("formatBarnTickleTotal");
 	});
 });

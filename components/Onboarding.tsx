@@ -14,9 +14,11 @@ import {
 	ScrollView,
 	NativeSyntheticEvent,
 	NativeScrollEvent,
-	SafeAreaView,
 	useWindowDimensions,
 } from "react-native";
+// The context's safe view: React Native 0.86 deprecates its own. Same four
+// edges by default; the safe view here carries no author padding.
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { markStorybookSeenServer } from "@/utils/onboarding";
 import type { PigAnimation } from "./ui/pigRendererContract";

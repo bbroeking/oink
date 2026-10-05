@@ -3,6 +3,11 @@
 // a gold `Claim` while ready, a hand `N XP away` while locked. A ready rung sits
 // on the sun; a locked one keeps its shape behind a dashed well (mute the fill,
 // never dissolve the outline). Rows stack inside PassPanel's bordered sticker.
+//
+// A locked rung shows what it is waiting to give — the art receded at
+// `OPACITY.dim` inside the dashed well, the way the whole ladder sheet draws a
+// locked tier — rather than a padlock that hid the very thing being climbed
+// toward. The name wraps; an item's name never ends in "…". (2026-10-04)
 
 import { Image, StyleSheet, View } from "react-native";
 import {
@@ -18,6 +23,7 @@ import {
 import {
 	ART_SIZE,
 	BORDER,
+	OPACITY,
 	RADII,
 	SPACE,
 	UI_COLORS,
@@ -44,13 +50,6 @@ export const REWARD_KIND_TONE: Record<RewardKind, ChipTone> = {
 };
 
 function RewardWell({ reward, locked }: { reward: TierRow; locked: boolean }) {
-	if (locked) {
-		return (
-			<View style={[styles.well, styles.wellLocked]}>
-				<Icon name="lock" size={WELL_MARK} color={UI_COLORS.uiMuted} />
-			</View>
-		);
-	}
 	const art = resolveRewardArt(reward);
 	let inner: React.ReactNode;
 	switch (art.kind) {
@@ -81,7 +80,11 @@ function RewardWell({ reward, locked }: { reward: TierRow; locked: boolean }) {
 			inner = <Icon name="star" size={WELL_MARK} color={UI_COLORS.uiMuted} />;
 			break;
 	}
-	return <View style={styles.well}>{inner}</View>;
+	return (
+		<View style={[styles.well, locked && styles.wellLocked]}>
+			{locked ? <View style={styles.artLocked}>{inner}</View> : inner}
+		</View>
+	);
 }
 
 export interface LadderRowProps {
@@ -121,7 +124,7 @@ export function LadderRow({ tier, state, reward, xpAway = 0, busy, onClaim, test
 					</T>
 					<Tag tone={REWARD_KIND_TONE[kind]} label={kind} />
 				</View>
-				<T role="body" tone={locked ? "secondary" : "primary"} numberOfLines={1}>
+				<T role="body" tone={locked ? "secondary" : "primary"}>
 					{reward.display_label}
 				</T>
 			</View>
@@ -168,6 +171,13 @@ const styles = StyleSheet.create({
 	wellLocked: {
 		borderStyle: "dashed",
 		borderColor: UI_COLORS.uiMuted,
+	},
+	// The art recedes inside a locked well; the dashed outline is what carries
+	// the locked state [C-07] — the same step the ladder sheet's locked node uses.
+	artLocked: {
+		opacity: OPACITY.dim,
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	art: { width: WELL_ART, height: WELL_ART },
 	// Furnishing thumbnails fill their well — they are product shots, not

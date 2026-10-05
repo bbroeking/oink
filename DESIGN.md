@@ -36,6 +36,7 @@ colors:
   stage: "#1f1710"
   dirt: "#8d5a2c"
   dirt-deep: "#74441e"
+  cork: "#d9b27f"
   grass: "#8FBF6A"
   barn-red: "#C44848"
   prestige: "#D9A45D"
@@ -211,7 +212,7 @@ Feelings are shown, never stated: mood is Rosie's sprite, not a number. Progress
 
 **Key Characteristics:**
 - Ink-outlined paper stickers on warm cream, every card tilted and hard-shadowed
-- One palette (`WHIMSY`, 39 tokens): muted storybook pastels, a single terracotta accent, one dark "bark" surface for the storyteller voice
+- One palette (`WHIMSY`, 40 tokens): muted storybook pastels, a single terracotta accent, one dark "bark" surface for the storyteller voice
 - Four fonts, each with a job — Caprasimo (whimsy titles), Nunito (body), Fredoka (the one display numeral), Patrick Hand (hand-drawn kickers) — across 19 `TYPE` roles
 - Exactly two hard shadow tiers, zero blur — no soft ambient shadows in sticker contexts
 - Springy, hand-wound motion (`MOTION_SPRING`), never a linear fade that could belong to any app

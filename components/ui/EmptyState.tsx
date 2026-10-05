@@ -50,6 +50,7 @@ export function EmptyState({
 	accessibilityRole,
 	accessibilityLabel,
 	style,
+	flush = false,
 }: {
 	glyph?: GlyphName;
 	/** Product art instead of a glyph (a cabinet, a hat) — same box. (2026-09-11) */
@@ -65,6 +66,13 @@ export function EmptyState({
 	accessibilityRole?: "alert" | "summary" | "text";
 	accessibilityLabel?: string;
 	style?: StyleProp<ViewStyle>;
+	/**
+	 * Sit on the host's own inset. By default the card adds a page gutter of
+	 * its own (SPACE.card a side), which inside a sheet or under a full-width
+	 * card made it the one narrower card in the column (the referral ladder's
+	 * "No referrals yet"). Default false. (2026-10-04, Me ask M-10)
+	 */
+	flush?: boolean;
 }) {
 	const isError = kind === "error";
 	const resolvedColor = color ?? (isError ? ERROR_DEFAULTS.color : "paper");
@@ -73,7 +81,7 @@ export function EmptyState({
 
 	return (
 		<View
-			style={[styles.wrap, style]}
+			style={[styles.wrap, flush && styles.wrapFlush, style]}
 			accessibilityRole={accessibilityRole ?? (isError ? "alert" : undefined)}
 			accessibilityLabel={accessibilityLabel}
 		>
@@ -132,6 +140,9 @@ const styles = {
 	wrap: {
 		paddingHorizontal: SPACE.card,
 		paddingTop: SPACE.md,
+	},
+	wrapFlush: {
+		paddingHorizontal: 0,
 	},
 	card: {
 		paddingHorizontal: PAGE_PAD,

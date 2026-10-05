@@ -5,6 +5,7 @@ import { habitatItemAsset } from "@/constants/habitat";
 import {
   BORDER,
   RADII,
+  RARITY_BADGE,
   RARITY_BG_SOLID,
   SPACE,
   TILT,
@@ -25,7 +26,6 @@ import {
   Sticker,
   Tag,
   useUnmanagedModalHold,
-  type ChipTone,
 } from "@/components/ui";
 
 type Props = {
@@ -47,15 +47,15 @@ type Props = {
   onToggleWishlist?: () => void;
 };
 
-// The rarity capsule's fill, said in the Chip/Tag tone vocabulary rather than
-// as three raw WHIMSY picks. `lilac` replaces the old `lilacDeep`: spec §5
-// decision 2 forbids body-weight ink on lilacDeep, and Tag writes ink on every
-// tone but bark. [D-02] (2026-09-11)
-const RARITY_TONE: Record<HabitatCatalogItem["rarity"], ChipTone> = {
-  common: "sage",
-  uncommon: "paper",
-  rare: "lilac",
-};
+// The rarity capsule reads RARITY_BADGE — the validated fill + ink pair the
+// Shop's item sheet wears — in sentence case (UPPERCASE is kicker-pill
+// typography, [D-17]). It used to map common → sage, uncommon → paper and
+// rare → lilac in capitals: sage is the hue the collection tile's dot uses for
+// UNCOMMON, so one rarity read as two on the same flip from tile to sheet.
+// (polish 2026-10-04)
+function rarityLabel(rarity: HabitatCatalogItem["rarity"]) {
+  return rarity.charAt(0).toUpperCase() + rarity.slice(1);
+}
 
 // The Snout coin beside the price, sized to the sectionTitle numeral it sits
 // with — art at a type size, not a spacing step.
@@ -144,9 +144,12 @@ export function HabitatItemPreviewModal({
           ) : null}
 
           <Tag
-            label={item.rarity.toUpperCase()}
-            tone={RARITY_TONE[item.rarity]}
-            style={styles.rarityBadge}
+            label={rarityLabel(item.rarity)}
+            ink={(RARITY_BADGE[item.rarity] ?? RARITY_BADGE.common).ink}
+            style={[
+              styles.rarityBadge,
+              { backgroundColor: (RARITY_BADGE[item.rarity] ?? RARITY_BADGE.common).bg },
+            ]}
           />
           <PageTitle>{item.name}</PageTitle>
           <HandLg tone="secondary" style={styles.itemDescription}>

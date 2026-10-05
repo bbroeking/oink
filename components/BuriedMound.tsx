@@ -5,22 +5,26 @@
 // fan; this is only what it left behind.
 //
 // COLLAPSED BY DEFAULT. The mound stands alone, no tag, so the yard stays a
-// painting. Tap it and a paper tag unfolds BESIDE it with what is down there —
+// painting. Tap it and a paper tag unfolds ABOVE it with what is down there —
 // "3 snouts buried" — and that tag is the way into the buried-truffle sheet.
 // Tap the mound again and the tag folds. Nothing here fires a sheet on the
-// first tap. The tag sits to the right, not under: the yard anchors this by
-// its bottom-left corner, so a tag underneath would shove the mound off the
-// ground line the moment it unfolded.
+// first tap. The tag stands over the mound, never beside it: the yard anchors
+// this spot by its bottom-left corner, so a tag above grows upward and the
+// mound never leaves the ground line — and a tag to the right sat on Rosie's
+// front leg and half her bandana (polish 2026-10-04, B-07). Above, it reads as
+// the mound's own sign, the way the Barn button's word sits over the button.
 import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Glyph, Hand } from "./ui";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	PRESSED,
 	RADII,
 	SHADOW_SM,
 	SPACE,
+	TAP_MIN,
 	WHIMSY,
 } from "@/constants/theme";
 import { MOTION_DURATION, useMotionPolicy } from "@/hooks/useMotionPolicy";
@@ -34,8 +38,19 @@ const MOUND_H = 24;
 const TRUFFLE = 26;
 const TRUFFLE_LIFT = -16;
 const TAG_TILT = "-2deg";
-// How far the tag slides into place from the mound's side as it unfolds.
-const TAG_SLIDE = -6;
+// How far the tag rises into place over the mound as it unfolds.
+const TAG_RISE = 6;
+// The truffle's cap pokes TRUFFLE_LIFT above the mound's crown, so the tag
+// stands that much higher again to clear it.
+const CAP_CLEARANCE = -TRUFFLE_LIFT;
+// The mound is a 54x24 drawing; its touch frame comes back to TAP_MIN as
+// hitSlop, never by inflating the mound.
+const MOUND_HIT = {
+	top: (TAP_MIN - MOUND_H) / 2,
+	bottom: (TAP_MIN - MOUND_H) / 2,
+	left: SPACE.sm,
+	right: SPACE.sm,
+};
 
 interface Props {
 	/** Snouts still in the pot for visitors to dig. */
@@ -84,9 +99,40 @@ export function BuriedMound({ remaining, onPress }: Props) {
 
 	return (
 		<View style={styles.spot}>
+			{/* The tag is only in the tree while shown, so a folded mound never
+			    holds an invisible tap target over the yard. */}
+			{shown ? (
+				<Animated.View
+					style={[
+						styles.tagSeat,
+						{
+							opacity: unfold,
+							transform: [
+								{ translateY: unfold.interpolate({ inputRange: [0, 1], outputRange: [TAG_RISE, 0] }) },
+							],
+						},
+					]}
+				>
+					<Pressable
+						onPress={check}
+						hitSlop={SPACE.xs}
+						accessibilityRole="button"
+						accessibilityLabel={snouts}
+						accessibilityHint="Opens the buried-truffle sheet, where you can add snouts or dig it back up"
+						style={({ pressed }) => [styles.tag, pressed && styles.pressed]}
+					>
+						<Hand numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+							{snouts}
+						</Hand>
+						<Hand tone="secondary" numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+							check on it ›
+						</Hand>
+					</Pressable>
+				</Animated.View>
+			) : null}
 			<Pressable
 				onPress={toggle}
-				hitSlop={SPACE.sm}
+				hitSlop={MOUND_HIT}
 				accessibilityRole="button"
 				accessibilityLabel="Your buried truffle"
 				accessibilityValue={{ text: snouts }}
@@ -98,42 +144,20 @@ export function BuriedMound({ remaining, onPress }: Props) {
 					<Glyph name="truffle" size={TRUFFLE} />
 				</View>
 			</Pressable>
-			{/* The tag is only in the tree while shown, so a folded mound never
-			    holds an invisible tap target over the yard. */}
-			{shown ? (
-				<Animated.View
-					style={{
-						opacity: unfold,
-						transform: [
-							{ translateX: unfold.interpolate({ inputRange: [0, 1], outputRange: [TAG_SLIDE, 0] }) },
-						],
-					}}
-				>
-					<Pressable
-						onPress={check}
-						hitSlop={SPACE.xs}
-						accessibilityRole="button"
-						accessibilityLabel={snouts}
-						accessibilityHint="Opens the buried-truffle sheet, where you can add snouts or dig it back up"
-						style={({ pressed }) => [styles.tag, pressed && styles.pressed]}
-					>
-						<Hand numberOfLines={1}>{snouts}</Hand>
-						<Hand tone="secondary" numberOfLines={1}>
-							check on it ›
-						</Hand>
-					</Pressable>
-				</Animated.View>
-			) : null}
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	// A row: the mound planted at the left, the tag hanging off its shoulder.
+	// A column anchored at its foot: the tag on top, the mound planted under it
+	// on the ground line, both hung off the spot's left edge.
 	spot: {
-		flexDirection: "row",
-		alignItems: "flex-end",
-		gap: SPACE.sm,
+		alignItems: "flex-start",
+		gap: SPACE.xs,
+	},
+	// The tag stands clear of the truffle's cap, which overhangs the mound.
+	tagSeat: {
+		marginBottom: CAP_CLEARANCE,
 	},
 	pressed: {
 		...PRESSED,

@@ -2,7 +2,6 @@ import React from "react";
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
   type PressableProps,
   type StyleProp,
@@ -10,8 +9,18 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { ClipPath, Defs, Path, Rect } from "react-native-svg";
-import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { CHROME_TYPE_CAP, FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { DynamicTypeText as Text } from "./DynamicTypeText";
 import { Icon } from "./Icon";
+
+// The ticket is FIXED chrome: a 64pt face drawn as one path. So its words state
+// the chrome ceiling (CHROME_TYPE_CAP) rather than following the 200% rule —
+// uncapped, an accessibility-size verb wrapped to a third line and the face
+// clipped it mid-glyph. At the cap the face holds two centred lines of the
+// 18/22 label (57pt of its 64): the verb wraps, it never shrinks and never
+// ends in "…". Copy that needs a third line belongs in the accessibility label,
+// as "Hand it over" already does for the find's name. Live text-size changes
+// re-measure through DynamicTypeText (RN #57512). (2026-10-04)
 
 export type TicketButtonTone = "companion" | "golden" | "season";
 
@@ -167,6 +176,7 @@ export function TicketButton({
             >
               <View style={styles.stub}>
                 <Text
+                  maxFontSizeMultiplier={CHROME_TYPE_CAP}
                   style={[
                     stubCaption ? styles.stubMark : styles.stubSolo,
                     { color: colors.text },
@@ -175,14 +185,20 @@ export function TicketButton({
                   {stub}
                 </Text>
                 {stubCaption ? (
-                  <Text style={[styles.stubCaption, { color: colors.text }]}>
+                  <Text
+                    maxFontSizeMultiplier={CHROME_TYPE_CAP}
+                    style={[styles.stubCaption, { color: colors.text }]}
+                  >
                     {stubCaption}
                   </Text>
                 ) : null}
               </View>
               <Perforation />
               <View style={styles.action}>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>
+                <Text
+                  maxFontSizeMultiplier={CHROME_TYPE_CAP}
+                  style={[styles.actionLabel, { color: colors.text }]}
+                >
                   {visibleLabel}
                 </Text>
                 {showChevron && !loading ? (

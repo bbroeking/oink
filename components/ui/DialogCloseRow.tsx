@@ -1,11 +1,18 @@
 import React from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { SPACE } from "@/constants/theme";
+import { SPACE, TAP_MIN } from "@/constants/theme";
 import { IconButton } from "./IconButton";
 
 interface Props {
 	onPress: () => void;
+	/**
+	 * The ×'s spoken name. Keep it "Close" (or "Close <thing>"): the mark is a
+	 * close, so a name that promises somewhere else ("To the patch") lies to a
+	 * screen reader about what the drawing does. (2026-10-04)
+	 */
 	label?: string;
+	/** The spoken consequence. Defaults to "Closes this dialog". */
+	accessibilityHint?: string;
 	style?: StyleProp<ViewStyle>;
 	// A header that shares the rail's row — a kicker and a title beside the ×
 	// rather than stacked under it. The rail is 52pt of dead space when the
@@ -14,6 +21,10 @@ interface Props {
 	// edge as the content beneath it. (2026-09-13)
 	children?: React.ReactNode;
 }
+
+// The ×'s stroke box inside the 44pt disc — a hair over the 18pt default, as
+// the dialog rail's mark is the one close a player hunts for. (Was a bare 20.)
+const ICON = 20;
 
 /**
  * Standard dismiss rail for centered dialogs.
@@ -25,6 +36,7 @@ interface Props {
 export function DialogCloseRow({
 	onPress,
 	label = "Close",
+	accessibilityHint = "Closes this dialog",
 	style,
 	children,
 }: Props) {
@@ -34,9 +46,10 @@ export function DialogCloseRow({
 			<IconButton
 				name="x"
 				label={label}
+				accessibilityHint={accessibilityHint}
 				onPress={onPress}
-				visualSize={44}
-				iconSize={20}
+				visualSize={TAP_MIN}
+				iconSize={ICON}
 			/>
 		</View>
 	);

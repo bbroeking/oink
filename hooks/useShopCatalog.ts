@@ -80,6 +80,11 @@ export interface UseShopCatalog {
   // rolls with the drop. daily_shop() excludes members_only, so this is the
   // one place the members catalog is on sale.
   membersShelf: HatRow[];
+  // The catalog rows of everything the pig is wearing, whatever its category.
+  // `allItems` drops the hidden categories (a legacy scarf the demo pig still
+  // wears), so a slot that only read `allItems` drew the bandana and called
+  // itself empty, with no way to take it off (polish pass, 2026-10-04).
+  wornItems: HatRow[];
   // Derived: allItems ∩ owned, and the id-set of today's drop.
   ownedItems: HatRow[];
   dailyIds: Set<string>;
@@ -102,6 +107,9 @@ export function useShopCatalog(): UseShopCatalog {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<HatRow[]>([]);
+  // Every row the catalog fetch returned, hidden categories included — read
+  // only to name what the pig is already wearing (`wornItems`).
+  const [catalogRows, setCatalogRows] = useState<HatRow[]>([]);
   const [owned, setOwned] = useState<Set<string>>(new Set());
   // Multi-slot equipment: hat, aura, and background each have their own column
   // on profiles. Equipping an aura clears the aura slot only, leaving any
@@ -202,6 +210,7 @@ export function useShopCatalog(): UseShopCatalog {
         (r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id),
       );
       setAllItems(shoppable);
+      setCatalogRows((allRes.data as HatRow[] | null) ?? []);
       // The counter resolves against the same shoppable catalog, so a
       // crewmate's buy of something this shop can't sell (hidden category,
       // an id the catalog lacks) never stands at the counter.
@@ -287,6 +296,13 @@ export function useShopCatalog(): UseShopCatalog {
     [allItems, owned],
   );
 
+  const wornItems = useMemo(() => {
+    const worn = new Set(
+      Object.values(activeIds).filter((id): id is string => !!id),
+    );
+    return catalogRows.filter((row) => worn.has(row.id));
+  }, [catalogRows, activeIds]);
+
   // Only pieces the shelf can SELL rotate in. `allItems` keeps a pass
   // reward the player already owns (so the Closet can show it), but a pass
   // reward is the pass's — nine members-only cosmetics sit on the season-1
@@ -328,6 +344,7 @@ export function useShopCatalog(): UseShopCatalog {
     resetsIn,
     counterBuys,
     membersShelf,
+    wornItems,
     ownedItems,
     dailyIds,
     buyableIds,

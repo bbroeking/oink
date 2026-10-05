@@ -24,9 +24,10 @@ import {
 	type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Glyph, Hand, Label, Shovel, T } from "./ui";
+import { Glyph, Hand, Icon, Shovel, T } from "./ui";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	MODAL_BACKDROP_BG,
 	OPACITY,
 	PRESSED,
@@ -35,6 +36,7 @@ import {
 	SHADOW_SM,
 	SPACE,
 	STICKER_SHADOW,
+	TAP_MIN,
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
@@ -49,9 +51,16 @@ import { POP_IN_SPRING } from "@/utils/motionRecipes";
 // Drawing geometry for one control, in points.
 const FAB = 72;
 const FACE = 40;
-// The "+" on the shoulder, and how far it overhangs the rim.
+// The "+" on the shoulder, and how far it overhangs the rim. Its touch frame
+// comes back to TAP_MIN as hitSlop rather than by inflating the disc.
 const MORE = 26;
 const MORE_OVERHANG = -8;
+const MORE_HIT = (TAP_MIN - MORE) / 2;
+// The two marks the button draws as art (the shoulder "+" and the fan's close
+// "×") — the Icon family's dismiss and add, at the weight of the ink rim.
+const MORE_MARK = 14;
+const CLOSE_MARK = 26;
+const MARK_STROKE = 3;
 // The dashed ring that breathes around the button while the patch is open.
 const RING_OVERHANG = -10;
 const RING_SCALE = 1.08;
@@ -292,6 +301,9 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 								inputRange: [0, 1],
 								outputRange: [OPTION_RISE, 0],
 							});
+							// What the row draws under its title, and so what it says: a
+							// screen reader hears the same two lines the eye reads.
+							const line = option.disabled ? option.disabledLine : option.sub;
 							return (
 								<Animated.View
 									key={option.key}
@@ -300,15 +312,21 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 										{ bottom: rest, right: inset, opacity: fanOpacity, transform: [{ translateY }] },
 									]}
 								>
+									{/* ONE ELEMENT PER ROW, by construction: the row is the
+									    accessible button and everything drawn inside it is
+									    hidden from the tree, so no title or mark can surface
+									    on its own as a non-button (polish 2026-10-04, B-02). */}
 									<Pressable
 										onPress={() => arm(option.key)}
 										disabled={option.disabled}
+										accessible
 										accessibilityRole="button"
-										accessibilityLabel={option.title}
+										accessibilityLabel={line ? `${option.title}, ${line}` : option.title}
 										accessibilityHint={
-											option.disabled ? option.disabledLine : `Sets the Barn button to ${option.title}`
+											option.disabled ? undefined : `Sets the Barn button to ${option.title}`
 										}
 										accessibilityState={{ selected: isDefault, disabled: !!option.disabled }}
+										testID={`barn-fan-${option.key}`}
 										style={({ pressed }) => [
 											styles.optionRow,
 											pressed && !option.disabled && styles.optionPressed,
@@ -316,22 +334,36 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 										]}
 									>
 										<View
+											accessibilityElementsHidden
+											importantForAccessibility="no-hide-descendants"
 											style={[
 												styles.optionTitle,
 												isDefault && !option.disabled && styles.optionTitleDefault,
 												option.disabled && styles.optionTitleDisabled,
 											]}
 										>
-											<T role="label" tone={option.disabled ? "disabled" : "primary"}>
+											{/* Chrome on the scene: the row states its type
+											    ceiling rather than truncating its one line. */}
+											<T
+												role="label"
+												tone={option.disabled ? "disabled" : "primary"}
+												maxFontSizeMultiplier={CHROME_TYPE_CAP}
+											>
 												{option.title}
 											</T>
-											{(option.disabled ? option.disabledLine : option.sub) ? (
-												<Hand tone={option.disabled ? "disabled" : "secondary"} numberOfLines={1}>
-													{option.disabled ? option.disabledLine : option.sub}
+											{line ? (
+												<Hand
+													tone={option.disabled ? "disabled" : "secondary"}
+													numberOfLines={1}
+													maxFontSizeMultiplier={CHROME_TYPE_CAP}
+												>
+													{line}
 												</Hand>
 											) : null}
 										</View>
 										<View
+											accessibilityElementsHidden
+											importantForAccessibility="no-hide-descendants"
 											style={[
 												styles.optionMark,
 												{ width: size, height: size },
@@ -369,7 +401,9 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 						accessibilityHint="Folds the Barn button's actions away"
 						style={({ pressed }) => [styles.fab, styles.fabClosing, pressed && styles.fabPressed]}
 					>
-						<T role="display">×</T>
+						{/* The dismiss mark is the Icon family's "x" (the 2026-07-13
+						    dingbat ruling: a semantic mark is drawn, never typed). */}
+						<Icon name="x" size={CLOSE_MARK} strokeWidth={MARK_STROKE} color={UI_COLORS.textPrimary} />
 					</Pressable>
 				) : (
 					<Pressable
@@ -396,25 +430,18 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 						>
 							{armed ? <Mark mark={armed.mark} size={FACE} /> : null}
 						</Animated.View>
-						{canFan ? (
-							<Pressable
-								onPress={open}
-								hitSlop={SPACE.sm}
-								accessibilityRole="button"
-								accessibilityLabel="More"
-								accessibilityHint="Fans out everything the Barn button can do"
-								style={({ pressed }) => [styles.more, pressed && styles.morePressed]}
-							>
-								<Label>+</Label>
-							</Pressable>
-						) : null}
 						{/* The word above the face — the armed action's name. It lives in
 						    the shut-button branch only, so the fan's ladder (which climbs
-						    from the same rim) never shares the space with it. */}
+						    from the same rim) never shares the space with it. Chrome on
+						    the scene, so it states its type ceiling. */}
 						{armed ? (
 							<View pointerEvents="none" style={styles.labelSeat}>
 								<View style={[styles.label, faceDisabled && styles.labelDisabled]}>
-									<Hand numberOfLines={1} tone={faceDisabled ? "disabled" : "primary"}>
+									<Hand
+										numberOfLines={1}
+										tone={faceDisabled ? "disabled" : "primary"}
+										maxFontSizeMultiplier={CHROME_TYPE_CAP}
+									>
 										{faceDisabled && armed.disabledLine ? armed.disabledLine : armed.label}
 									</Hand>
 								</View>
@@ -422,6 +449,26 @@ export function BarnButton({ options, armedKey, onArm, live = false, style, test
 						) : null}
 					</Pressable>
 				)}
+				{/* THE "+" IS ITS OWN BUTTON. It used to ride inside the face's
+				    Pressable, and iOS exposes one accessible element and hides
+				    everything inside it — so VoiceOver could reach the face but
+				    never the "+", and the fan (Satchel, the truffle, the Trough,
+				    the Trader) was a long press away that nothing announced.
+				    A sibling on the same shoulder, drawn after the face so it sits
+				    on top. (polish 2026-10-04, B-01) */}
+				{canFan && !fanned ? (
+					<Pressable
+						onPress={open}
+						hitSlop={MORE_HIT}
+						accessibilityRole="button"
+						accessibilityLabel="More actions"
+						accessibilityHint="Fans out everything the Barn button can do"
+						testID="barn-button-more"
+						style={({ pressed }) => [styles.more, pressed && styles.morePressed]}
+					>
+						<Icon name="plus" size={MORE_MARK} strokeWidth={MARK_STROKE} color={UI_COLORS.textPrimary} />
+					</Pressable>
+				) : null}
 			</View>
 		</>
 	);

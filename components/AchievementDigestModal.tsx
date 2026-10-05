@@ -1,6 +1,9 @@
 // One launch interruption for every achievement earned while away.
 // Full descriptions and collection history remain on the Achievements page;
 // this digest acknowledges the batch and marks every row viewed together.
+// It calls them trophies, the Achievements page's own word ("counting
+// trophies", "Marks this trophy as seen"); it said "badge", a third noun for
+// one thing. (polish 2026-10-04)
 import React, { useEffect, useRef } from "react";
 import { Animated, Image, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -112,15 +115,15 @@ export function AchievementDigestModal({
 					style={styles.sticker}
 				>
 					<DialogCloseRow
-						label="Close achievement digest"
+						label="Close"
 						onPress={dismiss}
 						style={styles.closeRow}
 					/>
 					<Kicker>achievements</Kicker>
 					<T role="pageTitle" align="center">
 						{achievements.length === 1
-							? "A new badge is yours"
-							: `${achievements.length} new badges are yours`}
+							? "A new trophy is yours"
+							: `${achievements.length} new trophies are yours`}
 					</T>
 					<T role="hand" tone="secondary" align="center" style={styles.body}>
 						Everything is already saved. Here’s what landed.
@@ -159,7 +162,7 @@ export function AchievementDigestModal({
 						onPress={dismiss}
 						style={styles.doneButton}
 						accessibilityLabel="Got it"
-						accessibilityHint="Closes the digest and marks every badge seen"
+						accessibilityHint="Closes this and marks every new trophy seen"
 					>
 						Got it
 					</Button>

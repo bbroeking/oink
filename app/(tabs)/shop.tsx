@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
+// The context's safe view: React Native 0.86 deprecates its own (a console
+// warning on every render), and this one pads the same four edges.
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
@@ -24,11 +26,13 @@ import {
   Numeral,
   PageHeader,
   Ribbon,
+  ScrollEdge,
   SectionHeader,
   SnoutCoin,
   Sticker,
   T,
   Tag,
+  useScrollEdge,
   type BuyCelebrationHandle,
 } from "../../components/ui";
 import {
@@ -42,10 +46,12 @@ import { Shelf, ShelfItem, SlopClubShelf } from "@/components/shop/Shelf";
 import { Counter } from "@/components/shop/Counter";
 import { HatRow } from "@/constants/hats";
 import {
+  buyableNow,
   cardTag,
   cardTagFace,
   cardTapAction,
   chunkShelves,
+  shopKicker,
 } from "@/utils/shopShelves";
 import { resolveShopParams } from "@/utils/shopNav";
 import { SHOP_SIGN_LABELS_MIN } from "@/constants/layoutBreakpoints";
@@ -53,6 +59,7 @@ import { columnForCategory } from "@/constants/slots";
 import {
   UI_COLORS,
   BORDER,
+  CHROME_TYPE_CAP,
   WHIMSY,
   SPACE,
   RADII,
@@ -85,6 +92,14 @@ const COIN_MARK = 20;
 const THUMB_RATIO = 1.18;
 /** The alternating scrapbook lean across the two grid columns. */
 const CARD_TILT = 0.5;
+/**
+ * The card's inner corner, inside its RADII.xl outline and 2pt ink border: the
+ * next step down the radius scale (the true 16pt inner curve is within 0.6pt
+ * of it at the corner). The thumb's top corners and the MEMBERS ribbon's clip
+ * both round to it, so the card itself never clips — an `overflow: hidden`
+ * card loses its hard shadow on iOS.
+ */
+const CARD_INNER_RADIUS = RADII.lg;
 /** The snouts pocket leans the other way, like a chip tucked in a pocket. */
 const BALANCE_TILT = 2;
 /** The 2-column grid's own page inset and card-to-card gap. */
@@ -92,6 +107,11 @@ const GRID_PAD = SPACE.md;
 const GRID_GAP = SPACE.md;
 /** The shelves hold three items each (Storefront build 2). */
 const PER_SHELF = 3;
+/**
+ * The fallback card's name lines: every closet name fits two at 1.0x in the
+ * 2-up card (measured, 375pt phone), three at CHROME_TYPE_CAP.
+ */
+const CARD_NAME_LINES = 3;
 /** The plank wall's faint horizontal grain: one hairline every so often. */
 const WALL_STRIPE_PITCH = 48;
 /**
@@ -178,7 +198,14 @@ function ShopCard({
   // ownership, its cost and what a tap will do. [D-03] (2026-09-11)
   const a11y = cosmeticAccessibility(
     { name: item.name, rarity, cost: item.cost },
-    { owned, active, locked, canAfford, action: owned ? "equip" : "preview" },
+    {
+      owned,
+      active,
+      locked,
+      canAfford,
+      buyable: inDrop,
+      action: owned ? "equip" : "preview",
+    },
   );
   // One grammar for every card in the store (utils/shopShelves cardTag).
   const face = cardTagFace(
@@ -187,6 +214,7 @@ function ShopCard({
   return (
     <View
       ref={ref}
+      style={shopCardStyles.cardWrap}
       onLayout={() => {
         ref.current?.measureInWindow?.((x, y, w, h) =>
           onCenter?.(x + w / 2, y + h / 2),
@@ -236,12 +264,20 @@ function ShopCard({
               tone="slopGold"
               label="Members"
               icon={locked ? "lock" : undefined}
+              clipRadius={CARD_INNER_RADIUS}
             />
           ) : null}
           <HatThumb item={item} fill />
         </View>
         <View style={shopCardStyles.foot}>
-          <T role="cardTitleSm" numberOfLines={1}>
+          {/* A name never ends in "…": two lines hold every catalog name
+              at default size in this 2-up card, three at the chrome
+              ceiling, and the row's cards stretch to one height. */}
+          <T
+            role="cardTitleSm"
+            numberOfLines={CARD_NAME_LINES}
+            maxFontSizeMultiplier={CHROME_TYPE_CAP}
+          >
             {item.name}
           </T>
           {/* The tag is the action's face: "Wear" / "Wearing" for an owned
@@ -253,6 +289,7 @@ function ShopCard({
             icon={face.icon}
             coin={face.coin}
             label={face.label}
+            maxFontSizeMultiplier={CHROME_TYPE_CAP}
             style={shopCardStyles.footTag}
           />
         </View>
@@ -283,15 +320,24 @@ const shopCardStyles = StyleSheet.create({
     borderColor: UI_COLORS.border,
     ...SHADOW_SM,
   },
+  // The card fills its grid cell, which a wrapping row stretches to the
+  // line's tallest card, so a two-line name never lifts its neighbour's tag.
+  // It does not clip: the thumb rounds its own top corners and the ribbon
+  // clips itself (Ribbon clipRadius), so the card keeps its sticker shadow.
+  cardWrap: { flex: 1 },
   card: {
-    overflow: "hidden",
+    flex: 1,
   },
   // aspectRatio is safe on VIEWS — HatThumb measures inside, so the
-  // image itself still gets explicit numerics (the Yoga-quirk cure).
+  // image itself still gets explicit numerics (the Yoga-quirk cure). The
+  // thumb clips a full-bleed scene to the card's inner corner.
   thumb: {
     aspectRatio: THUMB_RATIO,
     borderBottomWidth: BORDER.ink,
     borderColor: UI_COLORS.border,
+    borderTopLeftRadius: CARD_INNER_RADIUS,
+    borderTopRightRadius: CARD_INNER_RADIUS,
+    overflow: "hidden",
     position: "relative",
   },
   // Corner badges share a single SPACE.sm inset (UI audit).
@@ -322,7 +368,12 @@ const shopCardStyles = StyleSheet.create({
     zIndex: 2,
     ...SHADOW_SM,
   },
-  foot: { padding: SPACE.md, gap: SPACE.sm },
+  foot: {
+    flexGrow: 1,
+    justifyContent: "space-between",
+    padding: SPACE.md,
+    gap: SPACE.sm,
+  },
   // The footer capsule spans the card, so OWNED / SEASON PASS / the price all
   // share one footprint and the grid never reflows between states.
   footTag: { alignSelf: "stretch" },
@@ -355,6 +406,7 @@ export default function ShopScreen() {
     resetsIn,
     counterBuys,
     membersShelf,
+    wornItems,
     ownedItems,
     dailyIds,
     buyableIds,
@@ -384,6 +436,25 @@ export default function ShopScreen() {
   };
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
+  // The crown's scroll edge: drawn once the list has left its top, so what
+  // scrolls under the crown slides under a drawn edge (polish pass,
+  // 2026-10-04 — the fitting room used to be cut by an invisible line).
+  const edge = useScrollEdge();
+  // The kicker counts what a tap can buy right now — the sun price tags on
+  // the page (utils/shopShelves shopKicker).
+  const inReach = useMemo(
+    () =>
+      allItems.filter((item) =>
+        buyableNow(item, { owned, buyableIds, counter, isVip }),
+      ).length,
+    [allItems, owned, buyableIds, counter, isVip],
+  );
+  const kicker = shopKicker({
+    loading,
+    failed: !!error,
+    shelfCount: daily.length + membersShelf.length,
+    inReach,
+  });
   // The store's one scroller, and the two things the screen drives on it: the
   // fold (the hero fitting room scrolled off — the hero pig rests while it is
   // off screen) and the imperative jump to "Your closet" that every Closet
@@ -721,8 +792,10 @@ export default function ShopScreen() {
             )
           ) : plainShelves ? (
             <>
+              {/* The kicker said "today's drop" over "Today's Drop"; it says
+                  the drop's one rule now (the buy gate's "Today only"). */}
               <SectionHeader
-                kicker="today's drop"
+                kicker="sold today only"
                 title="Today's Drop"
                 right={`resets in ${formatCountdownHM(resetsIn)}`}
               />
@@ -733,7 +806,7 @@ export default function ShopScreen() {
             </>
           ) : (
             chunkShelves(daily, PER_SHELF).map((row, r) => (
-              <Shelf key={r}>
+              <Shelf key={r} slots={PER_SHELF}>
                 {row.map((item, i) => shelfItem(item, r * PER_SHELF + i))}
               </Shelf>
             ))
@@ -751,7 +824,11 @@ export default function ShopScreen() {
                 </View>
               </>
             ) : (
-              <SlopClubShelf onPressSign={() => router.push("/pen")}>
+              <SlopClubShelf
+                onPressSign={() => router.push("/pen")}
+                member={isVip}
+                slots={PER_SHELF}
+              >
                 {membersShelf.map((item, i) => shelfItem(item, i, !isVip))}
               </SlopClubShelf>
             )
@@ -773,12 +850,17 @@ export default function ShopScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* The crown every screen wears. The snouts pocket alone rides the
             right slot — the Golden Ticket left for Me, where redeeming a code
-            already lives (2026-09-17); the kicker names THIS destination (it
-            used to read "your closet" above a title that says Shop). [D-15] */}
+            already lives (2026-09-17). The kicker used to read "the shop"
+            over a title that says Shop; it carries the day now ("three you
+            can buy today"), which on an SE is the only word about the
+            shelves above the fold (polish pass, 2026-10-04). [D-15] */}
         <PageHeader
           variant="tab"
-          kicker="the shop"
+          kicker={kicker}
           title="Shop"
+          // The crown is pinned above the one scroller: past the chrome
+          // ceiling it stops growing instead of eating the page (106).
+          maxFontSizeMultiplier={CHROME_TYPE_CAP}
           right={
             <Sticker
               color="sun"
@@ -793,6 +875,9 @@ export default function ShopScreen() {
             </Sticker>
           }
         />
+        {/* The crown's scroll edge (one rule app-wide), there only once
+            something has slid under the crown; always laid out. */}
+        <ScrollEdge visible={edge.edgeVisible} />
 
         {error ? (
           <EmptyState
@@ -839,6 +924,8 @@ export default function ShopScreen() {
               counter={counter}
               storeContent={storeWall}
               onFoldChange={setFolded}
+              wornItems={wornItems}
+              onScroll={edge.onScroll}
             />
           </View>
         )}

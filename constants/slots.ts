@@ -42,16 +42,21 @@ const SLOT_COLUMN: Record<EquipSlotKey, string> = {
 	background: "active_background_id",
 };
 
-// Player-facing slot labels (Closet slot chips).
+// Player-facing slot labels (Closet slot chips). One word each, singular like
+// the rest, and each must fit the 64pt chip on ONE line at CHROME_TYPE_CAP:
+// measured in kickerPillSm at 1.3x, "TICKLES" ran 64.7pt and broke mid-word
+// ("TICK/LES"), "TICKLE" is 54.8pt; "BACKGROUND" never fit (the chip said "BG",
+// dev shorthand), "SCENE" is 50.7pt and is the game's own word for the
+// scenery behind the pig (polish pass, 2026-10-04).
 export const SLOT_LABEL: Record<EquipSlotKey, string> = {
 	head: "Hat",
 	bow: "Bow",
 	face: "Face",
 	neck: "Neck",
-	tickle: "Tickles",
+	tickle: "Tickle",
 	aura: "Aura",
 	held: "Held",
-	background: "Background",
+	background: "Scene",
 };
 
 // Order the slot chips appear in the Closet.

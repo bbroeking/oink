@@ -104,6 +104,44 @@ describe("HabitatGiftReveal", () => {
   });
   afterEach(() => jest.useRealTimers());
 
+  it("titles a batch by what it is for, and counts it honestly", async () => {
+    // Nothing new, from a Barn journey milestone: never "A Wallow worth
+    // remembering" — that title belongs to Wallow gifts (polish 2026-10-04).
+    const lantern: HabitatCatalogItem = {
+      ...item,
+      id: "firefly_lantern",
+      name: "Firefly Lantern",
+      prestigeRank: undefined,
+      prestigeKeepsake: undefined,
+    };
+    mockJournal.acquisitions = [
+      { ...gift, itemId: lantern.id, source: "habitat_milestone", newlyOwned: false },
+    ];
+    const words = (tree: TestRenderer.ReactTestRenderer) =>
+      tree.root
+        .findAllByType(require("react-native").Text)
+        .map((node) => node.props.children)
+        .flat()
+        .filter((part: unknown) => typeof part === "string")
+        .join(" | ");
+    let tree = TestRenderer.create(
+      <HabitatGiftReveal accountId="a" catalog={[lantern]} onPreview={jest.fn()} />,
+    );
+    await settle();
+    expect(words(tree)).toContain("A milestone worth remembering");
+    expect(words(tree)).not.toContain("A Wallow worth remembering");
+    expect(words(tree)).toContain("You already own this one.");
+    act(() => tree.unmount());
+    // The same batch from a Wallow rank keeps its Wallow title.
+    mockJournal.acquisitions = [{ ...gift, newlyOwned: false }];
+    tree = TestRenderer.create(
+      <HabitatGiftReveal accountId="a" catalog={[item]} onPreview={jest.fn()} />,
+    );
+    await settle();
+    expect(words(tree)).toContain("A Wallow worth remembering");
+    act(() => tree.unmount());
+  });
+
   it("treats Later as presented but not seen and releases before teardown", async () => {
     const onDone = jest.fn();
     const tree = TestRenderer.create(

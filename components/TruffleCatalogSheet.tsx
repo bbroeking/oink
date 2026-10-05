@@ -13,7 +13,6 @@ import { useEffect, useState } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { supabase } from "@/utils/supabase";
 import {
-	Button,
 	Icon,
 	LoadingBeat,
 	Sheet,
@@ -86,24 +85,15 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 	const ownedCount = rows ? rows.filter((r) => r.owned).length : 0;
 	const total = rows ? rows.length : EXCHANGE_ITEM_IDS.length;
 
+	// A read-only case: the panel's X is its one close. The gold "Done" footer
+	// was a second close in the loudest colour on the sheet, and gold is the
+	// thing to do, never the way out. (2026-10-04)
 	return (
 		<Sheet
 			open={open}
 			onClose={onClose}
 			kicker="exclusives"
 			title="What you can earn"
-			footer={
-				<Button
-					full
-					variant="gold"
-					onPress={onClose}
-					accessibilityLabel="Done"
-					accessibilityHint="Closes the trophy case"
-					testID="truffle-catalog-done"
-				>
-					Done
-				</Button>
-			}
 			testID="truffle-catalog-sheet"
 		>
 			<T role="hand" tone="secondary" style={styles.sub}>
@@ -152,7 +142,13 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 										</View>
 									)}
 								</View>
-								<T role="kickerPillSm" align="center" numberOfLines={1} style={styles.name}>
+								{/* The name speaks in `label` and may take two lines: in the
+								    tracked caps-pill role "Festival Pennants" ended in "…"
+								    (a label that needs to shrink is in the wrong role,
+								    2026-09-14). The rarity rides the tile's foot, so a
+								    two-line name never knocks one row's rarity words out
+								    of line. */}
+								<T role="label" align="center" numberOfLines={2} style={styles.name}>
 									{r.name}
 								</T>
 								<T role="kicker" align="center" style={[styles.rarity, { color: badge.ink }]}>
@@ -193,6 +189,6 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	lock: { position: "absolute", top: SPACE.xs, right: SPACE.xs },
-	name: { textTransform: "none", marginTop: SPACE.xs, paddingHorizontal: SPACE.xxs },
-	rarity: { textTransform: "capitalize" },
+	name: { marginTop: SPACE.xs, paddingHorizontal: SPACE.xs },
+	rarity: { textTransform: "capitalize", marginTop: "auto" },
 });

@@ -20,6 +20,7 @@ import {
 } from "@/constants/habitat";
 import {
   BORDER,
+  CHROME_TYPE_CAP,
   RADII,
   SHADOW_SM,
   SPACE,
@@ -45,11 +46,12 @@ const MIN_TARGET = 44;
 // the artwork rather than steps on the spacing scale (the PageHeader plaque
 // precedent). `PIG_STAGE` is the 300pt frame a caller-supplied pig is authored
 // in; `THEME_MARKER_W` is the width of the "Room" capsule; `TOOLBAR_CLEARANCE`
-// drops that capsule below the editor's floating toolbar; `EDIT_SLOT_WASH` is
-// the pale paper veil that makes an empty decorating spot findable while the
-// art still reads through it, and `SELECTED_SLOT_WASH` its sun counterpart.
-// Both are veils over artwork, so they sit far below TINT.paperWash (.7) and
-// TINT.sunGlow (.5), which are designed to sit on paper. (2026-09-11)
+// drops that capsule below the editor's floating toolbar. An empty decorating
+// spot wears TINT.paperVeil so it is findable while the art still reads
+// through it, and the selected spot TINT.sunVeil — the two veils theme.ts
+// names for exactly this (they were hand-typed here as rgba literals until
+// 2026-10-04). Both sit far below TINT.paperWash (.7) and TINT.sunGlow (.5),
+// which are designed to sit on paper. (2026-09-11)
 const PIG_STAGE = 300;
 // Where the pigs sit, as fractions of the canvas: centre x / y and the drawn
 // width. The room is the ONE owner of pig size — a caller hands in a 300pt
@@ -69,8 +71,11 @@ const PIG_SPOTS = {
 } as const;
 const THEME_MARKER_W = 80;
 const TOOLBAR_CLEARANCE = 56;
-const EDIT_SLOT_WASH = "rgba(255,250,240,0.14)";
-const SELECTED_SLOT_WASH = "rgba(255,216,122,0.2)";
+// Where a spot's control sits. Most spots wear theirs at the centre of the
+// thing they hold; the centrepiece is UNDER the pigs by design, so a centred
+// control sat on Rosie's bandana (polish 2026-10-04, 008). Its control rides
+// the rug's front edge instead, below her hooves.
+const FRONT_EDGE_CONTROL: ReadonlySet<HabitatPosition> = new Set(["floor_centerpiece"]);
 // The mark inside a decorating spot's control: one step below the 22pt Icon
 // scale so it reads as an affordance on the art, not as a button.
 const CONTROL_MARK = 16;
@@ -100,7 +105,8 @@ export type HabitatSceneProps = {
   anchor?: HabitatSceneAnchor;
   hostPig?: ReactNode;
   visitorPig?: ReactNode;
-  onInspect?: (item: HabitatPlacedItem) => void;
+  /** A placed furnishing was tapped at rest. The spot says where it stands. */
+  onInspect?: (item: HabitatPlacedItem, position: HabitatPosition) => void;
   editing?: boolean;
   selectedPosition?: HabitatPosition;
   /** Safe-area top inset when the scene sits behind a floating editor toolbar. */
@@ -134,7 +140,7 @@ function HabitatPositionLayer({ position, placed, canvas, editing, selected, wal
   selected: boolean;
   wallowRank?: number;
   onSelectPosition?: (position: HabitatPosition) => void;
-  onInspect?: (item: HabitatPlacedItem) => void;
+  onInspect?: (item: HabitatPlacedItem, position: HabitatPosition) => void;
   onSettled: () => void;
 }) {
   const policy = useMotionPolicy();
@@ -163,6 +169,8 @@ function HabitatPositionLayer({ position, placed, canvas, editing, selected, wal
   const placedArt = placed ? Image.resolveAssetSource(habitatItemAsset(placed.assetKey)) : null;
   const placedH = placedArt?.width && placedArt.height ? Math.min(rect.height, (rect.width * placedArt.height) / placedArt.width) : rect.height;
   const plankTop = rect.top + (rect.height + placedH) / 2 - SHELF_PLANK_RISE;
+  // The control's centre: the spot's centre, or the rug's front edge.
+  const controlCentreY = FRONT_EDGE_CONTROL.has(position) ? rect.top + rect.height : rect.top + rect.height / 2;
   return <>
     {position === "surface" && (
       <Image
@@ -173,7 +181,13 @@ function HabitatPositionLayer({ position, placed, canvas, editing, selected, wal
         testID="habitat-shelf-plank"
       />
     )}
-    <Animated.View pointerEvents="none" style={[styles.positionArt, rect, { zIndex: meta.layer, transform: [{ scale: flourish }] }, editing && styles.editPosition, selected && styles.selectedPosition]}>
+    {/* A spot's box is drawn only when it means something: dashed while the
+        spot is EMPTY (the "waiting / not yet" sticker grammar), solid sun while
+        it is selected. A furnished spot shows its furniture and a pencil —
+        drawing every box at full size tangled six overlapping outlines over
+        the room (the rafters over the wall, the rug across both floor
+        spots). (polish 2026-10-04, 008) */}
+    <Animated.View pointerEvents="none" testID={`habitat-spot-${position}`} style={[styles.positionArt, rect, { zIndex: meta.layer, transform: [{ scale: flourish }] }, editing && !placed && styles.editPosition, selected && styles.selectedPosition]}>
       {placed && <HabitatImage source={habitatItemAsset(placed.assetKey)} style={styles.itemArt} resizeMode="contain" testID={`habitat-item-${placed.id}`} onSettled={onSettled} />}
       {/* The inscription. One line, never scaled: it is engraved on the
           plaque in the artwork, and the rank is spoken by the spot's own
@@ -182,8 +196,8 @@ function HabitatPositionLayer({ position, placed, canvas, editing, selected, wal
       {rank !== null && <Text accessible={false} allowFontScaling={false} numberOfLines={1} style={[styles.keepsakeRank, { top: (rect.height - artSize) / 2 + artSize * plaqueY! - KEEPSAKE_RANK_RISE }]} testID="habitat-keepsake-rank">{rank}</Text>}
     </Animated.View>
     <Pressable
-      style={({ pressed }) => [styles.positionControl, { left: rect.left + rect.width / 2 - MIN_TARGET / 2, top: rect.top + rect.height / 2 - MIN_TARGET / 2 }, editing && styles.visibleControl, selected && styles.selectedControl, pressed && styles.pressed]}
-      onPress={() => editing ? onSelectPosition?.(position) : placed && onInspect?.(placed)}
+      style={({ pressed }) => [styles.positionControl, { left: rect.left + rect.width / 2 - MIN_TARGET / 2, top: controlCentreY - MIN_TARGET / 2 }, editing && styles.visibleControl, selected && styles.selectedControl, pressed && styles.pressed]}
+      onPress={() => editing ? onSelectPosition?.(position) : placed && onInspect?.(placed, position)}
       disabled={editing ? !onSelectPosition : !placed || !onInspect}
       accessibilityRole="button"
       accessibilityLabel={placed ? `${meta.label}, ${placed.name}${rank !== null ? `, Wallow Rank ${rank}` : ""}` : `${meta.label}, empty`}
@@ -267,7 +281,7 @@ export function HabitatScene({
 
         {editing && (
           <Pressable
-            style={({ pressed }) => [styles.themeMarker, controlInsetTop !== undefined && { top: controlInsetTop + TOOLBAR_CLEARANCE }, selectedPosition === "interior_background" && styles.selectedPosition, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.themeMarker, controlInsetTop !== undefined && { top: controlInsetTop + TOOLBAR_CLEARANCE }, selectedPosition === "interior_background" && styles.selectedMarker, pressed && styles.pressed]}
             onPress={() => onSelectPosition?.("interior_background")}
             disabled={!onSelectPosition}
             accessibilityRole="button"
@@ -276,7 +290,7 @@ export function HabitatScene({
             accessibilityState={{ selected: selectedPosition === "interior_background", disabled: !onSelectPosition }}
             testID="habitat-position-interior_background"
           >
-            <Label maxFontSizeMultiplier={1.3}>Room</Label>
+            <Label maxFontSizeMultiplier={CHROME_TYPE_CAP}>Room</Label>
           </Pressable>
         )}
 
@@ -315,11 +329,15 @@ const styles = StyleSheet.create({
   positionControl: { position: "absolute", zIndex: 80, width: MIN_TARGET, height: MIN_TARGET, borderRadius: MIN_TARGET / 2, alignItems: "center", justifyContent: "center" },
   visibleControl: { backgroundColor: TINT.paperWash, borderWidth: BORDER.ink, borderColor: WHIMSY.ink, ...SHADOW_SM },
   selectedControl: { borderColor: WHIMSY.sun, backgroundColor: WHIMSY.paper },
-  themeMarker: { position: "absolute", left: 12, top: 12, zIndex: 80, width: THEME_MARKER_W, height: MIN_TARGET, paddingHorizontal: SPACE.sm, alignItems: "center", justifyContent: "center", borderRadius: RADII.xxl, borderWidth: BORDER.ink, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper, ...SHADOW_SM },
+  themeMarker: { position: "absolute", left: SPACE.md, top: SPACE.md, zIndex: 80, width: THEME_MARKER_W, height: MIN_TARGET, paddingHorizontal: SPACE.sm, alignItems: "center", justifyContent: "center", borderRadius: RADII.xxl, borderWidth: BORDER.ink, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper, ...SHADOW_SM },
   itemArt: { width: "100%", height: "100%" },
   keepsakeRank: { ...TYPE.label, color: WHIMSY.ink, position: "absolute", textAlign: "center", width: "100%" },
-  editPosition: { borderWidth: BORDER.ink, borderColor: WHIMSY.paper, borderStyle: "dashed", borderRadius: RADII.lg, backgroundColor: EDIT_SLOT_WASH },
-  selectedPosition: { borderColor: WHIMSY.sun, borderStyle: "solid", backgroundColor: SELECTED_SLOT_WASH },
+  editPosition: { borderWidth: BORDER.ink, borderColor: WHIMSY.paper, borderStyle: "dashed", borderRadius: RADII.lg, backgroundColor: TINT.paperVeil },
+  // The selected spot's box: a whole outline of its own, so a furnished spot
+  // (which draws no dashed box) still shows where its choice will land.
+  selectedPosition: { borderWidth: BORDER.ink, borderRadius: RADII.lg, borderColor: WHIMSY.sun, borderStyle: "solid", backgroundColor: TINT.sunVeil },
+  // The Room capsule keeps its own pill shape when selected; only its ink turns sun.
+  selectedMarker: { borderColor: WHIMSY.sun, borderStyle: "solid", backgroundColor: TINT.sunVeil },
   pressed: { transform: [{ scale: .97 }] },
   pigStage: { position: "absolute", width: PIG_STAGE, height: PIG_STAGE, zIndex: 50 },
   shelfPlank: { position: "absolute" },

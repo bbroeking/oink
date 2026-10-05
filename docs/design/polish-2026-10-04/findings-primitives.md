@@ -1,0 +1,20 @@
+# Polish findings — primitives and shell (2026-10-04)
+
+20 findings: P1 5 · P2 8 · P3 7. Fixed 13, hardened 1 (needs the after-round check), routed 3, as designed 1, fixed by owner 1, mostly fixed + routed 1. All 30 forwarded asks handled (M-12 skipped: a founder decision). Gates at finish: eslint 0 errors on 30 files; full jest 298 suites green; scorecard `{}`; `lint:web` green after `build:tokens`. `quality:layout` was already failing (line-clamp budget and a migration security check) and is unchanged by this pass.
+
+## Fixed (highlights)
+- **01** `Sheet`: the header keeps a little paper under it and a rule appears on its bottom edge once rows scroll under it (and above a pinned footer while more waits below): the Satchel, Lifetime story and Wallow rank collisions are gone. **02** the same edge under `AdaptiveModalScaffold`'s close rail.
+- **04 (P1)** `HangingSignsTabBar`: React Native gives role "tab" no iOS role, so VoiceOver read just "Barn"; on iOS each sign is now a selected-state button inside a tab-bar container ("tab, 1 of 5"). **05** labels capped at `CHROME_TYPE_CAP`, signs widen for their word, Large Content Viewer on long-press. **06** labels re-measure after a live text-size change (`DynamicTypeText`).
+- **07** `SegmentedControl` icon-over-label defaults to `CHROME_TYPE_CAP` with a 2 pt minimum side padding: "FRIENDS / RANKINGS" no longer break mid-word.
+- **08** `Button` never truncates (documented and tested); **09** `TicketButton` capped, re-measures, two lines max without clamping.
+- **10/11 (P1)** sign-in on the SE: React Native wrote Rosie's asset height (383) into her style, covering the heading; she now sits in a slot that yields; the email form scrolls only when it must; the 17 Pro layout is unchanged.
+- **12** `StackPage` uses safe-area-context's `SafeAreaView`; **13** `Receipt`'s total rule (a one-sided dashed border iOS refused to draw) now draws; **15** `ActionSheet` drops its second "Close"; **16** `Toast` titles wrap; **17** one Google error string, sentence case.
+
+## New API (all optional, existing callers unchanged)
+`ScrollEdge` + `useScrollEdge({ threshold?, onScroll? })` · `StackPage edges?`, `STACK_SCROLL_EDGES`, `useStackScrollPad()` · `useIconScale(cap?)`, exported `DynamicTypeText`, `TILE_TYPE_CAP` (1.2) · `PageHeader maxFontSizeMultiplier` · `SectionHeader size="sm"` · `AdaptiveModalScaffold card` · `DialogCloseRow accessibilityHint` · `ActionSheetItem.accessibilityHint` · `ListRow`/`NavRow action` (a control outside the row's button), `NavRow badgeLabel`/`accessibilityLabel` · `Tag flat` · `Ribbon clipRadius` · `EmptyState flush` · `PrestigeAvatar mode` · `Sticker accessible` / `accessibilityActions` / `onAccessibilityAction` · `ProfileIdentity`: a space before `#code`, the title under the name in rows, titles in their own casing, two-line names.
+
+## Routed to areas (adopter list)
+Scroll edge: Shop and Pen crowns, Season (its own hairline), Friends crown and Leaderboard sticky controls, the Barn collection's sticky header. `StackPage` edges + scroll pad replacing `TAB_SAFE`: barn-collection, achievements, recruits, recruits-progress, dig-collection, porch-round, contraptions (not MatchScreen). `card` frame: the three Season cards (then delete `seasonCard.ts`). `Ribbon clipRadius`: Account, barn-collection, shop. `EmptyState flush`, `NavRow action`: Account and recruits-progress. `SectionHeader size="sm"`: SatchelSheet. `TILE_TYPE_CAP`: barn-collection. Dashed rules that never draw: season.tsx, PassPanel, SnoutDeepSheets. React Native `SafeAreaView` still imported in nine files. × labels in PostcardModal, PigFriendsLaunchModal, HabitatGiftReveal. The Reanimated `.value` warning in PigFriendsLaunchModal.
+
+## Deferred
+#03 controls reported as text/images by the capture tool are named buttons in source (hardened anyway): verify with `idb ui describe-all` · 320 pt phones: tab signs and hub labels still break above 1.0× · the sheet grabber suggests drag-to-dismiss without a gesture (beyond polish).

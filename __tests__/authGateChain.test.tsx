@@ -9,6 +9,7 @@
 // regression here until a new player does. [E16, E24]
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { Onboarding } from "../components/Onboarding";
 import { ReferralCodeEntry } from "../components/ReferralCodeEntry";
@@ -33,10 +34,20 @@ jest.mock("../components/ui/PigRenderer", () => ({
 	shouldUseRiveRenderer: () => false,
 }));
 
+// The app mounts these under expo-router's SafeAreaProvider; the screens read
+// the insets themselves now (React Native's deprecated SafeAreaView is gone),
+// so the harness provides them too. (2026-10-04)
+const SAFE_METRICS = {
+	frame: { x: 0, y: 0, width: 375, height: 667 },
+	insets: { top: 20, left: 0, right: 0, bottom: 0 },
+};
+
 async function renderAct(node: React.ReactElement) {
 	let r!: TestRenderer.ReactTestRenderer;
 	await act(async () => {
-		r = TestRenderer.create(node);
+		r = TestRenderer.create(
+			<SafeAreaProvider initialMetrics={SAFE_METRICS}>{node}</SafeAreaProvider>,
+		);
 	});
 	return r;
 }

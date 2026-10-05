@@ -40,6 +40,7 @@ import {
 	BORDER,
 	OPACITY,
 	PAGE_PAD,
+	PRESSED_FLAT,
 	RADII,
 	RULE_WIDTH,
 	SPACE,
@@ -73,6 +74,14 @@ interface Props {
 	/** Hand-voice line under a `plaque` title ("sounders, one board"). */
 	subtitle?: string;
 	variant?: PageHeaderVariant;
+	/**
+	 * A Dynamic Type ceiling for the crown's words, for a crown PINNED above a
+	 * scroller (the tab crowns of Friends, Shop, Me and Season), where a
+	 * three-line title at accessibility sizes eats the list. Undefined by
+	 * default: a crown that scrolls with its page follows the 200% rule. Pass
+	 * `CHROME_TYPE_CAP`. (2026-10-04, Season ask 2)
+	 */
+	maxFontSizeMultiplier?: number;
 	ruleWidth?: number;
 	testID?: string;
 	style?: StyleProp<ViewStyle>;
@@ -90,9 +99,11 @@ const HANGER_HEIGHT = SPACE.lg;
 function BackButton({
 	onBack,
 	label = "back",
+	maxFontSizeMultiplier,
 }: {
 	onBack: () => void;
 	label?: string;
+	maxFontSizeMultiplier?: number;
 }) {
 	return (
 		<Pressable
@@ -100,9 +111,21 @@ function BackButton({
 			accessibilityRole="button"
 			// Spoken as a sentence, drawn as the hand line it is.
 			accessibilityLabel={label.charAt(0).toUpperCase() + label.slice(1)}
-			style={styles.backBtn}
+			accessibilityHint="Returns to the previous screen"
+			style={({ pressed }) => [styles.backBtn, pressed && PRESSED_FLAT]}
 		>
-			<Hand tone="secondary">‹ {label}</Hand>
+			{/* The ‹ is part of the drawing, not of the name: the label above is
+			    what a screen reader says, so the glyph line stays out of the tree
+			    rather than being read as "single left-pointing angle quotation
+			    mark, back". */}
+			<Hand
+				tone="secondary"
+				maxFontSizeMultiplier={maxFontSizeMultiplier}
+				accessibilityElementsHidden
+				importantForAccessibility="no-hide-descendants"
+			>
+				‹ {label}
+			</Hand>
 		</Pressable>
 	);
 }
@@ -116,10 +139,12 @@ export function PageHeader({
 	backLabel,
 	subtitle,
 	variant = "stack",
+	maxFontSizeMultiplier,
 	ruleWidth = RULE_WIDTH,
 	testID,
 	style,
 }: Props) {
+	const cap = maxFontSizeMultiplier;
 	// The hanging sign. Its own layout, because a plaque has no title ROW — the
 	// title is centred inside the sign, so `right` rides the back row instead.
 	if (variant === "plaque") {
@@ -128,7 +153,7 @@ export function PageHeader({
 				{onBack || right ? (
 					<View style={styles.plaqueTopRow}>
 						{onBack ? (
-							<BackButton onBack={onBack} label={backLabel} />
+							<BackButton onBack={onBack} label={backLabel} maxFontSizeMultiplier={cap} />
 						) : (
 							<View />
 						)}
@@ -136,7 +161,7 @@ export function PageHeader({
 					</View>
 				) : null}
 				{kicker ? (
-					<KickerPill align="center" accessibilityRole="text">
+					<KickerPill align="center" accessibilityRole="text" maxFontSizeMultiplier={cap}>
 						{kicker}
 					</KickerPill>
 				) : null}
@@ -152,11 +177,11 @@ export function PageHeader({
 					shadow="sm"
 					style={styles.plaque}
 				>
-					<PageTitle align="center" accessibilityRole="header">
+					<PageTitle align="center" accessibilityRole="header" maxFontSizeMultiplier={cap}>
 						{title}
 					</PageTitle>
 					{subtitle ? (
-						<Hand tone="secondary" align="center">
+						<Hand tone="secondary" align="center" maxFontSizeMultiplier={cap}>
 							{subtitle}
 						</Hand>
 					) : null}
@@ -174,11 +199,15 @@ export function PageHeader({
 		>
 			{/* A tab screen is already at the root of its stack: no back. */}
 			{!tab && onBack ? (
-				<BackButton onBack={onBack} label={backLabel} />
+				<BackButton onBack={onBack} label={backLabel} maxFontSizeMultiplier={cap} />
 			) : null}
-			{kicker ? <KickerPill accessibilityRole="text">{kicker}</KickerPill> : null}
+			{kicker ? (
+				<KickerPill accessibilityRole="text" maxFontSizeMultiplier={cap}>
+					{kicker}
+				</KickerPill>
+			) : null}
 			<View style={styles.row}>
-				<PageTitle accessibilityRole="header" style={styles.title}>
+				<PageTitle accessibilityRole="header" style={styles.title} maxFontSizeMultiplier={cap}>
 					{title}
 				</PageTitle>
 				{right ? <View style={styles.rightSlot}>{right}</View> : null}

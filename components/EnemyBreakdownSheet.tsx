@@ -48,7 +48,8 @@ export function EnemyBreakdownSheet({ enemy, onClose }: Props) {
 		<Sheet
 			open={open}
 			onClose={onClose}
-			closeLabel="Close rivalry breakdown"
+			// The X is a button named "Close" (the polish brief's rule); its hint
+			// already says it closes this sheet.
 			kicker="the rivalry receipt"
 			title={`${nameA} vs ${nameB}`}
 			testID="enemy-breakdown-sheet"

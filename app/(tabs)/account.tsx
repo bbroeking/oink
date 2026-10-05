@@ -13,9 +13,12 @@ export default function AccountScreen() {
 			setSession(session);
 		});
 
-		supabase.auth.onAuthStateChange((_event, session) => {
+		// The listener is dropped with the screen; it used to outlive it, one
+		// more subscription per mount. (polish 2026-10-04)
+		const { data } = supabase.auth.onAuthStateChange((_event, session) => {
 			setSession(session);
 		});
+		return () => data.subscription.unsubscribe();
 	}, []);
 
 	return (

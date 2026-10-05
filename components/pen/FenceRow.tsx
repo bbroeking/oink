@@ -4,9 +4,14 @@
 // the pig is not here), back (a sun dot: something waits on the board),
 // resting / locked (dashed cream2, muted name — a lapsed companion, or a pig
 // not yet recruited).
+//
+// VoiceOver: on iOS the medallions are buttons with `selected` inside a
+// tab-bar container (`TAB_ROLE` / `TAB_LIST_ROLE`), the tab bar's own fix; role
+// "tab" gave iOS no trait. The container is a plain View inside the scroller,
+// the shape verified on device. (2026-10-04)
 import { ScrollView, StyleSheet, View } from "react-native";
-import { PigPortrait, Sticker, T } from "@/components/ui";
-import { BORDER, OPACITY, PIG_ACCENT, RADII, SPACE, WHIMSY } from "@/constants/theme";
+import { PigPortrait, Sticker, T, TAB_LIST_ROLE, TAB_ROLE } from "@/components/ui";
+import { BORDER, CHROME_TYPE_CAP, OPACITY, PAGE_PAD, PIG_ACCENT, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import type { PigId } from "@/utils/pigs";
 import type { MedallionState } from "./penState";
 
@@ -45,50 +50,62 @@ export function FenceRow({ pigs, selected, onSelect }: Props) {
 		<ScrollView
 			horizontal
 			showsHorizontalScrollIndicator={false}
-			contentContainerStyle={styles.row}
-			accessibilityRole="tablist"
+			style={styles.rail}
 			testID="fence-row"
 		>
-			{pigs.map((pig) => {
-				const isSelected = pig.id === selected;
-				const dashed = pig.state === "out" || pig.state === "resting" || pig.state === "locked";
-				const faded = pig.state === "out";
-				const muted = pig.state === "resting" || pig.state === "locked";
-				return (
-					<View key={pig.id} style={styles.cell}>
-						<Sticker
-							color={isSelected ? "cream" : pig.state === "resting" || pig.state === "locked" ? "cream2" : PIG_ACCENT[pig.id].tint}
-							rotate={isSelected ? SELECTED_TILT : 0}
-							radius={RADII.pill}
-							shadow={isSelected ? "sticker" : "none"}
-							border={isSelected ? BORDER.heavy : BORDER.thin}
-							borderStyle={dashed ? "dashed" : "solid"}
-							onPress={() => onSelect(pig.id)}
-							accessibilityRole="tab"
-							accessibilityState={{ selected: isSelected }}
-							accessibilityLabel={`${pig.name}, ${STATE_LINE[pig.state]}`}
-							accessibilityHint={`Shows ${pig.name}'s card`}
-							testID={`fence-${pig.id}`}
-							style={[styles.medallion, faded ? styles.faded : null]}
-						>
-							<PigPortrait pigId={pig.id} size={MEDALLION_PIG} />
-						</Sticker>
-						{pig.state === "back" ? <View style={styles.dot} testID={`fence-${pig.id}-back`} /> : null}
-						<T role="label" tone={muted ? "disabled" : isSelected ? "primary" : "secondary"} align="center" numberOfLines={1}>
-							{pig.name}
-						</T>
-					</View>
-				);
-			})}
+			<View style={styles.row} accessibilityRole={TAB_LIST_ROLE} testID="fence-tabs">
+				{pigs.map((pig) => {
+					const isSelected = pig.id === selected;
+					const dashed = pig.state === "out" || pig.state === "resting" || pig.state === "locked";
+					const faded = pig.state === "out";
+					const muted = pig.state === "resting" || pig.state === "locked";
+					return (
+						<View key={pig.id} style={styles.cell}>
+							<Sticker
+								color={isSelected ? "cream" : pig.state === "resting" || pig.state === "locked" ? "cream2" : PIG_ACCENT[pig.id].tint}
+								rotate={isSelected ? SELECTED_TILT : 0}
+								radius={RADII.pill}
+								shadow={isSelected ? "sticker" : "none"}
+								border={isSelected ? BORDER.heavy : BORDER.thin}
+								borderStyle={dashed ? "dashed" : "solid"}
+								onPress={() => onSelect(pig.id)}
+								accessibilityRole={TAB_ROLE}
+								accessibilityState={{ selected: isSelected }}
+								accessibilityLabel={`${pig.name}, ${STATE_LINE[pig.state]}`}
+								accessibilityHint={`Shows ${pig.name}'s card`}
+								testID={`fence-${pig.id}`}
+								style={[styles.medallion, faded ? styles.faded : null]}
+							>
+								<PigPortrait pigId={pig.id} size={MEDALLION_PIG} />
+							</Sticker>
+							{pig.state === "back" ? <View style={styles.dot} testID={`fence-${pig.id}-back`} /> : null}
+							<T
+								role="label"
+								tone={muted ? "disabled" : isSelected ? "primary" : "secondary"}
+								align="center"
+								numberOfLines={1}
+								maxFontSizeMultiplier={CHROME_TYPE_CAP}
+							>
+								{pig.name}
+							</T>
+						</View>
+					);
+				})}
+			</View>
 		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
+	// The rail bleeds to the screen's edges and pads its medallions back to
+	// the page's inset, so the sixth pig peeks from the phone's edge instead
+	// of being cut mid-name at the page margin ("Pickl", 064 — the list-bleed
+	// ruling, 2026-09-15).
+	rail: { marginHorizontal: -PAGE_PAD },
 	row: {
 		flexDirection: "row",
 		gap: SPACE.md,
-		paddingHorizontal: SPACE.xs,
+		paddingHorizontal: PAGE_PAD,
 		paddingVertical: SPACE.md,
 	},
 	cell: { alignItems: "center", gap: SPACE.xs, width: MEDALLION_CELL_W },

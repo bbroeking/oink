@@ -5,7 +5,10 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { Button } from "../components/ui/Button";
 import {
+	BORDER,
 	BUTTON_SIZE,
+	RADII,
+	SPACE,
 	TAP_MIN,
 	TYPE,
 	UI_COLORS,
@@ -36,8 +39,11 @@ describe("Button accessibility contract", () => {
 			renderer = TestRenderer.create(<Button size="sm">Dig now</Button>);
 		});
 
-		const gradient = renderer.root.findByType(LinearGradient);
-		const style = StyleSheet.flatten(gradient.props.style);
+		// The gradient variant's box is its Pressable (the gradient only paints it).
+		const box = renderer.root.find(
+			(node) => node.props.accessibilityRole === "button",
+		);
+		const style = StyleSheet.flatten(box.props.style({ pressed: false }));
 		expect(style.minHeight).toBeGreaterThanOrEqual(44);
 		expect(style.height).toBeUndefined();
 		act(() => renderer.unmount());
@@ -188,6 +194,97 @@ describe("Button wave-2 variants", () => {
 		);
 		// No gradient while in flight: a loading button wears the resting look.
 		expect(renderer.root.findAllByType(LinearGradient)).toHaveLength(0);
+		act(() => renderer.unmount());
+	});
+});
+
+describe("Button gradient box", () => {
+	const render = (element: React.ReactElement) => {
+		let renderer!: TestRenderer.ReactTestRenderer;
+		act(() => {
+			renderer = TestRenderer.create(element);
+		});
+		return renderer;
+	};
+	const boxStyle = (renderer: TestRenderer.ReactTestRenderer) =>
+		StyleSheet.flatten(
+			renderer.root
+				.find((node) => node.props.accessibilityRole === "button")
+				.props.style({ pressed: false }),
+		);
+	const paintStyle = (renderer: TestRenderer.ReactTestRenderer) =>
+		StyleSheet.flatten(renderer.root.findByType(LinearGradient).props.style);
+
+	test("the gradient paints the box and never sizes it (after/083)", () => {
+		// Under React Native's legacy Yoga stretch errata (on by default) a
+		// flex-grown pill filled whatever height its button was measured against,
+		// so a button centred in a card grew to the card's whole height.
+		const renderer = render(
+			<Button style={{ marginTop: SPACE.md }} onPress={() => {}}>
+				Open the camera
+			</Button>,
+		);
+		const gradient = renderer.root.findByType(LinearGradient);
+		const paint = paintStyle(renderer);
+		expect(paint.position).toBe("absolute");
+		expect(paint.flex).toBeUndefined();
+		expect(paint.flexGrow).toBeUndefined();
+		expect(paint.minHeight).toBeUndefined();
+		expect(paint.marginTop).toBeUndefined();
+		expect(paint.paddingHorizontal).toBeUndefined();
+		// It reaches over the outline the box reserves, so it covers the whole box.
+		expect([paint.top, paint.right, paint.bottom, paint.left]).toEqual([
+			-BORDER.ink,
+			-BORDER.ink,
+			-BORDER.ink,
+			-BORDER.ink,
+		]);
+		// And it wears the outline, the radius and the sticker shadow.
+		expect(paint.borderWidth).toBe(BORDER.ink);
+		expect(paint.borderColor).toBe(UI_COLORS.border);
+		expect(paint.borderRadius).toBe(BUTTON_SIZE.md.br);
+		expect(paint.shadowOffset).toEqual({ width: 2, height: 2 });
+		// The label is the box's child, not the paint's.
+		expect(gradient.props.children).toBeUndefined();
+		act(() => renderer.unmount());
+	});
+
+	test("placement, padding and the label row live on the box", () => {
+		const renderer = render(
+			<Button full style={{ marginTop: SPACE.md, flex: 1, minWidth: 120 }}>
+				Wind it
+			</Button>,
+		);
+		const box = boxStyle(renderer);
+		expect(box.marginTop).toBe(SPACE.md);
+		expect(box.flex).toBe(1);
+		expect(box.minWidth).toBe(120);
+		expect(box.alignSelf).toBe("stretch");
+		expect(box.minHeight).toBe(BUTTON_SIZE.md.minH);
+		expect(box.paddingHorizontal).toBe(BUTTON_SIZE.md.px);
+		expect(box.paddingVertical).toBe(BUTTON_SIZE.md.py);
+		expect(box.flexDirection).toBe("row");
+		expect(box.alignItems).toBe("center");
+		expect(box.justifyContent).toBe("center");
+		// The outline's width is reserved (transparent), so the label sits inside
+		// it exactly where it sat inside the old outlined pill.
+		expect(box.borderWidth).toBe(BORDER.ink);
+		expect(box.borderColor).toBe("transparent");
+		// The box itself draws nothing.
+		expect(box.borderRadius).toBeUndefined();
+		expect(box.backgroundColor).toBeUndefined();
+		expect(box.shadowOffset).toBeUndefined();
+		act(() => renderer.unmount());
+	});
+
+	test("a caller's radius rounds the paint, not the box", () => {
+		const renderer = render(
+			<Button variant="gold" style={{ borderRadius: RADII.sm }}>
+				Claim
+			</Button>,
+		);
+		expect(paintStyle(renderer).borderRadius).toBe(RADII.sm);
+		expect(boxStyle(renderer).borderRadius).toBeUndefined();
 		act(() => renderer.unmount());
 	});
 });

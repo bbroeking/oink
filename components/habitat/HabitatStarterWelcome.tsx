@@ -29,9 +29,17 @@ const STARTER_ART = { width: 72, height: 72 } as const;
 export function HabitatStarterWelcome({
   visible,
   onDismiss,
+  onStart,
 }: {
   visible: boolean;
   onDismiss: () => void;
+  /**
+   * "Start decorating" — closes the welcome AND opens Decorate. The button
+   * used to say "Start decorating" and only close, leaving the player to find
+   * Decorate themselves; a host that can open the editor passes this, and the
+   * label keeps its promise. Omitted, the button only closes. (2026-10-04)
+   */
+  onStart?: () => void;
 }) {
   return (
     <AdaptiveModalScaffold
@@ -85,8 +93,12 @@ export function HabitatStarterWelcome({
           size="lg"
           full
           accessibilityLabel="Start decorating your Barn"
-          accessibilityHint="Closes this welcome and shows your Barn Interior"
-          onPress={onDismiss}
+          accessibilityHint={
+            onStart
+              ? "Closes this welcome and opens Decorate"
+              : "Closes this welcome and shows your Barn Interior"
+          }
+          onPress={onStart ?? onDismiss}
         >
           Start decorating
         </Button>

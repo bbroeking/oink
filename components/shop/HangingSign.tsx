@@ -4,10 +4,11 @@
 // label, in the same language as the hanging-signs tab bar: the current one
 // wears the peach wash and a lean, the rest hang straight.
 import type { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import {
 	ART_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	RADII,
 	SHADOW_SM,
 	SPACE,
@@ -39,6 +40,15 @@ const BADGE_H = 22;
  * nothing in it could give.)
  */
 export const SIGN_W = 60;
+/**
+ * The sign once the system text is larger than default. "Furnish" in `label`
+ * measures 44.4pt at 1.0x, inside the 48pt a 60pt sign leaves it, but 48.6pt a
+ * step up and 57pt at CHROME_TYPE_CAP, where it truncated to "Furn…". At this
+ * width the word fits to the cap (57 + the sign's 12pt of pad and border), and
+ * the chalkboard beside two of them still holds its caps line on a 375pt phone
+ * (183pt left for a 174pt board). (polish pass, 2026-10-04)
+ */
+export const SIGN_W_LARGE_TYPE = 70;
 
 export function HangingSign({
 	label,
@@ -71,8 +81,9 @@ export function HangingSign({
 	accessibilityHint?: string;
 	testID?: string;
 }) {
+	const { fontScale } = useWindowDimensions();
 	return (
-		<View style={styles.hanger}>
+		<View style={[styles.hanger, fontScale > 1 && styles.hangerLargeType]}>
 			<View style={styles.string} pointerEvents="none" />
 			<Sticker
 				color={active ? "peach" : "paper"}
@@ -100,7 +111,11 @@ export function HangingSign({
 					/>
 				) : null}
 				{labelHidden ? null : (
-					<T role="label" numberOfLines={1}>
+					<T
+						role="label"
+						numberOfLines={1}
+						maxFontSizeMultiplier={CHROME_TYPE_CAP}
+					>
 						{label}
 					</T>
 				)}
@@ -122,6 +137,7 @@ const styles = StyleSheet.create({
 		minWidth: 0,
 		alignItems: "stretch",
 	},
+	hangerLargeType: { width: SIGN_W_LARGE_TYPE },
 	string: {
 		alignSelf: "center",
 		width: BORDER.ink,

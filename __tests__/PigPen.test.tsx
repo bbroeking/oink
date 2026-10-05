@@ -31,7 +31,7 @@ const homecomingRows: number[] = [];
 jest.mock("../components/pen/Homecoming", () => ({
 	Homecoming: ({ row }: { row: { id: number } | null }) => {
 		if (row) homecomingRows.push(row.id);
-		// eslint-disable-next-line @testing-library/no-node-access, @typescript-eslint/no-require-imports
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		return row ? require("react").createElement(require("react-native").Text, { testID: "homecoming-open" }, String(row.id)) : null;
 	},
 }));
@@ -93,6 +93,21 @@ describe("penState", () => {
 		expect(pigCardState(DEFAULT_PIG_ROSTER, enabled(), ERRAND_TUNING, "pepper").action.kind).toBe("join");
 		expect(pigCardState(member, enabled({ today: { rosie: true } }), ERRAND_TUNING, "rosie").action.kind).toBe("used_today");
 		expect(pigCardState(member, EMPTY_ERRANDS, ERRAND_TUNING, "rosie").action.kind).toBe("none");
+	});
+
+	// A lone Rosie's "In the Pen" was a live segment that did nothing on a tap
+	// (polish pass, 2026-10-04): it means "the other pig comes home", so it
+	// needs an other pig who can.
+	it("only offers In the Pen when another awake pig can come home", () => {
+		const alone: PigRoster = { ...DEFAULT_PIG_ROSTER };
+		expect(pigCardState(alone, enabled(), ERRAND_TUNING, "rosie").penChoosable).toBe(false);
+		expect(pigCardState(member, enabled(), ERRAND_TUNING, "rosie").penChoosable).toBe(true);
+		// The companion is out looking: nobody to swap in.
+		expect(pigCardState(member, enabled({ out: [row({ pig_id: "copper" })] }), ERRAND_TUNING, "rosie").penChoosable).toBe(false);
+		// A lapsed member's companion rests: nobody to swap in either.
+		expect(pigCardState({ ...member, isMember: false }, enabled(), ERRAND_TUNING, "rosie").penChoosable).toBe(false);
+		// For the pig already in the Pen it is the current value.
+		expect(pigCardState(member, enabled(), ERRAND_TUNING, "copper").penChoosable).toBe(true);
 	});
 
 	it("a lapsed member's companion rests while Rosie still goes", () => {

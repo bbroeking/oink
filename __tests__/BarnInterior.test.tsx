@@ -39,6 +39,9 @@ jest.mock("@/components/habitat/HabitatOwnerPig", () => ({
 jest.mock("@/components/habitat/HabitatWorkshopCabinet", () => ({
   HabitatWorkshopCabinet: () => null,
 }));
+// Which spot the mock's tap reports (the scene says where a tapped furnishing
+// stands, 2026-10-04); undefined keeps the old one-argument call.
+let mockInspectPosition: string | undefined;
 jest.mock("@/components/habitat/HabitatScene", () => ({
   HabitatScene: ({ onInspect }: any) => {
     const { Pressable } = require("react-native");
@@ -46,10 +49,13 @@ jest.mock("@/components/habitat/HabitatScene", () => ({
       <Pressable
         testID="habitat-scene-mock"
         onPress={() =>
-          onInspect?.({
-            name: "Penny Portrait",
-            description: "A pencil portrait of Rosie.",
-          })
+          onInspect?.(
+            {
+              name: "Penny Portrait",
+              description: "A pencil portrait of Rosie.",
+            },
+            mockInspectPosition,
+          )
         }
       />
     );
@@ -335,6 +341,72 @@ describe("BarnInterior purchase return", () => {
     act(() => tree.unmount());
   });
 
+  it("rides the half of the room the furnishing is not in, speaks it, and leaves for Decorate", () => {
+    mockHabitat.loading = false;
+    mockParams.position = undefined;
+    mockParams.purchasedItemId = undefined;
+    const announce = jest
+      .spyOn(require("react-native").AccessibilityInfo, "announceForAccessibility")
+      .mockImplementation(() => {});
+    const tree = TestRenderer.create(
+      <BarnInterior accountId="a" workshop={null} pig={null} />,
+    );
+    const card = () =>
+      StyleSheet.flatten(
+        tree.root.findByProps({ testID: "habitat-item-details" }).props.style,
+      );
+    // A floor furnishing stands at Rosie's level: its card rides the top,
+    // under the Home / Furnishings controls.
+    mockInspectPosition = "floor_left";
+    act(() =>
+      tree.root.findByProps({ testID: "habitat-scene-mock" }).props.onPress(),
+    );
+    expect(card()).toMatchObject({ top: 47, marginTop: 56 });
+    expect(card().bottom).toBeUndefined();
+    expect(announce).toHaveBeenCalledWith(
+      "Penny Portrait. A pencil portrait of Rosie.",
+    );
+    // A wall furnishing: the card rides the floor, clear of the Decorate dock.
+    mockInspectPosition = "wall";
+    act(() =>
+      tree.root.findByProps({ testID: "habitat-scene-mock" }).props.onPress(),
+    );
+    expect(card()).toMatchObject({ bottom: 34, marginBottom: 64 });
+    // The card belongs to the room at rest; Decorate takes the room.
+    act(() =>
+      tree.root
+        .find((node) => node.props.accessibilityLabel === "Decorate")
+        .props.onPress(),
+    );
+    expect(
+      tree.root.findAllByProps({ testID: "habitat-item-details" }),
+    ).toHaveLength(0);
+    mockInspectPosition = undefined;
+    announce.mockRestore();
+    act(() => tree.unmount());
+  });
+
+  it("says a failed Barn read in words, never as its reason code", () => {
+    mockHabitat.loading = false;
+    mockParams.position = undefined;
+    mockParams.purchasedItemId = undefined;
+    mockHabitat.error = "invalid_response";
+    const tree = TestRenderer.create(
+      <BarnInterior accountId="a" workshop={null} pig={null} />,
+    );
+    const words = tree.root
+      .findAllByType(Text)
+      .map((node) => node.props.children)
+      .flat()
+      .filter((part: unknown) => typeof part === "string")
+      .join(" ");
+    expect(words).toContain("Couldn't reach your Barn just now.");
+    expect(words).not.toContain("invalid response");
+    expect(words).not.toContain("Barn error");
+    mockHabitat.error = null;
+    act(() => tree.unmount());
+  });
+
   it("exposes inspected furnishing details and a clear dismissal action", () => {
     mockHabitat.loading = false;
     mockParams.position = undefined;
@@ -345,14 +417,20 @@ describe("BarnInterior purchase return", () => {
     act(() =>
       tree.root.findByProps({ testID: "habitat-scene-mock" }).props.onPress(),
     );
-    // The details now read out of the card's own body text rather than out of
-    // an `accessibilityValue` on the close control (`Button` carries no such
-    // prop); the dismissal keeps its verbatim label and hint.
+    // The card reads its name as a title and its story under it (they used to
+    // be one secondary string with no emphasis, 2026-10-04); the dismissal
+    // keeps its verbatim label and hint.
     expect(
-      tree.root.findByProps({
-        children: "Penny Portrait\nA pencil portrait of Rosie.",
-      }),
-    ).toBeTruthy();
+      tree.root.findAll(
+        (node) =>
+          node.props.children === "Penny Portrait" &&
+          node.props.accessibilityRole === "header",
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      tree.root.findAllByProps({ children: "A pencil portrait of Rosie." })
+        .length,
+    ).toBeGreaterThan(0);
     const details = tree.root.findAll(
       (node) =>
         node.props.accessibilityRole === "button" &&

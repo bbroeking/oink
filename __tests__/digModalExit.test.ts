@@ -91,7 +91,12 @@ describe("leaving from the receipt lets the sheet go before the dig", () => {
 		expect(dig).toMatch(/onExit=\{exit\}/);
 		expect(dig).toMatch(/onPrimary=\{exit\}/);
 		expect(dig).toMatch(/onClose=\{exit\}/);
-		expect(dig).toMatch(/const join = useCallback\(\(\) => leave\(\(\) => router\.push\(JOIN_PATH\)\), \[leave\]\);/);
+		// The join waits out the dig's slide (the close queues the Barn tab) and
+		// goes to Friends ▸ Sounder, never the Season page, which has no herd door.
+		expect(dig).toMatch(
+			/const join = useCallback\(\s*\(\) => leave\(\(\) => setTimeout\(\(\) => router\.push\(JOIN_PATH\), POPUP_HANDOFF_GAP_MS\)\),\s*\[leave\],\s*\);/,
+		);
+		expect(dig).toMatch(/const JOIN_PATH = \{ pathname: "\/\(tabs\)\/friends", params: \{ seg: "sounder" \} \} as const;/);
 		// The host's own close (accessibility escape) is routed through it too.
 		expect(dig).toMatch(/registerLeave\?\.\(async \(\) => leave\(\)\);/);
 		expect(read("components/mudwar/useFeedingCta.tsx")).toMatch(
