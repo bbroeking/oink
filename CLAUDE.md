@@ -1,6 +1,6 @@
 # Tickle the Pig — Claude Code project notes
 
-Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS via TestFlight / App Store. Notes here orient Claude Code sessions in this repo; the domain glossary lives in `CONTEXT.md` next to this file.
+Single-developer React Native / Expo 57 game with Supabase backend (Expo 52 until build 175). Ships to iOS via TestFlight / App Store. Notes here orient Claude Code sessions in this repo; the domain glossary lives in `CONTEXT.md` next to this file.
 
 ## North Star
 
