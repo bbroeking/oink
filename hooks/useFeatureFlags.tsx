@@ -39,8 +39,12 @@ import { rpc } from "@/utils/rpc";
 //                     (20260913060000). The SERVER decides the dig's mode at
 //                     open_rooting (the same per-user merge); the client reads
 //                     this only to route the uncrewed lane in useDigEntry.
+//   multiplayer     — matchmade play (20261004230000): the Play door, invites
+//                     and the Render play server. Read it ONLY through
+//                     usePlayEnabled() in hooks/useMultiplayer.tsx; while it
+//                     reads false the app never opens a socket to the server.
 export type FeatureFlagKey =
-  "world_boss" | "season1_finale" | "rewarded_ads" | "snout_deep";
+  "world_boss" | "season1_finale" | "rewarded_ads" | "snout_deep" | "multiplayer";
 
 type FlagMap = Partial<Record<FeatureFlagKey, boolean>>;
 

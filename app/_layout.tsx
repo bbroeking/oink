@@ -46,7 +46,9 @@ import { rpc } from "@/utils/rpc";
 import {
   planTapRoute,
   responseConsumeKey,
+  tapTargetFromResponse,
   LAST_NOTIF_RESPONSE_KEY,
+  type PushTapTarget,
 } from "@/utils/notificationRouting";
 import {
   launchEventSourcesSucceeded,
@@ -70,6 +72,7 @@ import {
 } from "@/components/AchievementDigestModal";
 import { GreatHungerIntroModal } from "@/components/GreatHungerIntroModal";
 import { FeatureFlagsProvider } from "@/hooks/useFeatureFlags";
+import { MultiplayerProvider } from "@/hooks/useMultiplayer";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { PurchaseToastHost, showAppToast } from "@/components/PurchaseToast";
 import { RitualBubbleHost } from "@/components/ui/RitualBubble";
@@ -871,9 +874,9 @@ function RootLayoutInner() {
   }, []);
 
   const routeForTap = useCallback(
-    (screen: string | undefined) => {
+    (target: PushTapTarget) => {
       const plan = planTapRoute(
-        screen,
+        target,
         routerReadyRef.current,
         popupHeldRef.current,
       );
@@ -922,10 +925,7 @@ function RootLayoutInner() {
             if (consumed === key) return; // already routed this physical tap
             await AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key);
           }
-          const data = res.notification.request.content.data as {
-            screen?: string;
-          };
-          routeForTap(data?.screen);
+          routeForTap(tapTargetFromResponse(res));
         })
         .catch(() => {});
       // Warm/foreground taps. Stamp the consume key too, so the SAME tap replayed
@@ -935,10 +935,7 @@ function RootLayoutInner() {
         if (key) {
           AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key).catch(() => {});
         }
-        const data = res.notification.request.content.data as {
-          screen?: string;
-        };
-        routeForTap(data?.screen);
+        routeForTap(tapTargetFromResponse(res));
       });
     } catch {
       // Native notifications module unavailable this build — stay inert.
@@ -1168,7 +1165,9 @@ function RootLayoutWithQueue() {
   return (
     <PopupQueueProvider>
       <FeatureFlagsProvider>
-        <RootLayoutInner />
+        <MultiplayerProvider>
+          <RootLayoutInner />
+        </MultiplayerProvider>
       </FeatureFlagsProvider>
     </PopupQueueProvider>
   );

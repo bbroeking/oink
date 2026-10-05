@@ -1,3 +1,5 @@
+import { parseInviteCode } from "@/multiplayer/links";
+
 // Single source of truth mapping a push notification's `data.screen` to an
 // in-app route. The SERVER sets `screen` in the push payload (the push triggers
 // in supabase/migrations/*); the root layout routes on tap. Centralizing the
@@ -37,6 +39,11 @@ const NOTIFICATION_ROUTES = {
 	// A pig is back from its errand (20260918120000): the homecoming waits on
 	// the Pen's corkboard, so the push opens the Pen (2026-09-18).
 	pen: "/pen",
+	// Matchmade play (2026-10-04). Sent by the Render play server, not by a
+	// migration, so the guard test's migration scan never sees it. A bare
+	// `play` opens the Play hub; with `invite` it opens that invite, with
+	// `room` that table (routeForPush below carries the params).
+	play: "/play",
 } as const;
 
 // Every screen the router accepts (table keys). Includes the reserved `trough`
@@ -108,11 +115,86 @@ export type TapRoutePlan = {
 };
 
 export function planTapRoute(
-	screen: string | null | undefined,
+	target: string | PushTapTarget | null | undefined,
 	routerReady: boolean,
 	modalHeld = false
 ): TapRoutePlan {
-	const path = routeForScreen(screen);
+	const path = routeForPush(target);
 	if (!path) return { action: "ignore", path: null };
 	return { action: routerReady && !modalHeld ? "navigate" : "defer", path };
+}
+
+// ── Push taps that carry params (matchmade play, 2026-10-04) ────────────────
+// A tap is more than its screen once a push points at one thing: an invite
+// push carries `invite` (and `url`, the ticklethepig://play/<CODE> link), a
+// your-turn push carries `room`. The layout hands planTapRoute the whole
+// target (tapTargetFromResponse) and the consume-once + defer rules above
+// apply unchanged; the deferred value is still just a path.
+
+/** The invite push's iOS category (no ':' or '-' allowed in the id). */
+export const MATCH_INVITE_CATEGORY = "match_invite";
+/** The invite push's "Play" button: routes like a plain tap. */
+export const PLAY_ACTION = "play";
+/** The invite push's "Not now" button: a plain dismissal, never a route. */
+export const PLAY_DISMISS_ACTION = "not_now";
+
+export type PushTapTarget = {
+	screen?: string | null;
+	/** Invite code (screen "play"). Wins over `room` when both are present:
+	 *  an invitee is not seated yet, so the invite is what they can open. */
+	invite?: string | null;
+	/** Table id (screen "play"). */
+	room?: string | null;
+	/** The ticklethepig://play/<CODE> link an invite push also carries. */
+	url?: string | null;
+	/** The notification action tapped (expo's actionIdentifier). */
+	action?: string | null;
+};
+
+// Mirrors the room-id guard in multiplayer/protocol.ts.
+const ROOM_ID_RE = /^[0-9a-f-]{8,64}$/i;
+
+const asString = (value: unknown): string | null =>
+	typeof value === "string" ? value : null;
+
+/** A route for a push tap, params included; null when there is nothing to
+ *  open (unknown screen, the dismiss action). A bare string is a screen. */
+export function routeForPush(
+	target: string | PushTapTarget | null | undefined
+): string | null {
+	const t: PushTapTarget =
+		typeof target === "string" ? { screen: target } : (target ?? {});
+	if (t.action === PLAY_DISMISS_ACTION) return null;
+	const base = routeForScreen(asString(t.screen));
+	if (!base) return null;
+	if (t.screen === "play") {
+		const code = parseInviteCode(asString(t.invite)) ?? parseInviteCode(asString(t.url));
+		if (code) return `/play/${code}`;
+		const room = asString(t.room);
+		if (room && ROOM_ID_RE.test(room)) return `/match/${room}`;
+	}
+	return base;
+}
+
+// The slice of an expo NotificationResponse the tap path reads.
+export type TapResponse = {
+	actionIdentifier?: string | null;
+	notification: { request: { content: { data?: unknown } } };
+};
+
+/** The tap target of one notification response: its data's screen + params,
+ *  and the action that was tapped. Never throws on a malformed payload. */
+export function tapTargetFromResponse(
+	res: TapResponse | null | undefined
+): PushTapTarget {
+	const raw = res?.notification?.request?.content?.data;
+	const data =
+		raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+	return {
+		screen: asString(data.screen),
+		invite: asString(data.invite),
+		room: asString(data.room),
+		url: asString(data.url),
+		action: asString(res?.actionIdentifier),
+	};
 }

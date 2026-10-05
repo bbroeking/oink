@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tickle the Pig · come play</title>
+<meta name="description" content="A friend saved you a seat at the table in Tickle the Pig. Open the app and play together." />
+<!-- Invite codes are short-lived; nothing here is worth indexing. -->
+<meta name="robots" content="noindex" />
+<link rel="icon" href="/rosie.png" />
+<link rel="apple-touch-icon" href="/rosie.png" />
+<!-- Open Graph so a shared link previews well. Scrapers never run the script
+     below, so these stay general: the friend's name arrives with the fetch. -->
+<meta property="og:title" content="Come play with me in Tickle the Pig" />
+<meta property="og:description" content="I saved you a seat at the table. Tap to join the game." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ticklethepig.com" />
+<meta property="og:image" content="https://ticklethepig.com/og.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Rosie, the cheerful pink pig from Tickle the Pig" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Come play with me in Tickle the Pig" />
+<meta name="twitter:description" content="I saved you a seat at the table. Tap to join the game." />
+<meta name="twitter:image" content="https://ticklethepig.com/og.png" />
+<!-- A THIN page, like /i/: no CSS and no primitives of its own. Every rule
+     comes from tokens.css and sticker.css (GENERATED from constants/theme.ts)
+     and site.css (the shared page layer); every behaviour from /tickle.js.
+     `body.invite` is the visual delta; the panel and the invite lookup below
+     are the content delta. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="/tokens.css" />
+<link rel="stylesheet" href="/sticker.css" />
+<link rel="stylesheet" href="/site.css" />
+<script src="/tickle.js" defer></script>
+</head>
+<!-- data-play-origin: the play server that answers GET /v1/invites/<CODE>.
+     Point it at the custom domain once play.ticklethepig.com is verified. -->
+<body class="invite" data-play-origin="https://ttp-play.onrender.com">
+  <div class="bg-stars" id="bgStars" aria-hidden="true"></div>
+
+  <main class="page">
+  <div class="card sticker">
+    <p class="kicker"><span class="tw">★</span> Tickle the Pig <span class="tw">★</span></p>
+    <div class="hero">
+      <div class="copy-col">
+        <h1 class="hero-title" id="headline">A friend saved you a seat at the table.</h1>
+      </div>
+
+      <div class="rosie-col">
+        <div class="rosie-stage" id="rosieStage" role="button" tabindex="0" aria-label="Tickle Rosie the pig">
+          <p class="giggle" id="giggle">hehehe!</p>
+          <span class="rosie-wrap"><img class="rosie" src="/rosie.png" alt="Rosie the pig" width="370" height="383" draggable="false" /></span>
+        </div>
+        <p class="hint">psst · tap Rosie <svg class="glyph glyph--mark" aria-hidden="true"><use href="/glyph.svg#glyph-snout" /></svg></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div id="code-block">
+        <p class="code-label">Your invite code</p>
+        <div class="code-pill sticker">
+          <span class="code" id="code">–</span>
+          <button class="btn btn--sm btn--gold" id="copy" type="button">tap to copy</button>
+        </div>
+      </div>
+
+      <!-- The custom scheme, never the https link: a universal link to the
+           domain the browser is already on stays in the browser. -->
+      <a class="btn btn--lg btn--primary btn--full cta" id="open" href="ticklethepig://play">
+        Open in Tickle the Pig
+      </a>
+
+      <!-- The canonical listing, the same link the herd invite uses. -->
+      <a class="btn btn--lg btn--lilac btn--full cta" id="store" href="https://apps.apple.com/us/app/tickle-the-pig/id6740339848">
+        Download on the App Store
+      </a>
+
+      <div class="steps sticker" id="steps">
+        <strong>How to join the game:</strong>
+        <ol>
+          <li>Have the app? Tap Open in Tickle the Pig.</li>
+          <li>New here? Install the app, then tap your friend's link again.</li>
+          <li>Or open Play in the app and type the code above.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  </main>
+
+  <p class="toast toast--success" id="toast" role="status" aria-live="polite">Code copied</p>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    TTP.reveal();
+    TTP.sprite();
+    TTP.stars(document.getElementById('bgStars'));
+    TTP.tickle(document.getElementById('rosieStage'), { giggle: document.getElementById('giggle') });
+
+    /* ---------- the invite code ---------- */
+    // /play/ABCD2345 (also tolerates ?code=). The alphabet and length match
+    // INVITE_CODE_RE in multiplayer/protocol.ts: no 0, 1, I, L, O or U.
+    var CODE_RE = /^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}$/;
+    function normalise(raw) {
+      if (!raw) return null;
+      var code;
+      try { code = decodeURIComponent(raw); } catch (e) { return null; }
+      code = code.toUpperCase().trim();
+      return CODE_RE.test(code) ? code : null;
+    }
+    function readCode() {
+      var parts = window.location.pathname.split('/').filter(Boolean);
+      var fromPath = parts.length >= 2 && parts[0].toLowerCase() === 'play' ? parts[1] : '';
+      var fromQuery = new URLSearchParams(window.location.search).get('code') || '';
+      return normalise(fromPath) || normalise(fromQuery);
+    }
+
+    var code = readCode();
+    var headline = document.getElementById('headline');
+    var subline = null;
+    var codeEl = document.getElementById('code');
+    var copyBtn = document.getElementById('copy');
+    var openBtn = document.getElementById('open');
+    var steps = document.getElementById('steps');
+    var toast = document.getElementById('toast');
+
+    // The sub-line is made on demand: an empty .hero-sub would still hold a
+    // line of space, and the page carries no CSS of its own to hide it.
+    function say(line, sub) {
+      headline.textContent = line;
+      if (!sub) {
+        if (subline) subline.remove();
+        subline = null;
+        return;
+      }
+      if (!subline) {
+        subline = document.createElement('p');
+        subline.className = 'hero-sub';
+        headline.insertAdjacentElement('afterend', subline);
+      }
+      subline.textContent = sub;
+    }
+
+    if (!code) {
+      // No valid code: an organic visitor or a mistyped link. Welcome them.
+      say('Come play with us.', 'Got a link from a friend? Tap it again, or open Play in the app and type their code.');
+      document.getElementById('code-block').remove();
+      openBtn.remove();
+      if (steps) steps.remove();
+      return;
+    }
+
+    codeEl.textContent = code;
+    openBtn.href = 'ticklethepig://play/' + code;
+    copyBtn.addEventListener('click', function () {
+      TTP.copy(code).then(function (copied) {
+        if (copied) {
+          copyBtn.textContent = 'copied';
+          toast.classList.add('toast--success');
+          TTP.toast(toast, 'Code copied');
+          return;
+        }
+        TTP.selectText(codeEl);
+        toast.classList.remove('toast--success');
+        TTP.toast(toast, 'Copy blocked. The code is selected, copy it by hand');
+      });
+    });
+
+    /* ---------- who invited you, to what ---------- */
+    // Best effort: a slow or sleeping server, an old link, a network blip all
+    // leave the warm generic headline in place. Names land as text, never HTML.
+    var GAME_TITLES = {
+      rootle: 'Rootle',
+      fence_the_pen: 'Fence the Pen',
+      mud_volley: 'Mud Volley',
+      snout_says: 'Snout Says',
+      out_looking: 'Out Looking'
+    };
+    function gameTitle(data, invite) {
+      var fromServer = invite.gameTitle || (data.game && data.game.title);
+      if (typeof fromServer === 'string' && fromServer) return fromServer;
+      var id = typeof invite.game === 'string' ? invite.game : '';
+      if (GAME_TITLES[id]) return GAME_TITLES[id];
+      return id ? id.split('_').map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ') : 'a game';
+    }
+    var GONE = {
+      expired: 'Invites only wait a little while. Ask your friend for a fresh one.',
+      full: 'The table filled up. Ask your friend for a fresh invite.',
+      accepted: 'The table filled up. Ask your friend for a fresh invite.',
+      cancelled: 'Your friend called this one off. Ask them for a fresh invite.',
+      declined: 'Your friend called this one off. Ask them for a fresh invite.'
+    };
+
+    var origin = (document.body.getAttribute('data-play-origin') || 'https://ttp-play.onrender.com').replace(/\/+$/, '');
+    if (!window.fetch) return;
+    var controller = window.AbortController ? new AbortController() : null;
+    var timer = window.setTimeout(function () { if (controller) controller.abort(); }, 8000);
+    fetch(origin + '/v1/invites/' + encodeURIComponent(code), {
+      headers: { Accept: 'application/json' },
+      signal: controller ? controller.signal : undefined
+    })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        window.clearTimeout(timer);
+        if (!data || typeof data !== 'object') return;
+        var invite = data.invite && typeof data.invite === 'object' ? data.invite : data;
+        var from = invite.from && typeof invite.from.name === 'string' ? invite.from.name.trim() : '';
+        var status = typeof invite.status === 'string' ? invite.status : 'open';
+        if (status === 'open' && typeof invite.expiresAt === 'number' && invite.expiresAt < Date.now()) status = 'expired';
+        if (status !== 'open') {
+          say('This invite has wandered off.', GONE[status] || GONE.expired);
+          return;
+        }
+        var title = gameTitle(data, invite);
+        say((from || 'A friend') + ' invited you to play ' + title, 'Your seat at the table is saved. Come on in.');
+        document.title = 'Tickle the Pig · play ' + title;
+      })
+      .catch(function () {
+        window.clearTimeout(timer);
+      });
+  });
+</script>
+</body>
+</html>

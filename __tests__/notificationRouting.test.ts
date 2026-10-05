@@ -1,10 +1,15 @@
 import fs from "fs";
 import path from "path";
 import {
+	MATCH_INVITE_CATEGORY,
 	NOTIFICATION_SCREENS,
+	PLAY_ACTION,
+	PLAY_DISMISS_ACTION,
+	routeForPush,
 	routeForScreen,
 	responseConsumeKey,
 	planTapRoute,
+	tapTargetFromResponse,
 } from "../utils/notificationRouting";
 
 // Read the REAL server contract instead of trusting a hand-kept list: scan the
@@ -73,6 +78,11 @@ describe("routeForScreen — push deep-link map", () => {
 
 	test("pen routes to the Pen (the errand's homecoming waits on its corkboard)", () => {
 		expect(routeForScreen("pen")).toBe("/pen");
+	});
+
+	test("play routes to the Play hub (sent by the Render play server, not a migration)", () => {
+		expect(routeForScreen("play")).toBe("/play");
+		expect(NOTIFICATION_SCREENS).toContain("play");
 	});
 
 	test("unknown / missing screen → null (no navigation)", () => {
@@ -162,7 +172,117 @@ describe("planTapRoute — router-ready deferral (spec-18 suspect 3)", () => {
 
 	test("the root layout routes a tap through the hold and flushes on its lift", () => {
 		const layout = fs.readFileSync(path.join(__dirname, "..", "app", "_layout.tsx"), "utf8");
-		expect(layout).toMatch(/planTapRoute\(\s*screen,\s*routerReadyRef\.current,\s*popupHeldRef\.current,?\s*\)/);
+		expect(layout).toMatch(/planTapRoute\(\s*(?:screen|target),\s*routerReadyRef\.current,\s*popupHeldRef\.current,?\s*\)/);
 		expect(layout).toMatch(/if \(loaded && authChecked && !popupHeld && pendingRouteRef\.current\)/);
+	});
+
+	// Params ride the same consume-once + defer path: the layout hands the
+	// whole tap target over, never just its screen.
+	test("the root layout passes each tap's full target (screen + params + action)", () => {
+		const layout = fs.readFileSync(path.join(__dirname, "..", "app", "_layout.tsx"), "utf8");
+		const calls = layout.match(/routeForTap\(tapTargetFromResponse\(res\)\)/g) ?? [];
+		expect(calls).toHaveLength(2); // cold-start read + warm listener
+		expect(layout).not.toMatch(/routeForTap\(data\?\.screen\)/);
+	});
+
+	test("a play tap with params defers its full path until the router is ready", () => {
+		expect(planTapRoute({ screen: "play", invite: "ABCD2345" }, false)).toEqual({
+			action: "defer",
+			path: "/play/ABCD2345",
+		});
+		expect(planTapRoute({ screen: "play", room: "0000aaaa-1111" }, true)).toEqual({
+			action: "navigate",
+			path: "/match/0000aaaa-1111",
+		});
+		expect(planTapRoute({ screen: "play", invite: "ABCD2345" }, true, true)).toEqual({
+			action: "defer",
+			path: "/play/ABCD2345",
+		});
+		expect(planTapRoute({ screen: "play", invite: "ABCD2345", action: PLAY_DISMISS_ACTION }, true)).toEqual({
+			action: "ignore",
+			path: null,
+		});
+	});
+});
+
+describe("routeForPush — params for matchmade play (2026-10-04)", () => {
+	test("an invite push opens that invite", () => {
+		expect(routeForPush({ screen: "play", invite: "ABCD2345" })).toBe("/play/ABCD2345");
+		expect(routeForPush({ screen: "play", invite: "abcd2345" })).toBe("/play/ABCD2345");
+	});
+
+	test("the invite push's ticklethepig:// url works on its own", () => {
+		expect(routeForPush({ screen: "play", url: "ticklethepig://play/ABCD2345" })).toBe("/play/ABCD2345");
+		expect(routeForPush({ screen: "play", url: "https://ticklethepig.com/play/ABCD2345" })).toBe("/play/ABCD2345");
+	});
+
+	test("a your-turn push opens the table", () => {
+		expect(routeForPush({ screen: "play", room: "0f3a9c2e-1b7d-4e5f-9a6b-2c8d0e1f3a4b" })).toBe(
+			"/match/0f3a9c2e-1b7d-4e5f-9a6b-2c8d0e1f3a4b"
+		);
+	});
+
+	test("the invite wins when a push carries both (an invitee is not seated yet)", () => {
+		expect(routeForPush({ screen: "play", invite: "ABCD2345", room: "0000aaaa-1111" })).toBe("/play/ABCD2345");
+	});
+
+	test("malformed params fall back to the Play hub, never a broken route", () => {
+		expect(routeForPush({ screen: "play", invite: "ABCD1111" })).toBe("/play"); // 1 is not in the alphabet
+		expect(routeForPush({ screen: "play", room: "../../etc" })).toBe("/play");
+		expect(routeForPush({ screen: "play", invite: 42 as unknown as string })).toBe("/play");
+		expect(routeForPush({ screen: "play" })).toBe("/play");
+	});
+
+	test("params only matter for play; other screens route as before", () => {
+		expect(routeForPush({ screen: "season", invite: "ABCD2345", room: "0000aaaa-1111" })).toBe("/season");
+		expect(routeForPush("friends")).toBe("/friends");
+		expect(routeForPush({ screen: "nonsense", invite: "ABCD2345" })).toBeNull();
+		expect(routeForPush(null)).toBeNull();
+		expect(routeForPush(undefined)).toBeNull();
+	});
+
+	test("'Play' routes like a plain tap; 'Not now' is a dismissal", () => {
+		expect(routeForPush({ screen: "play", invite: "ABCD2345", action: PLAY_ACTION })).toBe("/play/ABCD2345");
+		expect(routeForPush({ screen: "play", invite: "ABCD2345", action: "expo.modules.notifications.actions.DEFAULT" })).toBe(
+			"/play/ABCD2345"
+		);
+		expect(routeForPush({ screen: "play", invite: "ABCD2345", action: PLAY_DISMISS_ACTION })).toBeNull();
+	});
+
+	test("the invite category id is iOS-safe (no ':' or '-')", () => {
+		expect(MATCH_INVITE_CATEGORY).toBe("match_invite");
+		expect(MATCH_INVITE_CATEGORY).not.toMatch(/[:-]/);
+	});
+});
+
+describe("tapTargetFromResponse — reading a notification response", () => {
+	const response = (data: unknown, actionIdentifier?: string) => ({
+		actionIdentifier,
+		notification: { request: { content: { data } } },
+	});
+
+	test("reads screen, params and the tapped action", () => {
+		expect(
+			tapTargetFromResponse(
+				response(
+					{ screen: "play", invite: "ABCD2345", url: "ticklethepig://play/ABCD2345", inviteId: "x", expiresAt: 1 },
+					PLAY_ACTION
+				)
+			)
+		).toEqual({ screen: "play", invite: "ABCD2345", room: null, url: "ticklethepig://play/ABCD2345", action: PLAY_ACTION });
+	});
+
+	test("keeps the old screen-only payloads routing exactly as before", () => {
+		const target = tapTargetFromResponse(response({ screen: "season" }));
+		expect(target).toMatchObject({ screen: "season", invite: null, room: null });
+		expect(planTapRoute(target, true)).toEqual({ action: "navigate", path: "/season" });
+	});
+
+	test("never throws on a malformed payload", () => {
+		expect(tapTargetFromResponse(response(null))).toMatchObject({ screen: null });
+		expect(tapTargetFromResponse(response("screen=play"))).toMatchObject({ screen: null });
+		expect(tapTargetFromResponse(response({ screen: 7, room: {} }))).toMatchObject({ screen: null, room: null });
+		expect(tapTargetFromResponse(null)).toMatchObject({ screen: null, action: null });
+		expect(planTapRoute(tapTargetFromResponse(response(undefined)), true)).toEqual({ action: "ignore", path: null });
 	});
 });
