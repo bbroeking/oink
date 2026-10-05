@@ -61,7 +61,8 @@ const TTP_WAVE_1_RULES = {
 
 module.exports = {
   extends: "expo",
-  ignorePatterns: ["/dist/*"],
+  // The play server's esbuild bundle (server/dist) is build output, like /dist.
+  ignorePatterns: ["/dist/*", "/server/dist/*"],
   plugins: ["ttp"],
   rules: {
     // Expo 57's React Hooks plugin enables the React Compiler readiness rules.

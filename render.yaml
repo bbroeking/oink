@@ -1,0 +1,53 @@
+# Render Blueprint for the Tickle the Pig play server (server/, rules shared
+# from multiplayer/). Facts and reasons: docs/multiplayer/research/platform-notes.md.
+#
+# - No rootDir: a Render root directory hides the rest of the repo at build
+#   and run time, and the bundle needs ../multiplayer. Commands cd into server/.
+# - npm ci --include=dev: NODE_ENV=production is set below and applies at
+#   build time too, which would otherwise skip devDependencies (esbuild).
+# - One instance: every live table is held in memory. Deploys are manual
+#   (autoDeployTrigger off) so they can wait for an hour with no live rooms;
+#   the old instance gets SIGTERM 60 s after cutover and drains in under 10 s.
+# - sync: false secrets are prompted only when the Blueprint is first created;
+#   set any added later by hand in the dashboard. The repo is public: no
+#   secret ever goes in this file.
+services:
+  - type: web
+    name: ttp-play
+    runtime: node
+    region: ohio # next to Supabase (AWS us-east-2); cannot change after creation
+    plan: 0.5c-512mb # the 512 MB paid instance (legacy name "starter"); never free, which spins down
+    numInstances: 1
+    buildCommand: cd server && npm ci --include=dev && npm run build
+    startCommand: cd server && node dist/index.js
+    healthCheckPath: /healthz
+    maxShutdownDelaySeconds: 300
+    autoDeployTrigger: "off"
+    buildFilter:
+      paths:
+        - server/**
+        - multiplayer/**
+        - render.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: "24" # the repo-root .nvmrc says 22 and would win otherwise
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: --enable-source-maps
+      - key: AUTH_MODE
+        value: supabase
+      - key: STORE
+        value: supabase
+      - key: PUSH_MODE
+        value: expo
+      - key: ACCESS
+        value: flag
+      - key: SUPABASE_URL
+        value: https://wbcnhvvakptoinwkulmn.supabase.co
+      - key: SUPABASE_SECRET_KEY # sb_secret_… (or set SUPABASE_SERVICE_ROLE_KEY by hand instead)
+        sync: false
+      - key: SUPABASE_JWT_SECRET # legacy HS256 secret: verifies user tokens locally
+        sync: false
+      - key: EXPO_ACCESS_TOKEN # only needed once Expo "enhanced push security" is on (VERIFY: inferred off today)
+        sync: false

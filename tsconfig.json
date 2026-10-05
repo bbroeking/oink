@@ -13,7 +13,11 @@
       ]
     }
   },
-  "exclude": ["node_modules", "artifacts"],
+  "exclude": [
+    "node_modules",
+    "artifacts",
+    "server"
+  ],
   "include": [
     "**/*.ts",
     "**/*.tsx",

@@ -73,3 +73,8 @@ tmp/
 
 # Local quality-loop reports
 .quality/
+
+# Play server (server/): its own install and bundle; the env example is tracked.
+server/node_modules/
+server/dist/
+!server/.env.example
