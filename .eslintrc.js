@@ -125,3 +125,30 @@ module.exports = {
     },
   ],
 };
+    {
+      // multiplayer/ is shared with the Render play server (server/), which
+      // bundles it for Node, and with the app, which runs it in Hermes for
+      // Practice. Relative imports only; nothing platform-specific.
+      files: ["multiplayer/**"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              {
+                group: ["react", "react-native", "react-native/*", "expo", "expo-*", "@expo/*", "@react-native*", "@supabase/*"],
+                message: "multiplayer/ is shared with the Node play server: no React, React Native, Expo or Supabase imports.",
+              },
+              {
+                group: ["@/*"],
+                message: "multiplayer/ uses relative imports only (the server bundles it without the app's path alias).",
+              },
+              {
+                group: ["node:*", "fs", "path", "crypto", "ws", "http", "https"],
+                message: "multiplayer/ also runs in Hermes: no Node built-ins. Inject them from server/ instead.",
+              },
+            ],
+          },
+        ],
+      },
+    },
