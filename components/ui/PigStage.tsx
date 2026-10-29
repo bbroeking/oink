@@ -544,9 +544,11 @@ export function PigStage({
 	const restingPose = usePigRestingPose();
 	const restTempo = usePigRestTempo();
 	const baseAnimation = resolveRestingAnimation(restingPose, requestedAnimation, pigMood);
-	// A worn costume with a skin this pig can wear (v1: Rosie) replaces the
-	// whole outfit: the pig is drawn from the skin's frames, same poses, same
-	// clock, same canvas, so nothing can drift against the body.
+	// A worn costume with a skin drawn for THIS pig replaces the whole outfit:
+	// the pig is drawn from its own skin's frames, same poses, same clock,
+	// same canvas, so nothing can drift against the body. No skin for the
+	// pair (in this binary): the pig wears its ordinary outfit, never another
+	// pig's skin.
 	const costumeSkin = costumeSkinFor(pigId, equippedCostume?.id);
 	const costumed = costumeSkin !== null;
 	const reaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;

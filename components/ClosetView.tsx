@@ -60,10 +60,10 @@ import {
 import { categoryIcon } from "@/constants/emojiArt";
 import { cosmeticAccessibility } from "@/utils/cosmetics";
 import { cardBadge, cardTag, cardTagFace } from "@/utils/shopShelves";
-import { isCostumeCategory, isKnownCostumeId, pigCanWearCostume } from "@/utils/costumeFit";
+import { costumeFitsPig, costumeThumbnailFor, isCostumeCategory } from "@/utils/costumeFit";
 import {
-	COSTUME_FITS_ROSIE_TAG,
 	costumeOnLine,
+	costumeTileTag,
 	isCoveredByCostume,
 } from "@/utils/costumeCopy";
 import {
@@ -421,10 +421,10 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 
 	// A worn full costume (canvas direction A, 2026-10-29) covers every worn
 	// slot: those chips fall asleep with an "under" tag, and a hand line under
-	// Rosie names what waits. Only on a pig the costume fits (v1: Rosie).
-	const costumeCanFit = pigCanWearCostume(pigId);
+	// the pig names what waits. Only when this binary carries the worn
+	// costume's skin for this pig; otherwise the pig wears its outfit.
 	const wornCostumeId = activeIds["active_costume_id"] ?? null;
-	const costumeOn = costumeCanFit && isKnownCostumeId(wornCostumeId);
+	const costumeOn = costumeFitsPig(wornCostumeId, pigId);
 	const costumeName = costumeOn && wornCostumeId
 		? (byId.current.get(wornCostumeId)?.name ?? null)
 		: null;
@@ -969,10 +969,13 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 							const active = isEquipped(item.id, item.category);
 							const owned = ownedIds.has(item.id);
 							const isCostume = isCostumeCategory(item.category);
-							// v1 costumes fit Rosie only: on another pig the tile
-							// greys and says so, and a tap previews instead of wearing.
-							const costumeElsewhere = isCostume && !costumeCanFit;
-							const src = HAT_THUMBNAILS_256[item.id] ?? HAT_IMAGES[item.id];
+							// A costume whose skin is not drawn for this pig greys and
+							// says what it fits; equipping it is stopped with a toast
+							// (handleEquip's costumeEquipRefusal). One that fits shows
+							// this pig's own skin on the tile.
+							const costumeElsewhere = isCostume && !costumeFitsPig(item.id, pigId);
+							const ownSkin = isCostume ? costumeThumbnailFor(pigId, item.id) : null;
+							const src = ownSkin ?? HAT_THUMBNAILS_256[item.id] ?? HAT_IMAGES[item.id];
 							const thumbSrc = src ?? categoryIcon(item.category);
 							// The tile wears the shelf's tag and the shelf's badge — the same
 							// Wizard Hat upstairs and down (utils/shopShelves, 2026-09-17).
@@ -1010,8 +1013,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 										shadow="sm"
 										onPress={() => {
 											Haptics.selectionAsync().catch(() => {});
-											if (costumeElsewhere) onPreview(item);
-											else if (owned) onEquip(active ? null : item.id, item.category);
+											if (owned) onEquip(active ? null : item.id, item.category);
 											else onPreview(item);
 										}}
 										style={[
@@ -1050,7 +1052,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 										)}
 											{isCostume ? (
 												<Tag
-													label={costumeElsewhere ? COSTUME_FITS_ROSIE_TAG : "costume"}
+													label={costumeTileTag(item.id, pigId)}
 													tone={costumeElsewhere ? "muted" : "lilac"}
 													flat
 													maxFontSizeMultiplier={CHROME_TYPE_CAP}
@@ -1280,8 +1282,8 @@ const styles = StyleSheet.create({
 		alignSelf: "center",
 		transform: [{ rotate: "-4deg" }],
 	},
-	// The tile's corner tag for a costume ("costume", or "fits Rosie" on a pig
-	// the art is not fitted to).
+	// The tile's corner tag for a costume ("costume", or what it fits instead
+	// on a pig its skin is not drawn for: "fits Rosie", "not for Pepper").
 	costumeCorner: {
 		position: "absolute",
 		top: SPACE.xs,

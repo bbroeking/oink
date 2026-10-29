@@ -1,11 +1,13 @@
 // Halloween 2026 full costumes: names and tile art.
 //
-// A costume is drawn as a whole skin of Rosie wearing it (the skin swap,
-// utils/costumeFit.ts), generated into costumeFrames.generated.ts. Its tile
-// in the Closet, the Pop-up Stall and every catalog grid is that skin's
-// front rest frame (idle_1), spread into HAT_IMAGES so every grid that
-// resolves art by id finds it. A costume without a complete skin has no tile,
-// which is also what keeps it off the Closet and the stall in this binary.
+// A costume is drawn as a whole skin of the pig wearing it, one per (costume,
+// pig) pair (the skin swap, utils/costumeFit.ts), generated into
+// costumeFrames.generated.ts. Its catalog tile in the Pop-up Stall and every
+// grid is a skin's front rest frame (idle_1): Rosie's, else the first pig the
+// costume fits, spread into HAT_IMAGES so every grid that resolves art by id
+// finds it (the Closet shows the viewer's own pig's skin when it has one). A
+// costume with no complete skin for any pig has no tile, which is also what
+// keeps it off the Closet and the stall in this binary.
 import { COSTUME_FRAMES } from "./costumeFrames.generated";
 
 /** Player-facing names (docs/design/halloween-2026/content.json). */
@@ -23,8 +25,12 @@ export const COSTUME_NAMES: Readonly<Record<string, string>> = {
 	halloween_2026_marshmallow_boo_costume: "Marshmallow Boo",
 };
 
+/** The pig whose skin is a costume's catalog tile, when it has one. */
+const TILE_PIG = "rosie";
+
 export const COSTUME_THUMBNAILS: Record<string, number> = Object.fromEntries(
-	Object.entries(COSTUME_FRAMES).flatMap(([id, frames]) =>
-		frames.idle_1 !== undefined ? [[id, frames.idle_1]] : [],
-	),
+	Object.entries(COSTUME_FRAMES).flatMap(([id, pigs]) => {
+		const skin = pigs[TILE_PIG] ?? Object.values(pigs)[0];
+		return skin?.idle_1 !== undefined ? [[id, skin.idle_1]] : [];
+	}),
 );

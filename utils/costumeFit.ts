@@ -8,66 +8,132 @@
 // the pig and the tickle particles are not worn items and stay.
 //
 // SKIN SWAP (founder direction, 2026-10-29): a costume is not layered over the
-// pig. Each one is a complete sprite set of Rosie wearing it, drawn on her own
-// 370x383 canvas with the same scale, camera and baseline, generated into
-// constants/costumeFrames.generated.ts (scripts/gen_costume_frames.mjs). The
-// renderer draws the skin's frame IN PLACE OF Rosie's for the same pose, so
+// pig. Each (costume, pig) pair is a complete sprite set of that pig wearing
+// it, drawn on the pig's own 370x383 canvas with the same scale, camera and
+// baseline, generated into constants/costumeFrames.generated.ts
+// (scripts/gen_costume_frames.mjs) as costume id -> pig id -> frames. The
+// renderer draws the skin's frame IN PLACE OF the pig's for the same pose, so
 // nothing can shift against the body. A skin carries six families (idle,
 // happy, surprise front; face, face_sit turned; walk side), four frames each;
-// every other family Rosie plays resolves inside the skin (costumeSkinSource),
-// and never back to un-costumed Rosie mid-animation.
+// every other family the pig plays resolves inside the skin
+// (costumeSkinSource), and never back to the bare pig mid-animation.
 //
-// AVAILABILITY: a costume with no complete skin in this binary is not
-// available: not shown in the Closet or on the stall, not equippable, and a
-// player who somehow wears one sees plain Rosie in her outfit.
+// PIGS (founder, 2026-10-29: "make it so the costumes fit all of the pigs"):
+// the skin drawn is the DRAWN pig's own, the effective pig pig_roster()
+// resolves (a lapsed member's stored companion is Rosie). A pair with no
+// complete skin in this binary is not wearable on that pig: the pig is drawn
+// in its ordinary outfit, never in another pig's skin, the Closet tile says
+// so, and an equip tap is stopped with a toast (utils/costumeCopy.ts). The
+// server checks ownership only (20261029280000_costumes_all_pigs.sql).
 //
-// PIGS (v1): the skins are Rosie. On any other pig the costume is not drawn
-// and the pig wears its saved outfit; the server refuses to equip a costume
-// unless Rosie is the effective pig (equip_cosmetic: costume_rosie_only).
+// AVAILABILITY: a costume with no complete skin for ANY pig in this binary is
+// not available: not shown in the Closet or on the stall, not equippable.
 
 import { COSTUME_FRAMES } from "@/constants/costumeFrames.generated";
 import { COSTUME_NAMES } from "@/constants/costumes";
-import type { PigId } from "@/utils/pigs";
+import { PIG_IDS, type PigId } from "@/utils/pigs";
 
 export const COSTUME_CATEGORY = "costume";
 
-/** The only pig the v1 costume skins are drawn for. */
-export const COSTUME_PIG_ID: PigId = "rosie";
+/** The pig drawn when a caller names none (every surface's default pig). */
+export const DEFAULT_COSTUME_PIG: PigId = "rosie";
 
 export type CostumeSkin = Readonly<Record<string, number>>;
+/** The generated manifest's shape: costume id -> pig id -> skin. */
+export type CostumeSkins = Readonly<Record<string, Readonly<Record<string, CostumeSkin>>>>;
+
+const own = (o: object, key: string) => Object.prototype.hasOwnProperty.call(o, key);
 
 export function isCostumeCategory(category: string | null | undefined): boolean {
 	return category === COSTUME_CATEGORY;
 }
 
-/** True for a costume this binary carries a complete skin for. */
+/**
+ * The skin to draw for this pig, or null to draw the pig's ordinary outfit:
+ * nothing worn, a costume this binary does not carry, or a (costume, pig)
+ * pair with no complete skin. Never another pig's skin.
+ */
+export function costumeSkinFor(
+	pigId: PigId | string | null | undefined,
+	costumeId: string | null | undefined,
+	frames: CostumeSkins = COSTUME_FRAMES,
+): CostumeSkin | null {
+	if (!costumeId || !own(frames, costumeId)) return null;
+	const pigs = frames[costumeId];
+	const pig = pigId ?? DEFAULT_COSTUME_PIG;
+	return own(pigs, pig) ? pigs[pig] : null;
+}
+
+/** True when this binary carries the (costume, pig) pair's skin. */
+export function costumeFitsPig(
+	costumeId: string | null | undefined,
+	pigId: PigId | string | null | undefined,
+	frames: CostumeSkins = COSTUME_FRAMES,
+): boolean {
+	return costumeSkinFor(pigId, costumeId, frames) !== null;
+}
+
+/** The pigs a costume is drawn for in this binary, in roster order. */
+export function costumePigs(
+	costumeId: string | null | undefined,
+	frames: CostumeSkins = COSTUME_FRAMES,
+): PigId[] {
+	return PIG_IDS.filter((pig) => costumeFitsPig(costumeId, pig, frames));
+}
+
+/** True for a costume this binary carries a complete skin for, on any pig. */
 export function isCostumeAvailable(
 	id: string | null | undefined,
-	frames: Readonly<Record<string, CostumeSkin>> = COSTUME_FRAMES,
+	frames: CostumeSkins = COSTUME_FRAMES,
 ): boolean {
-	return !!id && Object.prototype.hasOwnProperty.call(frames, id);
+	return costumePigs(id, frames).length > 0;
 }
 
 /** @deprecated name kept for callers: a "known" costume is an available one. */
 export const isKnownCostumeId = (id: string | null | undefined) => isCostumeAvailable(id);
 
-/** Can this pig wear a costume at all (v1: Rosie only)? */
-export function pigCanWearCostume(pigId: PigId | string | null | undefined): boolean {
-	return (pigId ?? COSTUME_PIG_ID) === COSTUME_PIG_ID;
+/**
+ * The pig a costume preview is drawn on: the viewer's own pig when the pair
+ * exists, else the first pig the costume fits (Rosie, for the Halloween set).
+ * Null for a costume with no skin at all.
+ */
+export function costumePreviewPig(
+	costumeId: string | null | undefined,
+	viewerPigId: PigId | string | null | undefined,
+	frames: CostumeSkins = COSTUME_FRAMES,
+): PigId | null {
+	const pigs = costumePigs(costumeId, frames);
+	const viewer = viewerPigId ?? DEFAULT_COSTUME_PIG;
+	return pigs.find((pig) => pig === viewer) ?? pigs[0] ?? null;
+}
+
+/** A pig's costume tile and icon art: its skin's front rest frame, or null. */
+export function costumeThumbnailFor(
+	pigId: PigId | string | null | undefined,
+	costumeId: string | null | undefined,
+	frames: CostumeSkins = COSTUME_FRAMES,
+): number | null {
+	return costumeSkinFor(pigId, costumeId, frames)?.idle_1 ?? null;
 }
 
 /**
- * The skin to draw, or null to draw the pig's ordinary outfit: nothing worn,
- * a costume this binary has no complete skin for, or a pig the skins are not
- * drawn for (v1: anything but Rosie).
+ * Which pigs a set of costumes covers: `all` fit every one of them, `some`
+ * fit at least one but not all (roster order). What the copy reads from.
  */
-export function costumeSkinFor(
-	pigId: PigId | string | null | undefined,
-	costumeId: string | null | undefined,
-	frames: Readonly<Record<string, CostumeSkin>> = COSTUME_FRAMES,
-): CostumeSkin | null {
-	if (!pigCanWearCostume(pigId) || !isCostumeAvailable(costumeId, frames)) return null;
-	return frames[costumeId!];
+export function costumeCoverage(
+	costumeIds: readonly string[],
+	frames: CostumeSkins = COSTUME_FRAMES,
+): { all: PigId[]; some: PigId[] } {
+	const ids = costumeIds.filter((id) => isCostumeAvailable(id, frames));
+	const all: PigId[] = [];
+	const some: PigId[] = [];
+	if (ids.length === 0) return { all, some };
+	for (const pig of PIG_IDS) {
+		const fits = ids.filter((id) => costumeFitsPig(id, pig, frames)).length;
+		if (fits === ids.length) all.push(pig);
+		else if (fits > 0) some.push(pig);
+	}
+	return { all, some };
 }
 
 /** The player-facing name of a costume, or null for an id this binary lacks. */

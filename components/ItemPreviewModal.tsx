@@ -29,12 +29,12 @@ import {
 } from "@/constants/theme";
 import { fitStage, type CanvasBox } from "@/utils/previewFit";
 import {
-	COSTUME_PIG_ID,
+	costumeFitsPig,
+	costumePreviewPig,
 	costumeSkinFor,
 	isCostumeCategory,
-	pigCanWearCostume,
 } from "@/utils/costumeFit";
-import { COSTUME_FITS_ROSIE_LINE, costumeCoverLine } from "@/utils/costumeCopy";
+import { costumeCoverLine, costumeNotFittedLine } from "@/utils/costumeCopy";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
@@ -238,7 +238,8 @@ interface Props {
 	windowTag?: string | null;
 	// Full costumes (Halloween 2026): the viewer's worn columns, so the cover
 	// line names only what would wait underneath, and the viewer's active pig
-	// (v1 costumes fit Rosie only). Omitted, the line names nothing.
+	// (the costume previews on it when its skin is drawn for it, else on a pig
+	// it fits, with a line saying so). Omitted, the line names nothing.
 	wornActiveIds?: Readonly<Record<string, string | null>>;
 	viewerPigId?: string | null;
 	// The stall's buy asks first: Buy now opens this ConfirmDialog (inline, so
@@ -325,8 +326,10 @@ export function ItemPreviewModal({
 	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
 	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
 	// A full costume is the whole outfit: it previews alone, as its own skin
-	// of the pig it is drawn for (v1: Rosie), whatever pig the viewer keeps.
-	const stageCostume = isCostumeCategory(item.category) ? costumeSkinFor(COSTUME_PIG_ID, item.id) : null;
+	// of the viewer's pig when this binary draws that pair, else of the first
+	// pig it fits (never one pig's skin on another).
+	const stagePig = isCostumeCategory(item.category) ? costumePreviewPig(item.id, viewerPigId) : null;
+	const stageCostume = stagePig ? costumeSkinFor(stagePig, item.id) : null;
 	const stageEquippedCostume = stageCostume ? previewSlot : null;
 
 	// The product shot is fitted, never cut (polish pass, 2026-10-04): the
@@ -452,7 +455,7 @@ export function ItemPreviewModal({
 									<PigStage
 										pigAnimation="idle"
 										pigFrozen
-										{...(stageCostume ? { pigId: COSTUME_PIG_ID } : null)}
+										{...(stageCostume && stagePig ? { pigId: stagePig } : null)}
 										equippedCostume={stageEquippedCostume}
 										equipped={stageEquipped}
 										equippedBow={stageEquippedBow}
@@ -489,9 +492,9 @@ export function ItemPreviewModal({
 					)}
 					{stageCostume ? (
 						<Hand tone="secondary" style={styles.itemDesc}>
-							{pigCanWearCostume(viewerPigId)
-								? costumeCoverLine(wornActiveIds ?? {})
-								: COSTUME_FITS_ROSIE_LINE}
+							{costumeFitsPig(item.id, viewerPigId)
+								? costumeCoverLine(wornActiveIds ?? {}, viewerPigId)
+								: costumeNotFittedLine(item.id, viewerPigId)}
 						</Hand>
 					) : null}
 

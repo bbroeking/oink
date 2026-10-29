@@ -31,7 +31,7 @@ import { ItemPreviewModal } from "@/components/ItemPreviewModal";
 import { showPurchaseToast } from "@/components/PurchaseToast";
 import { showToast } from "@/components/ui/Toast";
 import { usePigRoster } from "@/hooks/usePigRoster";
-import { costumeEquipRefusal, costumeTakeOffToast } from "@/utils/costumeCopy";
+import { costumeTakeOffToast, stopCostumeEquip } from "@/utils/costumeCopy";
 import { StallPage } from "@/components/shop/StallPage";
 import { SnoutsPocket } from "@/components/shop/SnoutsPocket";
 import { gridTileWidth } from "@/components/shop/ShopCard";
@@ -119,13 +119,10 @@ export default function StallScreen() {
 	}, [visitKey, visitUser]);
 
 	const handleEquip = async (itemId: string | null, category: string | null | undefined) => {
-		// Full costumes (Halloween 2026) fit Rosie only in v1, and taking one
-		// off says what comes back out from underneath.
-		const refusal = costumeEquipRefusal(category, itemId, pigRoster.roster.activePigId);
-		if (refusal) {
-			showToast({ tone: "info", title: refusal });
-			return;
-		}
+		// Full costumes (Halloween 2026) go on only a pig this binary draws the
+		// costume's skin for (a short toast says which pigs it fits), and taking
+		// one off says what comes back out from underneath.
+		if (stopCostumeEquip(category, itemId, pigRoster.roster.activePigId, showToast)) return;
 		const offLine = costumeTakeOffToast(category, itemId, activeIds, (id) =>
 			[...catalog.wornItems, ...allItems].find((row) => row.id === id)?.name,
 		);

@@ -905,7 +905,7 @@ function BarnVisitSession({
 	// screen-reader label.
 	const hostName = barn?.username ?? targetName;
 	// The host's worn full costume, named on the plaque ("in Moonpuff") when
-	// it draws on the host's pig (v1: Rosie only).
+	// this binary draws its skin for the host's pig.
 	const hostCostumeName = costumeSkinFor(hostPigId, hostEquip.costume?.id)
 		? costumeName(hostEquip.costume?.id)
 		: null;

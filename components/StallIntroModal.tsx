@@ -25,7 +25,6 @@ import {
 	type GlyphName,
 } from "./ui";
 import { StallCard } from "./shop/StallCard";
-import { COSTUME_FRAMES } from "@/constants/costumeFrames.generated";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PIG_FRAMES } from "@/constants/pigFrames.generated";
 import {
@@ -39,7 +38,13 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 import type { SeasonalShelf, ShelfItem } from "@/utils/seasonalShelf";
-import { stallIntroCards, type StallIntroCard, type StallIntroDoor } from "@/utils/stallIntro";
+import { costumeThumbnailFor } from "@/utils/costumeFit";
+import {
+	INTRO_COSTUME_PIG,
+	stallIntroCards,
+	type StallIntroCard,
+	type StallIntroDoor,
+} from "@/utils/stallIntro";
 import type { StallIntroAction } from "@/hooks/useStallOnboarding";
 
 // ── Drawing constants ───────────────────────────────────────────────────────
@@ -210,7 +215,7 @@ function CardArt({
 	}
 	if (card.id === "costumes") {
 		const backdrop = HAT_IMAGES[COSTUME_BACKDROP];
-		const skin = COSTUME_FRAMES[card.costume.id]?.idle_1;
+		const skin = costumeThumbnailFor(INTRO_COSTUME_PIG, card.costume.id);
 		return (
 			<View
 				style={styles.shot}

@@ -21,9 +21,10 @@ jest.mock("../utils/supabase", () => ({
 	},
 }));
 
-// One stand-in skin, as scripts/gen_costume_frames.mjs would emit it.
+// One stand-in skin (costume -> pig -> frames), as scripts/gen_costume_frames.mjs
+// would emit it.
 jest.mock("../constants/costumeFrames.generated", () => ({
-	COSTUME_FRAMES: { halloween_2026_hollow_jack_costume: { idle_1: 9001 } },
+	COSTUME_FRAMES: { halloween_2026_hollow_jack_costume: { rosie: { idle_1: 9001 } } },
 }));
 
 import { equipCosmetic } from "../utils/cosmetics";
@@ -41,7 +42,7 @@ describe("equipCosmetic: the costume slot", () => {
 		expect(mockRpcOutcome).toHaveBeenCalledWith("equip_cosmetic", { p_item_id: HOLLOW_JACK, p_category: "costume" });
 	});
 
-	it("a Rosie-only refusal (or a server without the slot) is a no-op patch", async () => {
+	it("a refusal (an older server's costume_rosie_only, or no slot) is a no-op patch", async () => {
 		mockRpcOutcome.mockResolvedValue({ ok: true, data: { ok: false, reason: "costume_rosie_only" } });
 		await expect(equipCosmetic(HOLLOW_JACK, "costume")).resolves.toEqual({});
 		mockRpcOutcome.mockResolvedValue({ ok: true, data: { ok: false, reason: "bad_category" } });

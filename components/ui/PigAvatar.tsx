@@ -3,7 +3,7 @@ import { View, Image, ViewStyle } from "react-native";
 import { ART_SIZE, AVATAR_SIZE, BORDER, RADII, WHIMSY } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PigStage } from "./PigStage";
-import { COSTUME_CATEGORY, costumeSkinFor } from "@/utils/costumeFit";
+import { COSTUME_CATEGORY, costumeThumbnailFor } from "@/utils/costumeFit";
 import { PigPortrait } from "./PigPortrait";
 import type { PigId } from "@/utils/pigs";
 import { staticPigFx, type PigFx } from "@/constants/ritualFx";
@@ -12,8 +12,9 @@ interface Props {
 	size?: number;
 	hatId?: string | null;
 	bowId?: string | null;
-	/** A worn full costume (Halloween 2026). When this pig can wear it (v1:
-	 *  Rosie) it IS the outfit: hat and bow are hidden, as on the stage. */
+	/** A worn full costume (Halloween 2026). When this binary draws it for
+	 *  this pig it IS the outfit: hat and bow are hidden, as on the stage, and
+	 *  the icon is this pig's own skin. Otherwise the pig keeps its outfit. */
 	costumeId?: string | null;
 	border?: string;
 	style?: ViewStyle;
@@ -65,10 +66,10 @@ export function PigAvatar({
 	ritual,
 }: Props) {
 	const staticRitual = staticPigFx(ritual);
-	const costume = costumeSkinFor(pigId, costumeId) ? costumeId! : null;
+	const costumeSrc = costumeThumbnailFor(pigId, costumeId);
+	const costume = costumeSrc !== null ? costumeId! : null;
 	const hatId = costume ? null : rawHatId;
 	const bowId = costume ? null : rawBowId;
-	const costumeSrc = costume ? HAT_IMAGES[costume] : null;
 	const hatSrc = hatId ? HAT_IMAGES[hatId] : null;
 	const bowSrc = bowId ? HAT_IMAGES[bowId] : null;
 	// The pig wears its outfit on the stage when it has both pieces (the icon

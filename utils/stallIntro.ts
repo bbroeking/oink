@@ -8,7 +8,8 @@
 // Step in all end it for good). The tag on the stall card stands until
 // `stall_visited:<key>:<uid>` is written on the first stall page visit.
 
-import { COSTUME_FRAMES } from "@/constants/costumeFrames.generated";
+import { costumeThumbnailFor } from "@/utils/costumeFit";
+import { costumeCoverageLine, costumesRosieOnly } from "@/utils/costumeCopy";
 import { countWord } from "@/utils/shopShelves";
 import type { SeasonalShelf, ShelfItem } from "@/utils/seasonalShelf";
 import type { ShelfPhase } from "@/utils/shelfCountdown";
@@ -91,13 +92,16 @@ export function weekendShelfLine(shelf: SeasonalShelf, now: number): string | nu
 
 const isCostume = (i: Pick<ShelfItem, "category">) => i.category === "costume";
 
+/** The pig the second card dresses: Rosie, the face of every set. */
+export const INTRO_COSTUME_PIG = "rosie";
+
 /**
  * The costume the second card dresses Rosie in: the theme's pick, else the
- * set's fallback, else the first costume with a complete skin. Null when the
- * stall sells none this binary can draw.
+ * set's fallback, else the first costume with a complete Rosie skin. Null
+ * when the stall sells none this binary can draw on her.
  */
 export function introCostume(shelf: SeasonalShelf, items: readonly ShelfItem[]): ShelfItem | null {
-	const drawn = items.filter((i) => isCostume(i) && !!COSTUME_FRAMES[i.id]?.idle_1);
+	const drawn = items.filter((i) => isCostume(i) && costumeThumbnailFor(INTRO_COSTUME_PIG, i.id) !== null);
 	const themePick = (shelf.theme as Record<string, unknown>).intro_costume_id;
 	const pick =
 		(typeof themePick === "string" ? themePick : null) ?? SET_FALLBACKS[shelf.key]?.introCostumeId;
@@ -153,13 +157,18 @@ export function stallIntroCards(
 		},
 	];
 	if (costume) {
+		// Which pigs the set fits is read from the skins this binary carries
+		// (utils/costumeCopy.ts), so a partial set names its pigs and a full
+		// one says every pig can wear one.
+		const costumeIds = items.filter(isCostume).map((i) => i.id);
+		const rosieOnly = costumesRosieOnly(costumeIds);
 		cards.push({
 			id: "costumes",
 			kicker: `new this year · 2 of ${total}`,
 			title: "Full costumes",
 			caption: `Rosie, then Rosie in ${costume.name}`,
-			body: "A full costume turns Rosie into someone else, head to hoof, front and side.",
-			hand: `Her hat, bow and the rest tuck away underneath and come back the moment it comes off. Rosie only: a companion pig swaps to her first. Try one on before you buy. Friends see "in ${costume.name}" when they visit.`,
+			body: `A full costume turns ${rosieOnly ? "Rosie" : "your pig"} into someone else, head to hoof, front and side.`,
+			hand: `${rosieOnly ? "Her" : "The"} hat, bow and the rest tuck away underneath and come back the moment it comes off. ${costumeCoverageLine(costumeIds)} Try one on before you buy. Friends see "in ${costume.name}" when they visit.`,
 			costume,
 		});
 	}
