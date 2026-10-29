@@ -2,6 +2,7 @@
 // the launch card, the page screen and the ledger all agree on. (2026-09-11)
 export const PORCH_PAGE_SIZE = 3;
 import { rpc, rpcAction } from "./rpc";
+import { isPigId, type PigId } from "./pigs";
 
 export interface PorchStop {
 	id: number;
@@ -11,6 +12,10 @@ export interface PorchStop {
 	targetName: string;
 	visitedAt: string;
 	activeHatId: string | null;
+	/** Worn full costume and the pig wearing it (20261029240000; absent on a
+	 *  server without it). The costume only draws on a pig it fits. */
+	activeCostumeId?: string | null;
+	activePigId?: PigId;
 	wallowCount: number;
 }
 
@@ -50,6 +55,10 @@ export function parsePorchStops(value: unknown): PorchStop[] {
 					: "A friendly pig",
 			visitedAt: row.visited_at,
 			activeHatId: typeof row.active_hat_id === "string" ? row.active_hat_id : null,
+			...(typeof row.active_costume_id === "string"
+				? { activeCostumeId: row.active_costume_id }
+				: null),
+			...(isPigId(row.active_pig_id) ? { activePigId: row.active_pig_id } : null),
 			wallowCount:
 				typeof row.wallow_count === "number" && row.wallow_count >= 0
 					? row.wallow_count

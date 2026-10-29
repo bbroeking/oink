@@ -1,5 +1,6 @@
 // Static mapping for require() — RN bundler needs literal paths.
 import { MEMBERS_IMAGES } from "./membersImages.generated";
+import { COSTUME_THUMBNAILS } from "./costumes";
 import type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
 import { HAT_REL_DATA } from "./hat_rel.generated";
 import { MEMBERS_REL_DATA } from "./membersRel.generated";
@@ -274,7 +275,9 @@ export const HAT_IMAGES: Record<string, number> = {
 	candy_lantern_trail_bg: require("../assets/images/backgrounds/halloween-2026/candy_lantern_trail_bg.png"),
 	halloween_2026_haunted_ship_deck_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_haunted_ship_deck_bg.png"),
 	halloween_2026_harvest_moon_cornfield_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_harvest_moon_cornfield_bg.png"),
-	halloween_2026_whispering_crypt_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_whispering_crypt_bg.png")
+	halloween_2026_whispering_crypt_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_whispering_crypt_bg.png"),
+	// Halloween 2026 full costumes: tile art only (constants/costumes.ts).
+	...COSTUME_THUMBNAILS,
 };
 
 // Browse surfaces never display these held-item masters above a few dozen

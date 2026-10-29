@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { supabase } from "@/utils/supabase";
+import { fetchWornCostume } from "@/utils/wornCostumes";
 import { rpc } from "@/utils/rpc";
 import {
   HAT_IMAGES,
@@ -154,7 +155,7 @@ export function useShopCatalog(): UseShopCatalog {
         return;
       }
 
-      const [dailyRes, allRes, ownedRes, profRes, resetsRes, counterRes] =
+      const [dailyRes, allRes, ownedRes, profRes, resetsRes, counterRes, wornCostumeId] =
         await Promise.all([
           supabase.rpc("daily_shop"),
           supabase
@@ -173,6 +174,9 @@ export function useShopCatalog(): UseShopCatalog {
             .single(),
           supabase.rpc("shop_resets_in_seconds"),
           rpc<unknown>("sounder_counter_buys"),
+          // Side-fetched, fail-soft: a server without the column reads as
+          // "no costume" and never fails the shop (utils/wornCostumes.ts).
+          fetchWornCostume(user.id),
         ]);
       const fetchError =
         dailyRes.error ??
@@ -234,6 +238,7 @@ export function useShopCatalog(): UseShopCatalog {
         active_background_id: prof?.active_background_id ?? null,
         active_held_id: prof?.active_held_id ?? null,
         active_tickle_particle_id: prof?.active_tickle_particle_id ?? null,
+        active_costume_id: wornCostumeId,
       });
       setActiveTitleId(prof?.active_title_id ?? null);
       setUserId(user.id);

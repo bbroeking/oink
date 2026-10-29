@@ -12,6 +12,7 @@
 // owned by useActiveEffects in Barn, not routed through this hook.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { costumeSlot } from "@/utils/wornCostumes";
 import { rpc } from "@/utils/rpc";
 import { log } from "@/utils/log";
 import { HOME_STATS_BACKOFF_MS, retryDelayMs } from "@/utils/bootRetry";
@@ -49,6 +50,8 @@ export interface Stats {
 	activeBackground: EquipSlot | null;
 	activeHeld: EquipSlot | null;
 	activeTickleParticle: EquipSlot | null;
+	// Full costume (Halloween 2026): hides the other worn slots while on.
+	activeCostume: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 }
@@ -74,6 +77,7 @@ const INITIAL_STATS: Stats = {
 	activeBackground: null,
 	activeHeld: null,
 	activeTickleParticle: null,
+	activeCostume: null,
 	currentTier: 1,
 	totalTiers: 30,
 };
@@ -169,6 +173,8 @@ export function useHomeStats(): UseHomeStats {
 				active_held?: SlotBlob;
 				active_tickle_particle_id?: string | null;
 				active_tickle_particle?: SlotBlob;
+				// 20261029240000; absent on a server without it (no costume).
+				active_costume_id?: string | null;
 				balance: number;
 				cap: number;
 				next_regen_seconds: number | null;
@@ -204,6 +210,7 @@ export function useHomeStats(): UseHomeStats {
 						r.active_tickle_particle_id ?? null,
 						r.active_tickle_particle ?? null
 					),
+					activeCostume: costumeSlot(r.active_costume_id ?? null),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 				});

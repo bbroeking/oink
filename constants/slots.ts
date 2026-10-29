@@ -11,7 +11,8 @@ export type EquipSlotKey =
 	| "aura"
 	| "held"
 	| "tickle"
-	| "background";
+	| "background"
+	| "costume";
 
 // Which slot a catalog category occupies. Glasses + masks share ONE
 // player-facing "Face" slot (the old separate Eyes chip read as clutter);
@@ -28,6 +29,9 @@ const SLOT_FOR_CATEGORY: Record<string, EquipSlotKey> = {
 	held: "held",
 	background: "background",
 	tickle_particle: "tickle",
+	// Halloween 2026 full costumes: their own column, and while one is worn
+	// every other wearable slot is hidden, never cleared (utils/costumeFit.ts).
+	costume: "costume",
 };
 
 // profiles column that stores each slot's equipped item id.
@@ -40,6 +44,7 @@ const SLOT_COLUMN: Record<EquipSlotKey, string> = {
 	held: "active_held_id",
 	tickle: "active_tickle_particle_id",
 	background: "active_background_id",
+	costume: "active_costume_id",
 };
 
 // Player-facing slot labels (Closet slot chips). One word each, singular like
@@ -57,10 +62,14 @@ export const SLOT_LABEL: Record<EquipSlotKey, string> = {
 	aura: "Aura",
 	held: "Held",
 	background: "Scene",
+	costume: "Costume",
 };
 
 // Order the slot chips appear in the Closet.
 export const SLOT_ORDER: EquipSlotKey[] = [
+	// A full costume heads the tray (Claude Design canvas direction A,
+	// 2026-10-29): it covers the chips below it while worn.
+	"costume",
 	"head",
 	"bow",
 	"face",
