@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import { Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { PIG_SKIN_WASH } from "@/utils/pigSkin";
 import { PIG_FRAMES_EXTRA } from "@/constants/pigFramesExtra";
@@ -8,11 +8,10 @@ import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { usePigActive } from "@/hooks/usePigActive";
 import { usePigRestTempo } from "./PigRestingPose";
 import {
-	PIG_ANIMATION_SPECS,
-	PIG_REST_FPS,
 	isPigRestAnimation,
 	type PigAnimation,
 } from "./pigRendererContract";
+import { usePigPlayback } from "./usePigPlayback";
 
 export type { PigAnimation } from "./pigRendererContract";
 
@@ -64,74 +63,18 @@ export function SpritePig({
 	const restTempo = usePigRestTempo();
 	const tempo = isPigRestAnimation(animation) ? restTempo : 1;
 	const reduced = reduceMotion ?? policy.reduceMotion;
-	const [internalIdx, setInternalIdx] = useState(0);
-	const setIdx = setInternalIdx;
-	const completeRef = useRef(onComplete);
-	completeRef.current = onComplete;
-	const frameRef = useRef(onFrame);
-	frameRef.current = onFrame;
-
-	// Resolve which frame set + fps to use. customFrames (from prebaked
-	// items) overrides the default ANIMATIONS entry per animation key.
-	// Memoized so the interval-driven setIdx → re-render cycle doesn't
-	// allocate a new config + frames array every frame tick.
-	//
-	// Defensive: if `animation` is a string we don't recognize (e.g.,
-	// a stale ref to a removed animation like the old "arms_up"), fall
-	// back to "idle" instead of crashing. This protects against future
-	// drift between SpritePig's ANIMATIONS table and external callers.
-	const { frames: activeFrames, playback: activePlayback, fps: activeFps, loop: activeLoop } = useMemo(() => {
-		const baseCfg = PIG_ANIMATION_SPECS[animation] ?? PIG_ANIMATION_SPECS.idle;
-		const overrideFrames = customFrames?.[animation];
-		return {
-			frames: overrideFrames ?? baseCfg.frames,
-			// Pre-baked appearances keep their authored sequence and were drawn
-			// against the four-frame rig, so they play at the rest tempo, not the
-			// twelve-frame idle's.
-			playback: overrideFrames
-				? overrideFrames.map((_, index) => index)
-				: baseCfg.playback ?? baseCfg.frames.map((_, index) => index),
-			fps: overrideFrames ? PIG_REST_FPS : baseCfg.fps,
-			loop: baseCfg.loop,
-		};
-	}, [animation, customFrames]);
-	// Report the displayed source frame, not the playback tick, so attached
-	// cosmetics use the correct existing per-frame anchor. Explicit frameIdx
-	// and Reduce Motion preserve their original frozen-pose behavior.
-	const idx = frameIdx ?? (reduced ? 0 : activePlayback[Math.min(internalIdx, activePlayback.length - 1)] ?? 0);
-
-	useEffect(() => {
-		// External frameIdx control bypasses the auto-advance interval —
-		// useful for the align screen's manual stepper.
-		if (frameIdx !== undefined || !visible) return;
-		setIdx(0);
-		if (reduced) {
-			if (playOnce || !activeLoop) completeRef.current?.();
-			return;
-		}
-		if (activePlayback.length <= 1) return;
-		const period = 1000 / (activeFps * tempo);
-		let frame = 0;
-		const handle = setInterval(() => {
-			frame += 1;
-			if (frame >= activePlayback.length) {
-				if (activeLoop && !playOnce) frame = 0;
-				else {
-					clearInterval(handle);
-					completeRef.current?.();
-					return;
-				}
-			}
-			setIdx(frame);
-		}, period);
-		return () => clearInterval(handle);
-	}, [activePlayback, activeFps, activeLoop, frameIdx, visible, reduced, playOnce, playbackKey, tempo]);
-
-	// Fire onFrame after commit — never inside the setIdx updater (React forbids
-	// side effects in state updaters as of React 18).
-	useEffect(() => {
-		frameRef.current?.(idx);
-	}, [idx]);
+	const { frames: activeFrames, frameIdx: idx } = usePigPlayback({
+		animation,
+		active: visible,
+		reduced,
+		tempo,
+		playOnce,
+		playbackKey,
+		customFrames,
+		frameIdx,
+		onComplete,
+		onFrame,
+	});
 
 	// Flip-book: every frame of the current animation is mounted at once and we
 	// just toggle which one is visible (opacity 1 vs 0). No Image `source` swaps

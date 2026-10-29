@@ -51,7 +51,14 @@
 		"db:reset": "npx supabase db reset",
 		"db:pull": "npx supabase db pull",
 		"ship": "./scripts/ship-ios.sh",
-		"scorecard": "node scripts/conformance-scorecard.mjs"
+		"scorecard": "node scripts/conformance-scorecard.mjs",
+		"accessory:studio": "node scripts/accessory-audit/cli.mjs studio",
+		"accessory:calibrate": "node scripts/accessory-audit/cli.mjs calibrate",
+		"accessory:export": "node scripts/accessory-audit/cli.mjs export",
+		"accessory:sheets": "node scripts/accessory-audit/cli.mjs sheets",
+		"accessory:preview:build": "node scripts/accessory-audit/cli.mjs build",
+		"accessory:preview:serve": "node scripts/accessory-audit/cli.mjs serve",
+		"accessory:validate": "node scripts/accessory-audit/cli.mjs validate"
 	},
 	"jest": {
 		"preset": "jest-expo",

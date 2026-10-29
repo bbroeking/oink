@@ -117,6 +117,21 @@ describe("SpritePig — flip-book frames", () => {
 		act(() => r.unmount());
 	});
 
+	test("switching animations immediately starts at source frame zero", async () => {
+		const frames = { ...PIG_FRAMES.rosie, ...PIG_FRAMES_EXTRA.rosie };
+		const r = await renderAct(<SpritePig animation="idle" />);
+		await act(async () => {
+			jest.advanceTimersByTime(5 * (1000 / 6));
+		});
+		expect(visibleSource(r)).toBe(frames.idle_6);
+
+		await act(async () => {
+			r.update(<SpritePig animation="wave" />);
+		});
+		expect(visibleSource(r)).toBe(frames.wave_1);
+		act(() => r.unmount());
+	});
+
 	test("manual frame stepping (align tool) pins the visible frame", async () => {
 		const r = await renderAct(<SpritePig animation="idle" frameIdx={0} />);
 		const pinned = visibleSource(r);

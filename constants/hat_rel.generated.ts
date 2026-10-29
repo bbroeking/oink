@@ -6,7 +6,7 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	acorn_bow: { pivot: { x: 0.4922, y: 0.4528 }, widthFrac: 0.42, anchor: "neck", behind: false },
 	archery_bow: { pivot: { x: 0.2882, y: 0.6848 }, widthFrac: 0.4, anchor: "hand_r", behind: false },
 	ascot: { pivot: { x: 0.5092, y: 0.287 }, widthFrac: 0.4, anchor: "neck", behind: false },
-	astronaut: { pivot: { x: 0.485, y: 0.2479 }, widthFrac: 1, anchor: "head", behind: false },
+	astronaut: { pivot: { x: 0.485, y: 0.2479 }, widthFrac: 1, anchor: "head", behind: false, perAnim: { sad: { pivot: { x: 0.485, y: 0.2 }, widthFrac: 1.15, anchor: "head", behind: false }, tired: { pivot: { x: 0.485, y: 0.2 }, widthFrac: 1.05, anchor: "head", behind: false } } },
 	aurora_glow_hood: { pivot: { x: 0.4791, y: 0.2819 }, widthFrac: 1.23, anchor: "head", behind: false },
 	aviator_sunglasses: { pivot: { x: 0.4919, y: 0.4524 }, widthFrac: 0.63, anchor: "eyes", behind: false },
 	balloon: { pivot: { x: 0.5036, y: 0.8768 }, widthFrac: 0.445, anchor: "hand_r", behind: false },

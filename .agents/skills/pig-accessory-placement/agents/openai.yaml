@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pig Accessory Placement"
+  short_description: "Fit and verify animated pig accessories"
+  default_prompt: "Use $pig-accessory-placement to fix and verify this accessory across every pig animation frame."

@@ -1,5 +1,12 @@
 // Static mapping for require() — RN bundler needs literal paths.
 import { MEMBERS_IMAGES } from "./membersImages.generated";
+import type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
+import { HAT_REL_DATA } from "./hat_rel.generated";
+import { MEMBERS_REL_DATA } from "./membersRel.generated";
+import type { PigAnimationKey } from "./hat_overlay_types";
+import { PIG_ATTACHMENT_FRAMES, type PigAttachmentFrame } from "./pigAttachmentFrames.generated";
+import type { PigId } from "../utils/pigs";
+
 
 export const HAT_IMAGES: Record<string, number> = {
 	wizard: require("../assets/images/hats/wizard.png"),
@@ -264,7 +271,6 @@ Object.assign(HAT_IMAGES, MEMBERS_IMAGES);
 // auto-generated overlays file; re-export here so consumers can keep
 // importing it from "constants/hats".
 export type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
-import type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
 
 // The anchor coordinate space — all REST_ANCHORS / PIG_FRAME_ANCHORS
 // values are in this 300×300 box. Anchor-relative placement divides by
@@ -277,8 +283,6 @@ export const PIG_CANVAS = 300;
 // their category's preset box (CATEGORY_OVERLAYS). The data is auto-written
 // by tools/placement_studio — drag an attach point and it persists into
 // hat_rel.generated.ts, which Metro hot-reloads.
-import { HAT_REL_DATA } from "./hat_rel.generated";
-import { MEMBERS_REL_DATA } from "./membersRel.generated";
 // Members items get category-default anchor placement; any hand-tuned entry in
 // hat_rel.generated (via tools/placement_studio) overrides it.
 export const HAT_REL: Record<string, RelSpec> = {
@@ -313,7 +317,6 @@ export const HIDDEN_CATEGORIES = new Set<string>(["scarf", "cape"]);
 // can reference it without forming a circular import. Re-export so
 // existing callers don't break.
 export type { PigAnimationKey } from "./hat_overlay_types";
-import type { PigAnimationKey } from "./hat_overlay_types";
 
 // Anchors describe named points on the pig (head crown, eye line, hand, etc.)
 // at every frame of every animation. Items declare which anchor they attach
@@ -461,10 +464,33 @@ export const PIG_FRAME_ANCHORS: Record<
 // `eyes` and `feet` are virtual: compute midpoint of their L/R pair so
 // items targeting the symmetric anchor track both sides correctly when
 // the underlying L/R anchors drift apart per pose.
-export function resolveAnchor(anim: PigAnimationKey, frameIdx: number, name: AnchorName): Anchor {
+
+function attachmentFrame(anim: PigAnimationKey, frameIdx: number, pigId: PigId): PigAttachmentFrame {
+	const frames: Readonly<Record<string, PigAttachmentFrame>> = PIG_ATTACHMENT_FRAMES[pigId] ?? PIG_ATTACHMENT_FRAMES.rosie;
+	const index = Math.max(0, Math.min(Number.isFinite(frameIdx) ? Math.trunc(frameIdx) : 0, (PIG_FRAME_ANCHORS[anim]?.length ?? 1) - 1));
+	return frames[`${anim}_${index + 1}`] ?? frames.idle_1;
+}
+
+// A rigid hat keeps its authored fit through expressions and squash. The
+// median skull band is measured once for each pig/pose family; ears, blinking,
+// raised hooves and motion lines must not make the item pulse in size.
+const HEAD_FIT_SCALE = Object.fromEntries(Object.entries(PIG_ATTACHMENT_FRAMES).map(([pig, frames]) => [
+	pig,
+	Object.fromEntries(Object.keys(PIG_FRAME_ANCHORS).map(anim => {
+		const widths = Object.entries(frames).filter(([name]) => name.startsWith(`${anim}_`)).map(([, frame]) => frame.scale).sort((a, b) => a - b);
+		const middle = Math.floor(widths.length / 2);
+		return [anim, widths.length % 2 ? widths[middle] : (widths[middle - 1] + widths[middle]) / 2];
+	})),
+])) as Record<PigId, Record<PigAnimationKey, number>>;
+
+export function resolveAnchor(anim: PigAnimationKey, frameIdx: number, name: AnchorName, pigId: PigId = "rosie"): Anchor {
+	if (name === "head") {
+		const frame = attachmentFrame(anim, frameIdx, pigId);
+		return { x: frame.x, y: frame.y };
+	}
 	if (name === "eyes") {
-		const l = resolveAnchor(anim, frameIdx, "eye_l");
-		const r = resolveAnchor(anim, frameIdx, "eye_r");
+		const l = resolveAnchor(anim, frameIdx, "eye_l", pigId);
+		const r = resolveAnchor(anim, frameIdx, "eye_r", pigId);
 		return { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
 	}
 	if (name === "feet") {
@@ -508,8 +534,16 @@ export const TURNED_EYE_SHIFT = 16;
 export function resolveWearablePose(
 	anim: PigAnimationKey,
 	frameIdx: number,
-	anchor: AnchorName
+	anchor: AnchorName,
+	pigId: PigId = "rosie"
 ): WearablePose {
+	if (anchor === "head") {
+		const frame = attachmentFrame(anim, frameIdx, pigId);
+		return {
+			rotate: Math.max(-8, Math.min(8, frame.rotation)),
+			scale: HEAD_FIT_SCALE[pigId]?.[anim] ?? HEAD_FIT_SCALE.rosie.idle,
+		};
+	}
 	if (!FACE_RIG_ANCHORS.has(anchor)) {
 		return { rotate: 0, scale: 1 };
 	}
@@ -580,11 +614,12 @@ export function frameDelta(
 	anim: PigAnimationKey,
 	frameIdx: number,
 	category: string | null,
-	itemAnchor?: AnchorName
+	itemAnchor?: AnchorName,
+	pigId: PigId = "rosie",
 ): { dx: number; dy: number } {
 	const name = itemAnchor ?? (category ? CATEGORY_ANCHORS[category] : undefined);
 	if (!name) return { dx: 0, dy: 0 };
-	const cur = resolveAnchor(anim, frameIdx, name);
+	const cur = resolveAnchor(anim, frameIdx, name, pigId);
 	const rest = REST_ANCHORS[name];
 	return { dx: cur.x - rest.x, dy: cur.y - rest.y };
 }

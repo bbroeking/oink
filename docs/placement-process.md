@@ -4,6 +4,35 @@ How cosmetic items get placed on Rosie. The **Placement Studio**
 (`tools/placement_studio.py`) is the single tool; it replaced the old
 `item-anchor.html` / `item-anchor/` / `anchor-editor/` tools.
 
+## Reusable command set
+
+Run these from the repository root. Node 22+, installed project dependencies,
+Python 3, Pillow, and NumPy are required. The commands derive the repository
+root from their own location; none depends on a user-specific absolute path.
+
+| Command | Purpose |
+|---|---|
+| `npm run accessory:studio` | Run the official Placement Studio writer at `http://127.0.0.1:8124`. |
+| `npm run accessory:calibrate` | Remeasure every pig/frame crown and regenerate `constants/pigAttachmentFrames.generated.ts` plus landmark diagnostics. Review its diff and diagnostics before keeping it. |
+| `npm run accessory:export` | Execute the actual production `resolveSlot` code and write `artifacts/accessory-attachment-preview/audit-data/placements.json`. |
+| `npm run accessory:sheets` | Refresh the production export and render all head-item × pig 48-frame sheets under `artifacts/accessory-attachment-preview/contact-sheets/`. Pass focused renderer flags after `--`, for example `npm run accessory:sheets -- --items astronaut --pigs rosie copper`. |
+| `npm run accessory:preview:build` | Refresh the production export and build the interactive preview under `artifacts/accessory-attachment-preview/`. |
+| `npm run accessory:preview:serve` | Serve the already-built preview on port 4176. Pass another port as the first argument after `--`. |
+| `npm run accessory:validate` | Check Python image dependencies, export production geometry, render a focused sheet, build the preview, and run attachment geometry tests. |
+
+The preview uses the production renderer and keeps the stage at the shipped
+300px game size. Use its playback for timing, loop, and transition checks; use
+the downloadable 48-frame sheets for source-frame inspection. The renderer's
+focused CLI is also available directly:
+
+```bash
+python3 scripts/accessory-audit/render.py --items astronaut crown --pigs rosie biscuit
+```
+
+`export.mjs --baseline` refuses to overwrite an existing baseline. Preserve
+the original before/after evidence; ordinary commands update only the current
+`placements.json` and generated preview artifacts.
+
 ---
 
 ## Architecture in one paragraph
@@ -46,9 +75,10 @@ see "Per-pose overrides" below.
      300px canvas).
    - **Render behind** — for items that sit behind the pig (on by default for
      auras).
-   The on-pig preview updates live and matches the app exactly — same anchors,
-   same side sprite on the turn, same eye shift, same head tilt (see "What the
-   preview mirrors").
+   The on-pig preview updates live and is useful for authoring. It is not the
+   final verification surface: after every edit, inspect the actual production
+   resolver with `npm run accessory:sheets` and
+   `npm run accessory:preview:build`.
 
 4. **It autosaves** to `constants/hat_rel.generated.ts` (full rebuild, sorted).
    Metro hot-reloads it. Use **Next untuned →** to walk the backlog, or
@@ -58,28 +88,29 @@ see "Per-pose overrides" below.
 
 Above the pig: **Pose** (every family in `PigAnimationKey` — `idle`, `walk`,
 `jump`, `happy`, `sad`, `tired`, `surprise`, `wave`, `face`, `face_sit`),
-**Pig** (rosie, copper, pepper, bandit, pickles, biscuit — *preview only*;
-anchors are shared by every pig), the frame buttons for that pose (idle has
-**12**), ▶ to play, and the per-pose render **Scale**.
+**Pig** (rosie, copper, pepper, bandit, pickles, biscuit), the frame buttons for
+that pose (idle has **12**), ▶ to play, and the per-pose render **Scale**.
 
-Anchor arrays are 4 frames long even where the sprite has more; the app clamps
-a frame index past the array to the last frame, and so does the studio. Frame 5
-of idle therefore shows frame 4's anchors — that is what ships.
+Production head placement uses measured per-pig, per-source-frame crown data
+from `constants/pigAttachmentFrames.generated.ts` (288 pig/frame records).
+Do not infer current runtime behavior from an older shared-anchor or clamped
+studio view. The production audit export executes `resolveSlot` for every real
+source frame and is the verification truth.
 
-### What the preview mirrors
+### Studio preview and production verification
 
-One function (`layoutItem`) draws the stage and the Sheet, and it is a direct
-port of `resolveSlot`:
+The studio provides a fast authoring approximation and the official writer.
+Some non-head behavior remains mirrored there, including:
 
 - **Side sprites.** On `face` / `face_sit` an item with
   `assets/images/hats/side/<id>.png` is drawn with that sprite and its own
   aspect. A small tag under the stage says *front sprite* / *side sprite*.
 - **Eye shift.** An item anchored exactly on `eyes` sits back `TURNED_EYE_SHIFT`
   (16 canvas px) on the turn so its bridge lands over the nose.
-- **Head tilt + apparent scale.** `resolveWearablePose`: head/face anchors take
-  the eye-line angle delta as a rotation and the eye-distance ratio as a scale
-  (clamped 0.72–1.18); on the turn a non-eye anchor keeps scale 1 — the head
-  turned, it didn't shrink.
+- **Head pose.** Production `resolveWearablePose` uses measured crown position,
+  contour tilt, and stable pose-family scale per pig and source frame. The
+  interactive audit preview and contact sheets execute this production path;
+  use them to verify head items after saving in the studio.
 
 ## Per-pose overrides
 
@@ -130,12 +161,13 @@ clipped to the canvas box. A review surface must show the whole stage.
 
 ## Edit the pig's anatomy anchors
 
-Switch to **Pig anatomy** mode. Drag the 11 body anchors for the selected
+Switch to **Pig anatomy** mode. Drag the shared non-head body anchors for the selected
 animation + frame (onion-skin toggle to check across frames). Autosaves
 `PIG_FRAME_ANCHORS` in `constants/hats.ts` **and** keeps `REST_ANCHORS` in sync
 with `idle[0]` — no manual copy step. `eyes`/`feet` are computed midpoints and
-aren't directly editable. The **Pig** picker here is preview only, same as in
-Items mode — the anchors are shared by every pig.
+aren't directly editable. These edits do not replace the generated per-pig
+head/crown measurements; run `npm run accessory:calibrate` when crown anatomy
+itself is wrong.
 
 Frame buttons cover the **sprite** count, so idle offers 12 while its anchor
 array holds 4. A frame past the array is dimmed and the panel says *"no anchors

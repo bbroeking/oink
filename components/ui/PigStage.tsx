@@ -73,6 +73,7 @@ import {
 import { breathe, BREATH_HALF_MS, BREATH_SQUASH, BREATH_STRETCH } from "@/utils/motionRecipes";
 import { useRivePigRolloutEnabled } from "@/utils/rivePigRollout";
 import { MOTION } from "@/constants/theme";
+import { usePigPlayback } from "./usePigPlayback";
 
 // Auras that ROTATE — radial rays / rings / sunbursts read well spinning. Every
 // OTHER aura gently pulses (breathes) instead: a spinning flame or mist looks
@@ -97,6 +98,13 @@ export function resolvePigStageAssetAspect(
 	source: number,
 	resolveAssetSource?: AssetResolver,
 ): number {
+	// Web and isolated previews carry dimensions on the source itself. Native
+	// uses Metro's numeric handles and resolveAssetSource below.
+	const direct: unknown = source;
+	if (direct && typeof direct === "object" && "width" in direct && "height" in direct &&
+		typeof direct.width === "number" && typeof direct.height === "number" && direct.width > 0 && direct.height > 0) {
+		return direct.height / direct.width;
+	}
 	if (!resolveAssetSource) return 1;
 
 	try {
@@ -221,6 +229,7 @@ export function resolveSlot(
 	pigAnim: PigAnimation,
 	pigFrameIdx: number,
 	relOverrides: Record<string, RelSpec> = {},
+	pigId: PigId = "rosie",
 ): {
 	itemId: string;
 	category: string | null;
@@ -275,6 +284,7 @@ export function resolveSlot(
 			anchorAnim,
 			pigFrameIdx,
 			anchorName,
+			pigId,
 		);
 		// An eye-line item on the turned head sits back from the eye midpoint so
 		// its bridge lands over the nose (TURNED_EYE_SHIFT); a forced ritual image
@@ -292,13 +302,15 @@ export function resolveSlot(
 			anchorAnim,
 			pigFrameIdx,
 			anchorName,
+			pigId,
 		);
 		const w = relSpec.widthFrac * PIG_CANVAS * pose.scale;
 		const h = w * aspect;
 		// React Native rotates a View around its centre. Compensate the box
 		// position so the item's authored pivot—not its centre—stays exactly on
 		// the anatomy anchor after that rotation.
-		const radians = (pose.rotate * Math.PI) / 180;
+		const rotation = Math.abs(pose.rotate) > 0.05 ? pose.rotate : 0;
+		const radians = (rotation * Math.PI) / 180;
 		const pivotX = relSpec.pivot.x * w;
 		const pivotY = relSpec.pivot.y * h;
 		const fromCenterX = pivotX - w / 2;
@@ -318,7 +330,7 @@ export function resolveSlot(
 			width: w,
 			height: h,
 			anchor: anchorName,
-			rotate: Math.abs(pose.rotate) > 0.05 ? pose.rotate : undefined,
+			rotate: rotation || undefined,
 			behind: relSpec.behind,
 		};
 		return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
@@ -345,13 +357,14 @@ export function resolveSlot(
 				anchorAnim,
 				pigFrameIdx,
 				category,
-				baseOverlay?.anchor,
+				baseOverlay?.anchor ?? (category ? CATEGORY_ANCHORS[category] : undefined) ?? "head",
+				pigId,
 			);
 	const catShift =
 		(category &&
 			CATEGORY_PERANIM_SHIFTS[category]?.[anchorAnim]) ||
 		null;
-	const overlay = baseOverlay
+	let overlay = baseOverlay
 		? isFullCanvas
 			? baseOverlay
 			: {
@@ -361,6 +374,30 @@ export function resolveSlot(
 						baseOverlay.bottom - delta.dy - (catShift?.dy ?? 0),
 				}
 		: null;
+	// Older category-box hats have an implicit contact point rather than a
+	// RelSpec. Rotate and scale the whole authored box about that contact too,
+	// preserving the original fit instead of leaving these hats translation-only.
+	const legacyAnchor = baseOverlay?.anchor ?? (category ? CATEGORY_ANCHORS[category] : undefined) ?? "head";
+	if (overlay && !isFullCanvas && legacyAnchor === "head") {
+		const anchor = resolveAnchor(anchorAnim, pigFrameIdx, legacyAnchor, pigId);
+		const pose = resolveWearablePose(anchorAnim, pigFrameIdx, legacyAnchor, pigId);
+		const angle = pose.rotate * Math.PI / 180;
+		const x = overlay.left + overlay.width / 2 - anchor.x;
+		const y = PIG_CANVAS - overlay.bottom - overlay.height / 2 - anchor.y;
+		const width = overlay.width * pose.scale;
+		const height = overlay.height * pose.scale;
+		const centerX = anchor.x + pose.scale * (x * Math.cos(angle) - y * Math.sin(angle));
+		const centerY = anchor.y + pose.scale * (x * Math.sin(angle) + y * Math.cos(angle));
+		overlay = {
+			...overlay,
+			left: centerX - width / 2,
+			bottom: PIG_CANVAS - centerY - height / 2,
+			width,
+			height,
+			anchor: legacyAnchor,
+			rotate: (overlay.rotate ?? 0) + pose.rotate || undefined,
+		};
+	}
 	return { itemId, category, emoji, imageSrc, prebaked, overlay };
 }
 
@@ -425,12 +462,14 @@ function ItemOverlay({
 				animTransform.length ? (
 					<Animated.Image
 						source={placeholderSrc}
+						fadeDuration={0}
 						style={[styles.fillImage, tint ? { tintColor: tint } : null, { transform: animTransform }]}
 						resizeMode="contain"
 					/>
 				) : (
 					<Image
 						source={placeholderSrc}
+						fadeDuration={0}
 						style={[styles.fillImage, tint ? { tintColor: tint } : null]}
 						resizeMode="contain"
 					/>
@@ -534,13 +573,9 @@ export function PigStage({
 		() => ({ ...RITUAL_ITEM_REL, ...relOverrides }),
 		[relOverrides],
 	);
-	const main = resolveSlot(worn.hat, pigAnimation, pigFrameIdx, rel);
-	const bowSlot = resolveSlot(worn.bow, pigAnimation, pigFrameIdx, rel);
-	const glassesSlot = resolveSlot(worn.glasses, pigAnimation, pigFrameIdx, rel);
-	const maskSlot = resolveSlot(worn.mask, pigAnimation, pigFrameIdx, rel);
-	const neckSlot = resolveSlot(equippedNeck, pigAnimation, pigFrameIdx, rel);
-	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, rel);
-	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, rel);
+	const mainPrebaked = worn.hat && isPrebaked(worn.hat.id)
+		? ITEM_PREBAKED[worn.hat.id]
+		: null;
 	const equipment = {
 		headId: worn.hat?.id,
 		bowId: worn.bow?.id,
@@ -559,12 +594,40 @@ export function PigStage({
 		rolloutEnabled &&
 		!motionPolicy.reduceMotion &&
 		resolvedRiveEquipment.supported &&
-		main?.prebaked == null &&
+		mainPrebaked == null &&
 		!pigFrozen &&
 		resolvedSkinTint == null &&
 		Object.keys(tints).length === 0 &&
 		Object.keys(relOverrides).length === 0 &&
 		!riveFailed;
+	// Raster animation has one owner at this layer: the same source-frame index
+	// feeds every wearable anchor and the controlled SpritePig drawing. Rive's
+	// authored rig keeps its own clock and internalized supported equipment.
+	const attachmentPlayback = usePigPlayback({
+		animation: pigAnimation,
+		active: visible && !riveActive && !pigFrozen,
+		reduced: motionPolicy.reduceMotion,
+		tempo: isPigRestAnimation(pigAnimation) ? restTempo : 1,
+		playOnce: !!reaction,
+		playbackKey: reaction?.id,
+		customFrames: mainPrebaked ?? undefined,
+		frameIdx: pigFrozen ? pigFrameIdx : undefined,
+		onComplete: () => {
+			if (reaction) setFinishedReaction(reaction.id);
+			onPigComplete?.();
+		},
+		onFrame: onPigFrame,
+	});
+	const displayedPigFrame = pigFrozen
+		? pigFrameIdx
+		: attachmentPlayback.frameIdx;
+	const main = resolveSlot(worn.hat, pigAnimation, displayedPigFrame, rel, pigId);
+	const bowSlot = resolveSlot(worn.bow, pigAnimation, displayedPigFrame, rel, pigId);
+	const glassesSlot = resolveSlot(worn.glasses, pigAnimation, displayedPigFrame, rel, pigId);
+	const maskSlot = resolveSlot(worn.mask, pigAnimation, displayedPigFrame, rel, pigId);
+	const neckSlot = resolveSlot(equippedNeck, pigAnimation, displayedPigFrame, rel, pigId);
+	const auraSlot = resolveSlot(equippedAura, pigAnimation, displayedPigFrame, rel, pigId);
+	const heldSlot = resolveSlot(equippedHeld, pigAnimation, displayedPigFrame, rel, pigId);
 	const riveOwnsEquipment = riveActive && riveReady;
 	const rendererCallback = React.useRef(onRendererChange);
 	rendererCallback.current = onRendererChange;
@@ -883,16 +946,16 @@ export function PigStage({
 					pigId={pigId}
 					animation={restAnimation}
 					mood={pigMood}
-					reaction={pigReaction}
+					reaction={reaction}
 					active={visible}
 					size={PIG_CANVAS}
-					onFrame={onPigFrame}
-					onComplete={() => {
+					onFrame={riveActive ? onPigFrame : undefined}
+					onComplete={riveActive ? () => {
 						if (reaction) setFinishedReaction(reaction.id);
 						onPigComplete?.();
-					}}
+					} : undefined}
 					customFrames={main?.prebaked ?? undefined}
-					frameIdx={pigFrozen ? pigFrameIdx : undefined}
+					frameIdx={riveActive ? undefined : displayedPigFrame}
 					skinTintOverride={resolvedSkinTint}
 					renderer={riveActive ? "rive" : "raster"}
 					riveSource={riveSource}
