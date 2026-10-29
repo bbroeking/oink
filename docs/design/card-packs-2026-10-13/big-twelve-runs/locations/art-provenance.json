@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Homestead Barn",
+    "number": "079",
+    "source": "assets/images/backgrounds/homestead_barn.jpg",
+    "size": [
+      752,
+      1584
+    ],
+    "sha256": "189a8f10b8468bcc76282fff53215c0dbe308b146f8ccae769a27ebc484ac7d3",
+    "rgba_sha256": "fdca089ad6549c4a0d4de565ec79ed526715e65a3772e4e1301e9af4b8f9027e",
+    "digital_effect": "Effect TBD",
+    "digital_rules": "Rules TBD",
+    "cost_stat": null
+  },
+  {
+    "name": "Truffle Patch",
+    "number": "080",
+    "source": "assets/images/backgrounds/mud_pit_bg.png",
+    "size": [
+      355,
+      593
+    ],
+    "sha256": "128ccaa06ae5a1582b580496c2d8c092bdb71da7fe4ee3859316e509b78d156b",
+    "rgba_sha256": "e2261eed01d9d29b13acd67387028d7e71b644141b311427acff20ea536f776d",
+    "digital_effect": "Effect TBD",
+    "digital_rules": "Rules TBD",
+    "cost_stat": null
+  },
+  {
+    "name": "Reed Marsh",
+    "number": "081",
+    "source": "assets/images/backgrounds/reed_marsh_bg.png",
+    "size": [
+      355,
+      593
+    ],
+    "sha256": "1e7313bbca2ed23b345e3c8975a9982275b822d5a707d35547c76455e4ec1f76",
+    "rgba_sha256": "f5a05bc7eb1a680531a500375ad3723b1d4fd465e642bfc6ec6a101a1c9d2277",
+    "digital_effect": "Effect TBD",
+    "digital_rules": "Rules TBD",
+    "cost_stat": null
+  }
+]

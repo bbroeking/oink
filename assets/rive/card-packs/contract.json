@@ -1,0 +1,167 @@
+{
+  "status": "editor-authored-runtime-verified",
+  "source": {
+    "file": "Card Packs",
+    "fileId": 2651084,
+    "projectId": 1739110,
+    "url": "https://editor.rive.app/file/card-packs/2651084",
+    "editableBackup": "source/card-pack-reveal.rev"
+  },
+  "binary": {
+    "path": "card-pack-reveal.riv",
+    "bytes": 1244656,
+    "sha256": "959f94cc677ac6fa8120b360d7fad547727a65ef7742b66af414cd527aa0c46d"
+  },
+  "artboard": {
+    "name": "CardPackReveal",
+    "width": 390,
+    "height": 844
+  },
+  "stateMachine": "CardPackRevealMachine",
+  "viewModel": "CardPackRevealViewModel",
+  "defaultInstance": "Default",
+  "inputs": {
+    "tearProgress": {
+      "type": "number",
+      "min": 0,
+      "max": 1,
+      "continuous": true,
+      "monotonicPerGesture": true
+    },
+    "revealIndex": {
+      "type": "number",
+      "min": 0,
+      "max": 4,
+      "integer": true
+    },
+    "tiltX": {
+      "type": "number",
+      "min": -1,
+      "max": 1
+    },
+    "tiltY": {
+      "type": "number",
+      "min": -1,
+      "max": 1
+    },
+    "cardArt": {
+      "type": "image",
+      "dynamic": true
+    },
+    "finish": {
+      "type": "enum",
+      "values": [
+        "Standard",
+        "Foil",
+        "Living"
+      ]
+    },
+    "reduceMotion": {
+      "type": "boolean"
+    },
+    "open": {
+      "type": "trigger"
+    },
+    "reveal": {
+      "type": "trigger"
+    },
+    "inspect": {
+      "type": "trigger"
+    },
+    "reset": {
+      "type": "trigger"
+    }
+  },
+  "outputs": {
+    "tearComplete": {
+      "type": "trigger"
+    },
+    "cardSettled": {
+      "type": "trigger"
+    },
+    "inspectComplete": {
+      "type": "trigger",
+      "optional": true
+    },
+    "sequenceComplete": {
+      "type": "trigger"
+    }
+  },
+  "fixtureCards": [
+    "firefly_swarm",
+    "mud_shovel",
+    "puddle_duckling",
+    "mushroom_cap",
+    "moon_firefly"
+  ],
+  "geometry": {
+    "sealedPacket": {
+      "centerX": 195,
+      "centerY": 441,
+      "width": 302,
+      "height": 430,
+      "top": 226,
+      "bottom": 656
+    },
+    "sealedPosterAlphaBounds": {
+      "left": 43,
+      "top": 206,
+      "rightExclusive": 352,
+      "bottomExclusive": 664,
+      "width": 309,
+      "height": 458
+    },
+    "cardFrame": {
+      "centerX": 195,
+      "centerY": 410,
+      "width": 300,
+      "height": 453.33
+    },
+    "artWindow": {
+      "x": 62.78,
+      "y": 203.33,
+      "width": 264.44,
+      "height": 333.33
+    },
+    "fixtureSource": {
+      "width": 750,
+      "height": 1050,
+      "scale": 0.36
+    }
+  },
+  "verification": {
+    "cloudEditorCaptureInspected": true,
+    "stateMachineSimulation": true,
+    "fiveCardStopAtIndexFour": true,
+    "coldStartRevealSimulation": true,
+    "coldStartInspectSimulation": true,
+    "livingLayerTimelines": true,
+    "runtimeExportWritten": true,
+    "editableBackupWritten": true,
+    "nativeIosImport": false,
+    "nativeAndroidImport": false,
+    "wasmExactBinaryViewModel": true,
+    "nativeIosSmoke": {
+      "runtimeSha256": "73d185aa6e430dfda1f394db435f522e47c2837e6c5c965edbc4218edc5d4d70",
+      "environment": "Installed development client, iPhone 17 Pro simulator, iOS 26.4",
+      "checked": [
+        "sealed packet hides art",
+        "cold resume at saved card",
+        "dynamic art swaps",
+        "foil inspection",
+        "fifth-card stop",
+        "complete receipt"
+      ],
+      "physicalDevicePerformance": false
+    },
+    "completionCallbackEmission": false
+  },
+  "knownLimitations": [
+    "Exact-binary WASM inspection verifies the artboard-bound CardPackRevealViewModel, Default instance, all 15 typed properties, finish enum values, dynamic image binding, state-machine bind, and advance. This premium packet SHA still requires device/browser visual reload verification.",
+    "The four output triggers are runtime-addressable but are not emitted by the current animation timelines. MCP trigger-property keyframe authoring returned success without creating trigger keyframes, so the host recovery timer remains required.",
+    "The exported View Model intentionally contains both Default and the editor-created Instance. Default is authoritative; adapters select the artboard-bound default instance.",
+    "The editor contains three actual living-scene timelines (Firefly lights, Puddle ripples, Moon halo/wings). They are lightweight layered transforms over preserved art; only Moon wings are represented as an articulated pair rather than a deforming mesh rig.",
+    "The app must clamp tearProgress monotonically during a gesture and revealIndex to 0...4.",
+    "The opening ceremony uses Rive only for the branded sealed packet, tear strip, and wrapper exit. React Native owns the authoritative typeset card and stops after either three current rewards or five legacy rewards; no cardCount property was added."
+  ]
+}

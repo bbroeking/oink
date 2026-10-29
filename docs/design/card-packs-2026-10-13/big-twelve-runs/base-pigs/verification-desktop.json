@@ -1,0 +1,158 @@
+[
+  {
+    "allTextInside": true,
+    "border": "3px",
+    "card": {
+      "height": 448,
+      "width": 320
+    },
+    "footerGap": 30.5,
+    "nameGap": 5.5390625,
+    "pig": "rosie",
+    "radius": "14px",
+    "ruleFont": "Nunito, sans-serif",
+    "ruleLine": "22.5px",
+    "ruleLines": 2,
+    "ruleSize": "15px",
+    "spriteLoaded": true,
+    "spriteNatural": [
+      370,
+      383
+    ],
+    "spriteRendered": [
+      184,
+      190.4609375
+    ],
+    "visibleSpriteToNameGap": 9.517440878378379
+  },
+  {
+    "allTextInside": true,
+    "border": "3px",
+    "card": {
+      "height": 448,
+      "width": 320
+    },
+    "footerGap": 30.5,
+    "nameGap": 5.9609375,
+    "pig": "copper",
+    "radius": "14px",
+    "ruleFont": "Nunito, sans-serif",
+    "ruleLine": "22.5px",
+    "ruleLines": 2,
+    "ruleSize": "15px",
+    "spriteLoaded": true,
+    "spriteNatural": [
+      370,
+      383
+    ],
+    "spriteRendered": [
+      172,
+      178.0390625
+    ],
+    "visibleSpriteToNameGap": 9.67985641891892
+  },
+  {
+    "allTextInside": true,
+    "border": "3px",
+    "card": {
+      "height": 448,
+      "width": 320
+    },
+    "footerGap": 8,
+    "nameGap": 5.75,
+    "pig": "pepper",
+    "radius": "14px",
+    "ruleFont": "Nunito, sans-serif",
+    "ruleLine": "22.5px",
+    "ruleLines": 3,
+    "ruleSize": "15px",
+    "spriteLoaded": true,
+    "spriteNatural": [
+      370,
+      383
+    ],
+    "spriteRendered": [
+      178,
+      184.25
+    ],
+    "visibleSpriteToNameGap": 9.598648648648648
+  },
+  {
+    "allTextInside": true,
+    "border": "3px",
+    "card": {
+      "height": 448,
+      "width": 320
+    },
+    "footerGap": 8,
+    "nameGap": 5.609375,
+    "pig": "bandit",
+    "radius": "14px",
+    "ruleFont": "Nunito, sans-serif",
+    "ruleLine": "22.5px",
+    "ruleLines": 3,
+    "ruleSize": "15px",
+    "spriteLoaded": true,
+    "spriteNatural": [
+      370,
+      383
+    ],
+    "spriteRendered": [
+      182,
+      188.390625
+    ],
+    "visibleSpriteToNameGap": 9.544510135135136
+  },
+  {
+    "allTextInside": true,
+    "border": "3px",
+    "card": {
+      "height": 448,
+      "width": 320
+    },
+    "footerGap": 8,
+    "nameGap": 5.609375,
+    "pig": "pickles",
+    "radius": "14px",
+    "ruleFont": "Nunito, sans-serif",
+    "ruleLine": "22.5px",
+    "ruleLines": 3,
+    "ruleSize": "15px",
+    "spriteLoaded": true,
+    "spriteNatural": [
+      370,
+      383
+    ],
+    "spriteRendered": [
+      182,
+      188.390625
+    ],
+    "visibleSpriteToNameGap": 9.544510135135136
+  },
+  {
+    "allTextInside": true,
+    "border": "3px",
+    "card": {
+      "height": 448,
+      "width": 320
+    },
+    "footerGap": 30.5,
+    "nameGap": 5.5390625,
+    "pig": "biscuit",
+    "radius": "14px",
+    "ruleFont": "Nunito, sans-serif",
+    "ruleLine": "22.5px",
+    "ruleLines": 2,
+    "ruleSize": "15px",
+    "spriteLoaded": true,
+    "spriteNatural": [
+      370,
+      383
+    ],
+    "spriteRendered": [
+      184,
+      190.4609375
+    ],
+    "visibleSpriteToNameGap": 9.517440878378379
+  }
+]

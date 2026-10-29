@@ -1,0 +1,17 @@
+[
+  {
+    "source": "assets/images/hats/mud_shovel.png",
+    "copy": "docs/design/card-packs-2026-10-13/big-twelve-runs/items/originals/mud_shovel.png",
+    "sha256": "8aa930043d2f69383cecf0336312966ec9640f7b9156829a2b9725f452b4eafe"
+  },
+  {
+    "source": "assets/images/hats/toy_sword.png",
+    "copy": "docs/design/card-packs-2026-10-13/big-twelve-runs/items/originals/toy_sword.png",
+    "sha256": "995b615fb461d1281a30dc2b446496c21df5ddbeeb7ad6468214c8ce669a94c6"
+  },
+  {
+    "source": "assets/images/hats/muddy_cap.png",
+    "copy": "docs/design/card-packs-2026-10-13/big-twelve-runs/items/originals/muddy_cap.png",
+    "sha256": "8847ee9560212b3a65752d304af1339635a17735d38897ba4d26aa4008b6c199"
+  }
+]

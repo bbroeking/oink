@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "index": 0,
+      "sourceFamilies": [
+        "base-pigs"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 1,
+      "sourceFamilies": [
+        "actions"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 2,
+      "sourceFamilies": [],
+      "matchesSource": false,
+      "expectedReviewOnlyChange": true
+    },
+    {
+      "index": 3,
+      "sourceFamilies": [
+        "actions"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 4,
+      "sourceFamilies": [
+        "actions"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 5,
+      "sourceFamilies": [
+        "actions"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 6,
+      "sourceFamilies": [
+        "actions"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 7,
+      "sourceFamilies": [
+        "base-pigs"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 8,
+      "sourceFamilies": [
+        "actions"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 9,
+      "sourceFamilies": [
+        "new-pigs"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 10,
+      "sourceFamilies": [
+        "new-pigs"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    },
+    {
+      "index": 11,
+      "sourceFamilies": [
+        "new-pigs"
+      ],
+      "matchesSource": true,
+      "expectedReviewOnlyChange": false
+    }
+  ],
+  "completedFacesExactSourceMatches": 11,
+  "expectedStaticPlaceholderOnlyDifference": true,
+  "sourceFilesUnchanged": {
+    "base-pigs": true,
+    "actions": true,
+    "items": true,
+    "new-pigs": true
+  },
+  "finalExportSha256": "bc858f8356cd36c7ca4b21bc3365346caae68b3e3a332c0005feb6350bfa3349",
+  "initialExportSha256": "4612909e60b9783b03162291d85ada1927ffd9f51733c06d5bbc927f7fb9fdfd"
+}

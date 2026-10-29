@@ -1,0 +1,495 @@
+{
+  "desktop": [
+    {
+      "card": {
+        "border": "3px",
+        "height": 448,
+        "overflow": "hidden",
+        "radius": "14px",
+        "width": 320,
+        "x": 62,
+        "y": 172.5
+      },
+      "id": "rosie",
+      "image": {
+        "complete": true,
+        "height": 190.4609375,
+        "insideCard": true,
+        "naturalHeight": 383,
+        "naturalWidth": 370,
+        "uniformRatio": true,
+        "width": 184
+      },
+      "text": [
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "86.4px",
+          "rect": {
+            "height": 86.3984375,
+            "width": 114.609375,
+            "x": 250.390625,
+            "y": 183.5
+          },
+          "size": "96px",
+          "text": "12"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 21.5,
+            "width": 45.4140625,
+            "x": 319.5859375,
+            "y": 269.8984375
+          },
+          "size": "16px",
+          "text": "Cheer"
+        },
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "44px",
+          "rect": {
+            "height": 44,
+            "width": 120.015625,
+            "x": 83,
+            "y": 437.5
+          },
+          "size": "44px",
+          "text": "Rosie"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 20.5,
+            "width": 52.2890625,
+            "x": 213.015625,
+            "y": 459.5
+          },
+          "size": "15px",
+          "text": "Legend"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.1px",
+          "rect": {
+            "height": 22.09375,
+            "width": 278,
+            "x": 83,
+            "y": 487.5
+          },
+          "size": "17px",
+          "text": "Loadout Tactician"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.5px",
+          "rect": {
+            "height": 67.5,
+            "width": 278,
+            "x": 83,
+            "y": 511.59375
+          },
+          "size": "15px",
+          "text": "Once per round, after you play a Support card, draw 1 card, then discard 1 card."
+        },
+        {
+          "font": "\"Patrick Hand\", cursive",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 20,
+            "width": 278,
+            "x": 83,
+            "y": 585.5
+          },
+          "size": "15px",
+          "text": "No. 001 \u00b7 Co-op test rules"
+        }
+      ]
+    },
+    {
+      "card": {
+        "border": "3px",
+        "height": 448,
+        "overflow": "hidden",
+        "radius": "14px",
+        "width": 320,
+        "x": 418,
+        "y": 172.5
+      },
+      "id": "mallow",
+      "image": {
+        "complete": true,
+        "height": 186,
+        "insideCard": true,
+        "naturalHeight": 1254,
+        "naturalWidth": 1254,
+        "uniformRatio": true,
+        "width": 186
+      },
+      "text": [
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "60px",
+          "rect": {
+            "height": 60,
+            "width": 133.21875,
+            "x": 587.78125,
+            "y": 183.5
+          },
+          "size": "60px",
+          "text": "TBD"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 21.5,
+            "width": 45.4140625,
+            "x": 675.5859375,
+            "y": 243.5
+          },
+          "size": "16px",
+          "text": "Cheer"
+        },
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "44px",
+          "rect": {
+            "height": 44,
+            "width": 165.2578125,
+            "x": 439,
+            "y": 437.5
+          },
+          "size": "44px",
+          "text": "Mallow"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "19.5px",
+          "rect": {
+            "height": 19.5,
+            "width": 278,
+            "x": 439,
+            "y": 487.5
+          },
+          "size": "15px",
+          "text": "Pig \u00b7 Provisional"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.1px",
+          "rect": {
+            "height": 22.09375,
+            "width": 278,
+            "x": 439,
+            "y": 509
+          },
+          "size": "17px",
+          "text": "Proposed hook"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.5px",
+          "rect": {
+            "height": 22.5,
+            "width": 278,
+            "x": 439,
+            "y": 533.09375
+          },
+          "size": "15px",
+          "text": "Find useful cards in the discard pile."
+        },
+        {
+          "font": "\"Patrick Hand\", cursive",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 20,
+            "width": 278,
+            "x": 439,
+            "y": 585.5
+          },
+          "size": "15px",
+          "text": "Concept \u00b7 No. TBD"
+        }
+      ]
+    },
+    {
+      "card": {
+        "border": "3px",
+        "height": 448,
+        "overflow": "hidden",
+        "radius": "14px",
+        "width": 320,
+        "x": 774,
+        "y": 172.5
+      },
+      "id": "pip",
+      "image": {
+        "complete": true,
+        "height": 186,
+        "insideCard": true,
+        "naturalHeight": 1254,
+        "naturalWidth": 1254,
+        "uniformRatio": true,
+        "width": 186
+      },
+      "text": [
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "60px",
+          "rect": {
+            "height": 60,
+            "width": 133.21875,
+            "x": 943.78125,
+            "y": 183.5
+          },
+          "size": "60px",
+          "text": "TBD"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 21.5,
+            "width": 45.4140625,
+            "x": 1031.5859375,
+            "y": 243.5
+          },
+          "size": "16px",
+          "text": "Cheer"
+        },
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "44px",
+          "rect": {
+            "height": 44,
+            "width": 75.0703125,
+            "x": 795,
+            "y": 437.5
+          },
+          "size": "44px",
+          "text": "Pip"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "19.5px",
+          "rect": {
+            "height": 19.5,
+            "width": 278,
+            "x": 795,
+            "y": 487.5
+          },
+          "size": "15px",
+          "text": "Pig \u00b7 Provisional"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.1px",
+          "rect": {
+            "height": 22.09375,
+            "width": 278,
+            "x": 795,
+            "y": 509
+          },
+          "size": "17px",
+          "text": "Proposed hook"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.5px",
+          "rect": {
+            "height": 45,
+            "width": 278,
+            "x": 795,
+            "y": 533.09375
+          },
+          "size": "15px",
+          "text": "Keep momentum by playing helpful cards."
+        },
+        {
+          "font": "\"Patrick Hand\", cursive",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 20,
+            "width": 278,
+            "x": 795,
+            "y": 585.5
+          },
+          "size": "15px",
+          "text": "Concept \u00b7 No. TBD"
+        }
+      ]
+    },
+    {
+      "card": {
+        "border": "3px",
+        "height": 448,
+        "overflow": "hidden",
+        "radius": "14px",
+        "width": 320,
+        "x": 1130,
+        "y": 172.5
+      },
+      "id": "dozer",
+      "image": {
+        "complete": true,
+        "height": 186,
+        "insideCard": true,
+        "naturalHeight": 1254,
+        "naturalWidth": 1254,
+        "uniformRatio": true,
+        "width": 186
+      },
+      "text": [
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "60px",
+          "rect": {
+            "height": 60,
+            "width": 133.21875,
+            "x": 1299.78125,
+            "y": 183.5
+          },
+          "size": "60px",
+          "text": "TBD"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 21.5,
+            "width": 45.4140625,
+            "x": 1387.5859375,
+            "y": 243.5
+          },
+          "size": "16px",
+          "text": "Cheer"
+        },
+        {
+          "font": "Caprasimo, serif",
+          "lineHeight": "44px",
+          "rect": {
+            "height": 44,
+            "width": 131.2734375,
+            "x": 1151,
+            "y": 437.5
+          },
+          "size": "44px",
+          "text": "Dozer"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "19.5px",
+          "rect": {
+            "height": 19.5,
+            "width": 278,
+            "x": 1151,
+            "y": 487.5
+          },
+          "size": "15px",
+          "text": "Pig \u00b7 Provisional"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.1px",
+          "rect": {
+            "height": 22.09375,
+            "width": 278,
+            "x": 1151,
+            "y": 509
+          },
+          "size": "17px",
+          "text": "Proposed hook"
+        },
+        {
+          "font": "Nunito, sans-serif",
+          "lineHeight": "22.5px",
+          "rect": {
+            "height": 45,
+            "width": 278,
+            "x": 1151,
+            "y": 533.09375
+          },
+          "size": "15px",
+          "text": "Soften setbacks while the deck recovers."
+        },
+        {
+          "font": "\"Patrick Hand\", cursive",
+          "lineHeight": "normal",
+          "rect": {
+            "height": 20,
+            "width": 278,
+            "x": 1151,
+            "y": 585.5
+          },
+          "size": "15px",
+          "text": "Concept \u00b7 No. TBD"
+        }
+      ]
+    }
+  ],
+  "narrow390": {
+    "cards": [
+      {
+        "height": 448,
+        "id": "rosie",
+        "imageAspectPreserved": true,
+        "left": 35,
+        "right": 355,
+        "textContained": true,
+        "width": 320,
+        "y": 249
+      },
+      {
+        "height": 448,
+        "id": "mallow",
+        "imageAspectPreserved": true,
+        "left": 35,
+        "right": 355,
+        "textContained": true,
+        "width": 320,
+        "y": 821.09375
+      },
+      {
+        "height": 448,
+        "id": "pip",
+        "imageAspectPreserved": true,
+        "left": 35,
+        "right": 355,
+        "textContained": true,
+        "width": 320,
+        "y": 1433.78125
+      },
+      {
+        "height": 448,
+        "id": "dozer",
+        "imageAspectPreserved": true,
+        "left": 35,
+        "right": 355,
+        "textContained": true,
+        "width": 320,
+        "y": 2026.171875
+      }
+    ],
+    "documentWidth": 390,
+    "viewportWidth": 390
+  },
+  "correctionNeeded": false,
+  "provenance": {
+    "rosieFaceMarkupIdenticalToSelectedE": true,
+    "rosieDecodedPixelsMatchOriginal": true,
+    "homesteadDecodedPixelsMatchOriginal": true,
+    "exportConceptCopiesByteIdentical": true,
+    "allLocalDependenciesPresent": true,
+    "fonts": "Google Fonts; requires network on first load",
+    "imageGenerationMode": "built-in image_gen; after Claude Design establishment",
+    "scope": "Owned Claude Design page and this local directory only"
+  },
+  "hashes": {
+    "Big Twelve - New Pig Concepts.dc.html": "25867aa569587cee2f8853b0fdae0256bd5508c75bbe05c858553eced8e2dd55",
+    "art/dozer-concept.png": "e0eb1af5f10bf0c145acce9e5b4d5454e42c5a19901fb52e20aaca648666e164",
+    "art/mallow-concept.png": "6b9a58e5880d026059aca34bce3d4b5530a0968a4eddf21bbe047ed834ba1a64",
+    "art/pip-concept.png": "3cd6a302b3848c5d1442e7b838bbb982fbc0a39bb5f7c25a67892f22e1e005a6"
+  }
+}

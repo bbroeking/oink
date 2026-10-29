@@ -1,0 +1,36 @@
+{
+  "rosieReferenceMarkupIdentical": true,
+  "exportSha256": "60352b4eea95baf9eb469652a15bf98de5d1ddd5fad7676f532ba112a1186e2c",
+  "assets": [
+    {
+      "source": "assets/images/trading-cards/base-set-art/076-snoot-boop-print-v1.png",
+      "packaged": "uploads/076-snoot-boop-print-v1.png",
+      "byteIdentical": true,
+      "sha256": "11b47796a19ab1b949919ec3b2f41bc10cfe779a887a3d9aefc499936669bbbc"
+    },
+    {
+      "source": "assets/images/trading-cards/base-set-art/064-big-wind-up-print-v2.png",
+      "packaged": "uploads/064-big-wind-up-print-v2.png",
+      "byteIdentical": true,
+      "sha256": "60116c8d379f5f20045a1d55a92fe37ca372237aa2b38139bff6b77a16fd1743"
+    },
+    {
+      "source": "assets/images/trading-cards/base-set-art/065-duck-into-the-mud-print-v1.png",
+      "packaged": "uploads/065-duck-into-the-mud-print-v1.png",
+      "byteIdentical": true,
+      "sha256": "a969f41fb9432bed73e8794ea2b93f7e52558e3efccdbf48f40f574021de4b59"
+    },
+    {
+      "source": "docs/design/card-packs-2026-10-13/static-layouts/art/coop/sprites/rosie-idle_1.png",
+      "packaged": "art/coop/sprites/rosie-idle_1.png",
+      "byteIdentical": true,
+      "sha256": "bb2d4571dc10113b1ab0b7e5f920aa30d60b2e35da9875e10233ecce143cab41"
+    },
+    {
+      "source": "docs/design/card-packs-2026-10-13/static-layouts/art/maple/homestead_barn.jpg",
+      "packaged": "art/maple/homestead_barn.jpg",
+      "byteIdentical": true,
+      "sha256": "3df2a74ff952e8e199404435918f466c38a3fad9cd12031149b038d84e7cbaae"
+    }
+  ]
+}

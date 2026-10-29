@@ -1,0 +1,74 @@
+[
+  {
+    "sourceFamilies": [
+      "base-pigs"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "actions"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "items"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "actions"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "actions"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "actions"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "actions"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "base-pigs"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "actions"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "new-pigs"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "new-pigs"
+    ],
+    "matchesSource": true
+  },
+  {
+    "sourceFamilies": [
+      "new-pigs"
+    ],
+    "matchesSource": true
+  }
+]

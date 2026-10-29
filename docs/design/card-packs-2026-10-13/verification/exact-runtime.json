@@ -1,0 +1,523 @@
+{
+  "runtimePath": "/Users/bbroeking/projects/oink/assets/rive/card-packs/card-pack-reveal.riv",
+  "bytes": 364139,
+  "sha256": "73d185aa6e430dfda1f394db435f522e47c2837e6c5c965edbc4218edc5d4d70",
+  "riveHeader": "RIVE",
+  "expected": {
+    "artboard": "CardPackReveal",
+    "stateMachine": "CardPackRevealMachine",
+    "viewModel": "CardPackRevealViewModel",
+    "defaultInstance": "Default",
+    "properties": {
+      "tearProgress": {
+        "type": "number",
+        "min": 0,
+        "max": 1,
+        "continuous": true,
+        "monotonicPerGesture": true
+      },
+      "revealIndex": {
+        "type": "number",
+        "min": 0,
+        "max": 4,
+        "integer": true
+      },
+      "tiltX": {
+        "type": "number",
+        "min": -1,
+        "max": 1
+      },
+      "tiltY": {
+        "type": "number",
+        "min": -1,
+        "max": 1
+      },
+      "cardArt": {
+        "type": "image",
+        "dynamic": true
+      },
+      "finish": {
+        "type": "enum",
+        "values": [
+          "Standard",
+          "Foil",
+          "Living"
+        ]
+      },
+      "reduceMotion": {
+        "type": "boolean"
+      },
+      "open": {
+        "type": "trigger"
+      },
+      "reveal": {
+        "type": "trigger"
+      },
+      "inspect": {
+        "type": "trigger"
+      },
+      "reset": {
+        "type": "trigger"
+      },
+      "tearComplete": {
+        "type": "trigger"
+      },
+      "cardSettled": {
+        "type": "trigger"
+      },
+      "inspectComplete": {
+        "type": "trigger",
+        "optional": true
+      },
+      "sequenceComplete": {
+        "type": "trigger"
+      }
+    }
+  },
+  "actual": {
+    "artboardFound": true,
+    "artboardSize": {
+      "width": 390,
+      "height": 844
+    },
+    "stateMachineFound": true,
+    "stateMachineBoundToSelectedInstance": true,
+    "behavior": {
+      "normalMotion": {
+        "states": [
+          "PackOpen",
+          "CardReveal"
+        ]
+      },
+      "reset": {
+        "states": [
+          "PackReset",
+          "PackIdle"
+        ]
+      },
+      "reducedMotion": {
+        "states": [
+          "ReducedMotionReveal"
+        ]
+      },
+      "dynamicImageBindingAddressable": true,
+      "dynamicImageNullAssignmentAdvanced": true,
+      "signalBindingsAddressable": {
+        "tearComplete": true,
+        "cardSettled": true,
+        "inspectComplete": true,
+        "sequenceComplete": true
+      },
+      "callbackEmissionTested": false,
+      "callbackEmissionLimitation": "The headless low-level WebGL wrapper exposes trigger() but no listener API; device/browser hook callback delivery remains a runtime integration test.",
+      "imageDecodeTested": false,
+      "imageDecodeLimitation": "WebGL decodeImage requires the browser Image API; headless Node verifies the typed image property but cannot decode pixels."
+    },
+    "coldStartResume": {
+      "reveal": {
+        "states": [
+          "CardReveal"
+        ]
+      },
+      "inspect": {
+        "states": [
+          "CardInspect"
+        ]
+      }
+    },
+    "viewModelFound": true,
+    "boundViewModelName": "CardPackRevealViewModel",
+    "namedLookupDiagnostic": {
+      "name": "CardPackRevealViewModel",
+      "instanceNames": [
+        "Default",
+        "Instance"
+      ],
+      "properties": [
+        {
+          "name": "cardArt",
+          "type": "image"
+        },
+        {
+          "name": "finish",
+          "enumName": "CardFinish",
+          "type": "enumType"
+        },
+        {
+          "name": "inspect",
+          "type": "trigger"
+        },
+        {
+          "name": "inspectComplete",
+          "type": "trigger"
+        },
+        {
+          "name": "open",
+          "type": "trigger"
+        },
+        {
+          "name": "tearComplete",
+          "type": "trigger"
+        },
+        {
+          "name": "reduceMotion",
+          "type": "boolean"
+        },
+        {
+          "name": "reset",
+          "type": "trigger"
+        },
+        {
+          "name": "reveal",
+          "type": "trigger"
+        },
+        {
+          "name": "cardSettled",
+          "type": "trigger"
+        },
+        {
+          "name": "revealIndex",
+          "type": "number"
+        },
+        {
+          "name": "sequenceComplete",
+          "type": "trigger"
+        },
+        {
+          "name": "tearProgress",
+          "type": "number"
+        },
+        {
+          "name": "tiltX",
+          "type": "number"
+        },
+        {
+          "name": "tiltY",
+          "type": "number"
+        }
+      ]
+    },
+    "instanceNames": [
+      "Default",
+      "Instance"
+    ],
+    "selectedInstanceName": null,
+    "runtimeDefaultInstanceProperties": {
+      "tearProgress": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "revealIndex": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "tiltX": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "tiltY": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "cardArt": {
+        "expectedType": "image",
+        "optional": false,
+        "found": true
+      },
+      "finish": {
+        "expectedType": "enum",
+        "optional": false,
+        "found": true,
+        "value": "Standard",
+        "values": [
+          "Standard",
+          "Foil",
+          "Living"
+        ]
+      },
+      "reduceMotion": {
+        "expectedType": "boolean",
+        "optional": false,
+        "found": true
+      },
+      "open": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "reveal": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "inspect": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "reset": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "tearComplete": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "cardSettled": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "inspectComplete": {
+        "expectedType": "trigger",
+        "optional": true,
+        "found": true
+      },
+      "sequenceComplete": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      }
+    },
+    "definitionProperties": [
+      {
+        "name": "cardArt",
+        "type": "image"
+      },
+      {
+        "name": "finish",
+        "enumName": "CardFinish",
+        "type": "enumType"
+      },
+      {
+        "name": "inspect",
+        "type": "trigger"
+      },
+      {
+        "name": "inspectComplete",
+        "type": "trigger"
+      },
+      {
+        "name": "open",
+        "type": "trigger"
+      },
+      {
+        "name": "tearComplete",
+        "type": "trigger"
+      },
+      {
+        "name": "reduceMotion",
+        "type": "boolean"
+      },
+      {
+        "name": "reset",
+        "type": "trigger"
+      },
+      {
+        "name": "reveal",
+        "type": "trigger"
+      },
+      {
+        "name": "cardSettled",
+        "type": "trigger"
+      },
+      {
+        "name": "revealIndex",
+        "type": "number"
+      },
+      {
+        "name": "sequenceComplete",
+        "type": "trigger"
+      },
+      {
+        "name": "tearProgress",
+        "type": "number"
+      },
+      {
+        "name": "tiltX",
+        "type": "number"
+      },
+      {
+        "name": "tiltY",
+        "type": "number"
+      }
+    ],
+    "selectedProperties": {
+      "tearProgress": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "revealIndex": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "tiltX": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "tiltY": {
+        "expectedType": "number",
+        "optional": false,
+        "found": true
+      },
+      "cardArt": {
+        "expectedType": "image",
+        "optional": false,
+        "found": true
+      },
+      "finish": {
+        "expectedType": "enum",
+        "optional": false,
+        "found": true,
+        "value": "Foil",
+        "values": [
+          "Standard",
+          "Foil",
+          "Living"
+        ]
+      },
+      "reduceMotion": {
+        "expectedType": "boolean",
+        "optional": false,
+        "found": true
+      },
+      "open": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "reveal": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "inspect": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "reset": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "tearComplete": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "cardSettled": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      },
+      "inspectComplete": {
+        "expectedType": "trigger",
+        "optional": true,
+        "found": true
+      },
+      "sequenceComplete": {
+        "expectedType": "trigger",
+        "optional": false,
+        "found": true
+      }
+    },
+    "diagnosticInstance": {
+      "name": "Instance",
+      "properties": {
+        "tearProgress": {
+          "expectedType": "number",
+          "optional": false,
+          "found": true
+        },
+        "revealIndex": {
+          "expectedType": "number",
+          "optional": false,
+          "found": true
+        },
+        "tiltX": {
+          "expectedType": "number",
+          "optional": false,
+          "found": true
+        },
+        "tiltY": {
+          "expectedType": "number",
+          "optional": false,
+          "found": true
+        },
+        "cardArt": {
+          "expectedType": "image",
+          "optional": false,
+          "found": true
+        },
+        "finish": {
+          "expectedType": "enum",
+          "optional": false,
+          "found": true,
+          "value": "Standard",
+          "values": [
+            "Standard",
+            "Foil",
+            "Living"
+          ]
+        },
+        "reduceMotion": {
+          "expectedType": "boolean",
+          "optional": false,
+          "found": true
+        },
+        "open": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        },
+        "reveal": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        },
+        "inspect": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        },
+        "reset": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        },
+        "tearComplete": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        },
+        "cardSettled": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        },
+        "inspectComplete": {
+          "expectedType": "trigger",
+          "optional": true,
+          "found": true
+        },
+        "sequenceComplete": {
+          "expectedType": "trigger",
+          "optional": false,
+          "found": true
+        }
+      }
+    }
+  },
+  "failures": [],
+  "ok": true
+}

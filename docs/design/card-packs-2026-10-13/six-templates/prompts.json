@@ -1,0 +1,25 @@
+{
+  "base": "Create one premium original collectible game card concept for Tickle the Pig. Portrait 3:4 composition, entire card visible straight-on with a small warm cream margin, no hands or mockup device. Input image is the authoritative Rosie game sprite: preserve her exact large round head, compact torso, short stubby legs, small dark hooves, eye spacing, snout, ears and curled tail; keep full body visible. Do not make a new long-legged pig or change anatomy. Warm hand-painted storybook game art, cocoa ink, cream paper, rose, sage, lilac, butter yellow. Spice comes from the card layout/material, not a new character. Real card information: title ROSIE; type LEGEND; heart stat 12 CHEER; ability LOADOUT TACTICIAN; readable rule 'Once per round, after you play a Support card, draw 1 card, then discard 1 card.'; two style labels BRAVE and SPARK. Keep information zones clear. This is an exploratory raster template mockup, no logo copied from another game.",
+  "chatgpt": [
+    [
+      "01-field-guide",
+      "HEDGEROW FIELD GUIDE. An asymmetrical naturalist folio: rounded-corner portrait card made of lightly textured cream paper; a tall specimen window on the left occupies 60 percent; narrow right column with a pink heart stat tab, tiny botanical diagram and type label. Rosie occupies the specimen window over simple sage meadow shapes. Name on bold top-left tab. Rules on a taped rectangular field-note near bottom with ample clean typography. Tiny pressed leaves and a seed envelope, stamped collector footer. Surprising elegant editorial information hierarchy with generous calm spacing. Flat source sprite style, no photorealistic pig."
+    ],
+    [
+      "02-guild-badge",
+      "HERD GUILD BADGE. A bold die-cut heraldic shield and rosette composition within a portrait card. Large round sage-and-cream medallion with Rosie centered full body, rose-and-butter enamel scallops, thick cocoa contours, shallow tactile relief. ROSIE on a wide flowing top ribbon, LEGEND on tiny crest flag. Heart-shaped 12 CHEER seal offset on the side. Rules on a broad clean parchment banner across the bottom third. BRAVE and SPARK are two tiny heraldic badges at the base. Bravely graphic, collectible, cheerful, iconic silhouette. Not a conventional rectangular art window above a text box; invent a coherent badge chassis."
+    ]
+  ],
+  "initialMidjourney": [
+    {
+      "id": "03-theatre",
+      "provider": "Midjourney",
+      "prompt": "One original premium collectible card frame template, portrait 3:4, flat straight-on full card with small cream margin. POP-UP PORCH THEATRE: delightful layered paper proscenium and folded stage, lilac curtains, cream scalloped arch, warm butter-yellow footlights, rose title handbill saying ROSIE, heart-shaped hanging side sign saying 12, two small style-ticket tabs. Empty sage meadow center, deliberately leave central character area UNPOPULATED for later sprite compositing, no pig or animal. Large clean cream rules fascia at bottom, elegant cocoa ink contours, hand-painted storybook papercraft, surprising playful tactile depth. Frame edges and small foreground leaves may break the card border but text areas stay clear. Not a box or display case. --ar 3:4 --stylize 175 --no pig, animal, character, hands, phone, logo, watermark, glossy plastic, dense text"
+    },
+    {
+      "id": "05-relic",
+      "provider": "Midjourney",
+      "prompt": "One original premium collectible card frame template, portrait 3:4, flat straight-on full card with small cream margin. MOONLIT RELIC: storybook astrolabe and botanical reliquary, asymmetrical crescent-shaped art aperture, lilac and sage enamel orbit, warm gold tiny star inlays, cocoa ink engraving, rose heart stat jewel at side saying 12, arched top title ROSIE, two small lower style charms, broad ivory parchment rules scroll unfurling across lower third. Empty softly painted meadow aperture, deliberately UNPOPULATED to composite a character later; no pig or animal. Whimsical cozy magical artifact, restrained tactile richness, readable graphic hierarchy, not dark gritty fantasy, not a conventional rectangular art-over-text frame. --ar 3:4 --stylize 175 --no pig, animal, character, hands, phone, logo, watermark, neon, dense text"
+    }
+  ]
+}

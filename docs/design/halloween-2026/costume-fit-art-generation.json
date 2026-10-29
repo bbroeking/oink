@@ -1,0 +1,60 @@
+{
+  "fit": {
+    "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4db34a16-8a5b-44be-8982-82d44ae6b77f.png",
+    "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/035-halloween-2026-hollow-jack-costume-card-v2.png",
+    "prompt": "Edit the referenced actual Rosie the Pig idle sprite into a precisely fitted Hollow Jack Halloween costume concept. PRESERVE Rosie's exact pose, huge round head to tiny short body ratio, eye locations and expression, snout and mouth, four short pig legs, hooves, curly tail, and original hand-painted illustration style. Add only clothing: padded pumpkin hood fitted around her big head with a generous oval real face opening showing both eyes, both cheeks, snout and mouth; soft ribbed pumpkin romper fitted tightly to her short torso; small green leaf collar between head and body; leafy ear cuffs, tiny curly vine accents. Keep all original hooves visible, no boots, no human arms, no humanoid body, no long legs, no second pumpkin face, no giant pumpkin belly face. Rich pumpkin orange and moss green cloth, cocoa outlines, warm painted shading matching Rosie. This is a dressed ACTUAL pig, not an empty anthropomorphic suit. Front idle pose identical to reference with all contours fully inside canvas and modest transparent padding. True clean alpha background, no scenery, shadows, text, card border. Her recognizable real face is the center of the costume. It must look wearable on the source pig's exact proportions.",
+    "version": 2
+  },
+  "overlay": {
+    "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-43ece4be-124d-41e2-b111-b50a36ec6f41.png",
+    "destination": "/Users/bbroeking/projects/oink/assets/images/costumes/hollow-jack/rosie-front-idle-v1.png",
+    "prompt": "Extract ONLY the pumpkin clothing from this fitted Rosie costume reference. Preserve the exact garment shapes, proportions, colors, painted texture and pose: broad pumpkin hood, leaf trim and stem, tiny short pumpkin torso romper and cuffs. REMOVE all actual pig pixels: the whole pink face including eyes/cheeks/snout/mouth, all pink ears, tail, visible pink legs and brown hooves must become fully transparent. The hood's entire face oval is an EMPTY transparent opening bounded by the existing cocoa rim; no replacement face. Keep the hollow ear openings and hoof openings clear. This is one flat wearable front-layer overlay fitted to the reference pig, not an empty humanoid suit. Do not invent human arms, gloves, boot feet or a second pumpkin face. Keep front hood and tiny body garment positioned exactly relative to each other as in the reference, with their outlines complete inside modest transparent padding. True clean transparent background and openings; no baked pig, floor, text or card frame.",
+    "version": 1
+  },
+  "completeGarments": {
+    "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4db34a16-8a5b-44be-8982-82d44ae6b77f.png",
+    "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/035-halloween-2026-hollow-jack-costume-card-v2.png",
+    "prompt": "Edit the referenced actual Rosie the Pig idle sprite into a precisely fitted Hollow Jack Halloween costume concept. PRESERVE Rosie's exact pose, huge round head to tiny short body ratio, eye locations and expression, snout and mouth, four short pig legs, hooves, curly tail, and original hand-painted illustration style. Add only clothing: padded pumpkin hood fitted around her big head with a generous oval real face opening showing both eyes, both cheeks, snout and mouth; soft ribbed pumpkin romper fitted tightly to her short torso; small green leaf collar between head and body; leafy ear cuffs, tiny curly vine accents. Keep all original hooves visible, no boots, no human arms, no humanoid body, no long legs, no second pumpkin face, no giant pumpkin belly face. Rich pumpkin orange and moss green cloth, cocoa outlines, warm painted shading matching Rosie. This is a dressed ACTUAL pig, not an empty anthropomorphic suit. Front idle pose identical to reference with all contours fully inside canvas and modest transparent padding. True clean alpha background, no scenery, shadows, text, card border. Her recognizable real face is the center of the costume. It must look wearable on the source pig's exact proportions.",
+    "version": 2,
+    "parts": [
+      {
+        "name": "hood",
+        "prompt": "From this fitted pumpkin outfit reference, produce ONLY the complete broad pumpkin HOOD garment for Rosie's huge round head. Keep the same orange cloth ribbing, cocoa rim, green leaf/stem decoration and open ear cuffs. The face oval and both ear interiors are fully transparent. Remove ALL torso/romper, neck leaf collar, leg cuffs, pig and hooves. NO pig face or actual ears. The entire hood rim must be one continuous painted garment with no horizontal cropping or cuts. Wide rounded pumpkin hood, large oval opening across the lower-middle large enough for Rosie's brows eyes cheeks snout mouth. Deliberately squat and broad, not tall human proportions. Keep a SHORT curled stem instead of tall one so it fits the 300px pig stage without clipping. Friendly painted cocoa-outline style exactly matching input. Center whole isolated hood with 12% transparent padding every side. Transparent background. No text or scenery.",
+        "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-70caae5f-e2cf-4f3c-b77b-fd71b3fe98f9.png",
+        "destination": "/Users/bbroeking/projects/oink/assets/images/costumes/hollow-jack/rosie-hood-v1.png"
+      },
+      {
+        "name": "romper",
+        "prompt": "From this fitted pumpkin outfit reference, produce ONLY the complete short pumpkin ROMPER garment for Rosie's tiny torso beneath her huge round head. Remove the entire hood/head section, all pig pixels, all ears, face and hooves. Keep a green LEAF COLLAR along the upper edge, softly padded ribbed orange cloth, and THREE open short leg cuffs matching visible reference pig legs. Hoof opening interiors are transparent; no boots or hooves or gloves. The suit body is very broad and very SHORT: width roughly twice its height. One continuous cozy painted garment, cocoa outlines, same inputcolors/shading, squat round silhouette, no human arms or long legs. Complete centered short romper with12% true transparent padding every side. Transparent background, no sourcepig, text, scene or floor.",
+        "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-6a4902b9-7df0-4acb-b7ed-de7585540814.png",
+        "destination": "/Users/bbroeking/projects/oink/assets/images/costumes/hollow-jack/rosie-romper-v1.png"
+      }
+    ],
+    "rejectedRomperCleanup": {
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-8895e8d6-68e2-4bd6-8878-7d49c4bd9d45.png",
+      "destination": "/Users/bbroeking/projects/oink/assets/images/costumes/hollow-jack/rosie-romper-v2.png",
+      "prompt": "Cleanly extract this pumpkin romper to TRUE transparency. Keep ONLY the orange cloth and its green leaf collar with complete dark cocoa outline, exactly the same shapes, colors and proportions. Remove every bit of brown/black smoky glow, bloom, shadow, backdrop and haze around the garment: all canvas outside the real outline must be alpha ZERO, no soft glow or shadow. The THREE leg-cuff interior openings must also be completely TRANSPARENT holes, no brown fill, so the source pig's legs show through. Do not add a pig, face, ears, hooves, human arms, text, scene or border. Short wide intact garment only. Keep the whole item safely inside 15% clear transparent padding on every side. Dark outlines end crisply at alpha0. Transparent background required.",
+      "version": 2
+    },
+    "selectedRomper": {
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-916c2874-6dbc-4cbb-a955-dabccfba027e.png",
+      "destination": "/Users/bbroeking/projects/oink/assets/images/costumes/hollow-jack/rosie-romper-v3.png",
+      "prompt": "Create one SMALL SHORT WIDE cartoon pumpkin romper clothing accessory, as a clean game sprite. It fits a tiny pig torso beneath a large head. Simple bright orange padded cloth, three SHORT hollow leg cuffs along the bottom, five green leaf tabs along the top collar, dark cocoa cartoon outline. Garment width is twice its height. No head/hood, no pig, no face, no arms, no actual legs or hooves. The three cuff holes are completely empty transparent openings, not brown-colored interiors. FLAT clean cel-painted fills with subtle shading restricted INSIDE the cloth. Every pixel outside the cocoa outline is completely clear alpha=0. Absolutely NO aura, glow, bloom, haze, smoke, shadows, black or brown background, backdrop gradient or ground. Clean closed contours. Center the complete object inside a square1024x1024 canvas with generous 20% fully transparent padding. True transparent background. No text or card frame.",
+      "version": 3
+    }
+  },
+  "selection": {
+    "card": 2,
+    "hood": 1,
+    "romper": 3
+  },
+  "rejected": {
+    "humanoidSuit": 1,
+    "combinedOverlay": "kept as reference; split rendering exposed seams",
+    "romperVersions": [
+      1,
+      2
+    ],
+    "reason": "Brown smoky halo and opaque cuff interiors"
+  }
+}

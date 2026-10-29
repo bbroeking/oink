@@ -1,0 +1,200 @@
+[11:04:36.234] rive  verified (0 bytes, 33ms, 0 errors, 0 warnings)
+[11:04:58.402] rive  verified (0 bytes, 33ms, 0 errors, 0 warnings)
+[11:04:58.481] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952159 bytes, 25ms, 0 errors, 0 warnings)
+[11:05:17.065] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 26ms, 0 errors, 0 warnings)
+[11:05:17.071] rive  showing Card Pack Reveal [1/1]
+[11:05:17.071] rive  viewport 390x844 @1x
+[11:05:17.172] rive  screenshot failed: build/sealed.png
+[11:05:22.156] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 24ms, 0 errors, 0 warnings)
+[11:05:22.157] rive  showing Card Pack Reveal [1/1]
+[11:05:22.157] rive  viewport 390x844 @1x
+[11:05:22.291] rive  wrote docs/design/card-packs-2026-10-13/rive/build/sealed.png
+[11:05:24.774] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 25ms, 0 errors, 0 warnings)
+[11:05:24.775] rive  showing Card Pack Reveal [1/1]
+[11:05:24.775] rive  viewport 390x844 @1x
+[11:05:24.859] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reveal.png
+[11:05:26.701] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 24ms, 0 errors, 0 warnings)
+[11:05:26.702] rive  data: reduceMotion = true
+[11:05:26.702] rive  showing Card Pack Reveal [1/1]
+[11:05:26.702] rive  viewport 390x844 @1x
+[11:05:26.813] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reduced-motion.png
+[11:05:29.144] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 25ms, 0 errors, 0 warnings)
+[11:05:29.145] rive  data: reset = true
+[11:05:29.145] rive  showing Card Pack Reveal [1/1]
+[11:05:29.145] rive  viewport 390x844 @1x
+[11:05:29.223] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reset.png
+[11:05:32.374] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 26ms, 0 errors, 0 warnings)
+[11:05:32.374] rive  data: reduceMotion = true
+[11:05:32.374] rive  data: definedIndex = 4
+[11:05:32.374] rive  data: tiltX = 0.7
+[11:05:32.374] rive  data: tiltY = -0.5
+[11:05:32.375] rive  showing Card Pack Reveal [1/1]
+[11:05:32.375] rive  viewport 390x844 @1x
+[11:05:32.451] rive  wrote docs/design/card-packs-2026-10-13/rive/build/card-4-tilt.png
+[11:05:57.758] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 48ms, 0 errors, 0 warnings)
+[11:05:57.764] rive  showing Card Pack Reveal [1/1]
+[11:05:57.764] rive  viewport 390x844 @1x
+[11:05:57.925] rive  wrote docs/design/card-packs-2026-10-13/rive/build/sealed.png
+[11:05:59.412] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 26ms, 0 errors, 0 warnings)
+[11:05:59.413] rive  showing Card Pack Reveal [1/1]
+[11:05:59.413] rive  viewport 390x844 @1x
+[11:05:59.493] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reveal.png
+[11:06:01.088] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 35ms, 0 errors, 0 warnings)
+[11:06:01.089] rive  data: reduceMotion = true
+[11:06:01.089] rive  showing Card Pack Reveal [1/1]
+[11:06:01.089] rive  viewport 390x844 @1x
+[11:06:01.220] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reduced-motion.png
+[11:06:02.890] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 25ms, 0 errors, 0 warnings)
+[11:06:02.891] rive  data: reset = true
+[11:06:02.891] rive  showing Card Pack Reveal [1/1]
+[11:06:02.891] rive  viewport 390x844 @1x
+[11:06:02.994] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reset.png
+[11:06:04.562] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 24ms, 0 errors, 0 warnings)
+[11:06:04.563] rive  data: reduceMotion = true
+[11:06:04.563] rive  data: definedIndex = 4
+[11:06:04.563] rive  data: tiltX = 0.7
+[11:06:04.563] rive  data: tiltY = -0.5
+[11:06:04.563] rive  showing Card Pack Reveal [1/1]
+[11:06:04.563] rive  viewport 390x844 @1x
+[11:06:04.640] rive  wrote docs/design/card-packs-2026-10-13/rive/build/card-4-tilt.png
+[11:06:19.503] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 42ms, 0 errors, 0 warnings)
+[11:06:19.509] rive  showing Card Pack Reveal [1/1]
+[11:06:19.509] rive  viewport 390x844 @1x
+[11:06:19.634] rive  wrote docs/design/card-packs-2026-10-13/rive/build/sealed.png
+[11:06:21.993] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 25ms, 0 errors, 0 warnings)
+[11:06:21.994] rive  showing Card Pack Reveal [1/1]
+[11:06:21.994] rive  viewport 390x844 @1x
+[11:06:22.124] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reveal.png
+[11:06:24.910] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 25ms, 0 errors, 0 warnings)
+[11:06:24.911] rive  data: reduceMotion = true
+[11:06:24.911] rive  showing Card Pack Reveal [1/1]
+[11:06:24.911] rive  viewport 390x844 @1x
+[11:06:24.990] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reduced-motion.png
+[11:06:26.620] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 44ms, 0 errors, 0 warnings)
+[11:06:26.622] rive  data: reset = true
+[11:06:26.623] rive  showing Card Pack Reveal [1/1]
+[11:06:26.623] rive  viewport 390x844 @1x
+[11:06:26.780] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reset.png
+[11:06:28.589] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952253 bytes, 40ms, 0 errors, 0 warnings)
+[11:06:28.590] rive  data: reduceMotion = true
+[11:06:28.590] rive  data: definedIndex = 4
+[11:06:28.590] rive  data: tiltX = 0.7
+[11:06:28.590] rive  data: tiltY = -0.5
+[11:06:28.590] rive  showing Card Pack Reveal [1/1]
+[11:06:28.590] rive  viewport 390x844 @1x
+[11:06:28.722] rive  wrote docs/design/card-packs-2026-10-13/rive/build/card-4-tilt.png
+[11:06:40.230] rive  verified (0 bytes, 16ms, 0 errors, 0 warnings)
+[11:06:47.599] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952239 bytes, 36ms, 0 errors, 0 warnings)
+[11:06:47.601] rive  showing Card Pack Reveal [1/1]
+[11:06:47.601] rive  viewport 390x844 @1x
+[11:06:47.726] rive  wrote docs/design/card-packs-2026-10-13/rive/build/sealed.png
+[11:06:49.449] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952239 bytes, 25ms, 0 errors, 0 warnings)
+[11:06:49.450] rive  showing Card Pack Reveal [1/1]
+[11:06:49.450] rive  viewport 390x844 @1x
+[11:06:49.546] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reveal.png
+[11:06:50.988] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952239 bytes, 24ms, 0 errors, 0 warnings)
+[11:06:50.989] rive  data: reduceMotion = true
+[11:06:50.989] rive  showing Card Pack Reveal [1/1]
+[11:06:50.989] rive  viewport 390x844 @1x
+[11:06:51.082] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reduced-motion.png
+[11:06:53.117] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952239 bytes, 25ms, 0 errors, 0 warnings)
+[11:06:53.117] rive  data: reset = true
+[11:06:53.118] rive  showing Card Pack Reveal [1/1]
+[11:06:53.118] rive  viewport 390x844 @1x
+[11:06:53.208] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reset.png
+[11:06:55.521] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952239 bytes, 26ms, 0 errors, 0 warnings)
+[11:06:55.522] rive  data: reduceMotion = true
+[11:06:55.522] rive  data: definedIndex = 4
+[11:06:55.522] rive  data: tiltX = 0.7
+[11:06:55.522] rive  data: tiltY = -0.5
+[11:06:55.522] rive  showing Card Pack Reveal [1/1]
+[11:06:55.522] rive  viewport 390x844 @1x
+[11:06:55.638] rive  wrote docs/design/card-packs-2026-10-13/rive/build/card-4-tilt.png
+[11:07:11.267] rive  verified (0 bytes, 18ms, 0 errors, 0 warnings)
+[11:07:22.632] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (8952239 bytes, 24ms, 0 errors, 0 warnings)
+[11:07:22.633] rive  data: reset = true
+[11:07:22.633] rive  showing Card Pack Reveal [1/1]
+[11:07:22.633] rive  viewport 390x844 @1x
+[11:07:22.714] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reset.png
+[11:07:30.418] rive  verified (0 bytes, 19ms, 0 errors, 0 warnings)
+[11:08:54.179] rive  verified (0 bytes, 27ms, 0 errors, 0 warnings)
+[11:08:59.937] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 15ms, 0 errors, 0 warnings)
+[11:08:59.939] rive  showing Card Pack Reveal [1/1]
+[11:08:59.939] rive  viewport 390x844 @1x
+[11:09:00.157] rive  wrote docs/design/card-packs-2026-10-13/rive/build/sealed.png
+[11:09:03.627] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 15ms, 0 errors, 0 warnings)
+[11:09:03.627] rive  showing Card Pack Reveal [1/1]
+[11:09:03.628] rive  viewport 390x844 @1x
+[11:09:03.687] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reveal.png
+[11:09:05.390] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 15ms, 0 errors, 0 warnings)
+[11:09:05.390] rive  data: tiltX = 0.55
+[11:09:05.390] rive  data: tiltY = 0.65
+[11:09:05.391] rive  showing Card Pack Reveal [1/1]
+[11:09:05.391] rive  viewport 390x844 @1x
+[11:09:05.447] rive  wrote docs/design/card-packs-2026-10-13/rive/build/foil-tilt.png
+[11:09:07.430] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 16ms, 0 errors, 0 warnings)
+[11:09:07.430] rive  data: reduceMotion = true
+[11:09:07.430] rive  showing Card Pack Reveal [1/1]
+[11:09:07.430] rive  viewport 390x844 @1x
+[11:09:07.502] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reduced-motion.png
+[11:09:09.152] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 15ms, 0 errors, 0 warnings)
+[11:09:09.152] rive  showing Card Pack Reveal [1/1]
+[11:09:09.152] rive  viewport 390x844 @1x
+[11:09:09.209] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-next.png
+[11:09:11.087] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 15ms, 0 errors, 0 warnings)
+[11:09:11.087] rive  showing Card Pack Reveal [1/1]
+[11:09:11.088] rive  viewport 390x844 @1x
+[11:09:11.143] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-rapid-wrap.png
+[11:09:12.696] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874368 bytes, 14ms, 0 errors, 0 warnings)
+[11:09:12.696] rive  showing Card Pack Reveal [1/1]
+[11:09:12.696] rive  viewport 390x844 @1x
+[11:09:12.741] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-reset.png
+[11:09:34.563] rive  verified (0 bytes, 30ms, 0 errors, 0 warnings)
+[11:09:39.992] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 17ms, 0 errors, 0 warnings)
+[11:09:39.992] rive  data: tiltX = 0.55
+[11:09:39.993] rive  data: tiltY = 0.10
+[11:09:39.994] rive  showing Card Pack Reveal [1/1]
+[11:09:39.994] rive  viewport 390x844 @1x
+[11:09:40.056] rive  wrote docs/design/card-packs-2026-10-13/rive/build/foil-tilt.png
+[11:09:43.083] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 16ms, 0 errors, 0 warnings)
+[11:09:43.083] rive  showing Card Pack Reveal [1/1]
+[11:09:43.083] rive  viewport 390x844 @1x
+[11:09:43.142] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-next.png
+[11:09:44.771] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 16ms, 0 errors, 0 warnings)
+[11:09:44.772] rive  showing Card Pack Reveal [1/1]
+[11:09:44.772] rive  viewport 390x844 @1x
+[11:09:44.851] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-rapid-wrap.png
+[11:09:46.558] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 16ms, 0 errors, 0 warnings)
+[11:09:46.559] rive  showing Card Pack Reveal [1/1]
+[11:09:46.559] rive  viewport 390x844 @1x
+[11:09:46.605] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-reset.png
+[11:09:54.626] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 16ms, 0 errors, 0 warnings)
+[11:09:54.627] rive  showing Card Pack Reveal [1/1]
+[11:09:54.627] rive  viewport 390x844 @1x
+[11:09:54.740] rive  wrote docs/design/card-packs-2026-10-13/rive/build/interaction-rapid-wrap.png
+[11:10:07.753] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 31ms, 0 errors, 0 warnings)
+[11:10:07.754] rive  data: reset = true
+[11:10:07.756] rive  showing Card Pack Reveal [1/1]
+[11:10:07.756] rive  viewport 390x844 @1x
+[11:10:07.865] rive  wrote docs/design/card-packs-2026-10-13/rive/build/reset.png
+[11:10:09.817] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874792 bytes, 16ms, 0 errors, 0 warnings)
+[11:10:09.818] rive  data: reduceMotion = true
+[11:10:09.818] rive  data: definedIndex = 4
+[11:10:09.818] rive  data: tiltX = 0.7
+[11:10:09.818] rive  data: tiltY = -0.5
+[11:10:09.818] rive  showing Card Pack Reveal [1/1]
+[11:10:09.818] rive  viewport 390x844 @1x
+[11:10:09.874] rive  wrote docs/design/card-packs-2026-10-13/rive/build/card-4-tilt.png
+[11:10:14.406] rive  verified (0 bytes, 16ms, 0 errors, 0 warnings)
+[11:11:09.620] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874795 bytes, 28ms, 0 errors, 0 warnings)
+[11:11:09.621] rive  data: reduceMotion = true
+[11:11:09.621] rive  data: revealIndex = 4
+[11:11:09.621] rive  data: tiltX = 0.7
+[11:11:09.621] rive  data: tiltY = -0.5
+[11:11:09.621] rive  showing CardPackReveal [1/1]
+[11:11:09.621] rive  viewport 390x844 @1x
+[11:11:09.681] rive  wrote docs/design/card-packs-2026-10-13/rive/build/card-4-tilt.png
+[11:11:12.821] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874795 bytes, 17ms, 0 errors, 0 warnings)
+[11:11:12.864] rive  verified (0 bytes, 15ms, 0 errors, 0 warnings)
+[11:14:03.020] rive  verified (0 bytes, 28ms, 0 errors, 0 warnings)
+[11:40:46.315] rive  built docs/design/card-packs-2026-10-13/rive/build/card-pack-reveal.riv (874795 bytes, 31ms, 0 errors, 0 warnings)

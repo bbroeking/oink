@@ -11,8 +11,9 @@ import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand/400Regul
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import Constants from "expo-constants";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { AppState, LogBox, Linking } from "react-native";
+import { AppState, LogBox, Linking, Platform } from "react-native";
 import "react-native-reanimated";
 
 // Silence the bridgeless-Fabric "Unsupported dashed / dotted border
@@ -110,6 +111,11 @@ import { UI_COLORS } from "@/constants/theme";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import type { SounderMessageRow } from "@/utils/sounderMessages";
 import { useFeedingTimeZoneRegistration } from "@/hooks/useFeedingTimeZoneRegistration";
+import { useHalloweenLoginGift } from "@/hooks/useHalloweenLoginGift";
+import { HalloweenLoginGiftModal } from "@/components/HalloweenLoginGift";
+import { ROSIE_COSTUME_FIT_BY_ID } from "@/features/cards/data/costumeFits";
+import type { RosieCostumeFit } from "@/features/cards/data/costumeFits";
+import type { HalloweenLoginGiftReceipt } from "@/features/cards/domain/halloweenLoginGift";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -142,6 +148,32 @@ const APP_NAV_THEME = {
   },
 };
 
+// Read the value embedded in the installed native binary. Expo config can be
+// changed by an update, so it is not authoritative for a server build gate.
+// Expo Go and web have no eligible installed build and stay dark.
+function installedNativeBuild(): number {
+  const raw = Platform.OS === "ios"
+    ? Constants.platform?.ios?.buildNumber
+    : Platform.OS === "android"
+      ? Constants.platform?.android?.versionCode
+      : null;
+  const value = typeof raw === "number"
+    ? raw
+    : typeof raw === "string" && /^\d+$/.test(raw)
+      ? Number(raw)
+      : 0;
+  return Number.isSafeInteger(value) && value > 0 ? value : 0;
+}
+
+const HALLOWEEN_GIFT_NATIVE_BUILD = installedNativeBuild();
+const HALLOWEEN_GIFT_FIT_POLICY_VERSION = 1;
+
+interface HalloweenGiftPresentation {
+  userId: string;
+  receipt: HalloweenLoginGiftReceipt;
+  fit: RosieCostumeFit;
+}
+
 function RootLayoutInner() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -169,6 +201,25 @@ function RootLayoutInner() {
   // arming only sets state; the queue holds it off the storybook.
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   useFeedingTimeZoneRegistration(sessionUserId);
+  const halloweenGift = useHalloweenLoginGift({
+    userId: sessionUserId,
+    enabled:
+      authChecked && !!sessionUserId && HALLOWEEN_GIFT_NATIVE_BUILD > 0,
+    clientBuild: HALLOWEEN_GIFT_NATIVE_BUILD,
+    fitPolicyVersion: HALLOWEEN_GIFT_FIT_POLICY_VERSION,
+  });
+  const [halloweenGiftPresentation, setHalloweenGiftPresentation] =
+    useState<HalloweenGiftPresentation | null>(null);
+  const [halloweenGiftClosing, setHalloweenGiftClosing] = useState(false);
+  const [halloweenGiftDeferredUser, setHalloweenGiftDeferredUser] = useState<
+    string | null
+  >(null);
+  const halloweenGiftTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const reportedInvalidHalloweenReceipts = useRef(new Set<string>());
+  const activeHalloweenGiftPresentation =
+    halloweenGiftPresentation?.userId === sessionUserId
+      ? halloweenGiftPresentation
+      : null;
   // Season 1 co-op dig visibility — gates the "start a Sounder" launch nudge.
   const coopDig = useSeason1Active();
   // Season 0: pending alignment-schism reveal. Set by the polling
@@ -226,6 +277,13 @@ function RootLayoutInner() {
     !!rituals,
     POPUP_PRIORITIES.rituals,
   );
+  const halloweenGiftSlot = usePopupSlot(
+    "halloweenLoginGift",
+    !!activeHalloweenGiftPresentation &&
+      !halloweenGiftClosing &&
+      halloweenGiftDeferredUser !== sessionUserId,
+    POPUP_PRIORITIES.halloweenLoginGift,
+  );
   // Suppressed for the session if a ceremony (recap / hungerIntro) fired —
   // the digest surfaces next login instead (flip-day stacking ceiling).
   const achievementsSlot = usePopupSlot(
@@ -255,6 +313,92 @@ function RootLayoutInner() {
   useEffect(() => {
     if (pigFriendsSlot.visible) markCeremonyShown();
   }, [pigFriendsSlot.visible]);
+
+  // Resolve only the exact server receipt into a reviewed local fit. Unknown or
+  // mismatched content is reported and kept dark; the client never substitutes
+  // or randomizes a reward.
+  useEffect(() => {
+    const receipt = halloweenGift.receipt;
+    const userId = sessionUserId;
+    if (!receipt || !userId) return;
+    const fit = ROSIE_COSTUME_FIT_BY_ID.get(receipt.costumeId);
+    if (!fit || fit.cardId !== receipt.cardId) {
+      if (!reportedInvalidHalloweenReceipts.current.has(receipt.receiptId)) {
+        reportedInvalidHalloweenReceipts.current.add(receipt.receiptId);
+        Sentry.captureMessage("Halloween login gift receipt has no matching reviewed fit", {
+          level: "error",
+          tags: { receiptId: receipt.receiptId },
+        });
+      }
+      return;
+    }
+    setHalloweenGiftPresentation({ userId, receipt, fit });
+  }, [halloweenGift.receipt, sessionUserId]);
+
+  // "Later" is scoped to one authenticated login session. A sign-out/account
+  // switch re-arms the durable unacknowledged receipt on the next session.
+  useEffect(() => {
+    setHalloweenGiftDeferredUser(null);
+    setHalloweenGiftClosing(false);
+    if (!sessionUserId) setHalloweenGiftPresentation(null);
+  }, [sessionUserId]);
+
+  useEffect(
+    () => () => {
+      for (const timer of halloweenGiftTimers.current) clearTimeout(timer);
+      halloweenGiftTimers.current = [];
+    },
+    [],
+  );
+
+  const finishHalloweenGift = useCallback(
+    (presentation: HalloweenGiftPresentation) => {
+      setHalloweenGiftClosing(true);
+      halloweenGiftSlot.release();
+      halloweenGiftTimers.current.push(
+        setTimeout(() => {
+          setHalloweenGiftPresentation((current) =>
+            current?.userId === presentation.userId &&
+            current.receipt.receiptId === presentation.receipt.receiptId
+              ? null
+              : current,
+          );
+          setHalloweenGiftClosing(false);
+        }, POPUP_TEARDOWN_MS),
+      );
+    },
+    [halloweenGiftSlot],
+  );
+
+  const deferHalloweenGift = useCallback(() => {
+    const presentation = activeHalloweenGiftPresentation;
+    if (!presentation || halloweenGiftClosing) return;
+    setHalloweenGiftDeferredUser(presentation.userId);
+    finishHalloweenGift(presentation);
+  }, [activeHalloweenGiftPresentation, finishHalloweenGift, halloweenGiftClosing]);
+
+  const acknowledgePresentedHalloweenGift = useCallback(async () => {
+    const presentation = activeHalloweenGiftPresentation;
+    if (!presentation || halloweenGiftClosing) return false;
+    const acknowledged = await halloweenGift.acknowledge();
+    if (
+      !acknowledged ||
+      sessionUserId !== presentation.userId ||
+      halloweenGiftPresentation?.receipt.receiptId !==
+        presentation.receipt.receiptId
+    ) {
+      return false;
+    }
+    finishHalloweenGift(presentation);
+    return true;
+  }, [
+    activeHalloweenGiftPresentation,
+    finishHalloweenGift,
+    halloweenGift,
+    halloweenGiftClosing,
+    halloweenGiftPresentation?.receipt.receiptId,
+    sessionUserId,
+  ]);
 
   // Resolve the initial auth state before letting the splash drop, so we
   // transition straight into either auth or the home screen — no blank flash.
@@ -996,6 +1140,20 @@ function RootLayoutInner() {
 			    unmounted mid-flight, so the next one can't present into an
 			    in-progress teardown and come up invisible (the iOS
 			    "stuck/invisible" bug — see PopupQueue.tsx). */}
+      {activeHalloweenGiftPresentation && (
+        <HalloweenLoginGiftModal
+          visible={halloweenGiftSlot.visible}
+          receipt={activeHalloweenGiftPresentation.receipt}
+          costume={{
+            name: activeHalloweenGiftPresentation.fit.name,
+            fit: activeHalloweenGiftPresentation.fit,
+          }}
+          busy={halloweenGift.pending}
+          error={halloweenGift.error}
+          onContinue={acknowledgePresentedHalloweenGift}
+          onLater={deferHalloweenGift}
+        />
+      )}
       {schism && (
         <AlignmentSchismModal
           visible={schismSlot.visible}

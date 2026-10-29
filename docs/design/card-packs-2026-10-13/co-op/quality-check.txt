@@ -1,0 +1,43 @@
+
+> ttp@1.0.0 quality:check
+> node scripts/quality-loop.mjs --once
+
+
+▶ quality contract tests
+✖ current repository satisfies the locked quality contracts (422.163ms)
+✔ layout inspection sees shrinking and sub-11pt production text (2.007875ms)
+✔ layout inspection ignores documented anti-patterns while checking JSX (0.679833ms)
+✔ security inspection rejects exposed definers and tables without RLS (0.731708ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 624.920708
+
+✖ failing tests:
+
+test at scripts/quality/contracts.test.mjs:22:1
+✖ current repository satisfies the locked quality contracts (422.163ms)
+  AssertionError [ERR_ASSERTION]: layout: text line clamps: 138 exceeds budget 91
+  security: 20260916140000_my_drives_opener_pig.sql: SECURITY DEFINER my_drives is not revoked from default roles
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/bbroeking/projects/oink/scripts/quality/contracts.test.mjs:24:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+✗ quality contract tests (0.7s)
+
+QUALITY FAIL · report: .quality/last-run.json

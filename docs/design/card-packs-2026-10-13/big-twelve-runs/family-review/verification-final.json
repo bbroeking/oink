@@ -1,0 +1,4769 @@
+{
+  "desktop": {
+    "cards": [
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 782.09375,
+          "height": 448,
+          "right": 444,
+          "width": 320,
+          "x": 124,
+          "y": 334.09375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 581.5546875,
+              "height": 190.4609375,
+              "right": 325,
+              "width": 184,
+              "x": 141,
+              "y": 391.09375
+            },
+            "complete": true,
+            "fit": "fill",
+            "naturalHeight": 383,
+            "naturalWidth": 370,
+            "src": "art/coop/sprites/rosie-idle_1.png"
+          }
+        ],
+        "index": 0,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 431.4921875,
+              "height": 86.3984375,
+              "right": 427,
+              "width": 114.609375,
+              "x": 312.390625,
+              "y": 345.09375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "86.4px",
+            "size": "96px",
+            "text": "12"
+          },
+          {
+            "bounds": {
+              "bottom": 452.9921875,
+              "height": 21.5,
+              "right": 427,
+              "width": 45.4140625,
+              "x": 381.5859375,
+              "y": 431.4921875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 629.09375,
+              "height": 42,
+              "right": 259.5625,
+              "width": 114.5625,
+              "x": 145,
+              "y": 587.09375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "42px",
+            "size": "42px",
+            "text": "Rosie"
+          },
+          {
+            "bounds": {
+              "bottom": 628.09375,
+              "height": 20.5,
+              "right": 423,
+              "width": 87.7265625,
+              "x": 335.2734375,
+              "y": 607.59375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Pig · Legend"
+          },
+          {
+            "bounds": {
+              "bottom": 651.59375,
+              "height": 22.5,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 629.09375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Heart of the Herd"
+          },
+          {
+            "bounds": {
+              "bottom": 677.59375,
+              "height": 22,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 655.59375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22px",
+            "size": "17px",
+            "text": "Loadout Instinct"
+          },
+          {
+            "bounds": {
+              "bottom": 722.59375,
+              "height": 45,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 677.59375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Once each turn after you equip Gear, draw a card, then discard a card."
+          },
+          {
+            "bounds": {
+              "bottom": 771.09375,
+              "height": 18,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 753.09375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "18px",
+            "size": "15px",
+            "text": "001/88 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 782.09375,
+          "height": 448,
+          "right": 800,
+          "width": 320,
+          "x": 480,
+          "y": 334.09375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 651.09375,
+              "height": 234,
+              "right": 797,
+              "width": 314,
+              "x": 483,
+              "y": 417.09375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/076-snoot-boop-print-v1.png"
+          }
+        ],
+        "index": 1,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 392.09375,
+              "height": 30,
+              "right": 675.171875,
+              "width": 174.171875,
+              "x": 501,
+              "y": 362.09375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Snoot Boop"
+          },
+          {
+            "bounds": {
+              "bottom": 382.09375,
+              "height": 21,
+              "right": 773.3125,
+              "width": 46.625,
+              "x": 726.6875,
+              "y": 361.09375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 395.09375,
+              "height": 12,
+              "right": 770.1953125,
+              "width": 40.3984375,
+              "x": 729.796875,
+              "y": 383.09375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 686.84375,
+              "height": 23.75,
+              "right": 554.9609375,
+              "width": 53.9609375,
+              "x": 501,
+              "y": 663.09375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 685.84375,
+              "height": 18.75,
+              "right": 611.46875,
+              "width": 46.5078125,
+              "x": 564.9609375,
+              "y": 667.09375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 733.84375,
+              "height": 45,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 688.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+          },
+          {
+            "bounds": {
+              "bottom": 767.09375,
+              "height": 20,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 747.09375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 076 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 782.09375,
+          "height": 448,
+          "right": 1156,
+          "width": 320,
+          "x": 836,
+          "y": 334.09375
+        },
+        "images": [],
+        "index": 2,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 371.59375,
+              "height": 20.5,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 351.09375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Item"
+          },
+          {
+            "bounds": {
+              "bottom": 409.390625,
+              "height": 37.796875,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 371.59375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "37.8px",
+            "size": "36px",
+            "text": "Mud Shovel"
+          },
+          {
+            "bounds": {
+              "bottom": 675.1875,
+              "height": 22.09375,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 653.09375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Effect TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 700.4375,
+              "height": 23.25,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 677.1875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.25px",
+            "size": "15px",
+            "text": "Rules TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 767.09375,
+              "height": 20,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 747.09375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Digital rules TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 1598.9375,
+          "height": 448,
+          "right": 444,
+          "width": 320,
+          "x": 124,
+          "y": 1150.9375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 1467.9375,
+              "height": 234,
+              "right": 441,
+              "width": 314,
+              "x": 127,
+              "y": 1233.9375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/076-snoot-boop-print-v1.png"
+          }
+        ],
+        "index": 3,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1208.9375,
+              "height": 30,
+              "right": 319.171875,
+              "width": 174.171875,
+              "x": 145,
+              "y": 1178.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Snoot Boop"
+          },
+          {
+            "bounds": {
+              "bottom": 1198.9375,
+              "height": 21,
+              "right": 417.3125,
+              "width": 46.625,
+              "x": 370.6875,
+              "y": 1177.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 1211.9375,
+              "height": 12,
+              "right": 414.1953125,
+              "width": 40.3984375,
+              "x": 373.796875,
+              "y": 1199.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 1503.6875,
+              "height": 23.75,
+              "right": 198.9609375,
+              "width": 53.9609375,
+              "x": 145,
+              "y": 1479.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 1502.6875,
+              "height": 18.75,
+              "right": 255.46875,
+              "width": 46.5078125,
+              "x": 208.9609375,
+              "y": 1483.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 1550.6875,
+              "height": 45,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 1505.6875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+          },
+          {
+            "bounds": {
+              "bottom": 1583.9375,
+              "height": 20,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 1563.9375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 076 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 1598.9375,
+          "height": 448,
+          "right": 800,
+          "width": 320,
+          "x": 480,
+          "y": 1150.9375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 1467.9375,
+              "height": 234,
+              "right": 797,
+              "width": 314,
+              "x": 483,
+              "y": 1233.9375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/064-big-wind-up-print-v2.png"
+          }
+        ],
+        "index": 4,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1208.9375,
+              "height": 30,
+              "right": 692.2265625,
+              "width": 191.2265625,
+              "x": 501,
+              "y": 1178.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Big Wind-Up"
+          },
+          {
+            "bounds": {
+              "bottom": 1198.9375,
+              "height": 21,
+              "right": 773.3125,
+              "width": 46.625,
+              "x": 726.6875,
+              "y": 1177.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 1211.9375,
+              "height": 12,
+              "right": 770.1953125,
+              "width": 40.3984375,
+              "x": 729.796875,
+              "y": 1199.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 1503.6875,
+              "height": 23.75,
+              "right": 554.9609375,
+              "width": 53.9609375,
+              "x": 501,
+              "y": 1479.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 1502.6875,
+              "height": 18.75,
+              "right": 611.46875,
+              "width": 46.5078125,
+              "x": 564.9609375,
+              "y": 1483.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 1550.6875,
+              "height": 45,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 1505.6875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Your Legend's next attack this turn gets +2 Bash."
+          },
+          {
+            "bounds": {
+              "bottom": 1583.9375,
+              "height": 20,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 1563.9375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 064 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 1598.9375,
+          "height": 448,
+          "right": 1156,
+          "width": 320,
+          "x": 836,
+          "y": 1150.9375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 1467.9375,
+              "height": 234,
+              "right": 1153,
+              "width": 314,
+              "x": 839,
+              "y": 1233.9375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 5,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1223.9375,
+              "height": 60,
+              "right": 1057,
+              "width": 200,
+              "x": 857,
+              "y": 1163.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 1198.9375,
+              "height": 21,
+              "right": 1129.3125,
+              "width": 46.625,
+              "x": 1082.6875,
+              "y": 1177.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 1211.9375,
+              "height": 12,
+              "right": 1126.1953125,
+              "width": 40.3984375,
+              "x": 1085.796875,
+              "y": 1199.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 1503.6875,
+              "height": 23.75,
+              "right": 910.9609375,
+              "width": 53.9609375,
+              "x": 857,
+              "y": 1479.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 1502.6875,
+              "height": 18.75,
+              "right": 967.46875,
+              "width": 46.5078125,
+              "x": 920.9609375,
+              "y": 1483.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 1550.6875,
+              "height": 45,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 1505.6875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 1583.9375,
+              "height": 20,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 1563.9375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 2207.03125,
+          "height": 448,
+          "right": 1098,
+          "width": 320,
+          "x": 778,
+          "y": 1759.03125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 2076.03125,
+              "height": 234,
+              "right": 1095,
+              "width": 314,
+              "x": 781,
+              "y": 1842.03125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 6,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1832.03125,
+              "height": 60,
+              "right": 999,
+              "width": 200,
+              "x": 799,
+              "y": 1772.03125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 1807.03125,
+              "height": 21,
+              "right": 1071.3125,
+              "width": 46.625,
+              "x": 1024.6875,
+              "y": 1786.03125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 1820.03125,
+              "height": 12,
+              "right": 1068.1953125,
+              "width": 40.3984375,
+              "x": 1027.796875,
+              "y": 1808.03125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 2111.78125,
+              "height": 23.75,
+              "right": 852.9609375,
+              "width": 53.9609375,
+              "x": 799,
+              "y": 2088.03125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 2110.78125,
+              "height": 18.75,
+              "right": 909.46875,
+              "width": 46.5078125,
+              "x": 862.9609375,
+              "y": 2092.03125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 2158.78125,
+              "height": 45,
+              "right": 1077,
+              "width": 278,
+              "x": 799,
+              "y": 2113.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 2192.03125,
+              "height": 20,
+              "right": 1077,
+              "width": 278,
+              "x": 799,
+              "y": 2172.03125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3002.515625,
+          "height": 448,
+          "right": 622,
+          "width": 320,
+          "x": 302,
+          "y": 2554.515625
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 2801.90625,
+              "height": 188.390625,
+              "right": 502,
+              "width": 182,
+              "x": 320,
+              "y": 2613.515625
+            },
+            "complete": true,
+            "fit": "fill",
+            "naturalHeight": 383,
+            "naturalWidth": 370,
+            "src": "uploads/pickles-idle_1.png"
+          }
+        ],
+        "index": 7,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 2651.9140625,
+              "height": 86.3984375,
+              "right": 605,
+              "width": 114.609375,
+              "x": 490.390625,
+              "y": 2565.515625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "86.4px",
+            "size": "96px",
+            "text": "12"
+          },
+          {
+            "bounds": {
+              "bottom": 2673.4140625,
+              "height": 21.5,
+              "right": 605,
+              "width": 45.4140625,
+              "x": 559.5859375,
+              "y": 2651.9140625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 2849.515625,
+              "height": 42,
+              "right": 477,
+              "width": 154,
+              "x": 323,
+              "y": 2807.515625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "42px",
+            "size": "42px",
+            "text": "Pickles"
+          },
+          {
+            "bounds": {
+              "bottom": 2848.515625,
+              "height": 20.5,
+              "right": 601,
+              "width": 87.7265625,
+              "x": 513.2734375,
+              "y": 2828.015625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Pig · Legend"
+          },
+          {
+            "bounds": {
+              "bottom": 2872.015625,
+              "height": 22.5,
+              "right": 601,
+              "width": 278,
+              "x": 323,
+              "y": 2849.515625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Orchard Finder"
+          },
+          {
+            "bounds": {
+              "bottom": 2898.015625,
+              "height": 22,
+              "right": 601,
+              "width": 278,
+              "x": 323,
+              "y": 2876.015625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22px",
+            "size": "17px",
+            "text": "Orchard Nose"
+          },
+          {
+            "bounds": {
+              "bottom": 2965.515625,
+              "height": 67.5,
+              "right": 601,
+              "width": 278,
+              "x": 323,
+              "y": 2898.015625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "At the start of your turn, look at the top card of your deck; you may put it on the bottom."
+          },
+          {
+            "bounds": {
+              "bottom": 2991.515625,
+              "height": 18,
+              "right": 601,
+              "width": 278,
+              "x": 323,
+              "y": 2973.515625
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "18px",
+            "size": "15px",
+            "text": "005/88 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3002.515625,
+          "height": 448,
+          "right": 978,
+          "width": 320,
+          "x": 658,
+          "y": 2554.515625
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 2871.515625,
+              "height": 234,
+              "right": 975,
+              "width": 314,
+              "x": 661,
+              "y": 2637.515625
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 8,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 2627.515625,
+              "height": 60,
+              "right": 879,
+              "width": 200,
+              "x": 679,
+              "y": 2567.515625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 2602.515625,
+              "height": 21,
+              "right": 951.3125,
+              "width": 46.625,
+              "x": 904.6875,
+              "y": 2581.515625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2615.515625,
+              "height": 12,
+              "right": 948.1953125,
+              "width": 40.3984375,
+              "x": 907.796875,
+              "y": 2603.515625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 2907.265625,
+              "height": 23.75,
+              "right": 732.9609375,
+              "width": 53.9609375,
+              "x": 679,
+              "y": 2883.515625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 2906.265625,
+              "height": 18.75,
+              "right": 789.46875,
+              "width": 46.5078125,
+              "x": 742.9609375,
+              "y": 2887.515625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 2954.265625,
+              "height": 45,
+              "right": 957,
+              "width": 278,
+              "x": 679,
+              "y": 2909.265625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 2987.515625,
+              "height": 20,
+              "right": 957,
+              "width": 278,
+              "x": 679,
+              "y": 2967.515625
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3723.109375,
+          "height": 448,
+          "right": 444,
+          "width": 320,
+          "x": 124,
+          "y": 3275.109375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3530.109375,
+              "height": 186,
+              "right": 326,
+              "width": 186,
+              "x": 140,
+              "y": 3344.109375
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/mallow-concept.png"
+          }
+        ],
+        "index": 9,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3346.109375,
+              "height": 60,
+              "right": 427,
+              "width": 133.21875,
+              "x": 293.78125,
+              "y": 3286.109375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3367.609375,
+              "height": 21.5,
+              "right": 427,
+              "width": 45.4140625,
+              "x": 381.5859375,
+              "y": 3346.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 3584.109375,
+              "height": 44,
+              "right": 310.2578125,
+              "width": 165.2578125,
+              "x": 145,
+              "y": 3540.109375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Mallow"
+          },
+          {
+            "bounds": {
+              "bottom": 3609.609375,
+              "height": 19.5,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 3590.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 3633.703125,
+              "height": 22.09375,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 3611.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 3658.203125,
+              "height": 22.5,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 3635.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Find useful cards in the discard pile."
+          },
+          {
+            "bounds": {
+              "bottom": 3708.109375,
+              "height": 20,
+              "right": 423,
+              "width": 278,
+              "x": 145,
+              "y": 3688.109375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3723.109375,
+          "height": 448,
+          "right": 800,
+          "width": 320,
+          "x": 480,
+          "y": 3275.109375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3530.109375,
+              "height": 186,
+              "right": 682,
+              "width": 186,
+              "x": 496,
+              "y": 3344.109375
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/pip-concept.png"
+          }
+        ],
+        "index": 10,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3346.109375,
+              "height": 60,
+              "right": 783,
+              "width": 133.21875,
+              "x": 649.78125,
+              "y": 3286.109375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3367.609375,
+              "height": 21.5,
+              "right": 783,
+              "width": 45.4140625,
+              "x": 737.5859375,
+              "y": 3346.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 3584.109375,
+              "height": 44,
+              "right": 576.0703125,
+              "width": 75.0703125,
+              "x": 501,
+              "y": 3540.109375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Pip"
+          },
+          {
+            "bounds": {
+              "bottom": 3609.609375,
+              "height": 19.5,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 3590.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 3633.703125,
+              "height": 22.09375,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 3611.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 3680.703125,
+              "height": 45,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 3635.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Keep momentum by playing helpful cards."
+          },
+          {
+            "bounds": {
+              "bottom": 3708.109375,
+              "height": 20,
+              "right": 779,
+              "width": 278,
+              "x": 501,
+              "y": 3688.109375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3723.109375,
+          "height": 448,
+          "right": 1156,
+          "width": 320,
+          "x": 836,
+          "y": 3275.109375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3530.109375,
+              "height": 186,
+              "right": 1038,
+              "width": 186,
+              "x": 852,
+              "y": 3344.109375
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/dozer-concept.png"
+          }
+        ],
+        "index": 11,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3346.109375,
+              "height": 60,
+              "right": 1139,
+              "width": 133.21875,
+              "x": 1005.78125,
+              "y": 3286.109375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3367.609375,
+              "height": 21.5,
+              "right": 1139,
+              "width": 45.4140625,
+              "x": 1093.5859375,
+              "y": 3346.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 3584.109375,
+              "height": 44,
+              "right": 988.2734375,
+              "width": 131.2734375,
+              "x": 857,
+              "y": 3540.109375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Dozer"
+          },
+          {
+            "bounds": {
+              "bottom": 3609.609375,
+              "height": 19.5,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 3590.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 3633.703125,
+              "height": 22.09375,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 3611.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 3680.703125,
+              "height": 45,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 3635.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Soften setbacks while the deck recovers."
+          },
+          {
+            "bounds": {
+              "bottom": 3708.109375,
+              "height": 20,
+              "right": 1135,
+              "width": 278,
+              "x": 857,
+              "y": 3688.109375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      }
+    ],
+    "documentWidth": 1280,
+    "fonts": {
+      "Caprasimo": true,
+      "Nunito": true,
+      "PatrickHand": true
+    },
+    "interactiveControls": 0,
+    "placeholder": true,
+    "rows": [
+      "TBD Energy",
+      "TBD Energy",
+      "TBD Energy"
+    ],
+    "viewport": {
+      "height": 900,
+      "width": 1280
+    }
+  },
+  "narrow390": {
+    "cards": [
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 931.34375,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 483.34375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 730.8046875,
+              "height": 190.4609375,
+              "right": 236,
+              "width": 184,
+              "x": 52,
+              "y": 540.34375
+            },
+            "complete": true,
+            "fit": "fill",
+            "naturalHeight": 383,
+            "naturalWidth": 370,
+            "src": "art/coop/sprites/rosie-idle_1.png"
+          }
+        ],
+        "index": 0,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 580.7421875,
+              "height": 86.3984375,
+              "right": 338,
+              "width": 114.609375,
+              "x": 223.390625,
+              "y": 494.34375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "86.4px",
+            "size": "96px",
+            "text": "12"
+          },
+          {
+            "bounds": {
+              "bottom": 602.2421875,
+              "height": 21.5,
+              "right": 338,
+              "width": 45.4140625,
+              "x": 292.5859375,
+              "y": 580.7421875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 778.34375,
+              "height": 42,
+              "right": 170.5625,
+              "width": 114.5625,
+              "x": 56,
+              "y": 736.34375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "42px",
+            "size": "42px",
+            "text": "Rosie"
+          },
+          {
+            "bounds": {
+              "bottom": 777.34375,
+              "height": 20.5,
+              "right": 334,
+              "width": 87.7265625,
+              "x": 246.2734375,
+              "y": 756.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Pig · Legend"
+          },
+          {
+            "bounds": {
+              "bottom": 800.84375,
+              "height": 22.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 778.34375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Heart of the Herd"
+          },
+          {
+            "bounds": {
+              "bottom": 826.84375,
+              "height": 22,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 804.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22px",
+            "size": "17px",
+            "text": "Loadout Instinct"
+          },
+          {
+            "bounds": {
+              "bottom": 871.84375,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 826.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Once each turn after you equip Gear, draw a card, then discard a card."
+          },
+          {
+            "bounds": {
+              "bottom": 920.34375,
+              "height": 18,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 902.34375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "18px",
+            "size": "15px",
+            "text": "001/88 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 1517.84375,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 1069.84375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 1386.84375,
+              "height": 234,
+              "right": 352,
+              "width": 314,
+              "x": 38,
+              "y": 1152.84375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/076-snoot-boop-print-v1.png"
+          }
+        ],
+        "index": 1,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1127.84375,
+              "height": 30,
+              "right": 230.171875,
+              "width": 174.171875,
+              "x": 56,
+              "y": 1097.84375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Snoot Boop"
+          },
+          {
+            "bounds": {
+              "bottom": 1117.84375,
+              "height": 21,
+              "right": 328.3125,
+              "width": 46.625,
+              "x": 281.6875,
+              "y": 1096.84375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 1130.84375,
+              "height": 12,
+              "right": 325.1953125,
+              "width": 40.3984375,
+              "x": 284.796875,
+              "y": 1118.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 1422.59375,
+              "height": 23.75,
+              "right": 109.9609375,
+              "width": 53.9609375,
+              "x": 56,
+              "y": 1398.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 1421.59375,
+              "height": 18.75,
+              "right": 166.46875,
+              "width": 46.5078125,
+              "x": 119.9609375,
+              "y": 1402.84375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 1469.59375,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 1424.59375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+          },
+          {
+            "bounds": {
+              "bottom": 1502.84375,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 1482.84375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 076 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 2125.34375,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 1677.34375
+        },
+        "images": [],
+        "index": 2,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1714.84375,
+              "height": 20.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 1694.34375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Item"
+          },
+          {
+            "bounds": {
+              "bottom": 1752.640625,
+              "height": 37.796875,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 1714.84375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "37.8px",
+            "size": "36px",
+            "text": "Mud Shovel"
+          },
+          {
+            "bounds": {
+              "bottom": 2018.4375,
+              "height": 22.09375,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 1996.34375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Effect TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2043.6875,
+              "height": 23.25,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 2020.4375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.25px",
+            "size": "15px",
+            "text": "Rules TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2110.34375,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 2090.34375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Digital rules TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3062.78125,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 2614.78125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 2931.78125,
+              "height": 234,
+              "right": 352,
+              "width": 314,
+              "x": 38,
+              "y": 2697.78125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/076-snoot-boop-print-v1.png"
+          }
+        ],
+        "index": 3,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 2672.78125,
+              "height": 30,
+              "right": 230.171875,
+              "width": 174.171875,
+              "x": 56,
+              "y": 2642.78125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Snoot Boop"
+          },
+          {
+            "bounds": {
+              "bottom": 2662.78125,
+              "height": 21,
+              "right": 328.3125,
+              "width": 46.625,
+              "x": 281.6875,
+              "y": 2641.78125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2675.78125,
+              "height": 12,
+              "right": 325.1953125,
+              "width": 40.3984375,
+              "x": 284.796875,
+              "y": 2663.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 2967.53125,
+              "height": 23.75,
+              "right": 109.9609375,
+              "width": 53.9609375,
+              "x": 56,
+              "y": 2943.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 2966.53125,
+              "height": 18.75,
+              "right": 166.46875,
+              "width": 46.5078125,
+              "x": 119.9609375,
+              "y": 2947.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 3014.53125,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 2969.53125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+          },
+          {
+            "bounds": {
+              "bottom": 3047.78125,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 3027.78125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 076 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3550.78125,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 3102.78125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3419.78125,
+              "height": 234,
+              "right": 352,
+              "width": 314,
+              "x": 38,
+              "y": 3185.78125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/064-big-wind-up-print-v2.png"
+          }
+        ],
+        "index": 4,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3160.78125,
+              "height": 30,
+              "right": 247.2265625,
+              "width": 191.2265625,
+              "x": 56,
+              "y": 3130.78125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Big Wind-Up"
+          },
+          {
+            "bounds": {
+              "bottom": 3150.78125,
+              "height": 21,
+              "right": 328.3125,
+              "width": 46.625,
+              "x": 281.6875,
+              "y": 3129.78125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3163.78125,
+              "height": 12,
+              "right": 325.1953125,
+              "width": 40.3984375,
+              "x": 284.796875,
+              "y": 3151.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 3455.53125,
+              "height": 23.75,
+              "right": 109.9609375,
+              "width": 53.9609375,
+              "x": 56,
+              "y": 3431.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 3454.53125,
+              "height": 18.75,
+              "right": 166.46875,
+              "width": 46.5078125,
+              "x": 119.9609375,
+              "y": 3435.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 3502.53125,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 3457.53125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Your Legend's next attack this turn gets +2 Bash."
+          },
+          {
+            "bounds": {
+              "bottom": 3535.78125,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 3515.78125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 064 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 4038.78125,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 3590.78125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3907.78125,
+              "height": 234,
+              "right": 352,
+              "width": 314,
+              "x": 38,
+              "y": 3673.78125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 5,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3663.78125,
+              "height": 60,
+              "right": 256,
+              "width": 200,
+              "x": 56,
+              "y": 3603.78125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 3638.78125,
+              "height": 21,
+              "right": 328.3125,
+              "width": 46.625,
+              "x": 281.6875,
+              "y": 3617.78125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3651.78125,
+              "height": 12,
+              "right": 325.1953125,
+              "width": 40.3984375,
+              "x": 284.796875,
+              "y": 3639.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 3943.53125,
+              "height": 23.75,
+              "right": 109.9609375,
+              "width": 53.9609375,
+              "x": 56,
+              "y": 3919.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 3942.53125,
+              "height": 18.75,
+              "right": 166.46875,
+              "width": 46.5078125,
+              "x": 119.9609375,
+              "y": 3923.78125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 3990.53125,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 3945.53125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 4023.78125,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 4003.78125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 5364.765625,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 4916.765625
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 5233.765625,
+              "height": 234,
+              "right": 352,
+              "width": 314,
+              "x": 38,
+              "y": 4999.765625
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 6,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 4989.765625,
+              "height": 60,
+              "right": 256,
+              "width": 200,
+              "x": 56,
+              "y": 4929.765625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 4964.765625,
+              "height": 21,
+              "right": 328.3125,
+              "width": 46.625,
+              "x": 281.6875,
+              "y": 4943.765625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 4977.765625,
+              "height": 12,
+              "right": 325.1953125,
+              "width": 40.3984375,
+              "x": 284.796875,
+              "y": 4965.765625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 5269.515625,
+              "height": 23.75,
+              "right": 109.9609375,
+              "width": 53.9609375,
+              "x": 56,
+              "y": 5245.765625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 5268.515625,
+              "height": 18.75,
+              "right": 166.46875,
+              "width": 46.5078125,
+              "x": 119.9609375,
+              "y": 5249.765625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 5316.515625,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 5271.515625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 5349.765625,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 5329.765625
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 6096.609375,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 5648.609375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 5896,
+              "height": 188.390625,
+              "right": 235,
+              "width": 182,
+              "x": 53,
+              "y": 5707.609375
+            },
+            "complete": true,
+            "fit": "fill",
+            "naturalHeight": 383,
+            "naturalWidth": 370,
+            "src": "uploads/pickles-idle_1.png"
+          }
+        ],
+        "index": 7,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 5746.0078125,
+              "height": 86.3984375,
+              "right": 338,
+              "width": 114.609375,
+              "x": 223.390625,
+              "y": 5659.609375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "86.4px",
+            "size": "96px",
+            "text": "12"
+          },
+          {
+            "bounds": {
+              "bottom": 5767.5078125,
+              "height": 21.5,
+              "right": 338,
+              "width": 45.4140625,
+              "x": 292.5859375,
+              "y": 5746.0078125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 5943.609375,
+              "height": 42,
+              "right": 210,
+              "width": 154,
+              "x": 56,
+              "y": 5901.609375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "42px",
+            "size": "42px",
+            "text": "Pickles"
+          },
+          {
+            "bounds": {
+              "bottom": 5942.609375,
+              "height": 20.5,
+              "right": 334,
+              "width": 87.7265625,
+              "x": 246.2734375,
+              "y": 5922.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Pig · Legend"
+          },
+          {
+            "bounds": {
+              "bottom": 5966.109375,
+              "height": 22.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 5943.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Orchard Finder"
+          },
+          {
+            "bounds": {
+              "bottom": 5992.109375,
+              "height": 22,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 5970.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22px",
+            "size": "17px",
+            "text": "Orchard Nose"
+          },
+          {
+            "bounds": {
+              "bottom": 6059.609375,
+              "height": 67.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 5992.109375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "At the start of your turn, look at the top card of your deck; you may put it on the bottom."
+          },
+          {
+            "bounds": {
+              "bottom": 6085.609375,
+              "height": 18,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 6067.609375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "18px",
+            "size": "15px",
+            "text": "005/88 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 6584.609375,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 6136.609375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 6453.609375,
+              "height": 234,
+              "right": 352,
+              "width": 314,
+              "x": 38,
+              "y": 6219.609375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 8,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 6209.609375,
+              "height": 60,
+              "right": 256,
+              "width": 200,
+              "x": 56,
+              "y": 6149.609375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 6184.609375,
+              "height": 21,
+              "right": 328.3125,
+              "width": 46.625,
+              "x": 281.6875,
+              "y": 6163.609375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 6197.609375,
+              "height": 12,
+              "right": 325.1953125,
+              "width": 40.3984375,
+              "x": 284.796875,
+              "y": 6185.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 6489.359375,
+              "height": 23.75,
+              "right": 109.9609375,
+              "width": 53.9609375,
+              "x": 56,
+              "y": 6465.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 6488.359375,
+              "height": 18.75,
+              "right": 166.46875,
+              "width": 46.5078125,
+              "x": 119.9609375,
+              "y": 6469.609375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 6536.359375,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 6491.359375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 6569.609375,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 6549.609375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 7351.703125,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 6903.703125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 7158.703125,
+              "height": 186,
+              "right": 237,
+              "width": 186,
+              "x": 51,
+              "y": 6972.703125
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/mallow-concept.png"
+          }
+        ],
+        "index": 9,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 6974.703125,
+              "height": 60,
+              "right": 338,
+              "width": 133.21875,
+              "x": 204.78125,
+              "y": 6914.703125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 6996.203125,
+              "height": 21.5,
+              "right": 338,
+              "width": 45.4140625,
+              "x": 292.5859375,
+              "y": 6974.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 7212.703125,
+              "height": 44,
+              "right": 221.2578125,
+              "width": 165.2578125,
+              "x": 56,
+              "y": 7168.703125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Mallow"
+          },
+          {
+            "bounds": {
+              "bottom": 7238.203125,
+              "height": 19.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7218.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 7262.296875,
+              "height": 22.09375,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7240.203125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 7286.796875,
+              "height": 22.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7264.296875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Find useful cards in the discard pile."
+          },
+          {
+            "bounds": {
+              "bottom": 7336.703125,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7316.703125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 7839.703125,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 7391.703125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 7646.703125,
+              "height": 186,
+              "right": 237,
+              "width": 186,
+              "x": 51,
+              "y": 7460.703125
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/pip-concept.png"
+          }
+        ],
+        "index": 10,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 7462.703125,
+              "height": 60,
+              "right": 338,
+              "width": 133.21875,
+              "x": 204.78125,
+              "y": 7402.703125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 7484.203125,
+              "height": 21.5,
+              "right": 338,
+              "width": 45.4140625,
+              "x": 292.5859375,
+              "y": 7462.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 7700.703125,
+              "height": 44,
+              "right": 131.0703125,
+              "width": 75.0703125,
+              "x": 56,
+              "y": 7656.703125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Pip"
+          },
+          {
+            "bounds": {
+              "bottom": 7726.203125,
+              "height": 19.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7706.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 7750.296875,
+              "height": 22.09375,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7728.203125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 7797.296875,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7752.296875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Keep momentum by playing helpful cards."
+          },
+          {
+            "bounds": {
+              "bottom": 7824.703125,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 7804.703125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 8327.703125,
+          "height": 448,
+          "right": 355,
+          "width": 320,
+          "x": 35,
+          "y": 7879.703125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 8134.703125,
+              "height": 186,
+              "right": 237,
+              "width": 186,
+              "x": 51,
+              "y": 7948.703125
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/dozer-concept.png"
+          }
+        ],
+        "index": 11,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 7950.703125,
+              "height": 60,
+              "right": 338,
+              "width": 133.21875,
+              "x": 204.78125,
+              "y": 7890.703125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 7972.203125,
+              "height": 21.5,
+              "right": 338,
+              "width": 45.4140625,
+              "x": 292.5859375,
+              "y": 7950.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 8188.703125,
+              "height": 44,
+              "right": 187.2734375,
+              "width": 131.2734375,
+              "x": 56,
+              "y": 8144.703125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Dozer"
+          },
+          {
+            "bounds": {
+              "bottom": 8214.203125,
+              "height": 19.5,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 8194.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 8238.296875,
+              "height": 22.09375,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 8216.203125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 8285.296875,
+              "height": 45,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 8240.296875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Soften setbacks while the deck recovers."
+          },
+          {
+            "bounds": {
+              "bottom": 8312.703125,
+              "height": 20,
+              "right": 334,
+              "width": 278,
+              "x": 56,
+              "y": 8292.703125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      }
+    ],
+    "documentWidth": 390,
+    "fonts": {
+      "Caprasimo": true,
+      "Nunito": true,
+      "PatrickHand": true
+    },
+    "interactiveControls": 0,
+    "placeholder": true,
+    "rows": [
+      "TBD Energy",
+      "TBD Energy",
+      "TBD Energy"
+    ],
+    "viewport": {
+      "height": 900,
+      "width": 390
+    }
+  },
+  "narrow320": {
+    "cards": [
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 1005.4375,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 557.4375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 804.8984375,
+              "height": 190.4609375,
+              "right": 201,
+              "width": 184,
+              "x": 17,
+              "y": 614.4375
+            },
+            "complete": true,
+            "fit": "fill",
+            "naturalHeight": 383,
+            "naturalWidth": 370,
+            "src": "art/coop/sprites/rosie-idle_1.png"
+          }
+        ],
+        "index": 0,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 654.8359375,
+              "height": 86.3984375,
+              "right": 303,
+              "width": 114.609375,
+              "x": 188.390625,
+              "y": 568.4375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "86.4px",
+            "size": "96px",
+            "text": "12"
+          },
+          {
+            "bounds": {
+              "bottom": 676.3359375,
+              "height": 21.5,
+              "right": 303,
+              "width": 45.4140625,
+              "x": 257.5859375,
+              "y": 654.8359375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 852.4375,
+              "height": 42,
+              "right": 135.5625,
+              "width": 114.5625,
+              "x": 21,
+              "y": 810.4375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "42px",
+            "size": "42px",
+            "text": "Rosie"
+          },
+          {
+            "bounds": {
+              "bottom": 851.4375,
+              "height": 20.5,
+              "right": 299,
+              "width": 87.7265625,
+              "x": 211.2734375,
+              "y": 830.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Pig · Legend"
+          },
+          {
+            "bounds": {
+              "bottom": 874.9375,
+              "height": 22.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 852.4375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Heart of the Herd"
+          },
+          {
+            "bounds": {
+              "bottom": 900.9375,
+              "height": 22,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 878.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22px",
+            "size": "17px",
+            "text": "Loadout Instinct"
+          },
+          {
+            "bounds": {
+              "bottom": 945.9375,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 900.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Once each turn after you equip Gear, draw a card, then discard a card."
+          },
+          {
+            "bounds": {
+              "bottom": 994.4375,
+              "height": 18,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 976.4375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "18px",
+            "size": "15px",
+            "text": "001/88 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 1591.9375,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 1143.9375
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 1460.9375,
+              "height": 234,
+              "right": 317,
+              "width": 314,
+              "x": 3,
+              "y": 1226.9375
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/076-snoot-boop-print-v1.png"
+          }
+        ],
+        "index": 1,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1201.9375,
+              "height": 30,
+              "right": 195.171875,
+              "width": 174.171875,
+              "x": 21,
+              "y": 1171.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Snoot Boop"
+          },
+          {
+            "bounds": {
+              "bottom": 1191.9375,
+              "height": 21,
+              "right": 293.3125,
+              "width": 46.625,
+              "x": 246.6875,
+              "y": 1170.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 1204.9375,
+              "height": 12,
+              "right": 290.1953125,
+              "width": 40.3984375,
+              "x": 249.796875,
+              "y": 1192.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 1496.6875,
+              "height": 23.75,
+              "right": 74.9609375,
+              "width": 53.9609375,
+              "x": 21,
+              "y": 1472.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 1495.6875,
+              "height": 18.75,
+              "right": 131.46875,
+              "width": 46.5078125,
+              "x": 84.9609375,
+              "y": 1476.9375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 1543.6875,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 1498.6875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+          },
+          {
+            "bounds": {
+              "bottom": 1576.9375,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 1556.9375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 076 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 2199.4375,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 1751.4375
+        },
+        "images": [],
+        "index": 2,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 1788.9375,
+              "height": 20.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 1768.4375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Item"
+          },
+          {
+            "bounds": {
+              "bottom": 1826.734375,
+              "height": 37.796875,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 1788.9375
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "37.8px",
+            "size": "36px",
+            "text": "Mud Shovel"
+          },
+          {
+            "bounds": {
+              "bottom": 2092.53125,
+              "height": 22.09375,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 2070.4375
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Effect TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2117.78125,
+              "height": 23.25,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 2094.53125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.25px",
+            "size": "15px",
+            "text": "Rules TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2184.4375,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 2164.4375
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Digital rules TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3160.125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 2712.125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3029.125,
+              "height": 234,
+              "right": 317,
+              "width": 314,
+              "x": 3,
+              "y": 2795.125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/076-snoot-boop-print-v1.png"
+          }
+        ],
+        "index": 3,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 2770.125,
+              "height": 30,
+              "right": 195.171875,
+              "width": 174.171875,
+              "x": 21,
+              "y": 2740.125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Snoot Boop"
+          },
+          {
+            "bounds": {
+              "bottom": 2760.125,
+              "height": 21,
+              "right": 293.3125,
+              "width": 46.625,
+              "x": 246.6875,
+              "y": 2739.125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 2773.125,
+              "height": 12,
+              "right": 290.1953125,
+              "width": 40.3984375,
+              "x": 249.796875,
+              "y": 2761.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 3064.875,
+              "height": 23.75,
+              "right": 74.9609375,
+              "width": 53.9609375,
+              "x": 21,
+              "y": 3041.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 3063.875,
+              "height": 18.75,
+              "right": 131.46875,
+              "width": 46.5078125,
+              "x": 84.9609375,
+              "y": 3045.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 3111.875,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 3066.875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+          },
+          {
+            "bounds": {
+              "bottom": 3145.125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 3125.125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 076 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 3648.125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 3200.125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 3517.125,
+              "height": 234,
+              "right": 317,
+              "width": 314,
+              "x": 3,
+              "y": 3283.125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/064-big-wind-up-print-v2.png"
+          }
+        ],
+        "index": 4,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3258.125,
+              "height": 30,
+              "right": 212.2265625,
+              "width": 191.2265625,
+              "x": 21,
+              "y": 3228.125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Big Wind-Up"
+          },
+          {
+            "bounds": {
+              "bottom": 3248.125,
+              "height": 21,
+              "right": 293.3125,
+              "width": 46.625,
+              "x": 246.6875,
+              "y": 3227.125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3261.125,
+              "height": 12,
+              "right": 290.1953125,
+              "width": 40.3984375,
+              "x": 249.796875,
+              "y": 3249.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 3552.875,
+              "height": 23.75,
+              "right": 74.9609375,
+              "width": 53.9609375,
+              "x": 21,
+              "y": 3529.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 3551.875,
+              "height": 18.75,
+              "right": 131.46875,
+              "width": 46.5078125,
+              "x": 84.9609375,
+              "y": 3533.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 3599.875,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 3554.875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Your Legend's next attack this turn gets +2 Bash."
+          },
+          {
+            "bounds": {
+              "bottom": 3633.125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 3613.125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 064 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 4136.125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 3688.125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 4005.125,
+              "height": 234,
+              "right": 317,
+              "width": 314,
+              "x": 3,
+              "y": 3771.125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 5,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 3761.125,
+              "height": 60,
+              "right": 221,
+              "width": 200,
+              "x": 21,
+              "y": 3701.125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 3736.125,
+              "height": 21,
+              "right": 293.3125,
+              "width": 46.625,
+              "x": 246.6875,
+              "y": 3715.125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 3749.125,
+              "height": 12,
+              "right": 290.1953125,
+              "width": 40.3984375,
+              "x": 249.796875,
+              "y": 3737.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 4040.875,
+              "height": 23.75,
+              "right": 74.9609375,
+              "width": 53.9609375,
+              "x": 21,
+              "y": 4017.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 4039.875,
+              "height": 18.75,
+              "right": 131.46875,
+              "width": 46.5078125,
+              "x": 84.9609375,
+              "y": 4021.125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 4087.875,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 4042.875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 4121.125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 4101.125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 5535.953125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 5087.953125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 5404.953125,
+              "height": 234,
+              "right": 317,
+              "width": 314,
+              "x": 3,
+              "y": 5170.953125
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 6,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 5160.953125,
+              "height": 60,
+              "right": 221,
+              "width": 200,
+              "x": 21,
+              "y": 5100.953125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 5135.953125,
+              "height": 21,
+              "right": 293.3125,
+              "width": 46.625,
+              "x": 246.6875,
+              "y": 5114.953125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 5148.953125,
+              "height": 12,
+              "right": 290.1953125,
+              "width": 40.3984375,
+              "x": 249.796875,
+              "y": 5136.953125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 5440.703125,
+              "height": 23.75,
+              "right": 74.9609375,
+              "width": 53.9609375,
+              "x": 21,
+              "y": 5416.953125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 5439.703125,
+              "height": 18.75,
+              "right": 131.46875,
+              "width": 46.5078125,
+              "x": 84.9609375,
+              "y": 5420.953125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 5487.703125,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 5442.703125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 5520.953125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 5500.953125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 6318.640625,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 5870.640625
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 6118.03125,
+              "height": 188.390625,
+              "right": 200,
+              "width": 182,
+              "x": 18,
+              "y": 5929.640625
+            },
+            "complete": true,
+            "fit": "fill",
+            "naturalHeight": 383,
+            "naturalWidth": 370,
+            "src": "uploads/pickles-idle_1.png"
+          }
+        ],
+        "index": 7,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 5968.0390625,
+              "height": 86.3984375,
+              "right": 303,
+              "width": 114.609375,
+              "x": 188.390625,
+              "y": 5881.640625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "86.4px",
+            "size": "96px",
+            "text": "12"
+          },
+          {
+            "bounds": {
+              "bottom": 5989.5390625,
+              "height": 21.5,
+              "right": 303,
+              "width": 45.4140625,
+              "x": 257.5859375,
+              "y": 5968.0390625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 6165.640625,
+              "height": 42,
+              "right": 175,
+              "width": 154,
+              "x": 21,
+              "y": 6123.640625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "42px",
+            "size": "42px",
+            "text": "Pickles"
+          },
+          {
+            "bounds": {
+              "bottom": 6164.640625,
+              "height": 20.5,
+              "right": 299,
+              "width": 87.7265625,
+              "x": 211.2734375,
+              "y": 6144.140625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Pig · Legend"
+          },
+          {
+            "bounds": {
+              "bottom": 6188.140625,
+              "height": 22.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 6165.640625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Orchard Finder"
+          },
+          {
+            "bounds": {
+              "bottom": 6214.140625,
+              "height": 22,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 6192.140625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22px",
+            "size": "17px",
+            "text": "Orchard Nose"
+          },
+          {
+            "bounds": {
+              "bottom": 6281.640625,
+              "height": 67.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 6214.140625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "At the start of your turn, look at the top card of your deck; you may put it on the bottom."
+          },
+          {
+            "bounds": {
+              "bottom": 6307.640625,
+              "height": 18,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 6289.640625
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "18px",
+            "size": "15px",
+            "text": "005/88 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 6806.640625,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 6358.640625
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 6675.640625,
+              "height": 234,
+              "right": 317,
+              "width": 314,
+              "x": 3,
+              "y": 6441.640625
+            },
+            "complete": true,
+            "fit": "cover",
+            "naturalHeight": 1536,
+            "naturalWidth": 1024,
+            "src": "uploads/065-duck-into-the-mud-print-v1.png"
+          }
+        ],
+        "index": 8,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 6431.640625,
+              "height": 60,
+              "right": 221,
+              "width": 200,
+              "x": 21,
+              "y": 6371.640625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "30px",
+            "size": "30px",
+            "text": "Duck Into the Mud"
+          },
+          {
+            "bounds": {
+              "bottom": 6406.640625,
+              "height": 21,
+              "right": 293.3125,
+              "width": 46.625,
+              "x": 246.6875,
+              "y": 6385.640625
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "21px",
+            "size": "21px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 6419.640625,
+              "height": 12,
+              "right": 290.1953125,
+              "width": 40.3984375,
+              "x": 249.796875,
+              "y": 6407.640625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "12px",
+            "size": "12px",
+            "text": "Energy"
+          },
+          {
+            "bounds": {
+              "bottom": 6711.390625,
+              "height": 23.75,
+              "right": 74.9609375,
+              "width": 53.9609375,
+              "x": 21,
+              "y": 6687.640625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "23.75px",
+            "size": "19px",
+            "text": "Effect"
+          },
+          {
+            "bounds": {
+              "bottom": 6710.390625,
+              "height": 18.75,
+              "right": 131.46875,
+              "width": 46.5078125,
+              "x": 84.9609375,
+              "y": 6691.640625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "18.75px",
+            "size": "15px",
+            "text": "Action"
+          },
+          {
+            "bounds": {
+              "bottom": 6758.390625,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 6713.390625
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Before your next turn, prevent the next 2 damage to your Legend."
+          },
+          {
+            "bounds": {
+              "bottom": 6791.640625,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 6771.640625
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "No. 065 · Prototype catalog"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 7624.578125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 7176.578125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 7431.578125,
+              "height": 186,
+              "right": 202,
+              "width": 186,
+              "x": 16,
+              "y": 7245.578125
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/mallow-concept.png"
+          }
+        ],
+        "index": 9,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 7247.578125,
+              "height": 60,
+              "right": 303,
+              "width": 133.21875,
+              "x": 169.78125,
+              "y": 7187.578125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 7269.078125,
+              "height": 21.5,
+              "right": 303,
+              "width": 45.4140625,
+              "x": 257.5859375,
+              "y": 7247.578125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 7485.578125,
+              "height": 44,
+              "right": 186.2578125,
+              "width": 165.2578125,
+              "x": 21,
+              "y": 7441.578125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Mallow"
+          },
+          {
+            "bounds": {
+              "bottom": 7511.078125,
+              "height": 19.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 7491.578125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 7535.171875,
+              "height": 22.09375,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 7513.078125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 7559.671875,
+              "height": 22.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 7537.171875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Find useful cards in the discard pile."
+          },
+          {
+            "bounds": {
+              "bottom": 7609.578125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 7589.578125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 8112.578125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 7664.578125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 7919.578125,
+              "height": 186,
+              "right": 202,
+              "width": 186,
+              "x": 16,
+              "y": 7733.578125
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/pip-concept.png"
+          }
+        ],
+        "index": 10,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 7735.578125,
+              "height": 60,
+              "right": 303,
+              "width": 133.21875,
+              "x": 169.78125,
+              "y": 7675.578125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 7757.078125,
+              "height": 21.5,
+              "right": 303,
+              "width": 45.4140625,
+              "x": 257.5859375,
+              "y": 7735.578125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 7973.578125,
+              "height": 44,
+              "right": 96.0703125,
+              "width": 75.0703125,
+              "x": 21,
+              "y": 7929.578125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Pip"
+          },
+          {
+            "bounds": {
+              "bottom": 7999.078125,
+              "height": 19.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 7979.578125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 8023.171875,
+              "height": 22.09375,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8001.078125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 8070.171875,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8025.171875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Keep momentum by playing helpful cards."
+          },
+          {
+            "bounds": {
+              "bottom": 8097.578125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8077.578125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      },
+      {
+        "border": "3px",
+        "bounds": {
+          "bottom": 8600.578125,
+          "height": 448,
+          "right": 320,
+          "width": 320,
+          "x": 0,
+          "y": 8152.578125
+        },
+        "images": [
+          {
+            "bounds": {
+              "bottom": 8407.578125,
+              "height": 186,
+              "right": 202,
+              "width": 186,
+              "x": 16,
+              "y": 8221.578125
+            },
+            "complete": true,
+            "fit": "contain",
+            "naturalHeight": 1254,
+            "naturalWidth": 1254,
+            "src": "uploads/dozer-concept.png"
+          }
+        ],
+        "index": 11,
+        "radius": "14px",
+        "text": [
+          {
+            "bounds": {
+              "bottom": 8223.578125,
+              "height": 60,
+              "right": 303,
+              "width": 133.21875,
+              "x": 169.78125,
+              "y": 8163.578125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "60px",
+            "size": "60px",
+            "text": "TBD"
+          },
+          {
+            "bounds": {
+              "bottom": 8245.078125,
+              "height": 21.5,
+              "right": 303,
+              "width": 45.4140625,
+              "x": 257.5859375,
+              "y": 8223.578125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "normal",
+            "size": "16px",
+            "text": "Cheer"
+          },
+          {
+            "bounds": {
+              "bottom": 8461.578125,
+              "height": 44,
+              "right": 152.2734375,
+              "width": 131.2734375,
+              "x": 21,
+              "y": 8417.578125
+            },
+            "font": "Caprasimo, serif",
+            "lineHeight": "44px",
+            "size": "44px",
+            "text": "Dozer"
+          },
+          {
+            "bounds": {
+              "bottom": 8487.078125,
+              "height": 19.5,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8467.578125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "19.5px",
+            "size": "15px",
+            "text": "Pig · Provisional"
+          },
+          {
+            "bounds": {
+              "bottom": 8511.171875,
+              "height": 22.09375,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8489.078125
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.1px",
+            "size": "17px",
+            "text": "Proposed hook"
+          },
+          {
+            "bounds": {
+              "bottom": 8558.171875,
+              "height": 45,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8513.171875
+            },
+            "font": "Nunito, sans-serif",
+            "lineHeight": "22.5px",
+            "size": "15px",
+            "text": "Soften setbacks while the deck recovers."
+          },
+          {
+            "bounds": {
+              "bottom": 8585.578125,
+              "height": 20,
+              "right": 299,
+              "width": 278,
+              "x": 21,
+              "y": 8565.578125
+            },
+            "font": "\"Patrick Hand\", cursive",
+            "lineHeight": "normal",
+            "size": "15px",
+            "text": "Concept · No. TBD"
+          }
+        ],
+        "textContained": true,
+        "withinViewport": true
+      }
+    ],
+    "documentWidth": 320,
+    "fonts": {
+      "Caprasimo": true,
+      "Nunito": true,
+      "PatrickHand": true
+    },
+    "interactiveControls": 0,
+    "placeholder": true,
+    "rows": [
+      "TBD Energy",
+      "TBD Energy",
+      "TBD Energy"
+    ],
+    "viewport": {
+      "height": 900,
+      "width": 320
+    }
+  }
+}

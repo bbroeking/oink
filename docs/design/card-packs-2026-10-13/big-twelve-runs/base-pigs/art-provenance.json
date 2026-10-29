@@ -1,0 +1,50 @@
+[
+  {
+    "pig": "rosie",
+    "source": "assets/images/sprites/rosie/idle_1.png",
+    "exportPath": "art/coop/sprites/rosie-idle_1.png",
+    "byteEqual": true,
+    "rgbaEqual": true,
+    "sha256": "02d1644f38a1538ef7fe9ef6c6de852908c4c5318e2954f4b9e922692576579d"
+  },
+  {
+    "pig": "copper",
+    "source": "assets/images/sprites/copper/idle_1.png",
+    "exportPath": "uploads/copper-idle_1.png",
+    "byteEqual": true,
+    "rgbaEqual": true,
+    "sha256": "906df216d41191a92866ce5ad66a30ce937df4a776308750ddd5fb11a98032e3"
+  },
+  {
+    "pig": "pepper",
+    "source": "assets/images/sprites/pepper/idle_1.png",
+    "exportPath": "art/coop/sprites/pepper-idle_1.png",
+    "byteEqual": true,
+    "rgbaEqual": true,
+    "sha256": "32e4208afb5271c2b0445acbde8c585d2879400db367f19334165ea64cf9c23e"
+  },
+  {
+    "pig": "bandit",
+    "source": "assets/images/sprites/bandit/idle_1.png",
+    "exportPath": "uploads/bandit-idle_1.png",
+    "byteEqual": true,
+    "rgbaEqual": true,
+    "sha256": "8bfbd61b97607ccf456bc882a483f2ec072113a6690a7cb90e1b27cc481518bf"
+  },
+  {
+    "pig": "pickles",
+    "source": "assets/images/sprites/pickles/idle_1.png",
+    "exportPath": "uploads/pickles-idle_1.png",
+    "byteEqual": true,
+    "rgbaEqual": true,
+    "sha256": "6d8de3b98646d92aa55b6f154bf695f3e4a890db7738aa7e50c14319de700c51"
+  },
+  {
+    "pig": "biscuit",
+    "source": "assets/images/sprites/biscuit/idle_1.png",
+    "exportPath": "uploads/biscuit-idle_1.png",
+    "byteEqual": true,
+    "rgbaEqual": true,
+    "sha256": "c4a5e95c3796442335da862ea1a0745f9663d52509f3f564d34b108df6bb3cd5"
+  }
+]

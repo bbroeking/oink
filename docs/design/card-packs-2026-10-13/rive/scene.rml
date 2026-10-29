@@ -1,0 +1,500 @@
+<Rive version="1" kind="fragment">
+    <Artboard defaultStateMachineId="0:7" viewModelId="0:200" clip="true" width="390" height="844" styleId="0:5" name="CardPackReveal" id="0:2">
+        <Fill name="Bog Night">
+            <SolidColor colorValue="FFFFFAF0" name="Color" />
+        </Fill>
+        <LayoutComponentStyle name="Card Pack Artboard Style" id="0:5" />
+        <Text x="28" y="764" width="62" height="28" name="Next Label" id="0:78">
+            <TextStylePaint fontSize="14" fontAssetId="0:311" name="Next Label Style" id="0:79">
+                <Fill name="Cocoa"><SolidColor colorValue="FF2A1F15" name="Color" /></Fill>
+            </TextStylePaint>
+            <TextValueRun styleId="0:79" text="NEXT" name="Next Text" />
+        </Text>
+        <Shape x="58" y="778" name="Next Control" id="0:77">
+            <Rectangle width="72" height="38" cornerRadiusTL="19" originX="0.5" originY="0.5" name="Next Hit" />
+            <Fill name="Rose"><SolidColor colorValue="FFFFD6DC" name="Color" /></Fill>
+            <Stroke thickness="3" name="Cocoa Edge"><SolidColor colorValue="FF2A1F15" name="Color" /></Stroke>
+        </Shape>
+        <!-- Preview-only reset control; the app should own production controls. -->
+        <Text x="300" y="764" width="62" height="28" name="Reset Label" id="0:75">
+            <TextStylePaint fontSize="14" fontAssetId="0:311" name="Reset Label Style" id="0:76">
+                <Fill name="Cocoa"><SolidColor colorValue="FF2A1F15" name="Color" /></Fill>
+            </TextStylePaint>
+            <TextValueRun styleId="0:76" text="RESET" name="Reset Text" />
+        </Text>
+        <Shape x="330" y="778" name="Reset Control" id="0:74">
+            <Rectangle width="72" height="38" cornerRadiusTL="19" originX="0.5" originY="0.5" name="Reset Hit" />
+            <Fill name="Sage"><SolidColor colorValue="FFC9DEC1" name="Color" /></Fill>
+            <Stroke thickness="3" name="Cocoa Edge"><SolidColor colorValue="FF2A1F15" name="Color" /></Stroke>
+        </Shape>
+        <!-- Foil glint is deliberately vector-only and driven by host tilt. -->
+        <!-- Exactly one card image is active. revealIndex selects the state/Solo child. -->
+        <Node x="195" y="410" name="Card Tilt" id="0:60">
+            <Shape x="0" y="0" opacity="0.26" blendModeValue="screen" name="Foil Glint" id="0:70" childOrder="4/1">
+                <DataBindContext sourcePathIds="0:200-0:205" propertyKey="13" converterId="0:232" />
+                <Rectangle width="52" height="340" cornerRadiusTL="20" originX="0.5" originY="0.5" rotation="-0.28" name="Foil Strip" />
+                <Fill name="Foil">
+                    <LinearGradient startX="-46" startY="-200" endX="46" endY="200" name="Foil Gradient">
+                        <GradientStop colorValue="00FFFFFF" position="0" />
+                        <GradientStop colorValue="B8F9E27D" position="0.35" />
+                        <GradientStop colorValue="99A9D8FF" position="0.6" />
+                        <GradientStop colorValue="00FFFFFF" position="1" />
+                    </LinearGradient>
+                </Fill>
+            </Shape>
+            <Solo activeComponentId="0:91" childOrder="3/1" name="Card Fronts" id="0:90">
+                <Image assetId="0:301" scaleX="0.35" scaleY="0.35" name="Firefly Swarm" id="0:91" />
+                <Image assetId="0:302" scaleX="0.35" scaleY="0.35" name="Mud Shovel" id="0:92" />
+                <Image assetId="0:303" scaleX="0.35" scaleY="0.35" name="Puddle Duckling" id="0:93" />
+                <Image assetId="0:304" scaleX="0.35" scaleY="0.35" name="Mushroom Cap" id="0:94" />
+                <Image assetId="0:305" scaleX="0.35" scaleY="0.35" name="Moon Firefly" id="0:95" />
+            </Solo>
+            <Shape childOrder="2/1" name="Card Mat" id="0:62">
+                <Rectangle width="268" height="402" cornerRadiusTL="18" originX="0.5" originY="0.5" name="Mat Path" />
+                <Fill name="Cream">
+                    <SolidColor colorValue="FFFBEEE2" name="Color" />
+                </Fill>
+                <Stroke thickness="5" name="Ink Edge">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Stroke>
+            </Shape>
+            <Shape x="4" y="4" childOrder="1/1" name="Hard Shadow" id="0:61">
+                <Rectangle width="268" height="402" cornerRadiusTL="18" originX="0.5" originY="0.5" name="Shadow Path" />
+                <Fill name="Ink">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Fill>
+            </Shape>
+        </Node>
+        <!-- Packet: waxed cream, hard offset shadow, green ink frame and split seam. -->
+        <Node x="195" y="440" name="Packet" id="0:20">
+            <Shape x="-76" y="-188" childOrder="12/1" name="Left Tear Flap" id="0:40">
+                <DataBindContext sourcePathIds="0:200-0:201" propertyKey="13" converterId="0:231" />
+                <Rectangle width="152" height="54" cornerRadiusTL="8" originX="0.5" originY="0.5" name="Left Crimp" />
+                <Fill name="Paper">
+                    <SolidColor colorValue="FFFBEEE2" name="Color" />
+                </Fill>
+                <Stroke thickness="4" name="Ink">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Stroke>
+            </Shape>
+            <Shape x="76" y="-188" childOrder="11/1" name="Right Tear Flap" id="0:41">
+                <DataBindContext sourcePathIds="0:200-0:201" propertyKey="13" converterId="0:233" />
+                <Rectangle width="152" height="54" cornerRadiusTL="8" originX="0.5" originY="0.5" name="Right Crimp" />
+                <Fill name="Paper">
+                    <SolidColor colorValue="FFFBEEE2" name="Color" />
+                </Fill>
+                <Stroke thickness="4" name="Ink">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Stroke>
+            </Shape>
+            <Text x="-128" y="-132" width="256" height="38" childOrder="9/1" name="Pack Heading" id="0:31">
+                <TextStylePaint fontSize="25" fontAssetId="0:310" name="Caprasimo" id="0:32">
+                    <Fill name="Cream">
+                        <SolidColor colorValue="FF6F8068" name="Color" />
+                    </Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:32" text="Rosie's Loadout" name="Heading" />
+            </Text>
+            <Text x="-128" y="-96" width="256" height="24" childOrder="8/1" name="Pack Subtitle" id="0:33">
+                <TextStylePaint fontSize="16" fontAssetId="0:312" name="Patrick Hand" id="0:34">
+                    <Fill name="Cream">
+                        <SolidColor colorValue="FF2A1F15" name="Color" />
+                    </Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:34" text="The Hunger in the Bog" name="Subtitle" />
+            </Text>
+            <Text x="-126" y="126" width="252" height="40" childOrder="7/1" name="Pack Count" id="0:35">
+                <TextStylePaint fontSize="28" fontAssetId="0:311" name="Nunito ExtraBold" id="0:36">
+                    <Fill name="Green">
+                        <SolidColor colorValue="FF2A1F15" name="Color" />
+                    </Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:36" text="5 CARDS" name="Count" />
+            </Text>
+            <Text x="-126" y="169" width="252" height="26" childOrder="6/1" name="Pack Footer" id="0:37">
+                <TextStylePaint fontSize="15" fontAssetId="0:311" name="Nunito" id="0:38">
+                    <Fill name="Green">
+                        <SolidColor colorValue="FF2A1F15" name="Color" />
+                    </Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:38" text="packed at the Truffle Patch" name="Footer" />
+            </Text>
+            <Shape y="-18" childOrder="6/1" name="Pig Snout Stamp" id="0:24">
+                <Ellipse width="112" height="82" originX="0.5" originY="0.5" name="Snout" />
+                <Fill name="Stamp Pink">
+                    <SolidColor colorValue="FFFFD6DC" name="Color" />
+                </Fill>
+                <Stroke thickness="5" name="Hand Ink">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Stroke>
+                <Ellipse x="-25" width="15" height="25" originX="0.5" originY="0.5" name="Left Nostril" />
+                <Ellipse x="25" width="15" height="25" originX="0.5" originY="0.5" name="Right Nostril" />
+            </Shape>
+            <Shape y="-104" childOrder="5/1" name="Green Title Plaque" id="0:25">
+                <Rectangle width="260" height="82" cornerRadiusTL="10" originX="0.5" originY="0.5" name="Path" />
+                <Fill name="Green">
+                    <SolidColor colorValue="FFFBEEE2" name="Color" />
+                </Fill>
+            </Shape>
+            <Shape y="149" childOrder="3/1" name="Sage Bottom Band" id="0:23">
+                <Rectangle width="294" height="126" cornerRadiusTL="8" originX="0.5" originY="0.5" name="Path" />
+                <Fill name="Sage">
+                    <SolidColor colorValue="FFC9DEC1" name="Color" />
+                </Fill>
+            </Shape>
+            <Shape childOrder="2/1" name="Waxed Cream Envelope" id="0:22">
+                <Rectangle width="304" height="438" cornerRadiusTL="16" originX="0.5" originY="0.5" name="Path" />
+                <Fill name="Paper">
+                    <SolidColor colorValue="FFFBEEE2" name="Color" />
+                </Fill>
+                <Stroke thickness="5" name="Ink Edge">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Stroke>
+            </Shape>
+            <Shape x="4" y="4" childOrder="1/1" name="Packet Hard Shadow" id="0:21">
+                <Rectangle width="304" height="438" cornerRadiusTL="16" originX="0.5" originY="0.5" name="Path" />
+                <Fill name="Shadow">
+                    <SolidColor colorValue="FF2A1F15" name="Color" />
+                </Fill>
+            </Shape>
+        </Node>
+        <StateMachine name="CardPackRevealMachine" id="0:7">
+            <StateMachineLayer name="Reveal and Cards" id="0:8">
+                <AnyState x="700" y="-120">
+                    <StateTransition stateToId="0:13" duration="0">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyBoolean>
+                                    <DataBindContext sourcePathIds="0:200-0:203" propertyKey="634" />
+                                </BindablePropertyBoolean>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueBooleanComparator value="true" />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <StateTransition stateToId="0:10" duration="0">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyTrigger>
+                                    <DataBindContext sourcePathIds="0:200-0:207" propertyKey="686" />
+                                </BindablePropertyTrigger>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueTriggerComparator />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnyState>
+                <ExitState x="900" y="-120" />
+                <EntryState x="0" y="0">
+                    <StateTransition stateToId="0:10" />
+                </EntryState>
+                <AnimationState x="160" y="0" animationId="0:100" reset="true" id="0:10">
+                    <StateTransition stateToId="0:11" duration="100">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyTrigger>
+                                    <DataBindContext sourcePathIds="0:200-0:206" propertyKey="686" />
+                                </BindablePropertyTrigger>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueTriggerComparator />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="320" y="0" animationId="0:101" reset="true" id="0:11">
+                    <StateTransition stateToId="0:12" duration="80" enableExitTime="true" exitTimeIsPercetange="true" exitTime="100" />
+                </AnimationState>
+                <AnimationState x="480" y="0" animationId="0:102" reset="true" id="0:12" />
+                <AnimationState x="640" y="0" animationId="0:103" reset="true" id="0:13" />
+            </StateMachineLayer>
+            <StateMachineListenerSingle targetId="0:22" listenerTypeValue="click" name="Tap packet to open" id="0:150">
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:200-0:206" propertyKey="686" direction="true" />
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineLayer name="Defined Card Index" id="0:9">
+                <AnyState x="700" y="160">
+                    <StateTransition stateToId="0:121" duration="90">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyNumber>
+                                    <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" />
+                                </BindablePropertyNumber>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueNumberComparator value="0" />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <StateTransition stateToId="0:122" duration="90">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyNumber>
+                                    <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" />
+                                </BindablePropertyNumber>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueNumberComparator value="1" />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <StateTransition stateToId="0:123" duration="90">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyNumber>
+                                    <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" />
+                                </BindablePropertyNumber>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueNumberComparator value="2" />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <StateTransition stateToId="0:124" duration="90">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyNumber>
+                                    <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" />
+                                </BindablePropertyNumber>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueNumberComparator value="3" />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <StateTransition stateToId="0:125" duration="90">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyNumber>
+                                    <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" />
+                                </BindablePropertyNumber>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueNumberComparator value="4" />
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnyState>
+                <ExitState x="900" y="160" />
+                <EntryState x="0" y="160">
+                    <StateTransition stateToId="0:121" />
+                </EntryState>
+                <AnimationState x="160" y="160" animationId="0:110" reset="true" id="0:121" />
+                <AnimationState x="260" y="160" animationId="0:111" reset="true" id="0:122" />
+                <AnimationState x="360" y="160" animationId="0:112" reset="true" id="0:123" />
+                <AnimationState x="460" y="160" animationId="0:113" reset="true" id="0:124" />
+                <AnimationState x="560" y="160" animationId="0:114" reset="true" id="0:125" />
+            </StateMachineLayer>
+            <StateMachineListenerSingle targetId="0:91" listenerTypeValue="click" name="Next from Firefly Swarm" id="0:151">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="1">
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" direction="true" />
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:92" listenerTypeValue="click" name="Next from Mud Shovel" id="0:152">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="2">
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" direction="true" />
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:93" listenerTypeValue="click" name="Next from Puddle Duckling" id="0:153">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="3">
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" direction="true" />
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:94" listenerTypeValue="click" name="Next from Mushroom Cap" id="0:154">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="4">
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" direction="true" />
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:95" listenerTypeValue="click" name="Cycle from Moon Firefly" id="0:155">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="0">
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" direction="true" />
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:74" listenerTypeValue="click" name="Preview reset" id="0:156">
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:200-0:207" propertyKey="686" direction="true" />
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:77" listenerTypeValue="click" name="Preview next" id="0:157">
+                <ListenerViewModelChange fromViewModelProperty="true" fromDataBindId="0:235">
+                    <BindablePropertyNumber>
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" id="0:235" converterId="0:234" />
+                        <DataBindContext sourcePathIds="0:200-0:202" propertyKey="636" direction="true" />
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+        </StateMachine>
+        <LinearAnimation duration="1" name="Sealed" id="0:100">
+            <KeyedObject objectId="0:20">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="1" />
+                </KeyedProperty>
+                <KeyedProperty propertyKey="14"><KeyFrameDouble value="440" /></KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:60">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="0" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:70">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="0" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:40"><KeyedProperty propertyKey="13"><KeyFrameDouble value="-76" /></KeyedProperty></KeyedObject>
+            <KeyedObject objectId="0:41"><KeyedProperty propertyKey="13"><KeyFrameDouble value="76" /></KeyedProperty></KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="42" name="Open Pack" id="0:101">
+            <KeyedObject objectId="0:20">
+                <KeyedProperty propertyKey="14">
+                    <KeyFrameDouble value="440" />
+                    <KeyFrameDouble value="300" frame="22" />
+                    <KeyFrameDouble value="665" frame="42" />
+                </KeyedProperty>
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="1" />
+                    <KeyFrameDouble value="1" frame="28" />
+                    <KeyFrameDouble value="0" frame="42" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:40">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble value="-76" />
+                    <KeyFrameDouble value="-150" frame="24" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:41">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble value="76" />
+                    <KeyFrameDouble value="150" frame="24" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:60">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="0" />
+                    <KeyFrameDouble value="1" frame="22" />
+                </KeyedProperty>
+                <KeyedProperty propertyKey="14">
+                    <KeyFrameDouble value="510" />
+                    <KeyFrameDouble value="410" frame="32" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Revealed Card" id="0:102">
+            <KeyedObject objectId="0:20">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="0" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:60">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="1" />
+                </KeyedProperty>
+                <KeyedProperty propertyKey="14">
+                    <KeyFrameDouble value="410" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:90">
+                <KeyedProperty propertyKey="296">
+                    <KeyFrameId value="0:91" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:70"><KeyedProperty propertyKey="18"><KeyFrameDouble value="0.32" /></KeyedProperty></KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Reduced Motion Rest" id="0:103">
+            <KeyedObject objectId="0:20">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="0" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:60">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="1" />
+                </KeyedProperty>
+                <KeyedProperty propertyKey="14">
+                    <KeyFrameDouble value="410" />
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:70">
+                <KeyedProperty propertyKey="18">
+                    <KeyFrameDouble value="0" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 0 Firefly Swarm" id="0:110">
+            <KeyedObject objectId="0:90">
+                <KeyedProperty propertyKey="296">
+                    <KeyFrameId value="0:91" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 1 Mud Shovel" id="0:111">
+            <KeyedObject objectId="0:90">
+                <KeyedProperty propertyKey="296">
+                    <KeyFrameId value="0:92" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 2 Puddle Duckling" id="0:112">
+            <KeyedObject objectId="0:90">
+                <KeyedProperty propertyKey="296">
+                    <KeyFrameId value="0:93" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 3 Mushroom Cap" id="0:113">
+            <KeyedObject objectId="0:90">
+                <KeyedProperty propertyKey="296">
+                    <KeyFrameId value="0:94" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 4 Moon Firefly" id="0:114">
+            <KeyedObject objectId="0:90">
+                <KeyedProperty propertyKey="296">
+                    <KeyFrameId value="0:95" />
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+    </Artboard>
+    <ViewModel defaultInstanceId="0:210" name="CardPackRevealViewModel" id="0:200">
+        <ViewModelPropertyNumber name="tearProgress" id="0:201" />
+        <ViewModelPropertyNumber name="revealIndex" id="0:202" />
+        <ViewModelPropertyBoolean name="reduceMotion" id="0:203" />
+        <ViewModelPropertyNumber name="tiltX" id="0:204" />
+        <ViewModelPropertyNumber name="tiltY" id="0:205" />
+        <ViewModelPropertyTrigger name="open" id="0:206" />
+        <ViewModelPropertyTrigger name="reset" id="0:207" />
+        <ViewModelInstance exports="true" name="Default" id="0:210">
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:201" />
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:202" />
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:203" />
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:204" />
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:205" />
+            <ViewModelInstanceTrigger viewModelPropertyId="0:206" />
+            <ViewModelInstanceTrigger viewModelPropertyId="0:207" />
+        </ViewModelInstance>
+    </ViewModel>
+    <DataConverterRangeMapper minInput="-1" maxInput="1" minOutput="-0.10" maxOutput="0.10" clampLower="true" clampUpper="true" name="Tilt to radians" id="0:230" />
+    <DataConverterRangeMapper minInput="0" maxInput="1" minOutput="-76" maxOutput="-150" clampLower="true" clampUpper="true" name="Left tear" id="0:231" />
+    <DataConverterRangeMapper minInput="-1" maxInput="1" minOutput="-105" maxOutput="105" clampLower="true" clampUpper="true" name="Foil sweep" id="0:232" />
+    <DataConverterRangeMapper minInput="0" maxInput="1" minOutput="76" maxOutput="150" clampLower="true" clampUpper="true" name="Right tear" id="0:233" />
+    <DataConverterFormula name="Next card modulo five" id="0:234">
+        <FormulaTokenParenthesisOpen />
+        <FormulaTokenInput />
+        <FormulaTokenOperation operationType="0" />
+        <FormulaTokenValue operationValue="1" />
+        <FormulaTokenParenthesisClose />
+        <FormulaTokenOperation operationType="4" />
+        <FormulaTokenValue operationValue="5" />
+    </DataConverterFormula>
+    <ImageAsset file="../../../../landing/cards/img/034-firefly_swarm.webp" name="Firefly Swarm art" id="0:301" />
+    <ImageAsset file="../../../../landing/cards/img/019-mud_shovel.webp" name="Mud Shovel art" id="0:302" />
+    <ImageAsset file="../../../../landing/cards/img/038-puddle_duckling.webp" name="Puddle Duckling art" id="0:303" />
+    <ImageAsset file="../../../../landing/cards/img/009-mushroom_cap.webp" name="Mushroom Cap art" id="0:304" />
+    <ImageAsset file="../../../../landing/cards/img/046-moon_firefly.webp" name="Moon Firefly art" id="0:305" />
+    <FontAsset file="../../../../node_modules/.pnpm/@expo-google-fonts+caprasimo@0.4.0/node_modules/@expo-google-fonts/caprasimo/400Regular/Caprasimo_400Regular.ttf" name="Caprasimo Regular" id="0:310" />
+    <FontAsset file="../../../../node_modules/.pnpm/@expo-google-fonts+nunito@0.4.2/node_modules/@expo-google-fonts/nunito/800ExtraBold/Nunito_800ExtraBold.ttf" name="Nunito ExtraBold" id="0:311" />
+    <FontAsset file="../../../../node_modules/.pnpm/@expo-google-fonts+patrick-hand@0.4.1/node_modules/@expo-google-fonts/patrick-hand/400Regular/PatrickHand_400Regular.ttf" name="Patrick Hand Regular" id="0:312" />
+</Rive>

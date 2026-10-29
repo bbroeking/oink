@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap" rel="stylesheet"><script src="./image-slot.js"></script><style>
+body{margin:0;background:#fbeee2}
+a{color:#a03e2f}a:hover{color:#2a1f15}
+</style></helmet>
+<div style="min-height:100vh;padding:32px 0 64px;box-sizing:border-box;font-family:'Nunito',sans-serif;color:#2a1f15;display:flex;flex-direction:column;gap:28px;max-width:1120px;margin:0 auto">
+  <header style="padding:0 16px;display:flex;flex-direction:column;gap:6px">
+    <span style="font-family:'Caprasimo',serif;font-size:30px;line-height:1.1">Big Twelve — Items</span>
+    <span style="font-weight:700;font-size:15px;line-height:1.5;color:rgba(42,31,21,.72);text-wrap:pretty;max-width:720px">Items put the name first and give the object the whole upper field: no corner number, the slant runs the opposite way to the Pig card, and the rules sit alone in the cream below.</span>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,320px);justify-content:center;gap:40px 36px">
+    <figure id="item-shovel" data-screen-label="Item Mud Shovel" style="margin:0;width:320px;display:flex;flex-direction:column;gap:12px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:0;right:0;top:0;height:300px;clip-path:polygon(0 0,100% 0,100% 100%,0 84%);background:#c9dec1"></div>
+        <svg viewBox="0 0 314 300" aria-hidden="true" style="position:absolute;left:0;top:0;width:314px;height:300px;overflow:visible"><polyline points="-2,252 316,300" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;left:18px;right:18px;top:14px;display:flex;flex-direction:column;gap:0"><span style="font-weight:800;font-size:15px;color:#a03e2f">Item</span><span style="font-family:'Caprasimo',serif;font-size:36px;line-height:1.05">Mud Shovel</span></div>
+        <image-slot id="item-mud-shovel" fit="contain" placeholder="mud_shovel.png (original missing)" style="position:absolute;left:50px;top:98px;width:214px;height:146px"></image-slot>
+        <div style="position:absolute;left:18px;right:18px;top:316px;bottom:12px;display:flex;flex-direction:column;gap:2px"><span style="font-weight:900;font-size:17px;line-height:1.3">Effect TBD</span><span style="font-weight:700;font-size:15px;line-height:1.55">Rules TBD</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">Digital rules TBD</span></div>
+      </div>
+      <figcaption style="padding:0 4px;font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.72)">Art: assets/images/hats/mud_shovel.png not in project. Only a composited legacy card print exists, so the slot is left empty.</figcaption>
+    </figure>
+
+    <figure id="item-sword" data-screen-label="Item Toy Sword" style="margin:0;width:320px;display:flex;flex-direction:column;gap:12px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:0;right:0;top:0;height:300px;clip-path:polygon(0 0,100% 0,100% 100%,0 84%);background:#c8e3f0"></div>
+        <svg viewBox="0 0 314 300" aria-hidden="true" style="position:absolute;left:0;top:0;width:314px;height:300px;overflow:visible"><polyline points="-2,252 316,300" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;left:18px;right:18px;top:14px;display:flex;flex-direction:column;gap:0"><span style="font-weight:800;font-size:15px;color:#a03e2f">Item</span><span style="font-family:'Caprasimo',serif;font-size:36px;line-height:1.05">Toy Sword</span></div>
+        <image-slot id="item-toy-sword" fit="contain" placeholder="toy_sword.png (original missing)" style="position:absolute;left:50px;top:98px;width:214px;height:146px"></image-slot>
+        <div style="position:absolute;left:18px;right:18px;top:316px;bottom:12px;display:flex;flex-direction:column;gap:2px"><span style="font-weight:900;font-size:17px;line-height:1.3">Effect TBD</span><span style="font-weight:700;font-size:15px;line-height:1.55">Rules TBD</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">Digital rules TBD</span></div>
+      </div>
+      <figcaption style="padding:0 4px;font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.72)">Art: assets/images/hats/toy_sword.png not in project. Slot left empty.</figcaption>
+    </figure>
+
+    <figure id="item-cap" data-screen-label="Item Muddy Cap" style="margin:0;width:320px;display:flex;flex-direction:column;gap:12px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:0;right:0;top:0;height:300px;clip-path:polygon(0 0,100% 0,100% 100%,0 84%);background:#ffd6dc"></div>
+        <svg viewBox="0 0 314 300" aria-hidden="true" style="position:absolute;left:0;top:0;width:314px;height:300px;overflow:visible"><polyline points="-2,252 316,300" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;left:18px;right:18px;top:14px;display:flex;flex-direction:column;gap:0"><span style="font-weight:800;font-size:15px;color:#a03e2f">Item</span><span style="font-family:'Caprasimo',serif;font-size:36px;line-height:1.05">Muddy Cap</span></div>
+        <image-slot id="item-muddy-cap" fit="contain" placeholder="muddy_cap.png (original missing)" style="position:absolute;left:50px;top:98px;width:214px;height:146px"></image-slot>
+        <div style="position:absolute;left:18px;right:18px;top:316px;bottom:12px;display:flex;flex-direction:column;gap:2px"><span style="font-weight:900;font-size:17px;line-height:1.3">Effect TBD</span><span style="font-weight:700;font-size:15px;line-height:1.55">Rules TBD</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">Digital rules TBD</span></div>
+      </div>
+      <figcaption style="padding:0 4px;font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.72)">Art: assets/images/hats/muddy_cap.png not in project. Slot left empty.</figcaption>
+    </figure>
+  </div>
+
+  <div style="padding:0 16px;display:flex;flex-direction:column;gap:4px;border-top:2px solid rgba(42,31,21,.18);padding-top:24px">
+    <span style="font-family:'Caprasimo',serif;font-size:22px;line-height:1.15">References</span>
+    <span style="font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.72)">Shown for comparison only. Their printed rules are historical test text, not approved digital rules.</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,320px);justify-content:center;gap:40px 36px">
+    <figure id="ref-rosie" data-screen-label="Ref Rosie" style="margin:0;width:320px;display:flex;flex-direction:column;gap:12px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:0;right:0;top:0;height:262px;clip-path:polygon(0 0,100% 0,100% 80%,0 100%);background-image:url(art/maple/homestead_barn.jpg);background-size:cover;background-position:50% 40%"></div>
+        <svg viewBox="0 0 314 262" aria-hidden="true" style="position:absolute;left:0;top:0;width:314px;height:262px;overflow:visible"><polyline points="-2,262 316,209.2" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;right:14px;top:8px;display:flex;flex-direction:column;align-items:flex-end"><span style="font-family:'Caprasimo',serif;font-size:96px;line-height:.9;color:#f7a3b3;-webkit-text-stroke:3px #2a1f15;paint-order:stroke fill">12</span><span style="font-weight:900;font-size:16px">Cheer</span></div>
+        <img src="art/coop/sprites/rosie-idle_1.png" alt="Rosie, front game sprite" style="position:absolute;left:14px;top:62px;width:184px;height:auto"></img>
+        <div style="position:absolute;left:18px;right:18px;top:262px;display:flex;align-items:baseline;gap:10px"><span style="font-family:'Caprasimo',serif;font-size:44px;line-height:1">Rosie</span><span style="font-weight:800;font-size:15px;color:#a03e2f">Legend</span></div>
+        <div style="position:absolute;left:18px;right:18px;top:312px;bottom:12px;display:flex;flex-direction:column;gap:2px"><span style="font-weight:900;font-size:17px;line-height:1.3">Loadout Tactician</span><span style="font-weight:700;font-size:15px;line-height:1.5;text-wrap:pretty">Once per round, after you play a Support card, draw 1 card, then discard 1 card.</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">No. 001 · Co-op test rules</span></div>
+      </div>
+      <figcaption style="padding:0 4px;font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.72)">Pig · Rosie. Static copy of E · Big Twelve from Six Static Layouts.</figcaption>
+    </figure>
+
+    <figure id="ref-boop" data-screen-label="Ref Snoot Boop" style="margin:0;width:320px;display:flex;flex-direction:column;gap:12px">
+      <div style="width:320px;height:448px;overflow:hidden">
+        <dc-import name="AtelierCard" family="crest" card="{{ boop }}" width="{{ w }}" hint-size="320px,448px"></dc-import>
+      </div>
+      <figcaption style="padding:0 4px;font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.72)">Action · Snoot Boop. Historical: Card Atelier, Storybook Crest (co-op test era). No Big Twelve Action exists yet.</figcaption>
+    </figure>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BOOP={tone:'move',kind:'Move',name:'Snoot Boop',no:'076',statN:3,statL:'ENERGY',typeLine:'Move · Attack · Support',lead:'',rules:'+3 Progress, then heal a chosen pig 2 Cheer.',target:'Enemy, then a chosen pig',sprite:'rosie',pose:'tq',boop:true,bg:'art/maple/homestead_barn.jpg',bgPos:'50% 32%'};
+class Component extends DCLogic {
+  renderVals(){ return { boop:BOOP, w:320 }; }
+}
+</script>
+</body>
+</html>

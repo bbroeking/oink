@@ -1,0 +1,31 @@
+{
+  "samples": [
+    "Idle frame 11 of 12 · one shared source clock · front idle only",
+    "Idle frame 1 of 12 · one shared source clock · front idle only",
+    "Idle frame 2 of 12 · one shared source clock · front idle only",
+    "Idle frame 4 of 12 · one shared source clock · front idle only",
+    "Idle frame 6 of 12 · one shared source clock · front idle only",
+    "Idle frame 7 of 12 · one shared source clock · front idle only",
+    "Idle frame 9 of 12 · one shared source clock · front idle only",
+    "Idle frame 11 of 12 · one shared source clock · front idle only",
+    "Idle frame 12 of 12 · one shared source clock · front idle only",
+    "Idle frame 2 of 12 · one shared source clock · front idle only",
+    "Idle frame 4 of 12 · one shared source clock · front idle only",
+    "Idle frame 5 of 12 · one shared source clock · front idle only",
+    "Idle frame 7 of 12 · one shared source clock · front idle only",
+    "Idle frame 9 of 12 · one shared source clock · front idle only",
+    "Idle frame 10 of 12 · one shared source clock · front idle only",
+    "Idle frame 12 of 12 · one shared source clock · front idle only"
+  ],
+  "reducedMotion": {
+    "first": "Idle frame 1 of 12 · one shared source clock · front idle only",
+    "after": "Idle frame 1 of 12 · one shared source clock · front idle only"
+  },
+  "normalPigPixels": 300,
+  "narrowViewport": 320,
+  "narrowStage": {
+    "x": 20,
+    "right": 300,
+    "width": 280
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "policy": "attack-first (synthetic, not human balance evidence)",
+  "seeds": 500,
+  "wins": 500,
+  "winRate": 1,
+  "averageWinningRound": 3.898
+}
+{
+  "policy": "guard-first (synthetic, not human balance evidence)",
+  "seeds": 500,
+  "wins": 498,
+  "winRate": 0.996,
+  "averageWinningRound": 4.546184738955823
+}
+{
+  "policy": "conditional-team (synthetic, not human balance evidence)",
+  "seeds": 500,
+  "wins": 481,
+  "winRate": 0.962,
+  "averageWinningRound": 4.744282744282744
+}

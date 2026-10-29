@@ -1,0 +1,53 @@
+{
+  "completedOn": "2026-10-14",
+  "sources": {
+    "base-pigs": {
+      "source": "docs/design/card-packs-2026-10-13/big-twelve-runs/base-pigs/Big Twelve - Base Pigs.dc.html",
+      "frozen": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/source-snapshots/base-pigs/Big Twelve - Base Pigs.dc.html",
+      "sha256": "de5e6bc0600eba522cab690d498906835b04b1ed656195a7abb0ff12777f32d4",
+      "status": "completed"
+    },
+    "actions": {
+      "source": "docs/design/card-packs-2026-10-13/big-twelve-runs/actions/Big Twelve - Actions.dc.html",
+      "frozen": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/source-snapshots/actions/Big Twelve - Actions.dc.html",
+      "sha256": "60352b4eea95baf9eb469652a15bf98de5d1ddd5fad7676f532ba112a1186e2c",
+      "status": "completed"
+    },
+    "items": {
+      "source": "docs/design/card-packs-2026-10-13/big-twelve-runs/items/Big Twelve - Items.dc.html",
+      "frozen": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/source-snapshots/items/Big Twelve - Items.dc.html",
+      "sha256": "b90c83114a2b1fefd57fc7fbd822abed2ba0d412bb9e7b608d3eca03406653a6",
+      "status": "incomplete: missing original object art"
+    },
+    "new-pigs": {
+      "source": "docs/design/card-packs-2026-10-13/big-twelve-runs/new-pigs/Big Twelve - New Pig Concepts.dc.html",
+      "frozen": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/source-snapshots/new-pigs/Big Twelve - New Pig Concepts.dc.html",
+      "sha256": "25867aa569587cee2f8853b0fdae0256bd5508c75bbe05c858553eced8e2dd55",
+      "status": "completed provisional concepts"
+    },
+    "locations": {
+      "status": "blocked: blank page; no completed export",
+      "sourceNotes": "docs/design/card-packs-2026-10-13/big-twelve-runs/locations/README.md"
+    }
+  },
+  "assetAliases": [
+    {
+      "path": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/art/coop/sprites/rosie-idle_1.png",
+      "alternateSource": "docs/design/card-packs-2026-10-13/big-twelve-runs/actions/art/coop/sprites/rosie-idle_1.png",
+      "decodedPixelsIdentical": true,
+      "keptExistingBytes": true
+    },
+    {
+      "path": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/art/coop/sprites/rosie-idle_1.png",
+      "alternateSource": "docs/design/card-packs-2026-10-13/big-twelve-runs/items/art/coop/sprites/rosie-idle_1.png",
+      "decodedPixelsIdentical": true,
+      "keptExistingBytes": true
+    },
+    {
+      "path": "docs/design/card-packs-2026-10-13/big-twelve-runs/family-review/art/coop/sprites/rosie-idle_1.png",
+      "alternateSource": "docs/design/card-packs-2026-10-13/big-twelve-runs/new-pigs/art/coop/sprites/rosie-idle_1.png",
+      "decodedPixelsIdentical": true,
+      "keptExistingBytes": true
+    }
+  ]
+}

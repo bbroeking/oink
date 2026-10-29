@@ -1,0 +1,13 @@
+PASS __tests__/HalloweenLoginGift.test.tsx
+PASS __tests__/cards-costume-fit.test.tsx
+PASS __tests__/cards-seasonal-render.test.tsx
+PASS __tests__/cards-costume-game-integration.test.tsx
+PASS __tests__/cards-seasonal-unlocks.test.ts
+PASS __tests__/cards-login-gift-demo.test.ts
+PASS __tests__/useHalloweenLoginGift.test.tsx
+PASS __tests__/cards-domain-catalog.test.ts
+
+Test Suites: 8 passed, 8 total
+Tests:       48 passed, 48 total
+Snapshots:   0 total
+Time:        3.694 s

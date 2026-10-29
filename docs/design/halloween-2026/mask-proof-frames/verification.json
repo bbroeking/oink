@@ -1,0 +1,74 @@
+[
+  {
+    "mask": "url(\"./assets/idle_1-Q62SL4RL.png\")",
+    "readout": "Idle frame 1 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_1-Q62SL4RL.png",
+    "screenshot": "frame-01.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_2-62AB2DTW.png\")",
+    "readout": "Idle frame 2 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_2-62AB2DTW.png",
+    "screenshot": "frame-02.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_3-E7MZGD5E.png\")",
+    "readout": "Idle frame 3 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_3-E7MZGD5E.png",
+    "screenshot": "frame-03.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_4-GPCBDQFU.png\")",
+    "readout": "Idle frame 4 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_4-GPCBDQFU.png",
+    "screenshot": "frame-04.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_5-STAKFQTP.png\")",
+    "readout": "Idle frame 5 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_5-STAKFQTP.png",
+    "screenshot": "frame-05.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_6-JKE5HQSI.png\")",
+    "readout": "Idle frame 6 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_6-JKE5HQSI.png",
+    "screenshot": "frame-06.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_7-I7BK6XUM.png\")",
+    "readout": "Idle frame 7 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_7-I7BK6XUM.png",
+    "screenshot": "frame-07.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_8-ENWQ7W7Q.png\")",
+    "readout": "Idle frame 8 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_8-ENWQ7W7Q.png",
+    "screenshot": "frame-08.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_9-5YD5QKSD.png\")",
+    "readout": "Idle frame 9 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_9-5YD5QKSD.png",
+    "screenshot": "frame-09.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_10-JK2WYCOP.png\")",
+    "readout": "Idle frame 10 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_10-JK2WYCOP.png",
+    "screenshot": "frame-10.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_11-YD5ODSJ6.png\")",
+    "readout": "Idle frame 11 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_11-YD5ODSJ6.png",
+    "screenshot": "frame-11.png"
+  },
+  {
+    "mask": "url(\"./assets/idle_12-2XRSE7ZT.png\")",
+    "readout": "Idle frame 12 of 12 \u00b7 shared clock \u00b7 saved gear would be hidden and restored by the future costume slot",
+    "source": "./assets/idle_12-2XRSE7ZT.png",
+    "screenshot": "frame-12.png"
+  }
+]

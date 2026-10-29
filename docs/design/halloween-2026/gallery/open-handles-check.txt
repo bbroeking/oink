@@ -1,0 +1,12 @@
+PASS __tests__/cards-halloween-gallery.test.tsx
+PASS __tests__/cards-costume-gallery-playback.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        4.046 s, estimated 5 s
+Ran all test suites matching /__tests__\/cards-halloween-gallery.test.tsx|__tests__\/cards-costume-gallery-playback.test.tsx/i.
+
+Command: npx jest __tests__/cards-halloween-gallery.test.tsx __tests__/cards-costume-gallery-playback.test.tsx --runInBand --no-watchman --detectOpenHandles
+Exit code: 0
+Open handles detected: none

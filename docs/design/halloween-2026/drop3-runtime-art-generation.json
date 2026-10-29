@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-14",
+  "generator": "built-in image_gen",
+  "mode": "precise-object-edit",
+  "sources": {
+    "hoodEditTarget": "assets/images/costumes/count-snout/rosie-hood-v1.png",
+    "romperEditTarget": "assets/images/costumes/moonpuff/rosie-romper-v1.png",
+    "fitReference": "assets/images/sprites/rosie/idle_1.png"
+  },
+  "sharedPromptText": {
+    "hood": "Use case: precise-object-edit\nAsset type: runtime 2D clothing overlay for Rosie, a front-facing chibi pig game character\nInput images: Image 1 is the edit target and exact hood geometry template; Image 2 is a fit-only character reference and must NOT appear in output.\nPrimary request: Restyle only the clothing material and decoration of Image 1 into THEME.\nStyle/medium: polished soft-painted mobile-game costume art, tactile fabric, cocoa-brown outline treatment matching Image 1.\nComposition/framing: preserve Image 1 pixel dimensions, exact placement, scale, padding, silhouette, and overlay alignment. The hood must remain a wide low garment with exactly one large central face window and exactly two original pig-ear holes.\nCritical transparency: keep the entire exterior background genuinely transparent. Keep the face window and both ear holes genuinely transparent alpha. No pig skin, eyes, snout, ears, feet, character, or body baked into the clothing.\nConstraints: preserve the face-hole edge geometry, both ear-hole edge geometries, and all outer padding exactly. No tall human hood, no human body, no arms, no boots, no extra legs. No text, watermark, checkerboard, white backdrop, brown smoke, exterior glow, drop-shadow halo, or scenery.",
+    "romper": "Use case: precise-object-edit\nAsset type: runtime 2D clothing overlay for Rosie, a front-facing chibi pig game character\nInput images: Image 1 is the edit target and exact romper geometry template; Image 2 is a fit-only character reference and must NOT appear in output.\nPrimary request: Restyle only the clothing material and decoration of Image 1 into THEME.\nStyle/medium: polished soft-painted mobile-game costume art, tactile fabric, cocoa-brown outline treatment matching Image 1.\nComposition/framing: preserve Image 1 pixel dimensions, exact placement, scale, padding, compact silhouette, and overlay alignment. The romper must remain a short low garment with exactly three hoof openings at the bottom.\nCritical transparency: keep the entire exterior background genuinely transparent. Keep all three hoof holes genuinely transparent alpha. No pig skin, eyes, snout, ears, hooves, feet, character, or body baked into the clothing.\nConstraints: preserve all three hoof-hole edge geometries and outer padding exactly. No tall human torso, no human body, no arms, no sleeves, no boots, no extra legs, no tail. No text, watermark, checkerboard, white backdrop, brown smoke, exterior glow, drop-shadow halo, or scenery."
+  },
+  "exactPromptAssembly": "For each asset, the exact submitted prompt is the corresponding sharedPromptText string with the single literal token THEME replaced by that asset's themeText, with no other changes.",
+  "assets": [
+    {
+      "theme": "linen-lurker",
+      "hood": {
+        "path": "assets/images/costumes/linen-lurker/rosie-hood-v1.png",
+        "themeText": "cream bandaged mummy hood, layered linen wraps following the approved hood shape, one small amber scarab button centered near the top; cozy playful Halloween mood",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-96444be5-95cc-40bb-8ad0-3eafabfa5178.png",
+        "sha256": "5ae83894f270c292a8f064c7a77645c8ee0967a5aa17b17433967f19d8659c30"
+      },
+      "romper": {
+        "path": "assets/images/costumes/linen-lurker/rosie-romper-v1.png",
+        "themeText": "short cream bandaged mummy romper, layered linen wraps and one small amber scarab button centered at the chest; cozy playful Halloween mood",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-202049b7-bbf0-4115-bf43-8b609188b257.png",
+        "sha256": "d08e66af3bc639759b7e2def8f606944b89aa31a2b78d8fcc0ef5d0162b926a4"
+      }
+    },
+    {
+      "theme": "starspell",
+      "hood": {
+        "path": "assets/images/costumes/starspell/rosie-hood-v1.png",
+        "themeText": "midnight-blue and lilac wizard hood with a short pointed top contained within the existing canvas padding, small tasteful gold stars, matching soft fabric; no tall hat",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-40b633d4-90fb-4b04-bbdb-537be14a62fe.png",
+        "sha256": "20264841fe8480f2493d1eebff67e33ad9148b4f38d2d47c133488290b3a3084"
+      },
+      "romper": {
+        "path": "assets/images/costumes/starspell/rosie-romper-v1.png",
+        "themeText": "matching short navy wizard romper with lilac details, tiny gold stars and one small gold moon button at the chest",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-31cd446d-3100-4692-8853-cb346f2ef1a4.png",
+        "sha256": "cbe7e54bbd8bc28eb324bb04feec245609848f002b576f9177f6ce3499762982"
+      }
+    },
+    {
+      "theme": "bat-nap",
+      "hood": {
+        "path": "assets/images/costumes/bat-nap/rosie-hood-v1.png",
+        "themeText": "soft plum-purple plush bat hood, with two short pointed costume bat ears fitted around but not blocking the original pig-ear apertures; cozy sleepy texture",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-5b7d2fb2-89b6-4e6a-9ec3-cbaef0b1b129.png",
+        "sha256": "32cfedde1f6308175bfaabae6409c274e7904e4dc4c72ab036ff3fb542cfb48b"
+      },
+      "romper": {
+        "path": "assets/images/costumes/bat-nap/rosie-romper-v1.png",
+        "themeText": "short soft plum-purple plush romper with a tiny folded felt bat-wing collar at the chest; cozy sleepy texture, no external wings",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-6e1e273f-6b85-44a6-9f81-ed288bc4eb64.png",
+        "sha256": "d1edf9304d60f7933541dfef0a0e0b83441c0446f50eb6924c37221b359ea77b"
+      }
+    },
+    {
+      "theme": "little-imp",
+      "hood": {
+        "path": "assets/images/costumes/little-imp/rosie-hood-v1.png",
+        "themeText": "brick-red toy-devil hood with exactly two SMALL cream plush horns fitted up top, soft cream trim accents; no painted second face, no tail",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-1c336e0c-af7b-463d-8349-2eb4f549427e.png",
+        "sha256": "911c5326574096e91960aa000d21c26f05fad8bf6d1d001ab6930b379c1557c3"
+      },
+      "romper": {
+        "path": "assets/images/costumes/little-imp/rosie-romper-v1.png",
+        "themeText": "short brick-red toy-devil romper with soft cream trim; playful and compact, no painted second face, no tail",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-49bf97c1-a6e5-49a2-9f26-0fade2ff2f98.png",
+        "sha256": "07d8cd9322222f03f87734a900c289357d66d9c34f8c2c9f68e033891ca415be"
+      }
+    },
+    {
+      "theme": "marshmallow-boo",
+      "hood": {
+        "path": "assets/images/costumes/marshmallow-boo/rosie-hood-v1.png",
+        "themeText": "cream friendly ghost hood with a clean face window and both original ear apertures, soft cloth folds and subtle pale-aqua stitches; no ghost face painted on garment",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-d54f0fda-5105-4a6e-9e2f-9da5a19a82d6.png",
+        "sha256": "b4c79b7082a79a235349676a3e02dcb6296cff60add647b9a1c25899e5893f16"
+      },
+      "romper": {
+        "path": "assets/images/costumes/marshmallow-boo/rosie-romper-v1.png",
+        "themeText": "short cream friendly-ghost romper with a modest ragged cloth hem and subtle pale-aqua stitches; no ghost face painted on garment",
+        "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13c9d-577e-7d92-952b-e28f7e14e05c/exec-770b5728-172c-49e4-902f-f4517c0d9432.png",
+        "sha256": "f6ab4a1a793232b9633e058468f2be058d8f150f5fa097db1c94fd7e61f0970d"
+      }
+    }
+  ],
+  "checks": {
+    "byteForByteCopyFromGeneratedSource": true,
+    "manualRasterEditOrResize": false,
+    "hoodDimensions": [1393, 1129],
+    "romperDimensions": [1254, 1254],
+    "allFilesHaveAlpha": true,
+    "alphaComponentRule": "Each hood has one exterior transparent component plus three enclosed transparent components: one face and two ears. Each romper has one exterior transparent component plus three enclosed transparent components: three hoof holes.",
+    "alphaComponentRulePassed": true,
+    "visualInspection": {
+      "allTenInspected": true,
+      "noCharacterAnatomyBakedIn": true,
+      "noExtraLimbsOrTallHumanBody": true,
+      "noOpaqueBackdropCheckerboardSmokeOrExteriorHalo": true,
+      "themeDetailsPresent": true,
+      "softPaintedCocoaOutlineStylePresent": true
+    }
+  }
+}

@@ -1,0 +1,1082 @@
+[
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 339
+    },
+    "label": "Rosie wearing Count Snout, idle frame 2",
+    "layers": [
+      "./assets/idle_2-62AB2DTW.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_2-62AB2DTW.png",
+    "name": "Count Snout",
+    "frame": 2,
+    "file": "count-snout-02.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 3",
+    "layers": [
+      "./assets/idle_3-E7MZGD5E.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_3-E7MZGD5E.png",
+    "name": "Count Snout",
+    "frame": 3,
+    "file": "count-snout-03.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 4",
+    "layers": [
+      "./assets/idle_4-GPCBDQFU.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_4-GPCBDQFU.png",
+    "name": "Count Snout",
+    "frame": 4,
+    "file": "count-snout-04.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 5",
+    "layers": [
+      "./assets/idle_5-STAKFQTP.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_5-STAKFQTP.png",
+    "name": "Count Snout",
+    "frame": 5,
+    "file": "count-snout-05.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 6",
+    "layers": [
+      "./assets/idle_6-JKE5HQSI.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_6-JKE5HQSI.png",
+    "name": "Count Snout",
+    "frame": 6,
+    "file": "count-snout-06.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 7",
+    "layers": [
+      "./assets/idle_7-I7BK6XUM.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_7-I7BK6XUM.png",
+    "name": "Count Snout",
+    "frame": 7,
+    "file": "count-snout-07.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 8",
+    "layers": [
+      "./assets/idle_8-ENWQ7W7Q.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_8-ENWQ7W7Q.png",
+    "name": "Count Snout",
+    "frame": 8,
+    "file": "count-snout-08.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 9",
+    "layers": [
+      "./assets/idle_9-5YD5QKSD.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_9-5YD5QKSD.png",
+    "name": "Count Snout",
+    "frame": 9,
+    "file": "count-snout-09.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 10",
+    "layers": [
+      "./assets/idle_10-JK2WYCOP.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_10-JK2WYCOP.png",
+    "name": "Count Snout",
+    "frame": 10,
+    "file": "count-snout-10.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 11",
+    "layers": [
+      "./assets/idle_11-YD5ODSJ6.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_11-YD5ODSJ6.png",
+    "name": "Count Snout",
+    "frame": 11,
+    "file": "count-snout-11.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 12",
+    "layers": [
+      "./assets/idle_12-2XRSE7ZT.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_12-2XRSE7ZT.png",
+    "name": "Count Snout",
+    "frame": 12,
+    "file": "count-snout-12.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Count Snout, idle frame 1",
+    "layers": [
+      "./assets/idle_1-Q62SL4RL.png",
+      "./assets/rosie-hood-v1-GPTNXOF6.png",
+      "./assets/rosie-romper-v1-GFHOW6YZ.png"
+    ],
+    "source": "./assets/idle_1-Q62SL4RL.png",
+    "name": "Count Snout",
+    "frame": 1,
+    "file": "count-snout-01.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 273
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 2",
+    "layers": [
+      "./assets/idle_2-62AB2DTW.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_2-62AB2DTW.png",
+    "name": "Moonpuff",
+    "frame": 2,
+    "file": "moonpuff-02.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 3",
+    "layers": [
+      "./assets/idle_3-E7MZGD5E.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_3-E7MZGD5E.png",
+    "name": "Moonpuff",
+    "frame": 3,
+    "file": "moonpuff-03.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 4",
+    "layers": [
+      "./assets/idle_4-GPCBDQFU.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_4-GPCBDQFU.png",
+    "name": "Moonpuff",
+    "frame": 4,
+    "file": "moonpuff-04.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 5",
+    "layers": [
+      "./assets/idle_5-STAKFQTP.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_5-STAKFQTP.png",
+    "name": "Moonpuff",
+    "frame": 5,
+    "file": "moonpuff-05.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 6",
+    "layers": [
+      "./assets/idle_6-JKE5HQSI.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_6-JKE5HQSI.png",
+    "name": "Moonpuff",
+    "frame": 6,
+    "file": "moonpuff-06.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 7",
+    "layers": [
+      "./assets/idle_7-I7BK6XUM.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_7-I7BK6XUM.png",
+    "name": "Moonpuff",
+    "frame": 7,
+    "file": "moonpuff-07.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 8",
+    "layers": [
+      "./assets/idle_8-ENWQ7W7Q.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_8-ENWQ7W7Q.png",
+    "name": "Moonpuff",
+    "frame": 8,
+    "file": "moonpuff-08.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 9",
+    "layers": [
+      "./assets/idle_9-5YD5QKSD.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_9-5YD5QKSD.png",
+    "name": "Moonpuff",
+    "frame": 9,
+    "file": "moonpuff-09.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 10",
+    "layers": [
+      "./assets/idle_10-JK2WYCOP.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_10-JK2WYCOP.png",
+    "name": "Moonpuff",
+    "frame": 10,
+    "file": "moonpuff-10.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 11",
+    "layers": [
+      "./assets/idle_11-YD5ODSJ6.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_11-YD5ODSJ6.png",
+    "name": "Moonpuff",
+    "frame": 11,
+    "file": "moonpuff-11.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 12",
+    "layers": [
+      "./assets/idle_12-2XRSE7ZT.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_12-2XRSE7ZT.png",
+    "name": "Moonpuff",
+    "frame": 12,
+    "file": "moonpuff-12.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Moonpuff, idle frame 1",
+    "layers": [
+      "./assets/idle_1-Q62SL4RL.png",
+      "./assets/rosie-hood-v1-3QIPP6P2.png",
+      "./assets/rosie-romper-v1-7RE7JPJ7.png"
+    ],
+    "source": "./assets/idle_1-Q62SL4RL.png",
+    "name": "Moonpuff",
+    "frame": 1,
+    "file": "moonpuff-01.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 207
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 2",
+    "layers": [
+      "./assets/idle_2-62AB2DTW.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_2-62AB2DTW.png",
+    "name": "Little Reaper",
+    "frame": 2,
+    "file": "little-reaper-02.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 3",
+    "layers": [
+      "./assets/idle_3-E7MZGD5E.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_3-E7MZGD5E.png",
+    "name": "Little Reaper",
+    "frame": 3,
+    "file": "little-reaper-03.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 4",
+    "layers": [
+      "./assets/idle_4-GPCBDQFU.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_4-GPCBDQFU.png",
+    "name": "Little Reaper",
+    "frame": 4,
+    "file": "little-reaper-04.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 5",
+    "layers": [
+      "./assets/idle_5-STAKFQTP.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_5-STAKFQTP.png",
+    "name": "Little Reaper",
+    "frame": 5,
+    "file": "little-reaper-05.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 6",
+    "layers": [
+      "./assets/idle_6-JKE5HQSI.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_6-JKE5HQSI.png",
+    "name": "Little Reaper",
+    "frame": 6,
+    "file": "little-reaper-06.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 7",
+    "layers": [
+      "./assets/idle_7-I7BK6XUM.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_7-I7BK6XUM.png",
+    "name": "Little Reaper",
+    "frame": 7,
+    "file": "little-reaper-07.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 8",
+    "layers": [
+      "./assets/idle_8-ENWQ7W7Q.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_8-ENWQ7W7Q.png",
+    "name": "Little Reaper",
+    "frame": 8,
+    "file": "little-reaper-08.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 9",
+    "layers": [
+      "./assets/idle_9-5YD5QKSD.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_9-5YD5QKSD.png",
+    "name": "Little Reaper",
+    "frame": 9,
+    "file": "little-reaper-09.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 10",
+    "layers": [
+      "./assets/idle_10-JK2WYCOP.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_10-JK2WYCOP.png",
+    "name": "Little Reaper",
+    "frame": 10,
+    "file": "little-reaper-10.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 11",
+    "layers": [
+      "./assets/idle_11-YD5ODSJ6.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_11-YD5ODSJ6.png",
+    "name": "Little Reaper",
+    "frame": 11,
+    "file": "little-reaper-11.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 12",
+    "layers": [
+      "./assets/idle_12-2XRSE7ZT.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_12-2XRSE7ZT.png",
+    "name": "Little Reaper",
+    "frame": 12,
+    "file": "little-reaper-12.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Little Reaper, idle frame 1",
+    "layers": [
+      "./assets/idle_1-Q62SL4RL.png",
+      "./assets/rosie-hood-v1-WKIFM27R.png",
+      "./assets/rosie-romper-v1-TJZT3OOC.png"
+    ],
+    "source": "./assets/idle_1-Q62SL4RL.png",
+    "name": "Little Reaper",
+    "frame": 1,
+    "file": "little-reaper-01.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 141
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 2",
+    "layers": [
+      "./assets/idle_2-62AB2DTW.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_2-62AB2DTW.png",
+    "name": "Patchwork Pal",
+    "frame": 2,
+    "file": "patchwork-pal-02.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 3",
+    "layers": [
+      "./assets/idle_3-E7MZGD5E.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_3-E7MZGD5E.png",
+    "name": "Patchwork Pal",
+    "frame": 3,
+    "file": "patchwork-pal-03.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 4",
+    "layers": [
+      "./assets/idle_4-GPCBDQFU.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_4-GPCBDQFU.png",
+    "name": "Patchwork Pal",
+    "frame": 4,
+    "file": "patchwork-pal-04.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 5",
+    "layers": [
+      "./assets/idle_5-STAKFQTP.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_5-STAKFQTP.png",
+    "name": "Patchwork Pal",
+    "frame": 5,
+    "file": "patchwork-pal-05.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 6",
+    "layers": [
+      "./assets/idle_6-JKE5HQSI.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_6-JKE5HQSI.png",
+    "name": "Patchwork Pal",
+    "frame": 6,
+    "file": "patchwork-pal-06.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 7",
+    "layers": [
+      "./assets/idle_7-I7BK6XUM.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_7-I7BK6XUM.png",
+    "name": "Patchwork Pal",
+    "frame": 7,
+    "file": "patchwork-pal-07.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 8",
+    "layers": [
+      "./assets/idle_8-ENWQ7W7Q.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_8-ENWQ7W7Q.png",
+    "name": "Patchwork Pal",
+    "frame": 8,
+    "file": "patchwork-pal-08.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 9",
+    "layers": [
+      "./assets/idle_9-5YD5QKSD.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_9-5YD5QKSD.png",
+    "name": "Patchwork Pal",
+    "frame": 9,
+    "file": "patchwork-pal-09.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 10",
+    "layers": [
+      "./assets/idle_10-JK2WYCOP.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_10-JK2WYCOP.png",
+    "name": "Patchwork Pal",
+    "frame": 10,
+    "file": "patchwork-pal-10.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 11",
+    "layers": [
+      "./assets/idle_11-YD5ODSJ6.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_11-YD5ODSJ6.png",
+    "name": "Patchwork Pal",
+    "frame": 11,
+    "file": "patchwork-pal-11.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 12",
+    "layers": [
+      "./assets/idle_12-2XRSE7ZT.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_12-2XRSE7ZT.png",
+    "name": "Patchwork Pal",
+    "frame": 12,
+    "file": "patchwork-pal-12.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Patchwork Pal, idle frame 1",
+    "layers": [
+      "./assets/idle_1-Q62SL4RL.png",
+      "./assets/rosie-hood-v1-FENFAAE7.png",
+      "./assets/rosie-romper-v1-EAQMBOA4.png"
+    ],
+    "source": "./assets/idle_1-Q62SL4RL.png",
+    "name": "Patchwork Pal",
+    "frame": 1,
+    "file": "patchwork-pal-01.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 75
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 2",
+    "layers": [
+      "./assets/idle_2-62AB2DTW.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_2-62AB2DTW.png",
+    "name": "Candy Corn",
+    "frame": 2,
+    "file": "candy-corn-02.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 3",
+    "layers": [
+      "./assets/idle_3-E7MZGD5E.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_3-E7MZGD5E.png",
+    "name": "Candy Corn",
+    "frame": 3,
+    "file": "candy-corn-03.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 4",
+    "layers": [
+      "./assets/idle_4-GPCBDQFU.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_4-GPCBDQFU.png",
+    "name": "Candy Corn",
+    "frame": 4,
+    "file": "candy-corn-04.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 5",
+    "layers": [
+      "./assets/idle_5-STAKFQTP.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_5-STAKFQTP.png",
+    "name": "Candy Corn",
+    "frame": 5,
+    "file": "candy-corn-05.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 6",
+    "layers": [
+      "./assets/idle_6-JKE5HQSI.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_6-JKE5HQSI.png",
+    "name": "Candy Corn",
+    "frame": 6,
+    "file": "candy-corn-06.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 7",
+    "layers": [
+      "./assets/idle_7-I7BK6XUM.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_7-I7BK6XUM.png",
+    "name": "Candy Corn",
+    "frame": 7,
+    "file": "candy-corn-07.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 8",
+    "layers": [
+      "./assets/idle_8-ENWQ7W7Q.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_8-ENWQ7W7Q.png",
+    "name": "Candy Corn",
+    "frame": 8,
+    "file": "candy-corn-08.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 9",
+    "layers": [
+      "./assets/idle_9-5YD5QKSD.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_9-5YD5QKSD.png",
+    "name": "Candy Corn",
+    "frame": 9,
+    "file": "candy-corn-09.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 10",
+    "layers": [
+      "./assets/idle_10-JK2WYCOP.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_10-JK2WYCOP.png",
+    "name": "Candy Corn",
+    "frame": 10,
+    "file": "candy-corn-10.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 11",
+    "layers": [
+      "./assets/idle_11-YD5ODSJ6.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_11-YD5ODSJ6.png",
+    "name": "Candy Corn",
+    "frame": 11,
+    "file": "candy-corn-11.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 12",
+    "layers": [
+      "./assets/idle_12-2XRSE7ZT.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_12-2XRSE7ZT.png",
+    "name": "Candy Corn",
+    "frame": 12,
+    "file": "candy-corn-12.png"
+  },
+  {
+    "box": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    },
+    "label": "Rosie wearing Candy Corn, idle frame 1",
+    "layers": [
+      "./assets/idle_1-Q62SL4RL.png",
+      "./assets/rosie-hood-v1-CPEUPCTT.png",
+      "./assets/rosie-romper-v1-XZ4ZW3HW.png"
+    ],
+    "source": "./assets/idle_1-Q62SL4RL.png",
+    "name": "Candy Corn",
+    "frame": 1,
+    "file": "candy-corn-01.png"
+  }
+]

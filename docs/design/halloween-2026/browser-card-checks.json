@@ -1,0 +1,546 @@
+[
+  {
+    "number": 1,
+    "label": "Moonbrew Witch Hat, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/001-moonbrew-witch-hat-card-v1-3AGFARU3.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 2,
+    "label": "Hedge Broom, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/002-hedge-broom-card-v1-GXJGRE45.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 3,
+    "label": "High Collar Scarf, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/003-high-collar-scarf-card-v1-PB655CVF.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 4,
+    "label": "Pip Candle, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/004-pip-candle-card-v1-7EMW7C4U.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 5,
+    "label": "Bolt Headband, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/005-patchwork-bolt-cap-card-v2-2PNQNMXE.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 6,
+    "label": "Stitched Bow, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/006-stitched-bow-card-v1-GP76O5NZ.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 7,
+    "label": "Bone Mask, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/007-friendly-skull-facepaint-card-v2-HOJHQEQK.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 8,
+    "label": "Crossbones Bow, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/008-crossbones-bow-card-v1-O7N6OYWK.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 9,
+    "label": "Linen Knot Headwrap, ITEM, uncommon",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/009-linen-knot-headwrap-card-v2-2FCIUB35.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 10,
+    "label": "Scarab Lantern, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/010-scarab-lantern-card-v1-M7Y3AMJY.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 11,
+    "label": "Lantern Sprout Cap, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/011-lantern-sprout-cap-card-v1-VQOPV7QR.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 12,
+    "label": "Pumpkin Treat Pail, ITEM, uncommon",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/012-pumpkin-treat-pail-card-v1-WZCWQPLM.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 13,
+    "label": "Silly Sheet Ghost Hood, ITEM, legendary",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1213,
+      "src": "http://127.0.0.1:4320/assets/013-silly-sheet-ghost-hood-card-v1-OZYW5F5I.png",
+      "width": 1297
+    }
+  },
+  {
+    "number": 14,
+    "label": "Spirit Glow, ITEM, legendary",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1024,
+      "src": "http://127.0.0.1:4320/assets/014-spirit-glow-card-v2-YLPV3XYZ.png",
+      "width": 1536
+    }
+  },
+  {
+    "number": 15,
+    "label": "Moonpuff Wolf Ears, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/015-moonpuff-wolf-ears-card-v1-JQIHAV5A.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 16,
+    "label": "Moon Charm, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/016-moon-charm-card-v1-MGXDIAAI.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 17,
+    "label": "Lantern Porch, PLACE, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/017-lantern-porch-bg-card-v1-M5NGEYIT.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 18,
+    "label": "Haunted Orchard, PLACE, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/018-haunted-orchard-bg-card-v1-SUQLY3G5.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 19,
+    "label": "Moonlit Graveyard, PLACE, legendary",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/019-moonlit-graveyard-bg-card-v1-TNJJEJYL.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 20,
+    "label": "Witch's Wood, PLACE, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/020-witches-wood-bg-card-v1-DOR2O5DV.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 21,
+    "label": "Cobweb Barn, PLACE, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/021-cobweb-barn-bg-card-v1-T4YAEJRQ.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 22,
+    "label": "Candy Lantern Trail, PLACE, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/022-candy-lantern-trail-bg-card-v1-GIRMOKXO.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 23,
+    "label": "Moonwake Tricorn, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/023-halloween-2026-pirate-tricorn-hat-card-v2-MOGTZ35A.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 24,
+    "label": "Toy Cutlass, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/024-halloween-2026-toy-cutlass-card-v1-QBDGALBP.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 25,
+    "label": "Patchwork Straw Hat, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/025-halloween-2026-patched-straw-hat-card-v1-KC75QWWR.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 26,
+    "label": "Straw Bow, ITEM, uncommon",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/026-halloween-2026-straw-bow-card-v1-426UPAR5.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 27,
+    "label": "Spark Goggles, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 887,
+      "src": "http://127.0.0.1:4320/assets/027-halloween-2026-spark-goggles-card-v1-2LSRKJ7M.png",
+      "width": 1774
+    }
+  },
+  {
+    "number": 28,
+    "label": "Bubbling Flask, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/028-halloween-2026-bubbling-flask-card-v1-DEP5IDXH.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 29,
+    "label": "Twilight Bat-Ear Cap, ITEM, rare",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1145,
+      "src": "http://127.0.0.1:4320/assets/029-halloween-2026-bat-ear-cap-card-v2-UXCNAQ2Y.png",
+      "width": 1374
+    }
+  },
+  {
+    "number": 30,
+    "label": "Bat-Wing Bow, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/030-halloween-2026-bat-wing-bow-card-v1-F4DMYBOB.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 31,
+    "label": "Starlight Headwrap, ITEM, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1145,
+      "src": "http://127.0.0.1:4320/assets/031-halloween-2026-star-headwrap-card-v1-2QMOWSDR.png",
+      "width": 1374
+    }
+  },
+  {
+    "number": 32,
+    "label": "Pocket Crystal Ball, ITEM, legendary",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/032-halloween-2026-crystal-ball-card-v1-E5OJ3IS3.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 33,
+    "label": "Haunted Ship Deck, PLACE, legendary",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/033-halloween-2026-haunted-ship-deck-bg-card-v1-CXF3U6M3.png",
+      "width": 1254
+    }
+  },
+  {
+    "number": 34,
+    "label": "Harvest Moon Cornfield, PLACE, epic",
+    "box": {
+      "height": 420,
+      "width": 300,
+      "x": 46.5,
+      "y": 316.5
+    },
+    "art": {
+      "complete": true,
+      "height": 1254,
+      "src": "http://127.0.0.1:4320/assets/034-halloween-2026-harvest-moon-cornfield-bg-card-v1-OT4WP2VV.png",
+      "width": 1254
+    }
+  }
+]

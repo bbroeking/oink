@@ -1,0 +1,962 @@
+[
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-02.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_2-62AB2DTW.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 2",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 9
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-03.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_3-E7MZGD5E.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 3",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-04.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_4-GPCBDQFU.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 4",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-05.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_5-STAKFQTP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 5",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-06.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_6-JKE5HQSI.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 6",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-07.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_7-I7BK6XUM.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 7",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-08.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_8-ENWQ7W7Q.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 8",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-09.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_9-5YD5QKSD.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 9",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-10.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_10-JK2WYCOP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 10",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-11.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_11-YD5ODSJ6.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 11",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-12.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_12-2XRSE7ZT.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 12",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Linen Lurker",
+    "path": "linen-lurker-01.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_1-Q62SL4RL.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-S4DTFKRQ.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-HN433MIL.png"
+    ],
+    "label": "Rosie wearing Linen Lurker, idle frame 1",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-02.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_2-62AB2DTW.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 2",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 320
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-03.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_3-E7MZGD5E.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 3",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-04.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_4-GPCBDQFU.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 4",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-05.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_5-STAKFQTP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 5",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-06.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_6-JKE5HQSI.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 6",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-07.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_7-I7BK6XUM.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 7",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-08.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_8-ENWQ7W7Q.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 8",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-09.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_9-5YD5QKSD.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 9",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-10.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_10-JK2WYCOP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 10",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-11.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_11-YD5ODSJ6.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 11",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-12.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_12-2XRSE7ZT.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 12",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Starspell",
+    "path": "starspell-01.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_1-Q62SL4RL.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-UDUBAWIH.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-T72QRZ7Q.png"
+    ],
+    "label": "Rosie wearing Starspell, idle frame 1",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-02.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_2-62AB2DTW.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 2",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 320
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-03.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_3-E7MZGD5E.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 3",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-04.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_4-GPCBDQFU.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 4",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-05.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_5-STAKFQTP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 5",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-06.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_6-JKE5HQSI.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 6",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-07.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_7-I7BK6XUM.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 7",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-08.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_8-ENWQ7W7Q.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 8",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-09.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_9-5YD5QKSD.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 9",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-10.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_10-JK2WYCOP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 10",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-11.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_11-YD5ODSJ6.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 11",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-12.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_12-2XRSE7ZT.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 12",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Bat Nap",
+    "path": "bat-nap-01.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_1-Q62SL4RL.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-ZKD3C5TV.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-B4HWWWR4.png"
+    ],
+    "label": "Rosie wearing Bat Nap, idle frame 1",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-02.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_2-62AB2DTW.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 2",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 320
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-03.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_3-E7MZGD5E.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 3",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-04.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_4-GPCBDQFU.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 4",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-05.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_5-STAKFQTP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 5",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-06.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_6-JKE5HQSI.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 6",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-07.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_7-I7BK6XUM.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 7",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-08.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_8-ENWQ7W7Q.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 8",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-09.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_9-5YD5QKSD.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 9",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-10.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_10-JK2WYCOP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 10",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-11.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_11-YD5ODSJ6.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 11",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-12.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_12-2XRSE7ZT.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 12",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Little Imp",
+    "path": "little-imp-01.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_1-Q62SL4RL.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-YMHQ2DU7.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-YCRYXCVV.png"
+    ],
+    "label": "Rosie wearing Little Imp, idle frame 1",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-02.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_2-62AB2DTW.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 2",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 320
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-03.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_3-E7MZGD5E.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 3",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-04.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_4-GPCBDQFU.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 4",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-05.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_5-STAKFQTP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 5",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-06.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_6-JKE5HQSI.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 6",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-07.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_7-I7BK6XUM.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 7",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-08.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_8-ENWQ7W7Q.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 8",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-09.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_9-5YD5QKSD.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 9",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-10.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_10-JK2WYCOP.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 10",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-11.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_11-YD5ODSJ6.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 11",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-12.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_12-2XRSE7ZT.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 12",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  },
+  {
+    "name": "Marshmallow Boo",
+    "path": "marshmallow-boo-01.png",
+    "images": [
+      "http://127.0.0.1:4320/assets/idle_1-Q62SL4RL.png",
+      "http://127.0.0.1:4320/assets/rosie-hood-v1-PNZ723SN.png",
+      "http://127.0.0.1:4320/assets/rosie-romper-v1-3R65PXFK.png"
+    ],
+    "label": "Rosie wearing Marshmallow Boo, idle frame 1",
+    "rect": {
+      "height": 360,
+      "width": 360,
+      "x": 472,
+      "y": 106
+    }
+  }
+]

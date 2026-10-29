@@ -1,0 +1,16 @@
+{
+  "scope": "Re-review limited to the two previously reported findings",
+  "disposition": "ship",
+  "findings": [
+    {
+      "id": "foreground-layering",
+      "verdict": "resolved",
+      "evidence": "D's rose name band now overlays only Rosie's lower hoof tips, and F's rose spine now masks only the tail tip/outer silhouette. Both effects are visible in the desktop and 390px captures, preserve the face and primary silhouette, and satisfy the requirement for at least two illustrations behind selected frame elements."
+    },
+    {
+      "id": "text-safe-accent",
+      "verdict": "resolved",
+      "evidence": "The exact export contains #a03e2f for the terracotta text treatments and no remaining #c25a3f occurrences. The updated labels remain legible in both supplied captures."
+    }
+  ]
+}

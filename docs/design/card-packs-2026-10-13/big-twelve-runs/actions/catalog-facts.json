@@ -1,0 +1,30 @@
+{
+  "authority": "Current digital prototype catalog; new adventure adaptation remains TBD",
+  "sources": [
+    "features/cards/data/catalog.generated.ts",
+    "docs/design/card-packs-2026-10-13/three-card-refinement.md"
+  ],
+  "actions": [
+    {
+      "id": "snoot_boop",
+      "number": "076",
+      "name": "Snoot Boop",
+      "text": "Deal 2 damage to an Enemy, then restore 2 Cheer.",
+      "energy": null
+    },
+    {
+      "id": "big_wind_up",
+      "number": "064",
+      "name": "Big Wind-Up",
+      "text": "Your Legend's next attack this turn gets +2 Bash.",
+      "energy": null
+    },
+    {
+      "id": "duck_into_the_mud",
+      "number": "065",
+      "name": "Duck Into the Mud",
+      "text": "Before your next turn, prevent the next 2 damage to your Legend.",
+      "energy": null
+    }
+  ]
+}

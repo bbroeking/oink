@@ -1,0 +1,38 @@
+Captured: 2026-10-14 America/New_York
+Mode: read-only audit; no build, push, deploy, upload, setting change, or version bump
+
+Repository
+HEAD: 16faad00c626e5e52aa9cc9cc80bb79a6ca1cbe6
+Branch: feat/matchmade-play
+git status paths: 210
+tracked diff: 139 files, 5903 additions, 3329 deletions
+untracked paths: 709
+
+Toolchain
+Xcode 26.4.1 (17E202)
+iPhoneOS SDK 26.4
+Node v24.12.0 (EAS reports .nvmrc resolves Node 22)
+npm 11.6.2
+pnpm 10.26.0
+EAS CLI 16.28.0 (24.10.0 available; no upgrade performed)
+CocoaPods 1.16.2
+Docker 29.6.0 (fb59821d45)
+
+Static production configuration
+App marketing version: 1.3
+Bundle identifier: com.broeking.ttp
+Apple Sign In: enabled
+Push entitlement: production
+Associated domain: applinks:ticklethepig.com
+Privacy URL, Sentry DSN, IAP and RevenueCat production-profile keys: configured; values intentionally omitted from this log
+
+Migration filenames newly untracked in this checkout
+20260922120000_preset_sounder_message_copy.sql
+20261004201000_account_deletion_referral_cleanup.sql
+20261013000000_extend_great_hunger_season.sql
+20261014180000_seasonal_card_item_unlocks.sql
+20261014200000_halloween_login_costume_gift.sql
+
+Duplicate migration timestamp prefixes: none found locally.
+Halloween login-gift campaign seed: active = false.
+

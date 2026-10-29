@@ -1,0 +1,16 @@
+{
+  "authoredAt": "2026-10-13",
+  "authoringMethod": "local Rive MCP against the existing cloud Card Packs file",
+  "editorUrl": "https://editor.rive.app/file/card-packs/2651084",
+  "runtimeSha256": "959f94cc677ac6fa8120b360d7fad547727a65ef7742b66af414cd527aa0c46d",
+  "backupSha256": "a9a94a84eccd6eb5b2d68c3f646295bccb8b8393279cd2f82412819214c606d5",
+  "fixtureSources": [
+    "landing/cards/img/034-firefly_swarm.webp",
+    "landing/cards/img/019-mud_shovel.webp",
+    "landing/cards/img/038-puddle_duckling.webp",
+    "landing/cards/img/009-mushroom_cap.webp",
+    "landing/cards/img/046-moon_firefly.webp"
+  ],
+  "scripts": ["scripts/rive/card-pack-upload-assets.sh", "scripts/rive/export-card-pack-mcp.py"],
+  "notes": "The earlier RML/CLI prototype remains reference material only. This export was produced from the editable cloud document. The premium packet revision adds an editable Rosie-branded SVG label, waxed-paper gradients, top and bottom crimp highlights, seam depth, and a coherent strip/body exit. Motion timing references the official Pokemon TCG Pocket preview at 0:15-0:20, translated to the Tickle the Pig seed-packet art."
+}

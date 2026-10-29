@@ -1,0 +1,41 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "assets/images/trading-cards/halloween-2026/035-halloween-2026-hollow-jack-costume-card-v2.png",
+  "variants": [
+    {
+      "key": "count_snout",
+      "number": 40,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted collectible card illustration for Tickle the Pig. Edit the supplied Hollow Jack dressed Rosie reference into Count Snout, a friendly vampire full-body costume. Keep EXACT original pig identity/face: huge round pink head, real black eyes, pink snout, cheeks, open smiling mouth, original pink inner ears, tiny short torso and three visible real cocoa hooves; preserve reference pose and framing. Change ONLY pumpkin clothing into a broad soft BURGUNDY vampire hood surrounding a generous face window and ear apertures, short black/burgundy vest romper with tiny cream shirt front and small bat-shaped collar. No human proportions, arms, boots, tall body, pumpkin stems/leaves, fangs pasted over snout, second costume face, scythe. Cocoa ink outlines, soft painted game illustration, warm friendly spooky palette, matches existing card art quality. TRUE transparent background, no smoke/shadow halo, no lettering, border, watermark. This is card illustration showing pig wearing garment, not runtime sprite.",
+      "art": "assets/images/trading-cards/halloween-2026/040-halloween-2026-count-snout-costume-card-v1.png",
+      "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-f6312d82-d8e9-48d5-9fd8-d8542476a30e.png"
+    },
+    {
+      "key": "moonpuff",
+      "number": 41,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted collectible card illustration for Tickle the Pig. Edit supplied Hollow Jack dressed Rosie into Moonpuff Halloween full-body costume. Keep EXACT original pig identity/face: huge round pink head, real black eyes, pink snout/cheeks, open smiling mouth, original pink inner ears, tiny short torso, curly tail and three visible real cocoa hooves. Preserve reference pose/proportions/framing. Change ONLY pumpkin clothes into warm gray fluffy wolf hood with softly pointed ear wraps around the pig's original pink ears, a generous empty face aperture, short gray fuzzy romper with cream chest tuft and three open hoof cuffs. No wolf face, snout, teeth or paws replacing Rosie; only wolf clothing. Cocoa ink outlines and soft painted cozy game style matching original reference. No pumpkin stem/leaves, human arms, boots, tall humanoid anatomy, second pig/costume face. TRUE transparent background, no exterior shadow/smoke/halo, no text/border/watermark. This is card illustration showing the pig wearing garment, not runtime sprite.",
+      "art": "assets/images/trading-cards/halloween-2026/041-halloween-2026-moonpuff-costume-card-v1.png",
+      "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-8204fc26-609f-410c-9940-84c07e3cd456.png"
+    },
+    {
+      "key": "little_reaper",
+      "number": 42,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted collectible card illustration for Tickle the Pig. Edit supplied Hollow Jack dressed Rosie into Little Reaper Halloween full-body costume. Keep EXACT original pig identity/face: huge round pink head, real black eyes, pink snout/cheeks, open smiling mouth, original pink inner ears, tiny short torso, curly tail and three visible real cocoa hooves. Preserve reference pose/proportions/framing. Change ONLY pumpkin clothes into charcoal plush hood with lilac lining, generous face window, pig ear apertures and VERY SHORT charcoal robe romper with lilac stitched seams and three open cuffs revealing original pig hooves. Friendly cozy Grim Reaper costume, no skull, skeleton, tall human robe, scythe or hidden pig face. Cocoa ink outlines and soft painted cozy game style matching original reference. No pumpkin stem/leaves, human arms, boots, tall humanoid anatomy, second pig/costume face. TRUE transparent background, no exterior shadow/smoke/halo, no text/border/watermark. This is card illustration showing the pig wearing garment, not runtime sprite.",
+      "art": "assets/images/trading-cards/halloween-2026/042-halloween-2026-little-reaper-costume-card-v1.png",
+      "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-d640f219-f5aa-4bf1-87ca-33438f839437.png"
+    },
+    {
+      "key": "patchwork_pal",
+      "number": 43,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted collectible card illustration for Tickle the Pig. Edit supplied Hollow Jack dressed Rosie into Patchwork Pal Halloween full-body costume. Keep EXACT original pig identity/face: huge round pink head, real black eyes, pink snout/cheeks, open smiling mouth, original pink inner ears, tiny short torso, curly tail and three visible real cocoa hooves. Preserve reference pose/proportions/framing. Change ONLY pumpkin clothes into sage green soft Frankenstein hood with tiny silver fabric side bolts, plum/mauve patchwork short romper with sage patches and visible stitched seams, three open cuffs revealing real pig hooves. Do not change the pig skin green, no monster face painted on hood. Cocoa ink outlines and soft painted cozy game style matching original reference. No pumpkin stem/leaves, human arms, boots, tall humanoid anatomy, second pig/costume face. TRUE transparent background, no exterior shadow/smoke/halo, no text/border/watermark. This is card illustration showing the pig wearing garment, not runtime sprite.",
+      "art": "assets/images/trading-cards/halloween-2026/043-halloween-2026-patchwork-pal-costume-card-v1.png",
+      "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-3b1c82a8-06c0-4a0f-b841-be0a59958f09.png"
+    },
+    {
+      "key": "candy_corn",
+      "number": 44,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted collectible card illustration for Tickle the Pig. Edit supplied Hollow Jack dressed Rosie into Candy Corn Halloween full-body costume. Keep EXACT original pig identity/face: huge round pink head, real black eyes, pink snout/cheeks, open smiling mouth, original pink inner ears, tiny short torso, curly tail and three visible real cocoa hooves. Preserve reference pose/proportions/framing. Change ONLY pumpkin clothes into soft triangular-tip hood in creamy white upper tip, warm orange middle and buttery yellow rim with generous face window and original pig-ear apertures, very short plush cream/orange/yellow striped romper and three open cuffs exposing original hooves. Cute candy corn onesie, not a giant cone replacing pig body. Cocoa ink outlines and soft painted cozy game style matching original reference. No pumpkin stem/leaves, human arms, boots, tall humanoid anatomy, second pig/costume face. TRUE transparent background, no exterior shadow/smoke/halo, no text/border/watermark. This is card illustration showing the pig wearing garment, not runtime sprite.",
+      "art": "assets/images/trading-cards/halloween-2026/044-halloween-2026-candy-corn-costume-card-v1.png",
+      "generatedSource": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-26924495-b864-4f6e-9ae7-a875a8d4a484.png"
+    }
+  ]
+}

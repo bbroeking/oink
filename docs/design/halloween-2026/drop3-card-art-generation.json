@@ -1,0 +1,60 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "assets/images/trading-cards/halloween-2026/040-halloween-2026-count-snout-costume-card-v1.png",
+  "cards": [
+    {
+      "name": "linen_lurker",
+      "number": 45,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted seasonal collectible card illustration for Tickle the Pig. Edit supplied fitted Count Snout reference into Linen Lurker, a Halloween full-body suit. Keep EXACT pig face/identity/proportions: huge round pink head, black source eyes, pink snout/cheeks, original open smiling mouth, original pink inner ears, tiny short quadruped body, original curly tail and THREE visible cocoa pig hooves; same pose/framing. Change ONLY vampire garment into creamy linen mummy bandage hood surrounding generous real-face and pig-ear windows, short bandaged cream pig romper with small amber scarab button. Friendly and soft, no mummy face/no covered real snout. Keep broad cozy head hood plus very short romper, no human arms/legs/boots or elongated torso; no second face painted onto clothing. Remove all old vampire bat collars/cape/jewel. Cocoa ink outlines, soft hand-painted cozy game art matching supplied card. TRUE alpha transparent background, no exterior brown smoke/halo/drop-shadow, no lettering/border/watermark. This is card artwork showing dressed pig; runtime clothing is separate transparent art.",
+      "path": "assets/images/trading-cards/halloween-2026/045-halloween-2026-linen-lurker-costume-card-v1.png",
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-0ee346c2-589d-438d-b908-7cfa11493ac0.png",
+      "sha256": "4e6898f869e729c6af4271272652467d537044291c6cf25615beaa39b773a492",
+      "selected": true
+    },
+    {
+      "name": "starspell",
+      "number": 46,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted seasonal collectible card illustration for Tickle the Pig. Edit supplied fitted Count Snout reference into Starspell, a Halloween full-body suit. Keep EXACT pig face/identity/proportions: huge round pink head, black source eyes, pink snout/cheeks, original open smiling mouth, original pink inner ears, tiny short quadruped body, original curly tail and THREE visible cocoa pig hooves; same pose/framing. Change ONLY vampire garment into midnight blue and lilac soft wizard hood with tiny gold stars and a SHORT softly pointed tip, original pig ears through open apertures, short navy pig romper and small gold moon button. No staff or human robe. Keep broad cozy head hood plus very short romper, no human arms/legs/boots or elongated torso; no second face painted onto clothing. Remove all old vampire bat collars/cape/jewel. Cocoa ink outlines, soft hand-painted cozy game art matching supplied card. TRUE alpha transparent background, no exterior brown smoke/halo/drop-shadow, no lettering/border/watermark. This is card artwork showing dressed pig; runtime clothing is separate transparent art.",
+      "path": "assets/images/trading-cards/halloween-2026/046-halloween-2026-starspell-costume-card-v1.png",
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-08069762-9b96-4457-8d79-0221b2582592.png",
+      "sha256": "6d33738fb82a43b05b254282845c93d38cff5c3523ea0d215768206d831a536a",
+      "selected": true
+    },
+    {
+      "name": "bat_nap",
+      "number": 47,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted seasonal collectible card illustration for Tickle the Pig. Edit supplied fitted Count Snout reference into Bat Nap, a Halloween full-body suit. Keep EXACT pig face/identity/proportions: huge round pink head, black source eyes, pink snout/cheeks, original open smiling mouth, original pink inner ears, tiny short quadruped body, original curly tail and THREE visible cocoa pig hooves; same pose/framing. Change ONLY vampire garment into plush purple bat hood with short pointed bat ear wraps around original pink pig ears, open generous real-face window, short soft purple pig romper with tiny folded felt bat-wing collar. No wings sprawling outside frame or replacement bat face. Keep broad cozy head hood plus very short romper, no human arms/legs/boots or elongated torso; no second face painted onto clothing. Remove all old vampire bat collars/cape/jewel. Cocoa ink outlines, soft hand-painted cozy game art matching supplied card. TRUE alpha transparent background, no exterior brown smoke/halo/drop-shadow, no lettering/border/watermark. This is card artwork showing dressed pig; runtime clothing is separate transparent art.",
+      "path": "assets/images/trading-cards/halloween-2026/047-halloween-2026-bat-nap-costume-card-v1.png",
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-fce14087-f715-4081-be23-d484b60767a9.png",
+      "sha256": "3f1b95dfb77e69691ae7894340c25ecf335658c4b0d01c9a88fe1e37dc75d8d5",
+      "selected": true
+    },
+    {
+      "name": "little_imp",
+      "number": 48,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted seasonal collectible card illustration for Tickle the Pig. Edit supplied fitted Count Snout reference into Little Imp, a Halloween full-body suit. Keep EXACT pig face/identity/proportions: huge round pink head, black source eyes, pink snout/cheeks, original open smiling mouth, original pink inner ears, tiny short quadruped body, original curly tail and THREE visible cocoa pig hooves; same pose/framing. Change ONLY vampire garment into brick-red soft toy devil hood, TWO SMALL cream plush horns at upper crown, generous real-face window and original pig-ear apertures, short red pig romper with cream seams. No extra tail; keep only original pig curly tail; no fangs or scary face. Keep broad cozy head hood plus very short romper, no human arms/legs/boots or elongated torso; no second face painted onto clothing. Remove all old vampire bat collars/cape/jewel. Cocoa ink outlines, soft hand-painted cozy game art matching supplied card. TRUE alpha transparent background, no exterior brown smoke/halo/drop-shadow, no lettering/border/watermark. This is card artwork showing dressed pig; runtime clothing is separate transparent art.",
+      "path": "assets/images/trading-cards/halloween-2026/048-halloween-2026-little-imp-costume-card-v1.png",
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c1a82dcb-c5b3-45f2-b5ed-5145b484431a.png",
+      "sha256": "ba9ae0345f1fac43fd1d9615d4169332d9f7a875c3c61532c7717cb1114ad483",
+      "selected": true
+    },
+    {
+      "name": "marshmallow_boo",
+      "number": 49,
+      "prompt": "Use case: precise-object-edit. Asset type: transparent painted seasonal collectible card illustration for Tickle the Pig. Edit supplied fitted Count Snout reference into Marshmallow Boo, a Halloween full-body suit. Keep EXACT pig face/identity/proportions: huge round pink head, black source eyes, pink snout/cheeks, original open smiling mouth, original pink inner ears, tiny short quadruped body, original curly tail and THREE visible cocoa pig hooves; same pose/framing. Change ONLY vampire garment into creamy soft friendly ghost hood with generous original-face and pig-ear windows, short cream pig romper with gently ragged hem and pale aqua stitches. Not an amorphous sheet replacing pig silhouette. Keep broad cozy head hood plus very short romper, no human arms/legs/boots or elongated torso; no second face painted onto clothing. Remove all old vampire bat collars/cape/jewel. Cocoa ink outlines, soft hand-painted cozy game art matching supplied card. TRUE alpha transparent background, no exterior brown smoke/halo/drop-shadow, no lettering/border/watermark. This is card artwork showing dressed pig; runtime clothing is separate transparent art.",
+      "path": "assets/images/trading-cards/halloween-2026/049-halloween-2026-marshmallow-boo-costume-card-v1.png",
+      "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-31c86ffc-cc63-4d86-a10a-d2923e333104.png",
+      "sha256": "e8494b251c91358cc49553c51d662b21d75c58d9df4abbdd68bbbae1487d57ec",
+      "selected": false
+    }
+  ],
+  "correction": {
+    "item": "marshmallow_boo",
+    "rejectedVersion": 1,
+    "reason": "Extra ghost-eye patches formed a second face",
+    "selectedVersion": 2,
+    "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c584a59e-4fe1-4259-b3d3-29b5b4b278c4.png",
+    "path": "assets/images/trading-cards/halloween-2026/049-halloween-2026-marshmallow-boo-costume-card-v2.png",
+    "sha256": "8f6d5a2d91778996b5d72094e3461dba2dec92e29958098c0d6b382609d9af46"
+  }
+}

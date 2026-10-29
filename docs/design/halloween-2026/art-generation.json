@@ -1,0 +1,672 @@
+{
+  "generatedAt": "2026-10-14",
+  "tool": "image_gen.imagegen",
+  "purpose": "Card raster illustrations for the additive local Spooky Snouts collection; wearable runtime fit is separate.",
+  "selection": "Exact cardArtVersion in content.json; rejected originals are retained.",
+  "entries": [
+    {
+      "number": "001",
+      "cardId": "halloween_2026_card_moonbrew_witch_hat",
+      "itemId": "moonbrew_witch_hat",
+      "originalFilename": "001-moonbrew-witch-hat-card-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: a single transparent accessory illustration for Tickle the Pig collectible cards and later pig equipment. Create ONE Moonbrew Witch Hat: plum felt crooked cone, a broad softly curled FRONT brim, warm amber buckle and one tiny stitched moon patch. Match the reference's bold dark cocoa cartoon outline, softly painted saturated fills, gentle irregular hand-drawn silhouette and simple readable children's storybook shading. Isolated accessory only, straight-on front view, no head/pig/body, no card frame, no lettering, no scenery, no detached props, no realistic texture. Preserve sensible open crown contact along the bottom; no back-of-brim loop. Center the complete hat with modest padding. True transparent alpha, no baked shadow or background. The image is the item artwork; our existing card renderer supplies every frame, name and rule.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-e7dae8f3-8f8a-4ee8-8237-083c93d39a5d.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": []
+    },
+    {
+      "number": "002",
+      "cardId": "halloween_2026_card_hedge_broom",
+      "itemId": "hedge_broom",
+      "originalFilename": "002-hedge-broom-card-v1.png",
+      "prompt": "Use case: style-transfer. Use the supplied Tickle the Pig accessory as the illustration style reference and create ONE new Hedge Broom. Short hand broom of bundled hedge twigs, plum ribbon, amber berries, and one curled leaf; compact readable silhouette. Match bold dark cocoa cartoon outlines, softly painted saturated fills, subtle storybook brush texture and gentle readable shading. Isolated accessory-only on genuine transparent alpha, front view for head/face/neck/bow items, compact clear grip for held items. No pig, head, body, card frame, labels, scenery, floating decorative props outside the item, baked shadow or background. Center the complete object with modest padding, no edge clipping. Preserve open face/eye/snout spaces if relevant.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c383ad65-ef8c-48b0-b4a0-bc370420aebc.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c383ad65-ef8c-48b0-b4a0-bc370420aebc.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/002-hedge-broom-card-v1.png",
+          "prompt": "Use case: style-transfer. Use the supplied Tickle the Pig accessory as the illustration style reference and create ONE new Hedge Broom. Short hand broom of bundled hedge twigs, plum ribbon, amber berries, and one curled leaf; compact readable silhouette. Match bold dark cocoa cartoon outlines, softly painted saturated fills, subtle storybook brush texture and gentle readable shading. Isolated accessory-only on genuine transparent alpha, front view for head/face/neck/bow items, compact clear grip for held items. No pig, head, body, card frame, labels, scenery, floating decorative props outside the item, baked shadow or background. Center the complete object with modest padding, no edge clipping. Preserve open face/eye/snout spaces if relevant.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "003",
+      "cardId": "halloween_2026_card_high_collar_scarf",
+      "itemId": "high_collar_scarf",
+      "originalFilename": "003-high-collar-scarf-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new High Collar Scarf, using the supplied Tickle the Pig accessory as the illustration style reference. Wine-red paper-cutout V bib with two high collar wings, cream piping, face and snout fully clear; transparent trimmed accessory, no cape. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-516542fd-f8e6-4a5e-accf-a876dd8c7be4.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-516542fd-f8e6-4a5e-accf-a876dd8c7be4.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/003-high-collar-scarf-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new High Collar Scarf, using the supplied Tickle the Pig accessory as the illustration style reference. Wine-red paper-cutout V bib with two high collar wings, cream piping, face and snout fully clear; transparent trimmed accessory, no cape. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "004",
+      "cardId": "halloween_2026_card_pip_candle",
+      "itemId": "pip_candle",
+      "originalFilename": "004-pip-candle-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Pip Candle, using the supplied Tickle the Pig accessory as the illustration style reference. Stubby ivory candle in a berry-red drip holder, warm friendly flame, wax kept clear of the hoof grip. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-107b5bf8-a799-492a-9832-2fe43c306f18.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-107b5bf8-a799-492a-9832-2fe43c306f18.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/004-pip-candle-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Pip Candle, using the supplied Tickle the Pig accessory as the illustration style reference. Stubby ivory candle in a berry-red drip holder, warm friendly flame, wax kept clear of the hoof grip. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "005",
+      "cardId": "halloween_2026_card_patchwork_bolt_cap",
+      "itemId": "patchwork_bolt_cap",
+      "originalFilename": "005-patchwork-bolt-cap-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Bolt Headband, using the supplied Tickle the Pig accessory as the illustration style reference. Slim moss-and-lavender patchwork headband with two padded felt bolt tabs and chunky stitches; ears and face stay open. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-63df27c7-a0cb-4044-84ac-91ff1b6f39fc.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-63df27c7-a0cb-4044-84ac-91ff1b6f39fc.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/005-patchwork-bolt-cap-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Bolt Headband, using the supplied Tickle the Pig accessory as the illustration style reference. Slim moss-and-lavender patchwork headband with two padded felt bolt tabs and chunky stitches; ears and face stay open. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-e9d5d2c7-6f85-4a85-8e18-34bffdd9d169.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/005-patchwork-bolt-cap-card-v2.png",
+          "prompt": "Use case: stylized-concept. A clean isolated item illustration for a cozy hand-painted Tickle the Pig collectible card: Bolt Headband. Slim moss-and-lavender patchwork headband with two padded felt bolt tabs and chunky stitches; ears and face stay open.  Square 1024x1024 canvas. The COMPLETE item including ALL cocoa outline strokes occupies at most70% of canvas width and75% height, with at least15% completely empty transparent padding on EVERY side. Every contour is closed and fully inside the canvas. Bold cocoa cartoon outlines, warm storybook gouache brush texture, gently shaded saturated fabric/metal, friendly rounded shapes. No drop shadows, aura, glow, bloom, smoky halo, gradient behind the object, pig, body, scenery, text or card frame. Dark edges end crisply at true alpha=0. Front-facing head/mask accessory only. This is card illustration art; the game supplies the frame and type.",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "number": "006",
+      "cardId": "halloween_2026_card_stitched_bow",
+      "itemId": "stitched_bow",
+      "originalFilename": "006-stitched-bow-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Stitched Bow, using the supplied Tickle the Pig accessory as the illustration style reference. Chunky fabric bow made from moss, lavender, and denim scraps with visible cream stitches and one wooden button. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5d07b641-60fd-4fa0-b3b2-5b19c181fc5a.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5d07b641-60fd-4fa0-b3b2-5b19c181fc5a.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/006-stitched-bow-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Stitched Bow, using the supplied Tickle the Pig accessory as the illustration style reference. Chunky fabric bow made from moss, lavender, and denim scraps with visible cream stitches and one wooden button. Match bold dark cocoa outlines, softly painted saturated fills, subtle storybook brush texture, friendly rounded shape and restrained shading. Isolated accessory-only on genuine transparent alpha. Straight-on FRONT cutout for clothing/bow/head pieces; readable grasp point for held objects. No pig/head/body, card frame, text, backdrop, or baked glow/drop shadow. No neck loop, rear wrap or hidden back side. Keep the complete silhouette inside modest padding. Our existing game card supplies frame and rules.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "007",
+      "cardId": "halloween_2026_card_friendly_skull_facepaint",
+      "itemId": "friendly_skull_facepaint",
+      "originalFilename": "007-friendly-skull-facepaint-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Bone Mask in the supplied Tickle the Pig accessory illustration style. Cream storybook bone mask with generous open eye and snout apertures, cheek dots, and coat-visible gaps; cute and clean, no gore. All eye and snout apertures must be completely transparent, with no drawn eyes, face, teeth or pig anatomy. Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5825115f-b39b-4e41-b758-884c4e0869eb.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5825115f-b39b-4e41-b758-884c4e0869eb.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/007-friendly-skull-facepaint-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Bone Mask in the supplied Tickle the Pig accessory illustration style. Cream storybook bone mask with generous open eye and snout apertures, cheek dots, and coat-visible gaps; cute and clean, no gore. All eye and snout apertures must be completely transparent, with no drawn eyes, face, teeth or pig anatomy. Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-31719e5f-7cfc-4722-a914-d73fa4e5bf7c.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/007-friendly-skull-facepaint-card-v2.png",
+          "prompt": "Use case: stylized-concept. A clean isolated item illustration for a cozy hand-painted Tickle the Pig collectible card: Bone Mask. Cream storybook bone mask with generous open eye and snout apertures, cheek dots, and coat-visible gaps; cute and clean, no gore. A single wearable EMPTY cream bone eye mask: two generous transparent eye windows and ONE broad transparent oval snout opening. No nostrils drawn into the mask, no actual eyes/face/pig. Closed complete outer contour. Square 1024x1024 canvas. The COMPLETE item including ALL cocoa outline strokes occupies at most70% of canvas width and75% height, with at least15% completely empty transparent padding on EVERY side. Every contour is closed and fully inside the canvas. Bold cocoa cartoon outlines, warm storybook gouache brush texture, gently shaded saturated fabric/metal, friendly rounded shapes. No drop shadows, aura, glow, bloom, smoky halo, gradient behind the object, pig, body, scenery, text or card frame. Dark edges end crisply at true alpha=0. Front-facing head/mask accessory only. This is card illustration art; the game supplies the frame and type.",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "number": "008",
+      "cardId": "halloween_2026_card_crossbones_bow",
+      "itemId": "crossbones_bow",
+      "originalFilename": "008-crossbones-bow-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Crossbones Bow in the supplied Tickle the Pig accessory illustration style. Blackberry bow with two rounded cream toy bones crossed at its center, orange knot, friendly storybook proportions.  Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-6b4599f9-1989-434d-9a74-3d624479f5a6.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-6b4599f9-1989-434d-9a74-3d624479f5a6.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/008-crossbones-bow-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Crossbones Bow in the supplied Tickle the Pig accessory illustration style. Blackberry bow with two rounded cream toy bones crossed at its center, orange knot, friendly storybook proportions.  Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "009",
+      "cardId": "halloween_2026_card_linen_knot_headwrap",
+      "itemId": "linen_knot_headwrap",
+      "originalFilename": "009-linen-knot-headwrap-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Linen Knot Headwrap in the supplied Tickle the Pig accessory illustration style. Warm oatmeal linen bands crossing as a soft crown cap with one jaunty knot; loose ends short, ears exposed.  Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-7e00cb2e-7754-4aa7-bb13-608bbaa3db27.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-7e00cb2e-7754-4aa7-bb13-608bbaa3db27.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/009-linen-knot-headwrap-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Linen Knot Headwrap in the supplied Tickle the Pig accessory illustration style. Warm oatmeal linen bands crossing as a soft crown cap with one jaunty knot; loose ends short, ears exposed.  Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c4e4a931-74f5-4942-8b1e-067b87dc4392.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/009-linen-knot-headwrap-card-v2.png",
+          "prompt": "Use case: stylized-concept. A clean isolated item illustration for a cozy hand-painted Tickle the Pig collectible card: Linen Knot Headwrap. Warm oatmeal linen bands crossing as a soft crown cap with one jaunty knot; loose ends short, ears exposed.  Square 1024x1024 canvas. The COMPLETE item including ALL cocoa outline strokes occupies at most70% of canvas width and75% height, with at least15% completely empty transparent padding on EVERY side. Every contour is closed and fully inside the canvas. Bold cocoa cartoon outlines, warm storybook gouache brush texture, gently shaded saturated fabric/metal, friendly rounded shapes. No drop shadows, aura, glow, bloom, smoky halo, gradient behind the object, pig, body, scenery, text or card frame. Dark edges end crisply at true alpha=0. Front-facing head/mask accessory only. This is card illustration art; the game supplies the frame and type.",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "number": "010",
+      "cardId": "halloween_2026_card_scarab_lantern",
+      "itemId": "scarab_lantern",
+      "originalFilename": "010-scarab-lantern-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Scarab Lantern in the supplied Tickle the Pig accessory illustration style. Small teal scarab lantern with antique-gold frame and honey glow; rounded toy-like form, no realistic insect detail.  Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-b64b875b-e9ae-4b93-847f-ffc2ca5e0be4.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-b64b875b-e9ae-4b93-847f-ffc2ca5e0be4.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/010-scarab-lantern-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Scarab Lantern in the supplied Tickle the Pig accessory illustration style. Small teal scarab lantern with antique-gold frame and honey glow; rounded toy-like form, no realistic insect detail.  Bold dark cocoa outline, softly painted saturated fill, gentle storybook brush texture, rounded friendly shapes, simple readable shading. Whole isolated accessory-only on genuine transparent alpha; front-facing face/head/bow piece, or compact held object with obvious grip. No pig/head/body, card border, text, background, baked shadow/glow or extra detached props. No rear band/neck loop. Center complete silhouette with modest padding. Existing card renderer adds all text and framing.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "011",
+      "cardId": "halloween_2026_card_lantern_sprout_cap",
+      "itemId": "lantern_sprout_cap",
+      "originalFilename": "011-lantern-sprout-cap-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Lantern Sprout Cap matching the supplied Tickle the Pig illustrated accessory style. Orange ribbed pumpkin-lid cap with curled green stem and one broad leaf; open face, no jack-o-lantern head enclosure.  Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-be0596ce-9573-433e-94f7-1273cd119844.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-be0596ce-9573-433e-94f7-1273cd119844.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/011-lantern-sprout-cap-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Lantern Sprout Cap matching the supplied Tickle the Pig illustrated accessory style. Orange ribbed pumpkin-lid cap with curled green stem and one broad leaf; open face, no jack-o-lantern head enclosure.  Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "012",
+      "cardId": "halloween_2026_card_pumpkin_treat_pail",
+      "itemId": "pumpkin_treat_pail",
+      "originalFilename": "012-pumpkin-treat-pail-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Pumpkin Treat Pail matching the supplied Tickle the Pig illustrated accessory style. Small smiling pumpkin candy pail with cream handle and two wrapped sweets peeking out; bold compact silhouette.  Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-eb6a0a60-6437-4656-b7d3-cc5147ba213d.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-eb6a0a60-6437-4656-b7d3-cc5147ba213d.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/012-pumpkin-treat-pail-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Pumpkin Treat Pail matching the supplied Tickle the Pig illustrated accessory style. Small smiling pumpkin candy pail with cream handle and two wrapped sweets peeking out; bold compact silhouette.  Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "013",
+      "cardId": "halloween_2026_card_silly_sheet_ghost_hood",
+      "itemId": "silly_sheet_ghost_hood",
+      "originalFilename": "013-silly-sheet-ghost-hood-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Silly Sheet Ghost Hood matching the supplied Tickle the Pig illustrated accessory style. Optional identity-relaxed comedy variant: short warm-white sheet hood, stitched eye windows and wide snout opening, both ears poking out, scalloped hem above shoulders. The hood is EMPTY cloth, with genuine transparent face/snout and ear cutouts. No pig ears, pig eyes, face or character under it. Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-8d63e15d-bd1a-4a17-a573-50887a660879.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-8d63e15d-bd1a-4a17-a573-50887a660879.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/013-silly-sheet-ghost-hood-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Silly Sheet Ghost Hood matching the supplied Tickle the Pig illustrated accessory style. Optional identity-relaxed comedy variant: short warm-white sheet hood, stitched eye windows and wide snout opening, both ears poking out, scalloped hem above shoulders. The hood is EMPTY cloth, with genuine transparent face/snout and ear cutouts. No pig ears, pig eyes, face or character under it. Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "014",
+      "cardId": "halloween_2026_card_spirit_glow",
+      "itemId": "spirit_glow",
+      "originalFilename": "014-spirit-glow-card-v1.png",
+      "prompt": "Use case: style-transfer. Create ONE new Spirit Glow matching the supplied Tickle the Pig illustrated accessory style. Transparent pale-lavender spirit wisps and mint firefly curls around the outer card, leaving pig face and body readable; no character figure. The center is COMPLETELY empty transparent. Delicate luminous curls belong to the aura itself; no rectangular backdrop or character. Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-00e63392-d7d8-4101-8e0a-30e848f271a7.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-00e63392-d7d8-4101-8e0a-30e848f271a7.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/014-spirit-glow-card-v1.png",
+          "prompt": "Use case: style-transfer. Create ONE new Spirit Glow matching the supplied Tickle the Pig illustrated accessory style. Transparent pale-lavender spirit wisps and mint firefly curls around the outer card, leaving pig face and body readable; no character figure. The center is COMPLETELY empty transparent. Delicate luminous curls belong to the aura itself; no rectangular backdrop or character. Bold dark cocoa cartoon outline, softly painted saturated fill, subtle storybook brush texture, friendly rounded simple silhouette. Genuine transparent alpha, whole object centered with sensible padding; head items front-on, held items with compact readable grip. No pig/head/body, card frame, letters, scenery or baked drop shadow. No clipping. Existing card system provides all framing and typography.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-b36f69bb-1392-49dd-b0c6-2508e2c455b5.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/014-spirit-glow-card-v2.png",
+          "prompt": "Create ONE Spirit Glow aura illustration for Tickle the Pig collectible card art: a wide, low oval loop of smooth soft lavender light, with a few small warm-mint and pale-gold rounded star motes along its outer arc. The oval's interior is entirely transparent for a pig to stand in later. Cozy hand-painted children's storybook gouache, clean rounded shapes, cocoa-outlined stars, soft lilac aura illumination only. Complete single aura centered with 15% transparent padding on every side. True alpha background and center; no pig, body, prop, outfit, text or card frame. High quality clean antialiased alpha edges, smooth subtle fades with consistent muted lavender/mint palette. Absolutely no neon blue/cyan/magenta edge fringe, pixel speckles, chromatic aberration or color-key artifacts. A simple legible small aura rather than a complex sparkle explosion.",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "number": "015",
+      "cardId": "halloween_2026_card_moonpuff_wolf_ears",
+      "itemId": "moonpuff_wolf_ears",
+      "originalFilename": "015-moonpuff-wolf-ears-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE illustrated Moonpuff Wolf Ears for the cozy painted Tickle the Pig collectible card family. Tufted blue-gray costume ears on a slim moon-yellow headband; clearly pretend, soft rounded tips, original design. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-1b31e259-d19b-48db-a726-16c93eb60b61.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-1b31e259-d19b-48db-a726-16c93eb60b61.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/015-moonpuff-wolf-ears-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE illustrated Moonpuff Wolf Ears for the cozy painted Tickle the Pig collectible card family. Tufted blue-gray costume ears on a slim moon-yellow headband; clearly pretend, soft rounded tips, original design. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "016",
+      "cardId": "halloween_2026_card_moon_charm",
+      "itemId": "moon_charm",
+      "originalFilename": "016-moon-charm-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE illustrated Moon Charm for the cozy painted Tickle the Pig collectible card family. Small brushed-silver crescent charm on a short visible front cord arc, blue bead accent, chest-centered and clear of the snout. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-7fdf95c9-e72d-4623-a65c-1a18c9b96d0f.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-7fdf95c9-e72d-4623-a65c-1a18c9b96d0f.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/016-moon-charm-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE illustrated Moon Charm for the cozy painted Tickle the Pig collectible card family. Small brushed-silver crescent charm on a short visible front cord arc, blue bead accent, chest-centered and clear of the snout. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "017",
+      "cardId": "halloween_2026_card_lantern_porch_bg",
+      "itemId": "lantern_porch_bg",
+      "originalFilename": "017-lantern-porch-bg-card-v1.png",
+      "prompt": "Use case: style-transfer. Make a new character-free background illustration inspired by the supplied Tickle the Pig card painting's medium and palette. Asset: Lantern Porch. Opaque cozy farmhouse porch at blue hour, carved lanterns at edges, leaf-strewn central ground clear for a 300px pig, no characters. Match warm storybook gouache/watercolor, bold dark cocoa outlines on major props, soft saturated lilac/amber/sage, gentle painted depth, friendly rounded silhouettes. Square scene fully filled, no transparency. Put rich detail toward top and edges; center and lower-center remain calm open ground for a pig. Ground baseline at about85%height. No creatures, people, pigs, writing, card borders or UI. Cozy Halloween, no gore, no photorealism. Our existing card system adds the frame and text.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-a6781da9-cba2-48dc-a6a2-90cad73a63d6.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-a6781da9-cba2-48dc-a6a2-90cad73a63d6.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/017-lantern-porch-bg-card-v1.png",
+          "prompt": "Use case: style-transfer. Make a new character-free background illustration inspired by the supplied Tickle the Pig card painting's medium and palette. Asset: Lantern Porch. Opaque cozy farmhouse porch at blue hour, carved lanterns at edges, leaf-strewn central ground clear for a 300px pig, no characters. Match warm storybook gouache/watercolor, bold dark cocoa outlines on major props, soft saturated lilac/amber/sage, gentle painted depth, friendly rounded silhouettes. Square scene fully filled, no transparency. Put rich detail toward top and edges; center and lower-center remain calm open ground for a pig. Ground baseline at about85%height. No creatures, people, pigs, writing, card borders or UI. Cozy Halloween, no gore, no photorealism. Our existing card system adds the frame and text.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "018",
+      "cardId": "halloween_2026_card_haunted_orchard_bg",
+      "itemId": "haunted_orchard_bg",
+      "originalFilename": "018-haunted-orchard-bg-card-v1.png",
+      "prompt": "Create ONE Haunted Orchard background scene illustration for Tickle the Pig. Opaque crooked apple orchard with friendly sheetlike mist, warm lantern depth, open central grass stage, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5429f844-63b7-4561-a71e-6313984f37ed.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5429f844-63b7-4561-a71e-6313984f37ed.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/018-haunted-orchard-bg-card-v1.png",
+          "prompt": "Create ONE Haunted Orchard background scene illustration for Tickle the Pig. Opaque crooked apple orchard with friendly sheetlike mist, warm lantern depth, open central grass stage, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "019",
+      "cardId": "halloween_2026_card_moonlit_graveyard_bg",
+      "itemId": "moonlit_graveyard_bg",
+      "originalFilename": "019-moonlit-graveyard-bg-card-v1.png",
+      "prompt": "Create ONE Moonlit Graveyard background scene illustration for Tickle the Pig. Opaque storybook graveyard, rounded old stones and silver moon, cozy violet palette, clear central path and readable silhouette area, no characters or gore. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-eddc0f1e-2310-4380-a8cf-ae9776f24c3c.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-eddc0f1e-2310-4380-a8cf-ae9776f24c3c.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/019-moonlit-graveyard-bg-card-v1.png",
+          "prompt": "Create ONE Moonlit Graveyard background scene illustration for Tickle the Pig. Opaque storybook graveyard, rounded old stones and silver moon, cozy violet palette, clear central path and readable silhouette area, no characters or gore. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "020",
+      "cardId": "halloween_2026_card_witches_wood_bg",
+      "itemId": "witches_wood_bg",
+      "originalFilename": "020-witches-wood-bg-card-v1.png",
+      "prompt": "Create ONE Witch's Wood background scene illustration for Tickle the Pig. Opaque enchanted woodland with twisted branches, hanging potion lamps, mushrooms at margins, uncluttered central clearing, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c0db3acc-d2aa-404e-b4c6-9053054818f9.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-c0db3acc-d2aa-404e-b4c6-9053054818f9.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/020-witches-wood-bg-card-v1.png",
+          "prompt": "Create ONE Witch's Wood background scene illustration for Tickle the Pig. Opaque enchanted woodland with twisted branches, hanging potion lamps, mushrooms at margins, uncluttered central clearing, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "021",
+      "cardId": "halloween_2026_card_cobweb_barn_bg",
+      "itemId": "cobweb_barn_bg",
+      "originalFilename": "021-cobweb-barn-bg-card-v1.png",
+      "prompt": "Create ONE Cobweb Barn background scene illustration for Tickle the Pig. Opaque familiar timber barn interior decorated with soft cobweb garlands and amber candles, open central floor for 300px pig, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-30ae00d0-c2e6-4b97-ba1f-0762ba7497f8.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-30ae00d0-c2e6-4b97-ba1f-0762ba7497f8.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/021-cobweb-barn-bg-card-v1.png",
+          "prompt": "Create ONE Cobweb Barn background scene illustration for Tickle the Pig. Opaque familiar timber barn interior decorated with soft cobweb garlands and amber candles, open central floor for 300px pig, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "022",
+      "cardId": "halloween_2026_card_candy_lantern_trail_bg",
+      "itemId": "candy_lantern_trail_bg",
+      "originalFilename": "022-candy-lantern-trail-bg-card-v1.png",
+      "prompt": "Create ONE Candy Lantern Trail background scene illustration for Tickle the Pig. Opaque dusk trail bordered by candy-shaped lanterns and autumn hedges, bright open central ground/read area, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-1097ab22-9ad7-41f0-bb7d-e1b1a62ae808.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-1097ab22-9ad7-41f0-bb7d-e1b1a62ae808.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/022-candy-lantern-trail-bg-card-v1.png",
+          "prompt": "Create ONE Candy Lantern Trail background scene illustration for Tickle the Pig. Opaque dusk trail bordered by candy-shaped lanterns and autumn hedges, bright open central ground/read area, no characters. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "023",
+      "cardId": "halloween_2026_card_pirate_tricorn_hat",
+      "itemId": "halloween_2026_pirate_tricorn_hat",
+      "originalFilename": "023-halloween-2026-pirate-tricorn-hat-card-v1.png",
+      "prompt": "Use case: style-transfer. Use the supplied Tickle the Pig accessory as the illustration style reference and create ONE new Moonwake Tricorn. Blackberry felt toy tricorn with warm-gold piping, a tiny moon-and-wave badge, and soft curled corners; jaunty storybook shape, no franchise marks. Match bold dark cocoa cartoon outlines, softly painted saturated fills, subtle storybook brush texture and gentle readable shading. Isolated accessory-only on genuine transparent alpha, front view for head/face/neck/bow items, compact clear grip for held items. No pig, head, body, card frame, labels, scenery, floating decorative props outside the item, baked shadow or background. Center the complete object with modest padding, no edge clipping. Preserve open face/eye/snout spaces if relevant.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-729459d0-ad92-47c0-b6be-1264ff6a03b1.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-729459d0-ad92-47c0-b6be-1264ff6a03b1.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/023-halloween-2026-pirate-tricorn-hat-card-v1.png",
+          "prompt": "Use case: style-transfer. Use the supplied Tickle the Pig accessory as the illustration style reference and create ONE new Moonwake Tricorn. Blackberry felt toy tricorn with warm-gold piping, a tiny moon-and-wave badge, and soft curled corners; jaunty storybook shape, no franchise marks. Match bold dark cocoa cartoon outlines, softly painted saturated fills, subtle storybook brush texture and gentle readable shading. Isolated accessory-only on genuine transparent alpha, front view for head/face/neck/bow items, compact clear grip for held items. No pig, head, body, card frame, labels, scenery, floating decorative props outside the item, baked shadow or background. Center the complete object with modest padding, no edge clipping. Preserve open face/eye/snout spaces if relevant.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-72dc46b1-2ee1-4a78-ba74-6ac538eab196.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/023-halloween-2026-pirate-tricorn-hat-card-v2.png",
+          "prompt": "Use case: stylized-concept. A clean isolated item illustration for a cozy hand-painted Tickle the Pig collectible card: Moonwake Tricorn. Blackberry felt toy tricorn with warm-gold piping, a tiny moon-and-wave badge, and soft curled corners; jaunty storybook shape, no franchise marks.  Square 1024x1024 canvas. The COMPLETE item including ALL cocoa outline strokes occupies at most70% of canvas width and75% height, with at least15% completely empty transparent padding on EVERY side. Every contour is closed and fully inside the canvas. Bold cocoa cartoon outlines, warm storybook gouache brush texture, gently shaded saturated fabric/metal, friendly rounded shapes. No drop shadows, aura, glow, bloom, smoky halo, gradient behind the object, pig, body, scenery, text or card frame. Dark edges end crisply at true alpha=0. Front-facing head/mask accessory only. This is card illustration art; the game supplies the frame and type.",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "number": "024",
+      "cardId": "halloween_2026_card_toy_cutlass",
+      "itemId": "halloween_2026_toy_cutlass",
+      "originalFilename": "024-halloween-2026-toy-cutlass-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE illustrated Toy Cutlass for the cozy painted Tickle the Pig collectible card family. Small wooden costume cutlass with a rounded silver-painted blade, plum grip, gold guard, and visibly toy-like blunt tip. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4746c939-bf8f-404a-baf1-b22edd9a0f2d.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4746c939-bf8f-404a-baf1-b22edd9a0f2d.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/024-halloween-2026-toy-cutlass-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE illustrated Toy Cutlass for the cozy painted Tickle the Pig collectible card family. Small wooden costume cutlass with a rounded silver-painted blade, plum grip, gold guard, and visibly toy-like blunt tip. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "025",
+      "cardId": "halloween_2026_card_patched_straw_hat",
+      "itemId": "halloween_2026_patched_straw_hat",
+      "originalFilename": "025-halloween-2026-patched-straw-hat-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE illustrated Patchwork Straw Hat for the cozy painted Tickle the Pig collectible card family. Soft golden straw hat with floppy rounded brim, moss and pumpkin cloth patches, chunky cream stitches, and one tucked autumn leaf. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5e66517c-9691-49fa-bfdb-2e92f0192230.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-5e66517c-9691-49fa-bfdb-2e92f0192230.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/025-halloween-2026-patched-straw-hat-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE illustrated Patchwork Straw Hat for the cozy painted Tickle the Pig collectible card family. Soft golden straw hat with floppy rounded brim, moss and pumpkin cloth patches, chunky cream stitches, and one tucked autumn leaf. Bold dark cocoa outlines, saturated storybook gouache colors, subtle brush texture and restrained hand-painted shading, rounded friendly silhouette. Accessory-only, genuine transparent alpha, square canvas, COMPLETE object including outline with at least10% empty transparent padding on all sides. Front view for hats/headbands/neck ornaments, clear grip for held props. No pig/head/body, scenery, frame, letters, drop shadow, smoky halo, bloom or unrelated floating objects. Never crop any contour. Card framing/typography is added by the existing game renderer.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "026",
+      "cardId": "halloween_2026_card_straw_bow",
+      "itemId": "halloween_2026_straw_bow",
+      "originalFilename": "026-halloween-2026-straw-bow-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE Straw Bow illustration for the cozy painted Tickle the Pig collectible card family. Compact bow of bundled golden straw with an orange gingham knot and two short soft-edged tails; clean readable silhouette. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-a16d0b99-fbb6-45a5-8e7d-67b6def753fb.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-a16d0b99-fbb6-45a5-8e7d-67b6def753fb.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/026-halloween-2026-straw-bow-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE Straw Bow illustration for the cozy painted Tickle the Pig collectible card family. Compact bow of bundled golden straw with an orange gingham knot and two short soft-edged tails; clean readable silhouette. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "027",
+      "cardId": "halloween_2026_card_spark_goggles",
+      "itemId": "halloween_2026_spark_goggles",
+      "originalFilename": "027-halloween-2026-spark-goggles-card-v1.png",
+      "prompt": "Use case: style-transfer. Use the supplied Tickle the Pig accessory as the illustration style reference and create ONE new Spark Goggles. Round lavender laboratory goggles with mint glass, brass bridge, tiny friendly spark reflections, and a soft plum strap; whimsical, not industrial. Match bold dark cocoa cartoon outlines, softly painted saturated fills, subtle storybook brush texture and gentle readable shading. Isolated accessory-only on genuine transparent alpha, front view for head/face/neck/bow items, compact clear grip for held items. No pig, head, body, card frame, labels, scenery, floating decorative props outside the item, baked shadow or background. Center the complete object with modest padding, no edge clipping. Preserve open face/eye/snout spaces if relevant.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-def629be-b640-4c9f-9c6f-eb476ec8c2c3.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-def629be-b640-4c9f-9c6f-eb476ec8c2c3.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/027-halloween-2026-spark-goggles-card-v1.png",
+          "prompt": "Use case: style-transfer. Use the supplied Tickle the Pig accessory as the illustration style reference and create ONE new Spark Goggles. Round lavender laboratory goggles with mint glass, brass bridge, tiny friendly spark reflections, and a soft plum strap; whimsical, not industrial. Match bold dark cocoa cartoon outlines, softly painted saturated fills, subtle storybook brush texture and gentle readable shading. Isolated accessory-only on genuine transparent alpha, front view for head/face/neck/bow items, compact clear grip for held items. No pig, head, body, card frame, labels, scenery, floating decorative props outside the item, baked shadow or background. Center the complete object with modest padding, no edge clipping. Preserve open face/eye/snout spaces if relevant.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "028",
+      "cardId": "halloween_2026_card_bubbling_flask",
+      "itemId": "halloween_2026_bubbling_flask",
+      "originalFilename": "028-halloween-2026-bubbling-flask-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE Bubbling Flask illustration for the cozy painted Tickle the Pig collectible card family. Toy-like round glass flask with glowing mint-purple potion, three oversized bubbles, cork stopper, and bold storybook outline; no realistic chemicals. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4560986a-29a4-489c-a47d-2153af623c2a.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4560986a-29a4-489c-a47d-2153af623c2a.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/028-halloween-2026-bubbling-flask-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE Bubbling Flask illustration for the cozy painted Tickle the Pig collectible card family. Toy-like round glass flask with glowing mint-purple potion, three oversized bubbles, cork stopper, and bold storybook outline; no realistic chemicals. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "029",
+      "cardId": "halloween_2026_card_bat_ear_cap",
+      "itemId": "halloween_2026_bat_ear_cap",
+      "originalFilename": "029-halloween-2026-bat-ear-cap-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE Twilight Bat-Ear Cap illustration for the cozy painted Tickle the Pig collectible card family. Deep violet fitted cap with two rounded bat-ear points, berry-pink inner panels, and a small crescent stitch; clearly a costume cap. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-f27d0c82-4a28-4c06-88e9-0c89217c5f32.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-f27d0c82-4a28-4c06-88e9-0c89217c5f32.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/029-halloween-2026-bat-ear-cap-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE Twilight Bat-Ear Cap illustration for the cozy painted Tickle the Pig collectible card family. Deep violet fitted cap with two rounded bat-ear points, berry-pink inner panels, and a small crescent stitch; clearly a costume cap. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-9ca3fb9b-3553-4418-a490-1f1e0f069ca5.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/029-halloween-2026-bat-ear-cap-card-v2.png",
+          "prompt": "Create exactly ONE isolated deep violet fitted costume cap with two tall rounded bat-ear points and berry-pink inner ear panels, plus one tiny warm-gold crescent stitch on the cap front. SINGLE CAP ONLY. Absolutely no bow, ribbon, neckpiece, flask, potion, accessory set, detached objects, pig/head/body, text, card frame or scenery. Friendly children's storybook gouache with chunky bold dark-cocoa outlines, simple painted saturated fills and soft shading. Straight-on frontal view, the cap crown makes a low dome and the ears rise from it. Open lower contact curve to sit on a pig's head later, face uncovered. Entire cap centered within 72% of canvas width and height, generous true transparent alpha padding on every side, no halo, shadow, floor or background.",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "number": "030",
+      "cardId": "halloween_2026_card_bat_wing_bow",
+      "itemId": "halloween_2026_bat_wing_bow",
+      "originalFilename": "030-halloween-2026-bat-wing-bow-card-v1.png",
+      "prompt": "Use case: stylized-concept. ONE Bat-Wing Bow illustration for the cozy painted Tickle the Pig collectible card family. Blackberry bow shaped like two soft scalloped bat wings with a moon-yellow center knot and lavender stitch accents. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-104560c3-9415-461a-b6f8-865ca1a9f8b5.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-104560c3-9415-461a-b6f8-865ca1a9f8b5.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/030-halloween-2026-bat-wing-bow-card-v1.png",
+          "prompt": "Use case: stylized-concept. ONE Bat-Wing Bow illustration for the cozy painted Tickle the Pig collectible card family. Blackberry bow shaped like two soft scalloped bat wings with a moon-yellow center knot and lavender stitch accents. Bold cocoa cartoon outlines, soft saturated storybook gouache colors and gentle painterly shading, friendly rounded silhouette. Real transparent alpha, square canvas. Complete object and outline occupy at most75%width/height with ample empty padding on ALL sides. Front view head/bow pieces, readable grasp point for held flask. Potion glow stays inside glass; a few bubbles are part of the flask, but no external haze. No pig/body/face, card frame, text, scene, shadows, smoky halos, clipped contours or realistic horror. Existing renderer supplies frame and typography.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "031",
+      "cardId": "halloween_2026_card_star_headwrap",
+      "itemId": "halloween_2026_star_headwrap",
+      "originalFilename": "031-halloween-2026-star-headwrap-card-v1.png",
+      "prompt": "Create ONE Starlight Headwrap accessory illustration for Tickle the Pig collectible cards. Plum and midnight-blue crown headwrap with warm-gold stars, a centered moonstone charm, and one short side knot; no neck or body wrap. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. ISOLATED SINGLE ACCESSORY ONLY; no pig/head/body, no clothing outfit or detached extra props, no card frame/lettering/scenery. Complete item centered at most 75% canvas width and height, minimum 12% transparent padding around all sides. True alpha transparency, no external halo, floor, baked drop shadow or background. Straight-on readable view.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-f5b2db4f-58eb-4c4b-ba8f-e5f4c14092e3.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-f5b2db4f-58eb-4c4b-ba8f-e5f4c14092e3.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/031-halloween-2026-star-headwrap-card-v1.png",
+          "prompt": "Create ONE Starlight Headwrap accessory illustration for Tickle the Pig collectible cards. Plum and midnight-blue crown headwrap with warm-gold stars, a centered moonstone charm, and one short side knot; no neck or body wrap. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. ISOLATED SINGLE ACCESSORY ONLY; no pig/head/body, no clothing outfit or detached extra props, no card frame/lettering/scenery. Complete item centered at most 75% canvas width and height, minimum 12% transparent padding around all sides. True alpha transparency, no external halo, floor, baked drop shadow or background. Straight-on readable view.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "032",
+      "cardId": "halloween_2026_card_crystal_ball",
+      "itemId": "halloween_2026_crystal_ball",
+      "originalFilename": "032-halloween-2026-crystal-ball-card-v1.png",
+      "prompt": "Create ONE Pocket Crystal Ball accessory illustration for Tickle the Pig collectible cards. Small lavender crystal orb on a crescent-shaped gold hand stand, with a friendly swirling star and warm inner glow; compact toy-like silhouette. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. ISOLATED SINGLE ACCESSORY ONLY; no pig/head/body, no clothing outfit or detached extra props, no card frame/lettering/scenery. Complete item centered at most 75% canvas width and height, minimum 12% transparent padding around all sides. True alpha transparency, no external halo, floor, baked drop shadow or background. Straight-on readable view.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-457aaf12-0436-4075-8b2c-dbfbcdc900ac.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-457aaf12-0436-4075-8b2c-dbfbcdc900ac.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/032-halloween-2026-crystal-ball-card-v1.png",
+          "prompt": "Create ONE Pocket Crystal Ball accessory illustration for Tickle the Pig collectible cards. Small lavender crystal orb on a crescent-shaped gold hand stand, with a friendly swirling star and warm inner glow; compact toy-like silhouette. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. ISOLATED SINGLE ACCESSORY ONLY; no pig/head/body, no clothing outfit or detached extra props, no card frame/lettering/scenery. Complete item centered at most 75% canvas width and height, minimum 12% transparent padding around all sides. True alpha transparency, no external halo, floor, baked drop shadow or background. Straight-on readable view.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "033",
+      "cardId": "halloween_2026_card_haunted_ship_deck_bg",
+      "itemId": "halloween_2026_haunted_ship_deck_bg",
+      "originalFilename": "033-halloween-2026-haunted-ship-deck-bg-card-v1.png",
+      "prompt": "Create ONE Haunted Ship Deck background scene illustration for Tickle the Pig. Opaque storybook ship deck at moonlit blue hour, gently crooked mast and glowing lanterns at the margins, soft ghostly sea mist, broad uncluttered central planks for a 300px pig, no characters, peril, or realistic horror. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-cf4a5914-fd30-4a13-957d-b4fedee70022.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-cf4a5914-fd30-4a13-957d-b4fedee70022.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/033-halloween-2026-haunted-ship-deck-bg-card-v1.png",
+          "prompt": "Create ONE Haunted Ship Deck background scene illustration for Tickle the Pig. Opaque storybook ship deck at moonlit blue hour, gently crooked mast and glowing lanterns at the margins, soft ghostly sea mist, broad uncluttered central planks for a 300px pig, no characters, peril, or realistic horror. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "034",
+      "cardId": "halloween_2026_card_harvest_moon_cornfield_bg",
+      "itemId": "halloween_2026_harvest_moon_cornfield_bg",
+      "originalFilename": "034-halloween-2026-harvest-moon-cornfield-bg-card-v1.png",
+      "prompt": "Create ONE Harvest Moon Cornfield background scene illustration for Tickle the Pig. Opaque cozy cornfield beneath an enormous amber harvest moon, rounded stalk silhouettes framing the margins, fireflies and a clear central dirt path for a 300px pig, no characters or threatening shapes. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+      "originalGeneration": "Generated images are saved to /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39 as /Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-892f75d5-2a90-4177-9c80-51376ed0328b.png by default.\nIf you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.\nThe generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-892f75d5-2a90-4177-9c80-51376ed0328b.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/034-halloween-2026-harvest-moon-cornfield-bg-card-v1.png",
+          "prompt": "Create ONE Harvest Moon Cornfield background scene illustration for Tickle the Pig. Opaque cozy cornfield beneath an enormous amber harvest moon, rounded stalk silhouettes framing the margins, fireflies and a clear central dirt path for a 300px pig, no characters or threatening shapes. Match the established cozy children's storybook card-art style: richly painted gouache, saturated plum/berry/amethyst with warm amber and moss accents, chunky rounded forms, bold dark cocoa outlines, simple soft shading. Opaque complete square scene, no card frame or lettering, no people/pigs/animals. Quiet open center for future pig readability, scenery concentrated at sides, clear lower ground at about 85% height. Friendly Halloween atmosphere, no realism.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "035",
+      "cardId": "halloween_2026_card_hollow_jack_costume",
+      "itemId": "halloween_2026_hollow_jack_costume",
+      "originalFilename": "035-halloween-2026-hollow-jack-costume-card-v1.png",
+      "prompt": "Create ONE Hollow Jack illustration for Tickle the Pig seasonal collectible card art. Full-body Hollow Jack pumpkin-and-vine monster suit in cozy painted storybook style: oversized ribbed jack-o'-lantern torso, crooked stem crest, curling leaf arms, rootlike boots, bold cocoa ink outline, saturated pumpkin orange, moss green and moonlit plum, theatrical and over-the-top but friendly, no gore or realistic decay. Show the dedicated body transformation silhouette, with an optional true face window or a thin seam of the pig's own coat under the face for recognition. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is the COMPLETE empty wearable full-body onesie suit only, including pumpkin hood and torso, vine cuffs and root-shaped soft feet; no pig inside. Hollow face/snout window and open sleeve cavities are transparent. Oversized theatrical silhouette, delightfully over-the-top, from head to feet as one connected suit. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+      "originalGeneration": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-776dac83-f411-4fb2-bf84-6be56cbb07c6.png",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-776dac83-f411-4fb2-bf84-6be56cbb07c6.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/035-halloween-2026-hollow-jack-costume-card-v1.png",
+          "prompt": "Create ONE Hollow Jack illustration for Tickle the Pig seasonal collectible card art. Full-body Hollow Jack pumpkin-and-vine monster suit in cozy painted storybook style: oversized ribbed jack-o'-lantern torso, crooked stem crest, curling leaf arms, rootlike boots, bold cocoa ink outline, saturated pumpkin orange, moss green and moonlit plum, theatrical and over-the-top but friendly, no gore or realistic decay. Show the dedicated body transformation silhouette, with an optional true face window or a thin seam of the pig's own coat under the face for recognition. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is the COMPLETE empty wearable full-body onesie suit only, including pumpkin hood and torso, vine cuffs and root-shaped soft feet; no pig inside. Hollow face/snout window and open sleeve cavities are transparent. Oversized theatrical silhouette, delightfully over-the-top, from head to feet as one connected suit. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+          "version": 1
+        },
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-4db34a16-8a5b-44be-8982-82d44ae6b77f.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/035-halloween-2026-hollow-jack-costume-card-v2.png",
+          "prompt": "Edit the referenced actual Rosie the Pig idle sprite into a precisely fitted Hollow Jack Halloween costume concept. PRESERVE Rosie's exact pose, huge round head to tiny short body ratio, eye locations and expression, snout and mouth, four short pig legs, hooves, curly tail, and original hand-painted illustration style. Add only clothing: padded pumpkin hood fitted around her big head with a generous oval real face opening showing both eyes, both cheeks, snout and mouth; soft ribbed pumpkin romper fitted tightly to her short torso; small green leaf collar between head and body; leafy ear cuffs, tiny curly vine accents. Keep all original hooves visible, no boots, no human arms, no humanoid body, no long legs, no second pumpkin face, no giant pumpkin belly face. Rich pumpkin orange and moss green cloth, cocoa outlines, warm painted shading matching Rosie. This is a dressed ACTUAL pig, not an empty anthropomorphic suit. Front idle pose identical to reference with all contours fully inside canvas and modest transparent padding. True clean alpha background, no scenery, shadows, text, card border. Her recognizable real face is the center of the costume. It must look wearable on the source pig's exact proportions.",
+          "version": 2
+        }
+      ],
+      "selectedVersion": 2,
+      "rejectedVersions": [
+        1
+      ],
+      "rejectionReason": "Humanoid empty suit did not fit Rosie; replaced with pig-shaped hood and short romper."
+    },
+    {
+      "number": "036",
+      "cardId": "halloween_2026_card_cobweb_crown",
+      "itemId": "halloween_2026_cobweb_crown",
+      "originalFilename": "036-halloween-2026-cobweb-crown-card-v1.png",
+      "prompt": "Create ONE Cobweb Crown illustration for Tickle the Pig seasonal collectible card art. Delicate but chunky cobweb crown woven from moon-silver thread, three rounded blackberry jewel drops and tiny curled web points, cozy painted fill with bold cocoa outline, readable at shop-card scale, playful spooky underworld mood, no realistic spiders or sharp menace. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is a SINGLE isolated accessory or friendly spirit only, no pig or costume outfit. No extra detached unrelated objects. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+      "originalGeneration": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-1984699f-11a1-4aad-9b07-156a008c871b.png",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-1984699f-11a1-4aad-9b07-156a008c871b.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/036-halloween-2026-cobweb-crown-card-v1.png",
+          "prompt": "Create ONE Cobweb Crown illustration for Tickle the Pig seasonal collectible card art. Delicate but chunky cobweb crown woven from moon-silver thread, three rounded blackberry jewel drops and tiny curled web points, cozy painted fill with bold cocoa outline, readable at shop-card scale, playful spooky underworld mood, no realistic spiders or sharp menace. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is a SINGLE isolated accessory or friendly spirit only, no pig or costume outfit. No extra detached unrelated objects. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "037",
+      "cardId": "halloween_2026_card_ghostlight_lantern",
+      "itemId": "halloween_2026_ghostlight_lantern",
+      "originalFilename": "037-halloween-2026-ghostlight-lantern-card-v1.png",
+      "prompt": "Create ONE Ghostlight Lantern illustration for Tickle the Pig seasonal collectible card art. Handheld crooked iron lantern with a plump mint-blue ghost flame peeking through amber panes, thick curled handle, painted saturated glow, bold cocoa outline, cozy spooky-underworld charm, compact readable silhouette, no trapped soul, gore or realistic fire. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is a SINGLE isolated accessory or friendly spirit only, no pig or costume outfit. No extra detached unrelated objects. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+      "originalGeneration": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-05bcac87-550d-41ac-967d-74199bf7a34a.png",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-05bcac87-550d-41ac-967d-74199bf7a34a.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/037-halloween-2026-ghostlight-lantern-card-v1.png",
+          "prompt": "Create ONE Ghostlight Lantern illustration for Tickle the Pig seasonal collectible card art. Handheld crooked iron lantern with a plump mint-blue ghost flame peeking through amber panes, thick curled handle, painted saturated glow, bold cocoa outline, cozy spooky-underworld charm, compact readable silhouette, no trapped soul, gore or realistic fire. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is a SINGLE isolated accessory or friendly spirit only, no pig or costume outfit. No extra detached unrelated objects. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "038",
+      "cardId": "halloween_2026_card_little_haunt",
+      "itemId": "halloween_2026_little_haunt",
+      "originalFilename": "038-halloween-2026-little-haunt-card-v1.png",
+      "prompt": "Create ONE Little Haunt illustration for Tickle the Pig seasonal collectible card art. Small spectral bog-frog companion floating behind the pig on a curl of violet mist, clearly an original painted friendly spirit rather than a real pig base, mint glow, round eyes, tiny reed crown, saturated storybook color and bold cocoa outline, spooky underworld atmosphere without gore, fear or photorealism. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is a SINGLE isolated accessory or friendly spirit only, no pig or costume outfit. No extra detached unrelated objects. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+      "originalGeneration": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-68ccf278-2fd3-42df-b504-c8f8117ecda3.png",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-68ccf278-2fd3-42df-b504-c8f8117ecda3.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/038-halloween-2026-little-haunt-card-v1.png",
+          "prompt": "Create ONE Little Haunt illustration for Tickle the Pig seasonal collectible card art. Small spectral bog-frog companion floating behind the pig on a curl of violet mist, clearly an original painted friendly spirit rather than a real pig base, mint glow, round eyes, tiny reed crown, saturated storybook color and bold cocoa outline, spooky underworld atmosphere without gore, fear or photorealism. The established style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. This is a SINGLE isolated accessory or friendly spirit only, no pig or costume outfit. No extra detached unrelated objects. Complete centered silhouette with 12% alpha padding on every side; true clean transparent background; no card frame, text, number, scenery, floor, baked shadow, chromatic halo, pixel fringe or clipped contours.",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "number": "039",
+      "cardId": "halloween_2026_card_whispering_crypt_bg",
+      "itemId": "halloween_2026_whispering_crypt_bg",
+      "originalFilename": "039-halloween-2026-whispering-crypt-bg-card-v1.png",
+      "prompt": "Create ONE Whispering Crypt background illustration for Tickle the Pig seasonal collectible card art. Opaque cozy painted crypt beneath the pumpkin roots: rounded cocoa-stone arches, plum alcoves, mint ghostlights, crooked candles and softly glowing runes framing the margins, bold cocoa outlines and saturated spooky-underworld color, broad uncluttered central floor for a 300px pig, no characters, bones, gore or realistic horror. The established visual style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. Full-bleed opaque landscape stage, broad uncluttered central floor and calm center for a pig character added by the game. No characters, pig, creature, text, card border, letters, logos or numbers. Large readable scene shapes at phone game size.",
+      "originalGeneration": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-188f84df-cb3b-4e56-aa40-0b341306370d.png",
+      "attempts": [
+        {
+          "source": "/Users/bbroeking/.codex/generated_images/01a13b02-fcb6-7250-9032-791d387fcc39/exec-188f84df-cb3b-4e56-aa40-0b341306370d.png",
+          "destination": "/Users/bbroeking/projects/oink/assets/images/trading-cards/halloween-2026/039-halloween-2026-whispering-crypt-bg-card-v1.png",
+          "prompt": "Create ONE Whispering Crypt background illustration for Tickle the Pig seasonal collectible card art. Opaque cozy painted crypt beneath the pumpkin roots: rounded cocoa-stone arches, plum alcoves, mint ghostlights, crooked candles and softly glowing runes framing the margins, bold cocoa outlines and saturated spooky-underworld color, broad uncluttered central floor for a 300px pig, no characters, bones, gore or realistic horror. The established visual style is cozy hand-painted storybook gouache, saturated pumpkin/plum/mint/amber colors, chunky bold dark cocoa cartoon outlines, rounded readable shapes, soft painted shading. Full-bleed opaque landscape stage, broad uncluttered central floor and calm center for a pig character added by the game. No characters, pig, creature, text, card border, letters, logos or numbers. Large readable scene shapes at phone game size.",
+          "version": 1
+        }
+      ]
+    }
+  ]
+}

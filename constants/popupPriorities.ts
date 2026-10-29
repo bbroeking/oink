@@ -23,7 +23,7 @@
 //	                                 additionally stamp the ceremonyGate (see
 //	                                 CEREMONY_SLOT_IDS) to suppress housekeeping
 //	                                 for the rest of the session.
-//	 40 – 55      HOUSEKEEPING & FLOURISHES  one achievement digest, then
+//	 35 – 55      HOUSEKEEPING & FLOURISHES  the one-time login gift, one achievement digest, then
 //	                                 mystery-hat and Lucky Pig rewards.
 //
 // Ordered ascending by priority. Keep it that way — the order in this literal
@@ -50,6 +50,7 @@ export const POPUP_PRIORITIES = {
   rituals: 30, // app/_layout.tsx — ritual reveals.
 
   // ── housekeeping & flourishes ──
+  halloweenLoginGift: 35, // app/_layout.tsx — one server-selected Halloween costume.
   // app/_layout.tsx — achievement digest. Housekeeping: held for
   // next login when a ceremony fired this session (ceremonyGate).
   achievements: 40,

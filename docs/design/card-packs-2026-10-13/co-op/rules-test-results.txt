@@ -1,0 +1,22 @@
+✔ deterministic setup conserves twelve cards (1.275583ms)
+✔ turns, passes, and phases gate commands without mutation (0.456916ms)
+✔ draw choices expose drawn hand and block other commands (0.220333ms)
+✔ Lantern optional cycle may skip then chains Rosie trigger (0.119375ms)
+✔ Pepper bonus once, Toy Sword only rewards ally Guard, reset next round (0.248541ms)
+✔ Toy Sword ally condition and Energy validation (0.163166ms)
+✔ Guard splits across simultaneous packets (0.098333ms)
+✔ lower-Cheer tie requires explicit leader choice (0.435333ms)
+✔ immediate win prevents enemy resolution (0.097917ms)
+✔ simultaneous defeat, no resurrection, and round-six clock (0.226708ms)
+✔ cleanup only discards excess and partial draw is legal (0.135375ms)
+✔ round-two cooperation replay resolves through public commands (0.162458ms)
+✔ winning Snoot Boop cuts off Rosie's post-card trigger (0.072167ms)
+✔ seeded whole game preserves every card UID and resource bounds (1.19175ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46.172125

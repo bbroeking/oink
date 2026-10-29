@@ -1,0 +1,15 @@
+PASS __tests__/cards-halloween-gallery.test.tsx
+PASS __tests__/cards-costume-fit.test.tsx
+PASS __tests__/HalloweenLoginGift.test.tsx
+PASS __tests__/pigAttachmentPlayback.test.tsx
+PASS __tests__/cards-costume-gallery-playback.test.tsx
+PASS __tests__/cards-costume-game-integration.test.tsx
+PASS __tests__/cards-seasonal-render.test.tsx
+
+Test Suites: 7 passed, 7 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        7.618 s, estimated 10 s
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.

@@ -1,0 +1,55 @@
+{
+  "artifact": "Big Twelve - Family Review.dc.html",
+  "url": "http://127.0.0.1:6466/Big%20Twelve%20-%20Family%20Review.dc.html",
+  "detector": {
+    "commandRuns": 1,
+    "total": 27,
+    "warnings": 19,
+    "advisories": 8,
+    "byRule": {
+      "cramped-padding": 12,
+      "design-system-font": 6,
+      "design-system-radius": 1,
+      "design-system-font-size": 7,
+      "cream-palette": 1
+    },
+    "actionable": 0,
+    "classification": "All detector hits are false positives or non-actionable advisories for this authored static collectible-card review. The 12 cards visibly retain 21px text insets and no descendant leaves a card. Caprasimo, Nunito, Patrick Hand, 10px card radius, display sizes, and the cream canvas are deliberate family styling; all three fonts load."
+  },
+  "viewports": [
+    {"label":"default","width":1280,"height":720,"documentWidth":1280,"documentHeight":3840,"horizontalOverflow":false,"printedFaces320x448":12},
+    {"label":"390","width":390,"height":844,"documentWidth":390,"documentHeight":8486,"horizontalOverflow":false,"printedFaces320x448":12},
+    {"label":"320","width":320,"height":844,"documentWidth":320,"documentHeight":8780,"horizontalOverflow":false,"printedFaces320x448":12}
+  ],
+  "cards": {
+    "count": 12,
+    "allExactly320x448": true,
+    "descendantsOutsideCardBoundsAt320": 0,
+    "rules": {"family":"Nunito, sans-serif","minimumPx":15,"lineHeightPx":22.5,"allMeetRule":true},
+    "content": "Names, types, costs/stats, rules, and footers remain contained with no observed overlap at all tested widths."
+  },
+  "assets": {
+    "imageCount": 11,
+    "allComplete": true,
+    "naturalDimensions": {
+      "pigSprites":"370x383",
+      "actionArt":"1024x1536",
+      "provisionalPigConcepts":"1254x1254"
+    },
+    "rendering": "Pig sprites preserve their natural ratio; square concepts render square with contain. Action artwork uses deliberate cover cropping inside the authored 314x234 illustration band.",
+    "missingItemArt": "Expected incomplete source evidence; excluded from unexpected-load-failure findings."
+  },
+  "fonts": {"status":"loaded","Nunito":true,"Caprasimo":true,"PatrickHand":true},
+  "contrast": [
+    {"sample":"rules","ratio":15.46},
+    {"sample":"Action label","ratio":6.26},
+    {"sample":"footer","ratio":6.92},
+    {"sample":"review status","ratio":5.72}
+  ],
+  "motion": {"animations":0,"transitions":0,"transforms":0,"depthOrTiltObserved":false},
+  "actionableDefects": [
+    "The incomplete Mud Shovel artwork placeholder exposes active-looking Replace and Edit controls inside a page described as a static review. Remove or visually neutralize those controls in the focused correction batch so missing source evidence cannot be mistaken for an editable repair task."
+  ],
+  "screenshots": ["assessment-b-default.jpg","assessment-b-390.jpg","assessment-b-320.jpg"],
+  "viewportRestored": true
+}

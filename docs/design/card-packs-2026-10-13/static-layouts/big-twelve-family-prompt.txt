@@ -1,0 +1,37 @@
+Build out a collectible-card family for Tickle the Pig in this existing Claude Design project.
+
+SELECTED DIRECTION
+Use E · Big Twelve from “Six Static Layouts” as the selected baseline for Pig / Legend cards. Keep its large upper-corner Cheer numeral, prominent pig illustration, diagonal transition into the cream text area, and bold name below the artwork. Extend this composition into a coherent family.
+
+GAME CONTEXT
+The intended loop is: open packs → build a starting deck from your collection → enter an adventure → draft and improve that deck as you progress. The visual system must help players recognize what each card does in collection, deck building, and draft choices. Starting deck size and permanent draft rewards are still undecided; do not invent those systems.
+
+SHARED DESIGN LANGUAGE
+Use the selected Tickle the Pig Design System and existing game screenshot references: warm cream and pastel surfaces, cocoa outlines, crisp cartoon shapes, softly shaded original artwork, Caprasimo display type, and Nunito rules. Keep every card a conventional 320 × 448 portrait rectangle with subtle rounded corners and one continuous outer outline. Character and object art are printed illustrations; inner graphic overlaps are welcome. Keep silhouettes and proportions intact, with no rooms, display cases, shelves, pedestals, or dioramas.
+
+1. ESTABLISH THE SIX BASE PIGS
+Show Rosie, Copper, Pepper, Bandit, Pickles, and Biscuit using the Big Twelve Pig / Legend template. Reuse their exact approved original artwork with uniform scaling and balanced perceived character size. Preserve each pig’s individual markings, face, ears, body, legs, and hooves.
+
+Use the approved digital prototype’s name, starting Cheer, unique ability, and rules for each pig. Cheer belongs in the large corner numeral; a pig is the character leading the deck, not an Energy-cost action. Keep name, card type, ability, readable rules, and a small collector footer. Do not mix the printed tabletop, Hedge Run, and co-op experiment’s rules. If approved digital text is missing, use clearly labeled “Ability TBD” / “Rules TBD” placeholders.
+
+2. CREATE THREE DISTINCT CARD-TYPE LAYOUTS
+Actions, Items, and Locations should each have their own composition within the same family. Change artwork scale, cropping, name placement, negative space, stat integration, and the illustration-to-rules transition. Differences must be structural, not merely colors or borders. Keep each type’s layout consistent across its examples.
+
+ACTIONS — Snoot Boop, Big Wind-Up, Duck Into the Mud.
+Make the play cost and immediate effect quick to read. Favor dynamic illustration and a concise, prominent rules area. Give these a different reading rhythm from Pig cards; do not reuse the giant Cheer treatment for Energy costs.
+
+ITEMS — Mud Shovel, Toy Sword, Muddy Cap.
+Let the object’s silhouette lead, with breathing room around the exact artwork. Emphasize the item name, applicable slot or item role, and effect. Show equipped or persistent behavior only where the supplied rules establish it. Give objects a composition suited to objects rather than substituting them into the pig frame.
+
+LOCATIONS — Homestead Barn, Truffle Patch, Reed Marsh.
+Let the landscape occupy a broad illustration area inside the portrait card. Make the location name and its effect easy to find, with a calm transition into rules. Use the scene’s crop and scale to distinguish this layout. Show costs or stats only when supplied by the approved rules.
+
+Reuse approved artwork and supplied digital rules for all examples. Missing mechanics should remain labeled placeholders, not invented facts.
+
+3. EXTEND WITH NEW PIG CONCEPTS
+After establishing the base family, propose three new pig identities in a separate concept section using the same Big Twelve template. Give each distinctive coat markings, personality, and a brief proposed playstyle hook. Match the existing pigs’ anatomy, shading, outline weight, and visual world. Label new identities and hooks as provisional concepts; preserve all existing pigs and their artwork.
+
+PRESENTATION AND QUALITY
+Show the six base pigs together, then three examples of each other card type, then the new pig concepts. All cards should be straight-on, equal size, on a neutral background. Add one short sentence outside the cards explaining each type’s layout logic. Keep rules legible at actual 320px card width, using at least 15px Nunito with comfortable line spacing. Check long names and rules without shrinking text to hide overflow. Protect names, costs, stats, and rules from illustration overlap. Avoid generic nested rectangles, excessive badges, tiny labels, fantasy filigree, and decorative clutter.
+
+Create a new “Big Twelve Card Family” page in this existing project and retain the earlier layout study as a reference. This pass is static composition and card-family design. Keep depth and animation deferred, and keep the exploration private.

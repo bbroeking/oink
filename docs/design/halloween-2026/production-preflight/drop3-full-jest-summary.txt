@@ -1,0 +1,15 @@
+2026-10-14 final full Jest rerun after seasonal expectations were corrected
+Command: npx jest --runInBand --watchman=false --testPathPatterns='cards-|HalloweenLoginGift' --silent
+Installed Jest treated this as full-suite scope (plural pattern option is unsupported).
+Exit: 1
+Test Suites: 2 failed, 1 skipped, 320 passed, 322 of 323 total
+Tests: 2 failed, 2 skipped, 3757 passed, 3761 total
+Time: 137.287 s
+
+Remaining failures:
+__tests__/relPerAnim.test.ts:35 — expected width126, actual125.748
+__tests__/pigStageSideSprite.test.ts:36 — expected179.65499999999997, actual176.646
+
+All Halloween, login gift and seasonal card tests passed.
+Focused 8-suite/48-test result is recorded in drop3-focused-tests.txt.
+Hook lint-harness followup passed its6tests after this run.

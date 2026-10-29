@@ -1,0 +1,6 @@
+name: card-pack-reveal
+output: build/card-pack-reveal.riv
+logs:
+  file: build/rive.log
+  problems: build/problems.log
+

@@ -1,0 +1,9 @@
+PASS __tests__/cards-domain-opening.test.ts
+PASS __tests__/cards-domain-hedge-run.test.ts
+PASS __tests__/cards-domain-catalog.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        0.473 s, estimated 1 s
+Ran all test suites within paths "__tests__/cards-domain-catalog.test.ts", "__tests__/cards-domain-opening.test.ts", "__tests__/cards-domain-hedge-run.test.ts".

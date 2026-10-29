@@ -1,0 +1,148 @@
+{
+  "desktop": [
+    {
+      "border": "3px",
+      "height": 448,
+      "id": "rosie",
+      "images": [
+        {
+          "fit": "fill",
+          "loaded": true,
+          "naturalHeight": 383,
+          "naturalWidth": 370,
+          "position": "50% 50%",
+          "src": "art/coop/sprites/rosie-idle_1.png"
+        }
+      ],
+      "radius": "14px",
+      "ruleToFooterGap": 6.40625,
+      "rules": {
+        "font": "Nunito, sans-serif",
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Once per round, after you play a Support card, draw 1 card, then discard 1 card."
+      },
+      "textWithinCard": true,
+      "width": 320
+    },
+    {
+      "border": "3px",
+      "height": 448,
+      "id": "snoot-boop",
+      "images": [
+        {
+          "fit": "cover",
+          "loaded": true,
+          "naturalHeight": 1536,
+          "naturalWidth": 1024,
+          "position": "50% 43%",
+          "src": "uploads/076-snoot-boop-print-v1.png"
+        }
+      ],
+      "radius": "14px",
+      "ruleToFooterGap": 13.25,
+      "rules": {
+        "font": "Nunito, sans-serif",
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+      },
+      "textWithinCard": true,
+      "width": 320
+    },
+    {
+      "border": "3px",
+      "height": 448,
+      "id": "big-wind-up",
+      "images": [
+        {
+          "fit": "cover",
+          "loaded": true,
+          "naturalHeight": 1536,
+          "naturalWidth": 1024,
+          "position": "50% 76%",
+          "src": "uploads/064-big-wind-up-print-v2.png"
+        }
+      ],
+      "radius": "14px",
+      "ruleToFooterGap": 13.25,
+      "rules": {
+        "font": "Nunito, sans-serif",
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Your Legend's next attack this turn gets +2 Bash."
+      },
+      "textWithinCard": true,
+      "width": 320
+    },
+    {
+      "border": "3px",
+      "height": 448,
+      "id": "duck-into-the-mud",
+      "images": [
+        {
+          "fit": "cover",
+          "loaded": true,
+          "naturalHeight": 1536,
+          "naturalWidth": 1024,
+          "position": "50% 43%",
+          "src": "uploads/065-duck-into-the-mud-print-v1.png"
+        }
+      ],
+      "radius": "14px",
+      "ruleToFooterGap": 13.25,
+      "rules": {
+        "font": "Nunito, sans-serif",
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Before your next turn, prevent the next 2 damage to your Legend."
+      },
+      "textWithinCard": true,
+      "width": 320
+    }
+  ],
+  "narrow": {
+    "cards": [
+      {
+        "height": 448,
+        "width": 320
+      },
+      {
+        "height": 448,
+        "width": 320
+      },
+      {
+        "height": 448,
+        "width": 320
+      },
+      {
+        "height": 448,
+        "width": 320
+      }
+    ],
+    "ruleSizes": [
+      {
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Once per round, after you play a Support card, draw 1 card, then discard 1 card."
+      },
+      {
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Deal 2 damage to an Enemy, then restore 2 Cheer."
+      },
+      {
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Your Legend's next attack this turn gets +2 Bash."
+      },
+      {
+        "lineHeight": "22.5px",
+        "size": "15px",
+        "text": "Before your next turn, prevent the next 2 damage to your Legend."
+      }
+    ],
+    "scrollWidth": 390,
+    "width": 390
+  }
+}

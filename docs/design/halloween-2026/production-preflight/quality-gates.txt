@@ -1,0 +1,43 @@
+Halloween 2026 production-preparation quality evidence
+Run date: 2026-10-14
+
+npm run quality:check:full
+RESULT: FAIL (short-circuited at locked quality contracts)
+- Layout text line clamps: 138, budget: 91
+- SECURITY DEFINER public.my_drives is not revoked from default roles
+
+npx tsc --noEmit
+RESULT: PASS
+
+python3 scripts/verify-pig-sprites.py
+RESULT: FAIL
+- assets/images/sprites/copper/idle_8.png: opaque canvas corner
+
+npx jest --runInBand --watch=false --no-watchman (initial stable-source run)
+RESULT: FAIL: 4 suites, 6 tests; 318 suites passed, 1 skipped; 3,753 tests passed, 2 skipped
+- __tests__/relPerAnim.test.ts: expected 126, received 125.748
+- __tests__/pigStageSideSprite.test.ts: front 179.655, side 176.646
+- Two cards-seasonal-render failures had stale 44-card/final-card expectations
+- Two cards-seasonal-unlocks failures had stale 44-card and three-card fixture assumptions
+The seasonal expectations were subsequently fixed by their owning agent; focused 13/13 and TypeScript passed.
+
+npx jest --runInBand --watch=false --no-watchman (post-fix root run)
+RESULT: FAIL: 2 suites / 2 tests; 320 suites passed, 1 skipped; 3,757 tests passed, 2 skipped; 3,761 total; 137.287 seconds
+- __tests__/relPerAnim.test.ts: expected 126, received 125.748
+- __tests__/pigStageSideSprite.test.ts: expected front 179.655, received side 176.646
+- All Halloween tests passed. The focused Halloween set passed 8 suites / 48 tests.
+
+npx eslint app components constants hooks utils __tests__ --ext .ts,.tsx
+INITIAL: FAIL: 1 error, 865 warnings. The error was __tests__/useHalloweenLoginGift.test.tsx:39 react-hooks/globals.
+POST-FIX RESULT: PASS WITH WARNINGS: 0 errors, 865 warnings; exit 0
+
+NODE_OPTIONS=--max-old-space-size=16384 node scripts/quality/verify-ios-export.mjs
+RESULT: PASS: iOS bundle completed, 4,532 modules / 1,300 assets, exit 0
+
+bash scripts/db-harness/run.sh <quality.config.mjs DB_HARNESS_EXTRAS>
+RESULT: PASS: DB HARNESS OK, exit 0
+
+npx supabase db lint --linked --level error
+RESULT: PENDING: no output for 60 seconds; interrupted, exit 130. No SQL was applied.
+
+No EAS build, upload, deployment, database push, version bump, or campaign activation was performed.

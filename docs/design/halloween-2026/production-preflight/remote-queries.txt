@@ -1,0 +1,16 @@
+Captured: 2026-10-14 America/New_York
+Mode: read-only remote queries only
+
+EAS
+Command: npx eas build:version:get --platform ios --profile production --non-interactive
+Result: iOS buildNumber 197
+Notes: production profile resolved; no remote value changed. EAS warned that app.json bundleIdentifier is ignored because native ios/ exists. The native project uses com.broeking.ttp.
+
+Supabase
+Command: npx supabase migration list --linked
+Result: no list returned; command remained silent and was interrupted after the bounded audit wait.
+Effect: no migration or SQL was applied.
+Disposition: linked production migration boundary remains pending. Retry sequentially after confirming CLI authentication, before any database go/push decision.
+
+Store history
+No App Store Connect/public store query was performed in this audit. The recorded 1.2 (143) value is historical evidence from 2026-10-04 and must be reverified before candidate freeze.

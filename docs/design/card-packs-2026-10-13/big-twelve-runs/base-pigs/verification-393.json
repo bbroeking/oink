@@ -1,0 +1,92 @@
+{
+  "figures": [
+    {
+      "height": 448,
+      "id": "rosie",
+      "width": 320,
+      "x": 36.5,
+      "y": 330
+    },
+    {
+      "height": 448,
+      "id": "copper",
+      "width": 320,
+      "x": 36.5,
+      "y": 822
+    },
+    {
+      "height": 448,
+      "id": "pepper",
+      "width": 320,
+      "x": 36.5,
+      "y": 1314
+    },
+    {
+      "height": 448,
+      "id": "bandit",
+      "width": 320,
+      "x": 36.5,
+      "y": 1806
+    },
+    {
+      "height": 448,
+      "id": "pickles",
+      "width": 320,
+      "x": 36.5,
+      "y": 2298
+    },
+    {
+      "height": 448,
+      "id": "biscuit",
+      "width": 320,
+      "x": 36.5,
+      "y": 2790
+    }
+  ],
+  "page": [
+    393,
+    3302
+  ],
+  "rules": [
+    {
+      "fontSize": "15px",
+      "footerGap": 30.5,
+      "id": "rosie",
+      "lineHeight": "22.5px"
+    },
+    {
+      "fontSize": "15px",
+      "footerGap": 30.5,
+      "id": "copper",
+      "lineHeight": "22.5px"
+    },
+    {
+      "fontSize": "15px",
+      "footerGap": 8,
+      "id": "pepper",
+      "lineHeight": "22.5px"
+    },
+    {
+      "fontSize": "15px",
+      "footerGap": 8,
+      "id": "bandit",
+      "lineHeight": "22.5px"
+    },
+    {
+      "fontSize": "15px",
+      "footerGap": 8,
+      "id": "pickles",
+      "lineHeight": "22.5px"
+    },
+    {
+      "fontSize": "15px",
+      "footerGap": 30.5,
+      "id": "biscuit",
+      "lineHeight": "22.5px"
+    }
+  ],
+  "viewport": [
+    393,
+    852
+  ]
+}

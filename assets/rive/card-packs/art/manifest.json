@@ -1,0 +1,102 @@
+{
+  "algorithm": "RGBA transparent canvas, contain, center, Pillow LANCZOS, PNG compress_level=9",
+  "cards": {
+    "firefly_swarm": {
+      "contentBox": {
+        "height": 1050,
+        "width": 700,
+        "x": 25,
+        "y": 0
+      },
+      "output": "assets/rive/card-packs/art/firefly_swarm.png",
+      "outputHeight": 1050,
+      "outputMode": "RGBA",
+      "outputSha256": "dba468d21e3556a49380f8d1c084387c2ba50e7b99b47805aabfbe653b6f29d9",
+      "outputWidth": 750,
+      "source": "assets/images/trading-cards/base-set-art/034-firefly-swarm-print-v1.png",
+      "sourceHeight": 1536,
+      "sourceMode": "RGB",
+      "sourceSha256": "bf750b4f83e81541f1f23292472003c45f1e267228a404964aa5d778efefb048",
+      "sourceWidth": 1024
+    },
+    "moon_firefly": {
+      "contentBox": {
+        "height": 1050,
+        "width": 700,
+        "x": 25,
+        "y": 0
+      },
+      "output": "assets/rive/card-packs/art/moon_firefly.png",
+      "outputHeight": 1050,
+      "outputMode": "RGBA",
+      "outputSha256": "7d26ef965100945762b49c1146ec035ab4189ae5b0eb0ad642005964f2868b95",
+      "outputWidth": 750,
+      "source": "assets/images/trading-cards/base-set-art/046-moon-firefly-print-v1.png",
+      "sourceHeight": 1536,
+      "sourceMode": "RGB",
+      "sourceSha256": "f4dabb86b93b07df3ae8ac5adfa2f9b744fe69c61cc715ef709a6f501e8002a6",
+      "sourceWidth": 1024
+    },
+    "mud_shovel": {
+      "contentBox": {
+        "height": 935,
+        "width": 750,
+        "x": 0,
+        "y": 57
+      },
+      "output": "assets/rive/card-packs/art/mud_shovel.png",
+      "outputHeight": 1050,
+      "outputMode": "RGBA",
+      "outputSha256": "f708bb5e84a7cc89ec8a7cb239639ddcae510941adcad26e0bb98cc8a2c154fa",
+      "outputWidth": 750,
+      "source": "assets/images/hats/mud_shovel.png",
+      "sourceHeight": 414,
+      "sourceMode": "RGBA",
+      "sourceSha256": "8aa930043d2f69383cecf0336312966ec9640f7b9156829a2b9725f452b4eafe",
+      "sourceWidth": 332
+    },
+    "mushroom_cap": {
+      "contentBox": {
+        "height": 750,
+        "width": 750,
+        "x": 0,
+        "y": 150
+      },
+      "output": "assets/rive/card-packs/art/mushroom_cap.png",
+      "outputHeight": 1050,
+      "outputMode": "RGBA",
+      "outputSha256": "85c68b799bf86202481456d6fa2097a97a2da2e3c776facc84636772da3e20ce",
+      "outputWidth": 750,
+      "source": "assets/images/hats/mushroom_cap.png",
+      "sourceHeight": 256,
+      "sourceMode": "RGBA",
+      "sourceSha256": "5cbb3c6138ce6f0c3f6c78526f7f35306039b0c8943ccb82f5e23d9875755c7d",
+      "sourceWidth": 256
+    },
+    "puddle_duckling": {
+      "contentBox": {
+        "height": 1050,
+        "width": 700,
+        "x": 25,
+        "y": 0
+      },
+      "output": "assets/rive/card-packs/art/puddle_duckling.png",
+      "outputHeight": 1050,
+      "outputMode": "RGBA",
+      "outputSha256": "3c1d90b90e489e6d8ce115fdf615473add42f45eec3bfe7c1dba0881ed15a56f",
+      "outputWidth": 750,
+      "source": "assets/images/trading-cards/base-set-art/038-puddle-duckling-print-v1.png",
+      "sourceHeight": 1536,
+      "sourceMode": "RGB",
+      "sourceSha256": "2b3f47e53fde4d528419e2b43f2ab47f60d80e900a4630fa07764f98721b45ae",
+      "sourceWidth": 1024
+    }
+  },
+  "purpose": "Rive dynamic-image runtime derivatives; originals are unchanged",
+  "target": {
+    "height": 1050,
+    "mode": "RGBA",
+    "width": 750
+  },
+  "version": 1
+}

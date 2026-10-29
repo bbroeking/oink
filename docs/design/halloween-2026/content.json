@@ -1,0 +1,1389 @@
+{
+  "status": "approved_concept_pending_art_and_rollout",
+  "seasonKey": "halloween_2026",
+  "workingTitle": "Spooky Snouts",
+  "subtitle": "Moonlit Mischief",
+  "assortmentModel": "default_first_copy_unlocks_one_matching_cosmetic_per_card",
+  "constraints": {
+    "supportedPigs": [
+      "rosie",
+      "bandit",
+      "pickles",
+      "biscuit",
+      "copper",
+      "pepper"
+    ],
+    "modularWearableCount": 29,
+    "costumeCount": 11,
+    "wearableCount": 40,
+    "backgroundCount": 9,
+    "unlockCardCount": 49,
+    "liveDates": null,
+    "packOdds": null,
+    "shippingAccessoryArt": "transparent accessory-only PNG; never bake a pig or character into a modular deliverable",
+    "shippingCostumeArt": "transparent full-body transformation masks authored per pig and source frame; the source pig remains a separate, unaltered render layer",
+    "shippingBackgroundArt": "opaque character-free scene with an unobstructed central 300px pig ground/read area",
+    "unlockReceipt": "New card! Matching wearable added: {cosmetic_name}.",
+    "duplicateReceipt": "Another copy for your album \u00b7 Item already owned"
+  },
+  "looks": [
+    {
+      "id": "rosie_hedge_witch",
+      "name": "Rosie Hedge Witch",
+      "archetype": "witch",
+      "itemIds": [
+        "moonbrew_witch_hat",
+        "hedge_broom"
+      ]
+    },
+    {
+      "id": "pepper_little_vampire",
+      "name": "Pepper Little Vampire",
+      "archetype": "vampire",
+      "itemIds": [
+        "high_collar_scarf",
+        "pip_candle"
+      ]
+    },
+    {
+      "id": "copper_patchwork_monster",
+      "name": "Copper Patchwork Monster",
+      "archetype": "patchwork monster",
+      "itemIds": [
+        "patchwork_bolt_cap",
+        "stitched_bow"
+      ]
+    },
+    {
+      "id": "bandit_skeleton",
+      "name": "Bandit Skeleton",
+      "archetype": "skeleton",
+      "itemIds": [
+        "friendly_skull_facepaint",
+        "crossbones_bow"
+      ]
+    },
+    {
+      "id": "pickles_mummy",
+      "name": "Pickles Mummy",
+      "archetype": "mummy",
+      "itemIds": [
+        "linen_knot_headwrap",
+        "scarab_lantern"
+      ]
+    },
+    {
+      "id": "biscuit_pumpkin",
+      "name": "Biscuit Pumpkin",
+      "archetype": "pumpkin",
+      "itemIds": [
+        "lantern_sprout_cap",
+        "pumpkin_treat_pail"
+      ]
+    },
+    {
+      "id": "rosie_friendly_ghost",
+      "name": "Rosie Friendly Ghost",
+      "archetype": "ghost",
+      "itemIds": [
+        "silly_sheet_ghost_hood",
+        "spirit_glow"
+      ]
+    },
+    {
+      "id": "copper_moon_howler",
+      "name": "Copper Moon Howler",
+      "archetype": "werewolf",
+      "itemIds": [
+        "moonpuff_wolf_ears",
+        "moon_charm"
+      ]
+    },
+    {
+      "id": "bandit_halloween_pirate",
+      "name": "Bandit Halloween Pirate",
+      "archetype": "pirate",
+      "itemIds": [
+        "halloween_2026_pirate_tricorn_hat",
+        "halloween_2026_toy_cutlass"
+      ]
+    },
+    {
+      "id": "pickles_halloween_scarecrow",
+      "name": "Pickles Halloween Scarecrow",
+      "archetype": "scarecrow",
+      "itemIds": [
+        "halloween_2026_patched_straw_hat",
+        "halloween_2026_straw_bow"
+      ]
+    },
+    {
+      "id": "pepper_halloween_mad_scientist",
+      "name": "Pepper Halloween Mad Scientist",
+      "archetype": "mad scientist",
+      "itemIds": [
+        "halloween_2026_spark_goggles",
+        "halloween_2026_bubbling_flask"
+      ]
+    },
+    {
+      "id": "biscuit_halloween_bat",
+      "name": "Biscuit Halloween Bat",
+      "archetype": "bat",
+      "itemIds": [
+        "halloween_2026_bat_ear_cap",
+        "halloween_2026_bat_wing_bow"
+      ]
+    },
+    {
+      "id": "rosie_halloween_fortune_teller",
+      "name": "Rosie Halloween Fortune Teller",
+      "archetype": "fortune teller",
+      "itemIds": [
+        "halloween_2026_star_headwrap",
+        "halloween_2026_crystal_ball"
+      ]
+    },
+    {
+      "id": "halloween_2026_hollow_jack",
+      "name": "Hollow Jack",
+      "archetype": "pumpkin-vine monster",
+      "itemIds": [
+        "halloween_2026_hollow_jack_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_spooky_extras",
+      "name": "Spooky Extras",
+      "archetype": "mix-and-match haunted keepsakes",
+      "itemIds": [
+        "halloween_2026_cobweb_crown",
+        "halloween_2026_ghostlight_lantern",
+        "halloween_2026_little_haunt"
+      ],
+      "pairing": "independent_reusable_pieces_no_forced_pair"
+    },
+    {
+      "id": "halloween_2026_count_snout",
+      "name": "Count Snout",
+      "archetype": "friendly vampire",
+      "itemIds": [
+        "halloween_2026_count_snout_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_moonpuff",
+      "name": "Moonpuff",
+      "archetype": "friendly werewolf",
+      "itemIds": [
+        "halloween_2026_moonpuff_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_little_reaper",
+      "name": "Little Reaper",
+      "archetype": "friendly grim reaper",
+      "itemIds": [
+        "halloween_2026_little_reaper_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_patchwork_pal",
+      "name": "Patchwork Pal",
+      "archetype": "friendly patchwork monster",
+      "itemIds": [
+        "halloween_2026_patchwork_pal_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_candy_corn",
+      "name": "Candy Corn",
+      "archetype": "candy corn onesie",
+      "itemIds": [
+        "halloween_2026_candy_corn_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_linen_lurker",
+      "name": "Linen Lurker",
+      "archetype": "mummy",
+      "itemIds": [
+        "halloween_2026_linen_lurker_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_starspell",
+      "name": "Starspell",
+      "archetype": "wizard",
+      "itemIds": [
+        "halloween_2026_starspell_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_bat_nap",
+      "name": "Bat Nap",
+      "archetype": "bat",
+      "itemIds": [
+        "halloween_2026_bat_nap_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_little_imp",
+      "name": "Little Imp",
+      "archetype": "friendly devil",
+      "itemIds": [
+        "halloween_2026_little_imp_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    },
+    {
+      "id": "halloween_2026_marshmallow_boo",
+      "name": "Marshmallow Boo",
+      "archetype": "friendly ghost",
+      "itemIds": [
+        "halloween_2026_marshmallow_boo_costume"
+      ],
+      "pairing": "complete_one_piece_look"
+    }
+  ],
+  "wearables": [
+    {
+      "id": "moonbrew_witch_hat",
+      "name": "Moonbrew Witch Hat",
+      "lookId": "rosie_hedge_witch",
+      "category": "hat",
+      "cardId": "halloween_2026_card_moonbrew_witch_hat",
+      "rarity": "epic",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored left/right profile silhouettes; crooked cone and brim must preserve crown pivot without flattening ears."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A moon-curled hat for stirring up cozy trouble.",
+      "artBrief": "Plum felt crooked witch hat, warm amber buckle, tiny stitched moon patch; broad rounded brim, clear crown contact, ears remain readable."
+    },
+    {
+      "id": "hedge_broom",
+      "name": "Hedge Broom",
+      "lookId": "rosie_hedge_witch",
+      "category": "held",
+      "cardId": "halloween_2026_card_hedge_broom",
+      "rarity": "rare",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Single trimmed broom silhouette may mirror with facing; authored grip pivot is calibrated in placement tooling."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A twiggy whisk for sweeping moonbeams.",
+      "artBrief": "Short hand broom of bundled hedge twigs, plum ribbon, amber berries, and one curled leaf; compact readable silhouette."
+    },
+    {
+      "id": "high_collar_scarf",
+      "name": "High Collar Scarf",
+      "lookId": "pepper_little_vampire",
+      "category": "scarf",
+      "cardId": "halloween_2026_card_high_collar_scarf",
+      "rarity": "epic",
+      "anchor": "neck",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile flat front cutouts tested on all six pigs; V bib and collar wings stay in one front layer with no wrap or back piece."
+      },
+      "sourcePigForConcept": "pepper",
+      "copy": "A grand collar for very small midnight plans.",
+      "artBrief": "Wine-red paper-cutout V bib with two high collar wings, cream piping, face and snout fully clear; transparent trimmed accessory, no cape."
+    },
+    {
+      "id": "pip_candle",
+      "name": "Pip Candle",
+      "lookId": "pepper_little_vampire",
+      "category": "held",
+      "cardId": "halloween_2026_card_pip_candle",
+      "rarity": "rare",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Single trimmed candle may mirror with facing; authored grip pivot is calibrated in placement tooling."
+      },
+      "sourcePigForConcept": "pepper",
+      "copy": "A brave little flame for the walk home.",
+      "artBrief": "Stubby ivory candle in a berry-red drip holder, warm friendly flame, wax kept clear of the hoof grip."
+    },
+    {
+      "id": "patchwork_bolt_cap",
+      "name": "Bolt Headband",
+      "lookId": "copper_patchwork_monster",
+      "category": "hat",
+      "cardId": "halloween_2026_card_patchwork_bolt_cap",
+      "rarity": "epic",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored profiles keep cloth cap on crown; padded side bolts stay clear of ears."
+      },
+      "sourcePigForConcept": "copper",
+      "copy": "Soft bolts, bright scraps, excellent ideas.",
+      "artBrief": "Slim moss-and-lavender patchwork headband with two padded felt bolt tabs and chunky stitches; ears and face stay open.",
+      "cardArtVersion": 2
+    },
+    {
+      "id": "stitched_bow",
+      "name": "Stitched Bow",
+      "lookId": "copper_patchwork_monster",
+      "category": "bow",
+      "cardId": "halloween_2026_card_stitched_bow",
+      "rarity": "rare",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile bow silhouettes tested on all six pigs; use the calibrated head pivot and keep ears visible."
+      },
+      "sourcePigForConcept": "copper",
+      "copy": "Every stitch holds a tiny happy thought.",
+      "artBrief": "Chunky fabric bow made from moss, lavender, and denim scraps with visible cream stitches and one wooden button."
+    },
+    {
+      "id": "friendly_skull_facepaint",
+      "name": "Bone Mask",
+      "lookId": "bandit_skeleton",
+      "category": "mask",
+      "cardId": "halloween_2026_card_friendly_skull_facepaint",
+      "rarity": "epic",
+      "anchor": "eyes",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile registration art tested on all six pigs; eyes and snout remain open and coat shows between marks."
+      },
+      "sourcePigForConcept": "bandit",
+      "copy": "A bony grin painted on with marshmallow chalk.",
+      "artBrief": "Cream storybook bone mask with generous open eye and snout apertures, cheek dots, and coat-visible gaps; cute and clean, no gore.",
+      "cardArtVersion": 2
+    },
+    {
+      "id": "crossbones_bow",
+      "name": "Crossbones Bow",
+      "lookId": "bandit_skeleton",
+      "category": "bow",
+      "cardId": "halloween_2026_card_crossbones_bow",
+      "rarity": "rare",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile bow silhouettes tested on all six pigs; crossed toy-bone tails remain clear of ears."
+      },
+      "sourcePigForConcept": "bandit",
+      "copy": "A bow with a cheerful little rattle.",
+      "artBrief": "Blackberry bow with two rounded cream toy bones crossed at its center, orange knot, friendly storybook proportions."
+    },
+    {
+      "id": "linen_knot_headwrap",
+      "name": "Linen Knot Headwrap",
+      "lookId": "pickles_mummy",
+      "category": "hat",
+      "cardId": "halloween_2026_card_linen_knot_headwrap",
+      "rarity": "uncommon",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored profiles show crown bands only; never wrap the neck or body, leave ears and face open."
+      },
+      "sourcePigForConcept": "pickles",
+      "copy": "Ancient linens, freshly fluffed.",
+      "artBrief": "Warm oatmeal linen bands crossing as a soft crown cap with one jaunty knot; loose ends short, ears exposed.",
+      "cardArtVersion": 2
+    },
+    {
+      "id": "scarab_lantern",
+      "name": "Scarab Lantern",
+      "lookId": "pickles_mummy",
+      "category": "held",
+      "cardId": "halloween_2026_card_scarab_lantern",
+      "rarity": "epic",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Single trimmed lantern may mirror with facing; authored handle pivot is calibrated in placement tooling."
+      },
+      "sourcePigForConcept": "pickles",
+      "copy": "Old golden light, warm as toast.",
+      "artBrief": "Small teal scarab lantern with antique-gold frame and honey glow; rounded toy-like form, no realistic insect detail."
+    },
+    {
+      "id": "lantern_sprout_cap",
+      "name": "Lantern Sprout Cap",
+      "lookId": "biscuit_pumpkin",
+      "category": "hat",
+      "cardId": "halloween_2026_card_lantern_sprout_cap",
+      "rarity": "rare",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored profiles preserve low pumpkin-lid seat and angle the leaf around the nearest ear."
+      },
+      "sourcePigForConcept": "biscuit",
+      "copy": "A pumpkin lid that picked you.",
+      "artBrief": "Orange ribbed pumpkin-lid cap with curled green stem and one broad leaf; open face, no jack-o-lantern head enclosure."
+    },
+    {
+      "id": "pumpkin_treat_pail",
+      "name": "Pumpkin Treat Pail",
+      "lookId": "biscuit_pumpkin",
+      "category": "held",
+      "cardId": "halloween_2026_card_pumpkin_treat_pail",
+      "rarity": "uncommon",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Mirror-compatible pail; handle meets the hand anchor and bucket remains clear of feet."
+      },
+      "sourcePigForConcept": "biscuit",
+      "copy": "Room for one more caramel truffle.",
+      "artBrief": "Small smiling pumpkin candy pail with cream handle and two wrapped sweets peeking out; bold compact silhouette."
+    },
+    {
+      "id": "silly_sheet_ghost_hood",
+      "name": "Silly Sheet Ghost Hood",
+      "lookId": "rosie_friendly_ghost",
+      "category": "hat",
+      "cardId": "halloween_2026_card_silly_sheet_ghost_hood",
+      "rarity": "legendary",
+      "anchor": "head",
+      "layer": "front",
+      "optionalMoreCoveredVariant": true,
+      "sideArt": {
+        "required": true,
+        "requirement": "Mandatory front and profile art for every pose family; eye and snout openings track anatomy, hem ends above shoulders, never wraps body or neck."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A wobbly boo with two ears poking through.",
+      "artBrief": "Optional identity-relaxed comedy variant: short warm-white sheet hood, stitched eye windows and wide snout opening, both ears poking out, scalloped hem above shoulders."
+    },
+    {
+      "id": "spirit_glow",
+      "cardArtVersion": 2,
+      "name": "Spirit Glow",
+      "lookId": "rosie_friendly_ghost",
+      "category": "aura",
+      "cardId": "halloween_2026_card_spirit_glow",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "behind",
+      "sideArt": {
+        "required": false,
+        "requirement": "Single behind-pig aura; keep the center transparent and test silhouette contrast on all six pigs."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A soft boo-light that follows everywhere.",
+      "artBrief": "Transparent pale-lavender spirit wisps and mint firefly curls around the outer card, leaving pig face and body readable; no character figure."
+    },
+    {
+      "id": "moonpuff_wolf_ears",
+      "name": "Moonpuff Wolf Ears",
+      "lookId": "copper_moon_howler",
+      "category": "hat",
+      "cardId": "halloween_2026_card_moonpuff_wolf_ears",
+      "rarity": "rare",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile art tested on all six pigs; fuzzy wolf ears sit between and behind visible pig ears rather than replacing them."
+      },
+      "sourcePigForConcept": "copper",
+      "copy": "Extra ears for hearing the treat bag open.",
+      "artBrief": "Tufted blue-gray costume ears on a slim moon-yellow headband; clearly pretend, soft rounded tips, original design."
+    },
+    {
+      "id": "moon_charm",
+      "name": "Moon Charm",
+      "lookId": "copper_moon_howler",
+      "category": "necklace",
+      "cardId": "halloween_2026_card_moon_charm",
+      "rarity": "epic",
+      "anchor": "neck",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile flat front charm art tested on all six pigs; one front layer only, no wrap or back piece."
+      },
+      "sourcePigForConcept": "copper",
+      "copy": "A pocket-sized moon for gentle howls.",
+      "artBrief": "Small brushed-silver crescent charm on a short visible front cord arc, blue bead accent, chest-centered and clear of the snout."
+    },
+    {
+      "id": "halloween_2026_pirate_tricorn_hat",
+      "name": "Moonwake Tricorn",
+      "lookId": "bandit_halloween_pirate",
+      "category": "hat",
+      "cardId": "halloween_2026_card_pirate_tricorn_hat",
+      "rarity": "epic",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile silhouettes tested on all six pigs; low curled brim follows the crown while both pig ears stay readable."
+      },
+      "sourcePigForConcept": "bandit",
+      "copy": "A captain\u2019s hat for charting the candy seas.",
+      "artBrief": "Blackberry felt toy tricorn with warm-gold piping, a tiny moon-and-wave badge, and soft curled corners; jaunty storybook shape, no franchise marks.",
+      "cardArtVersion": 2
+    },
+    {
+      "id": "halloween_2026_toy_cutlass",
+      "name": "Toy Cutlass",
+      "lookId": "bandit_halloween_pirate",
+      "category": "held",
+      "cardId": "halloween_2026_card_toy_cutlass",
+      "rarity": "rare",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Mirror-compatible toy cutlass; rounded grip stays fixed to hand_r and the blunt blade remains clear of face and feet."
+      },
+      "sourcePigForConcept": "bandit",
+      "copy": "A brave little blade made for cardboard treasure.",
+      "artBrief": "Small wooden costume cutlass with a rounded silver-painted blade, plum grip, gold guard, and visibly toy-like blunt tip."
+    },
+    {
+      "id": "halloween_2026_patched_straw_hat",
+      "name": "Patchwork Straw Hat",
+      "lookId": "pickles_halloween_scarecrow",
+      "category": "hat",
+      "cardId": "halloween_2026_card_patched_straw_hat",
+      "rarity": "rare",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile silhouettes tested on all six pigs; crown seat stays low and uneven straw edges remain clear of eyes and ears."
+      },
+      "sourcePigForConcept": "pickles",
+      "copy": "A harvest hat with room for one more patch.",
+      "artBrief": "Soft golden straw hat with floppy rounded brim, moss and pumpkin cloth patches, chunky cream stitches, and one tucked autumn leaf."
+    },
+    {
+      "id": "halloween_2026_straw_bow",
+      "name": "Straw Bow",
+      "lookId": "pickles_halloween_scarecrow",
+      "category": "bow",
+      "cardId": "halloween_2026_card_straw_bow",
+      "rarity": "uncommon",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile bow silhouettes tested on all six pigs; tied straw loops use the calibrated head pivot and do not cover ears."
+      },
+      "sourcePigForConcept": "pickles",
+      "copy": "Tied from the friendliest wisps in the field.",
+      "artBrief": "Compact bow of bundled golden straw with an orange gingham knot and two short soft-edged tails; clean readable silhouette."
+    },
+    {
+      "id": "halloween_2026_spark_goggles",
+      "name": "Spark Goggles",
+      "lookId": "pepper_halloween_mad_scientist",
+      "category": "glasses",
+      "cardId": "halloween_2026_card_spark_goggles",
+      "rarity": "epic",
+      "anchor": "eyes",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile registration art tested on all six pigs; both eyes and snout remain visible through oversized lenses."
+      },
+      "sourcePigForConcept": "pepper",
+      "copy": "For observing extremely fizzy ideas.",
+      "artBrief": "Round lavender laboratory goggles with mint glass, brass bridge, tiny friendly spark reflections, and a soft plum strap; whimsical, not industrial."
+    },
+    {
+      "id": "halloween_2026_bubbling_flask",
+      "name": "Bubbling Flask",
+      "lookId": "pepper_halloween_mad_scientist",
+      "category": "held",
+      "cardId": "halloween_2026_card_bubbling_flask",
+      "rarity": "rare",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Mirror-compatible flask; narrow corked neck supplies the grip pivot and the glass bowl stays clear of body and feet."
+      },
+      "sourcePigForConcept": "pepper",
+      "copy": "One bubble means curious. Three mean snack time.",
+      "artBrief": "Toy-like round glass flask with glowing mint-purple potion, three oversized bubbles, cork stopper, and bold storybook outline; no realistic chemicals."
+    },
+    {
+      "id": "halloween_2026_bat_ear_cap",
+      "name": "Twilight Bat-Ear Cap",
+      "lookId": "biscuit_halloween_bat",
+      "category": "hat",
+      "cardId": "halloween_2026_card_bat_ear_cap",
+      "rarity": "rare",
+      "cardArtVersion": 2,
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile silhouettes tested on all six pigs; costume bat ears sit between the pig ears and the cap never encloses the face."
+      },
+      "sourcePigForConcept": "biscuit",
+      "copy": "Extra ears for every tiny midnight flutter.",
+      "artBrief": "Deep violet fitted cap with two rounded bat-ear points, berry-pink inner panels, and a small crescent stitch; clearly a costume cap."
+    },
+    {
+      "id": "halloween_2026_bat_wing_bow",
+      "name": "Bat-Wing Bow",
+      "lookId": "biscuit_halloween_bat",
+      "category": "bow",
+      "cardId": "halloween_2026_card_bat_wing_bow",
+      "rarity": "epic",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile bow silhouettes tested on all six pigs; soft wing loops stay compact and clear of the pig ears."
+      },
+      "sourcePigForConcept": "biscuit",
+      "copy": "A bow that flutters whenever treats are near.",
+      "artBrief": "Blackberry bow shaped like two soft scalloped bat wings with a moon-yellow center knot and lavender stitch accents."
+    },
+    {
+      "id": "halloween_2026_star_headwrap",
+      "name": "Starlight Headwrap",
+      "lookId": "rosie_halloween_fortune_teller",
+      "category": "hat",
+      "cardId": "halloween_2026_card_star_headwrap",
+      "rarity": "epic",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile crown-only wraps tested on all six pigs; ears and face remain open and the star charm clears the forehead."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A little starlight for seeing tomorrow\u2019s treats.",
+      "artBrief": "Plum and midnight-blue crown headwrap with warm-gold stars, a centered moonstone charm, and one short side knot; no neck or body wrap."
+    },
+    {
+      "id": "halloween_2026_crystal_ball",
+      "name": "Pocket Crystal Ball",
+      "lookId": "rosie_halloween_fortune_teller",
+      "category": "held",
+      "cardId": "halloween_2026_card_crystal_ball",
+      "rarity": "legendary",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Mirror-compatible crystal ball; small gold stand supplies the hand_r grip and the orb remains clear of snout and feet."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "It predicts a very cozy evening.",
+      "artBrief": "Small lavender crystal orb on a crescent-shaped gold hand stand, with a friendly swirling star and warm inner glow; compact toy-like silhouette."
+    },
+    {
+      "id": "halloween_2026_hollow_jack_costume",
+      "name": "Hollow Jack",
+      "lookId": "halloween_2026_hollow_jack",
+      "category": "costume",
+      "cardId": "halloween_2026_card_hollow_jack_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "author may leave a real face window or a small pig-color seam beneath the face when it strengthens recognition",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs, including front/profile transitions; this is dedicated transformation art, never a head-slot overlay."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A whole patch of moonlit mischief in one suit.",
+      "artBrief": "Rosie-shaped Hollow Jack costume: broad ribbed pumpkin hood with a generous real face window, a padded romper over the short pig torso, leaf collar, open ear and hoof cuffs, curled vine accents. Preserve real pig proportions, source face and hooves; no human arms, long boots or second pumpkin face.",
+      "cardArtVersion": 2
+    },
+    {
+      "id": "halloween_2026_cobweb_crown",
+      "name": "Cobweb Crown",
+      "lookId": "halloween_2026_spooky_extras",
+      "category": "hat",
+      "cardId": "halloween_2026_card_cobweb_crown",
+      "rarity": "epic",
+      "anchor": "head",
+      "layer": "front",
+      "sideArt": {
+        "required": true,
+        "requirement": "Authored front/profile crown silhouettes tested on all six pigs; web points stay clear of eyes and preserve the pig ears."
+      },
+      "sourcePigForConcept": "pepper",
+      "copy": "Moon-silk finery for the ruler of the rafters.",
+      "artBrief": "Delicate but chunky cobweb crown woven from moon-silver thread, three rounded blackberry jewel drops and tiny curled web points, cozy painted fill with bold cocoa outline, readable at shop-card scale, playful spooky underworld mood, no realistic spiders or sharp menace."
+    },
+    {
+      "id": "halloween_2026_ghostlight_lantern",
+      "name": "Ghostlight Lantern",
+      "lookId": "halloween_2026_spooky_extras",
+      "category": "held",
+      "cardId": "halloween_2026_card_ghostlight_lantern",
+      "rarity": "epic",
+      "anchor": "hand_r",
+      "layer": "front",
+      "sideArt": {
+        "required": false,
+        "requirement": "Mirror-compatible lantern; thick curled handle supplies the hand_r pivot and the glow clears the snout and feet."
+      },
+      "sourcePigForConcept": "bandit",
+      "copy": "A shy little light that knows every shortcut home.",
+      "artBrief": "Handheld crooked iron lantern with a plump mint-blue ghost flame peeking through amber panes, thick curled handle, painted saturated glow, bold cocoa outline, cozy spooky-underworld charm, compact readable silhouette, no trapped soul, gore or realistic fire."
+    },
+    {
+      "id": "halloween_2026_little_haunt",
+      "name": "Little Haunt",
+      "lookId": "halloween_2026_spooky_extras",
+      "category": "aura",
+      "cardId": "halloween_2026_card_little_haunt",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "behind",
+      "companionKind": "permitted_friendly_spirit",
+      "sourcePigRule": "spectral painted bog-frog companion; never use a real pig sprite or a pig base",
+      "sideArt": {
+        "required": false,
+        "requirement": "One behind-pig composition may follow the body stage; keep the floating frog clear of the face, feet and held-item space."
+      },
+      "sourcePigForConcept": "copper",
+      "copy": "A bog-frog ghost who follows the bravest hooves.",
+      "artBrief": "Small spectral bog-frog companion floating behind the pig on a curl of violet mist, clearly an original painted friendly spirit rather than a real pig base, mint glow, round eyes, tiny reed crown, saturated storybook color and bold cocoa outline, spooky underworld atmosphere without gore, fear or photorealism."
+    },
+    {
+      "id": "halloween_2026_count_snout_costume",
+      "name": "Count Snout",
+      "lookId": "halloween_2026_count_snout",
+      "category": "costume",
+      "cardId": "halloween_2026_card_count_snout_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A velvet cape for the gentlest creature of the night.",
+      "artBrief": "Friendly vampire costume fitted to a real pig: plum velvet hood and cape, cream shirt front, tiny gold moon medallion and soft bat-wing collar. Preserve the pig face, ears, snout, hooves and short four-legged proportions; no fangs, blood, human limbs or floor shadow."
+    },
+    {
+      "id": "halloween_2026_moonpuff_costume",
+      "name": "Moonpuff",
+      "lookId": "halloween_2026_moonpuff",
+      "category": "costume",
+      "cardId": "halloween_2026_card_moonpuff_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "All the moonlit fluff, none of the growl.",
+      "artBrief": "Friendly werewolf costume fitted to a real pig: rounded blue-gray faux-fur hood, moon-yellow lining, soft chest ruff and short fuzzy romper. Preserve the pig face, ears, snout, hooves and short four-legged proportions; costume claws stay plush and harmless."
+    },
+    {
+      "id": "halloween_2026_little_reaper_costume",
+      "name": "Little Reaper",
+      "lookId": "halloween_2026_little_reaper",
+      "category": "costume",
+      "cardId": "halloween_2026_card_little_reaper_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "Here to collect treats and tiny smiles.",
+      "artBrief": "Friendly grim-reaper costume fitted to a real pig: soft charcoal hood, scalloped short cloak, lavender lining and a small toy crescent crook secured to the suit. Preserve the pig face, ears, snout, hooves and short four-legged proportions; no skull mask, weapon, bones or menace."
+    },
+    {
+      "id": "halloween_2026_patchwork_pal_costume",
+      "name": "Patchwork Pal",
+      "lookId": "halloween_2026_patchwork_pal",
+      "category": "costume",
+      "cardId": "halloween_2026_card_patchwork_pal_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "Stitched together with friendship and a little moonlight.",
+      "artBrief": "Friendly patchwork-monster costume fitted to a real pig: mint cloth hood, rounded plush neck bolts, purple and pumpkin fabric patches, chunky cream stitches and a short romper. Preserve the pig face, ears, snout, hooves and short four-legged proportions; no scars, wounds or human anatomy."
+    },
+    {
+      "id": "halloween_2026_candy_corn_costume",
+      "name": "Candy Corn",
+      "lookId": "halloween_2026_candy_corn",
+      "category": "costume",
+      "cardId": "halloween_2026_card_candy_corn_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "Three cozy stripes and one very sweet snout.",
+      "artBrief": "Candy-corn onesie fitted to a real pig: rounded cream hood, warm orange middle, golden-yellow lower romper, tiny leaf-green zipper pull and soft striped ear cuffs. Preserve the pig face, ears, snout, hooves and short four-legged proportions; no rigid cone body or human limbs."
+    },
+    {
+      "id": "halloween_2026_linen_lurker_costume",
+      "name": "Linen Lurker",
+      "lookId": "halloween_2026_linen_lurker",
+      "category": "costume",
+      "cardId": "halloween_2026_card_linen_lurker_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "Cream bandages, soft seams, and a very awake little snout.",
+      "artBrief": "Cream bandaged hood with true face and pig-inner-ear windows, short bandaged pig romper with a small amber scarab button, original hooves through three open cuffs.",
+      "cardArtVersion": 1
+    },
+    {
+      "id": "halloween_2026_starspell_costume",
+      "name": "Starspell",
+      "lookId": "halloween_2026_starspell",
+      "category": "costume",
+      "cardId": "halloween_2026_card_starspell_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A pocketful of stars and a moon just for Rosie.",
+      "artBrief": "Midnight-blue/lilac plush wizard hood with small gold stars and a short soft pointed tip, short navy pig romper and golden moon button. Real face and hooves visible.",
+      "cardArtVersion": 1
+    },
+    {
+      "id": "halloween_2026_bat_nap_costume",
+      "name": "Bat Nap",
+      "lookId": "halloween_2026_bat_nap",
+      "category": "costume",
+      "cardId": "halloween_2026_card_bat_nap_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "Wrapped in plum velvet, ready for a midnight snooze.",
+      "artBrief": "Plush purple bat hood with small pointed ear wraps around original pig ear windows, short purple romper and tiny folded felt bat-wing collar, no replacement bat face.",
+      "cardArtVersion": 1
+    },
+    {
+      "id": "halloween_2026_little_imp_costume",
+      "name": "Little Imp",
+      "lookId": "halloween_2026_little_imp",
+      "category": "costume",
+      "cardId": "halloween_2026_card_little_imp_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "Two tiny horns. One very innocent smile.",
+      "artBrief": "Brick-red toy devil hood with two small cream plush horns, generous real face window, short red romper with cream trim. Preserve original pig tail; no extra tail or limbs.",
+      "cardArtVersion": 1
+    },
+    {
+      "id": "halloween_2026_marshmallow_boo_costume",
+      "name": "Marshmallow Boo",
+      "lookId": "halloween_2026_marshmallow_boo",
+      "category": "costume",
+      "cardId": "halloween_2026_card_marshmallow_boo_costume",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "fullbody_transformation",
+      "transformation": {
+        "renderMode": "per_pig_per_frame_mask",
+        "coverage": "may_fully_cover_source_pig",
+        "identityRule": "player pig identity persists in UI and ownership even when the source sprite is visually covered",
+        "recognitionOptions": "keep the source pig face, ears and hooves readable through the hood and costume openings",
+        "otherGear": "hide while equipped; preserve saved equipment selections and restore them when the costume is removed"
+      },
+      "sideArt": {
+        "required": true,
+        "requirement": "Author a registered full-body silhouette for every source frame and all six pigs; the front-idle Rosie concept is fit guidance only."
+      },
+      "sourcePigForConcept": "rosie",
+      "copy": "A soft little boo, with Rosie smiling underneath.",
+      "artBrief": "Cream friendly ghost hood with empty face/ear windows, short cream romper with soft ragged hem and pale aqua seams, real eyes, snout and hooves visible.",
+      "cardArtVersion": 2
+    }
+  ],
+  "backgrounds": [
+    {
+      "id": "lantern_porch_bg",
+      "name": "Lantern Porch",
+      "category": "background",
+      "cardId": "halloween_2026_card_lantern_porch_bg",
+      "rarity": "rare",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "rosie",
+      "copy": "Every porch light is a pumpkin smile.",
+      "artBrief": "Opaque cozy farmhouse porch at blue hour, carved lanterns at edges, leaf-strewn central ground clear for a 300px pig, no characters."
+    },
+    {
+      "id": "haunted_orchard_bg",
+      "name": "Haunted Orchard",
+      "category": "background",
+      "cardId": "halloween_2026_card_haunted_orchard_bg",
+      "rarity": "epic",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "bandit",
+      "copy": "The apple trees whisper silly secrets.",
+      "artBrief": "Opaque crooked apple orchard with friendly sheetlike mist, warm lantern depth, open central grass stage, no characters."
+    },
+    {
+      "id": "moonlit_graveyard_bg",
+      "name": "Moonlit Graveyard",
+      "category": "background",
+      "cardId": "halloween_2026_card_moonlit_graveyard_bg",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "biscuit",
+      "copy": "Soft moonlight for brave little hooves.",
+      "artBrief": "Opaque storybook graveyard, rounded old stones and silver moon, cozy violet palette, clear central path and readable silhouette area, no characters or gore."
+    },
+    {
+      "id": "witches_wood_bg",
+      "name": "Witch's Wood",
+      "category": "background",
+      "cardId": "halloween_2026_card_witches_wood_bg",
+      "rarity": "epic",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "pickles",
+      "copy": "A crooked path where fireflies brew moonlight.",
+      "artBrief": "Opaque enchanted woodland with twisted branches, hanging potion lamps, mushrooms at margins, uncluttered central clearing, no characters."
+    },
+    {
+      "id": "cobweb_barn_bg",
+      "name": "Cobweb Barn",
+      "category": "background",
+      "cardId": "halloween_2026_card_cobweb_barn_bg",
+      "rarity": "rare",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "copper",
+      "copy": "The barn dressed up too.",
+      "artBrief": "Opaque familiar timber barn interior decorated with soft cobweb garlands and amber candles, open central floor for 300px pig, no characters."
+    },
+    {
+      "id": "candy_lantern_trail_bg",
+      "name": "Candy Lantern Trail",
+      "category": "background",
+      "cardId": "halloween_2026_card_candy_lantern_trail_bg",
+      "rarity": "rare",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "pepper",
+      "copy": "Follow the sweets all the way home.",
+      "artBrief": "Opaque dusk trail bordered by candy-shaped lanterns and autumn hedges, bright open central ground/read area, no characters."
+    },
+    {
+      "id": "halloween_2026_haunted_ship_deck_bg",
+      "name": "Haunted Ship Deck",
+      "category": "background",
+      "cardId": "halloween_2026_card_haunted_ship_deck_bg",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "bandit",
+      "copy": "The moon keeps watch from the crow\u2019s nest.",
+      "artBrief": "Opaque storybook ship deck at moonlit blue hour, gently crooked mast and glowing lanterns at the margins, soft ghostly sea mist, broad uncluttered central planks for a 300px pig, no characters, peril, or realistic horror."
+    },
+    {
+      "id": "halloween_2026_harvest_moon_cornfield_bg",
+      "name": "Harvest Moon Cornfield",
+      "category": "background",
+      "cardId": "halloween_2026_card_harvest_moon_cornfield_bg",
+      "rarity": "epic",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "pickles",
+      "copy": "The corn rows glow under a pumpkin-bright moon.",
+      "artBrief": "Opaque cozy cornfield beneath an enormous amber harvest moon, rounded stalk silhouettes framing the margins, fireflies and a clear central dirt path for a 300px pig, no characters or threatening shapes."
+    },
+    {
+      "id": "halloween_2026_whispering_crypt_bg",
+      "name": "Whispering Crypt",
+      "category": "background",
+      "cardId": "halloween_2026_card_whispering_crypt_bg",
+      "rarity": "legendary",
+      "anchor": "body",
+      "layer": "behind",
+      "sourcePigForConcept": "pepper",
+      "copy": "The old stones only whisper friendly secrets.",
+      "artBrief": "Opaque cozy painted crypt beneath the pumpkin roots: rounded cocoa-stone arches, plum alcoves, mint ghostlights, crooked candles and softly glowing runes framing the margins, bold cocoa outlines and saturated spooky-underworld color, broad uncluttered central floor for a 300px pig, no characters, bones, gore or realistic horror."
+    }
+  ],
+  "unlockCards": [
+    {
+      "id": "halloween_2026_card_moonbrew_witch_hat",
+      "unlocks": "moonbrew_witch_hat",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_hedge_broom",
+      "unlocks": "hedge_broom",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_high_collar_scarf",
+      "unlocks": "high_collar_scarf",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_pip_candle",
+      "unlocks": "pip_candle",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_patchwork_bolt_cap",
+      "unlocks": "patchwork_bolt_cap",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_stitched_bow",
+      "unlocks": "stitched_bow",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_friendly_skull_facepaint",
+      "unlocks": "friendly_skull_facepaint",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_crossbones_bow",
+      "unlocks": "crossbones_bow",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_linen_knot_headwrap",
+      "unlocks": "linen_knot_headwrap",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_scarab_lantern",
+      "unlocks": "scarab_lantern",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_lantern_sprout_cap",
+      "unlocks": "lantern_sprout_cap",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_pumpkin_treat_pail",
+      "unlocks": "pumpkin_treat_pail",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_silly_sheet_ghost_hood",
+      "unlocks": "silly_sheet_ghost_hood",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_spirit_glow",
+      "unlocks": "spirit_glow",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_moonpuff_wolf_ears",
+      "unlocks": "moonpuff_wolf_ears",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_moon_charm",
+      "unlocks": "moon_charm",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_lantern_porch_bg",
+      "unlocks": "lantern_porch_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_haunted_orchard_bg",
+      "unlocks": "haunted_orchard_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_moonlit_graveyard_bg",
+      "unlocks": "moonlit_graveyard_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_witches_wood_bg",
+      "unlocks": "witches_wood_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_cobweb_barn_bg",
+      "unlocks": "cobweb_barn_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_candy_lantern_trail_bg",
+      "unlocks": "candy_lantern_trail_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_pirate_tricorn_hat",
+      "unlocks": "halloween_2026_pirate_tricorn_hat",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_toy_cutlass",
+      "unlocks": "halloween_2026_toy_cutlass",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_patched_straw_hat",
+      "unlocks": "halloween_2026_patched_straw_hat",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_straw_bow",
+      "unlocks": "halloween_2026_straw_bow",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_spark_goggles",
+      "unlocks": "halloween_2026_spark_goggles",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_bubbling_flask",
+      "unlocks": "halloween_2026_bubbling_flask",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_bat_ear_cap",
+      "unlocks": "halloween_2026_bat_ear_cap",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_bat_wing_bow",
+      "unlocks": "halloween_2026_bat_wing_bow",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_star_headwrap",
+      "unlocks": "halloween_2026_star_headwrap",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_crystal_ball",
+      "unlocks": "halloween_2026_crystal_ball",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_haunted_ship_deck_bg",
+      "unlocks": "halloween_2026_haunted_ship_deck_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_harvest_moon_cornfield_bg",
+      "unlocks": "halloween_2026_harvest_moon_cornfield_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_hollow_jack_costume",
+      "unlocks": "halloween_2026_hollow_jack_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_cobweb_crown",
+      "unlocks": "halloween_2026_cobweb_crown",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_ghostlight_lantern",
+      "unlocks": "halloween_2026_ghostlight_lantern",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_little_haunt",
+      "unlocks": "halloween_2026_little_haunt",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_whispering_crypt_bg",
+      "unlocks": "halloween_2026_whispering_crypt_bg",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_count_snout_costume",
+      "unlocks": "halloween_2026_count_snout_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_moonpuff_costume",
+      "unlocks": "halloween_2026_moonpuff_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_little_reaper_costume",
+      "unlocks": "halloween_2026_little_reaper_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_patchwork_pal_costume",
+      "unlocks": "halloween_2026_patchwork_pal_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_candy_corn_costume",
+      "unlocks": "halloween_2026_candy_corn_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_linen_lurker_costume",
+      "unlocks": "halloween_2026_linen_lurker_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_starspell_costume",
+      "unlocks": "halloween_2026_starspell_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_bat_nap_costume",
+      "unlocks": "halloween_2026_bat_nap_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_little_imp_costume",
+      "unlocks": "halloween_2026_little_imp_costume",
+      "firstCopyUnlock": true
+    },
+    {
+      "id": "halloween_2026_card_marshmallow_boo_costume",
+      "unlocks": "halloween_2026_marshmallow_boo_costume",
+      "firstCopyUnlock": true
+    }
+  ]
+}

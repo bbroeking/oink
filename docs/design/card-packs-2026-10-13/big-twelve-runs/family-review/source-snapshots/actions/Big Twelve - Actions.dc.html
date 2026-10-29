@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800;900&family=Patrick+Hand&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#fbeee2}
+a{color:#a03e2f}a:hover{color:#2a1f15}
+</style></helmet>
+<div style="min-height:100vh;padding:32px 20px 64px;box-sizing:border-box;font-family:'Nunito',sans-serif;color:#2a1f15;display:flex;flex-direction:column;gap:28px;max-width:1420px;margin:0 auto">
+  <header style="display:flex;flex-direction:column;gap:6px;max-width:720px">
+    <span style="font-family:'Caprasimo',serif;font-size:30px;line-height:1.1">Big Twelve — Actions</span>
+    <span style="font-weight:700;font-size:15px;line-height:1.45;text-wrap:pretty">Actions read top-down: name and Energy first, a slanted illustration band in the middle, and the effect in the lower third.</span>
+    <span style="font-weight:700;font-size:15px;line-height:1.45;color:#a03e2f;text-wrap:pretty">Current prototype catalog effects · adventure adaptation TBD. Energy costs remain TBD.</span>
+  </header>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,320px);justify-content:center;align-items:start;gap:44px 32px">
+
+    <figure id="rosie" data-screen-label="Rosie reference" style="margin:0;width:320px;display:flex;flex-direction:column;gap:14px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:0;right:0;top:0;height:262px;clip-path:polygon(0 0,100% 0,100% 80%,0 100%);background-image:url(art/maple/homestead_barn.jpg);background-size:cover;background-position:50% 40%"></div>
+        <svg viewBox="0 0 314 262" aria-hidden="true" style="position:absolute;left:0;top:0;width:314px;height:262px;overflow:visible"><polyline points="-2,262 316,209.2" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;right:14px;top:8px;display:flex;flex-direction:column;align-items:flex-end"><span style="font-family:'Caprasimo',serif;font-size:96px;line-height:.9;color:#f7a3b3;-webkit-text-stroke:3px #2a1f15;paint-order:stroke fill">12</span><span style="font-weight:900;font-size:16px">Cheer</span></div>
+        <img src="art/coop/sprites/rosie-idle_1.png" alt="Rosie, front game sprite" style="position:absolute;left:14px;top:62px;width:184px;height:auto"></img>
+        <div style="position:absolute;left:18px;right:18px;top:262px;display:flex;align-items:baseline;gap:10px"><span style="font-family:'Caprasimo',serif;font-size:44px;line-height:1">Rosie</span><span style="font-weight:800;font-size:15px;color:#a03e2f">Legend</span></div>
+        <div style="position:absolute;left:18px;right:18px;top:312px;bottom:12px;display:flex;flex-direction:column;gap:2px"><span style="font-weight:900;font-size:17px;line-height:1.3">Loadout Tactician</span><span style="font-weight:700;font-size:15px;line-height:1.5;text-wrap:pretty">Once per round, after you play a Support card, draw 1 card, then discard 1 card.</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">No. 001 · Co-op test rules</span></div>
+      </div>
+      <figcaption style="font-weight:700;font-size:14px;line-height:1.45;color:rgba(42,31,21,.75);text-wrap:pretty">Immutable E · Big Twelve visual reference — earlier co-op copy; not the rules source for Actions.</figcaption>
+    </figure>
+
+    <figure id="snoot-boop" data-screen-label="Action · Snoot Boop" style="margin:0;width:320px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:18px;right:96px;top:0;height:80px;display:flex;align-items:center"><span style="font-family:'Caprasimo',serif;font-size:30px;line-height:1;text-wrap:balance">Snoot Boop</span></div>
+        <div style="position:absolute;right:14px;top:8px;width:66px;height:66px;box-sizing:border-box;border:2.5px solid #2a1f15;border-radius:50%;background:#ffd87a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px"><span style="font-family:'Caprasimo',serif;font-size:21px;line-height:1">TBD</span><span style="font-weight:900;font-size:12px;line-height:1">Energy</span></div>
+        <div style="position:absolute;left:0;right:0;top:80px;height:234px;clip-path:polygon(0 18px,100% 0,100% calc(100% - 18px),0 100%)"><img src="uploads/076-snoot-boop-print-v1.png" alt="Snoot Boop illustration" style="display:block;width:100%;height:100%;object-fit:cover;object-position:50% 43%"></img></div>
+        <svg viewBox="0 0 314 234" aria-hidden="true" style="position:absolute;left:0;top:80px;width:314px;height:234px;overflow:visible"><polyline points="-2,18 316,0" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline><polyline points="-2,234 316,216" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;left:18px;right:18px;top:326px;bottom:12px;display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font-weight:900;font-size:19px;line-height:1.25">Effect</span><span style="font-weight:800;font-size:15px;line-height:1.25;color:#a03e2f">Action</span></div><span style="font-weight:700;font-size:15px;line-height:22.5px;text-wrap:pretty">Deal 2 damage to an Enemy, then restore 2 Cheer.</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">No. 076 · Prototype catalog</span></div>
+      </div>
+    </figure>
+
+    <figure id="big-wind-up" data-screen-label="Action · Big Wind-Up" style="margin:0;width:320px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:18px;right:96px;top:0;height:80px;display:flex;align-items:center"><span style="font-family:'Caprasimo',serif;font-size:30px;line-height:1;text-wrap:balance">Big Wind-Up</span></div>
+        <div style="position:absolute;right:14px;top:8px;width:66px;height:66px;box-sizing:border-box;border:2.5px solid #2a1f15;border-radius:50%;background:#ffd87a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px"><span style="font-family:'Caprasimo',serif;font-size:21px;line-height:1">TBD</span><span style="font-weight:900;font-size:12px;line-height:1">Energy</span></div>
+        <div style="position:absolute;left:0;right:0;top:80px;height:234px;clip-path:polygon(0 18px,100% 0,100% calc(100% - 18px),0 100%)"><img src="uploads/064-big-wind-up-print-v2.png" alt="Big Wind-Up illustration" style="display:block;width:100%;height:100%;object-fit:cover;object-position:50% 76%"></img></div>
+        <svg viewBox="0 0 314 234" aria-hidden="true" style="position:absolute;left:0;top:80px;width:314px;height:234px;overflow:visible"><polyline points="-2,18 316,0" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline><polyline points="-2,234 316,216" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;left:18px;right:18px;top:326px;bottom:12px;display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font-weight:900;font-size:19px;line-height:1.25">Effect</span><span style="font-weight:800;font-size:15px;line-height:1.25;color:#a03e2f">Action</span></div><span style="font-weight:700;font-size:15px;line-height:22.5px;text-wrap:pretty">Your Legend's next attack this turn gets +2 Bash.</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">No. 064 · Prototype catalog</span></div>
+      </div>
+    </figure>
+
+    <figure id="duck-into-the-mud" data-screen-label="Action · Duck Into the Mud" style="margin:0;width:320px">
+      <div style="position:relative;width:320px;height:448px;box-sizing:border-box;border:3px solid #2a1f15;border-radius:14px;overflow:hidden;background:#fffaf0">
+        <div style="position:absolute;left:18px;right:96px;top:0;height:80px;display:flex;align-items:center"><span style="font-family:'Caprasimo',serif;font-size:30px;line-height:1;text-wrap:balance">Duck Into the Mud</span></div>
+        <div style="position:absolute;right:14px;top:8px;width:66px;height:66px;box-sizing:border-box;border:2.5px solid #2a1f15;border-radius:50%;background:#ffd87a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px"><span style="font-family:'Caprasimo',serif;font-size:21px;line-height:1">TBD</span><span style="font-weight:900;font-size:12px;line-height:1">Energy</span></div>
+        <div style="position:absolute;left:0;right:0;top:80px;height:234px;clip-path:polygon(0 18px,100% 0,100% calc(100% - 18px),0 100%)"><img src="uploads/065-duck-into-the-mud-print-v1.png" alt="Duck Into the Mud illustration" style="display:block;width:100%;height:100%;object-fit:cover;object-position:50% 43%"></img></div>
+        <svg viewBox="0 0 314 234" aria-hidden="true" style="position:absolute;left:0;top:80px;width:314px;height:234px;overflow:visible"><polyline points="-2,18 316,0" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline><polyline points="-2,234 316,216" fill="none" stroke="#2a1f15" stroke-width="2.5"></polyline></svg>
+        <div style="position:absolute;left:18px;right:18px;top:326px;bottom:12px;display:flex;flex-direction:column;gap:2px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font-weight:900;font-size:19px;line-height:1.25">Effect</span><span style="font-weight:800;font-size:15px;line-height:1.25;color:#a03e2f">Action</span></div><span style="font-weight:700;font-size:15px;line-height:22.5px;text-wrap:pretty">Before your next turn, prevent the next 2 damage to your Legend.</span><span style="margin-top:auto;font-family:'Patrick Hand',cursive;font-size:15px;color:rgba(42,31,21,.7)">No. 065 · Prototype catalog</span></div>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

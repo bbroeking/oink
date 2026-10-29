@@ -1,0 +1,9 @@
+{
+  "status": "superseded-local-reference",
+  "currentContract": "../../../../assets/rive/card-packs/contract.json",
+  "currentRuntime": "../../../../assets/rive/card-packs/card-pack-reveal.riv",
+  "currentEditableBackup": "../../../../assets/rive/card-packs/source/card-pack-reveal.rev",
+  "referenceBinary": "build/card-pack-reveal.riv",
+  "referenceAuthoringCliVersion": "1.5.1",
+  "note": "The build directory is an earlier RML/CLI motion reference. Integrate the MCP-authored asset under assets/rive/card-packs."
+}

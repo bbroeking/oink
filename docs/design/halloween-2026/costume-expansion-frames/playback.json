@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Count Snout",
+    "frames": [
+      "Idle frame 2 of 12 · one shared source clock",
+      "Idle frame 4 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 7 of 12 · one shared source clock",
+      "Idle frame 9 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 12 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 6 of 12 · one shared source clock",
+      "Idle frame 8 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 11 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 2 of 12 · one shared source clock"
+    ]
+  },
+  {
+    "name": "Moonpuff",
+    "frames": [
+      "Idle frame 2 of 12 · one shared source clock",
+      "Idle frame 4 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 7 of 12 · one shared source clock",
+      "Idle frame 9 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 12 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 6 of 12 · one shared source clock",
+      "Idle frame 8 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 11 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock"
+    ]
+  },
+  {
+    "name": "Little Reaper",
+    "frames": [
+      "Idle frame 2 of 12 · one shared source clock",
+      "Idle frame 4 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 7 of 12 · one shared source clock",
+      "Idle frame 9 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 12 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 6 of 12 · one shared source clock",
+      "Idle frame 8 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 11 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock"
+    ]
+  },
+  {
+    "name": "Patchwork Pal",
+    "frames": [
+      "Idle frame 2 of 12 · one shared source clock",
+      "Idle frame 4 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 7 of 12 · one shared source clock",
+      "Idle frame 9 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 12 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 6 of 12 · one shared source clock",
+      "Idle frame 8 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 11 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock"
+    ]
+  },
+  {
+    "name": "Candy Corn",
+    "frames": [
+      "Idle frame 2 of 12 · one shared source clock",
+      "Idle frame 4 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 7 of 12 · one shared source clock",
+      "Idle frame 9 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 12 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 3 of 12 · one shared source clock",
+      "Idle frame 5 of 12 · one shared source clock",
+      "Idle frame 6 of 12 · one shared source clock",
+      "Idle frame 8 of 12 · one shared source clock",
+      "Idle frame 10 of 12 · one shared source clock",
+      "Idle frame 11 of 12 · one shared source clock",
+      "Idle frame 1 of 12 · one shared source clock",
+      "Idle frame 2 of 12 · one shared source clock"
+    ]
+  }
+]
