@@ -10,6 +10,12 @@
 //   • had enough: the bag dims, no hand-over button, the "enough" line
 //   • an empty bag is the EmptyState that points at the Dig
 //   • the fan row renders his mark and stay line, and only when present
+//   • sets and trade-ups (2026-10-29, canvas boards A2 to A4): one tile per
+//     find with a ×N badge; taps build a hand (one, a pair, three alike); the
+//     pair's strip and ticket say +9 and hand over two ids; three alike asks
+//     first (the confirm) and can step back; the receipt keeps one tally across
+//     the open sheet and a lilac card for what came back; rare stops at a pair;
+//     a sheet without the trade-up mutation stops at a pair too
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -36,7 +42,7 @@ jest.mock("expo-haptics", () => ({
 import { TraderSheet } from "@/components/trader/TraderSheet";
 import { Sticker } from "@/components/ui/Sticker";
 import { BarnButton, type BarnFanOption } from "@/components/BarnButton";
-import { toTraderStatus, type TraderSaleOutcome, type TraderStatus } from "@/utils/trader";
+import { toTraderStatus, type TraderSaleOutcome, type TraderStatus, type TraderTradeUpOutcome } from "@/utils/trader";
 import type { SatchelItem } from "@/utils/satchel";
 
 const METRICS = {
@@ -166,6 +172,8 @@ describe("TraderSheet", () => {
 				findId: "river_pebble",
 				tickles: 3,
 				wasWant: false,
+				pair: false,
+				pairBonus: 0,
 				before: 100,
 				after: 103,
 				findsLeft: 5,
@@ -273,5 +281,250 @@ describe("the fan row", () => {
 			r.update(<BarnButton options={[barn]} armedKey="barn" onArm={jest.fn()} />);
 		});
 		expect(r.root.findAllByProps({ accessibilityLabel: row })).toHaveLength(0);
+	});
+});
+
+describe("TraderSheet, sets and trade-ups", () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+		jest.setSystemTime(Date.parse(NOW));
+	});
+	afterEach(() => jest.useRealTimers());
+
+	const SETS = {
+		finds_per_visit: 9,
+		pair_multiplier: 1.5,
+		trade_up: true,
+		trade_up_count: 3,
+	};
+	const setsStatus = (visit: Record<string, unknown> = {}) =>
+		status({
+			...SETS,
+			visit: { finds_left: 9, unpaired: [], trade_ups: { common: "marble", uncommon: "tin_whistle" }, ...visit },
+		});
+	const PEBBLES: SatchelItem[] = [
+		{ id: 11, find_id: "river_pebble", source: "gift" },
+		{ id: 12, find_id: "river_pebble", source: "dig" },
+		{ id: 13, find_id: "river_pebble", source: "dig" },
+		{ id: 14, find_id: "clover", source: "dig" },
+		{ id: 15, find_id: "clover", source: "dig" },
+		{ id: 16, find_id: "tin_whistle", source: "dig" },
+		{ id: 17, find_id: "tin_whistle", source: "dig" },
+		{ id: 18, find_id: "tin_whistle", source: "dig" },
+	];
+	const offers = (r: TestRenderer.ReactTestRenderer) =>
+		r.root.findAllByType(Sticker).filter((n) => n.props.testID === "trader-offer");
+	const sale = (findId: "river_pebble", tickles: number, pair: boolean, before: number): TraderSaleOutcome => ({
+		ok: true,
+		replay: false,
+		findId,
+		tickles,
+		wasWant: false,
+		pair,
+		pairBonus: pair ? tickles / 2 : 0,
+		before,
+		after: before + tickles,
+		findsLeft: 7,
+		visitTickles: 9,
+		bag: [],
+	});
+
+	it("one tile per find with a ×N badge, and his new line", async () => {
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(mount({ status: setsStatus(), items: PEBBLES, onTradeUp: jest.fn() }));
+		});
+		expect(offers(r)).toHaveLength(3);
+		const text = textOf(r.root);
+		expect(text).toContain("×3");
+		expect(text).toContain("×2");
+		expect(text).toContain("Bring me a pair and I pay half again. Three alike and I will trade you up.");
+		expect(text).toContain("tap finds to make a hand");
+		expect(text).toContain("takes 9 more finds");
+		expect(offers(r)[0].props.accessibilityLabel).toBe("river pebble, 3 tickles, 3 in the bag");
+	});
+
+	it("two taps make a pair: the strip, the hint, +9 on the ticket, and two ids handed over", async () => {
+		const onSell = jest
+			.fn<Promise<TraderSaleOutcome>, [number]>()
+			.mockResolvedValueOnce(sale("river_pebble", 3, false, 100))
+			.mockResolvedValueOnce(sale("river_pebble", 6, true, 103));
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(mount({ status: setsStatus(), items: PEBBLES, onSell, onTradeUp: jest.fn() }));
+		});
+		await act(async () => offers(r)[0].props.onPress());
+		expect(hostCount(r.root, "trader-hand")).toBe(0);
+		await act(async () => offers(r)[0].props.onPress());
+		const text = textOf(r.root);
+		expect(text).toContain("a pair of river pebbles");
+		expect(text).toContain("3 + 3, then half again: 9 tickles");
+		expect(text).toContain("a pair · +9");
+		expect(text).toContain("tap one more river pebble and he will trade all three for a glass marble");
+		const sell = r.root.findByProps({ testID: "trader-sell" });
+		expect(sell.props.stub).toBe("+9");
+		expect(sell.props.label).toBe("Hand over the pair");
+		await act(async () => sell.props.onPress());
+		// Dug ones first: the friend's gift (11) stays.
+		expect(onSell.mock.calls.map((c) => c[0])).toEqual([12, 13]);
+		const after = textOf(r.root);
+		expect(after).toContain("a pair of river pebbles went into his satchel · +9");
+		expect(after).toContain("100");
+		expect(after).toContain("109");
+		expect(after).toContain("after");
+	});
+
+	it("a pair the bag cannot finish says hold one more", async () => {
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(
+				mount({ status: setsStatus(), items: PEBBLES.filter((i) => i.id !== 11), onTradeUp: jest.fn() }),
+			);
+		});
+		await act(async () => offers(r)[0].props.onPress());
+		await act(async () => offers(r)[0].props.onPress());
+		expect(textOf(r.root)).toContain("hold one more river pebble and he will trade all three for a glass marble");
+		// A third tap clears the hand (two is all the bag holds).
+		await act(async () => offers(r)[0].props.onPress());
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.disabled).toBe(true);
+	});
+
+	it("three alike asks first, can step back, then trades up and draws what came back", async () => {
+		const onTradeUp = jest.fn(
+			async (): Promise<TraderTradeUpOutcome> => ({
+				ok: true,
+				replay: false,
+				gaveFindId: "river_pebble",
+				count: 3,
+				gotFindId: "marble",
+				gotItemId: 42,
+				newToBag: true,
+				findsLeft: 6,
+				visitTickles: 0,
+				bag: [],
+			}),
+		);
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(mount({ status: setsStatus(), items: PEBBLES, onTradeUp }));
+		});
+		for (let i = 0; i < 3; i++) await act(async () => offers(r)[0].props.onPress());
+		const ticket = r.root.findByProps({ testID: "trader-sell" });
+		expect(ticket.props.stub).toBe("3→1");
+		expect(ticket.props.label).toBe("Trade three river pebbles for a glass marble");
+		expect(textOf(r.root)).toContain("three alike · up");
+		await act(async () => ticket.props.onPress());
+		// A3: the confirm, before anything moves.
+		expect(hostCount(r.root, "trader-trade-up")).toBeGreaterThan(0);
+		let text = textOf(r.root);
+		expect(text).toContain("Three river pebbles, little pig? Then a glass marble is yours. My pick of which. No take-backs.");
+		expect(text).toContain("Rare has no trade-up: nothing sits above it.");
+		expect(text).toContain("uncommon");
+		expect(onTradeUp).not.toHaveBeenCalled();
+		// Keep them: back to the bag, the hand still held.
+		await act(async () => r.root.findByProps({ testID: "trader-trade-up-back" }).props.onPress());
+		expect(hostCount(r.root, "trader-trade-up")).toBe(0);
+		await act(async () => r.root.findByProps({ testID: "trader-sell" }).props.onPress());
+		await act(async () => r.root.findByProps({ testID: "trader-trade-up-confirm" }).props.onPress());
+		expect(onTradeUp).toHaveBeenCalledWith("river_pebble");
+		// A4: the lilac card.
+		expect(hostCount(r.root, "trader-came-back")).toBeGreaterThan(0);
+		text = textOf(r.root);
+		expect(text).toContain("a glass marble");
+		expect(text).toContain("came back for three river pebbles · new to your bag");
+		expect(hostCount(r.root, "trader-trade-up")).toBe(0);
+	});
+
+	it("the receipt keeps one tally across the open sheet", async () => {
+		const onSell = jest
+			.fn<Promise<TraderSaleOutcome>, [number]>()
+			.mockResolvedValueOnce(sale("river_pebble", 3, false, 41))
+			.mockResolvedValueOnce(sale("river_pebble", 6, true, 44));
+		const onTradeUp = jest.fn(
+			async (): Promise<TraderTradeUpOutcome> => ({
+				ok: true,
+				replay: false,
+				gaveFindId: "clover",
+				count: 3,
+				gotFindId: "old_key",
+				gotItemId: 43,
+				newToBag: false,
+				findsLeft: 4,
+				visitTickles: 9,
+				bag: [],
+			}),
+		);
+		const bag = [...PEBBLES, { id: 19, find_id: "clover" as const, source: "dig" as const }];
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(
+				mount({ status: setsStatus({ trade_ups: { common: "old_key" } }), items: bag, onSell, onTradeUp }),
+			);
+		});
+		await act(async () => offers(r)[0].props.onPress());
+		await act(async () => offers(r)[0].props.onPress());
+		await act(async () => r.root.findByProps({ testID: "trader-sell" }).props.onPress());
+		// The clovers: three alike.
+		for (let i = 0; i < 3; i++) await act(async () => offers(r)[1].props.onPress());
+		await act(async () => r.root.findByProps({ testID: "trader-sell" }).props.onPress());
+		await act(async () => r.root.findByProps({ testID: "trader-trade-up-confirm" }).props.onPress());
+		const tally = r.root.findAll((n) => n.props.testID === "trader-tally" && typeof n.type !== "string")[0];
+		expect(tally.props.accessibilityLabel).toBe(
+			"41 before, 50 tickled now. a pair of river pebbles went into his satchel · +9",
+		);
+		const text = textOf(r.root);
+		expect(text).toContain("an old key");
+		expect(text).toContain("came back for three four-leaf clovers");
+		expect(text).not.toContain("new to your bag");
+	});
+
+	it("a pair cut short by a refusal tallies the one that went", async () => {
+		const onRefused = jest.fn();
+		const onSell = jest
+			.fn<Promise<TraderSaleOutcome>, [number]>()
+			.mockResolvedValueOnce(sale("river_pebble", 3, false, 100))
+			.mockResolvedValueOnce({ ok: false, reason: "had_enough", arrivesAt: null, bag: null });
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(mount({ status: setsStatus(), items: PEBBLES, onSell, onRefused, onTradeUp: jest.fn() }));
+		});
+		await act(async () => offers(r)[0].props.onPress());
+		await act(async () => offers(r)[0].props.onPress());
+		await act(async () => r.root.findByProps({ testID: "trader-sell" }).props.onPress());
+		expect(onRefused).toHaveBeenCalledWith("He's taken all he'll take this visit.");
+		expect(textOf(r.root)).toContain("the river pebble went into his satchel · +3");
+	});
+
+	it("a single that completes an earlier pair says so and pays it", async () => {
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(
+				mount({ status: setsStatus({ unpaired: ["river_pebble"] }), items: PEBBLES, onTradeUp: jest.fn() }),
+			);
+		});
+		expect(textOf(r.root)).toContain("makes a pair");
+		await act(async () => offers(r)[0].props.onPress());
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.stub).toBe("+6");
+		expect(textOf(r.root)).toContain("pairs with the one he took earlier: +6");
+	});
+
+	it("rare stops at a pair, and so does a sheet without the trade-up", async () => {
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(mount({ status: setsStatus(), items: PEBBLES, onTradeUp: jest.fn() }));
+		});
+		const whistle = () => offers(r)[2];
+		await act(async () => whistle().props.onPress());
+		await act(async () => whistle().props.onPress());
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.stub).toBe("+60");
+		expect(hostCount(r.root, "trader-hint")).toBe(0);
+		await act(async () => whistle().props.onPress());
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.disabled).toBe(true);
+
+		await act(async () => {
+			r.update(mount({ status: setsStatus(), items: PEBBLES }));
+		});
+		for (let i = 0; i < 3; i++) await act(async () => offers(r)[0].props.onPress());
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.disabled).toBe(true);
 	});
 });
