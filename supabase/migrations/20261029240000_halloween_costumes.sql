@@ -32,10 +32,13 @@
 --   2. equip_cosmetic(text, text): CARRIED from 20260826030000_independent_
 --      bow_slot.sql (its latest def; nothing later redefines it). Changes:
 --        * CASE gains WHEN 'costume' THEN 'active_costume_id'.
---        * Equipping a costume (non-NULL) needs profiles.active_pig_id =
---          'rosie' (the art is Rosie-fitted only in v1), else
---          {ok:false, reason:'costume_rosie_only'}. Checked after no_such_item
---          / not_owned. Unequip (NULL, 'costume') is always allowed.
+--        * Equipping a costume (non-NULL) needs the caller's EFFECTIVE pig to
+--          be 'rosie' (the art is Rosie-fitted only in v1), else
+--          {ok:false, reason:'costume_rosie_only'}. Effective pig = the
+--          pig_roster() rule: stored active_pig_id only for a member (is_vip)
+--          who owns it in user_pigs, else 'rosie' (a lapsed member on a stored
+--          pepper is Rosie and may wear one). Checked after no_such_item /
+--          not_owned. Unequip (NULL, 'costume') is always allowed.
 --        * A costume clears no other slot, and equipping any other slot while
 --          costumed keeps the costume (the client hides the outfit under it;
 --          taking it off restores the outfit). Both fall out of the generic
@@ -175,10 +178,22 @@ BEGIN
 	END IF;
 
 	-- Costume art is Rosie-fitted only (v1): putting one on needs Rosie as the
-	-- active pig. Taking one off (the NULL path above) is always allowed, and a
-	-- saved costume survives a pig switch (the client just does not draw it).
+	-- EFFECTIVE pig, the pig_roster() rule (20260781000000 /
+	-- 20260791000000): the stored active_pig_id only while the caller is a
+	-- member (is_vip) who owns it in user_pigs, else Rosie. So a lapsed member
+	-- whose stored pig is still pepper (and who sees Rosie) can wear one.
+	-- Taking one off (the NULL path above) is always allowed, and a saved
+	-- costume survives a pig switch (the client just does not draw it).
 	IF v_category = 'costume' THEN
-		SELECT active_pig_id INTO v_pig_id FROM public.profiles WHERE id = caller_id;
+		SELECT CASE
+			WHEN COALESCE(p.is_vip, false) AND EXISTS (
+				SELECT 1 FROM public.user_pigs up
+				WHERE up.user_id = caller_id AND up.pig_id = COALESCE(p.active_pig_id, 'rosie')
+			) THEN COALESCE(p.active_pig_id, 'rosie')
+			ELSE 'rosie'
+		END
+		INTO v_pig_id
+		FROM public.profiles p WHERE p.id = caller_id;
 		IF COALESCE(v_pig_id, 'rosie') <> 'rosie' THEN
 			RETURN jsonb_build_object('ok', false, 'reason', 'costume_rosie_only');
 		END IF;

@@ -8,8 +8,10 @@
 --   (c) equip_cosmetic(NULL, 'costume') clears only active_costume_id, the
 --       outfit underneath is intact;
 --   (d) a costume the caller does not own answers not_owned;
---   (e) a non-Rosie active pig answers costume_rosie_only (nothing written);
---       taking a costume off on a non-Rosie pig is still allowed;
+--   (e) the EFFECTIVE pig decides: a lapsed member (not is_vip) whose stored
+--       pig is pepper is Rosie and may equip; a member on an owned pepper
+--       answers costume_rosie_only (nothing written); taking a costume off
+--       on a non-Rosie pig is still allowed;
 --   (f) the FK nulls active_costume_id when the worn row is deleted;
 --   (g) home_stats() carries active_costume_id + active_costume {id,category,
 --       emoji} (null when bare); my_porch_round() stops carry
@@ -126,10 +128,21 @@ BEGIN
 	IF (r->>'ok')::boolean OR r->>'reason' <> 'not_owned' THEN
 		RAISE EXCEPTION 'chk costumes d: unowned costume should be not_owned, got %', r; END IF;
 
-	-- (e) Non-Rosie pig: refused, nothing written; unequip still allowed.
+	-- (e) The EFFECTIVE pig decides (pig_roster rule: stored pig only for a
+	-- member who owns it, else Rosie).
+	-- A lapsed member (not is_vip) whose stored pig is still pepper sees Rosie:
+	-- the costume goes on.
+	INSERT INTO public.user_pigs (user_id, pig_id) VALUES (u, 'pepper') ON CONFLICT DO NOTHING;
+	UPDATE public.profiles SET active_pig_id = 'pepper', is_vip = false WHERE id = u;
 	r := public.equip_cosmetic('halloween_2026_hollow_jack_costume');
-	IF NOT (r->>'ok')::boolean THEN RAISE EXCEPTION 'chk costumes e: re-equip on Rosie failed: %', r; END IF;
-	UPDATE public.profiles SET active_pig_id = 'pepper' WHERE id = u;
+	IF NOT (r->>'ok')::boolean THEN
+		RAISE EXCEPTION 'chk costumes e: a lapsed member on a stored pepper (effective Rosie) should equip, got %', r; END IF;
+	SELECT active_costume_id INTO costume FROM public.profiles WHERE id = u;
+	IF costume IS DISTINCT FROM 'halloween_2026_hollow_jack_costume' THEN
+		RAISE EXCEPTION 'chk costumes e: lapsed-member equip did not save, got %', costume; END IF;
+
+	-- A member on an owned pepper: refused, nothing written; unequip still allowed.
+	UPDATE public.profiles SET is_vip = true WHERE id = u;
 	r := public.equip_cosmetic('halloween_2026_starspell_costume');
 	IF (r->>'ok')::boolean OR r->>'reason' <> 'costume_rosie_only' THEN
 		RAISE EXCEPTION 'chk costumes e: non-Rosie equip should be costume_rosie_only, got %', r; END IF;
@@ -148,7 +161,7 @@ BEGIN
 	SELECT active_costume_id INTO costume FROM public.profiles WHERE id = u;
 	IF NOT (r->>'ok')::boolean OR costume IS NOT NULL THEN
 		RAISE EXCEPTION 'chk costumes e: unequip on a non-Rosie pig should work: % / %', r, costume; END IF;
-	UPDATE public.profiles SET active_pig_id = 'rosie', active_hat_id = 'a5_hat' WHERE id = u;
+	UPDATE public.profiles SET active_pig_id = 'rosie', is_vip = false, active_hat_id = 'a5_hat' WHERE id = u;
 
 	RAISE NOTICE 'chk costumes a-e: equip / keep outfit / hat-while-costumed / unequip / not_owned / costume_rosie_only OK';
 END
