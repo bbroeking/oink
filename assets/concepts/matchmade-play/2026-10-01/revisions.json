@@ -1,0 +1,43 @@
+{
+  "tool": "built-in image_gen",
+  "final_files": [
+    {
+      "slug": "01-tickle-duet",
+      "path": "/Users/bbroeking/projects/oink/assets/concepts/matchmade-play/2026-10-01/01-tickle-duet.png"
+    },
+    {
+      "slug": "02-mud-volley",
+      "path": "/Users/bbroeking/projects/oink/assets/concepts/matchmade-play/2026-10-01/02-mud-volley.png"
+    },
+    {
+      "slug": "03-truffle-trail",
+      "path": "/Users/bbroeking/projects/oink/assets/concepts/matchmade-play/2026-10-01/03-truffle-trail.png"
+    },
+    {
+      "slug": "04-picnic-relay",
+      "path": "/Users/bbroeking/projects/oink/assets/concepts/matchmade-play/2026-10-01/04-picnic-relay.png"
+    },
+    {
+      "slug": "05-pig-pageant",
+      "path": "/Users/bbroeking/projects/oink/assets/concepts/matchmade-play/2026-10-01/05-pig-pageant.png"
+    }
+  ],
+  "edits": [
+    {
+      "slug": "02-mud-volley",
+      "purpose": "Remove rivalry and make rally success cooperative.",
+      "prompt": "Use case: precise-object-edit.\nEdit this Mud Volley concept board to turn the game into COOPERATIVE toss-and-catch. Preserve the full landscape board composition, two portrait phone UIs, scenery, paper UI style, round pig identities, costumes, colors and large legible typography.\nChange title subtitle wherever it appears to \"Keep the mud flying together.\"\nRemove the competitive score strip \"You 2 · 1 Clover\" and replace with a single shared paper progress strip \"Together 3 / 5\"; keep player identities as small \"You\" and \"Clover\" chips alongside it. Label the current exchange \"Rally 4 / 5\".\nKeep \"Your toss!\" and \"Toss\" on the gameplay screen, but make the dotted mud-ball trajectory end at a wide outlined catch zone directly below Clover's outstretched hoof, and add a small partner cue \"Clover is ready to catch\". The three broad zones are catch positions rather than targets to attack. Show the fence across the playfield between the two pigs so the volley reads clearly.\nIn the right gameplay vignette, show Copper happily catching the soft mud ball with front hoofs at the fence while Rosie cheers, instead of Copper getting splatted in the face. Some funny harmless mud spots on their bodies are fine. Change the bottom vignette caption to exactly \"Toss. Catch. Cheer.\"\nThis is a cooperative game: the two pigs keep a ball going through five rallies, and success is shared. No duel score or winner/loser."
+    },
+    {
+      "slug": "03-truffle-trail",
+      "purpose": "Clarify role-specific information.",
+      "prompt": "Use case: precise-object-edit. Preserve this entire Truffle Trail concept board, all three columns, the two pigs, existing UI style, typography, mud board and scenery. Make exactly one gameplay clarification: on the MIDDLE phone, replace the small paper inset labelled \"Sniffer's view\" and \"Strong smell here!\" with a received communication card labelled \"Clover's signal\" and containing a simple large daisy pictogram, with bottom caption \"Try the daisies\". This Digger screen should display only the clue the partner explicitly sent, never the partner's private scent-strength rings or hidden Sniffer state. Keep the existing \"I smell it near the daisies!\" message and marked board tile as a preset partner signal. No other changes."
+    },
+    {
+      "slug": "04-picnic-relay",
+      "purpose": "Clarify role-specific information.",
+      "prompt": "Use case: precise-object-edit. Preserve this entire Picnic Relay concept board, three-column arrangement, pigs, all UI style, typography, ingredient tray, bowl, countryside and illustration. Clarify asymmetric cooperative play on the MIDDLE phone only: the local role is \"You · Picker\", so replace the full recipe card \"Clover crunch\" showing clover+clover+apple with a partner request card headed \"Clover needs an apple\" showing only one large apple-slice pictogram and small text \"Recipe stays with the Mixer\". The Mixer knows the recipe and the Picker only sees a requested ingredient. Leave the player chips, \"Your side / Pick ingredients\", partner bowl, \"Pass the apple to Clover\" and \"Pass it!\" unchanged. No other changes."
+    }
+  ],
+  "notes": "prompts.json preserves the exact initial generation prompts, including a discarded competitive Mud Volley draft. Apply revisions in this file to reproduce selected final boards. Only final selected boards are saved in this project."
+}
