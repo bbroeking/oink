@@ -95,6 +95,9 @@
 --
 -- Migration AUTHORED ONLY. Never `db push` autonomously (CLAUDE.md).
 
+-- Fail fast rather than queue behind live traffic on profiles (review NIT).
+SET LOCAL lock_timeout = '5s';
+
 -- 1. The Costume slot ---------------------------------------------------------
 ALTER TABLE public.profiles
 	ADD COLUMN IF NOT EXISTS active_costume_id text;
@@ -300,7 +303,14 @@ BEGIN
 				'visited_at', s.created_at,
 				'active_hat_id', p.active_hat_id,
 				'active_costume_id', p.active_costume_id,
-				'active_pig_id', p.active_pig_id,
+				-- The EFFECTIVE pig (pig_roster()'s rule, 20260791000000): a lapsed
+				-- member's stored companion resolves to Rosie, the pig a visitor sees
+				-- and the one the costume equip gate uses (review 2026-10-29).
+				'active_pig_id', CASE
+					WHEN COALESCE(p.is_vip, false) AND EXISTS (
+						SELECT 1 FROM public.user_pigs up
+						WHERE up.user_id = p.id AND up.pig_id = p.active_pig_id)
+					THEN p.active_pig_id ELSE 'rosie' END,
 				'wallow_count', COALESCE(p.wallow_count, 0)
 			) AS row_data
 		FROM public.porch_round_stops s
