@@ -1,0 +1,143 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T19:00:09Z"
+ },
+ "title": "TTP Halloween onboarding — 2026-10-29",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A1 · Card 1 of 3: the stall",
+   "is_interactive": true
+  },
+  "A2_Costumes.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A2 · Card 2 of 3: full costumes",
+   "is_interactive": true
+  },
+  "A3_Where.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A3 · Card 3 of 3: where to look",
+   "is_interactive": true
+  },
+  "A4_StepIn.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A4 · Step in: the stall, New tab",
+   "is_interactive": true
+  },
+  "B1_Shop.dc.html": {
+   "x": 0,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B1 · Shop: new-here tag + weekend shelf",
+   "is_interactive": true
+  },
+  "B2_New.dc.html": {
+   "x": 470,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B2 · Stall, New: coach strip",
+   "is_interactive": true
+  },
+  "B3_Back.dc.html": {
+   "x": 940,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B3 · Stall, Back: coach strip",
+   "is_interactive": true
+  },
+  "B4_Yours.dc.html": {
+   "x": 1410,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B4 · Stall, Yours: coach strip",
+   "is_interactive": true
+  },
+  "B5_Costume.dc.html": {
+   "x": 1880,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B5 · First costume preview: the explainer",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A2_Costumes.dc.html",
+  "A3_Where.dc.html",
+  "A4_StepIn.dc.html",
+  "B1_Shop.dc.html",
+  "B2_New.dc.html",
+  "B3_Back.dc.html",
+  "B4_Yours.dc.html",
+  "B5_Costume.dc.html"
+ ],
+ "notes": {
+  "titleA": {
+   "x": 0,
+   "y": -300,
+   "text": "A · Three cards, then the stall (fires once, then Step in)",
+   "kind": "title1",
+   "maxW": 1840
+  },
+  "titleB": {
+   "x": 0,
+   "y": 1020,
+   "text": "B · The stall teaches itself (tag, coach strips, one explainer)",
+   "kind": "title1",
+   "maxW": 2310
+  },
+  "stickyA": {
+   "x": 1880,
+   "y": 0,
+   "w": 440,
+   "text": "A · Three cards, then the stall\n\nWhat: a 3-card intro sheet (AdaptiveModalScaffold card, like GreatHungerIntro): the stall, full costumes, where to look. \"Step in\" lands on the stall's New tab.\n\nPillar: Collect (the set and the haul) with one Connect beat (friends see the costume on a visit).\n\nTrigger: the Shop tab mounts while a stall is open and `stall_intro_seen:<set_key>:<user>` is unset. Joins PopupQueue through usePopupSlot at priority 60, behind What's New, so it never stacks on another modal. The seen-key is written on present, not on finish: Skip, Later, the hardware back and Step in all end it for good. Once per set key, so a winter set gets its own single showing.\n\nBuild: ~45 min for one Opus engineer. One new file, components/StallIntroModal.tsx (3 static cards, pager state, dots, Button, Glyph), plus ~10 lines in the Shop tab (usePopupSlot + AsyncStorage + router.push to the stall). Heroes are static Image sprites, not PigStage; animating them is what pushes it past 45.\n\nNext set (winter): the sheet reads title, kicker and counts from the seasonal_shelves row; the job is a new row and two hero images. Card 3's daily-drop door hides when the set has no shelf.",
+   "fill": "purple"
+  },
+  "stickyRec": {
+   "x": 1880,
+   "y": 1320,
+   "w": 440,
+   "text": "Recommendation: build A this week, and fold in B1's \"new here?\" tag (5 min).\n\nA answers the founder's question in one sitting and in the order asked: the stall, costumes, where to find them. One component, one seen-key, routed through PopupQueue like every other intro, reusable for winter by reading the shelf row.\n\nB is the better long-run teacher (it teaches where the player is standing) and is the natural follow-up once the stall has a second tenant: by then the coach strips can be written from what players actually got stuck on.\n\nNot drawn: a replay entry in Settings (the Season tab's ctaLabel pattern makes it cheap) and the Closet chip's own first-time hint; both are post-launch polish.",
+   "fill": "green"
+  },
+  "stickyB": {
+   "x": 2350,
+   "y": 1320,
+   "w": 440,
+   "text": "B · The stall teaches itself\n\nWhat: no modal. The stall card wears a \"new here?\" tag, each stall tab opens with a one-time coach strip (New · Back · Yours), and the first time any full costume is previewed a one-time explainer sits in front of the try-on. The weekend shelf is taught in place by its own section kicker.\n\nPillar: Collect, taught at the moment of need. The Barn and Home stay untouched.\n\nTrigger: the tag shows until the first stall visit (`stall_visited:<set_key>`). A coach strip shows once per tab (`stall_coach:<tab>`), dismissed by Got it or by leaving the tab, then never. The explainer fires once ever (`costume_explainer_seen`), and \"Try it on\" continues into the normal preview. Nothing re-arms.\n\nBuild: ~45 min, but across four files: the tag on the stall card (5), one CoachStrip primitive + 3 keys in the stall page (15), the explainer dialog in the costume preview sheet (15), the weekend-shelf kicker (5), QA (5). More touch points than A; a missed one fails silently.\n\nNext set: coach copy is keyed by tab, not by set, so winter inherits it unchanged. Only the tag re-arms per set key.",
+   "fill": "orange"
+  }
+ },
+ "designSystems": [
+  {
+   "title": "Tickle the Pig",
+   "namespace": "tickle-the-pig",
+   "artifact": "https://claude.ai/artifact/A3L11psUnnGUQ36714vrCz",
+   "version": "1793291966-be33",
+   "copiedAt": "2026-10-29T19:00:09Z"
+  }
+ ]
+}
