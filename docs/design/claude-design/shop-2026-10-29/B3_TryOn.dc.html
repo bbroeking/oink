@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>B3 · Try-on in place: the hero wears what you tap</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Fredoka:wght@700&amp;family=Nunito:wght@700;800;900&amp;family=Patrick+Hand&amp;display=swap">
+<style>
+body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+a { color: #a03e2f; text-decoration: none; } a:hover { color: #2a1f15; }
+img { display: block; } button { font: inherit; color: inherit; cursor: pointer; }
+.pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+.sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 20px; line-height: 24px; }
+.cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+.cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 14px; line-height: 18px; }
+.numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 24px; line-height: 26px; }
+.numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+.hero { font-family: "Fredoka", "Nunito", sans-serif; font-weight: 700; font-size: 30px; line-height: 34px; }
+.hand { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 15px; line-height: 20px; }
+.handSm { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 16px; }
+.kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; white-space: nowrap; }
+.kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; white-space: nowrap; }
+.kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+.label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+.body { font-weight: 700; font-size: 15px; line-height: 21px; }
+.bodySm { font-weight: 700; font-size: 13px; line-height: 18px; }
+.mute { color: #605449; } .dim { color: #6a5c50; } .accent { color: #a03e2f; }
+.phone { position: relative; width: 390px; height: 844px; overflow: hidden; background: #fffaf0; display: flex; flex-direction: column; box-sizing: border-box; }
+.statusArea { height: 54px; flex: none; }
+.pageHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px; flex: none; gap: 12px; }
+.crown { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; }
+.pocket { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); flex: none; }
+.pocket img { width: 20px; height: 20px; }
+.edge { height: 2px; background: #2a1f15; opacity: .12; margin-top: 10px; flex: none; }
+.scroll { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.wall { position: relative; background: #f6e6d4; background-image: repeating-linear-gradient(180deg, transparent 0 46px, rgba(42,31,21,.08) 46px 48px); border-top: 2px solid #2a1f15; border-bottom: 2px solid #2a1f15; padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+.sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; box-sizing: border-box; }
+.sticker.sm { box-shadow: 2px 2px 0 #2a1f15; border-radius: 12px; }
+.sticker.cream2 { background: #f6e6d4; } .sticker.sun { background: #ffd87a; } .sticker.sage { background: #c9dec1; } .sticker.rose { background: #ffd6dc; } .sticker.lilac { background: #d6c8f0; } .sticker.sky { background: #c8e3f0; }
+.tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; box-sizing: border-box; background: #fffaf0; white-space: nowrap; }
+.tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; } .tag.lilac { background: #d6c8f0; } .tag.rose { background: #ffd6dc; } .tag.bark { background: #3a2c1e; color: #fff3e2; border-color: #2a1f15; } .tag.gold { background: #F5C44A; color: #5A3F00; }
+.tag img { width: 14px; height: 14px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #fffaf0; box-shadow: 4px 4px 0 #2a1f15; font-weight: 800; font-size: 15px; line-height: 20px; box-sizing: border-box; color: #2a1f15; }
+.btn.primary { background: #ffd87a; } .btn.success { background: #c9dec1; } .btn.ghost { box-shadow: none; background: transparent; } .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; } .btn.locked { background: #f6e6d4; color: #6a5c50; box-shadow: 2px 2px 0 #2a1f15; }
+.btn.lg { min-height: 54px; padding: 14px 22px; border-radius: 999px; font-size: 17px; } .btn.sm { min-height: 36px; padding: 6px 14px; font-size: 13px; box-shadow: 2px 2px 0 #2a1f15; } .btn.wide { width: 100%; }
+.btn img { width: 18px; height: 18px; }
+.chalk { background: #3a2c1e; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; color: #fff3e2; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; flex: 1 1 0; min-width: 0; }
+.chalk .k { font-family: "Patrick Hand", cursive; font-size: 13px; line-height: 16px; color: #ffd87a; letter-spacing: .4px; }
+.chalk .v { font-family: "Caprasimo", Georgia, serif; font-size: 18px; line-height: 22px; }
+.chalk .m { font-size: 12px; line-height: 16px; color: #e8d9c6; }
+.sign { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 64px; height: 56px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; flex: none; }
+.sign img { width: 22px; height: 22px; } .sign .lbl { font-weight: 800; font-size: 11px; line-height: 14px; }
+.sign::before { content: ""; position: absolute; top: -10px; left: 50%; width: 2px; height: 10px; background: #2a1f15; opacity: .5; }
+.plank { height: 14px; background: linear-gradient(180deg, #8d5a2c, #74441e); border: 2px solid #2a1f15; border-radius: 4px; box-shadow: 2px 3px 0 #2a1f15; box-sizing: border-box; }
+.shelfRow { display: flex; justify-content: space-around; align-items: flex-end; padding: 0 4px; }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100px; }
+.coaster { width: 74px; height: 74px; border-radius: 999px; border: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; box-sizing: border-box; background: #FAF7F3; position: relative; box-shadow: 2px 2px 0 #2a1f15; }
+.coaster img.art { width: 54px; height: 54px; object-fit: contain; }
+.coaster .rdot { position: absolute; left: -2px; bottom: 6px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-sizing: border-box; }
+.coaster .badge { position: absolute; right: -6px; top: -6px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; background: #c9dec1; box-sizing: border-box; }
+.coaster .badge.gold { background: #F5C44A; } .coaster .badge img { width: 12px; height: 12px; }
+.coaster.big { width: 100px; height: 100px; } .coaster.big img.art { width: 74px; height: 74px; }
+.r-common { background: #FAF7F3; } .r-uncommon { background: #E8F5E0; } .r-rare { background: #E0EBFF; } .r-epic { background: #EFE9FF; } .r-legendary { background: #FFF3D0; }
+.d-common { background: #cdbfae; } .d-uncommon { background: #7ba868; } .d-rare { background: #5a8bc5; } .d-epic { background: #a89bff; } .d-legendary { background: #d4a437; }
+.rb-common { background: #FAF7F3; color: #494f56; } .rb-uncommon { background: #E8F5E0; color: #2e6640; } .rb-rare { background: #E0EBFF; color: #2c4f7a; } .rb-epic { background: #EFE9FF; color: #4a3a8f; } .rb-legendary { background: #FFF3D0; color: #6b4a00; }
+.sectionHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; box-sizing: border-box; display: flex; flex-direction: column; overflow: visible; }
+.card .thumb { position: relative; aspect-ratio: 1.18; border-bottom: 2px solid #2a1f15; border-radius: 14px 14px 0 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.card .thumb img.art { width: 72%; height: 72%; object-fit: contain; }
+.card .thumb img.scene { width: 100%; height: 100%; object-fit: cover; }
+.card .rdot { position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; box-sizing: border-box; }
+.card .owned { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; background: #c9dec1; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.card .owned img { width: 14px; height: 14px; }
+.card .foot { display: flex; flex-direction: column; gap: 8px; padding: 12px; flex: 1; justify-content: space-between; }
+.card .foot .tag { align-self: stretch; }
+.card.t-l { transform: rotate(-.5deg); } .card.t-r { transform: rotate(.5deg); }
+.scrim { position: absolute; inset: 0; background: rgba(42,31,21,.55); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fffaf0; border: 2px solid #2a1f15; border-bottom: 0; border-radius: 22px 22px 0 0; padding: 12px 18px 28px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.grab { width: 44px; height: 5px; border-radius: 999px; background: #2a1f15; opacity: .3; align-self: center; }
+.closeRow { display: flex; justify-content: flex-end; }
+.iconBtn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid #2a1f15; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; }
+.stage { position: relative; width: 100%; height: 220px; border: 2px solid #2a1f15; border-radius: 14px; overflow: hidden; background: #c8e3f0; display: flex; align-items: flex-end; justify-content: center; box-sizing: border-box; }
+.stage img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: #c9dec1; border-top: 2px solid #2a1f15; }
+.pig { position: relative; width: 170px; height: 176px; }
+.pig img.rosie { position: absolute; left: 0; top: 0; width: 170px; height: 176px; object-fit: contain; }
+.pig img.ov { position: absolute; object-fit: contain; }
+.toast { position: absolute; left: 18px; right: 18px; top: 62px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #c9dec1; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-.6deg); }
+.toast img { width: 28px; height: 28px; }
+.dialog { position: absolute; left: 24px; right: 24px; top: 50%; transform: translateY(-50%) rotate(-.8deg); background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.row { display: flex; align-items: center; gap: 8px; }
+.seg { display: flex; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; box-shadow: 2px 2px 0 #2a1f15; }
+.seg button { flex: 1; min-height: 40px; border: 0; background: transparent; font-weight: 800; font-size: 13px; }
+.seg button.on { background: #ffd87a; }
+.track { height: 14px; border: 2px solid #2a1f15; border-radius: 999px; background: #f6e6d4; overflow: hidden; box-shadow: 2px 2px 0 #2a1f15; }
+.track .fill { height: 100%; background: #d6c8f0; border-right: 2px solid #2a1f15; }
+.bunting { display: flex; justify-content: space-between; padding: 0 6px; height: 16px; }
+.bunting span { width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 14px solid #d6c8f0; }
+.bunting span:nth-child(2n) { border-top-color: #ffd87a; } .bunting span:nth-child(3n) { border-top-color: #ffd6dc; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px; text-align: center; }
+.empty img { width: 56px; height: 56px; }
+.peg { width: 36px; height: 36px; border-radius: 999px; border: 2px dashed #8c7e71; display: flex; align-items: center; justify-content: center; background: #fffaf0; box-sizing: border-box; }
+.peg.on { border-style: solid; border-color: #2a1f15; box-shadow: 2px 2px 0 #2a1f15; background: #ffd87a; }
+.peg img { width: 22px; height: 22px; object-fit: contain; }
+.tape { position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(-8deg); width: 72px; height: 18px; background: rgba(255,216,122,.85); border: 1.5px solid #2a1f15; }
+.priceHang { position: absolute; padding: 2px 8px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 8px; box-shadow: 2px 2px 0 #2a1f15; font-weight: 800; font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.priceHang img { width: 12px; height: 12px; }
+.tabbar { flex: none; height: 64px; border-top: 2px solid #2a1f15; background: #fffaf0; display: flex; justify-content: space-around; align-items: center; padding: 0 12px; }
+.tabbar .t { display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 800; font-size: 10px; letter-spacing: .6px; text-transform: uppercase; color: #605449; }
+.tabbar .t.on { color: #2a1f15; } .tabbar .t img { width: 22px; height: 22px; }
+.tabbar .t .ico { width: 22px; height: 22px; border-radius: 6px; border: 2px solid currentColor; box-sizing: border-box; }
+</style>
+</helmet>
+<div class="phone"><div class="statusArea"></div>
+<div class="pageHeader"><div class="crown"><a href="B1_Shop.dc.html" class="handSm accent" style="margin-bottom:2px">‹ Shop</a><span class="kicker">leaving in 6 days</span><span class="pageTitle">Spooky Snouts</span><span class="rule"></span></div><div class="pocket" aria-label="1,840 snouts"><img src="/_blob/ee43e4886ddcebfd97ab1d9c789683d1" alt=""><span class="numeral">1,840</span></div></div>
+<div class="edge"></div><div class="scroll" style="gap:12px"><div class="stage" style="height:236px; border-radius:0; border-left:0; border-right:0"><img class="bg" src="/_blob/abfeecd3decccb2bc12be6b07fce9999" alt=""><div class="pig" style="width:184px;height:190px"><img class="rosie" src="/_blob/f079201697bd191bd2a52f99fd18355a" alt="Rosie" style="width:184px;height:190px"><img class="ov" src="/_blob/82d709ee0ebd217c5ab9a38c00f6bfa9" alt="Skull Mask" style="left:22%; top:22%; width:56%;"><img class="ov" src="/_blob/c31171f6f63ffffc5a4946daef8087b4" alt="Moonbrew Witch Hat" style="left:14%; top:-22%; width:78%;"><span class="priceHang" style="right:14px; top:14px; transform: rotate(6deg)"><img src="/_blob/ee43e4886ddcebfd97ab1d9c789683d1" alt="">1,200</span></div><span class="handSm" style="position:absolute; left:12px; top:10px; color:#fff3e2">Rosie is trying on the Moonbrew Witch Hat</span></div><div style="padding:0 18px; display:flex; flex-direction:column; gap:10px">
+  <div class="sticker sm" style="display:flex; align-items:center; gap:12px; padding:10px 12px">
+    <span class="coaster r-epic" style="flex:none"><img class="art" src="/_blob/c31171f6f63ffffc5a4946daef8087b4" alt=""><span class="rdot d-epic"></span></span>
+    <span style="display:flex; flex-direction:column; gap:4px; min-width:0; flex:1"><span class="cardTitle">Moonbrew Witch Hat</span><span class="row"><span class="tag rb-epic">epic</span><span class="tag lilac">leaving in 6 days</span></span></span>
+    <button class="btn primary" aria-label="Buy Moonbrew Witch Hat for 1,200 snouts">Buy · <img src="/_blob/ee43e4886ddcebfd97ab1d9c789683d1" alt="">1,200</button>
+  </div>
+  <span class="handSm mute" style="text-align:center">try-on is free and stays until you leave the stall · long press for the sheet</span>
+</div><div style="padding:0 18px; display:flex; flex-direction:column; gap:12px"><div class="grid"><button class="card t-l" aria-label="Moonbrew Witch Hat, epic, 1,200 snouts" style="padding:0;text-align:left">
+  <span class="thumb r-epic"><img class="art" src="/_blob/c31171f6f63ffffc5a4946daef8087b4" alt=""><span class="rdot d-epic"></span></span>
+  <span class="foot"><span class="cardTitleSm">Moonbrew Witch Hat</span><span class="tag sun"><img src="/_blob/ee43e4886ddcebfd97ab1d9c789683d1" alt="">1,200</span></span>
+</button><button class="card t-r" aria-label="Silly Sheet Ghost Hood, legendary, 2,400 snouts" style="padding:0;text-align:left">
+  <span class="thumb r-legendary"><img class="art" src="/_blob/f64989d81ca71c98712068de2a9d4189" alt=""><span class="rdot d-legendary"></span></span>
+  <span class="foot"><span class="cardTitleSm">Silly Sheet Ghost Hood</span><span class="tag muted"><img src="/_blob/ee43e4886ddcebfd97ab1d9c789683d1" alt="">2,400</span></span>
+</button></div></div></div><nav class="tabbar" aria-label="Tabs"><a href="#top" class="t"><img src="/_blob/8c7123d42d42de64016fa55db076eb36" alt=""><span>Home</span></a><a href="#top" class="t"><span class="ico"></span><span>Season</span></a><a href="#top" class="t on"><img src="/_blob/13013e9e872ea1bdf3d3318ddc33bdae" alt=""><span>Shop</span></a><a href="#top" class="t"><span class="ico"></span><span>Friends</span></a><a href="#top" class="t"><span class="ico"></span><span>Me</span></a></nav></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

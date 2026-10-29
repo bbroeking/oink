@@ -1,0 +1,203 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T16:38:14Z"
+ },
+ "title": "TTP Trader \u2014 2026-10-29",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A1 \u00b7 Arrival: the fan",
+   "is_interactive": true
+  },
+  "A2.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A2 \u00b7 The sheet: a hand in the bag",
+   "is_interactive": true
+  },
+  "A3.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A3 \u00b7 Confirm: three alike, one up",
+   "is_interactive": true
+  },
+  "A4.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A4 \u00b7 Receipt: tally and the marble",
+   "is_interactive": true
+  },
+  "A5.dc.html": {
+   "x": 1880,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A5 \u00b7 He leaves",
+   "is_interactive": true
+  },
+  "B1.dc.html": {
+   "x": 0,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "B1 \u00b7 Arrival: he came from Maya's",
+   "is_interactive": true
+  },
+  "B2.dc.html": {
+   "x": 470,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "B2 \u00b7 The sheet: a wish he carries",
+   "is_interactive": true
+  },
+  "B3.dc.html": {
+   "x": 940,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "B3 \u00b7 Confirm: two bags, one for one",
+   "is_interactive": true
+  },
+  "B4.dc.html": {
+   "x": 1410,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "B4 \u00b7 Receipt: it lands at Maya's",
+   "is_interactive": true
+  },
+  "B5.dc.html": {
+   "x": 1880,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "B5 \u00b7 He moves on",
+   "is_interactive": true
+  },
+  "C1.dc.html": {
+   "x": 0,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "C1 \u00b7 Arrival: Hallows week",
+   "is_interactive": true
+  },
+  "C2.dc.html": {
+   "x": 470,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "C2 \u00b7 The sheet: tonight's ask",
+   "is_interactive": true
+  },
+  "C3.dc.html": {
+   "x": 940,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "C3 \u00b7 Confirm: spent, not sold",
+   "is_interactive": true
+  },
+  "C4.dc.html": {
+   "x": 1410,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "C4 \u00b7 Receipt: the keepsake",
+   "is_interactive": true
+  },
+  "C5.dc.html": {
+   "x": 1880,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "C5 \u00b7 He leaves, a friend needs yours",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A2.dc.html",
+  "A3.dc.html",
+  "A4.dc.html",
+  "A5.dc.html",
+  "B1.dc.html",
+  "B2.dc.html",
+  "B3.dc.html",
+  "B4.dc.html",
+  "B5.dc.html",
+  "C1.dc.html",
+  "C2.dc.html",
+  "C3.dc.html",
+  "C4.dc.html",
+  "C5.dc.html"
+ ],
+ "notes": {
+  "brief": {
+   "x": 0,
+   "y": -760,
+   "w": 1180,
+   "fill": "gray",
+   "text": "TTP Trader, next version \u00b7 2026-10-29 \u00b7 pick one direction for a ~2.5 h Opus build at 13:45 EDT\n\nTODAY: the Ghost Sheep Trader is a Trader row on the Barn button's fan while he is at the hedge (one 6 h visit per pig per local day, seeded 08 to 22 in the feeding zone). His sheet is the bag with a price on every tile: 3 / 8 / 20 applied tickles by rarity, the fancied find \u00d72, six per visit, never snouts (app_settings.trader_tuning; trade_with_trader; trader_sales is the ledger).\n\nRULES EVERY DIRECTION KEEPS: no new currency \u00b7 the trader never pays snouts \u00b7 bought items are never convertible \u00b7 finds are given, never sold (a swap mints nothing) \u00b7 the fan is the one door \u00b7 tokens, painted glyphs, no em dashes.\n\nEach row: arrival on the fan \u00b7 the sheet \u00b7 the confirm \u00b7 the receipt \u00b7 the leave. Boards link in Play (tap the Trader row or the ticket). Art is the real trader frames, find glyphs, Rosie idle_1, Pepper as the friend's pig."
+  },
+  "tA": {
+   "x": 0,
+   "y": -250,
+   "text": "A \u00b7 Ghost Sheep v2: sets and trade-ups",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "sA": {
+   "x": 2350,
+   "y": 0,
+   "w": 520,
+   "text": "A \u00b7 Ghost Sheep v2: sets and trade-ups\n\nWHAT: he still buys singles (3/8/20, fancy \u00d72). New: a PAIR pays half again (two alike handed over in one visit), and THREE ALIKE trade up one rarity (3 \u2192 1, his seeded pick of which; rare has no trade-up). The bag of six grows to nine so a hand can actually form.\n\nPILLAR: Collect (holding becomes a reason; a dead-end stack becomes a step up). Contend: none. Connect: none, honestly.\n\nCHARTER CHECK: no new currency (applied tickles only) \u00b7 never snouts \u00b7 paid items untouched (finds only) \u00b7 finds given-never-sold stands (trade-up is finds for a find, a 3\u21921 sink, never a faucet) \u00b7 one sentence: 'pairs pay more, three alike go up'.\n\nSERVER: trader_tuning gains {pairMultiplier, tradeUp:true}; trade_with_trader judges a pair over the visit's trader_sales (no multi-select RPC needed); NEW trade_up_with_trader(find_id, nonce): delete 3 rows, insert 1, ledger kind='trade_up'; satchel cap 6 \u2192 9 in satchel tuning. One migration, two RPCs.\n\nCLIENT: TraderSheet gains the hand strip + a trade-up ticket state + the lilac 'came back' receipt; hook: one new mutation; fan sub-line.\n\nBUILD: 2.5 h fits IF pairs are judged server-side over the visit and flushes are deferred. Migration 45m \u00b7 sheet 75m \u00b7 tests 30m. Risk: the bag cap change touches the Satchel sheet's empty slots.",
+   "fill": "green"
+  },
+  "tB": {
+   "x": 0,
+   "y": 954,
+   "text": "B \u00b7 The roaming broker: he carries a friend's wish",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "sB": {
+   "x": 2350,
+   "y": 1204,
+   "w": 520,
+   "text": "B \u00b7 The roaming broker\n\nWHAT: on arrival he is carrying ONE sounder-mate's rolled wish (seeded: a mate whose wish you can fill from your bag; else nobody, and he trades as today). You send the find and take one of up to three spares the server picks from her biggest stacks (the barn swap's own rule), or just give it. The sheet shows his route today (seeded arrival order across the herd), so 'he was at Maya's 2h ago' is a text message.\n\nPILLAR: Connect first (a specific friend's want, carried to you), Collect (a lone digger meets a rare), Contend ('N swapped' on the Board already counts it).\n\nCHARTER CHECK: no new currency \u00b7 never snouts (he carries, he never pays; the flat 3 tickles each is the delivery the barn swap already pays) \u00b7 finds move 1:1 and mint nothing \u00b7 one swap per pair per UTC day reuses the swap cap \u00b7 nothing bought is ever involved.\n\nSERVER: trader_status() gains carrying {friend, wish, spares[]} via _peek_wish + _wish_options; NEW broker_swap(nonce, give_item_id, take_find_id|null) wrapping the barn swap's transfer path with the trader as the courier; route = sounder-mates' trader_visits for the day ordered by arrival (read-only). One migration, two RPC changes, no new table.\n\nCLIENT: a 'He carries' section + spare picker + route strip on TraderSheet; a landed-delivery toast; the Satchel's swaps tab lists the courier.\n\nBUILD: 3.5 to 4 h. Does NOT fit 2.5 h whole. B-lite (carry the wish, GIVE only through the existing swap RPC, no spares, route line only) is ~2.5 h and keeps the Connect beat.",
+   "fill": "blue"
+  },
+  "tC": {
+   "x": 0,
+   "y": 2158,
+   "text": "C \u00b7 The seasonal wanderer: Old Wisp folded into the Ghost Sheep",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "sC": {
+   "x": 2350,
+   "y": 2408,
+   "w": 520,
+   "text": "C \u00b7 The seasonal wanderer\n\nWHAT: on a seasonal week (Hallows first) the same visitor goes by Old Wisp, dusk tint on the yard, and ADDS one ask a day: a named earned wearable or find. Hand it over and he leaves a seasonal keepsake (a Barn furnishing, 7 per set, the set closes with the week). He still buys finds for tickles underneath.\n\nPILLAR: Collect (a set with an end, keepsakes hang in the Barn), Connect (friends swap spare wearables to fill each other's asks; the 10-14 ruling).\n\nCHARTER CHECK: keepsake = furnishing, not a currency \u00b7 never snouts, never tickles for a wearable \u00b7 paid items NEVER convertible: an ask only ever names earned pieces, provenance checked server-side, bought pieces shown locked \u00b7 finds given-never-sold unchanged. CAUTION: spending a wearable consumes it; the permanent-unlock promise needs the instance ledger before this is real.\n\nSERVER: wearable instance ledger + mint provenance backfill (the big one), seasonal_asks(user, local_day, item), redeem_seasonal_ask(nonce) granting via grant_habitat_item, swap_wearable(friend, give, take); seasonal window in app_settings.\n\nCLIENT: dusk yard, Old Wisp name/greetings, ask card + keepsake reveal + set row, friend swap entry.\n\nBUILD: 8 to 12 h. Not today. C-lite (ask for a FIND, pay a keepsake via grant_habitat_item, no wearables) is ~2.5 h but drops the wearable loop that makes it Old Wisp.",
+   "fill": "purple"
+  }
+ },
+ "designSystems": []
+}

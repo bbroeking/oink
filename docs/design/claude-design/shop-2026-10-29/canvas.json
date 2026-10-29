@@ -1,0 +1,219 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T16:39:01Z"
+ },
+ "title": "TTP Shop \u2014 seasonal shelf \u2014 2026-10-29",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A1 \u00b7 Shop landing"
+  },
+  "A2_Set.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A2 \u00b7 Set sheet"
+  },
+  "A3_Preview.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A3 \u00b7 Preview on Rosie"
+  },
+  "A4_Buy.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A4 \u00b7 Buy"
+  },
+  "A5_Owned.dc.html": {
+   "x": 1880,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A5 \u00b7 Owned and worn"
+  },
+  "A6_Closed.dc.html": {
+   "x": 2350,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A6 \u00b7 Window closed"
+  },
+  "B1_Shop.dc.html": {
+   "x": 0,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B1 \u00b7 Shop landing"
+  },
+  "B2_Stall.dc.html": {
+   "x": 470,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B2 \u00b7 Stall page"
+  },
+  "B3_TryOn.dc.html": {
+   "x": 940,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B3 \u00b7 Try on in place"
+  },
+  "B4_Confirm.dc.html": {
+   "x": 1410,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B4 \u00b7 Buy confirm"
+  },
+  "B5_Owned.dc.html": {
+   "x": 1880,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B5 \u00b7 Owned"
+  },
+  "B6_Closed.dc.html": {
+   "x": 2350,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B6 \u00b7 Window closed"
+  },
+  "C1_Shop.dc.html": {
+   "x": 0,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "C1 \u00b7 Shop landing"
+  },
+  "C2_Fitting.dc.html": {
+   "x": 470,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "C2 \u00b7 Fitting room"
+  },
+  "C3_Preview.dc.html": {
+   "x": 940,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "C3 \u00b7 Swap a piece"
+  },
+  "C4_Confirm.dc.html": {
+   "x": 1410,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "C4 \u00b7 Buy the look"
+  },
+  "C5_Owned.dc.html": {
+   "x": 1880,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "C5 \u00b7 Owned + share"
+  },
+  "C6_Closed.dc.html": {
+   "x": 2350,
+   "y": 2640,
+   "w": 390,
+   "h": 844,
+   "title": "C6 \u00b7 Window closed"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A2_Set.dc.html",
+  "A3_Preview.dc.html",
+  "A4_Buy.dc.html",
+  "A5_Owned.dc.html",
+  "A6_Closed.dc.html",
+  "B1_Shop.dc.html",
+  "B2_Stall.dc.html",
+  "B3_TryOn.dc.html",
+  "B4_Confirm.dc.html",
+  "B5_Owned.dc.html",
+  "B6_Closed.dc.html",
+  "C1_Shop.dc.html",
+  "C2_Fitting.dc.html",
+  "C3_Preview.dc.html",
+  "C4_Confirm.dc.html",
+  "C5_Owned.dc.html",
+  "C6_Closed.dc.html"
+ ],
+ "notes": {
+  "intro": {
+   "x": -520,
+   "y": 0,
+   "w": 420,
+   "fill": "orange",
+   "text": "TTP Shop \u00b7 seasonal shelf \u00b7 2026-10-29\n\nThree directions for a dated shelf whose first tenant is Halloween 2026 (Spooky Snouts) and whose next is a winter set. Each row is one direction, left to right: shop landing \u00b7 the set \u00b7 preview/try-on \u00b7 buy \u00b7 owned/equip \u00b7 after the window.\n\nShared facts on every board: the window is a row (key, title, opens_at, closes_at); 'leaving in N days' is computed from closes_at; new pieces are sold only inside the window; the four returning pieces (Skull Mask, Pumpkin Patch, Firefly Lantern, Candy Land) keep their daily-drop life after it. Prices sit in the rarity bands. Balance 1,840 snouts. Costumes are out of scope (no body slot yet).\n\nArt: the Halloween shop art folders were empty at build time, so every Halloween piece on these boards is the trading-card art from assets/images/trading-cards/halloween-2026 as a stand-in; existing items use their shipped sprites. Rosie is sprites/rosie/idle_1 at rest (the shop preview rule). Overlay placement is eyeballed, not the renderer's RelSpec.\n\nTokens are copied by hand from constants/theme.ts: the 'Tickle the Pig' design system artifact existed but was still empty when this was built."
+  },
+  "titleA": {
+   "x": 0,
+   "y": -300,
+   "kind": "title1",
+   "maxW": 2740,
+   "text": "A \u00b7 The Third Plank: a dated shelf in today's wall"
+  },
+  "titleB": {
+   "x": 0,
+   "y": 1020,
+   "kind": "title1",
+   "maxW": 2740,
+   "text": "B \u00b7 The Pop-up Stall: a card on the wall, a page of its own"
+  },
+  "titleC": {
+   "x": 0,
+   "y": 2340,
+   "kind": "title1",
+   "maxW": 2740,
+   "text": "C \u00b7 Dress for the Night: try the look, buy the look"
+  },
+  "stickyA": {
+   "x": 2820,
+   "y": 0,
+   "w": 440,
+   "fill": "green",
+   "text": "A \u00b7 The Third Plank  (\u2248 2.5 h, fits)\n\nWhat it is: a third plank in the store's wall, above Today's drop, with bunting and a 'leaving in N days' kicker. Three coasters a day from the set (same daily hash as the drop, seeded by shelf key) and an 'all 16 \u203a' tag that opens the set as a sheet: segment New \u00b7 Back for the weekend, the shipped 2-col ShopCard grid. Preview is today's ItemPreviewModal plus one lilac tag (leaving in N days). Buy is today's one-tap Buy now (the sheet is the confirm). Owned coasters say Wear / Wearing and dress her in one tap (the 2026-09-17 rule, unchanged). After closes_at the plank stays bare for 3 days with 'back next year', then unmounts.\n\nPillar fit: Collect (a shelf you can miss is a reason to come back this week); Connect only via the counter (a crewmate's seasonal buy shows there like any buy). Nothing new to learn: one grammar, sun price = on the shelf now.\n\nVs today: + SeasonalShelf (plank + sign + 3 ShelfItems), + SeasonalSetSheet (Sheet + SegmentedControl + ShopCard grid), + leaving tag in the preview, + shelf ids in buyableIds, + 'leaving in' copy. No route, no new card grammar.\n\nServer: seasonal_shelves(key pk, title, kicker, opens_at, closes_at) + hats.shelf_key, hats.shelf_lane ('new'|'returning'); seasonal_shelf() RPC returns the open shelf + its hats; daily_shop() excludes lane='new' rows; buy_hat() refuses lane='new' outside the window (reason not_in_window). Seed: 1 shelf row, 12 new hats (art paths), 4 returning hats tagged. Winter = one shelf row + its hats, no code.\n\nHours: migration + seed 0.75 \u00b7 hook/util + buyable gate 0.5 \u00b7 plank 0.5 \u00b7 set sheet 0.5 \u00b7 preview tag + closed state + tests 0.25 \u2248 2.5. First cut if late: the set sheet ('all 16 \u203a' scrolls the catalog filtered to the shelf instead)."
+  },
+  "stickyB": {
+   "x": 2820,
+   "y": 1320,
+   "w": 440,
+   "fill": "blue",
+   "text": "B \u00b7 The Pop-up Stall  (\u2248 3.5 h, over by an hour; a 2.5 h cut exists)\n\nWhat it is: a painted stall card at the top of the wall (the set's hero background, Rosie in a piece, the countdown) that opens its own route /shop/shelf/[key]. The page is a small store: hero stage that tries on whatever you tap (free, ephemeral), a haul meter (3 of 16), a segment New \u00b7 Back \u00b7 Yours, the 2-col grid, Buy on a strip under the hero. Buy confirms with a ConfirmDialog that names the price and the window. After closes_at the card is a boarded sign and the page is an EmptyState with 'Your haul' under it.\n\nPillar fit: Collect (the set is a place with a meter, so completing it is legible); Connect via the share-ready hero (not drawn: a later step). Contend: none.\n\nVs today: + stall card, + a pushed route with PageHeader back, + in-place try-on on a stage (PigStage frozen at rest, equip state local to the page), + ProgressTrack haul, + ConfirmDialog on buy (today has none), + segment with Yours. Two preview grammars in the app (sheet elsewhere, stage here): the honest cost of this direction.\n\nServer: same as A plus seasonal_shelves.backdrop_hat_id + theme (title colour, bunting), and seasonal_shelf() returns owned_count. buy_hat() window check identical. Winter = one shelf row.\n\nHours: migration + seed 0.75 \u00b7 route + hero try-on 1.25 \u00b7 grid + segment + meter 0.5 \u00b7 confirm + closed + card 0.5 \u00b7 tests 0.5 \u2248 3.5. The 2.5 h cut: drop the in-place try-on (tap opens today's sheet) and the haul meter; keep the card, the route, the grid, the dialog."
+  },
+  "stickyC": {
+   "x": 2820,
+   "y": 2640,
+   "w": 440,
+   "fill": "purple",
+   "text": "C \u00b7 Dress for the Night  (\u2248 5 to 6 h, two sessions; not today)\n\nWhat it is: the seasonal shelf is a fitting room, not a shelf. A look card on the wall opens a full-screen stage: Rosie on the set's background, a slot rail (hat \u00b7 bow \u00b7 held \u00b7 mask \u00b7 glasses \u00b7 charm \u00b7 aura \u00b7 scene), a picker per slot; every tap dresses her at once, price tags hang off the unowned pieces, and one basket bar buys everything she is wearing (itemised ConfirmDialog, one atomic RPC). Bought pieces stay worn; a gold Share-the-look CTA posts a card to the sounder. After closes_at the pickers close and the look she kept stays.\n\nPillar fit: Collect at its strongest (you assemble, then you buy the assembly) and Connect for real (the share card is the set's marketing, from players). Risk: it is a second store grammar beside the shelf, and it tempts a 3,000-snout basket on a 1,840 balance.\n\nVs today: + a stage with multi-slot ephemeral equip (PigStage already resolves every slot; the state model is new), + slot rail and pickers, + basket math and partial-afford handling, + itemised dialog, + batch buy toast/celebration, + share card renderer. The set is also browsable only through slots (no grid), so a 16-piece set needs every slot drawn.\n\nServer: A's tables plus buy_hats(hat_ids uuid[]) atomic (all-or-nothing, one balance check, one window check, returns remaining) and a share-card endpoint or on-device render. Winter = one shelf row, but every new slot category needs rail art.\n\nHours: migration + batch RPC 1.25 \u00b7 stage + rail + pickers 2 \u00b7 basket + dialog + celebration 1 \u00b7 share card 1 \u00b7 closed + tests 0.5 \u2248 5.75. Ship A or B now; C is what the shelf grows into once a set has a full look per pig."
+  },
+  "rec": {
+   "x": -520,
+   "y": 1320,
+   "w": 420,
+   "fill": "pink",
+   "text": "Recommendation\n\nBuild A today. It fits the 2.5 h with the honest cut named, changes no grammar a player has learned since 2026-09-17, and its server shape (a seasonal_shelves row + shelf_key on hats) is the same one B and C stand on, so nothing is thrown away.\n\nFold in from B, if the clock allows: the stall card's countdown language ('leaving in 6 days') on the plank's kicker, and 'Yours \u00b7 N' as the set sheet's third segment.\n\nSave for the winter set: B's route with the in-place try-on, then C's basket once a set carries a whole look per pig.\n\nTwo rules to log in SKILL.md if A ships: (1) a seasonal piece is sold inside its window and nowhere else; a returning piece keeps its daily-drop life after the window. (2) the shelf is data: a winter set is a row and its hats, never a build."
+  }
+ },
+ "designSystems": []
+}
