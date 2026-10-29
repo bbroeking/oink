@@ -20,10 +20,23 @@ const sourceOnlyDirectories = [
 	"artifacts", "docs", "assets/concepts", "assets/marketing",
 	"assets/rive/backups",
 ];
+// Runtime data that still lives with its design source. The Halloween 2026
+// content.json is the single source for the card catalog and its art script,
+// and features/cards/data imports it; blocking it fails the iOS bundle.
+const runtimeExceptions = {
+	docs: ["design/halloween-2026/content.json"],
+};
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 for (const directory of sourceOnlyDirectories) {
 	const absolutePath = path.resolve(__dirname, directory);
+	// The crawler tests directories too, so each exception's parent folders
+	// must pass (only the folders themselves, not their other files).
+	const allowed = (runtimeExceptions[directory] ?? [])
+		.flatMap((file) => file.split("/").map((_, i, parts) => parts.slice(0, i + 1).join("/")))
+		.map((entry) => `(?!${escapeRegExp(entry)}$)`)
+		.join("");
 	config.resolver.blockList.push(new RegExp(
-		`^${absolutePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[/\\\\]`,
+		`^${escapeRegExp(absolutePath)}[/\\\\]${allowed}`,
 	));
 }
 config.resolver.blockList.push(/\.rev$/);
