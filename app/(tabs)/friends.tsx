@@ -162,6 +162,9 @@ export default function FriendsHubScreen() {
 	const [boardScope] = useState<BoardScope | undefined>(undefined);
 	// What the board is showing, reported up by the Leaderboard for the crown.
 	const [boardView, setBoardView] = useState<BoardView>("global");
+	// Season 2 ranks the season's tickles, not the lifetime number (the
+	// server's board_sort_column, reported up by the Leaderboard).
+	const [boardSeasonal, setBoardSeasonal] = useState(false);
 	// The board remounts on its opening view each time it is shown, so the
 	// crown's kicker starts there too, rather than flashing the last view's.
 	const showSegment = useCallback(
@@ -212,7 +215,12 @@ export default function FriendsHubScreen() {
 			? "Find your Sounder"
 			: header.title;
 	// Only the Rankings kicker tracks the board (tickles · bonds · curses).
-	const kicker = segment === "board" ? BOARD_KICKERS[boardView] : header.kicker;
+	const kicker =
+		segment === "board"
+			? boardSeasonal && (boardView === "global" || boardView === "friends")
+				? "this season's tickles"
+				: BOARD_KICKERS[boardView]
+			: header.kicker;
 
 	// Top-level nav — one radio per social surface, icon over label. The Inbox
 	// carries its unread count in the segment's own badge slot, and says the
@@ -280,6 +288,7 @@ export default function FriendsHubScreen() {
 							key={boardScope ?? "default"}
 							initialScope={boardScope}
 							onViewChange={setBoardView}
+							onSeasonalChange={setBoardSeasonal}
 						/>
 					)}
 					{segment === "sounder" && coopDig && (

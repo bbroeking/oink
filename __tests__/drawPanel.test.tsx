@@ -147,6 +147,31 @@ describe("drumLines — the three lines", () => {
 	});
 });
 
+describe("drumLines — Leftovers (Season 2)", () => {
+	it("prints no leftover when the drum holds none (Season 1 reads unchanged)", () => {
+		expect(drumLines(state(), NOW).balls).toBe("7 of 21 balls this week");
+		expect(drumLines(state({ runningLeftoverBalls: 0 }), NOW).balls).toBe("7 of 21 balls this week");
+	});
+
+	it("names a leftover beside the count, never folded into it", () => {
+		expect(drumLines(state({ runningLeftoverBalls: 1 }), NOW).balls).toBe(
+			"7 of 21 balls this week (+1 leftover)",
+		);
+		expect(drumLines(state({ runningBalls: 21, runningLeftoverBalls: 1 }), NOW).balls).toBe(
+			"21 of 21 · every last feeding (+1 leftover)",
+		);
+		expect(drumLines(state({ runningCap: 0, runningLeftoverBalls: 1 }), NOW).balls).toBe(
+			"7 balls this week (+1 leftover)",
+		);
+	});
+
+	it("quotes the server's odds, which count the leftover", () => {
+		const l = drumLines(state({ runningBalls: 1, runningLeftoverBalls: 1, runningOddsOneIn: 4 }), NOW);
+		expect(l.balls).toBe("1 of 21 balls this week (+1 leftover)");
+		expect(l.odds).toBe("rare or better: 1 in 4");
+	});
+});
+
 describe("the strip's Draw cell", () => {
 	it("is gold only while a purse is drawable and undrawn", () => {
 		expect(drawCellTodo(state())).toBe(true);

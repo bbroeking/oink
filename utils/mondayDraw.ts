@@ -61,8 +61,15 @@ export interface MondayDrawState {
 	drawn: boolean;
 	amount: number | null;
 	tier: MondayDrawTier | null;
-	/** Balls in the drawable week's drum. */
+	/** Balls in the drawable week's drum: its digs, capped at its feedings. */
 	balls: number;
+	/**
+	 * Leftovers (Season 2): one extra ball a below-rare Monday left in this
+	 * week's drum. 0 or 1, never counted in `balls`; it rolls with them (the
+	 * odds below already include it). The parser always fills it (0 on a server
+	 * that doesn't say); optional so a hand-built state needn't.
+	 */
+	leftoverBalls?: number;
 	/** That week's cap — the snout's own feeding windows. 0 = the server didn't say. */
 	cap: number;
 	/** The tier rolled per ball, best-of-N. Null until the purse is drawn. */
@@ -73,6 +80,8 @@ export interface MondayDrawState {
 	runningWeek: string;
 	/** Balls minted so far this week. */
 	runningBalls: number;
+	/** The leftover waiting in this week's drum (0 or 1); rolls once the week holds a dig. */
+	runningLeftoverBalls?: number;
 	/** This week's cap. 0 = the server didn't say. */
 	runningCap: number;
 	/** "1 in N" for rare-or-better at max(1, runningBalls) — always a number. */
@@ -159,6 +168,16 @@ export function ballsWord(balls: number): string {
 }
 
 /**
+ * ` (+1 leftover)` when a below-rare Monday left a ball in this drum, else
+ * nothing. Appended to the drum's count wherever it is printed, so the
+ * leftover is named instead of folded silently into the number.
+ */
+export function leftoverSuffix(leftover: number): string {
+	const n = Math.max(0, Math.floor(finite(leftover, 0)));
+	return n > 0 ? ` (+${n} leftover)` : "";
+}
+
+/**
  * The odds line the Draw panel and the draw sheet both print. Never a
  * percentage — "1 in N" is the form a player can check against the drum.
  */
@@ -215,11 +234,19 @@ export function parseMondayDrawState(raw: unknown): MondayDrawState {
 	const cap = count(s.cap, 0);
 	const runningBalls = count(s.running_balls, 0);
 	const runningCap = count(s.running_cap, 0);
+	// Leftovers (Season 2): optional, capped at one ball, 0 when a server (or
+	// an older one) doesn't send them. They roll beside the dug balls, so the
+	// client's fallback odds count the sum; the server's odds already do.
+	const leftoverBalls = Math.min(1, count(s.leftover_balls, 0));
+	const runningLeftoverBalls = Math.min(1, count(s.running_leftover_balls, 0));
 
 	const week = typeof s.week === "string" ? s.week : "";
 	const purseOdds =
 		balls > 0
-			? Math.max(1, Math.round(finite(s.purse_odds_one_in, oddsOneIn(balls, tuning))))
+			? Math.max(
+					1,
+					Math.round(finite(s.purse_odds_one_in, oddsOneIn(balls + leftoverBalls, tuning))),
+				)
 			: null;
 
 	return {
@@ -229,15 +256,19 @@ export function parseMondayDrawState(raw: unknown): MondayDrawState {
 		amount,
 		tier,
 		balls,
+		leftoverBalls,
 		cap,
 		rolls: parseRolls(s.rolls),
 		purseOddsOneIn: purseOdds,
 		runningWeek: typeof s.running_week === "string" ? s.running_week : week,
 		runningBalls,
+		runningLeftoverBalls,
 		runningCap,
 		runningOddsOneIn: Math.max(
 			1,
-			Math.round(finite(s.running_odds_one_in, oddsOneIn(runningBalls, tuning))),
+			Math.round(
+				finite(s.running_odds_one_in, oddsOneIn(runningBalls + runningLeftoverBalls, tuning)),
+			),
 		),
 		nextTurnAt: typeof s.next_turn_at === "string" ? s.next_turn_at : null,
 		tuning,

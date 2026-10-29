@@ -177,12 +177,15 @@ function DevWallowPreview({ edge }: { edge: ScrollEdgeState }) {
 function ChampionPoster({
 	champ,
 	isYou = false,
+	seasonal = false,
 	onPress,
 	onPressScore
 }: {
 	champ: LeaderboardEntry;
 	// The caller leads the board — the poster says so the way every row does.
 	isYou?: boolean;
+	// Season 2 ranks the season's tickles (the server's board_sort_column).
+	seasonal?: boolean;
 	onPress: (userId: string) => void;
 	// Tapping the tickle count opens the breakdown receipt for this pig (spec 17)
 	// — a different target than the poster body (which opens the profile sheet).
@@ -196,7 +199,7 @@ function ChampionPoster({
 				radius={RADII.xl}
 				border={BORDER.heavy}
 				onPress={() => onPress(champ.id)}
-				accessibilityLabel={`${champ.username}${isYou ? ", you" : ""}, the all-time leader`}
+				accessibilityLabel={`${champ.username}${isYou ? ", you" : ""}, the ${seasonal ? "season" : "all-time"} leader`}
 				accessibilityHint="Opens this pig's profile"
 				style={styles.champ}
 			>
@@ -207,9 +210,11 @@ function ChampionPoster({
 				{/* Lifetime tickles_earned drives the sort, so the #1 slot
 				    is the all-time leader — calling them 'today's
 				    champion' would imply a daily reset the schema
-				    doesn't have. Restored the accurate label. */}
+				    doesn't have. Restored the accurate label. Once the
+				    server ranks the season's tickles (Season 2's
+				    baseline), the #1 slot leads the season instead. */}
 				<T role="kicker" tone="accent" style={styles.champOver}>
-					★ all-time leader ★
+					{seasonal ? "★ season leader ★" : "★ all-time leader ★"}
 				</T>
 				<View style={styles.champBody}>
 					<PrestigeAvatar
@@ -643,10 +648,13 @@ function BoardBody({ children }: { children: (edge: ScrollEdgeState) => ReactNod
 // `onViewChange` tells the host what is being ranked, for its crown's kicker.
 export function Leaderboard({
 	initialScope,
-	onViewChange
+	onViewChange,
+	onSeasonalChange
 }: {
 	initialScope?: BoardScope;
 	onViewChange?: (view: BoardView) => void;
+	/** True once the tickle boards rank the season, not the lifetime number. */
+	onSeasonalChange?: (seasonal: boolean) => void;
 }) {
 	const [showWallowPreview, setShowWallowPreview] = useState(false);
 	const [scope, setScope] = useState<Scope>(initialScope ?? "global");
@@ -692,9 +700,13 @@ export function Leaderboard({
 		loadingMore,
 		hasMore,
 		error,
+		seasonal,
 		refresh: fetchLeaderboard,
 		loadMore
 	} = useLeaderboard(scope);
+	useEffect(() => {
+		onSeasonalChange?.(seasonal);
+	}, [onSeasonalChange, seasonal]);
 
 	const champ = leaderboard[0];
 	const rest = useMemo(() => leaderboard.slice(1), [leaderboard]);
@@ -1010,6 +1022,7 @@ export function Leaderboard({
 									<ChampionPoster
 										champ={champ}
 										isYou={champ.id === myId}
+										seasonal={seasonal}
 										onPress={setSelectedUserId}
 										onPressScore={openBreakdown}
 									/>

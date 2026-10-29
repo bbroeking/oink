@@ -20,11 +20,11 @@ import {
 } from "@/utils/pushNotifications";
 import { RADII, SPACE, TILT } from "@/constants/theme";
 import { ballsWord, type MondayDrawState } from "@/utils/mondayDraw";
+import { seasonTheme, type SeasonTheme } from "@/utils/seasonTheme";
 import { StageMeter } from "./StageMeter";
 
-const HUNGERER = require("../../../assets/images/hunger/great_hungerer_chip.png");
-
-// Drawing geometry: the hero's Hungerer sprite.
+// Drawing geometry: the hero's sprite (the Hungerer in Season 1, Rosie happy
+// in the Feast; the art is the theme's).
 const HERO_ART = 84;
 // Pass XP a banked dig pays. No RPC reports it today (the grant lives in
 // submit_rooting — migrations 20260706400000 / 20260714000000), so this is the
@@ -32,12 +32,10 @@ const HERO_ART = 84;
 // exposed, arrives through `digPassXp` and wins.
 const DIG_PASS_XP_FALLBACK = 20;
 
-// The one sentence under the meter — the day is the season's real last day.
-// Truffles, not finds: the dig credits the Hungerer's meter with the truffles
-// the herd brings home and nothing else (Snout Deep, "truffles only"; things
-// are yours alone, 2026-09-17), and the guide's third step says the same.
-const meterLine = (lastDay: number) =>
-	`Every truffle dug back starves him a little. The herd wants him Famished by day ${lastDay}.`;
+// The one sentence under the meter is the theme's `meterLine`: the day is the
+// season's real last day, and it counts truffles, not finds (the dig credits
+// the meter with the truffles the herd brings home and nothing else; Snout
+// Deep, "truffles only"; things are yours alone, 2026-09-17).
 
 /**
  * `3 balls this week · +1 if you dig now` while the patch is open and untaken,
@@ -59,6 +57,8 @@ export interface FeedPanelProps {
 	digPassXp?: number;
 	/** The drum, for the ball counter. Null before the first read lands. */
 	draw: MondayDrawState | null;
+	/** The active season's fiction (hero sprite, meter words); Season 1's when absent. */
+	theme?: SeasonTheme;
 	testID?: string;
 }
 
@@ -68,6 +68,7 @@ export function FeedPanel({
 	seasonDays,
 	digPassXp,
 	draw,
+	theme = seasonTheme("snout_season_1"),
 	testID,
 }: FeedPanelProps) {
 	const open = cta.phaseOpen;
@@ -96,7 +97,7 @@ export function FeedPanel({
 			<Sticker color="cream" rotate={TILT.card} radius={RADII.xl} style={styles.hero}>
 				<View style={styles.heroRow}>
 					<Image
-						source={HUNGERER}
+						source={theme.heroArt}
 						style={styles.heroArt}
 						resizeMode="contain"
 						accessibilityIgnoresInvertColors
@@ -111,9 +112,9 @@ export function FeedPanel({
 						<Hand tone="secondary">{sub}</Hand>
 					</View>
 				</View>
-				<StageMeter stageIndex={stageIndex} testID="feed-stage-meter" />
+				<StageMeter stageIndex={stageIndex} theme={theme} testID="feed-stage-meter" />
 				<Hand tone="secondary" align="center" style={styles.meterLine}>
-					{meterLine(seasonDays)}
+					{theme.meterLine(seasonDays)}
 				</Hand>
 				{open && !dug ? (
 					<Button

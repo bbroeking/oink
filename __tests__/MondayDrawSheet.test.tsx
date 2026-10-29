@@ -345,6 +345,16 @@ describe("the drum's reveal", () => {
 		expect(hostCount(renderer.root, "monday-draw-ball-winner")).toBe(0);
 	});
 
+	it("puts a Leftovers ball (Season 2) in the drum and names it on the card", async () => {
+		let renderer!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			renderer = TestRenderer.create(mount(baseState({ leftoverBalls: 1 })));
+		});
+		const balls = renderer.root.findByProps({ testID: "monday-draw-balls" });
+		expect(balls.props.accessibilityLabel).toBe("8 balls in the drum");
+		expect(textOf(renderer.root)).toContain("7 of 21 balls in the drum (+1 leftover)");
+	});
+
 	it("has no drum at all on a ball-less week", async () => {
 		let renderer!: TestRenderer.ReactTestRenderer;
 		await act(async () => {

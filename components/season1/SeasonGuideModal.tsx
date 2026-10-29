@@ -37,44 +37,29 @@ import {
 	PageTitle,
 	Tag,
 	useUnmanagedModalHold,
-	type GlyphName,
 } from "@/components/ui";
 import {
 	useHungerMeter,
 	HUNGER_STAGES,
-	HUNGER_LEVEL_NAME,
 	HUNGER_LEVEL_CREDIT_PREVIEW,
 	formatCredit,
 } from "@/hooks/useHungerMeter";
 import { AVATAR_SIZE, SPACE } from "@/constants/theme";
+import { seasonTheme, type SeasonTheme } from "@/utils/seasonTheme";
 
-const STEPS: { g: GlyphName; title: string; line: string }[] = [
-	{
-		g: "gem",
-		title: "Dig every feeding",
-		line: "Every 8 hours the Hungerer gorges. Dig the Truffle Patch open through his first four hours, then he guards it the next four while he digests. Whatever you tie off is yours to keep.",
-	},
-	{
-		g: "gift",
-		title: "Draw on Monday",
-		line: "Every dig drops a ball in Monday's drum. On Monday the drum turns once for you, and the more balls you hold the better your purse tends to be. Nobody else's week changes yours.",
-	},
-	{
-		// His crown, the thing the herd takes at Famished (the story's last beat
-		// draws it too). The red ogre this used was a second face for a
-		// character the page draws as the crowned pig.
-		g: "crown",
-		title: "Starve the Hungerer",
-		line: "Every truffle the herd digs back drains him, level by level, until the whole valley starves him to Famished and every digger with ten finds takes his crown.",
-	},
-];
+// The three steps, the ladder's words and the headline are the season's own
+// (utils/seasonTheme.ts): Season 1 starves the Hungerer, Season 2 fills the
+// Larder, over the same six stage ids.
 
 export function SeasonGuideModal({
 	visible,
 	onDismiss,
+	theme = seasonTheme("snout_season_1"),
 }: {
 	visible: boolean;
 	onDismiss: () => void;
+	/** The active season's fiction; Season 1's when absent. */
+	theme?: SeasonTheme;
 }) {
 	// Unmanaged native Modal (season-tab guide, outside the popup queue): hold the
 	// queue while visible so a foreground poll can't present a queued popup over it
@@ -93,10 +78,10 @@ export function SeasonGuideModal({
 				the season, in three steps ★
 			</Kicker>
 			<PageTitle align="center" accessibilityRole="header" style={styles.headline}>
-				The Season of the Hunger
+				{theme.seasonName}
 			</PageTitle>
 
-			{STEPS.map((s, i) => (
+			{theme.guideSteps.map((s, i) => (
 				<View key={s.title} style={styles.stepRow}>
 					<Avatar
 						size={AVATAR_SIZE[1]}
@@ -117,7 +102,7 @@ export function SeasonGuideModal({
 			    reclaimed. He ate the valley's tickles; the barnyard
 			    steals every last one back. */}
 			<Kicker align="center" style={styles.ladderKicker}>
-				steal back the tickles ★
+				{theme.ladderKicker}
 			</Kicker>
 			<View style={styles.ladder}>
 				{HUNGER_STAGES.map((stage, i) => {
@@ -130,8 +115,8 @@ export function SeasonGuideModal({
 							selected={here}
 							title={
 								<Label>
-									{HUNGER_LEVEL_NAME[stage]}
-									{here ? " · he is here" : ""}
+									{theme.levelNames[stage]}
+									{here ? theme.ladderHere : ""}
 								</Label>
 							}
 							trailing={
@@ -145,8 +130,7 @@ export function SeasonGuideModal({
 				})}
 			</View>
 			<Hand tone="secondary" align="center" style={styles.ladderFoot}>
-				He ate the valley&apos;s tickles. Every truffle the herd digs up
-				pries them back. Starve him from Gorged to Famished.
+				{theme.ladderFoot}
 			</Hand>
 
 			<Button

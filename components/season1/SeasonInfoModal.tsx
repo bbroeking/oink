@@ -21,21 +21,26 @@ import {
 } from "@/components/ui";
 import { SeasonStory } from "./SeasonStory";
 import { SPACE } from "@/constants/theme";
+import { seasonTheme, type SeasonTheme } from "@/utils/seasonTheme";
 
 export type SeasonInfoTopic = "story";
 
-const COPY: Record<SeasonInfoTopic, { kicker: string; title: string }> = {
-	story: { kicker: "what's happening", title: "The Season of the Hunger" },
+// The headline is the season's own name (utils/seasonTheme.ts).
+const COPY: Record<SeasonInfoTopic, { kicker: string; title: (t: SeasonTheme) => string }> = {
+	story: { kicker: "what's happening", title: (t) => t.seasonName },
 };
 
 export function SeasonInfoModal({
 	topic,
 	onDismiss,
+	theme = seasonTheme("snout_season_1"),
 }: {
 	// null = closed. Keeping the topic as the open-state avoids two modals
 	// fighting over the same backdrop.
 	topic: SeasonInfoTopic | null;
 	onDismiss: () => void;
+	/** The active season's fiction; Season 1's when absent. */
+	theme?: SeasonTheme;
 }) {
 	// Unmanaged native Modal (season-tab reference sheet, outside the popup queue):
 	// hold the queue while open so a foreground poll can't present a queued popup
@@ -59,9 +64,9 @@ export function SeasonInfoModal({
 				{copy.kicker} ★
 			</Kicker>
 			<PageTitle align="center" accessibilityRole="header" style={styles.headline}>
-				{copy.title}
+				{copy.title(theme)}
 			</PageTitle>
-			<SeasonStory />
+			<SeasonStory theme={theme} />
 			<Button
 				size="md"
 				variant="primary"
