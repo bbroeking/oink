@@ -30,8 +30,7 @@ import {
 import { fitStage, type CanvasBox } from "@/utils/previewFit";
 import {
 	COSTUME_PIG_ID,
-	costumeFitFor,
-	costumeLayout,
+	costumeSkinFor,
 	isCostumeCategory,
 	pigCanWearCostume,
 } from "@/utils/costumeFit";
@@ -254,17 +253,6 @@ interface Props {
 }
 
 
-// The costume's two layers as preview boxes (floor-relative, like the item
-// overlays), so the product shot fits the hood instead of cutting it.
-function costumeCanvasBoxes(fit: NonNullable<ReturnType<typeof costumeFitFor>>): CanvasBox[] {
-	const { hood, romper } = costumeLayout(fit, "idle_1", PIG_CANVAS);
-	return [hood, romper].map((box) => ({
-		left: box.left,
-		bottom: PIG_CANVAS - (box.top + box.height),
-		width: box.width,
-		height: box.height,
-	}));
-}
 
 export function ItemPreviewModal({
 	item,
@@ -336,9 +324,9 @@ export function ItemPreviewModal({
 		: null;
 	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
 	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
-	// A full costume is the whole outfit: it previews alone, on the pig its art
-	// is fitted to (v1: Rosie), whatever pig the viewer keeps.
-	const stageCostume = isCostumeCategory(item.category) ? costumeFitFor(COSTUME_PIG_ID, item.id) : null;
+	// A full costume is the whole outfit: it previews alone, as its own skin
+	// of the pig it is drawn for (v1: Rosie), whatever pig the viewer keeps.
+	const stageCostume = isCostumeCategory(item.category) ? costumeSkinFor(COSTUME_PIG_ID, item.id) : null;
 	const stageEquippedCostume = stageCostume ? previewSlot : null;
 
 	// The product shot is fitted, never cut (polish pass, 2026-10-04): the
@@ -358,7 +346,7 @@ export function ItemPreviewModal({
 	].flatMap((slot) => {
 		const overlay = resolveSlot(slot, "idle", 0)?.overlay;
 		return overlay ? [overlay] : [];
-	}).concat(stageCostume ? costumeCanvasBoxes(stageCostume) : []);
+	});
 	const fit = frame
 		? fitStage(stageBoxes, PIG_CANVAS, frame.w, frame.h, SPACE.sm)
 		: null;

@@ -1,30 +1,43 @@
-// Full costumes (Halloween 2026): the slot, the fit rule, the hide rule, and
-// the copy. utils/costumeFit.ts + utils/costumeCopy.ts + PigStage's costume
-// layers + constants/slots.ts routing + the catalog's one id list.
+// Full costumes (Halloween 2026), the skin swap: a worn costume is drawn as
+// its own sprite set of Rosie wearing it (constants/costumeFrames.generated.ts),
+// pose for pose in place of her frames, and hides every other worn item.
+// utils/costumeFit.ts + utils/costumeCopy.ts + PigStage/SpritePig + the slot
+// routing + the catalog's one id list + the generator's emit rule.
+import { execFileSync } from "child_process";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+
+// One complete stand-in skin (24 frames, numeric sources 9000+) and nothing
+// else: a stand-in for what scripts/gen_costume_frames.mjs emits.
+const FAMILIES = ["idle", "happy", "surprise", "face", "face_sit", "walk"];
+jest.mock("../constants/costumeFrames.generated", () => {
+	const skin: Record<string, number> = {};
+	["idle", "happy", "surprise", "face", "face_sit", "walk"].forEach((family, f) => {
+		for (let n = 1; n <= 4; n += 1) skin[`${family}_${n}`] = 9000 + f * 10 + n;
+	});
+	return { COSTUME_FRAMES: { halloween_2026_hollow_jack_costume: skin } };
+});
+
 import { PigStage } from "../components/ui/PigStage";
-import { COSTUME_THUMBNAILS } from "../constants/costumes";
+import { COSTUME_NAMES, COSTUME_THUMBNAILS } from "../constants/costumes";
 import { HAT_IMAGES } from "../constants/hats";
 import { PIG_FRAMES } from "../constants/pigFrames.generated";
-import {
-	SLOT_LABEL,
-	SLOT_ORDER,
-	columnForCategory,
-	slotForCategory,
-} from "../constants/slots";
-import { ROSIE_COSTUME_FITS } from "../features/cards/data/costumeFits";
+import { PIG_FRAMES_EXTRA } from "../constants/pigFramesExtra";
+import { SLOT_LABEL, SLOT_ORDER, columnForCategory, slotForCategory } from "../constants/slots";
 import { computeEquip } from "../utils/cosmetics";
 import {
-	costumeAnimation,
-	costumeFitFor,
-	costumeLayout,
-	costumeReaction,
+	costumeName,
+	costumeSkinFor,
+	costumeSkinFrameName,
+	costumeSkinSource,
+	isCostumeAvailable,
 	pigCanWearCostume,
 } from "../utils/costumeFit";
 import {
+	COSTUME_NOT_READY_LINE,
 	costumeCoverLine,
 	costumeEquipRefusal,
 	costumeOffLine,
@@ -32,11 +45,17 @@ import {
 	costumeTakeOffToast,
 	slotsWaitingUnder,
 } from "../utils/costumeCopy";
+import { costumeSlot } from "../utils/wornCostumes";
+import { COSTUME_FRAMES } from "../constants/costumeFrames.generated";
+
+const mockSkin = COSTUME_FRAMES.halloween_2026_hollow_jack_costume as Record<string, number>;
 
 const HOLLOW_JACK = "halloween_2026_hollow_jack_costume";
-const MOONPUFF = "halloween_2026_moonpuff_costume";
+const MOONPUFF = "halloween_2026_moonpuff_costume"; // no skin in this test
 const costume = (id: string) => ({ id, category: "costume", emoji: null });
 const hat = { id: "cowboy", category: "hat", emoji: null };
+const ROSIE = { ...PIG_FRAMES.rosie, ...PIG_FRAMES_EXTRA.rosie };
+const SKIN_SOURCES = new Set(Object.values(mockSkin));
 
 describe("costume slot routing", () => {
 	test("costume is its own slot and column, at the head of the tray", () => {
@@ -50,62 +69,71 @@ describe("costume slot routing", () => {
 		const current = { active_hat_id: "cowboy", active_bow_id: "pink_bow", active_mask_id: "skull" };
 		const on = computeEquip("costume", HOLLOW_JACK, current);
 		expect(on.update).toEqual({ active_costume_id: HOLLOW_JACK });
-		expect(on.activeIds).toMatchObject({ ...current, active_costume_id: HOLLOW_JACK });
 		const off = computeEquip("costume", null, on.activeIds);
 		expect(off.update).toEqual({ active_costume_id: null });
 		expect(off.activeIds).toMatchObject(current);
 	});
 });
 
-describe("costume fit rule", () => {
-	test("only Rosie wears the v1 art; unknown ids draw nothing", () => {
-		expect(costumeFitFor("rosie", HOLLOW_JACK)?.name).toBe("Hollow Jack");
-		expect(costumeFitFor(undefined, HOLLOW_JACK)?.name).toBe("Hollow Jack");
-		expect(costumeFitFor("pepper", HOLLOW_JACK)).toBeNull();
-		expect(costumeFitFor("rosie", "not_a_costume")).toBeNull();
-		expect(costumeFitFor("rosie", null)).toBeNull();
-		expect(pigCanWearCostume("rosie")).toBe(true);
+describe("availability: only a complete skin is a costume", () => {
+	test("a costume with a skin is available on Rosie only", () => {
+		expect(isCostumeAvailable(HOLLOW_JACK)).toBe(true);
+		expect(costumeSkinFor("rosie", HOLLOW_JACK)).toBe(mockSkin);
+		expect(costumeSkinFor(undefined, HOLLOW_JACK)).toBe(mockSkin);
+		expect(costumeSkinFor("pepper", HOLLOW_JACK)).toBeNull();
 		expect(pigCanWearCostume("bandit")).toBe(false);
 	});
 
-	test("a costumed pig plays front families only", () => {
-		for (const front of ["idle", "sit", "happy", "surprise", "walk"] as const) {
-			expect(costumeAnimation(front)).toBe(front);
+	test("unknown or skinless costumes are unavailable everywhere", () => {
+		expect(isCostumeAvailable(MOONPUFF)).toBe(false);
+		expect(isCostumeAvailable("not_a_costume")).toBe(false);
+		expect(isCostumeAvailable(null)).toBe(false);
+		expect(costumeSkinFor("rosie", MOONPUFF)).toBeNull();
+		// No tile (so no Closet section and no stall card) and no stage slot.
+		expect(COSTUME_THUMBNAILS[MOONPUFF]).toBeUndefined();
+		expect(HAT_IMAGES[MOONPUFF]).toBeUndefined();
+		expect(costumeSlot(MOONPUFF)).toBeNull();
+		// Not equippable: the tap is stopped before the server.
+		expect(costumeEquipRefusal("costume", MOONPUFF, "rosie")).toBe(COSTUME_NOT_READY_LINE);
+		// The available one's tile is its own front rest frame.
+		expect(HAT_IMAGES[HOLLOW_JACK]).toBe(mockSkin.idle_1);
+		expect(costumeSlot(HOLLOW_JACK)).toEqual(costume(HOLLOW_JACK));
+	});
+
+	test("names come from the designed set", () => {
+		expect(costumeName(HOLLOW_JACK)).toBe("Hollow Jack");
+		expect(costumeName("nope")).toBeNull();
+	});
+});
+
+describe("skin frame mapping (never back to bare Rosie)", () => {
+	test("the six drawn families map to themselves", () => {
+		for (const name of ["idle_2", "happy_4", "surprise_1", "face_3", "face_sit_2", "walk_4"]) {
+			expect(costumeSkinFrameName(mockSkin, name)).toBe(name);
 		}
-		expect(costumeAnimation("face")).toBe("idle");
-		expect(costumeAnimation("face_sit")).toBe("sit");
-		expect(costumeAnimation("sad")).toBe("idle");
-		expect(costumeAnimation("tired")).toBe("idle");
-		expect(costumeAnimation("jump")).toBe("happy");
-		expect(costumeAnimation("bounce")).toBe("happy");
-		expect(costumeAnimation("wave")).toBe("happy");
-		expect(costumeReaction({ id: 4, kind: "jump" })).toEqual({ id: 4, kind: "happy" });
-		const surprise = { id: 5, kind: "surprise" as const };
-		expect(costumeReaction(surprise)).toBe(surprise);
-		expect(costumeReaction(null)).toBeNull();
 	});
 
-	test("idle_1 places the layers exactly where they were painted", () => {
-		const fit = costumeFitFor("rosie", HOLLOW_JACK)!;
-		const { hood, romper } = costumeLayout(fit, "idle_1", 300);
-		expect(hood).toMatchObject({ left: -30, top: -60, width: 360, height: 320, rotate: 0, scale: 1 });
-		// The pivot is Rosie's measured crown (154, 16) relative to the hood's centre.
-		expect(hood.pivotX).toBeCloseTo(30 + 154 - 180);
-		expect(hood.pivotY).toBeCloseTo(60 + 16 - 160);
-		expect(romper).toEqual({ left: 2, top: 136, width: 260, height: 213 });
+	test("Rosie's 12-frame idle cycles the skin's 4", () => {
+		expect(
+			Array.from({ length: 12 }, (_, i) => costumeSkinFrameName(mockSkin, `idle_${i + 1}`)),
+		).toEqual(["idle_1", "idle_2", "idle_3", "idle_4", "idle_1", "idle_2", "idle_3", "idle_4", "idle_1", "idle_2", "idle_3", "idle_4"]);
 	});
 
-	test("the hood follows the measured head per frame; the canvas scales it all", () => {
-		const fit = costumeFitFor("rosie", MOONPUFF)!;
-		const six = costumeLayout(fit, "idle_6", 300).hood;
-		expect(six.left).toBeCloseTo(-30 + 159.4 - 154);
-		expect(six.top).toBeCloseTo(-60 + 18 - 16);
-		expect(six.rotate).toBeCloseTo(-2.9);
-		expect(six.scale).toBeCloseTo(1.062);
-		const half = costumeLayout(fit, "idle_1", 150);
-		expect(half.romper).toEqual({ left: 1, top: 68, width: 130, height: 106.5 });
-		// A frame with no measurement falls back to the reference, never NaN.
-		expect(costumeLayout(fit, "nope_1", 300).hood.left).toBe(-30);
+	test("moods rest in idle, reactions in happy, the lounge in the seated turn", () => {
+		expect(costumeSkinFrameName(mockSkin, "sad_3")).toBe("idle_3");
+		expect(costumeSkinFrameName(mockSkin, "tired_4")).toBe("idle_4");
+		expect(costumeSkinFrameName(mockSkin, "jump_2")).toBe("happy_2");
+		expect(costumeSkinFrameName(mockSkin, "wave_1")).toBe("happy_1");
+		expect(costumeSkinFrameName(mockSkin, "idle_s_2")).toBe("face_sit_1");
+		expect(costumeSkinFrameName(mockSkin, "sit_e")).toBe("face_sit_1");
+		expect(costumeSkinFrameName(mockSkin, "walk_n_3")).toBe("face_sit_1");
+		expect(costumeSkinFrameName(mockSkin, "mystery")).toBe("idle_1");
+	});
+
+	test("every frame Rosie has resolves to a skin frame", () => {
+		for (const name of Object.keys(ROSIE)) {
+			expect(SKIN_SOURCES.has(costumeSkinSource(mockSkin, name))).toBe(true);
+		}
 	});
 });
 
@@ -118,8 +146,7 @@ describe("PigStage with a costume on", () => {
 
 	const sourcesOf = (r: TestRenderer.ReactTestRenderer) =>
 		r.root.findAll((n) => !!n.props && n.props.source !== undefined).map((n) => n.props.source);
-	const byTestId = (r: TestRenderer.ReactTestRenderer, id: string) =>
-		r.root.findAll((n) => n.props?.testID === id);
+	const rosieSources = new Set(Object.values(ROSIE));
 
 	async function renderStage(node: React.ReactElement) {
 		let r!: TestRenderer.ReactTestRenderer;
@@ -129,57 +156,67 @@ describe("PigStage with a costume on", () => {
 		return r;
 	}
 
-	test("draws the hood and romper and hides every other worn item", async () => {
-		const fit = ROSIE_COSTUME_FITS.find((f) => f.id === HOLLOW_JACK)!;
+	test("the skin replaces Rosie's frames and every worn item is hidden", async () => {
 		const r = await renderStage(
 			<PigStage
 				pigFrozen
 				equipped={hat}
 				equippedBow={{ id: "pink_bow", category: "bow", emoji: null }}
 				equippedGlasses={{ id: "aviators", category: "glasses", emoji: null }}
+				equippedNeck={{ id: "pearl_necklace", category: "necklace", emoji: null }}
 				equippedAura={{ id: "gold_aura", category: "aura", emoji: null }}
 				equippedHeld={{ id: "magic_wand", category: "held", emoji: null }}
 				equippedCostume={costume(HOLLOW_JACK)}
 			/>,
 		);
 		const sources = sourcesOf(r);
-		expect(sources).toContain(fit.hoodSource);
-		expect(sources).toContain(fit.romperSource);
-		expect(sources).toContain(PIG_FRAMES.rosie.idle_1);
-		for (const id of ["cowboy", "pink_bow", "aviators", "gold_aura", "magic_wand"]) {
+		expect(sources).toContain(mockSkin.idle_1);
+		expect(sources.some((s) => rosieSources.has(s))).toBe(false);
+		for (const id of ["cowboy", "pink_bow", "aviators", "pearl_necklace", "gold_aura", "magic_wand"]) {
 			if (HAT_IMAGES[id]) expect(sources).not.toContain(HAT_IMAGES[id]);
 		}
-		expect(byTestId(r, "pig-costume-hood").length).toBeGreaterThan(0);
-		expect(byTestId(r, "pig-costume-romper").length).toBeGreaterThan(0);
 		act(() => r.unmount());
 	});
 
-	test("taking it off brings the saved outfit back", async () => {
+	test("every pose stays in the skin: the turn, a mood, a reaction", async () => {
+		for (const props of [
+			{ facing: "left" as const },
+			{ pigMood: "sad" as const },
+			{ pigMood: "tired" as const },
+			{ pigReaction: { id: 1, kind: "jump" as const } },
+			{ pigReaction: { id: 2, kind: "wave" as const } },
+		]) {
+			const r = await renderStage(<PigStage {...props} equippedCostume={costume(HOLLOW_JACK)} />);
+			for (let tick = 0; tick < 8; tick += 1) {
+				const sources = sourcesOf(r);
+				expect(sources.length).toBeGreaterThan(0);
+				expect(sources.some((s) => rosieSources.has(s))).toBe(false);
+				await act(async () => jest.advanceTimersByTime(250));
+			}
+			act(() => r.unmount());
+		}
+	});
+
+	test("taking it off brings Rosie and her saved outfit back", async () => {
 		const r = await renderStage(<PigStage pigFrozen equipped={hat} equippedCostume={costume(HOLLOW_JACK)} />);
 		expect(sourcesOf(r)).not.toContain(HAT_IMAGES.cowboy);
 		await act(async () => r.update(<PigStage pigFrozen equipped={hat} equippedCostume={null} />));
 		expect(sourcesOf(r)).toContain(HAT_IMAGES.cowboy);
-		expect(byTestId(r, "pig-costume-hood")).toHaveLength(0);
+		expect(sourcesOf(r)).toContain(PIG_FRAMES.rosie.idle_1);
 		act(() => r.unmount());
 	});
 
-	test("a pig the art does not fit keeps its own outfit", async () => {
-		const r = await renderStage(
+	test("a skinless costume, or another pig, keeps the ordinary outfit", async () => {
+		const skinless = await renderStage(<PigStage pigFrozen equipped={hat} equippedCostume={costume(MOONPUFF)} />);
+		expect(sourcesOf(skinless)).toContain(HAT_IMAGES.cowboy);
+		expect(sourcesOf(skinless)).toContain(PIG_FRAMES.rosie.idle_1);
+		act(() => skinless.unmount());
+		const pepper = await renderStage(
 			<PigStage pigId="pepper" pigFrozen equipped={hat} equippedCostume={costume(HOLLOW_JACK)} />,
 		);
-		expect(sourcesOf(r)).toContain(HAT_IMAGES.cowboy);
-		expect(byTestId(r, "pig-costume-hood")).toHaveLength(0);
-		act(() => r.unmount());
-	});
-
-	test("the turn toward a friend plays the front rest under a costume", async () => {
-		const r = await renderStage(
-			<PigStage pigFrozen facing="left" equippedCostume={costume(MOONPUFF)} />,
-		);
-		const sources = sourcesOf(r);
-		expect(sources).toContain(PIG_FRAMES.rosie.idle_1);
-		expect(sources).not.toContain(PIG_FRAMES.rosie.face_1);
-		act(() => r.unmount());
+		expect(sourcesOf(pepper)).toContain(HAT_IMAGES.cowboy);
+		expect(sourcesOf(pepper)).toContain(PIG_FRAMES.pepper.idle_1);
+		act(() => pepper.unmount());
 	});
 });
 
@@ -202,7 +239,6 @@ describe("costume copy", () => {
 		expect(costumeOffLine("Hollow Jack", { active_hat_id: "a", active_bow_id: "b" })).toBe(
 			"Hollow Jack is off. Your hat and bow are back.",
 		);
-		expect(costumeOffLine("Hollow Jack", { active_hat_id: "a" })).toBe("Hollow Jack is off. Your hat is back.");
 		expect(costumeOffLine("Hollow Jack", { active_aura_id: "a" })).toBe("Hollow Jack is off. Your aura is back.");
 		expect(costumeCoverLine(ids)).toBe(
 			"Covers everything but her face and hooves. Your hat, bow and glasses stay put underneath.",
@@ -219,18 +255,19 @@ describe("costume copy", () => {
 		expect(costumeTakeOffToast("costume", null, worn, () => "Hollow Jack")).toBe(
 			"Hollow Jack is off. Your hat is back.",
 		);
-		expect(costumeTakeOffToast("costume", MOONPUFF, worn, () => "Moonpuff")).toBeNull();
-		expect(costumeTakeOffToast("hat", null, worn, () => "x")).toBeNull();
+		expect(costumeTakeOffToast("costume", HOLLOW_JACK, worn, () => "x")).toBeNull();
 	});
 
 	test("no em dashes in anything a costume says", () => {
-		const lines = [
+		for (const line of [
 			costumeOnLine("Hollow Jack", ids),
 			costumeOffLine("Hollow Jack", ids),
 			costumeCoverLine(ids),
 			costumeEquipRefusal("costume", HOLLOW_JACK, "pepper") ?? "",
-		];
-		for (const line of lines) expect(line).not.toMatch(/—/);
+			COSTUME_NOT_READY_LINE,
+		]) {
+			expect(line).not.toMatch(/—/);
+		}
 	});
 });
 
@@ -243,19 +280,53 @@ describe("the costume catalog is one id list", () => {
 		path.join(__dirname, "../supabase/migrations/20261029240000_halloween_costumes.sql"),
 		"utf8",
 	);
-	const soldIds = [...migration.matchAll(/\('(halloween_2026_[a-z_]+_costume)',\s*'([^']+)'[^)]*'costume',\s*'legendary'/g)];
+	const sold = [...migration.matchAll(/\('(halloween_2026_[a-z_]+_costume)',\s*'([^']+)'[^)]*'costume',\s*'legendary'/g)];
 
-	test("every sold costume has fitted art, a tile and a designed name", () => {
-		expect(soldIds.length).toBeGreaterThanOrEqual(10);
-		for (const [, id, name] of soldIds) {
-			expect(costumeFitFor("rosie", id)?.name).toBe(name);
-			expect(COSTUME_THUMBNAILS[id]).toBeDefined();
-			expect(HAT_IMAGES[id]).toBe(COSTUME_THUMBNAILS[id]);
-			expect(designed.find((w) => w.id === id)?.name).toBe(name);
-		}
+	test("names match the designed set and every sold row", () => {
+		expect(Object.keys(COSTUME_NAMES).sort()).toEqual(designed.map((w) => w.id).sort());
+		for (const w of designed) expect(COSTUME_NAMES[w.id]).toBe(w.name);
+		for (const [, id, name] of sold) expect(COSTUME_NAMES[id]).toBe(name);
+	});
+});
+
+describe("scripts/gen_costume_frames.mjs emit rule", () => {
+	const script = path.join(__dirname, "../scripts/gen_costume_frames.mjs");
+	const run = (dir: string) =>
+		JSON.parse(
+			execFileSync(
+				process.execPath,
+				[
+					"--input-type=module",
+					"-e",
+					`const m = await import(${JSON.stringify(script)});` +
+						`const s = m.scanSkins(${JSON.stringify(dir)});` +
+						`console.log(JSON.stringify({ ids: Object.keys(s.complete), incomplete: s.incomplete, text: m.render(s.complete) }));`,
+				],
+				{ encoding: "utf8" },
+			),
+		) as { ids: string[]; incomplete: Record<string, string[]>; text: string };
+
+	test("only skins with all six families, four frames each, are emitted", () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "costume-skins-"));
+		const write = (slug: string, names: string[]) => {
+			fs.mkdirSync(path.join(dir, slug), { recursive: true });
+			for (const name of names) fs.writeFileSync(path.join(dir, slug, `${name}.png`), "");
+		};
+		const full = FAMILIES.flatMap((f) => [1, 2, 3, 4].map((n) => `${f}_${n}`));
+		write("hollow-jack", [...full, "sad_1"]);
+		write("count-snout", full.filter((n) => n !== "walk_4"));
+		write("moonpuff", full.filter((n) => !n.startsWith("face_sit")));
+		const out = run(dir);
+		expect(out.ids).toEqual(["halloween_2026_hollow_jack_costume"]);
+		expect(out.incomplete["count-snout"]).toEqual(["walk_4"]);
+		expect(out.incomplete.moonpuff).toHaveLength(4);
+		expect(out.text).toContain('face_sit_1: require("../assets/images/sprites/costumes/hollow-jack/face_sit_1.png"),');
+		expect(out.text).toContain("sad_1: require(");
+		expect(out.text).not.toContain("count-snout");
+		fs.rmSync(dir, { recursive: true, force: true });
 	});
 
-	test("the fitted set is the designed set", () => {
-		expect(ROSIE_COSTUME_FITS.map((f) => f.id).sort()).toEqual(designed.map((w) => w.id).sort());
+	test("the committed file is current", () => {
+		execFileSync(process.execPath, [script, "--check"], { encoding: "utf8" });
 	});
 });

@@ -12,6 +12,7 @@ import {
 	type PigAnimation,
 } from "./pigRendererContract";
 import { usePigPlayback } from "./usePigPlayback";
+import { costumeSkinSource } from "@/utils/costumeFit";
 
 export type { PigAnimation } from "./pigRendererContract";
 
@@ -39,6 +40,11 @@ interface Props {
 	// Prototype-only escape hatch for isolated internal previews. Production
 	// pigs never read or apply the retired global gold-wash setting.
 	skinTintOverride?: string | null;
+	// A worn full costume's skin (utils/costumeFit.ts): every frame is drawn
+	// from the skin, pose for pose on the same canvas, in place of the pig's
+	// own; a family the skin lacks resolves inside the skin, never to the bare
+	// pig. Null/absent draws the pig as always.
+	costumeSkin?: Readonly<Record<string, number>> | null;
 }
 
 export function SpritePig({
@@ -51,6 +57,7 @@ export function SpritePig({
 	customFrames,
 	frameIdx,
 	skinTintOverride,
+	costumeSkin,
 	active = true,
 	reduceMotion,
 	playOnce = false,
@@ -85,6 +92,8 @@ export function SpritePig({
 	// override. No persisted setting can alter production character art.
 	const prototypeSkinTint = skinTintOverride ?? null;
 	const frames = { ...(PIG_FRAMES[pigId] ?? PIG_FRAMES.rosie), ...PIG_FRAMES_EXTRA[pigId] };
+	const sourceOf = (name: string) =>
+		costumeSkin ? costumeSkinSource(costumeSkin, name) : (frames[name] ?? PIG_FRAMES.rosie[name]);
 	// The old optional gold-wash prototype only applies to Rosie. Recruitable
 	// pigs already have authored coats and must never be flattened by a tint.
 	const skinTint = pigId === "rosie" ? prototypeSkinTint : null;
@@ -93,7 +102,7 @@ export function SpritePig({
 			{activeFrames.map((f, i) => (
 				<Image
 					key={i}
-					source={frames[f] ?? PIG_FRAMES.rosie[f]}
+					source={sourceOf(f)}
 					style={[styles.fill, { opacity: i === safeIdx ? 1 : 0 }]}
 					resizeMode="contain"
 					fadeDuration={0}
@@ -102,10 +111,7 @@ export function SpritePig({
 			{skinTint && (
 				<View style={styles.fill} pointerEvents="none">
 					<Image
-						source={
-							frames[activeFrames[safeIdx]] ??
-							PIG_FRAMES.rosie[activeFrames[safeIdx]]
-						}
+						source={sourceOf(activeFrames[safeIdx])}
 						style={[styles.fill, { tintColor: skinTint, opacity: PIG_SKIN_WASH }]}
 						resizeMode="contain"
 						fadeDuration={0}

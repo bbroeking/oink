@@ -6,6 +6,7 @@
 // the slots that actually hold something. No em dashes (lint-enforced).
 
 import { columnsForSlot, SLOT_LABEL, type EquipSlotKey } from "@/constants/slots";
+import { isCostumeAvailable } from "@/utils/costumeFit";
 
 /** The slots a worn costume covers, in Closet chip order. */
 export const COSTUME_COVERED_SLOTS: readonly EquipSlotKey[] = [
@@ -99,6 +100,8 @@ export function costumeCoverLine(
 export const COSTUME_FITS_ROSIE_TAG = "fits Rosie";
 export const COSTUME_FITS_ROSIE_LINE =
 	"Costumes are fitted to Rosie for now. Switch to Rosie to wear one.";
+/** A costume this binary has no skin for (never offered; a stale tap). */
+export const COSTUME_NOT_READY_LINE = "This costume arrives in a later update.";
 
 /**
  * Why an equip tap must not reach the server, or null to go ahead: a costume
@@ -111,6 +114,7 @@ export function costumeEquipRefusal(
 	pigId: string | null | undefined,
 ): string | null {
 	if (category !== "costume" || !itemId) return null;
+	if (!isCostumeAvailable(itemId)) return COSTUME_NOT_READY_LINE;
 	return (pigId ?? "rosie") === "rosie" ? null : COSTUME_FITS_ROSIE_LINE;
 }
 

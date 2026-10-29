@@ -18,6 +18,9 @@ export interface PigRendererComponentProps extends PigRendererProps {
 	customFrames?: Partial<Record<PigAnimation, string[]>>;
 	skinTintOverride?: string | null;
 	rolloutEnabled?: boolean;
+	/** A worn full costume's skin (utils/costumeFit.ts): its frames replace the
+	 *  pig's own, pose for pose. Raster only; the Rive rig has no skins. */
+	costumeSkin?: Readonly<Record<string, number>> | null;
 }
 
 export interface PigRendererDecision {
@@ -64,6 +67,7 @@ export function PigRenderer({
 	frameIdx,
 	skinTintOverride,
 	rolloutEnabled,
+	costumeSkin,
 	...props
 }: PigRendererComponentProps) {
 	const persistedRolloutEnabled = useRivePigRolloutEnabled();
@@ -72,7 +76,7 @@ export function PigRenderer({
 	const active = usePigActive(props.active);
 	const resolvedEquipment = resolveRivePigEquipment(props.equipment ?? {});
 	const effectiveAnimation = resolvePigAnimation(props.animation, props.mood);
-	const useRive = shouldUseRiveRenderer({
+	const useRive = !costumeSkin && shouldUseRiveRenderer({
 		renderer,
 		riveSource,
 		hasCustomFrames: customFrames !== undefined,
@@ -93,6 +97,7 @@ export function PigRenderer({
 				customFrames={customFrames}
 				frameIdx={frameIdx}
 				skinTintOverride={skinTintOverride}
+				costumeSkin={costumeSkin}
 			/>
 		);
 	}

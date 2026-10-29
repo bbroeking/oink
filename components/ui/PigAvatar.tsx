@@ -3,7 +3,7 @@ import { View, Image, ViewStyle } from "react-native";
 import { ART_SIZE, AVATAR_SIZE, BORDER, RADII, WHIMSY } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PigStage } from "./PigStage";
-import { COSTUME_CATEGORY, costumeFitFor } from "@/utils/costumeFit";
+import { COSTUME_CATEGORY, costumeSkinFor } from "@/utils/costumeFit";
 import { PigPortrait } from "./PigPortrait";
 import type { PigId } from "@/utils/pigs";
 import { staticPigFx, type PigFx } from "@/constants/ritualFx";
@@ -65,7 +65,7 @@ export function PigAvatar({
 	ritual,
 }: Props) {
 	const staticRitual = staticPigFx(ritual);
-	const costume = costumeFitFor(pigId, costumeId) ? costumeId! : null;
+	const costume = costumeSkinFor(pigId, costumeId) ? costumeId! : null;
 	const hatId = costume ? null : rawHatId;
 	const bowId = costume ? null : rawBowId;
 	const costumeSrc = costume ? HAT_IMAGES[costume] : null;

@@ -6,6 +6,7 @@ import { resolvePigAnimation, type PigRendererProps, type PigAnimation } from ".
 export function RasterPig({ reaction, animation, mood, onComplete, ...props }: PigRendererProps & {
 	customFrames?: Partial<Record<PigAnimation, string[]>>;
 	skinTintOverride?: string | null;
+	costumeSkin?: Readonly<Record<string, number>> | null;
 }) {
 	const [finished, setFinished] = useState<number | null>(null);
 	const current = reaction && reaction.id !== finished ? reaction : null;

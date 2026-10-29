@@ -21,6 +21,11 @@ jest.mock("../utils/supabase", () => ({
 	},
 }));
 
+// One stand-in skin, as scripts/gen_costume_frames.mjs would emit it.
+jest.mock("../constants/costumeFrames.generated", () => ({
+	COSTUME_FRAMES: { halloween_2026_hollow_jack_costume: { idle_1: 9001 } },
+}));
+
 import { equipCosmetic } from "../utils/cosmetics";
 import { costumeSlot, fetchWornCostume, fetchWornCostumes } from "../utils/wornCostumes";
 import { parsePorchStops } from "../utils/porchRound";
@@ -66,7 +71,7 @@ describe("worn costume side fetch", () => {
 		await expect(fetchWornCostume(null)).resolves.toBeNull();
 	});
 
-	it("only a costume this binary carries becomes a stage slot", () => {
+	it("only a costume this binary carries a skin for becomes a stage slot", () => {
 		expect(costumeSlot(HOLLOW_JACK)).toEqual({ id: HOLLOW_JACK, category: "costume", emoji: null });
 		expect(costumeSlot("halloween_2027_future_costume")).toBeNull();
 		expect(costumeSlot(null)).toBeNull();

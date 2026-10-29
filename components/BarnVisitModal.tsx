@@ -63,7 +63,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "@/utils/supabase";
 import { costumeSlot, fetchWornCostume } from "@/utils/wornCostumes";
-import { costumeFitFor } from "@/utils/costumeFit";
+import { costumeName, costumeSkinFor } from "@/utils/costumeFit";
 import { rpcAction } from "@/utils/rpc";
 import { fetchBarnVisitStatus } from "@/utils/barnVisit";
 import { useVisitorEffects } from "@/hooks/useVisitorEffects";
@@ -906,7 +906,9 @@ function BarnVisitSession({
 	const hostName = barn?.username ?? targetName;
 	// The host's worn full costume, named on the plaque ("in Moonpuff") when
 	// it draws on the host's pig (v1: Rosie only).
-	const hostCostumeName = costumeFitFor(hostPigId, hostEquip.costume?.id)?.name ?? null;
+	const hostCostumeName = costumeSkinFor(hostPigId, hostEquip.costume?.id)
+		? costumeName(hostEquip.costume?.id)
+		: null;
 
 	// Re-read the host's wish when a swap answer didn't carry the next one —
 	// the bubble's options come from friend_wishes, never from the client.

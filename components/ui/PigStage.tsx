@@ -74,13 +74,7 @@ import { breathe, BREATH_HALF_MS, BREATH_SQUASH, BREATH_STRETCH } from "@/utils/
 import { useRivePigRolloutEnabled } from "@/utils/rivePigRollout";
 import { MOTION } from "@/constants/theme";
 import { usePigPlayback } from "./usePigPlayback";
-import {
-	costumeAnimation,
-	costumeFitFor,
-	costumeHoodTransform,
-	costumeLayout,
-	costumeReaction,
-} from "@/utils/costumeFit";
+import { costumeSkinFor } from "@/utils/costumeFit";
 
 // Auras that ROTATE — radial rays / rings / sunbursts read well spinning. Every
 // OTHER aura gently pulses (breathes) instead: a spinning flame or mist looks
@@ -177,10 +171,11 @@ export interface PigStageProps {
 	equippedNeck?: EquippedItem | null;    // neck (scarf / necklace)
 	equippedAura?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
-	// Full costume (Halloween 2026, utils/costumeFit.ts). While one this pig
-	// can wear is on, it is the whole outfit: every slot above is hidden (not
-	// cleared), the pig plays front families only, and the Rive rig steps
-	// aside for the raster stack the costume is fitted to.
+	// Full costume (Halloween 2026, utils/costumeFit.ts). While one with a
+	// skin this pig can wear is on, the pig is drawn from the costume's own
+	// frames (a skin swap, pose for pose on the same canvas) and every slot
+	// above is hidden, not cleared. The Rive rig steps aside for the raster
+	// sprite the skins are drawn as.
 	equippedCostume?: EquippedItem | null;
 
 	// Dev-only: live overrides from tools/placement_studio.py. Pass an
@@ -549,16 +544,15 @@ export function PigStage({
 	const restingPose = usePigRestingPose();
 	const restTempo = usePigRestTempo();
 	const baseAnimation = resolveRestingAnimation(restingPose, requestedAnimation, pigMood);
-	// A worn costume this pig can wear (v1: Rosie) replaces the whole outfit.
-	const costumeFit = costumeFitFor(pigId, equippedCostume?.id);
-	const costumed = costumeFit !== null;
-	const liveReaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;
-	const reaction = costumed ? costumeReaction(liveReaction) : liveReaction;
+	// A worn costume with a skin this pig can wear (v1: Rosie) replaces the
+	// whole outfit: the pig is drawn from the skin's frames, same poses, same
+	// clock, same canvas, so nothing can drift against the body.
+	const costumeSkin = costumeSkinFor(pigId, equippedCostume?.id);
+	const costumed = costumeSkin !== null;
+	const reaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;
 	// Mood first, then the turn: a tired host still naps (from the front
 	// frames, mirrored); only a pig actually at rest turns toward its friend.
-	// A costumed pig plays front families only (utils/costumeFit.ts).
-	const facedAnimation = resolveFacingAnimation(resolvePigAnimation(baseAnimation, pigMood), facing);
-	const restAnimation = costumed ? costumeAnimation(facedAnimation) : facedAnimation;
+	const restAnimation = resolveFacingAnimation(resolvePigAnimation(baseAnimation, pigMood), facing);
 	const pigAnimation = reaction?.kind ?? restAnimation;
 	const mirrored = facing !== undefined && facing !== pigDrawnFacing(pigAnimation);
 	const motionPolicy = useMotionPolicy();
@@ -654,13 +648,6 @@ export function PigStage({
 	const neckSlot = resolveSlot(worn.neck, pigAnimation, displayedPigFrame, rel, pigId);
 	const auraSlot = resolveSlot(worn.aura, pigAnimation, displayedPigFrame, rel, pigId);
 	const heldSlot = resolveSlot(worn.held, pigAnimation, displayedPigFrame, rel, pigId);
-	// The costume's layers ride the same source-frame clock as the pig drawing.
-	const costumeFrameName = attachmentPlayback.frames[
-		Math.max(0, Math.min(displayedPigFrame, attachmentPlayback.frames.length - 1))
-	];
-	const costumeBoxes = costumeFit
-		? costumeLayout(costumeFit, costumeFrameName, PIG_CANVAS)
-		: null;
 	const riveOwnsEquipment = riveActive && riveReady;
 	const rendererCallback = React.useRef(onRendererChange);
 	rendererCallback.current = onRendererChange;
@@ -978,7 +965,8 @@ export function PigStage({
 				<PigRenderer
 					pigId={pigId}
 					animation={restAnimation}
-					mood={costumed ? undefined : pigMood}
+					mood={pigMood}
+					costumeSkin={costumeSkin}
 					reaction={reaction}
 					active={visible}
 					size={PIG_CANVAS}
@@ -1002,31 +990,6 @@ export function PigStage({
 					}}
 				/>
 			</View>
-			{costumeFit && costumeBoxes && !hideAccessory && (
-				<>
-					<Image
-						testID="pig-costume-hood"
-						source={costumeFit.hoodSource}
-						resizeMode="stretch"
-						style={[
-							styles.costumeLayer,
-							{
-								left: costumeBoxes.hood.left,
-								top: costumeBoxes.hood.top,
-								width: costumeBoxes.hood.width,
-								height: costumeBoxes.hood.height,
-								transform: costumeHoodTransform(costumeBoxes.hood),
-							},
-						]}
-					/>
-					<Image
-						testID="pig-costume-romper"
-						source={costumeFit.romperSource}
-						resizeMode="stretch"
-						style={[styles.costumeLayer, styles.costumeRomper, costumeBoxes.romper]}
-					/>
-				</>
-			)}
 			{showMainOverlay && !mainIsBehind && (
 				<ItemOverlay
 					overlay={mainOverlay}
@@ -1144,11 +1107,4 @@ const styles = StyleSheet.create({
 		width: "100%",
 		height: "100%",
 	},
-	// Hood then romper, both over the pig and under nothing worn (a costume
-	// hides every worn item). The romper's collar overlaps the hood's hem.
-	costumeLayer: {
-		position: "absolute",
-		zIndex: 6,
-	},
-	costumeRomper: { zIndex: 7 },
 });
