@@ -203,7 +203,13 @@ def write_anim_scale(data):
 # Parse their category straight from the catalog migrations so the studio knows
 # an aura is an aura. (Mirrors scripts/pig_preview.py:sql_categories.)
 SQL_CATALOGS = ["supabase/migrations/20260502030000_shop_catalog.sql",
-                "supabase/migrations/20260650000000_mud_war_cosmetics.sql"]
+                "supabase/migrations/20260650000000_mud_war_cosmetics.sql",
+                "supabase/migrations/20261029230000_halloween_2026_catalog.sql"]
+
+# Seasonal sets keep their art in a subfolder of hats/ (file stem = item id,
+# registered in HAT_IMAGES under the same key). Listed explicitly so stray
+# folders (side/, thumbs/) never turn into items.
+SEASONAL_HAT_SUBDIRS = ["halloween-2026"]
 
 
 def sql_categories():
@@ -219,8 +225,19 @@ def sql_categories():
     return out
 
 
+# Seasonal design content: categories for set pieces with art but no hats row
+# yet (e.g. halloween_2026_little_haunt, an aura placed by hand before it sells).
+SEASON_CONTENT = ["docs/design/halloween-2026/content.json"]
+
+
 def catalog_categories():
-    out = sql_categories()                       # base + mud-war items (from migrations)
+    out = {}
+    for rel in SEASON_CONTENT:
+        p = os.path.join(ROOT, rel)
+        if os.path.isfile(p):
+            for it in json.load(open(p)).get("wearables", []):
+                out[it["id"]] = {"category": it["category"], "members": False, "name": it["name"]}
+    out.update(sql_categories())                 # base + mud-war + seasonal rows (from migrations)
     if os.path.isfile(CATALOG):
         for it in json.load(open(CATALOG)):       # members catalog wins on overlap
             out[it["id"]] = {"category": it["category"], "members": True, "name": it["name"]}
@@ -244,7 +261,12 @@ def build_items():
     members_rel = parse_rel(MEMBERS_REL)
     cats = catalog_categories()
     items = []
-    for fn in sorted(os.listdir(HATS_DIR)):
+    files = [("", fn) for fn in sorted(os.listdir(HATS_DIR))]
+    for sub in SEASONAL_HAT_SUBDIRS:
+        d = os.path.join(HATS_DIR, sub)
+        if os.path.isdir(d):
+            files += [(sub + "/", fn) for fn in sorted(os.listdir(d))]
+    for sub, fn in files:
         if not fn.endswith(".png"):
             continue
         iid = fn[:-4]
@@ -255,7 +277,7 @@ def build_items():
         side = f"assets/images/hats/side/{iid}.png"
         items.append({
             "id": iid,
-            "image": f"assets/images/hats/{iid}.png",
+            "image": f"assets/images/hats/{sub}{iid}.png",
             # The three-quarter sprite the turned families swap in
             # (HAT_SIDE_IMAGES / tools/gen_side_items.py), or null.
             "side": side if os.path.isfile(os.path.join(ROOT, side)) else None,

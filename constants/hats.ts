@@ -226,7 +226,55 @@ export const HAT_IMAGES: Record<string, number> = {
 	// grant_season1_finale(). Seeded in migration
 	// 20260739100000_season1_finale_reward.sql. Placement tuned in
 	// hat_rel.generated (pivot y 0.9, widthFrac 0.54).
-	hungerers_crown: require("../assets/images/hats/hungerers_crown.png")
+	hungerers_crown: require("../assets/images/hats/hungerers_crown.png"),
+	// Halloween 2026 ("Spooky Snouts"): the 29 modular accessories and 9
+	// backgrounds from docs/design/halloween-2026/content.json. Each key is the
+	// content.json id, which is also the file stem, so the card set's
+	// `unlocks` ids join straight to a hats row. Sold on the `halloween_2026`
+	// seasonal shelf (migration 20261029230000_halloween_2026_catalog.sql).
+	// Art only, no hats row (never for sale): high_collar_scarf (scarf is in
+	// HIDDEN_CATEGORIES), moon_charm (necklace is never sold, 20260761000000),
+	// halloween_2026_little_haunt (an aura that needs a hand-placed offset
+	// first). No RelSpecs yet: everything sits on its CATEGORY_OVERLAYS preset
+	// until a placement pass in tools/placement_studio.
+	moonbrew_witch_hat: require("../assets/images/hats/halloween-2026/moonbrew_witch_hat.png"),
+	hedge_broom: require("../assets/images/hats/halloween-2026/hedge_broom.png"),
+	high_collar_scarf: require("../assets/images/hats/halloween-2026/high_collar_scarf.png"),
+	pip_candle: require("../assets/images/hats/halloween-2026/pip_candle.png"),
+	patchwork_bolt_cap: require("../assets/images/hats/halloween-2026/patchwork_bolt_cap.png"),
+	stitched_bow: require("../assets/images/hats/halloween-2026/stitched_bow.png"),
+	friendly_skull_facepaint: require("../assets/images/hats/halloween-2026/friendly_skull_facepaint.png"),
+	crossbones_bow: require("../assets/images/hats/halloween-2026/crossbones_bow.png"),
+	linen_knot_headwrap: require("../assets/images/hats/halloween-2026/linen_knot_headwrap.png"),
+	scarab_lantern: require("../assets/images/hats/halloween-2026/scarab_lantern.png"),
+	lantern_sprout_cap: require("../assets/images/hats/halloween-2026/lantern_sprout_cap.png"),
+	pumpkin_treat_pail: require("../assets/images/hats/halloween-2026/pumpkin_treat_pail.png"),
+	silly_sheet_ghost_hood: require("../assets/images/hats/halloween-2026/silly_sheet_ghost_hood.png"),
+	spirit_glow: require("../assets/images/hats/halloween-2026/spirit_glow.png"),
+	moonpuff_wolf_ears: require("../assets/images/hats/halloween-2026/moonpuff_wolf_ears.png"),
+	moon_charm: require("../assets/images/hats/halloween-2026/moon_charm.png"),
+	halloween_2026_pirate_tricorn_hat: require("../assets/images/hats/halloween-2026/halloween_2026_pirate_tricorn_hat.png"),
+	halloween_2026_toy_cutlass: require("../assets/images/hats/halloween-2026/halloween_2026_toy_cutlass.png"),
+	halloween_2026_patched_straw_hat: require("../assets/images/hats/halloween-2026/halloween_2026_patched_straw_hat.png"),
+	halloween_2026_straw_bow: require("../assets/images/hats/halloween-2026/halloween_2026_straw_bow.png"),
+	halloween_2026_spark_goggles: require("../assets/images/hats/halloween-2026/halloween_2026_spark_goggles.png"),
+	halloween_2026_bubbling_flask: require("../assets/images/hats/halloween-2026/halloween_2026_bubbling_flask.png"),
+	halloween_2026_bat_ear_cap: require("../assets/images/hats/halloween-2026/halloween_2026_bat_ear_cap.png"),
+	halloween_2026_bat_wing_bow: require("../assets/images/hats/halloween-2026/halloween_2026_bat_wing_bow.png"),
+	halloween_2026_star_headwrap: require("../assets/images/hats/halloween-2026/halloween_2026_star_headwrap.png"),
+	halloween_2026_crystal_ball: require("../assets/images/hats/halloween-2026/halloween_2026_crystal_ball.png"),
+	halloween_2026_cobweb_crown: require("../assets/images/hats/halloween-2026/halloween_2026_cobweb_crown.png"),
+	halloween_2026_ghostlight_lantern: require("../assets/images/hats/halloween-2026/halloween_2026_ghostlight_lantern.png"),
+	halloween_2026_little_haunt: require("../assets/images/hats/halloween-2026/halloween_2026_little_haunt.png"),
+	lantern_porch_bg: require("../assets/images/backgrounds/halloween-2026/lantern_porch_bg.png"),
+	haunted_orchard_bg: require("../assets/images/backgrounds/halloween-2026/haunted_orchard_bg.png"),
+	moonlit_graveyard_bg: require("../assets/images/backgrounds/halloween-2026/moonlit_graveyard_bg.png"),
+	witches_wood_bg: require("../assets/images/backgrounds/halloween-2026/witches_wood_bg.png"),
+	cobweb_barn_bg: require("../assets/images/backgrounds/halloween-2026/cobweb_barn_bg.png"),
+	candy_lantern_trail_bg: require("../assets/images/backgrounds/halloween-2026/candy_lantern_trail_bg.png"),
+	halloween_2026_haunted_ship_deck_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_haunted_ship_deck_bg.png"),
+	halloween_2026_harvest_moon_cornfield_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_harvest_moon_cornfield_bg.png"),
+	halloween_2026_whispering_crypt_bg: require("../assets/images/backgrounds/halloween-2026/halloween_2026_whispering_crypt_bg.png")
 };
 
 // Browse surfaces never display these held-item masters above a few dozen
