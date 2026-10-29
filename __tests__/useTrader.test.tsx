@@ -7,6 +7,11 @@
 //   • a sale moves the visit's count and hands the caller the bag; a not_here
 //     refusal re-reads so the row and the sheet agree
 //   • the dev summon installs the answered status
+//   • sets and trade-ups (2026-10-29): a sale keeps the visit's unpaired finds
+//     in step (a pair closes one, a single opens one); the trade-up calls
+//     trade_up_with_trader, counts its three against the visit and hands back
+//     the bag; a refusal that means the deal moved re-reads; the leave the yard
+//     witnesses fires onLeave, and the arrival hands its status over
 import React, { useEffect } from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import { useTrader, type UseTrader } from "@/hooks/useTrader";
@@ -33,8 +38,25 @@ const VISIT = {
 const AWAY = { ok: true, present: false, now: NOW, visit: VISIT, prices: { common: 3, uncommon: 8, rare: 20 }, want_multiplier: 2, finds_per_visit: 6, met: false, sales: 0 };
 const HERE = { ...AWAY, present: true, now: "2026-05-01T12:31:00.000Z", visit: { ...VISIT, want_find_id: "blue_feather" } };
 
-function Harness({ onArrive, out }: { onArrive?: () => void; out: { current: UseTrader | null } }) {
-	const t = useTrader({ onArrive });
+const SETS = {
+	...HERE,
+	finds_per_visit: 9,
+	pair_multiplier: 1.5,
+	trade_up: true,
+	trade_up_count: 3,
+	visit: { ...HERE.visit, finds_left: 9, unpaired: [], trade_ups: { common: "marble", uncommon: "tin_whistle" } },
+};
+
+function Harness({
+	onArrive,
+	onLeave,
+	out,
+}: {
+	onArrive?: (s: UseTrader["status"]) => void;
+	onLeave?: () => void;
+	out: { current: UseTrader | null };
+}) {
+	const t = useTrader({ onArrive, onLeave });
 	useEffect(() => {
 		out.current = t;
 	});
@@ -56,9 +78,9 @@ describe("useTrader", () => {
 		jest.useRealTimers();
 	});
 
-	const mount = async (onArrive?: () => void) => {
+	const mount = async (onArrive?: (s: UseTrader["status"]) => void, onLeave?: () => void) => {
 		await act(async () => {
-			tree = TestRenderer.create(<Harness onArrive={onArrive} out={out} />);
+			tree = TestRenderer.create(<Harness onArrive={onArrive} onLeave={onLeave} out={out} />);
 		});
 	};
 
@@ -188,5 +210,128 @@ describe("useTrader", () => {
 		});
 		expect(ok).toBe(false);
 		expect(out.current?.present).toBe(false);
+	});
+
+	it("a single opens a pair on the visit and the sale that completes it closes it", async () => {
+		const sale = (pair: boolean, tickles: number) => ({
+			ok: true,
+			replay: false,
+			find_id: "river_pebble",
+			tickles,
+			was_want: false,
+			pair,
+			pair_bonus: pair ? 3 : 0,
+			before: 100,
+			after: 100 + tickles,
+			finds_left: 8,
+			visit_tickles: tickles,
+			bag: [],
+		});
+		let n = 0;
+		rpc.mockImplementation(async (name) => {
+			if (name === "trader_status") return SETS as never;
+			if (name === "trade_with_trader") return (++n === 1 ? sale(false, 3) : sale(true, 6)) as never;
+			return { ok: false, reason: "unknown" } as never;
+		});
+		await mount();
+		expect(out.current?.status.tuning.pairMultiplier).toBe(1.5);
+		let r: Awaited<ReturnType<UseTrader["sell"]>> | undefined;
+		await act(async () => {
+			r = await out.current?.sell(1);
+		});
+		expect(out.current?.status.visit?.unpaired).toEqual(["river_pebble"]);
+		await act(async () => {
+			r = await out.current?.sell(2);
+		});
+		if (r?.ok) {
+			expect(r.pair).toBe(true);
+			expect(r.pairBonus).toBe(3);
+		} else throw new Error("expected a sale");
+		expect(out.current?.status.visit?.unpaired).toEqual([]);
+		expect(out.current?.status.visit?.sold).toBe(2);
+	});
+
+	it("a trade-up calls the server, counts its three, and hands back the bag", async () => {
+		rpc.mockImplementation(async (name) => {
+			if (name === "trader_status") return SETS as never;
+			if (name === "trade_up_with_trader")
+				return {
+					ok: true,
+					replay: false,
+					gave_find_id: "river_pebble",
+					count: 3,
+					got_find_id: "marble",
+					got_item_id: 42,
+					new_to_bag: true,
+					finds_left: 6,
+					visit_tickles: 0,
+					bag: [{ id: 42, find_id: "marble", source: "trader" }],
+				} as never;
+			return { ok: false, reason: "unknown" } as never;
+		});
+		await mount();
+		let r: Awaited<ReturnType<UseTrader["tradeUp"]>> | undefined;
+		await act(async () => {
+			r = await out.current?.tradeUp("river_pebble");
+		});
+		expect(rpc).toHaveBeenCalledWith(
+			"trade_up_with_trader",
+			expect.objectContaining({ p_find_id: "river_pebble", p_nonce: expect.stringMatching(/^[0-9a-f-]{36}$/) }),
+		);
+		expect(r?.ok).toBe(true);
+		if (r?.ok) {
+			expect(r.gotFindId).toBe("marble");
+			expect(r.newToBag).toBe(true);
+			expect(r.count).toBe(3);
+			// An unknown source is dropped, the row is kept.
+			expect(r.bag).toEqual([{ id: 42, find_id: "marble" }]);
+		}
+		expect(out.current?.status.visit?.findsLeft).toBe(6);
+		expect(out.current?.status.visit?.sold).toBe(3);
+		expect(out.current?.status.met).toBe(true);
+	});
+
+	it("a trade-up refusal that means the deal moved re-reads; not_enough hands back the bag", async () => {
+		let reason = "no_trade_up";
+		rpc.mockImplementation(async (name) => {
+			if (name === "trader_status") return SETS as never;
+			return { ok: false, reason, bag: [{ id: 1, find_id: "river_pebble", source: "dig" }] } as never;
+		});
+		await mount();
+		let r: Awaited<ReturnType<UseTrader["tradeUp"]>> | undefined;
+		await act(async () => {
+			r = await out.current?.tradeUp("river_pebble");
+		});
+		expect(r?.ok).toBe(false);
+		expect(rpc.mock.calls.filter(([n]) => n === "trader_status")).toHaveLength(2);
+		reason = "not_enough";
+		await act(async () => {
+			r = await out.current?.tradeUp("river_pebble");
+		});
+		if (r && !r.ok) expect(r.bag).toEqual([{ id: 1, find_id: "river_pebble", source: "dig" }]);
+		expect(rpc.mock.calls.filter(([n]) => n === "trader_status")).toHaveLength(2);
+	});
+
+	it("the arrival hands its status over, and the leave the yard witnesses fires once", async () => {
+		const onArrive = jest.fn();
+		const onLeave = jest.fn();
+		rpc.mockResolvedValueOnce(AWAY as never);
+		await mount(onArrive, onLeave);
+		rpc.mockResolvedValue(SETS as never);
+		await act(async () => {
+			await out.current?.refresh();
+		});
+		expect(onArrive).toHaveBeenCalledTimes(1);
+		expect(onArrive.mock.calls[0][0].tuning.tradeUp).toBe(true);
+		expect(onLeave).not.toHaveBeenCalled();
+		rpc.mockResolvedValue({ ...AWAY, visit: { ...VISIT, day: "2026-05-02" } } as never);
+		await act(async () => {
+			await out.current?.refresh();
+		});
+		expect(onLeave).toHaveBeenCalledTimes(1);
+		await act(async () => {
+			await out.current?.refresh();
+		});
+		expect(onLeave).toHaveBeenCalledTimes(1);
 	});
 });

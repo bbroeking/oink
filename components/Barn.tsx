@@ -19,7 +19,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { observeFieldGuide, observeSnouts } from "@/utils/fieldGuide";
-import { traderMinutesLeft, traderStayLine } from "@/utils/trader";
+import { TRADER_LEAVE_COPY, traderArrivalCopy, traderFanLine, traderMinutesLeft } from "@/utils/trader";
+import type { SatchelFindId } from "@/constants/satchel";
 import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/crews";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
@@ -27,6 +28,7 @@ import {
 	BarnOverlay,
 	Glyph,
 	glyphSource,
+	type GlyphName,
 	Hand,
 	Icon,
 	PageBackground,
@@ -184,6 +186,11 @@ const REST_FLOAT_MS = 600;
 // Mark sizes on the toast. A glyph is art, so its size is a picture size, not
 // a spacing step.
 const TOAST_GLYPH = 18;
+type ToastLook = { glyph: GlyphName; color: "paper" | "cream" };
+// The Ghost Sheep's words in the yard: paper when he turns up, cream when he
+// has wandered off (canvas A1 / A5).
+const TRADER_ARRIVE_LOOK: ToastLook = { glyph: "trader", color: "paper" };
+const TRADER_LEAVE_LOOK: ToastLook = { glyph: "trader", color: "cream" };
 const RECOVERY_ICON = 20;
 // How far above its resting place the toast starts (and returns to). A travel
 // distance, not a margin.
@@ -421,6 +428,10 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		title: string;
 		body: string;
 		onPress?: () => void;
+		/** A visitor's own word (the Ghost Sheep's arrival and leave, canvas
+		 *  A1/A5): his painted mark on a paper or cream sticker instead of the
+		 *  heart on rose. */
+		look?: ToastLook;
 	} | null>(null);
 	const toastOpacity = useRef(new Animated.Value(0)).current;
 	const toastY = useRef(new Animated.Value(TOAST_OFFSET)).current;
@@ -480,8 +491,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const truffleBuried = !!truffle.status?.buried;
 
 	const showToast = useCallback(
-		(title: string, body: string, onPress?: () => void) => {
-			setToast({ title, body, onPress });
+		(title: string, body: string, onPress?: () => void, look?: ToastLook) => {
+			setToast({ title, body, onPress, look });
 			toastOpacity.setValue(0);
 			toastY.setValue(TOAST_OFFSET);
 			Animated.sequence([
@@ -861,15 +872,19 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// hedge — a yard state, never a fixture — and the row opens his sheet, where
 	// finds in the bag go into his satchel for tickles. The yard says so when he
 	// arrives while you are watching.
+	// Sets and trade-ups (2026-10-29): the word on arrival names the day's deal
+	// (pairs pay more, three alike go up), and the yard says so when he packs
+	// up while you watch: what is left stays yours.
 	const [traderOpen, setTraderOpen] = useState(false);
-	// (useTrader keeps the arrival callback in a ref, so a plain function is fine.)
+	// (useTrader keeps the callbacks in refs, so plain functions are fine.)
 	const trader = useTrader({
-		onArrive: () =>
-			showToast("A hooded stranger is at the hedge", "The Ghost Sheep Trader · finds for tickles, while he stays", () =>
-				setTraderOpen(true),
-			),
+		onArrive: (s) => {
+			const word = traderArrivalCopy(s);
+			showToast(word.title, word.sub, () => setTraderOpen(true), TRADER_ARRIVE_LOOK);
+		},
+		onLeave: () => showToast(TRADER_LEAVE_COPY.title, TRADER_LEAVE_COPY.sub, undefined, TRADER_LEAVE_LOOK),
 	});
-	const { sell } = trader;
+	const { sell, tradeUp } = trader;
 	const { applyBag } = satchel;
 	const sellToTrader = useCallback(
 		async (itemId: number) => {
@@ -887,6 +902,21 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			return r;
 		},
 		[sell, applyBag, fetchStats],
+	);
+	// Three alike for one up: no tickles move, so no stats read; the bag the
+	// server answers is installed whole.
+	const tradeUpWithTrader = useCallback(
+		async (findId: SatchelFindId) => {
+			const r = await tradeUp(findId);
+			if (r.ok) {
+				applyBag(r.bag);
+				if (!r.replay) observeFieldGuide("trader");
+			} else if (r.bag) {
+				applyBag(r.bag);
+			}
+			return r;
+		},
+		[tradeUp, applyBag],
 	);
 	const traderRefused = useCallback((line: string) => showToast("He shook his head", line), [showToast]);
 	// The Sheep's Riddle's day, read from the device (no server in v1).
@@ -989,14 +1019,10 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	}
 
 	if (trader.present) {
-		const left = trader.status.visit?.findsLeft ?? 0;
 		fanOptions.push({
 			key: "trader",
 			title: "Trader",
-			sub:
-				left <= 0
-					? "the Ghost Sheep has had enough"
-					: `the Ghost Sheep · ${traderStayLine(traderMinutesLeft(trader.status, trader.readAt))}`,
+			sub: traderFanLine(trader.status, traderMinutesLeft(trader.status, trader.readAt)),
 			label: "trader",
 			mark: "trader",
 			onPress: () => setTraderOpen(true),
@@ -1177,15 +1203,19 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 							accessibilityLiveRegion="polite"
 						>
 							<Sticker
-								color="rose"
+								color={toast.look?.color ?? "rose"}
 								rotate={TOAST_TILT}
 								radius={RADII.lg}
 								style={styles.toast}
 							>
 								<View style={styles.toastInner}>
-									<View style={styles.toastIcon}>
-										<Glyph name="heart" size={TOAST_GLYPH} />
-									</View>
+									{toast.look ? (
+										<Glyph name={toast.look.glyph} size={AVATAR_SIZE[0]} />
+									) : (
+										<View style={styles.toastIcon}>
+											<Glyph name="heart" size={TOAST_GLYPH} />
+										</View>
+									)}
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<T role="cardTitleSm">{toast.title}</T>
 										<Hand tone="secondary" style={styles.toastBody}>
@@ -1445,6 +1475,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				readAt={trader.readAt}
 				items={satchel.state.items}
 				onSell={sellToTrader}
+				onTradeUp={tradeUpWithTrader}
 				onRefused={traderRefused}
 			/>
 

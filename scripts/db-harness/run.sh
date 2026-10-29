@@ -322,6 +322,8 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		supabase/migrations/20260918090000_satchel_unbounded.sql \
 		supabase/migrations/20260918120000_pig_errands.sql \
 		scripts/db-harness/99_pig_errands_smoke.sql \
+		supabase/migrations/20261029210000_trader_sets_and_trade_ups.sql \
+		scripts/db-harness/A4_trader_sets_and_trade_ups_smoke.sql \
 		supabase/migrations/20260921150000_drum_draw.sql \
 		scripts/db-harness/A0_drum_draw_smoke.sql \
 		scripts/db-harness/00y_endless_wallow_prep.sql \
