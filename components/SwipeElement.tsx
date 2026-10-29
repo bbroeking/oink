@@ -40,6 +40,8 @@ interface SwipeElementProps {
 	equippedAura?: EquippedItem | null;
 	equippedBackground?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
+	// Full costume (Halloween 2026): PigStage hides every other worn slot.
+	equippedCostume?: EquippedItem | null;
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
 	prestigeLevel?: number;
@@ -78,6 +80,7 @@ export default function SwipeElement({
 	equippedAura,
 	equippedBackground,
 	equippedHeld,
+	equippedCostume,
 	canTickle = true,
 	playSixSeven,
 	prestigeLevel = 0,
@@ -305,6 +308,7 @@ export default function SwipeElement({
 						equippedNeck={equippedNeck}
 						equippedAura={equippedAura}
 						equippedHeld={equippedHeld}
+						equippedCostume={equippedCostume}
 						prestigeLevel={prestigeLevel}
 						ritual={ritual}
 						facing={facing}

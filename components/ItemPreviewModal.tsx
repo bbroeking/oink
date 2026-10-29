@@ -28,6 +28,14 @@ import {
 	UI_COLORS,
 } from "@/constants/theme";
 import { fitStage, type CanvasBox } from "@/utils/previewFit";
+import {
+	COSTUME_PIG_ID,
+	costumeFitFor,
+	costumeLayout,
+	isCostumeCategory,
+	pigCanWearCostume,
+} from "@/utils/costumeFit";
+import { COSTUME_FITS_ROSIE_LINE, costumeCoverLine } from "@/utils/costumeCopy";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
@@ -229,6 +237,11 @@ interface Props {
 	// The Pop-up Stall (2026-10-29): how long the piece stays, as a lilac tag
 	// beside its rarity ("leaving in 6 days"). Omitted everywhere else.
 	windowTag?: string | null;
+	// Full costumes (Halloween 2026): the viewer's worn columns, so the cover
+	// line names only what would wait underneath, and the viewer's active pig
+	// (v1 costumes fit Rosie only). Omitted, the line names nothing.
+	wornActiveIds?: Readonly<Record<string, string | null>>;
+	viewerPigId?: string | null;
 	// The stall's buy asks first: Buy now opens this ConfirmDialog (inline, so
 	// no second native modal stacks on the sheet) and only its confirm calls
 	// onBuy. Omitted, Buy now buys in one tap as it always has.
@@ -238,6 +251,19 @@ interface Props {
 		body: string;
 		confirmLabel: string;
 	} | null;
+}
+
+
+// The costume's two layers as preview boxes (floor-relative, like the item
+// overlays), so the product shot fits the hood instead of cutting it.
+function costumeCanvasBoxes(fit: NonNullable<ReturnType<typeof costumeFitFor>>): CanvasBox[] {
+	const { hood, romper } = costumeLayout(fit, "idle_1", PIG_CANVAS);
+	return [hood, romper].map((box) => ({
+		left: box.left,
+		bottom: PIG_CANVAS - (box.top + box.height),
+		width: box.width,
+		height: box.height,
+	}));
 }
 
 export function ItemPreviewModal({
@@ -259,6 +285,8 @@ export function ItemPreviewModal({
 	onTroughOpened,
 	windowTag = null,
 	buyConfirm = null,
+	wornActiveIds,
+	viewerPigId,
 }: Props) {
 	// Unmanaged native Modal (direct-tap from the shop, outside the popup queue):
 	// hold the queue while an item is previewed so a foreground poll can't present
@@ -308,6 +336,10 @@ export function ItemPreviewModal({
 		: null;
 	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
 	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
+	// A full costume is the whole outfit: it previews alone, on the pig its art
+	// is fitted to (v1: Rosie), whatever pig the viewer keeps.
+	const stageCostume = isCostumeCategory(item.category) ? costumeFitFor(COSTUME_PIG_ID, item.id) : null;
+	const stageEquippedCostume = stageCostume ? previewSlot : null;
 
 	// The product shot is fitted, never cut (polish pass, 2026-10-04): the
 	// Wizard Hat's tip ran ~62pt past the top of a 300pt stage drawn at 1:1 in
@@ -326,7 +358,7 @@ export function ItemPreviewModal({
 	].flatMap((slot) => {
 		const overlay = resolveSlot(slot, "idle", 0)?.overlay;
 		return overlay ? [overlay] : [];
-	});
+	}).concat(stageCostume ? costumeCanvasBoxes(stageCostume) : []);
 	const fit = frame
 		? fitStage(stageBoxes, PIG_CANVAS, frame.w, frame.h, SPACE.sm)
 		: null;
@@ -432,6 +464,8 @@ export function ItemPreviewModal({
 									<PigStage
 										pigAnimation="idle"
 										pigFrozen
+										{...(stageCostume ? { pigId: COSTUME_PIG_ID } : null)}
+										equippedCostume={stageEquippedCostume}
 										equipped={stageEquipped}
 										equippedBow={stageEquippedBow}
 										equippedGlasses={stageEquippedGlasses}
@@ -455,6 +489,7 @@ export function ItemPreviewModal({
 							accessibilityLabel={`${rarity} rarity`}
 							style={{ backgroundColor: badge.bg }}
 						/>
+						{stageCostume ? <Tag tone="lilac" label="full costume" /> : null}
 						{windowTag ? <Tag tone="lilac" label={windowTag} /> : null}
 					</View>
 
@@ -464,6 +499,13 @@ export function ItemPreviewModal({
 							{item.description}
 						</Hand>
 					)}
+					{stageCostume ? (
+						<Hand tone="secondary" style={styles.itemDesc}>
+							{pigCanWearCostume(viewerPigId)
+								? costumeCoverLine(wornActiveIds ?? {})
+								: COSTUME_FITS_ROSIE_LINE}
+						</Hand>
+					) : null}
 
 					{/* Price + CTA row */}
 					<View style={styles.ctaRow}>
@@ -483,7 +525,7 @@ export function ItemPreviewModal({
 								accessibilityLabel={`Take off ${item.name}`}
 								accessibilityHint="Removes this item from your pig"
 							>
-								Take off
+								{stageCostume ? "Take it off" : "Take off"}
 							</Button>
 						) : owned ? (
 							<Button

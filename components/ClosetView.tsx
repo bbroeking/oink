@@ -60,6 +60,12 @@ import {
 import { categoryIcon } from "@/constants/emojiArt";
 import { cosmeticAccessibility } from "@/utils/cosmetics";
 import { cardBadge, cardTag, cardTagFace } from "@/utils/shopShelves";
+import { isCostumeCategory, isKnownCostumeId, pigCanWearCostume } from "@/utils/costumeFit";
+import {
+	COSTUME_FITS_ROSIE_TAG,
+	costumeOnLine,
+	isCoveredByCostume,
+} from "@/utils/costumeCopy";
 import {
 	SLOT_ORDER,
 	SLOT_LABEL,
@@ -184,10 +190,14 @@ const COLUMN_CATEGORY: Record<string, string> = {
 	active_aura_id: "aura",
 	active_background_id: "background",
 	active_tickle_particle_id: "tickle_particle",
+	active_costume_id: "costume",
 };
 
 // Category sections, in order, with player-facing headings.
 const CAT_ORDER = [
+	// Halloween 2026 full costumes lead while the season is on: wearing one
+	// hides the rest of the outfit (utils/costumeFit.ts).
+	"costume",
 	"hat",
 	"bow",
 	"glasses",
@@ -200,6 +210,7 @@ const CAT_ORDER = [
 	"tickle_particle"
 ];
 const CAT_LABEL: Record<string, string> = {
+	costume: "Costumes",
 	hat: "Hats",
 	bow: "Bows",
 	glasses: "Glasses",
@@ -223,6 +234,7 @@ const stripe = (r: string | undefined) => RARITY_STRIPE[r ?? "common"] ?? RARITY
 // Paper-doll: a signature WHIMSY tint per equip slot, painted behind the slot's
 // item/category icon so the slots flanking Rosie read as a colourful dress-up tray.
 const SLOT_TINT: Record<string, string> = {
+	costume: WHIMSY.lilac,
 	head: WHIMSY.sun,
 	bow: WHIMSY.rose,
 	face: WHIMSY.sky,
@@ -399,6 +411,16 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 	};
 
 	const scale = PIG_PREVIEW / PIG_CANVAS;
+
+	// A worn full costume (canvas direction A, 2026-10-29) covers every worn
+	// slot: those chips fall asleep with an "under" tag, and a hand line under
+	// Rosie names what waits. Only on a pig the costume fits (v1: Rosie).
+	const costumeCanFit = pigCanWearCostume(pigId);
+	const wornCostumeId = activeIds["active_costume_id"] ?? null;
+	const costumeOn = costumeCanFit && isKnownCostumeId(wornCostumeId);
+	const costumeName = costumeOn && wornCostumeId
+		? (byId.current.get(wornCostumeId)?.name ?? null)
+		: null;
 
 	// Display name on the preview chip: resolved name, "…" while the owned
 	// rows are still loading, or the pick prompt when nothing is equipped.
@@ -671,8 +693,10 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 				slotForCategory(category) === s &&
 				(categoryTotals[category]?.total ?? 0) > 0,
 		);
+		const asleep = costumeOn && isCoveredByCostume(s);
+		const under = asleep && !!equippedId;
 		const wearing = equippedId
-			? `${slotName} slot, wearing ${it?.name ?? "something"}`
+			? `${slotName} slot, wearing ${it?.name ?? "something"}${under ? `, tucked under ${costumeName ?? "the costume"}` : ""}`
 			: `${slotName} slot, empty`;
 		// The ✕ is the chip's SIBLING, drawn over its corner: nested inside the
 		// pressable chip it was part of one VoiceOver element (an accessible
@@ -681,10 +705,10 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		return (
 			<View key={s} style={styles.slotWrap}>
 			<Sticker
-				color="paper"
+				color={asleep ? "cream2" : "paper"}
 				rotate={0}
 				radius={RADII.lg}
-				shadow="sm"
+				shadow={asleep ? "none" : "sm"}
 				onPress={jumpable ? () => scrollToCategory(s) : undefined}
 				accessibilityRole={jumpable ? "button" : "text"}
 				accessibilityLabel={wearing}
@@ -693,9 +717,18 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 				}
 				style={styles.slotChip}
 			>
-				<View style={[styles.slotThumb, { backgroundColor: SLOT_TINT[s] ?? WHIMSY.cream2 }]}>
+				<View
+					style={[
+						styles.slotThumb,
+						{ backgroundColor: asleep ? WHIMSY.cream2 : (SLOT_TINT[s] ?? WHIMSY.cream2) },
+					]}
+				>
 					{thumbSrc ? (
-						<Image source={thumbSrc} style={styles.slotThumbImg} resizeMode="contain" />
+						<Image
+							source={thumbSrc}
+							style={[styles.slotThumbImg, asleep && styles.slotThumbImgAsleep]}
+							resizeMode="contain"
+						/>
 					) : (
 						<Icon name="plus" size={ART_SIZE.glyphSm} color={UI_COLORS.uiMuted} />
 					)}
@@ -715,6 +748,15 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 				>
 					{slotName}
 				</T>
+				{under ? (
+					<Tag
+						label="under"
+						tone="lilac"
+						flat
+						maxFontSizeMultiplier={CHROME_TYPE_CAP}
+						style={styles.slotUnder}
+					/>
+				) : null}
 			</Sticker>
 				{equippedId && removeCategory ? (
 					<IconButton
@@ -794,12 +836,19 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 									equippedNeck={slot("active_neck_id")}
 									equippedAura={slot("active_aura_id")}
 									equippedHeld={slot("active_held_id")}
+									equippedCostume={slot("active_costume_id")}
 								/>
 							</View>
 						</View>
 					</View>
 					<View style={styles.slotCol}>{rightSlots.map((s) => renderSlot(s))}</View>
 				</View>
+
+				{costumeOn && costumeName ? (
+					<T role="hand" tone="secondary" align="center" maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+						{costumeOnLine(costumeName, activeIds)}
+					</T>
+				) : null}
 
 				{/* Title chip — the pig's nameplate; tapping scrolls to Titles. */}
 				{userId != null && (
@@ -912,6 +961,10 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 						{row.items.map((item) => {
 							const active = isEquipped(item.id, item.category);
 							const owned = ownedIds.has(item.id);
+							const isCostume = isCostumeCategory(item.category);
+							// v1 costumes fit Rosie only: on another pig the tile
+							// greys and says so, and a tap previews instead of wearing.
+							const costumeElsewhere = isCostume && !costumeCanFit;
 							const src = HAT_THUMBNAILS_256[item.id] ?? HAT_IMAGES[item.id];
 							const thumbSrc = src ?? categoryIcon(item.category);
 							// The tile wears the shelf's tag and the shelf's badge — the same
@@ -950,7 +1003,8 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 										shadow="sm"
 										onPress={() => {
 											Haptics.selectionAsync().catch(() => {});
-											if (owned) onEquip(active ? null : item.id, item.category);
+											if (costumeElsewhere) onPreview(item);
+											else if (owned) onEquip(active ? null : item.id, item.category);
 											else onPreview(item);
 										}}
 										style={[
@@ -980,13 +1034,22 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 											source={thumbSrc}
 											style={[
 												{ width: thumbArt, height: thumbArt },
-												!owned && styles.itemArtUnowned,
+												(!owned || costumeElsewhere) && styles.itemArtUnowned,
 											]}
 											resizeMode="contain"
 										/>
 												) : (
 													<Glyph name="sparkle" size={ART_SIZE.glyph} style={styles.artFallback} />
 										)}
+											{isCostume ? (
+												<Tag
+													label={costumeElsewhere ? COSTUME_FITS_ROSIE_TAG : "costume"}
+													tone={costumeElsewhere ? "muted" : "lilac"}
+													flat
+													maxFontSizeMultiplier={CHROME_TYPE_CAP}
+													style={styles.costumeCorner}
+												/>
+											) : null}
 											{active && (
 												<View style={styles.check}>
 													<Icon name="check" size={CHECK_ICON} color={WHIMSY.paper} strokeWidth={CHECK_STROKE} />
@@ -1201,6 +1264,22 @@ const styles = StyleSheet.create({
 	},
 	// Explicit pt size (not %) — see itemThumbImg for why.
 	slotThumbImg: { width: SLOT_THUMB_ART, height: SLOT_THUMB_ART },
+	// Covered by a worn costume: the chip goes to sleep on cream2, flat, its
+	// art faded, and an "under" tag hangs off its foot (canvas direction A).
+	slotThumbImgAsleep: { opacity: OPACITY.ghost },
+	slotUnder: {
+		position: "absolute",
+		bottom: -SPACE.sm,
+		alignSelf: "center",
+		transform: [{ rotate: "-4deg" }],
+	},
+	// The tile's corner tag for a costume ("costume", or "fits Rosie" on a pig
+	// the art is not fitted to).
+	costumeCorner: {
+		position: "absolute",
+		top: SPACE.xs,
+		left: SPACE.xs,
+	},
 	slotLabel: {
 		marginTop: SPACE.xs
 	},

@@ -69,6 +69,8 @@ import {
 } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
+import { showToast } from "@/components/ui/Toast";
+import { costumeEquipRefusal, costumeTakeOffToast } from "@/utils/costumeCopy";
 import * as Haptics from "expo-haptics";
 import { useAudioPlayer } from "expo-audio";
 
@@ -384,6 +386,16 @@ export default function ShopScreen() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
+    // Full costumes (Halloween 2026) fit Rosie only in v1, and taking one
+    // off says what comes back out from underneath.
+    const refusal = costumeEquipRefusal(category, itemId, pigRoster.roster.activePigId);
+    if (refusal) {
+      showToast({ tone: "info", title: refusal });
+      return;
+    }
+    const offLine = costumeTakeOffToast(category, itemId, activeIds, (id) =>
+      [...wornItems, ...allItems].find((row) => row.id === id)?.name,
+    );
     Haptics.selectionAsync().catch(() => {});
     try {
       equipPlayer.seekTo(0);
@@ -391,6 +403,7 @@ export default function ShopScreen() {
     } catch {}
     const update = await equipCosmetic(itemId, category);
     patchActiveIds(update);
+    if (offLine && "active_costume_id" in update) showToast({ tone: "info", title: offLine });
   };
 
   // Redesigned Today grid: numeric 2-col tile width (GRID_PAD scroll padding
@@ -678,6 +691,8 @@ export default function ShopScreen() {
         locked={previewItem ? !!previewItem.members_only && !isVip : false}
         equippedHat={equippedPreviewSlot("active_hat_id")}
         equippedBow={equippedPreviewSlot("active_bow_id")}
+        wornActiveIds={activeIds}
+        viewerPigId={pigRoster.roster.activePigId}
         onTroughOpened={(spent, newBalance) => {
           // Seed left the account server-side — reflect it in the
           // header chip NOW, not on the next focus refetch. (The Barn's fan

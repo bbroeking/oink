@@ -62,6 +62,8 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "@/utils/supabase";
+import { costumeSlot, fetchWornCostume } from "@/utils/wornCostumes";
+import { costumeFitFor } from "@/utils/costumeFit";
 import { rpcAction } from "@/utils/rpc";
 import { fetchBarnVisitStatus } from "@/utils/barnVisit";
 import { useVisitorEffects } from "@/hooks/useVisitorEffects";
@@ -225,6 +227,9 @@ interface EquipSet {
 	neck: Slot;
 	aura: Slot;
 	held: Slot;
+	// Full costume (Halloween 2026). Side-fetched fail-soft (utils/wornCostumes),
+	// never part of EQUIP_SELECT, so a server without the column still visits.
+	costume: Slot;
 }
 const EMPTY_EQUIP: EquipSet = {
   hat: null,
@@ -234,6 +239,7 @@ const EMPTY_EQUIP: EquipSet = {
   neck: null,
   aura: null,
   held: null,
+  costume: null,
 };
 
 // Shape of a joined `hats` row (to-one FK). Supabase may surface a to-one embed
@@ -280,6 +286,7 @@ const rowToEquip = (r: ProfileEquipRow): EquipSet => ({
 	neck: toSlot(r.active_neck),
 	aura: toSlot(r.active_aura),
 	held: toSlot(r.active_held),
+	costume: null,
 });
 
 interface BarnProfileRow extends ProfileEquipRow {
@@ -605,6 +612,10 @@ function BarnVisitSession({
 				active_background_id: d.active_background_id ?? null,
 			});
 			setHostEquip(rowToEquip(d));
+			void fetchWornCostume(targetUserId).then((costumeId) => {
+				if (cancelled || !costumeId) return;
+				setHostEquip((prev) => ({ ...prev, costume: costumeSlot(costumeId) }));
+			});
 			setHostPigId(
 				d.is_vip && isPigId(d.active_pig_id) ? d.active_pig_id : "rosie",
 			);
@@ -629,6 +640,11 @@ function BarnVisitSession({
 				if (!cancelled && me) {
 					const m = me;
 					setMyEquip(rowToEquip(m));
+					const myId = ures.user.id;
+					void fetchWornCostume(myId).then((costumeId) => {
+						if (cancelled || !costumeId) return;
+						setMyEquip((prev) => ({ ...prev, costume: costumeSlot(costumeId) }));
+					});
 					setMyPigId(
 						m.is_vip && isPigId(m.active_pig_id)
 							? m.active_pig_id
@@ -888,6 +904,9 @@ function BarnVisitSession({
 	// visible place (the header plaque); everything else that carries it is a
 	// screen-reader label.
 	const hostName = barn?.username ?? targetName;
+	// The host's worn full costume, named on the plaque ("in Moonpuff") when
+	// it draws on the host's pig (v1: Rosie only).
+	const hostCostumeName = costumeFitFor(hostPigId, hostEquip.costume?.id)?.name ?? null;
 
 	// Re-read the host's wish when a swap answer didn't carry the next one —
 	// the bubble's options come from friend_wishes, never from the client.
@@ -1123,7 +1142,7 @@ function BarnVisitSession({
 					<>
 						{/* ===== header: one name, one row of numbers ===== */}
 						<View style={styles.chrome}>
-							<VisitHeader hostName={hostName} onLeave={requestExit} />
+							<VisitHeader hostName={hostName} onLeave={requestExit} costumeName={hostCostumeName} />
 							<VisitStatusRow
 								youHearts={youHearts}
 								hostHearts={friendHearts}
@@ -1144,6 +1163,7 @@ function BarnVisitSession({
 											pigId={myPigId}
 											hatId={myEquip.hat?.id}
 											bowId={myEquip.bow?.id}
+											costumeId={myEquip.costume?.id}
 											size={AVATAR_SIZE[0]}
 										/>
 									</Avatar>
@@ -1159,6 +1179,7 @@ function BarnVisitSession({
 											pigId={hostPigId}
 											hatId={hostEquip.hat?.id}
 											bowId={hostEquip.bow?.id}
+											costumeId={hostEquip.costume?.id}
 											size={AVATAR_SIZE[0]}
 											// The tally wears the host AS DRESSED, and a ritual is
 											// part of being dressed. PigAvatar keeps only the static
@@ -1938,6 +1959,7 @@ function TapPig({
 						equippedNeck={equip.neck}
 						equippedAura={equip.aura}
 						equippedHeld={equip.held}
+						equippedCostume={equip.costume}
 						// The resting idle follows the mood: the host slumps into the
 						// tired set once its 3–7 taps are spent (the durable "you
 						// can't tickle this one" signal); you beam once a heart has

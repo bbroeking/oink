@@ -2,6 +2,7 @@ import React from "react";
 import { Image, StyleSheet, View, type ViewStyle } from "react-native";
 import { BORDER, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import { PigAvatar } from "./PigAvatar";
+import type { PigId } from "@/utils/pigs";
 import { staticPigFx, type PigFx } from "@/constants/ritualFx";
 import { wallowAuraArtStage } from "@/utils/wallow";
 import { T } from "./Text";
@@ -37,6 +38,8 @@ export function PrestigeAvatar({
 	size = 40,
 	hatId,
 	bowId,
+	costumeId,
+	pigId,
 	prestigeLevel = 0,
 	showRank = true,
 	style,
@@ -46,6 +49,10 @@ export function PrestigeAvatar({
 	size?: number;
 	hatId?: string | null;
 	bowId?: string | null;
+	/** Forwarded to `PigAvatar`: a worn full costume (Halloween 2026) and the
+	 *  pig it is worn by (the costume only draws on a pig it fits). */
+	costumeId?: string | null;
+	pigId?: PigId;
 	prestigeLevel?: number | null;
 	showRank?: boolean;
 	style?: ViewStyle;
@@ -73,6 +80,8 @@ export function PrestigeAvatar({
 				size={size}
 				hatId={hatId}
 				bowId={bowId}
+				costumeId={costumeId}
+				pigId={pigId}
 				style={style}
 				ritual={ritual}
 				mode={mode}
@@ -100,6 +109,8 @@ export function PrestigeAvatar({
 					size={coreSize}
 					hatId={hatId}
 					bowId={bowId}
+					costumeId={costumeId}
+					pigId={pigId}
 					border={WHIMSY.ink}
 					ritual={ritual}
 					mode={mode}

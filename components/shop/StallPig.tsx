@@ -15,6 +15,7 @@ type SlotProps = {
 	equippedNeck?: EquippedItem | null;
 	equippedAura?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
+	equippedCostume?: EquippedItem | null;
 };
 
 /** The PigStage prop a piece rides, by category (ItemPreviewModal's routing). */
@@ -41,6 +42,10 @@ export function stallSlot(item: Pick<HatRow, "id" | "category" | "emoji"> | null
 			return { equippedAura: slot };
 		case "held":
 			return { equippedHeld: slot };
+		// A full costume draws on Rosie, the pig its art is fitted to (the
+		// stage's default pig), and is the whole outfit.
+		case "costume":
+			return { equippedCostume: slot };
 		default:
 			return {};
 	}

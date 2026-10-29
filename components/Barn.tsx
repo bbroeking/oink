@@ -1148,6 +1148,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 							equippedAura={stats.activeAura}
 								equippedBackground={forInterior ? null : stats.activeBackground}
 							equippedHeld={stats.activeHeld}
+							equippedCostume={stats.activeCostume}
 							ritual={presentation.pig}
 							facing={pigFacing}
 						/>

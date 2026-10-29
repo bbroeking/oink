@@ -3,6 +3,7 @@ import { View, Image, ViewStyle } from "react-native";
 import { ART_SIZE, AVATAR_SIZE, BORDER, RADII, WHIMSY } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PigStage } from "./PigStage";
+import { COSTUME_CATEGORY, costumeFitFor } from "@/utils/costumeFit";
 import { PigPortrait } from "./PigPortrait";
 import type { PigId } from "@/utils/pigs";
 import { staticPigFx, type PigFx } from "@/constants/ritualFx";
@@ -11,6 +12,9 @@ interface Props {
 	size?: number;
 	hatId?: string | null;
 	bowId?: string | null;
+	/** A worn full costume (Halloween 2026). When this pig can wear it (v1:
+	 *  Rosie) it IS the outfit: hat and bow are hidden, as on the stage. */
+	costumeId?: string | null;
 	border?: string;
 	style?: ViewStyle;
 	/** Which pig. Defaults to Rosie, the way every list row did before pigs
@@ -51,8 +55,9 @@ const WORN_DROP_FRAC = 0.09;
 // standard retires. [B-05] (2026-09-11)
 export function PigAvatar({
 	size = AVATAR_SIZE[1],
-	hatId,
-	bowId,
+	hatId: rawHatId,
+	bowId: rawBowId,
+	costumeId,
 	border,
 	style,
 	pigId = "rosie",
@@ -60,11 +65,16 @@ export function PigAvatar({
 	ritual,
 }: Props) {
 	const staticRitual = staticPigFx(ritual);
+	const costume = costumeFitFor(pigId, costumeId) ? costumeId! : null;
+	const hatId = costume ? null : rawHatId;
+	const bowId = costume ? null : rawBowId;
+	const costumeSrc = costume ? HAT_IMAGES[costume] : null;
 	const hatSrc = hatId ? HAT_IMAGES[hatId] : null;
 	const bowSrc = bowId ? HAT_IMAGES[bowId] : null;
 	// The pig wears its outfit on the stage when it has both pieces (the icon
 	// path can only show one), or whenever the caller asked for the pig itself.
-	const showCombinedOutfit = (!!hatId && !!bowId) || (mode === "worn" && (!!hatId || !!bowId));
+	const showCombinedOutfit =
+		(!!hatId && !!bowId) || (mode === "worn" && (!!hatId || !!bowId || !!costume));
 	return (
 		<View
 			style={[
@@ -100,11 +110,12 @@ export function PigAvatar({
 						ritual={staticRitual}
 						equipped={hatId ? { id: hatId, category: "hat", emoji: null } : null}
 						equippedBow={bowId ? { id: bowId, category: "bow", emoji: null } : null}
+						equippedCostume={costume ? { id: costume, category: COSTUME_CATEGORY, emoji: null } : null}
 					/>
 				</View>
-			) : hatSrc || bowSrc ? (
+			) : costumeSrc || hatSrc || bowSrc ? (
 				<Image
-					source={hatSrc ?? bowSrc!}
+					source={costumeSrc ?? hatSrc ?? bowSrc!}
 					style={{ width: size * ITEM_FRAC, height: size * ITEM_FRAC }}
 					resizeMode="contain"
 					accessible={false}

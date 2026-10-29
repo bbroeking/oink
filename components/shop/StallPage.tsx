@@ -12,7 +12,8 @@
 // (components/dev/screens/stall-preview.tsx) both feed it.
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
-import { EmptyState, Hand, SectionHeader, SegmentedControl } from "@/components/ui";
+import { EmptyState, Hand, SectionHeader, SegmentedControl, Tag } from "@/components/ui";
+import { isCostumeCategory } from "@/utils/costumeFit";
 import { ShopCard, shopCardStyles } from "@/components/shop/ShopCard";
 import { HAT_IMAGES } from "@/constants/hats";
 import { BORDER, PAGE_PAD, SPACE, TAB_SAFE, UI_COLORS, WHIMSY } from "@/constants/theme";
@@ -93,6 +94,13 @@ export function StallPage({
 					onLongPress={() => onLongPressItem(item)}
 					onCenter={(x, y) => onCenter?.(item.id, x, y)}
 				/>
+				{/* A full costume is the whole outfit, not one more piece: its
+				    tile says so in the corner (canvas direction A, 2026-10-29). */}
+				{isCostumeCategory(item.category) ? (
+					<View pointerEvents="none" style={styles.costumeCorner}>
+						<Tag label="full costume" tone="lilac" flat />
+					</View>
+				) : null}
 			</View>
 		);
 	};
@@ -210,4 +218,11 @@ const styles = StyleSheet.create({
 	backdrop: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
 	hint: { position: "absolute", left: SPACE.md, top: SPACE.sm },
 	section: { paddingHorizontal: PAGE_PAD, gap: SPACE.md },
+	// Right of the card's rarity dot, clear of its owned badge.
+	costumeCorner: {
+		position: "absolute",
+		top: SPACE.sm,
+		left: SPACE.xl,
+		zIndex: 2,
+	},
 });

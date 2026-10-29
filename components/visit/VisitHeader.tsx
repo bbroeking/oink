@@ -16,6 +16,7 @@ import {
 	IconText,
 	Sticker,
 	T,
+	Tag,
 } from "@/components/ui";
 import { RADII, SPACE, TAP_MIN } from "@/constants/theme";
 import { VISIT_TYPE_CAP } from "./chrome";
@@ -30,9 +31,13 @@ const HEADER_TYPE_CAP = VISIT_TYPE_CAP;
 export function VisitHeader({
 	hostName,
 	onLeave,
+	costumeName = null,
 }: {
 	hostName: string;
 	onLeave: () => void;
+	/** The host's worn full costume (Halloween 2026), named on the plaque as
+	 *  "in Moonpuff" (canvas direction A, 2026-10-29). */
+	costumeName?: string | null;
 }) {
 	return (
 		<View style={styles.row}>
@@ -42,6 +47,7 @@ export function VisitHeader({
 				shadow="sm"
 				style={styles.plaque}
 			>
+				<View style={costumeName ? styles.plaqueName : undefined}>
 				<IconText left={<Glyph name="star" size={PLAQUE_MARK} />} gap={SPACE.xs}>
 					<T
 						role="cardTitle"
@@ -52,6 +58,16 @@ export function VisitHeader({
 						{`${hostName}'s Barn`}
 					</T>
 				</IconText>
+				</View>
+				{costumeName ? (
+					<Tag
+						label={`in ${costumeName}`}
+						tone="lilac"
+						flat
+						maxFontSizeMultiplier={HEADER_TYPE_CAP}
+						style={styles.costumeTag}
+					/>
+				) : null}
 			</Sticker>
 			{/* The way out never gives. A `Button` label is shrinkable by design
 			    (a long CTA wraps rather than overflowing its pill), so in a
@@ -91,8 +107,13 @@ const styles = StyleSheet.create({
 	plaque: {
 		flexShrink: 1,
 		minWidth: 0,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.xs,
 	},
+	plaqueName: { flexShrink: 1, minWidth: 0 },
+	costumeTag: { flexShrink: 0 },
 	leave: { flexShrink: 0 },
 });

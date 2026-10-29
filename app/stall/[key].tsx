@@ -29,6 +29,9 @@ import {
 } from "@/components/ui";
 import { ItemPreviewModal } from "@/components/ItemPreviewModal";
 import { showPurchaseToast } from "@/components/PurchaseToast";
+import { showToast } from "@/components/ui/Toast";
+import { usePigRoster } from "@/hooks/usePigRoster";
+import { costumeEquipRefusal, costumeTakeOffToast } from "@/utils/costumeCopy";
 import { StallPage } from "@/components/shop/StallPage";
 import { SnoutsPocket } from "@/components/shop/SnoutsPocket";
 import { gridTileWidth } from "@/components/shop/ShopCard";
@@ -79,6 +82,7 @@ export default function StallScreen() {
 	const params = useLocalSearchParams<{ key?: string }>();
 	const stall = useSeasonalShelf();
 	const catalog = useShopCatalog();
+	const pigRoster = usePigRoster();
 	const { owned, activeIds, counter, isVip, allItems } = catalog;
 	const edge = useScrollEdge();
 	const { width } = useWindowDimensions();
@@ -106,12 +110,24 @@ export default function StallScreen() {
 	const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/shop"));
 
 	const handleEquip = async (itemId: string | null, category: string | null | undefined) => {
+		// Full costumes (Halloween 2026) fit Rosie only in v1, and taking one
+		// off says what comes back out from underneath.
+		const refusal = costumeEquipRefusal(category, itemId, pigRoster.roster.activePigId);
+		if (refusal) {
+			showToast({ tone: "info", title: refusal });
+			return;
+		}
+		const offLine = costumeTakeOffToast(category, itemId, activeIds, (id) =>
+			[...catalog.wornItems, ...allItems].find((row) => row.id === id)?.name,
+		);
 		Haptics.selectionAsync().catch(() => {});
 		try {
 			equipPlayer.seekTo(0);
 			equipPlayer.play();
 		} catch {}
-		catalog.patchActiveIds(await equipCosmetic(itemId, category));
+		const update = await equipCosmetic(itemId, category);
+		catalog.patchActiveIds(update);
+		if (offLine && "active_costume_id" in update) showToast({ tone: "info", title: offLine });
 	};
 
 	const handleBuy = async (item: ShelfItem) => {
@@ -212,6 +228,8 @@ export default function StallScreen() {
 				item={previewItem}
 				owned={previewItem ? ownedNow(previewItem.id) : false}
 				active={previewItem ? isEquipped(previewItem.id, previewItem.category) : false}
+				wornActiveIds={activeIds}
+				viewerPigId={pigRoster.roster.activePigId}
 				canAfford={previewItem ? counter >= previewItem.cost : false}
 				balance={counter}
 				busy={previewItem ? busyId === previewItem.id : false}

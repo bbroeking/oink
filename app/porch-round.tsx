@@ -62,6 +62,8 @@ function StopPanel({ stop, onPress }: { stop: PorchStop; onPress: () => void }) 
 			<PrestigeAvatar
 				size={STOP_PORTRAIT}
 				hatId={stop.activeHatId}
+				costumeId={stop.activeCostumeId}
+				pigId={stop.activePigId}
 				prestigeLevel={stop.wallowCount}
 			/>
 			<T role="bodySm" style={styles.stopName}>
