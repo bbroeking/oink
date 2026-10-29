@@ -754,8 +754,13 @@ def cmd_sim(n: int) -> int:
     art_short = art_info.get("CFBundleShortVersionString")
     exe = os.path.join(app, art_info.get("CFBundleExecutable", ""))
     art_exe_sha = sha256_file(exe) if os.path.isfile(exe) else None
+    # The JS bundle is what differs between builds with the same native code (198 vs 199),
+    # so it is part of the identity, not just the executable.
+    art_js = os.path.join(app, "main.jsbundle")
+    art_js_sha = sha256_file(art_js) if os.path.isfile(art_js) else None
     extra["artifact"] = {"app": rel(app), "short_version": art_short,
-                         "bundle_version": art_info.get("CFBundleVersion"), "executable_sha256": art_exe_sha}
+                         "bundle_version": art_info.get("CFBundleVersion"), "executable_sha256": art_exe_sha,
+                         "jsbundle_sha256": art_js_sha}
 
     dev = find_device(SIM_DEVICE_NAME)
     if not dev:
@@ -789,6 +794,10 @@ def cmd_sim(n: int) -> int:
             reason = f"installed version {inst_info.get('CFBundleShortVersionString')} != {art_short}"
         elif not os.path.isfile(inst_exe) or sha256_file(inst_exe) != art_exe_sha:
             reason = "installed executable differs from the artifact (dev client or older build)"
+        else:
+            inst_js = os.path.join(installed, "main.jsbundle")
+            if (sha256_file(inst_js) if os.path.isfile(inst_js) else None) != art_js_sha:
+                reason = "installed JS bundle differs from the artifact (same native code, other build)"
     if reason:
         i = run(["xcrun", "simctl", "install", udid, app], timeout=600)
         checks.append(check("release-identical simulator app installed", i.returncode == 0,
