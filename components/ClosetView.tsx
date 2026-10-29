@@ -84,6 +84,7 @@ import {
 	SPACE,
 	TAB_SAFE,
 	TAP_MIN,
+	TYPE,
 	RARITY_BG_SOLID,
 	RARITY_STRIPE,
 	UI_COLORS,
@@ -270,6 +271,12 @@ const SLOT_CHIP_W = 64;
 const SLOT_COL_W = SLOT_CHIP_W + SHADOW_SM.shadowOffset.width;
 // The "remove" badge rides the slot chip's corner, half off the edge.
 const SLOT_REMOVE_INSET = -10;
+// "COSTUME" is the one slot word wider than the chip: in kickerPillSm's 1.6
+// tracking it measures ~60pt at 1.0x against the chip's 60pt inside, so it
+// broke where every other label fits at CHROME_TYPE_CAP. Tracked at the
+// `label` role's spacing it is ~52pt at 1.0x and ~57pt at this ceiling.
+// (costume slot, 2026-10-29)
+const COSTUME_LABEL_TYPE_CAP = 1.1;
 const SLOT_REMOVE_ICON = 10;
 const SLOT_REMOVE_VISUAL = 20;
 const SLOT_THUMB_ART = 30;
@@ -743,8 +750,8 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 					tone="secondary"
 					align="center"
 					numberOfLines={1}
-					maxFontSizeMultiplier={CHROME_TYPE_CAP}
-					style={styles.slotLabel}
+					maxFontSizeMultiplier={s === "costume" ? COSTUME_LABEL_TYPE_CAP : CHROME_TYPE_CAP}
+					style={[styles.slotLabel, s === "costume" && styles.slotLabelTight]}
 				>
 					{slotName}
 				</T>
@@ -1283,6 +1290,7 @@ const styles = StyleSheet.create({
 	slotLabel: {
 		marginTop: SPACE.xs
 	},
+	slotLabelTight: { letterSpacing: TYPE.label.letterSpacing },
 	// A small paper badge pinned to the chip's top-right corner. A bare ✕ over
 	// the thumbnail art read as a stray mark colliding with the tile; the filled
 	// badge + ink border makes it an intentional "remove" affordance sitting on
