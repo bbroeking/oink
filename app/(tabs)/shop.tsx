@@ -9,6 +9,7 @@ import {
 // warning on every render), and this one pads the same four edges.
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
+import { useIsFocused } from "expo-router/react-navigation";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { useShopCatalog } from "@/hooks/useShopCatalog";
@@ -42,6 +43,9 @@ import {
 import { SnoutsPocket } from "@/components/shop/SnoutsPocket";
 import { StallCardSlot } from "@/components/shop/StallCard";
 import { useSeasonalShelf, stallVisible } from "@/hooks/useSeasonalShelf";
+import { useStallIntro, useStallVisited } from "@/hooks/useStallOnboarding";
+import { StallIntroModal } from "@/components/StallIntroModal";
+import { showNewHereTag } from "@/utils/stallIntro";
 import { stallBuyCopy } from "@/utils/seasonalShelf";
 import { leavingLabel } from "@/utils/shelfCountdown";
 import { HangingSign } from "@/components/shop/HangingSign";
@@ -130,6 +134,17 @@ export default function ShopScreen() {
   // "today only" gate the screen and the sheet read.
   const stall = useSeasonalShelf();
   const stallOpen = stall.phase === "open" && !!stall.shelf;
+  // Halloween onboarding (2026-10-29): a one-time 3-card intro while a stall
+  // is open, once per set key, queued behind every launch popup; and a "new
+  // here?" tag on the card until the first step into the stall.
+  const shopFocused = useIsFocused();
+  const stallIntro = useStallIntro({
+    shelf: stall.shelf,
+    phase: stall.phase,
+    userId,
+    focused: shopFocused,
+  });
+  const stallVisited = useStallVisited(stall.shelf?.key ?? null, userId);
   const stallIds = useMemo(
     () => new Set(stallOpen ? stall.items.map((i) => i.id) : []),
     [stallOpen, stall.items],
@@ -523,6 +538,7 @@ export default function ShopScreen() {
               ownedCount={
                 stall.items.filter((i) => i.owned || owned.has(i.id)).length
               }
+              newHere={showNewHereTag(stall.phase, stallVisited)}
               onPress={() => {
                 if (!stall.shelf) return;
                 router.push({
@@ -733,6 +749,13 @@ export default function ShopScreen() {
       {/* On-screen ka-ching sparkle burst overlay. Rendered at root
 			    so it sits above every other view (tabs, modals are below
 			    the absolute fill order). Fired imperatively from handleBuy. */}
+      <StallIntroModal
+        visible={stallIntro.visible}
+        shelf={stall.shelf}
+        items={stall.items}
+        now={stall.now}
+        onDone={stallIntro.finish}
+      />
       <BuyCelebration ref={celebrationRef} />
     </View>
   );

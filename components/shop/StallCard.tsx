@@ -39,6 +39,8 @@ const PLANK_TILT = 7;
 const PLANK_H = 26;
 /** The card's inner corner, inside its RADII.xl outline (the ShopCard rule). */
 const INNER_RADIUS = RADII.lg;
+/** The "new here?" tag's lean, a stuck-on note (B1). */
+const NEW_HERE_TILT = -4;
 
 export interface StallCardProps {
 	shelf: SeasonalShelf;
@@ -48,10 +50,21 @@ export interface StallCardProps {
 	now: number;
 	/** How many of the stall's pieces are yours (the boarded sign's haul). */
 	ownedCount: number;
+	/** The "new here?" tag (B1): an open stall this account has not stepped
+	 *  into yet. Comes down for good on the first stall page visit. */
+	newHere?: boolean;
 	onPress: () => void;
 }
 
-export function StallCard({ shelf, items, phase, now, ownedCount, onPress }: StallCardProps) {
+export function StallCard({
+	shelf,
+	items,
+	phase,
+	now,
+	ownedCount,
+	newHere = false,
+	onPress,
+}: StallCardProps) {
 	const backdrop = shelf.backdropHatId ? HAT_IMAGES[shelf.backdropHatId] : undefined;
 	const boarded = phase === "boarded";
 	const leaving = leavingLabel(shelf.closesAt, now);
@@ -60,9 +73,10 @@ export function StallCard({ shelf, items, phase, now, ownedCount, onPress }: Sta
 		? closedLabel(shelf.closesAt, shelf.theme.back_line)
 		: `seasonal stall · ${pieces}`;
 	const hero = heroItem(shelf, items);
+	const showNewHere = newHere && !boarded;
 	const a11yLabel = boarded
 		? `${shelf.title} stall, packed up. ${countWord(ownedCount)} in your haul`
-		: `${shelf.title} stall, ${pieces}${leaving ? `, ${leaving}` : ""}`;
+		: `${showNewHere ? "New here. " : ""}${shelf.title} stall, ${pieces}${leaving ? `, ${leaving}` : ""}`;
 	return (
 		<Sticker
 			color="paper"
@@ -85,6 +99,11 @@ export function StallCard({ shelf, items, phase, now, ownedCount, onPress }: Sta
 					<View style={styles.boards} pointerEvents="none">
 						<View style={[styles.plank, styles.plankUp]} />
 						<View style={[styles.plank, styles.plankDown]} />
+					</View>
+				) : null}
+				{showNewHere ? (
+					<View style={styles.newHere} pointerEvents="none" testID="stall-card-new-here">
+						<Tag tone="sun" label="new here? ★" maxFontSizeMultiplier={CHROME_TYPE_CAP} />
 					</View>
 				) : null}
 				<View style={styles.heroTag} pointerEvents="none">
@@ -170,6 +189,12 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		top: SPACE.sm,
 		right: SPACE.sm,
+	},
+	newHere: {
+		position: "absolute",
+		top: SPACE.sm,
+		left: SPACE.sm,
+		transform: [{ rotate: `${NEW_HERE_TILT}deg` }],
 	},
 	foot: {
 		flexDirection: "row",

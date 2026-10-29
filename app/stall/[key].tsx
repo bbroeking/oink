@@ -10,7 +10,7 @@
 // is wearing), so a buy or an equip here is the same buy or equip as the Shop
 // tab's. buy_hat() is the gate: a new piece outside its window is refused
 // with `not_in_window` (20261029220000).
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -36,6 +36,7 @@ import { StallPage } from "@/components/shop/StallPage";
 import { SnoutsPocket } from "@/components/shop/SnoutsPocket";
 import { gridTileWidth } from "@/components/shop/ShopCard";
 import { useSeasonalShelf, stallVisible } from "@/hooks/useSeasonalShelf";
+import { markStallVisited } from "@/hooks/useStallOnboarding";
 import { useShopCatalog } from "@/hooks/useShopCatalog";
 import { columnForCategory } from "@/constants/slots";
 import { CHROME_TYPE_CAP, PAGE_PAD } from "@/constants/theme";
@@ -108,6 +109,14 @@ export default function StallScreen() {
 	};
 	const leaving = shelf ? leavingLabel(shelf.closesAt, stall.now) : null;
 	const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/shop"));
+
+	// The first step inside takes the Shop card's "new here?" tag down for
+	// good (B1, once per set key).
+	const visitKey = params.key ?? null;
+	const visitUser = catalog.userId;
+	useEffect(() => {
+		if (visitKey && visitUser) void markStallVisited(visitKey, visitUser);
+	}, [visitKey, visitUser]);
 
 	const handleEquip = async (itemId: string | null, category: string | null | undefined) => {
 		// Full costumes (Halloween 2026) fit Rosie only in v1, and taking one

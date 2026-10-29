@@ -28,6 +28,7 @@ const SLOT_SOURCE_FILES = [
   "components/Barn.tsx",
   "components/MysteryHatReveal.tsx",
   "components/habitat/HabitatExpansionDiscovery.tsx",
+  "hooks/useStallOnboarding.ts",
 ];
 
 const ROOT = path.join(__dirname, "..");

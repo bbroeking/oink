@@ -25,6 +25,8 @@
 //	                                 for the rest of the session.
 //	 35 – 55      HOUSEKEEPING & FLOURISHES  the one-time login gift, one achievement digest, then
 //	                                 mystery-hat and Lucky Pig rewards.
+//	 60           TAB INTROS         a one-time explainer wanted while its tab
+//	                                 is focused (the Pop-up Stall intro).
 //
 // Ordered ascending by priority. Keep it that way — the order in this literal
 // is the human-readable precedence list.
@@ -57,6 +59,14 @@ export const POPUP_PRIORITIES = {
   habitatExpansionDiscovery: 44, // app/_layout.tsx — one-time Barn catalog expansion.
   mysteryHat: 48, // components/MysteryHatReveal.tsx — mystery hat reveal.
   luckyPig: 55, // Barn.tsx — lucky-pig burst modal.
+
+  // ── tab intros ──
+  // hooks/useStallOnboarding.ts — the Pop-up Stall's one-time 3-card intro,
+  // wanted only while the Shop tab is focused. Last in line: every launch
+  // popup and Barn flourish shows first. What's New (ReleaseNotesModal) is not
+  // a slot at all: the Me tab opens it by hand under useUnmanagedModalHold,
+  // which holds the whole queue, so this is behind it by construction.
+  stallIntro: 60,
 } as const;
 
 export type PopupSlotId = keyof typeof POPUP_PRIORITIES;
