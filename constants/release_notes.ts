@@ -404,6 +404,27 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+	// ── Build 198: the combined 1.3 release. Facts from SKILL.md 2026-10-29.
+	// Only what a player can see on day one: the Pop-up Stall, The Feast and
+	// the update nudge ship dark and get their own moment when they open.
+	{
+		version: "1.17.0",
+		date: "2026-10-29",
+		availableFrom: "2026-10-29",
+		headline: "Riddles and trades",
+		items: [
+			{
+				glyph: "search",
+				title: "The Sheep's Riddle",
+				body: "One picture riddle a day, the same for everyone: three clues, nine pictures, two guesses. Find it on the Barn button.",
+			},
+			{
+				glyph: "trader",
+				title: "The Ghost Sheep trades in sets",
+				body: "Hand him a matching pair in one visit and he pays half again, or trade three alike for one of the next rarity.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

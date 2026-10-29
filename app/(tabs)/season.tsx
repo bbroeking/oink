@@ -92,14 +92,13 @@ import {
 } from "@/components/season1/almanac/almanacState";
 import { VerbTabStrip } from "@/components/season1/almanac/VerbTabStrip";
 import { FeedPanel } from "@/components/season1/almanac/FeedPanel";
+import { FreshStartCard } from "@/components/season1/almanac/FreshStartCard";
+import { useFreshStart } from "@/hooks/useFreshStart";
 import { DrawPanel } from "@/components/season1/almanac/DrawPanel";
 import { PassPanel } from "@/components/season1/almanac/PassPanel";
 import { useWeeklyQuests } from "@/components/season1/almanac/useWeeklyQuests";
-import {
-	HUNGER_LEVEL_NAME,
-	HUNGER_STAGES,
-	useHungerMeter,
-} from "@/hooks/useHungerMeter";
+import { HUNGER_STAGES, useHungerMeter } from "@/hooks/useHungerMeter";
+import { seasonTheme } from "@/utils/seasonTheme";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
 import { alignmentEffects } from "@/utils/alignment";
@@ -151,8 +150,6 @@ import { useMondayDraw } from "@/hooks/useMondayDraw";
 import type { ClaimResult } from "@/hooks/useSeason";
 
 const claimSound = require("../../assets/sounds/claim.mp3");
-// The Hungerer — the page's protagonist, once per screen.
-const HUNGERER_SPRITE = require("../../assets/images/hunger/great_hungerer_chip.png");
 
 // SeasonRow / RewardValue / TierRow / ClaimRow / SeasonState now live in
 // utils/seasonPass (the pure derivation module); NextReward + TierState too.
@@ -1032,6 +1029,12 @@ export default function SeasonScreen() {
 	}, [uid, wallowGiftAccount]);
 	// Season 1 vs the preserved Season-0 rendering on the else-branch.
 	const s1 = useSeason1Active();
+	// The one-time "fresh start" note for a season that began with a reset
+	// (The Feast): only for a pig the flip actually zeroed something for.
+	const freshStart = useFreshStart(
+		s1 && state?.active ? (state.season?.id ?? null) : null,
+		uid ?? null,
+	);
 	// The Great Hunger intro — the tale cinematic. Auto-opens on this account's
 	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
 	// re-opens any time from the title row's `?` door.
@@ -1510,7 +1513,11 @@ export default function SeasonScreen() {
 			: Math.max(0, Math.min(1, (xp - (tier - 1) * xpPer) / xpPer));
 	const stageIndex =
 		__DEV__ && devSeason.hungerStage != null ? devSeason.hungerStage : hunger.stageIndex;
-	const stageName = HUNGER_LEVEL_NAME[HUNGER_STAGES[Math.max(0, Math.min(HUNGER_STAGES.length - 1, stageIndex))]];
+	// The season's fiction (title, kicker, stage words, story, guide, hero
+	// sprite) by season id: The Great Hunger for snout_season_1, The Feast for
+	// snout_season_2, Season 1's for anything this binary has never heard of.
+	const theme = seasonTheme(season.id);
+	const stageName = theme.levelNames[HUNGER_STAGES[Math.max(0, Math.min(HUNGER_STAGES.length - 1, stageIndex))]];
 	const { day, total: totalDays } = seasonDay(season.starts_at, season.ends_at);
 
 	// The title row. Season 1 wears the Hungerer's name; Season 0 keeps its
@@ -1522,18 +1529,14 @@ export default function SeasonScreen() {
 		<PageHeader
 			variant="tab"
 			maxFontSizeMultiplier={CHROME_TYPE_CAP}
-			kicker={
-				s1
-					? `day ${day} of ${totalDays} · the Hungerer is ${stageName}`
-					: season.name.toLowerCase()
-			}
-			title={s1 ? "The Great Hunger" : "Goblins vs Angels"}
+			kicker={s1 ? theme.kicker(day, totalDays, stageName) : season.name.toLowerCase()}
+			title={s1 ? theme.title : "Goblins vs Angels"}
 			right={
 				s1 ? (
 					<>
 						{selectedTab !== "feed" ? (
 							<Image
-								source={HUNGERER_SPRITE}
+								source={theme.heroArt}
 								style={styles.titleSprite}
 								resizeMode="contain"
 								accessibilityIgnoresInvertColors
@@ -1546,7 +1549,11 @@ export default function SeasonScreen() {
 						)}
 						<HeaderDoor
 							label="How the season works"
-							hint="Opens the guide, the story, the tale and your tickle receipt"
+							hint={
+								theme.hasIntroCinematic
+									? "Opens the guide, the story, the tale and your tickle receipt"
+									: "Opens the guide, the story and your tickle receipt"
+							}
 							onPress={() => setDoorsOpen(true)}
 						>
 							<T role="cardTitle" maxFontSizeMultiplier={CHROME_TYPE_CAP}>
@@ -1640,12 +1647,21 @@ export default function SeasonScreen() {
 								testID="almanac-panel-scroll"
 							>
 								<View style={styles.panel}>
+									{selectedTab === "feed" && freshStart.kinds ? (
+										<FreshStartCard
+											seasonTitle={theme.title}
+											kinds={freshStart.kinds}
+											onDismiss={freshStart.dismiss}
+											testID="almanac-fresh-start"
+										/>
+									) : null}
 									{selectedTab === "feed" && (
 										<FeedPanel
 											cta={feedingCta}
 											stageIndex={stageIndex}
 											seasonDays={totalDays}
 											draw={drawState}
+											theme={theme}
 											testID="almanac-feed"
 										/>
 									)}
@@ -1798,11 +1814,14 @@ export default function SeasonScreen() {
 			<ActionSheet
 				open={doorsOpen}
 				onClose={() => setDoorsOpen(false)}
-				title="The Great Hunger"
+				title={theme.title}
 				items={[
 					{ label: "How the season works", onPress: () => setGuideOpen(true) },
 					{ label: "The season's story", onPress: () => setInfoTopic("story") },
-					{ label: "Hear the tale again", onPress: () => setIntroOpen(true) },
+					// The tale tells the Hunger beginning; only a season that owns it replays it.
+					...(theme.hasIntroCinematic
+						? [{ label: "Hear the tale again", onPress: () => setIntroOpen(true) }]
+						: []),
 					...(uid ? [{ label: "Your tickle receipt", onPress: () => setBreakdownOpen(true) }] : []),
 				]}
 			/>
@@ -1899,7 +1918,7 @@ export default function SeasonScreen() {
 			{/* Season 1 intro — the tale cinematic. The first telling is root's
 			    (app/_layout.tsx); this is the `?` chooser's "Hear the tale again",
 			    and its one button says where it lands: back on this page. */}
-			{s1 && (
+			{s1 && theme.hasIntroCinematic && (
 				<GreatHungerIntroModal
 					visible={introOpen}
 					onDone={dismissIntro}
@@ -1913,6 +1932,7 @@ export default function SeasonScreen() {
 				<SeasonGuideModal
 					visible={guideOpen && !introOpen}
 					onDismiss={dismissGuide}
+					theme={theme}
 				/>
 			)}
 
@@ -1929,7 +1949,7 @@ export default function SeasonScreen() {
 				) : null}
 
 			{/* The header-icon reference sheets — story (scroll) / earnables (gift). */}
-			<SeasonInfoModal topic={infoTopic} onDismiss={() => setInfoTopic(null)} />
+			<SeasonInfoModal topic={infoTopic} onDismiss={() => setInfoTopic(null)} theme={theme} />
 
 			{/* The full-track sheet's star door — how XP is earned. */}
 			<XPHowToModal

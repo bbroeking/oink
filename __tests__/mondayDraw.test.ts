@@ -4,6 +4,7 @@
 import {
 	MONDAY_DRAW_TUNING,
 	ballsWord,
+	leftoverSuffix,
 	oddsLine,
 	oddsOneIn,
 	parseMondayDrawState,
@@ -238,5 +239,78 @@ describe("Monday drum — a stale (pre-drum) server still renders", () => {
 		expect(s.herdBottomHalf).toBeUndefined();
 		expect(s.nextRareOddsOneIn).toBeUndefined();
 		expect((s.tuning as Record<string, unknown>).catchup).toBeUndefined();
+	});
+});
+
+// Leftovers (Season 2, The Feast): a Monday that pays below rare leaves one
+// ball in the next week's drum. The server sends it beside the dug balls
+// (`leftover_balls` / `running_leftover_balls`, 0 or 1), never inside them,
+// and its odds already count it.
+describe("Monday drum — Leftovers", () => {
+	const base = {
+		week: "20261116",
+		eligible: true,
+		drawn: false,
+		balls: 7,
+		cap: 21,
+		running_week: "20261123",
+		running_balls: 3,
+		running_cap: 21,
+	};
+
+	it("reads 0 when the server says nothing (Season 1, or an older server)", () => {
+		const s = parseMondayDrawState(base);
+		expect(s.leftoverBalls).toBe(0);
+		expect(s.runningLeftoverBalls).toBe(0);
+		// No server odds: the client derives them from the dug balls alone.
+		expect(s.purseOddsOneIn).toBe(oddsOneIn(7));
+		expect(s.runningOddsOneIn).toBe(oddsOneIn(3));
+	});
+
+	it("keeps the leftover beside the balls, never inside them", () => {
+		const s = parseMondayDrawState({ ...base, leftover_balls: 1, running_leftover_balls: 1 });
+		expect(s.balls).toBe(7);
+		expect(s.runningBalls).toBe(3);
+		expect(s.leftoverBalls).toBe(1);
+		expect(s.runningLeftoverBalls).toBe(1);
+	});
+
+	it("derives the odds off the sum when the server sends no odds", () => {
+		// 1 running ball alone is 1 in 8; with the leftover it is a two-ball spin.
+		const s = parseMondayDrawState({
+			...base,
+			balls: 1,
+			running_balls: 1,
+			leftover_balls: 1,
+			running_leftover_balls: 1,
+		});
+		expect(s.purseOddsOneIn).toBe(oddsOneIn(2));
+		expect(s.runningOddsOneIn).toBe(oddsOneIn(2));
+		expect(oddsOneIn(2)).toBeLessThan(oddsOneIn(1));
+	});
+
+	it("prefers the server's odds, which already count the leftover", () => {
+		const s = parseMondayDrawState({
+			...base,
+			leftover_balls: 1,
+			running_leftover_balls: 1,
+			purse_odds_one_in: 2,
+			running_odds_one_in: 3,
+		});
+		expect(s.purseOddsOneIn).toBe(2);
+		expect(s.runningOddsOneIn).toBe(3);
+	});
+
+	it("caps the leftover at one ball and shrugs off junk", () => {
+		expect(parseMondayDrawState({ ...base, leftover_balls: 4 }).leftoverBalls).toBe(1);
+		expect(parseMondayDrawState({ ...base, leftover_balls: -1 }).leftoverBalls).toBe(0);
+		expect(parseMondayDrawState({ ...base, leftover_balls: "1" }).leftoverBalls).toBe(0);
+		expect(parseMondayDrawState({ ...base, running_leftover_balls: null }).runningLeftoverBalls).toBe(0);
+	});
+
+	it("names the leftover in one suffix, and only when there is one", () => {
+		expect(leftoverSuffix(0)).toBe("");
+		expect(leftoverSuffix(1)).toBe(" (+1 leftover)");
+		expect(leftoverSuffix(Number.NaN)).toBe("");
 	});
 });

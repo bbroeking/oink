@@ -14,7 +14,8 @@ import { useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { T } from "@/components/ui";
 import { BORDER, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
-import { HUNGER_LEVEL_NAME, HUNGER_STAGES } from "@/hooks/useHungerMeter";
+import { HUNGER_STAGES } from "@/hooks/useHungerMeter";
+import { seasonTheme, type SeasonTheme } from "@/utils/seasonTheme";
 
 // Drawing geometry — the height of one stage block.
 const BLOCK_H = 14;
@@ -26,23 +27,30 @@ const WIDEST_LABEL = 46;
 export interface StageMeterProps {
 	/** 0 (Gorged) … 5 (Famished). */
 	stageIndex: number;
+	/** The season's words for the six stages; Season 1's when absent. */
+	theme?: SeasonTheme;
 	testID?: string;
 }
 
-export function StageMeter({ stageIndex, testID }: StageMeterProps) {
+export function StageMeter({
+	stageIndex,
+	theme = seasonTheme("snout_season_1"),
+	testID,
+}: StageMeterProps) {
 	const { fontScale } = useWindowDimensions();
 	const [rowWidth, setRowWidth] = useState(0);
 	const current = Math.max(0, Math.min(HUNGER_STAGES.length - 1, stageIndex));
 	const remaining = HUNGER_STAGES.length - 1 - current;
-	const name = HUNGER_LEVEL_NAME[HUNGER_STAGES[current]];
-	const toGo = `${remaining} ${remaining === 1 ? "stage" : "stages"} to Famished`;
+	const name = theme.levelNames[HUNGER_STAGES[current]];
+	const finish = theme.levelNames[HUNGER_STAGES[HUNGER_STAGES.length - 1]];
+	const toGo = `${remaining} ${remaining === 1 ? "stage" : "stages"} to ${finish}`;
 	// One column per stage, five gutters between them.
 	const column = (rowWidth - SPACE.xs * (HUNGER_STAGES.length - 1)) / HUNGER_STAGES.length;
 	const labelsFit = rowWidth === 0 || WIDEST_LABEL * fontScale <= column;
 	return (
 		<View
 			accessible
-			accessibilityLabel={`The Hungerer is ${name}. ${toGo}.`}
+			accessibilityLabel={`${theme.meterSubject} is ${name}. ${toGo}.`}
 			testID={testID}
 			onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
 		>
@@ -75,7 +83,7 @@ export function StageMeter({ stageIndex, testID }: StageMeterProps) {
 							numberOfLines={1}
 							style={styles.label}
 						>
-							{HUNGER_LEVEL_NAME[stage]}
+							{theme.levelNames[stage]}
 						</T>
 					))}
 				</View>

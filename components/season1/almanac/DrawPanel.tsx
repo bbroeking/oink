@@ -42,7 +42,12 @@ import {
 	TILT,
 } from "@/constants/theme";
 import { formatHM } from "@/utils/duration";
-import { ballsWord, oddsLine, type MondayDrawState } from "@/utils/mondayDraw";
+import {
+	ballsWord,
+	leftoverSuffix,
+	oddsLine,
+	type MondayDrawState,
+} from "@/utils/mondayDraw";
 
 const MS_PER_DAY = 86_400_000;
 const MS_PER_HOUR = 3_600_000;
@@ -92,12 +97,15 @@ export function drumLines(state: MondayDrawState, now: number = Date.now()): Dru
 	const cap = Math.max(0, Math.floor(state.runningCap));
 	// A full drum is the perfect week — the `every_last_feeding` achievement
 	// reads the same number, so the panel says so in the same words.
+	// Leftovers (Season 2): a ball a below-rare Monday left in this drum is
+	// named beside the count, never added into it.
+	const leftover = leftoverSuffix(state.runningLeftoverBalls ?? 0);
 	const ballsLine =
-		cap > 0 && balls >= cap
+		(cap > 0 && balls >= cap
 			? `${cap} of ${cap} · every last feeding`
 			: cap > 0
 				? `${balls} of ${cap} balls this week`
-				: `${ballsWord(balls)} this week`;
+				: `${ballsWord(balls)} this week`) + leftover;
 
 	let turn = TURN_UNKNOWN;
 	if (state.nextTurnAt) {

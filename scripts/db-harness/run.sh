@@ -330,6 +330,8 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/00zb_account_deletion_referral_prep.sql \
 		supabase/migrations/20261004201000_account_deletion_referral_cleanup.sql \
 		scripts/db-harness/A2_account_deletion_referral_cleanup_smoke.sql \
+		supabase/migrations/20261029190000_season_2_the_feast.sql \
+		scripts/db-harness/B0_season_2_the_feast_smoke.sql \
 		scripts/db-harness/00zc_seasonal_shelves_prep.sql \
 		supabase/migrations/20261029170000_halloween_weekend_shelf.sql \
 		supabase/migrations/20261029220000_seasonal_shelves.sql \

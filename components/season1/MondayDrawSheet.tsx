@@ -57,6 +57,7 @@ import {
 	MONDAY_DRAW_TUNING,
 	RARE_OR_BETTER,
 	ballsWord,
+	leftoverSuffix,
 	oddsLine,
 	verdictFor,
 	type MondayDrawState,
@@ -253,7 +254,9 @@ export function MondayDrawSheet({
 			) : (
 				<View style={styles.body}>
 					<BallRow
-						balls={state.balls}
+						// A leftover (Season 2) rolls beside the dug balls, so it
+						// sits in the drum with them.
+						balls={state.balls + (state.leftoverBalls ?? 0)}
 						rolls={revealed ? state.rolls : null}
 						winner={revealed ? state.tier : null}
 					/>
@@ -291,7 +294,9 @@ export function MondayDrawSheet({
 						accessibilityRole="text"
 						testID="monday-draw-drum"
 					>
-						<Hand align="center">{drumBallsLine(state.balls, state.cap)}</Hand>
+						<Hand align="center">
+							{drumBallsLine(state.balls, state.cap) + leftoverSuffix(state.leftoverBalls ?? 0)}
+						</Hand>
 						<Hand tone="secondary" align="center">
 							{oddsLine(state.purseOddsOneIn ?? 1)}
 						</Hand>

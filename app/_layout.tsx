@@ -44,6 +44,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/supabase";
 import { fetchUsernamesById } from "@/utils/profiles";
 import { rpc } from "@/utils/rpc";
+import { seasonTheme } from "@/utils/seasonTheme";
 import {
   planTapRoute,
   responseConsumeKey,
@@ -538,6 +539,12 @@ function RootLayoutInner() {
       if (cancelled || !me) return;
       const seen = await AsyncStorage.getItem(`s2_intro_seen:${me}`);
       if (cancelled || seen) return;
+      // The tale tells the Hunger BEGINNING: once a season without it is
+      // active (The Feast), a new pig is never shown it. No stamp is written,
+      // so a reversed flip still tells it. An unreadable season reads as
+      // Season 1 (seasonTheme's fallback), which is today's behaviour.
+      const active = await rpc<{ id?: string | null }>("active_season");
+      if (cancelled || !seasonTheme(active?.id).hasIntroCinematic) return;
       setHungerIntroUid(me);
       setHungerIntro(true);
     })();

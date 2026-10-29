@@ -82,6 +82,9 @@ import type { TierRow, TiersByNumber } from "@/utils/seasonPass";
 import { WHIMSY } from "@/constants/theme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SeasonGuideModal } from "@/components/season1/SeasonGuideModal";
+import { SeasonInfoModal } from "@/components/season1/SeasonInfoModal";
+import { SeasonStory } from "@/components/season1/SeasonStory";
+import { seasonTheme } from "@/utils/seasonTheme";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -667,5 +670,106 @@ describe("the Season page's chrome (source guards)", () => {
 		expect(src).not.toContain("Coming Soon");
 		// One ready tier claims from its own row; the bar is for sweeping two or more.
 		expect(src).toContain("{readyTiers.length >= 2 && (");
+	});
+});
+
+// The season's fiction is read by season id (utils/seasonTheme.ts): the same
+// panels and sheets speak The Great Hunger for snout_season_1 and The Feast
+// for snout_season_2, and an unknown id keeps Season 1's words.
+describe("the season's fiction, by season id", () => {
+	const S1 = seasonTheme("snout_season_1");
+	const S2 = seasonTheme("snout_season_2");
+
+	test("Feed panel: Season 1 is the Hungerer (also the default), Season 2 the Larder with Rosie happy", async () => {
+		for (const theme of [undefined, S1, seasonTheme("snout_season_9")]) {
+			const r = await render(
+				<FeedPanel cta={cta()} stageIndex={3} seasonDays={60} draw={draw()} theme={theme} />
+			);
+			const text = textOf(r.root);
+			expect(text).toContain("Every truffle dug back starves him a little. The herd wants him Famished by day 60.");
+			expect(text).toContain("Peckish");
+			const meter = r.root.find((n) => n.props.testID === "feed-stage-meter" && typeof n.props.accessibilityLabel === "string");
+			expect(meter.props.accessibilityLabel).toBe("The Hungerer is Peckish. 2 stages to Famished.");
+			expect(r.root.findAll((n) => n.props.source === S1.heroArt).length).toBeGreaterThan(0);
+			act(() => r.unmount());
+		}
+
+		const r = await render(
+			<FeedPanel cta={cta()} stageIndex={3} seasonDays={56} draw={draw()} theme={S2} />
+		);
+		const text = textOf(r.root);
+		expect(text).toContain(S2.meterLine(56));
+		expect(text).toContain("Bursting");
+		expect(text).not.toContain("starves him");
+		expect(text).not.toContain("Peckish");
+		const meter = r.root.find((n) => n.props.testID === "feed-stage-meter" && typeof n.props.accessibilityLabel === "string");
+		expect(meter.props.accessibilityLabel).toBe("The Larder is Full. 2 stages to Bursting.");
+		expect(r.root.findAll((n) => n.props.source === S2.heroArt).length).toBeGreaterThan(0);
+		expect(r.root.findAll((n) => n.props.source === S1.heroArt)).toHaveLength(0);
+		act(() => r.unmount());
+	});
+
+	test("the story strip tells each season's beats", async () => {
+		const s1 = await render(<SeasonStory />);
+		expect(textOf(s1.root)).toContain("the theft");
+		expect(textOf(s1.root)).toContain("The Great Hungerer crept in one night");
+		act(() => s1.unmount());
+
+		const s2 = await render(<SeasonStory theme={S2} />);
+		const text = textOf(s2.root);
+		expect(text).toContain("the long table");
+		expect(text).toContain("the larder");
+		expect(text).not.toContain("the theft");
+		act(() => s2.unmount());
+	});
+
+	test("the story sheet and the guide wear the season's name, steps and ladder", async () => {
+		const info = await render(
+			<SafeAreaProvider initialMetrics={GUIDE_METRICS}>
+				<SeasonInfoModal topic="story" onDismiss={jest.fn()} theme={S2} />
+			</SafeAreaProvider>
+		);
+		expect(textOf(info.root)).toContain("The Season of the Feast");
+		expect(textOf(info.root)).not.toContain("The Season of the Hunger");
+		act(() => info.unmount());
+
+		const s1Guide = await render(
+			<SafeAreaProvider initialMetrics={GUIDE_METRICS}>
+				<SeasonGuideModal visible onDismiss={jest.fn()} />
+			</SafeAreaProvider>
+		);
+		const s1Text = textOf(s1Guide.root);
+		expect(s1Text).toContain("The Season of the Hunger");
+		expect(s1Text).toContain("Starve the Hungerer");
+		expect(s1Text).toContain("steal back the tickles ★");
+		expect(s1Text).toContain(S1.ladderFoot);
+		act(() => s1Guide.unmount());
+
+		const s2Guide = await render(
+			<SafeAreaProvider initialMetrics={GUIDE_METRICS}>
+				<SeasonGuideModal visible onDismiss={jest.fn()} theme={S2} />
+			</SafeAreaProvider>
+		);
+		const s2Text = textOf(s2Guide.root);
+		expect(s2Text).toContain("The Season of the Feast");
+		expect(s2Text).toContain("Fill the Larder");
+		expect(s2Text).toContain("fill the larder ★");
+		expect(s2Text).toContain("Bare");
+		expect(s2Text).toContain("Bursting");
+		expect(s2Text).not.toContain("Starve the Hungerer");
+		expect(s2Text).not.toContain("Gorged");
+		act(() => s2Guide.unmount());
+	});
+
+	test("the Season tab reads its title, kicker and sprite from the theme, never a literal", () => {
+		const fs = require("node:fs") as typeof import("node:fs");
+		const path = require("node:path") as typeof import("node:path");
+		const src = fs.readFileSync(path.join(__dirname, "..", "app", "(tabs)", "season.tsx"), "utf8");
+		expect(src).toContain("const theme = seasonTheme(season.id);");
+		expect(src).toContain("title={s1 ? theme.title : \"Goblins vs Angels\"}");
+		expect(src).not.toContain("\"The Great Hunger\"");
+		expect(src).not.toContain("the Hungerer is ${stageName}");
+		// The Hunger tale replays only for a season that owns it.
+		expect(src).toContain("{s1 && theme.hasIntroCinematic && (");
 	});
 });

@@ -31,6 +31,7 @@ import {
 } from "@/utils/pairBonds";
 import { log } from "@/utils/log";
 import { fetchSatchelSwapsFor } from "@/utils/satchel";
+import { boardColumn, refreshBoardColumn, type BoardColumn } from "@/utils/boardColumn";
 
 // Page size + hard upper bound for the global leaderboard. 25 lands
 // just over a single phone screen so each "Load more" is a deliberate
@@ -93,10 +94,18 @@ export interface LeaderboardEntry {
 type RawRow = Omit<LeaderboardEntry, "active_title" | "active_hat"> & {
 	active_title?: ActiveTitle[] | ActiveTitle | null;
 	active_hat?: ActiveHat[] | ActiveHat | null;
+	// Season 2's baselined Board column (20261029190000); selected only once
+	// the server ranks by it.
+	season_tickles_earned?: number | null;
 };
-function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
-	return (rows ?? []).map((r) => ({
+// `col` is the column the Board ranks by (utils/boardColumn). The entry's
+// `tickles_earned` is the number the Board shows, so a season-scoped Board
+// carries the season number there and every renderer stays as it is.
+function normalize(rows: RawRow[] | null, col: BoardColumn = "tickles_earned"): LeaderboardEntry[] {
+	return (rows ?? []).map(({ season_tickles_earned, ...r }) => ({
 		...r,
+		tickles_earned:
+			col === "season_tickles_earned" ? (season_tickles_earned ?? 0) : r.tickles_earned,
 		active_hat: Array.isArray(r.active_hat)
 			? (r.active_hat[0] ?? null)
 			: (r.active_hat ?? null),
@@ -138,6 +147,12 @@ export interface UseLeaderboard {
 	hasMore: boolean;
 	/** The global page read threw — show a retry. */
 	error: boolean;
+	/**
+	 * True once the server ranks the Board by the season's tickles (Season 2's
+	 * baseline) instead of the lifetime number. The copy says "season", not
+	 * "all-time", and the lifetime receipt is not offered as the score's sum.
+	 */
+	seasonal: boolean;
 	/** Re-fetch the current scope (focus, retry, a friendship changed). */
 	refresh: () => Promise<void>;
 	/** Pull the next page of the global scope (cursor + dedupe + cap). */
@@ -150,6 +165,14 @@ export interface UseLeaderboard {
 const RANKED_PROFILE_SELECT =
 	"id, username, discriminator, tickles_earned, wallow_count, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 
+// The ranked select for the Board's column: the season column rides along
+// only when the server ranks by it (it does not exist before the migration).
+function rankedSelect(col: BoardColumn): string {
+	return col === "season_tickles_earned"
+		? `${RANKED_PROFILE_SELECT}, season_tickles_earned`
+		: RANKED_PROFILE_SELECT;
+}
+
 // The caller's own row, plus the two columns that decide whether the global
 // board shows them at all.
 type OwnRow = RawRow & {
@@ -161,15 +184,19 @@ type OwnRow = RawRow & {
 // number of ranked pigs above them under the board's own order (tickles
 // descending, id ascending on a tie) and the board's own filters. Fail-soft to
 // null on any miss — a pinned rank that might be wrong is worse than none.
-async function fetchYouOnGlobal(uid: string): Promise<YouOnBoard | null> {
+async function fetchYouOnGlobal(
+	uid: string,
+	col: BoardColumn = "tickles_earned",
+): Promise<YouOnBoard | null> {
 	const own = await supabase
 		.from("profiles")
-		.select(`${RANKED_PROFILE_SELECT}, is_test, hide_from_leaderboard`)
+		.select(`${rankedSelect(col)}, is_test, hide_from_leaderboard`)
 		.eq("id", uid)
 		.returns<OwnRow[]>();
 	const row = own.error ? null : (own.data?.[0] ?? null);
 	if (!row || !row.username || row.is_test || row.hide_from_leaderboard) return null;
-	const tickles = row.tickles_earned ?? 0;
+	const tickles =
+		(col === "season_tickles_earned" ? row.season_tickles_earned : row.tickles_earned) ?? 0;
 	const above = await supabase
 		.from("profiles")
 		.select("id", { count: "exact", head: true })
@@ -177,9 +204,9 @@ async function fetchYouOnGlobal(uid: string): Promise<YouOnBoard | null> {
 		.neq("username", "")
 		.eq("is_test", false)
 		.eq("hide_from_leaderboard", false)
-		.or(`tickles_earned.gt.${tickles},and(tickles_earned.eq.${tickles},id.lt.${uid})`);
+		.or(`${col}.gt.${tickles},and(${col}.eq.${tickles},id.lt.${uid})`);
 	if (above.error || typeof above.count !== "number") return null;
-	const [entry] = await withSwaps(normalize([row]));
+	const [entry] = await withSwaps(normalize([row], col));
 	return entry ? { entry, rank: above.count + 1 } : null;
 }
 
@@ -216,18 +243,24 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 	const [youEnemy, setYouEnemy] = useState<EnemyPairRow | null>(null);
 	// The caller's own global standing (see `UseLeaderboard.you`).
 	const [you, setYou] = useState<YouOnBoard | null>(null);
+	// The column the Board ranks by (server-chosen; lifetime until Season 2).
+	const [column, setColumn] = useState<BoardColumn>(boardColumn);
 
 	// Fetches `count` rows starting at `from` from profiles, ordered
 	// by tickles_earned desc.
 	const fetchGlobalPage = useCallback(
-		async (from: number, count: number): Promise<LeaderboardEntry[]> => {
+		async (
+			from: number,
+			count: number,
+			col: BoardColumn = boardColumn(),
+		): Promise<LeaderboardEntry[]> => {
 			// is_test filter only fires on the global scope — friends
 			// list intentionally shows any account you've friended,
 			// test or not. Column is NOT NULL DEFAULT false (20260548).
 			const run = async () =>
 				supabase
 					.from("profiles")
-					.select(RANKED_PROFILE_SELECT)
+					.select(rankedSelect(col))
 					.not("username", "is", null)
 					.neq("username", "")
 					.eq("is_test", false)
@@ -235,7 +268,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					// appear on the global board. Column is NOT NULL DEFAULT
 					// false, so eq(false) covers every row.
 					.eq("hide_from_leaderboard", false)
-					.order("tickles_earned", { ascending: false })
+					.order(col, { ascending: false })
 					// Unique tiebreaker so contiguous .range() pages never
 					// overlap: tickles_earned alone is not unique (a fresh
 					// board has everyone tied at 0), and Postgres orders tied
@@ -251,7 +284,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					.returns<RawRow[]>();
 			const result = await run();
 			if (result.error) throw result.error;
-			return normalize(result.data);
+			return normalize(result.data, col);
 		},
 		[],
 	);
@@ -266,6 +299,11 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 				data: { user },
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
+			// Which column the Board ranks by (fail-soft: lifetime). Read once
+			// per refresh so every query in it agrees.
+			await refreshBoardColumn().catch(() => false);
+			const col = boardColumn();
+			setColumn(col);
 
 			if (scope === "pairs") {
 				// The page owns a local Strongest/Enemies toggle, so fetch both
@@ -326,17 +364,17 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 				}
 				const result = await supabase
 					.from("profiles")
-					.select(RANKED_PROFILE_SELECT)
+					.select(rankedSelect(col))
 					.in("id", friendIds)
 					.not("username", "is", null)
 					.neq("username", "")
-					.order("tickles_earned", { ascending: false })
+					.order(col, { ascending: false })
 					// Dynamic select string → PostgREST infers a parser-error
 					// row shape; declare our known row type through the builder
 					// (matches the global path) instead of casting .data.
 					.returns<RawRow[]>();
 				if (result.error) throw result.error;
-				setLeaderboard(await withSwaps(normalize(result.data)));
+				setLeaderboard(await withSwaps(normalize(result.data, col)));
 				return;
 			}
 
@@ -346,8 +384,8 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 			// The caller's own standing reads beside it, fail-soft: a miss
 			// pins nothing and never fails the board.
 			const [firstPage, mine] = await Promise.all([
-				fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE).then(withSwaps),
-				user ? fetchYouOnGlobal(user.id).catch(() => null) : Promise.resolve(null),
+				fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE, col).then(withSwaps),
+				user ? fetchYouOnGlobal(user.id, col).catch(() => null) : Promise.resolve(null),
 			]);
 			setLeaderboard(firstPage);
 			setYou(mine);
@@ -377,7 +415,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 				setHasMore(false);
 				return;
 			}
-			const next = await fetchGlobalPage(from, want);
+			const next = await fetchGlobalPage(from, want, column);
 			// Dedupe by id, keeping the already-shown row: even with the stable
 			// id tiebreaker, a row's tickles_earned can change between the
 			// first-page fetch and this one (someone tickles mid-scroll),
@@ -395,7 +433,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 		} finally {
 			setLoadingMore(false);
 		}
-	}, [loadingMore, hasMore, leaderboard.length, fetchGlobalPage]);
+	}, [loadingMore, hasMore, leaderboard.length, fetchGlobalPage, column]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -415,6 +453,7 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 		loadingMore,
 		hasMore,
 		error,
+		seasonal: column === "season_tickles_earned",
 		refresh,
 		loadMore,
 	};

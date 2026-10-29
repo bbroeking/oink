@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { rpc } from "@/utils/rpc";
+import { SEASON_THEMES } from "@/utils/seasonTheme";
 
 export type HungerStage =
 	| "gorged"
@@ -30,14 +31,11 @@ export const HUNGER_STAGES: HungerStage[] = [
 
 // Player-facing stage whisper (Patrick-Hand voice; the vignette shows the
 // feeling, this line names it — never a number, per the taste standard).
-export const HUNGER_STAGE_LINE: Record<HungerStage, string> = {
-	gorged: "He's gorged. The whole valley's joy in his belly.",
-	stuffed: "Stuffed, and still smug about it.",
-	full: "Full, but the hoard is thinning.",
-	peckish: "Peckish. He's noticed the missing truffles.",
-	hungry: "Hungry. His crown sits crooked.",
-	famished: "Famished. One good shove and he's gone.",
-};
+// Season 1's words; the per-season copy lives in utils/seasonTheme.ts
+// (`seasonTheme(id).stageCopy`), and this name stays for the surfaces that
+// only ever speak the Hunger.
+export const HUNGER_STAGE_LINE: Record<HungerStage, string> =
+	SEASON_THEMES.snout_season_1.stageCopy;
 
 export interface HungerMeter {
 	stage: HungerStage;
@@ -55,14 +53,9 @@ export interface HungerMeter {
 // server reports — retuning stays a server-side act.
 const HUNGER_CREDIT_SCALE = 1;
 
-export const HUNGER_LEVEL_NAME: Record<HungerStage, string> = {
-	gorged: "Gorged",
-	stuffed: "Stuffed",
-	full: "Full",
-	peckish: "Peckish",
-	hungry: "Hungry",
-	famished: "Famished",
-};
+// Season 1's stage words (the Feast re-words them: `seasonTheme(id).levelNames`).
+export const HUNGER_LEVEL_NAME: Record<HungerStage, string> =
+	SEASON_THEMES.snout_season_1.levelNames;
 
 // PROVISIONAL display ladder for the season guide — mirrors the server's
 // current thresholds ([600, 1800, 3600, 6000, 9000], 20260714000000, in
