@@ -1,7 +1,7 @@
 [
   {
-    "name": "active season is snout_season_1, ending 2026-11-30 00:00 UTC (the bridge) or 2026-11-09 00:00 UTC (20261029260000)",
-    "sql": "select s.id, s.ends_at in ('2026-11-30 00:00:00+00'::timestamptz, '2026-11-09 00:00:00+00'::timestamptz) as ends_at_known_cutoff from public.active_season() s",
+    "name": "active season is snout_season_1, ending 2026-11-30 00:00 UTC (the bridge) or 2026-11-09 00:15 UTC (20261029260000's buffered end; the 00:00 flip pulls it back)",
+    "sql": "select s.id, s.ends_at in ('2026-11-30 00:00:00+00'::timestamptz, '2026-11-09 00:15:00+00'::timestamptz) as ends_at_known_cutoff from public.active_season() s",
     "expect": {"row": {"id": "snout_season_1", "ends_at_known_cutoff": true}}
   },
   {

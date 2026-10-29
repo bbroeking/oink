@@ -5,7 +5,9 @@
 -- unflipped) and A6.
 --
 -- Proves:
---   (a) snout_season_1 ends 2026-11-09 00:00 UTC (the 11-30 bridge shortened);
+--   (a) snout_season_1's stored end is 2026-11-09 00:15 UTC (the announced
+--       00:00 plus a 15-minute buffer; the 11-30 bridge shortened), so at
+--       00:00:01, before the flip job commits, S1 is still the active season;
 --   (b) the cutoff guard: a past / NULL date, an absent season, and a flipped
 --       Season 2 all raise, and none of them moves the row;
 --   (c) cron: season2-flip (0 0 9 11 *) and great-hunger-reminder
@@ -24,7 +26,13 @@
 --   (g) refusals: bad kind, a moved cutoff, a flipped season, a clock past
 --       the cutoff all send nothing;
 --   (h) grants: anon / authenticated cannot execute either function or read
---       the ledger; service_role can execute the announcer.
+--       the ledger; service_role can execute the announcer;
+--   (i) the flip closes the buffer with no gap: flip_season_2(p_at) over a
+--       buffered S1 (p_at + 15 min) leaves S1 ending p_at and S2 starting
+--       p_at, and the season at p_at + 1s is S2, never empty. flip_season_2
+--       refuses a p_at more than a minute ahead of the real clock, so this
+--       runs on the real clock (p_at = now()), rolled back; without the flip,
+--       S1 covers p_at + 1s and lapses only after the buffer.
 \set ON_ERROR_STOP on
 
 -- Fixtures. Other smokes' profiles keep their usernames (they get the card)
@@ -87,7 +95,10 @@ DECLARE
 	u7 CONSTANT uuid := '00000000-0000-0000-0000-0000000a7007';
 	u8 CONSTANT uuid := '00000000-0000-0000-0000-0000000a7008';
 	u9 CONSTANT uuid := '00000000-0000-0000-0000-0000000a7009';
-	cutoff CONSTANT timestamptz := '2026-11-09 00:00:00+00';
+	cutoff CONSTANT timestamptz := '2026-11-09 00:00:00+00';   -- announced, the flip's p_at
+	stored CONSTANT timestamptz := '2026-11-09 00:15:00+00';   -- S1's buffered end until the flip
+	t timestamptz;
+	sid text;
 	res jsonb;
 	msg text;
 	n int;
@@ -96,9 +107,15 @@ DECLARE
 	got uuid[];
 BEGIN
 	-- ── (a) the cutoff ──────────────────────────────────────────────────────
-	IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1') IS DISTINCT FROM cutoff THEN
+	IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1') IS DISTINCT FROM stored THEN
 		RAISE EXCEPTION 'chk a: snout_season_1 ends_at %, want %',
-			(SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1'), cutoff; END IF;
+			(SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1'), stored; END IF;
+	-- active_season()'s window, read at the instants that matter (no preview).
+	SELECT id INTO sid FROM public.seasons
+		WHERE starts_at <= cutoff + interval '1 second' AND ends_at >= cutoff + interval '1 second'
+		ORDER BY starts_at DESC LIMIT 1;
+	IF sid IS DISTINCT FROM 'snout_season_1' THEN
+		RAISE EXCEPTION 'chk a: at 00:00:01, before the flip commits, the season must still be S1 (got %)', sid; END IF;
 	IF (SELECT starts_at FROM public.seasons WHERE id = 'snout_season_2') <> '2099-01-01 00:00:00+00' THEN
 		RAISE EXCEPTION 'chk a: snout_season_2 must stay dark until the flip'; END IF;
 
@@ -142,7 +159,7 @@ BEGIN
 	END;
 	IF msg IS NULL OR msg NOT LIKE '%already flipped%' THEN
 		RAISE EXCEPTION 'chk b: a flipped season must raise (got %)', msg; END IF;
-	IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1') IS DISTINCT FROM cutoff
+	IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1') IS DISTINCT FROM stored
 	   OR COALESCE((SELECT enabled FROM public.app_config WHERE key = 'season2_flipped'), false) THEN
 		RAISE EXCEPTION 'chk b: refused moves must leave the row (and the flip flag) alone'; END IF;
 
@@ -209,7 +226,8 @@ BEGIN
 	IF (res ->> 'queued')::int <> 1 OR got IS DISTINCT FROM ARRAY[u1, u4, u6, u8] THEN
 		RAISE EXCEPTION 'chk d: a late token must get exactly its own push: % / %', res, got; END IF;
 
-	-- ── (f) the reminder lane ───────────────────────────────────────────────
+	-- ── (f) the reminder lane, at its cron instant (Nov 8 00:00 UTC) ────────
+	PERFORM set_config('ttp.fake_now', '2026-11-08 00:00:05+00', false);
 	DELETE FROM public.push_outbox;
 	res := public.announce_great_hunger_ending('reminder');
 	SELECT array_agg(user_id ORDER BY user_id) INTO got FROM public.push_outbox;
@@ -226,6 +244,7 @@ BEGIN
 	res := public.announce_great_hunger_ending('reminder');
 	IF (res ->> 'queued')::int <> 0 OR (SELECT count(*) FROM public.push_outbox) <> 4 THEN
 		RAISE EXCEPTION 'chk f: a reminder re-run must send nothing: %', res; END IF;
+	PERFORM set_config('ttp.fake_now', '2026-10-29 12:00:00+00', false);
 
 	-- ── (g) refusals ────────────────────────────────────────────────────────
 	DELETE FROM public.push_outbox;
@@ -238,20 +257,28 @@ BEGIN
 		RAISE EXCEPTION 'chk g: NULL kind: %', res; END IF;
 	UPDATE public.seasons SET ends_at = '2026-11-30 00:00:00+00' WHERE id = 'snout_season_1';
 	res := public.announce_great_hunger_ending('reminder');
-	UPDATE public.seasons SET ends_at = cutoff WHERE id = 'snout_season_1';
+	UPDATE public.seasons SET ends_at = stored WHERE id = 'snout_season_1';
 	IF (res ->> 'ok')::boolean OR res ->> 'reason' <> 'cutoff_moved' THEN
 		RAISE EXCEPTION 'chk g: a moved cutoff: %', res; END IF;
+	-- 00:00 is the flip's rewrite, not the stored buffer: refused too.
+	UPDATE public.seasons SET ends_at = cutoff WHERE id = 'snout_season_1';
+	res := public.announce_great_hunger_ending('reminder');
+	UPDATE public.seasons SET ends_at = stored WHERE id = 'snout_season_1';
+	IF (res ->> 'ok')::boolean OR res ->> 'reason' <> 'cutoff_moved' THEN
+		RAISE EXCEPTION 'chk g: an end already pulled back to 00:00: %', res; END IF;
 	INSERT INTO public.app_config (key, enabled) VALUES ('season2_flipped', true)
 		ON CONFLICT (key) DO UPDATE SET enabled = true;
 	res := public.announce_great_hunger_ending('reminder');
 	UPDATE public.app_config SET enabled = false WHERE key = 'season2_flipped';
 	IF (res ->> 'ok')::boolean OR res ->> 'reason' <> 'season_over' THEN
 		RAISE EXCEPTION 'chk g: a flipped season: %', res; END IF;
+	-- Inside the buffer (00:00 .. 00:15, S1 still stored as running): refused,
+	-- because the copy's instant has passed.
 	PERFORM set_config('ttp.fake_now', '2026-11-09 00:00:01+00', false);
 	res := public.announce_great_hunger_ending('initial');
 	PERFORM set_config('ttp.fake_now', '2026-10-29 12:00:00+00', false);
 	IF (res ->> 'ok')::boolean OR res ->> 'reason' <> 'season_over' THEN
-		RAISE EXCEPTION 'chk g: past the cutoff: %', res; END IF;
+		RAISE EXCEPTION 'chk g: past the announced 00:00, inside the buffer: %', res; END IF;
 	IF (SELECT count(*) FROM public.push_outbox) <> 0
 	   OR (SELECT count(*) FROM public.season1_end_push_deliveries) <> 0 THEN
 		RAISE EXCEPTION 'chk g: refusals must send nothing'; END IF;
@@ -267,10 +294,42 @@ BEGIN
 	IF has_table_privilege('authenticated', 'public.season1_end_push_deliveries', 'SELECT')
 	   OR has_table_privilege('anon', 'public.season1_end_push_deliveries', 'SELECT') THEN
 		RAISE EXCEPTION 'chk h: the ledger must be server-only'; END IF;
+
+	-- ── (i) the flip closes the buffer with no gap (rolled back) ────────────
+	t := now();
+	sid := NULL;
+	BEGIN
+		UPDATE public.seasons SET ends_at = t + interval '15 minutes' WHERE id = 'snout_season_1';
+		-- the job failed: S1 still covers t + 1s, and lapses only past the buffer
+		IF (SELECT id FROM public.seasons WHERE starts_at <= t + interval '1 second'
+		    AND ends_at >= t + interval '1 second' ORDER BY starts_at DESC LIMIT 1) <> 'snout_season_1' THEN
+			RAISE EXCEPTION 'chk i: without the flip, S1 must cover p_at + 1s'; END IF;
+		res := public.flip_season_2(t);
+		IF NOT (res ->> 'ok')::boolean OR COALESCE((res ->> 'already_flipped')::boolean, false) THEN
+			RAISE EXCEPTION 'chk i: the flip did not run: %', res; END IF;
+		IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1') <> t
+		   OR (SELECT starts_at FROM public.seasons WHERE id = 'snout_season_2') <> t THEN
+			RAISE EXCEPTION 'chk i: the flip must pull S1''s buffered end back to p_at and start S2 at p_at: % / %',
+				(SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1'),
+				(SELECT starts_at FROM public.seasons WHERE id = 'snout_season_2'); END IF;
+		SELECT id INTO sid FROM public.seasons
+			WHERE starts_at <= t + interval '1 second' AND ends_at >= t + interval '1 second'
+			ORDER BY starts_at DESC LIMIT 1;
+		IF sid IS DISTINCT FROM 'snout_season_2' OR (SELECT id FROM public.active_season()) <> 'snout_season_2' THEN
+			RAISE EXCEPTION 'chk i: at p_at + 1s the season must be S2, never empty (got %)', sid; END IF;
+		RAISE EXCEPTION 'a7_rollback';
+	EXCEPTION WHEN OTHERS THEN
+		IF SQLERRM <> 'a7_rollback' THEN RAISE; END IF;
+	END;
+	IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1') IS DISTINCT FROM stored
+	   OR COALESCE((SELECT enabled FROM public.app_config WHERE key = 'season2_flipped'), false) THEN
+		RAISE EXCEPTION 'chk i: the rolled-back flip must leave S1 at 00:15, unflipped'; END IF;
 END
 $a7$;
 
--- ── (c) the reminder job's own command: sends, then unschedules itself ─────
+-- ── (c) the reminder job's own command, at its instant: sends, then
+-- unschedules itself ──────────────────────────────────────────────────────────
+SELECT set_config('ttp.fake_now', '2026-11-08 00:00:05+00', false);
 SELECT command AS a7_reminder_cmd FROM cron.job WHERE jobname = 'great-hunger-reminder' \gset
 :a7_reminder_cmd
 
@@ -283,7 +342,7 @@ BEGIN
 	IF (SELECT count(*) FROM public.push_outbox WHERE data ->> 'phase' = 'reminder') <> 4 THEN
 		RAISE EXCEPTION 'chk c: the reminder job command must send the reminder (got %)',
 			(SELECT count(*) FROM public.push_outbox); END IF;
-	RAISE NOTICE 'chk great hunger ends: cutoff, guards, cron once + self-unschedule, one push per device per kind, opt-outs skipped, cards, grants OK';
+	RAISE NOTICE 'chk great hunger ends: 00:15 buffer, gapless flip, guards, cron once + self-unschedule, one push per device per kind, opt-outs skipped, cards, grants OK';
 END
 $a7c$;
 

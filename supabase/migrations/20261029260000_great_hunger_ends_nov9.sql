@@ -8,10 +8,14 @@
 -- app_settings.season2_reset_scope). Copy approved verbatim, no em dashes.
 --
 -- What lands here:
---   1. The cutoff: snout_season_1.ends_at -> 2026-11-09 00:00+00. This
---      DELIBERATELY shortens the 11-30 bridge (20261029175000). Guarded by
---      _set_season1_ends_at(): fails if the season is absent, if the date is
---      not in the future, or if Season 2 has already flipped.
+--   1. The cutoff: snout_season_1.ends_at -> 2026-11-09 00:15+00, the
+--      announced 00:00 plus a 15-minute safety buffer. flip_season_2(p_at)
+--      sets S1.ends_at = S2.starts_at = p_at, so the 00:00 flip pulls the end
+--      back to 00:00 with no gap (active_season() hands straight to S2); if
+--      the job fails, S1 keeps running to 00:15 instead of the season
+--      stopping. This DELIBERATELY shortens the 11-30 bridge (20261029175000).
+--      Guarded by _set_season1_ends_at(): fails if the season is absent, if
+--      the date is not in the future, or if Season 2 has already flipped.
 --   2. pg_cron `season2-flip` (0 0 9 11 *): flip_season_2('2026-11-09 00:00')
 --      then cron.unschedule('season2-flip'). The flip is date-guarded in the
 --      command, so a job that somehow survives to 2027-11-09 only unschedules.
@@ -33,7 +37,8 @@
 --      also taps through to the Season tab.
 --
 -- What pushing this file does BY ITSELF: moves the cutoff and arms the two
--- cron jobs (the reminder on Nov 8 00:00 UTC, the flip on Nov 9 00:00 UTC).
+-- cron jobs (the reminder on Nov 8 00:00 UTC, the flip on Nov 9 00:00 UTC;
+-- the stored end is 00:15 only as a buffer under the flip).
 -- The first push and the in-app card wait for the founder's go:
 --   SELECT public.announce_great_hunger_ending('initial');
 --
@@ -88,12 +93,17 @@ END;
 $function$;
 REVOKE ALL ON FUNCTION public._set_season1_ends_at(timestamptz) FROM PUBLIC, anon, authenticated;
 
+-- 00:15, not the announced 00:00: the stored end is a safety net under the
+-- 00:00 flip (section 2), which rewrites it to 00:00. Between 00:00:00 and the
+-- moment the job commits, S1 is still the active season (no empty
+-- active_season(), the 2026-10-12 "season stopped" lapse); if the job fails,
+-- the founder has until 00:15 to run the flip by hand before S1 lapses.
 DO $cutoff$
 BEGIN
-	PERFORM public._set_season1_ends_at('2026-11-09 00:00:00+00'::timestamptz);
+	PERFORM public._set_season1_ends_at('2026-11-09 00:15:00+00'::timestamptz);
 	IF (SELECT ends_at FROM public.seasons WHERE id = 'snout_season_1')
-	   IS DISTINCT FROM '2026-11-09 00:00:00+00'::timestamptz THEN
-		RAISE EXCEPTION 'snout_season_1 did not move to 2026-11-09 00:00 UTC';
+	   IS DISTINCT FROM '2026-11-09 00:15:00+00'::timestamptz THEN
+		RAISE EXCEPTION 'snout_season_1 did not move to 2026-11-09 00:15 UTC';
 	END IF;
 END
 $cutoff$;
@@ -101,8 +111,10 @@ $cutoff$;
 
 -- ── 2. The flip, on the boundary ─────────────────────────────────────────────
 -- cron.timezone is GMT on production, so 0 0 9 11 * is Monday 2026-11-09
--- 00:00 UTC. flip_season_2 accepts a p_at up to 7 days back, so the few
--- seconds the job takes to start are fine; it is idempotent (season2_flipped),
+-- 00:00 UTC. p_at is the announced 00:00 (not the stored 00:15): the flip
+-- sets S1.ends_at and S2.starts_at to it, closing S1 at the promised instant.
+-- flip_season_2 accepts a p_at up to 7 days back, so the few seconds the job
+-- takes to start are fine; it is idempotent (season2_flipped),
 -- so a manual flip beforehand turns this into a no-op. The WHERE keeps a job
 -- that survives a failed run from flipping anything on 2027-11-09.
 -- Unschedule-if-exists first: a re-run of this file never double-schedules,
@@ -137,8 +149,10 @@ REVOKE ALL ON public.season1_end_push_deliveries FROM PUBLIC, anon, authenticate
 -- an Expo token held by two accounts (a founder signed into a second account
 -- on one phone) is sent once, to its lowest real account, and a device that
 -- already got this kind under any account it holds is skipped.
--- The copy names Nov 8, 7pm ET, so it sends only while snout_season_1 still
--- ends 2026-11-09 00:00 UTC, before that instant, and before any flip.
+-- The copy names Nov 8, 7pm ET (the announced 00:00 UTC), so it sends only
+-- while snout_season_1's stored end is still this file's 00:15 buffer (any
+-- other value means someone moved the date, or the flip already rewrote it
+-- to 00:00), before the announced 00:00, and before any flip.
 CREATE OR REPLACE FUNCTION public.announce_great_hunger_ending(p_kind text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -146,7 +160,10 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 DECLARE
+	-- The instant the copy announces (and the flip's p_at) ...
 	c_cutoff  CONSTANT timestamptz := '2026-11-09 00:00:00+00';
+	-- ... and S1's stored, buffered end until the flip rewrites it.
+	c_stored  CONSTANT timestamptz := '2026-11-09 00:15:00+00';
 	s1_end    timestamptz;
 	v_title   text;
 	v_body    text;
@@ -166,7 +183,7 @@ BEGIN
 	PERFORM pg_advisory_xact_lock(hashtextextended('season1_end_announce', 0));
 
 	SELECT ends_at INTO s1_end FROM public.seasons WHERE id = 'snout_season_1';
-	IF s1_end IS DISTINCT FROM c_cutoff THEN
+	IF s1_end IS DISTINCT FROM c_stored THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'cutoff_moved', 'ends_at', s1_end);
 	END IF;
 	IF public._patch_now() >= c_cutoff
