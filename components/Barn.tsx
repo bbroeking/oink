@@ -106,6 +106,7 @@ import { createSupabaseRewardedAdBackend } from "@/features/rewarded-ads/supabas
 import { isSixSevenTickleMilestone } from "@/utils/sixSeven";
 import { runOptimisticHomeTickle } from "@/utils/homeTickleConnection";
 import { useHomeHabitatPigPublisher } from "@/hooks/useHabitatPigBridge";
+import { UpdateNudge } from "./UpdateNudge";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
 // useLuckyPig hook). No ritual tunable lives here any more: rituals became
@@ -139,6 +140,8 @@ const YARD_GROUND = 54;
 // object, parked above the tab bar with the same breathing room the comp gives
 // it (docs/design/claude-design/barn/barn-home.html). A drawing measurement.
 const BARN_BUTTON_BOTTOM = 22;
+// The widest a card in Home's sky may grow (the ad refill's measure).
+const SKY_CARD_MAX_W = 360;
 // The safe edges the Exterior pads: the bottom belongs to the tab bar.
 const BARN_SAFE_EDGES = ["top", "left", "right"] as const;
 // A narrow phone (iPhone SE / mini, under PHONE_NARROW_MAX) draws Rosie's
@@ -1315,6 +1318,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 					</View>
 				) : null}
 
+				{/* "A new version is ready": inert until the server raises
+				    app_settings.min_build past this binary's build. In flow under the
+				    corners, never absolute, so it covers neither corner, the Barn
+				    button nor Rosie, and cannot swallow a tap meant for the yard. */}
+				<UpdateNudge style={styles.updateNudge} />
+
 				{/* The in-flow notice column that lived here — the shovel pill, the
 				    weekly-bounty chip, before them the Updates tray and the guestbook
 				    placard — is retired (2026-09-13). Burying is in the Barn button's
@@ -1486,6 +1495,15 @@ const styles = StyleSheet.create({
 	adRefillOffer: {
 		alignSelf: "center",
 		maxWidth: 360,
+		paddingHorizontal: PAGE_PAD,
+		marginBottom: SPACE.sm,
+		zIndex: 2,
+	},
+	// The soft-update card's seat: the same centred sky slot as the ad refill.
+	updateNudge: {
+		alignSelf: "center",
+		width: "100%",
+		maxWidth: SKY_CARD_MAX_W,
 		paddingHorizontal: PAGE_PAD,
 		marginBottom: SPACE.sm,
 		zIndex: 2,
