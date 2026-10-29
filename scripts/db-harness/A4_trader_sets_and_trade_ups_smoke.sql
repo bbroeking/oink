@@ -265,6 +265,6 @@ BEGIN
 	IF (res->>'trader')::int <> 0 THEN RAISE EXCEPTION 'a trade-up pays no lane: %', res; END IF;
 
 	PERFORM set_config('ttp.fake_now', '', true);
-	RAISE NOTICE 'chk A3 trader sets and trade-ups: ok';
+	RAISE NOTICE 'chk A4 trader sets and trade-ups: ok';
 END;
 $sets$;

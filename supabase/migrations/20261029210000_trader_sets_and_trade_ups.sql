@@ -63,7 +63,7 @@
 --      original receipt and never takes a second hand.
 --
 -- The testable clock is _patch_now() (ttp.fake_now-aware). Validated on the
--- stubbed-Postgres harness: scripts/db-harness/A3_trader_sets_and_trade_ups_smoke.sql.
+-- stubbed-Postgres harness: scripts/db-harness/A4_trader_sets_and_trade_ups_smoke.sql.
 --
 -- Authored for review; do not push without Brian's explicit "go".
 
