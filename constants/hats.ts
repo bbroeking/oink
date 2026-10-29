@@ -706,6 +706,11 @@ export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 
 export interface HatRow {
 	id: string;
+	// Seasonal shelf lane (20261029220000): 'new' pieces sell only inside their
+	// Pop-up Stall's window and never sit in Browse or the daily drop;
+	// 'returning' pieces keep their daily-drop life. Optional so pre-migration
+	// servers (no column) still parse.
+	shelf_lane?: string | null;
 	name: string;
 	cost: number;
 	display_order: number;

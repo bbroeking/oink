@@ -1398,6 +1398,8 @@ export type Database = {
           pass_exclusive: boolean;
           prestige_exclusive: boolean;
           rarity: string;
+          shelf_key: string | null;
+          shelf_lane: string | null;
           token_cost: number | null;
           war_exclusive: boolean;
         };
@@ -1415,6 +1417,8 @@ export type Database = {
           pass_exclusive?: boolean;
           prestige_exclusive?: boolean;
           rarity?: string;
+          shelf_key?: string | null;
+          shelf_lane?: string | null;
           token_cost?: number | null;
           war_exclusive?: boolean;
         };
@@ -1432,6 +1436,8 @@ export type Database = {
           pass_exclusive?: boolean;
           prestige_exclusive?: boolean;
           rarity?: string;
+          shelf_key?: string | null;
+          shelf_lane?: string | null;
           token_cost?: number | null;
           war_exclusive?: boolean;
         };

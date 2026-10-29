@@ -117,3 +117,25 @@ describe("battle-pass rewards can never enter the shop (all seasons)", () => {
 		expect(fs.readFileSync(CATALOG_HOOK, "utf8")).toMatch(/!\s*r\.pass_exclusive/);
 	});
 });
+
+// The Pop-up Stall (20261029220000): a shelf-'new' piece sells only on its
+// stall, inside its window. Same footgun as above: each of these four guards
+// lives in a function or filter that gets regenerated, so pin them.
+describe("seasonal 'new' pieces stay on their stall", () => {
+	it("the active daily_shop() leaves shelf-new pieces out of the drop", () => {
+		expect(activeDef("daily_shop")).toMatch(/shelf_lane[\s\S]{0,40}'new'/);
+	});
+
+	it("the active buy_hat() refuses a new piece outside its window", () => {
+		expect(activeDef("buy_hat")).toMatch(/not_in_window/);
+	});
+
+	it("the active mystery-box picker never draws a shelf-new piece", () => {
+		expect(activeDef("grant_mystery_box")).toMatch(/shelf_lane[\s\S]{0,40}'new'/);
+	});
+
+	it("Browse hides unowned shelf-new pieces", () => {
+		const hook = fs.readFileSync(CATALOG_HOOK, "utf8");
+		expect(hook).toMatch(/shelf_lane\s*!==\s*"new"\s*\|\|\s*ownedSet\.has/);
+	});
+});

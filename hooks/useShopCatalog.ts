@@ -160,7 +160,7 @@ export function useShopCatalog(): UseShopCatalog {
           supabase
             .from("hats")
             .select(
-              "id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive, members_only, prestige_exclusive",
+              "id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive, members_only, prestige_exclusive, shelf_lane",
             )
             .order("display_order"),
           supabase.from("user_hats").select("hat_id").eq("user_id", user.id),
@@ -206,9 +206,12 @@ export function useShopCatalog(): UseShopCatalog {
       // Cost-0 items are season-pass exclusives — not for sale. Only surface
       // them if the player already OWNS them (claimed via the pass); otherwise
       // they leak into the browseable shop (which players noticed).
-      const shoppable = filterPlaceable((allRes.data as HatRow[]) ?? []).filter(
-        (r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id),
-      );
+      // A seasonal 'new' piece sells only on its Pop-up Stall, inside its
+      // window; in Browse it would read "rotates in soon", which it never
+      // does. Owned ones still show, like owned pass pieces.
+      const shoppable = filterPlaceable((allRes.data as HatRow[]) ?? [])
+        .filter((r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id))
+        .filter((r) => r.shelf_lane !== "new" || ownedSet.has(r.id));
       setAllItems(shoppable);
       setCatalogRows((allRes.data as HatRow[] | null) ?? []);
       // The counter resolves against the same shoppable catalog, so a
