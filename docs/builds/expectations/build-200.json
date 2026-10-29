@@ -1,0 +1,113 @@
+[
+  {
+    "name": "active season is snout_season_1, stored end 2026-11-09 00:15 UTC (20261029260000; the flip at 00:00 pulls it back)",
+    "sql": "select s.id, s.ends_at = '2026-11-09 00:15:00+00'::timestamptz as ends_at_known_cutoff from public.active_season() s",
+    "expect": {
+      "row": {
+        "id": "snout_season_1",
+        "ends_at_known_cutoff": true
+      }
+    }
+  },
+  {
+    "name": "Season 2 is dark: snout_season_2 starts in 2099, season2_flipped false",
+    "sql": "select to_char(s.starts_at at time zone 'UTC', 'YYYY') as starts_year, (select c.enabled from public.app_config c where c.key = 'season2_flipped') as season2_flipped from public.seasons s where s.id = 'snout_season_2'",
+    "expect": {
+      "row": {
+        "starts_year": "2099",
+        "season2_flipped": false
+      }
+    }
+  },
+  {
+    "name": "the halloween_2026 stall is closed (opens_at IS NULL)",
+    "sql": "select key, opens_at from public.seasonal_shelves where key = 'halloween_2026'",
+    "expect": {
+      "row": {
+        "key": "halloween_2026",
+        "opens_at": null
+      }
+    }
+  },
+  {
+    "name": "35 new-lane accessory/background rows and 11 costume rows",
+    "sql": "select (select count(*) from public.hats where shelf_lane = 'new' and category <> 'costume') as new_lane_non_costume, (select count(*) from public.hats where category = 'costume') as costume_rows",
+    "expect": {
+      "row": {
+        "new_lane_non_costume": 35,
+        "costume_rows": 11
+      }
+    }
+  },
+  {
+    "name": "no new-lane piece or costume in daily_shop() (today's drop, and the filter itself)",
+    "sql": "select (select count(*) from public.daily_shop() d where d.shelf_lane = 'new' or d.category = 'costume') as in_todays_drop, position('shelf_lane IS DISTINCT FROM ''new''' in pg_get_functiondef('public.daily_shop()'::regprocedure)) > 0 as filter_excludes_new_lane",
+    "expect": {
+      "row": {
+        "in_todays_drop": 0,
+        "filter_excludes_new_lane": true
+      }
+    }
+  },
+  {
+    "name": "trader_tuning: pair_multiplier 1.5, trade_up true, finds_per_visit 9",
+    "sql": "select value -> 'pair_multiplier' as pair_multiplier, value -> 'trade_up' as trade_up, value -> 'finds_per_visit' as finds_per_visit from public.app_settings where key = 'trader_tuning'",
+    "expect": {
+      "row": {
+        "pair_multiplier": 1.5,
+        "trade_up": true,
+        "finds_per_visit": 9
+      }
+    }
+  },
+  {
+    "name": "min_build is inert (build 0)",
+    "sql": "select value -> 'build' as build from public.app_settings where key = 'min_build'",
+    "expect": {
+      "row": {
+        "build": 0
+      }
+    }
+  },
+  {
+    "name": "every local migration is applied except the three held ones",
+    "sql": "select version from supabase_migrations.schema_migrations order by version",
+    "expect": {
+      "migrations_applied": {
+        "held": [
+          "20261004230000",
+          "20261014180000",
+          "20261014200000"
+        ],
+        "held_must_be_unapplied": true
+      }
+    }
+  },
+  {
+    "name": "season-end jobs armed once each: season2-flip (0 0 9 11 *) and great-hunger-reminder (0 0 8 11 *)",
+    "sql": "select count(*) filter (where jobname='season2-flip' and schedule='0 0 9 11 *') = 1 and count(*) filter (where jobname='great-hunger-reminder' and schedule='0 0 8 11 *') = 1 as ok from cron.job",
+    "expect": {
+      "row": {
+        "ok": true
+      }
+    }
+  },
+  {
+    "name": "the founder's preview override is the only shelf_preview in production",
+    "sql": "select count(*) = 1 and bool_and(username = 'Brian' and discriminator = '4075' and is_test) as ok from public.profiles where feature_overrides ? 'shelf_preview'",
+    "expect": {
+      "row": {
+        "ok": true
+      }
+    }
+  },
+  {
+    "name": "any pig may wear a costume: equip_cosmetic has no costume_rosie_only gate (20261029280000)",
+    "sql": "select position('costume_rosie_only' in pg_get_functiondef(p.oid)) = 0 as ok from pg_proc p where p.proname = 'equip_cosmetic' and p.pronamespace = 'public'::regnamespace",
+    "expect": {
+      "row": {
+        "ok": true
+      }
+    }
+  }
+]
