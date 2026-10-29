@@ -1,5 +1,5 @@
 import { resolveSlot } from "../components/ui/PigStage";
-import { PIG_CANVAS } from "../constants/hats";
+import { PIG_CANVAS, resolveWearablePose } from "../constants/hats";
 import type { RelSpec } from "../constants/hat_overlay_types";
 
 // A per-pose override is the studio's answer to a silhouette that changes when
@@ -13,6 +13,10 @@ const BASE: RelSpec = {
 	behind: false,
 };
 const PLAIN: Record<string, RelSpec> = { cowboy: BASE };
+// Since the 2026-10-14 attachment audit a head item wears its pig/pose
+// family's measured crown scale (constant within the family, not 1), so the
+// expected width is widthFrac x canvas x that scale.
+const FACE_HEAD_SCALE = resolveWearablePose("face", 0, "head").scale;
 
 describe("per-pose RelSpec overrides", () => {
 	it("moves the item on the pose it overrides and leaves the others alone", () => {
@@ -32,10 +36,10 @@ describe("per-pose RelSpec overrides", () => {
 
 		const faceBase = resolveSlot(SLOT, "face", 0, PLAIN)?.overlay;
 		const faceOver = resolveSlot(SLOT, "face", 0, overridden)?.overlay;
-		expect(faceBase?.width).toBeCloseTo(0.42 * PIG_CANVAS, 5);
-		// A head item on the turned families keeps scale 1, so widthFrac is the
-		// whole story: the override's width is what ships.
-		expect(faceOver?.width).toBeCloseTo(0.6 * PIG_CANVAS, 5);
+		expect(faceBase?.width).toBeCloseTo(0.42 * PIG_CANVAS * FACE_HEAD_SCALE, 5);
+		// The family scale is the same for base and override, so widthFrac is the
+		// rest of the story: the override's width is what ships.
+		expect(faceOver?.width).toBeCloseTo(0.6 * PIG_CANVAS * FACE_HEAD_SCALE, 5);
 		expect(faceOver?.left).not.toBeCloseTo(faceBase?.left ?? 0, 3);
 
 		// …and every other pose still resolves from the base spec.
