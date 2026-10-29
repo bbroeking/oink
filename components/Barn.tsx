@@ -89,6 +89,8 @@ import { useSatchel } from "@/hooks/useSatchel";
 import { satchelStanding } from "@/utils/satchel";
 import { TraderSheet } from "./trader/TraderSheet";
 import { useTrader } from "@/hooks/useTrader";
+import { useDailyRiddle } from "@/hooks/useDailyRiddle";
+import { riddleFanLine } from "@/utils/dailyRiddle";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { useDigEntry } from "@/hooks/useDigEntry";
@@ -887,6 +889,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		[sell, applyBag, fetchStats],
 	);
 	const traderRefused = useCallback((line: string) => showToast("He shook his head", line), [showToast]);
+	// The Sheep's Riddle's day, read from the device (no server in v1).
+	const dailyRiddle = useDailyRiddle();
 
 	// THE FAN, in its fixed order: Dig · Barn · the truffle · the Satchel.
 	// Burying rides along whenever the truffle status has loaded — as the act
@@ -998,6 +1002,21 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			onPress: () => setTraderOpen(true),
 			accessibilityLabel: "The Ghost Sheep Trader",
 			accessibilityHint: "Opens the trader, who takes finds out of your bag for tickles",
+		});
+	}
+	// THE SHEEP'S RIDDLE (2026-10-29): one shared picture riddle a UTC day,
+	// beside the Trader where the day's things live. Always on the fan (it is
+	// the same riddle for everyone); the line says where today stands.
+	if (dailyRiddle.book) {
+		fanOptions.push({
+			key: "riddle",
+			title: "Riddle",
+			sub: riddleFanLine(dailyRiddle.riddle, dailyRiddle.book.play),
+			label: "riddle",
+			mark: "riddle",
+			onPress: () => router.push("/riddle"),
+			accessibilityLabel: "The Sheep's Riddle",
+			accessibilityHint: "Opens today's riddle: three clues, nine pictures, two guesses",
 		});
 	}
 	// THE ERRAND'S ROW (2026-09-18): beside the Trader's, never replacing it.
