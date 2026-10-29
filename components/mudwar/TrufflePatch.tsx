@@ -129,7 +129,7 @@ function joinNames(names: string[]): string {
 
 // The whisper line shown when a find is actually pouched (the warm-fiction beat).
 const FIND_LINES: Record<Find, string> = {
-  truffle_l: "a fat truffle — into the pouch.",
+  truffle_l: "a fat truffle, into the pouch.",
   truffle_d: "another truffle. he'll miss that one.",
   shimmer: MOTE_MACHINE_VISIBLE
     ? "a pocket of tickle-motes drifts free."
@@ -137,10 +137,10 @@ const FIND_LINES: Record<Find, string> = {
   stone: "just a stone.",
   junk_boot: "his old boot. why.",
   junk_wrap: "a licked-clean wrapper. keep it?",
-  unique: "something odd — into the pouch.",
+  unique: "something odd, into the pouch.",
 };
 
-const FREE_RUB_LINE = "your snout knows the way — a free rub.";
+const FREE_RUB_LINE = "your snout knows the way, a free rub.";
 
 // "The One That Got Away" copy — the session-opening whisper when a carry
 // exists. Kind-aware: a carried relic reads "relic", a carried truffle "truffle"
@@ -149,13 +149,13 @@ function carryNoun(kind: string): string {
   return kind === "unique" ? "relic" : "truffle";
 }
 function carryOpenLine(kind: string): string {
-  return `he reburied the ${carryNoun(kind)} you almost had — look for the gleam.`;
+  return `he reburied the ${carryNoun(kind)} you almost had. look for the gleam.`;
 }
 
 // A truffle is buried as a multi-tile cluster (Pokémon-fossil style) — this
 // whisper sets the expectation that a peeked cell is PART of a bigger find, so
 // clearing the whole cluster (not a single cell) is what claims it.
-const PARTIAL_TRUFFLE_LINE = "part of a big one — clear the rest of it!";
+const PARTIAL_TRUFFLE_LINE = "part of a big one. clear the rest of it!";
 
 interface Props {
   session: RootingSession;
@@ -612,7 +612,7 @@ export function TrufflePatch({
         collectedRef.current.has("truffle_l") &&
         collectedRef.current.has("truffle_d");
       if (bothTruffles) {
-        finish("clean and quiet — the Hungerer never noticed.");
+        finish("clean and quiet. the Hungerer never noticed.");
       } else if (stirRef.current >= stirBudget) {
         finish("the Hungerer stirred, so you stopped digging.");
       }
@@ -826,7 +826,7 @@ export function TrufflePatch({
             </View>
             {session.coop && (
               <T role="bodySm">
-                {coopNames || "A crewmate"} helped — up to 5 extra rubs.
+                {coopNames || "A crewmate"} helped: up to 5 extra rubs.
               </T>
             )}
             {session.blessed && <T role="bodySm">A blessing joins this dig.</T>}
@@ -939,13 +939,13 @@ function DigHelpModal({
         </HelpSection>
         {coop && (
           <HelpSection heading="digging together">
-            a crewmate already dug this feeding, so he's more distracted — you
+            a crewmate already dug this feeding, so he's more distracted. you
             can rub up to 5 more times before he wakes.
           </HelpSection>
         )}
         <HelpSection heading="leaving">
           leave anytime. the patch keeps your board until the feeding window
-          closes — nothing is lost by walking away.
+          closes. nothing is lost by walking away.
         </HelpSection>
       </View>
       <Button

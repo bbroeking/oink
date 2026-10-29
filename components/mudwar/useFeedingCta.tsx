@@ -242,12 +242,12 @@ export function useFeedingCta(
     if (!r.ok) {
       setNote(
         r.reason === "already_rooted"
-          ? "You rooted this feeding — he gorges again soon."
+          ? "You rooted this feeding. He gorges again soon."
           : r.reason === "no_crew"
-            ? "join a Sounder to dig for keeps — or try a practice dig first."
+            ? "join a Sounder to dig for keeps, or try a practice dig first."
             : r.reason === "patch_closed"
-              ? `He's guarding the patch — it opens in ${nextOpenCountdown()}.`
-              : "The patch is being stubborn — try again.",
+              ? `He's guarding the patch. It opens in ${nextOpenCountdown()}.`
+              : "The patch is being stubborn. Try again.",
       );
     }
   };

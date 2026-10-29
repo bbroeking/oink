@@ -40,7 +40,7 @@ function inviteError(reason?: string): string {
 		case "already_invited":
 			return "They already have a pending invite.";
 		case "recently_declined":
-			return "They passed recently — give it a day before asking again.";
+			return "They passed recently. Give it a day before asking again.";
 		case "blocked":
 			return "You can't invite that pig.";
 		case "no_crew":
@@ -101,8 +101,9 @@ export function PlayerInvitePicker({
 			open={visible}
 			onClose={onDismiss}
 			title="Recruit any snout"
-			subtitle="ranked by all-time truffles dug — or search a name"
-			closeLabel="Done"
+			// The X is a button named "Close"; the footer's quiet "Done" is the
+			// finished-here link. Two names for two places, never one name on both.
+			subtitle="ranked by all-time truffles dug · or search a name"
 			keyboardAware
 			footer={
 				<Button variant="handLink" full onPress={onDismiss} accessibilityHint="Closes the recruiting list">
@@ -139,13 +140,15 @@ export function PlayerInvitePicker({
 					const dug = `${p.truffles_dug.toLocaleString()} ${
 						p.truffles_dug === 1 ? "truffle" : "truffles"
 					} dug all-time`;
+					// One separator on the line: the sanctioned `·` (2026-07-13), where
+					// a bullet and a mid-dot used to share the same sentence.
 					const sub = waiting
-						? `${dug} • waiting on your last ask…`
+						? `${dug} · waiting on your last ask…`
 						: p.in_crew
-							? `${dug} • in ${p.crew_name ?? "another Sounder"} — invite to switch`
+							? `${dug} · in ${p.crew_name ?? "another Sounder"} · invite to switch`
 							: seatsFull
-								? `${dug} • the banner's full`
-								: `${dug} • no crew yet — free to ride`;
+								? `${dug} · the banner's full`
+								: `${dug} · no crew yet · free to ride`;
 					const right = waiting ? (
 						<HandLink
 							onPress={() => cancel(waitingInvite)}
@@ -174,7 +177,7 @@ export function PlayerInvitePicker({
 							left={<CrewPortrait />}
 							title={
 								<>
-									{p.username ?? "—"}
+									{p.username ?? "–"}
 									{p.discriminator ? <DiscText> #{p.discriminator}</DiscText> : null}
 								</>
 							}

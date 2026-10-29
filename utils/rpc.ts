@@ -86,7 +86,7 @@ function logRpcError(name: string, error: { message?: string; name?: string; cod
 	if (isTransientNetworkError(error)) {
 		log.warn(`[rpc:${name}]`, error.message, "(transient network)");
 	} else if (isMissingFunctionError(error)) {
-		log.warn(`[rpc:${name}]`, error.message, "(feature dark — migration unpushed)");
+		log.warn(`[rpc:${name}]`, error.message, "(feature dark: migration unpushed)");
 	} else {
 		log.error(`[rpc:${name}]`, error.message);
 	}

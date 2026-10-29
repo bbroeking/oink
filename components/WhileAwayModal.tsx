@@ -3,7 +3,7 @@
 // app. _layout.tsx polls for un-seen received rituals on launch and
 // mounts this; the events also live in the Friends-tab Inbox, this
 // is just the can't-miss-it announcement.
-import React from "react";
+import React, { useState } from "react";
 import {
 	View,
 	ScrollView,
@@ -16,12 +16,14 @@ import {
 	AdaptiveModalScaffold,
 	Avatar,
 	Button,
+	Divider,
 	Icon,
 	Kicker,
 	ListRow,
 	PageTitle,
 	RitualIconWell,
 } from "./ui";
+import { groupBarnVisits, visitGroupCopy } from "@/utils/whileAway";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -49,19 +51,17 @@ import { VISIT_EMOTE_IMAGES, type VisitEmoteId } from "@/utils/visitEmotes";
 const WELL_ICON = 18;
 const EMOTE_WELL = 52;
 const EMOTE_ART = 48;
-// How much of the dialog the recap list may claim before it scrolls — the
-// rows' own band, plus the bleed on both ends so the visible rows don't lose
-// height to the gutter that keeps their corners and shadows unclipped.
-const RECAP_MAX_H = 270 + LIST_BLEED * 2;
-// …and the least it may claim on a short window (an SE): one full row plus
-// its bleed. Below that the outer sheet scrolls the whole recap rather than
-// the list scrolling a sliver.
+// The least the recap list may claim on a short window (an SE): one full row
+// plus its bleed. Below that the outer sheet scrolls the whole recap rather
+// than the list scrolling a sliver.
 const RECAP_MIN_H = TAP_MIN + SPACE.sm * 2 + LIST_BLEED * 2;
 // Everything in the dialog that is NOT the list, at default type: the window
 // gutters and frame border, the close rail with its kicker + one-line title,
-// the gap, the primary and the sheet's bottom inset. The list is capped at
-// what's left so the primary stays on screen; the sheet's own ScrollView is
-// the safety net when Dynamic Type grows the rail past this estimate.
+// the gap, the primary and the sheet's bottom inset. The list may claim
+// everything else, so the dialog grows with its notes instead of scrolling a
+// 270pt window while a quarter of the screen sits empty above it (the fixed
+// cap this replaced, polish 2026-10-04); the sheet's own ScrollView is the
+// safety net when Dynamic Type grows the rail past this estimate.
 const RECAP_CHROME_H = 200;
 // The recap's frame: the reveal family's width (docs/reveal-family-spec.md).
 const RECAP_MAX_W = 390;
@@ -85,6 +85,10 @@ export type WhileAwayEvent =
 	| {
 			source: "system";
 			announcementId: number;
+			// The announcement's kind (`barn_visit`, `trough_nudge`, …). Optional
+			// so a caller that predates it still type-checks; the recap folds a
+			// run of plain `barn_visit` rows into one (utils/whileAway).
+			kind?: string;
 			title: string;
 			body: string;
 			// Deep-link target for a tap-through, or null when the announcement
@@ -123,8 +127,17 @@ export function WhileAwayModal({
 	const insets = useSafeAreaInsets();
 	const listMaxHeight = Math.max(
 		RECAP_MIN_H,
-		Math.min(RECAP_MAX_H, height - insets.top - insets.bottom - RECAP_CHROME_H),
+		height - insets.top - insets.bottom - RECAP_CHROME_H,
 	);
+	// A list that still runs past its cap gets a crease under its clip edge, so
+	// the cut reads as a fold the rows continue behind rather than rows sliced
+	// in mid-air. Measured, because only a long recap needs it.
+	const [listBoxH, setListBoxH] = useState(0);
+	const [listContentH, setListContentH] = useState(0);
+	const listOverflows = listBoxH > 0 && listContentH > listBoxH + 1;
+	// The rows the recap draws: the events in order, with a run of plain Barn
+	// visits folded into one row that names who came.
+	const rows = groupBarnVisits(events);
 	const blessings = events.filter((e) => e.source === "blessing").length;
 	const curses = events.filter((e) => e.source === "curse").length;
 	const trades = events.filter((e) => e.source === "trade_fulfilled").length;
@@ -171,7 +184,7 @@ export function WhileAwayModal({
 			animationType="fade"
 			maxWidth={RECAP_MAX_W}
 			showCloseButton
-			closeLabel="Close this recap"
+			closeLabel="Close"
 			closeRowContent={
 				<View style={styles.heading}>
 					<Kicker>while you were away</Kicker>
@@ -191,13 +204,41 @@ export function WhileAwayModal({
 					contentContainerStyle={styles.listContent}
 					bounces={false}
 					showsVerticalScrollIndicator={false}
+					onLayout={(ev) => setListBoxH(ev.nativeEvent.layout.height)}
+					onContentSizeChange={(_w, h) => setListContentH(h)}
 				>
-					{events.map((e, i) => {
+					{rows.map((e, i) => {
+						if (e.source === "visits") {
+							// Two or more plain Barn visits, folded: one row that names
+							// who came, each name once.
+							const copy = visitGroupCopy(e);
+							const route = e.route;
+							const tappable = !!route && !!onNavigate;
+							return (
+								<ListRow
+									key={e.key}
+									index={i}
+									fill={WHIMSY.cream}
+									leading={<BarnStar />}
+									title={copy.title}
+									sub={copy.body}
+									trailing={tappable ? <RowArrow /> : undefined}
+									onPress={route && onNavigate ? () => onNavigate(route) : undefined}
+									accessibilityLabel={spoken(copy.title, copy.body)}
+									accessibilityHint={
+										tappable ? "Opens this note from the barn" : undefined
+									}
+								/>
+							);
+						}
 						if (e.source === "sounder") {
 							return (
 								<ListRow
-									key={e.messageId || i}
+									key={e.messageId || `sounder-${i}`}
 									index={i}
+									// Sky, the Inbox's Sounder fill. Sun is the blessing's, and
+									// two kinds are never told apart by their mark alone.
+									fill={WHIMSY.sky}
 									leading={
 										<Avatar fill="paper" label="Your Sounder">
 											<Icon
@@ -209,7 +250,6 @@ export function WhileAwayModal({
 									}
 									title={`${e.from ?? "A crewmate"} · ${e.crewName}`}
 									sub={e.body}
-									style={styles.rowSounder}
 								/>
 							);
 						}
@@ -222,8 +262,11 @@ export function WhileAwayModal({
 									: null;
 							return (
 								<ListRow
-									key={i}
+									key={`system-${e.announcementId}-${i}`}
 									index={i}
+									// Cream (paper-toned), so it reads as "from the barn" rather
+									// than from any one friend or kind.
+									fill={WHIMSY.cream}
 									leading={
 										emoteSource ? (
 											<View style={styles.emoteWell}>
@@ -234,48 +277,33 @@ export function WhileAwayModal({
 												/>
 											</View>
 										) : (
-											<Avatar fill="sun" label="From the barn">
-												<Icon
-													name="star"
-													size={WELL_ICON}
-													color={UI_COLORS.textPrimary}
-												/>
-											</Avatar>
+											<BarnStar />
 										)
 									}
 									title={e.title}
 									sub={e.body}
-									trailing={
-										tappable ? (
-											<Icon
-												name="arrowRight"
-												size={WELL_ICON}
-												color={UI_COLORS.textPrimary}
-											/>
-										) : undefined
-									}
+									trailing={tappable ? <RowArrow /> : undefined}
 									// The parent persists the batch marker, releases the
 									// popup, then routes after native teardown.
 									onPress={route && onNavigate ? () => onNavigate(route) : undefined}
-									accessibilityLabel={`${e.title}. ${e.body}`}
+									accessibilityLabel={spoken(e.title, e.body)}
 									accessibilityHint={
 										tappable ? "Opens this note from the barn" : undefined
 									}
-									style={styles.rowSystem}
 								/>
 							);
 						}
 						if (e.source === "trade_fulfilled") {
 							return (
 								<ListRow
-									key={i}
+									key={`trade-${i}`}
 									index={i}
+									fill={WHIMSY.rose}
 									leading={
 										<Avatar fill="paper" glyph="heart" label="Trade answered" />
 									}
 									title={`${e.from ?? "A friend"} answered your trade`}
 									sub={`+${e.amount * 2} tickles landed in your barn.`}
-									style={styles.rowTrade}
 								/>
 							);
 						}
@@ -287,8 +315,13 @@ export function WhileAwayModal({
 							: CURSE_META[e.kind as CurseKind];
 						return (
 							<ListRow
-								key={i}
+								key={`${e.source}-${i}`}
 								index={i}
+								// A blessing is the bless door's sun; a curse sits on the
+								// curse pair's own surface, the paper an Inbox curse row and
+								// the friend row's curse door wear. It used to borrow sage,
+								// the app's "owned / done" fill, and read as good news.
+								fill={blessed ? WHIMSY.sun : WHIMSY.curseSurface}
 								leading={
 									<RitualIconWell
 										icon={meta?.icon}
@@ -300,13 +333,15 @@ export function WhileAwayModal({
 									blessed ? "blessed" : "cursed"
 								} you`}
 								sub={`${meta?.name ?? e.kind}${
-									meta?.blurb ? ` — ${meta.blurb}` : ""
+									meta?.blurb ? ` · ${meta.blurb}` : ""
 								}`}
-								style={blessed ? styles.rowBless : styles.rowCurse}
 							/>
 						);
 					})}
 				</ScrollView>
+				{/* The crease under a list that still runs past its cap: the rows
+				    continue behind the fold, they are not cut off. */}
+				{listOverflows && <Divider space="xxs" />}
 
 				{/* The family's one primary. The foot note that hung under it ("See
 				    the full activity in the Friends tab") is gone: the rows already
@@ -323,6 +358,26 @@ export function WhileAwayModal({
 				</Button>
 		</AdaptiveModalScaffold>
 	);
+}
+
+// A note's title and body read as two sentences. The server's titles usually
+// end in "!", and "Barn!. the piggler…" is not a sentence a voice can say.
+function spoken(title: string, body: string): string {
+	return /[.!?]$/.test(title) ? `${title} ${body}` : `${title}. ${body}`;
+}
+
+// The barn's own mark on a note from the barn, and the arrow a note that
+// opens somewhere wears. Shared by the single note and the folded visits.
+function BarnStar() {
+	return (
+		<Avatar fill="sun" label="From the barn">
+			<Icon name="star" size={WELL_ICON} color={UI_COLORS.textPrimary} />
+		</Avatar>
+	);
+}
+
+function RowArrow() {
+	return <Icon name="arrowRight" size={WELL_ICON} color={UI_COLORS.textPrimary} />;
 }
 
 const styles = StyleSheet.create({
@@ -344,21 +399,14 @@ const styles = StyleSheet.create({
 		marginHorizontal: -LIST_BLEED,
 		marginVertical: -LIST_BLEED,
 	},
+	// Each row keeps its event class's fill (ListRow's `fill`); the drawing
+	// (border, radius, shadow, tilt, text roles) is ListRow's. Spacing is the
+	// list's `gap`, so no per-row margin doubles up at the bleed edge.
 	listContent: {
 		paddingHorizontal: LIST_BLEED,
 		paddingVertical: LIST_BLEED,
 		gap: SPACE.sm,
 	},
-	// Each row keeps its event class's fill; the drawing (border, radius,
-	// shadow, tilt, text roles) is ListRow's. Spacing is the list's `gap`, so
-	// no per-row margin doubles up at the bleed edge.
-	rowBless: { backgroundColor: WHIMSY.sun },
-	rowCurse: { backgroundColor: WHIMSY.sage },
-	rowTrade: { backgroundColor: WHIMSY.rose },
-	rowSounder: { backgroundColor: WHIMSY.sun },
-	// System announcement row — cream (paper-toned) so it reads as
-	// "from the barn" rather than from any specific friend or kind.
-	rowSystem: { backgroundColor: WHIMSY.cream },
 	emoteWell: {
 		width: EMOTE_WELL,
 		height: EMOTE_WELL,

@@ -1,10 +1,22 @@
 // Referral Rewards — the full referral page reached from the Me tab. Shows
 // every invited player still on the way with progress toward 100 tickles and
-// the full reward
-// ladder (3 → 1000) with earned / next / locked states. Data: my_referral_summary.
+// the full reward ladder (3 → 1,000) with earned / next / locked states.
+// Data: my_referral_summary.
+//
+// Polish 2026-10-04: the empty state takes the "on the way" card's slot, on
+// the page's own inset, and carries the Share it used to send the player back
+// to the Me tab for. The code itself is not repeated here: the Me row owns it
+// and its Share (now a VoiceOver target of its own), and this page is that
+// row's door, not a copy of it (SKILL.md 2026-09-20). The rung badges are
+// capsules wide enough for "1,000" (the old 30pt disc cut it to "100("); the
+// next rung is the one with the heavy outline, not a twin of the locked ones.
 import React, { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
-import { StackPage } from "../components/ui/StackPage";
+import {
+	StackPage,
+	STACK_SCROLL_EDGES,
+	useStackScrollPad,
+} from "../components/ui/StackPage";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -14,16 +26,17 @@ import { Button } from "../components/ui/Button";
 import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
 import { ProgressTrack } from "../components/ui/ProgressTrack";
 import { Hand, KickerPill, Label, T } from "../components/ui/Text";
+import { ReferralShareButton } from "../components/ReferralShareButton";
 import {
 	ART_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	DISABLED,
 	RADII,
 	SPACE,
 	WHIMSY,
 	UI_COLORS,
 	PAGE_PAD,
-	TAB_SAFE,
 } from "@/constants/theme";
 import {
 	myReferralSummary,
@@ -34,8 +47,12 @@ import {
 
 // A referral counts at 100 tickles — the meter's max, named once.
 const TICKLE_TARGET = 100;
-// The ladder rung's count badge — a 30pt drawn disc, not a spacing step.
-const RUNG_BADGE = 30;
+// The ladder rung's count badge: a drawn capsule, not a spacing step. One
+// width on every rung (so the rewards line up) that holds "1,000" at the
+// chrome type cap: 13pt bold digits run ~34pt, ~44pt at 1.3x, inside 49pt of
+// capsule between the borders.
+const RUNG_BADGE_H = 30;
+const RUNG_BADGE_W = 52;
 
 function FriendProgress({ friend }: { friend: ReferralFriend }) {
 	const done = !!friend.completed;
@@ -100,12 +117,15 @@ export default function SounderProgressScreen() {
 
 	const completed = summary?.referrals_completed ?? 0;
 	const pending = summary?.pending_friends ?? [];
+	// A stack screen has no tab bar: the list ends one loose step past the
+	// home indicator, and the page leaves its bottom edge to the list.
+	const scrollPad = useStackScrollPad();
 
 	return (
 		<>
-			<StackPage>
+			<StackPage edges={STACK_SCROLL_EDGES}>
 				<PageHeader
-					kicker="referrals"
+					kicker="grow the herd"
 					title="Referral Rewards"
 					onBack={() => router.back()}
 					right={
@@ -113,8 +133,8 @@ export default function SounderProgressScreen() {
 							variant="handLink"
 							size="sm"
 							onPress={() => router.push("/recruits")}
-							accessibilityLabel="Referral board"
-							accessibilityHint="Opens Your Recruits"
+							accessibilityLabel="The board"
+							accessibilityHint="Opens Top Recruiters, the pigs who have brought the most players in"
 						>
 							the board ›
 						</Button>
@@ -135,7 +155,7 @@ export default function SounderProgressScreen() {
 				/>
 
 				<ScrollView
-					contentContainerStyle={styles.content}
+					contentContainerStyle={[styles.content, { paddingBottom: scrollPad }]}
 					showsVerticalScrollIndicator={false}
 				>
 					{status === "loading" && <LoadingBeat label="counting your recruits" />}
@@ -153,6 +173,20 @@ export default function SounderProgressScreen() {
 								>
 									Try again
 								</Button>
+							}
+						/>
+					)}
+
+					{/* Nobody brought in, nobody on the way: the empty state takes the
+					    "on the way" card's place, on the page's own inset, with the Share. */}
+					{status === "ready" && pending.length === 0 && completed === 0 && (
+						<EmptyState
+							glyph="friends"
+							title="No referrals yet"
+							sub={`A new pig counts once they reach ${TICKLE_TARGET} tickles.`}
+							flush
+							action={
+								summary?.code ? <ReferralShareButton code={summary.code} label="Share your code" /> : undefined
 							}
 						/>
 					)}
@@ -189,14 +223,14 @@ export default function SounderProgressScreen() {
 									const meta = earned
 										? "earned"
 										: isNext
-											? `${rung.count - completed} more to go`
-											: `at ${rung.count} referrals`;
+											? `${(rung.count - completed).toLocaleString()} more to go`
+											: `at ${rung.count.toLocaleString()} referrals`;
 									return (
 										<View
 											key={rung.count}
 											accessible
 											accessibilityRole="text"
-											accessibilityLabel={`${rung.reward} — ${meta}`}
+											accessibilityLabel={`${rung.reward}. ${meta}`}
 											style={[
 												styles.rung,
 												// A locked rung keeps its outline and mutes its fill;
@@ -220,8 +254,13 @@ export default function SounderProgressScreen() {
 														strokeWidth={2.4}
 													/>
 												) : (
-													<T role="bodySm" tone={isNext ? "primary" : "disabled"}>
-														{rung.count}
+														<T
+														role="bodySm"
+														tone={isNext ? "primary" : "disabled"}
+														numberOfLines={1}
+														maxFontSizeMultiplier={CHROME_TYPE_CAP}
+													>
+														{rung.count.toLocaleString()}
 													</T>
 												)}
 											</View>
@@ -240,13 +279,6 @@ export default function SounderProgressScreen() {
 						</Sticker>
 					)}
 
-					{status === "ready" && pending.length === 0 && completed === 0 && (
-						<EmptyState
-							glyph="friends"
-							title="No referrals yet"
-							sub="Share your code from the Me tab to invite a new player."
-						/>
-					)}
 				</ScrollView>
 			</StackPage>
 		</>
@@ -255,14 +287,15 @@ export default function SounderProgressScreen() {
 
 const styles = StyleSheet.create({
 	statsLine: { flexDirection: "row", alignItems: "baseline" },
+	// paddingBottom is the stack scroll pad, set inline.
 	content: {
 		paddingHorizontal: PAGE_PAD,
 		paddingTop: SPACE.sm,
-		paddingBottom: TAB_SAFE,
 		gap: SPACE.card,
 	},
 	card: { padding: SPACE.lg },
 	cardKicker: { marginBottom: SPACE.xs },
+
 	cardSub: { marginBottom: SPACE.md },
 	friendList: { gap: SPACE.md },
 	friendRow: { gap: SPACE.xs },
@@ -286,11 +319,14 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 	},
 	rungLocked: DISABLED,
-	rungNext: { backgroundColor: WHIMSY.cream2, borderWidth: BORDER.ink },
+	// The rung you're climbing toward: bright paper and the heavy outline, the
+	// "current" mark. It used to share cream2 + the 2pt ink with every locked
+	// rung, so only its text tone set it apart.
+	rungNext: { backgroundColor: WHIMSY.paper, borderWidth: BORDER.heavy },
 	rungBadge: {
-		width: RUNG_BADGE,
-		height: RUNG_BADGE,
-		borderRadius: RUNG_BADGE / 2,
+		width: RUNG_BADGE_W,
+		height: RUNG_BADGE_H,
+		borderRadius: RADII.pill,
 		borderWidth: BORDER.thin,
 		borderColor: UI_COLORS.border,
 		backgroundColor: WHIMSY.cream,

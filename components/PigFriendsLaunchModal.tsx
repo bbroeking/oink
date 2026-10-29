@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { PigPortrait } from "./ui/PigPortrait";
 import { Glyph } from "./ui/Glyph";
@@ -51,8 +51,9 @@ interface Props {
 
 export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }: Props) {
 	const motionPolicy = useMotionPolicy();
-	const reveal = useRef(FRIENDS.map(() => new Animated.Value(0))).current;
-	const copy = useRef(new Animated.Value(0)).current;
+	// Lazy state, not refs: both are render inputs (the RitualBubble idiom).
+	const [reveal] = useState(() => FRIENDS.map(() => new Animated.Value(0)));
+	const [copy] = useState(() => new Animated.Value(0));
 
 	useEffect(() => {
 		if (!visible) {
@@ -89,7 +90,11 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 		() =>
 			FRIENDS.map((pig, index) => ({
 				...pig,
-				value: reveal[index],
+				// `progress`, not `value`: the worklets Babel plugin flags any style
+				// property that reads `x.value` (it takes it for a Reanimated shared
+				// value) and injected a console warning into every render.
+				// (2026-10-04)
+				progress: reveal[index],
 			})),
 		[reveal]
 	);
@@ -99,7 +104,9 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 			visible={visible}
 			onRequestClose={onDismiss}
 			showCloseButton
-			closeLabel="Not now"
+			// The × is named what it is; "Not now" was a promise a close mark
+			// doesn't draw. (2026-10-04)
+			closeLabel="Close"
 			maxWidth={430}
 			contentContainerStyle={styles.panelContent}
 			testID="pig-friends-launch-modal"
@@ -127,16 +134,16 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 										styles.card,
 										{
 											backgroundColor: PIG_ACCENT[pig.id].tint,
-											opacity: pig.value,
+											opacity: pig.progress,
 											transform: [
 												{
-													translateY: pig.value.interpolate({
+													translateY: pig.progress.interpolate({
 														inputRange: [0, 1],
 														outputRange: [42, 0],
 													}),
 												},
 												{
-													scale: pig.value.interpolate({
+													scale: pig.progress.interpolate({
 														inputRange: [0, 1],
 														outputRange: [0.72, 1],
 													}),
@@ -180,7 +187,7 @@ export function PigFriendsLaunchModal({ visible, isMember, onDismiss, onAction }
 					>
 						<T role="handDisplay" align="center" style={styles.pitch}>
 							{isMember
-								? "Your membership includes one long-term companion. Choose carefully—your pick is locked for now."
+								? "Your membership includes one long-term companion. Choose carefully. Your pick is locked for now."
 								: "Join the Slop Club to choose Rosie one long-term friend."}
 						</T>
 						{isMember ? (

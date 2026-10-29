@@ -1,15 +1,21 @@
 // Achievements screen — redesigned per the v1 mockup.
 //
 // Layout:
-//   • Header: "← back · Achievements · ★ N/M unlocked · K ready to claim"
-//   • Filter chips: All / Ready (badged) / Generous / Greedy / Social
+//   • Header: "‹ back · ★ your story · Achievements · N/M unlocked · K ready"
+//   • Filter chips: All / Ready (badged) / Devotion / Generous / Greedy /
+//     Social / The Dig — the picked one is sun with the heavy outline, the
+//     app's one selected-capsule look
 //   • Per-card states:
 //     - Ready (claimed + viewed_at NULL): cream tint, ! badge on icon,
 //       "earned · +N snouts" body, gold "Got it ✦" button (calls
 //       mark_achievement_viewed → flips to "claimed/viewed" state).
 //     - In-progress (not claimed): paper card, description text,
-//       category tag top-right, progress bar, "N/G · reward · X" line.
-//     - Claimed + viewed: paper card, dim, ✓ badge.
+//       category tag top-right (only where the list mixes categories),
+//       progress bar, "N/G · reward · X" line.
+//     - Claimed + viewed: the same card at full strength, a sage bar and a
+//       success check beside the count. (It used to fade the whole card to
+//       0.85 and pin a faint check over the reward text; a finished trophy is
+//       not a disabled one.)
 //
 // The acknowledgement button on the page is the same one the
 // AchievementDigestModal batches on launch; auto-grant of the reward
@@ -26,6 +32,7 @@ import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
+import { supabase } from "@/utils/supabase";
 import { achievementIcon } from "@/constants/emojiArt";
 import {
 	Avatar,
@@ -39,15 +46,15 @@ import {
 	Sticker,
 	T,
 	StackPage,
-} from "../components/ui";
+	STACK_SCROLL_EDGES,
+	useStackScrollPad,
+	} from "../components/ui";
 import {
 	ART_SIZE,
 	AVATAR_SIZE,
 	BORDER,
 	WHIMSY,
-	OPACITY,
 	PAGE_PAD,
-	TAB_SAFE,
 	SPACE,
 	RADII,
 	UI_COLORS,
@@ -104,23 +111,71 @@ const BANG_BADGE = 18;
 const DONE_TICK = 14;
 const DONE_TICK_STROKE = 2.4;
 
+// The reward's name is the catalog's (titles.name / hats.name), read once per
+// load. This is only the fallback while that read is out or if it fails: the
+// id, title-cased the way the catalog writes names, small words kept small
+// ("hog_of_hearts" → "Hog of Hearts", never "Hog Of Hearts").
+const SMALL_WORDS = new Set(["a", "an", "and", "of", "the", "in", "on", "to", "for"]);
 function catalogName(id: string): string {
 	return id
 		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.map((word, i) =>
+			i > 0 && SMALL_WORDS.has(word)
+				? word
+				: word.charAt(0).toUpperCase() + word.slice(1),
+		)
 		.join(" ");
+}
+
+// "title:hog_of_hearts" / "item:wizard" → the catalog's display name.
+type RewardNames = Record<string, string>;
+
+async function fetchRewardNames(rows: AchievementRow[]): Promise<RewardNames> {
+	const titleIds = [...new Set(rows.map((r) => r.reward_title_id).filter((id): id is string => !!id))];
+	const itemIds = [...new Set(rows.map((r) => r.reward_item_id).filter((id): id is string => !!id))];
+	const [titles, items] = await Promise.all([
+		titleIds.length
+			? supabase.from("titles").select("id, name").in("id", titleIds)
+			: Promise.resolve({ data: [], error: null }),
+		itemIds.length
+			? supabase.from("hats").select("id, name").in("id", itemIds)
+			: Promise.resolve({ data: [], error: null }),
+	]);
+	const names: RewardNames = {};
+	for (const t of (titles.error ? [] : titles.data) ?? []) names[`title:${t.id}`] = t.name;
+	for (const h of (items.error ? [] : items.data) ?? []) names[`item:${h.id}`] = h.name;
+	return names;
 }
 
 export default function AchievementsScreen() {
 	const [rows, setRows] = useState<AchievementRow[]>([]);
 	const [filter, setFilter] = useState<FilterKey>("all");
 	const [loading, setLoading] = useState(true);
+	// A read that never came back is UNKNOWN, not empty: it gets the error and
+	// a retry, never "No trophies in this category yet" over a page that did
+	// not load. [B-14]
+	const [loadFailed, setLoadFailed] = useState(false);
+	const [rewardNames, setRewardNames] = useState<RewardNames>({});
+	// A stack screen has no tab bar: the list ends one loose step past the
+	// home indicator, and the page leaves its bottom edge to the list.
+	const scrollPad = useStackScrollPad();
 
 	const load = useCallback(async () => {
 		const data = await rpc<AchievementRow[]>("my_achievements");
-		setRows(data ?? []);
+		setLoadFailed(data === null);
+		if (data !== null) setRows(data);
 		setLoading(false);
+		if (data?.length) {
+			fetchRewardNames(data)
+				.then(setRewardNames)
+				.catch(() => {});
+		}
 	}, []);
+
+	const retry = () => {
+		setLoading(true);
+		void load();
+	};
 
 	useFocusEffect(
 		useCallback(() => {
@@ -159,9 +214,9 @@ export default function AchievementsScreen() {
 
 	return (
 		<>
-			<StackPage>
+			<StackPage edges={STACK_SCROLL_EDGES}>
 				<PageHeader
-					kicker="achievements"
+					kicker="your story"
 					title="Achievements"
 					onBack={() => router.back()}
 					below={
@@ -197,7 +252,7 @@ export default function AchievementsScreen() {
 							<Chip
 								key={c.key}
 								label={c.label}
-								tone={active ? "lilac" : "paper"}
+								tone={active ? "sun" : "paper"}
 								selected={active}
 								onPress={() => setFilter(c.key)}
 								badge={
@@ -222,11 +277,29 @@ export default function AchievementsScreen() {
 
 				<ScrollView
 					style={styles.list}
-					contentContainerStyle={styles.grid}
+					contentContainerStyle={[styles.grid, { paddingBottom: scrollPad }]}
 					showsVerticalScrollIndicator={false}
 				>
 					{loading && <LoadingBeat label="counting trophies" />}
-					{!loading && filtered.length === 0 && (
+					{!loading && loadFailed && rows.length === 0 && (
+						<EmptyState
+							kind="error"
+							title="Couldn't count your trophies"
+							sub="The shelf didn't come back. Give it another nudge."
+							action={
+								<Button
+									variant="ghost"
+									size="sm"
+									onPress={retry}
+									accessibilityLabel="Try again"
+									accessibilityHint="Reads your achievements again"
+								>
+									Try again
+								</Button>
+							}
+						/>
+					)}
+					{!loading && !loadFailed && filtered.length === 0 && (
 						<EmptyState
 							glyph="trophy"
 							title={
@@ -237,7 +310,7 @@ export default function AchievementsScreen() {
 							sub={
 								filter === "ready"
 									? "Earn one and it'll wait here for you."
-									: "Keep playing — they'll fill in."
+									: "Keep playing. They'll fill in."
 							}
 							action={
 								filter === "all" ? undefined : (
@@ -258,6 +331,10 @@ export default function AchievementsScreen() {
 						<AchievementCard
 							key={row.id}
 							row={row}
+							rewardNames={rewardNames}
+							// A category filter already says the category; the tag
+							// is for the lists that mix them.
+							showCategory={filter === "all" || filter === "ready"}
 							onAck={() => ackClaim(row.id)}
 						/>
 					))}
@@ -270,22 +347,32 @@ export default function AchievementsScreen() {
 // ── Card ──────────────────────────────────────────────────────────
 function AchievementCard({
 	row,
+	rewardNames,
+	showCategory,
 	onAck,
 }: {
 	row: AchievementRow;
+	rewardNames: RewardNames;
+	showCategory: boolean;
 	onAck: () => void;
 }) {
 	const ready = row.claimed && !row.viewed_at;
 	const done = row.claimed && !!row.viewed_at;
-	const categoryTag = CATEGORY_LABEL[row.display_category] ?? "";
+	const categoryTag = showCategory ? (CATEGORY_LABEL[row.display_category] ?? "") : "";
 
 	// Reward summary line under the progress bar: lead with title,
 	// fall back to hat, then snouts-only. Mirrors the design's
-	// "reward · Title: X" line.
+	// "reward · Title: X" line, in the catalog's own spelling.
 	const rewardLabel = (() => {
-		if (row.reward_title_id) return `reward · Title: ${catalogName(row.reward_title_id)}`;
-		if (row.reward_item_id) return `reward · Item: ${catalogName(row.reward_item_id)}`;
-		if (row.reward_snouts > 0) return `reward · +${row.reward_snouts} snouts`;
+		if (row.reward_title_id) {
+			const name = rewardNames[`title:${row.reward_title_id}`] ?? catalogName(row.reward_title_id);
+			return `reward · Title: ${name}`;
+		}
+		if (row.reward_item_id) {
+			const name = rewardNames[`item:${row.reward_item_id}`] ?? catalogName(row.reward_item_id);
+			return `reward · Item: ${name}`;
+		}
+		if (row.reward_snouts > 0) return `reward · +${row.reward_snouts.toLocaleString()} snouts`;
 		return "";
 	})();
 
@@ -295,7 +382,7 @@ function AchievementCard({
 			rotate={0}
 			radius={RADII.lg}
 			pad
-			style={[styles.card, done && styles.cardDone]}
+			style={styles.card}
 		>
 			<View style={styles.cardTop}>
 				<View style={styles.iconWrap}>
@@ -320,7 +407,10 @@ function AchievementCard({
 
 				<View style={styles.cardBody}>
 					<View style={styles.titleRow}>
-						<T role="cardTitle" numberOfLines={1} style={styles.cardName}>
+						{/* Two lines before an ellipsis: beside a category tag a
+						    long name ("Burrow Book Completist") lost its last word
+						    on one line. */}
+						<T role="cardTitle" numberOfLines={2} style={styles.cardName}>
 							{row.name}
 						</T>
 						{!!categoryTag && (
@@ -344,7 +434,7 @@ function AchievementCard({
 						<View style={styles.readyRow}>
 							<T role="hand" tone="secondary" style={styles.earnedText}>
 								{row.reward_snouts > 0
-									? `earned · +${row.reward_snouts} snouts`
+									? `earned · +${row.reward_snouts.toLocaleString()} snouts`
 									: "earned · keepsake unlocked"}
 							</T>
 							<Button
@@ -352,7 +442,7 @@ function AchievementCard({
 								size="sm"
 								testID={`achievement-claim-${row.id}`}
 								onPress={onAck}
-								accessibilityLabel={`Got it — ${row.name}`}
+								accessibilityLabel={`Got it. ${row.name}`}
 								accessibilityHint="Marks this trophy as seen; the reward is already yours"
 							>
 								Got it ✦
@@ -369,10 +459,22 @@ function AchievementCard({
 								style={styles.progress}
 							/>
 							<View style={styles.metaRow}>
-								<T role="label">
-									{Math.min(row.progress, row.threshold).toLocaleString()} /{" "}
-									{row.threshold.toLocaleString()}
-								</T>
+								{/* A finished trophy says so beside its count, in the
+								    success ink, at full strength. */}
+								<View style={styles.countRow}>
+									{done && (
+										<Icon
+											name="check"
+											size={DONE_TICK}
+											color={UI_COLORS.successText}
+											strokeWidth={DONE_TICK_STROKE}
+										/>
+									)}
+									<T role="label" tone={done ? "success" : "primary"}>
+										{Math.min(row.progress, row.threshold).toLocaleString()} /{" "}
+										{row.threshold.toLocaleString()}
+									</T>
+								</View>
 								{!!rewardLabel && (
 									<T
 										role="hand"
@@ -390,18 +492,6 @@ function AchievementCard({
 				</View>
 			</View>
 
-			{/* Tiny ✓ badge bottom-right on done cards — quiet
-			    acknowledgment that this one's been wrapped up. */}
-			{done && (
-				<View style={styles.doneTick}>
-					<Icon
-						name="check"
-						size={DONE_TICK}
-						color={UI_COLORS.uiMuted}
-						strokeWidth={DONE_TICK_STROKE}
-					/>
-				</View>
-			)}
 		</Sticker>
 	);
 }
@@ -435,12 +525,10 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	list: { flex: 1 },
-	grid: { padding: PAGE_PAD, gap: SPACE.md, paddingBottom: TAB_SAFE },
+	// paddingBottom is the stack scroll pad, set inline.
+	grid: { padding: PAGE_PAD, gap: SPACE.md },
 	card: {
 		position: "relative",
-	},
-	cardDone: {
-		opacity: OPACITY.pressed,
 	},
 	cardTop: { flexDirection: "row", gap: SPACE.card, alignItems: "flex-start" },
 	iconWrap: { position: "relative" },
@@ -484,6 +572,12 @@ const styles = StyleSheet.create({
 		marginTop: SPACE.xs,
 		gap: SPACE.sm,
 	},
+	countRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs,
+		flexShrink: 0,
+	},
 	metaReward: {
 		flexShrink: 1,
 	},
@@ -497,11 +591,5 @@ const styles = StyleSheet.create({
 	},
 	earnedText: {
 		flexShrink: 1,
-	},
-	doneTick: {
-		position: "absolute",
-		bottom: SPACE.sm,
-		right: SPACE.sm,
-		opacity: OPACITY.dim,
 	},
 });

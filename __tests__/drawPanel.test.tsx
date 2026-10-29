@@ -69,7 +69,7 @@ describe("drumLines — the three lines", () => {
 		const l = drumLines(state(), NOW);
 		expect(l.balls).toBe("7 of 21 balls this week");
 		expect(l.odds).toBe("rare or better: 1 in 2");
-		expect(l.turn).toBe("the drum turns Monday 00:00 UTC (in 2d 5h)");
+		expect(l.turn).toBe("the drum turns in 2d 5h");
 	});
 
 	it("calls a full drum the perfect week, in the achievement's words", () => {
@@ -88,26 +88,33 @@ describe("drumLines — the three lines", () => {
 		expect(drumLines(state({ runningBalls: 3, runningCap: 0 }), NOW).balls).toBe("3 balls this week");
 	});
 
-	it("keeps the turn line a clock — hours inside a day, nothing when it's due", () => {
+	it("keeps the turn line a countdown — hours inside a day, the rhythm when it's due", () => {
 		expect(drumLines(state(), Date.parse("2026-09-27T18:45:00.000Z")).turn).toBe(
-			"the drum turns Monday 00:00 UTC (in 5h 15m)",
+			"the drum turns in 5h 15m",
 		);
 		expect(drumLines(state(), Date.parse("2026-09-27T23:50:00.000Z")).turn).toBe(
-			"the drum turns Monday 00:00 UTC (in 10m)",
+			"the drum turns in 10m",
 		);
-		// Past the turn, or with no time from the server: the plain clock.
+		// Past the turn, or with no time from the server: the weekly rhythm,
+		// never a clock time the player would have to convert.
 		expect(drumLines(state(), Date.parse("2026-09-28T00:10:00.000Z")).turn).toBe(
-			"the drum turns Monday 00:00 UTC",
+			"the drum turns once a week",
 		);
-		expect(drumLines(state({ nextTurnAt: null }), NOW).turn).toBe("the drum turns Monday 00:00 UTC");
+		expect(drumLines(state({ nextTurnAt: null }), NOW).turn).toBe("the drum turns once a week");
 		expect(drumLines(state({ nextTurnAt: "not a time" }), NOW).turn).toBe(
-			"the drum turns Monday 00:00 UTC",
+			"the drum turns once a week",
 		);
+	});
+
+	it("never prints a server's time zone at the player", () => {
+		for (const at of [NOW, Date.parse("2026-09-27T23:50:00.000Z"), Date.parse("2026-09-28T00:10:00.000Z")]) {
+			expect(drumLines(state(), at).turn).not.toMatch(/UTC|00:00/);
+		}
 	});
 
 	it("names exactly one day when the hours round out", () => {
 		expect(drumLines(state(), Date.parse("2026-09-26T00:00:00.000Z")).turn).toBe(
-			"the drum turns Monday 00:00 UTC (in 2d)",
+			"the drum turns in 2d",
 		);
 	});
 
@@ -122,7 +129,7 @@ describe("drumLines — the three lines", () => {
 		const none = drumLines(state({ eligible: false, balls: 0, purseOddsOneIn: null }), NOW);
 		expect(none.purse).toBe("none");
 		expect(none.purseLine).toBe(
-			"no purse this Monday — dig once this week and you're in Monday's drum",
+			"no purse this Monday · dig once this week and you're in Monday's drum",
 		);
 	});
 
@@ -150,7 +157,10 @@ describe("the strip's Draw cell", () => {
 
 	it("prints Ready, then the receipt, then this week's own count", () => {
 		expect(drawCellValue(state())).toBe("Ready");
-		expect(drawCellValue(state({ drawn: true, amount: 60, tier: "good" }))).toBe("Drawn · 60");
+		// The pocketed amount lives in the panel; the cell says the state only, so
+		// a three-digit purse never ends the cell in "…".
+		expect(drawCellValue(state({ drawn: true, amount: 60, tier: "good" }))).toBe("Drawn");
+		expect(drawCellValue(state({ drawn: true, amount: 400, tier: "jackpot" }))).toBe("Drawn");
 		// A lapsed / ball-less drawable week: the cell falls back to the count.
 		expect(drawCellValue(state({ eligible: false, balls: 0, runningBalls: 7 }))).toBe("7 balls");
 		expect(drawCellValue(state({ eligible: false, balls: 0, runningBalls: 1 }))).toBe("1 ball");
@@ -158,7 +168,7 @@ describe("the strip's Draw cell", () => {
 	});
 
 	it("says nothing before the first read lands", () => {
-		expect(drawCellValue(null)).toBe("—");
+		expect(drawCellValue(null)).toBe("–");
 	});
 });
 
@@ -193,7 +203,10 @@ describe("DrawPanel", () => {
 		const text = textOf(renderer.root);
 		expect(text).toContain("7 of 21 balls this week");
 		expect(text).toContain("rare or better: 1 in 2");
-		expect(text).toContain("the drum turns Monday 00:00 UTC");
+		// The render reads the live clock: a countdown, or the rhythm once the
+		// fixture's turn is behind us — never a server time zone.
+		expect(text).toMatch(/the drum turns (in \d|once a week)/);
+		expect(text).not.toMatch(/UTC/);
 		const cta = renderer.root.findByProps({ testID: "draw-panel-draw" });
 		expect(cta.props.variant).toBe("gold");
 		await act(async () => {

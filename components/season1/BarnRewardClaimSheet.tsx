@@ -106,7 +106,6 @@ export function BarnRewardClaimSheet({ open, tier, onClose, onClaim }: Props) {
 		<Sheet
 			open={open}
 			onClose={onClose}
-			closeLabel="Close the furnishing"
 			testID="barn-reward-claim-sheet"
 			footer={
 				<View style={styles.actions}>
@@ -140,7 +139,7 @@ export function BarnRewardClaimSheet({ open, tier, onClose, onClaim }: Props) {
 					</Button>
 					{missed ? (
 						<Hand tone="danger" style={styles.centered} accessibilityLiveRegion="polite">
-							Couldn&apos;t claim it — give it another tap.
+							Couldn&apos;t claim it. Give it another tap.
 						</Hand>
 					) : (
 						<Hand tone="secondary" style={styles.centered}>

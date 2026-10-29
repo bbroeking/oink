@@ -296,7 +296,7 @@ export function homecomingCopy(
 		return {
 			kicker: `${p.subject} got distracted`,
 			title: found,
-			body: `not the ${target} ${friendPig} wanted — but ${p.subject} wasn't coming home empty. Yours to keep.`,
+			body: `not the ${target} ${friendPig} wanted, but ${p.subject} wasn't coming home empty. Yours to keep.`,
 			primaryLabel: "Keep it",
 			grantedLine: inBag,
 			primaryAction: "keep",
@@ -344,7 +344,7 @@ export function errandRefusalCopy(reason: string, friendName?: string): { title:
 		case "not_authenticated":
 			return { title: "Sign back in first." };
 		default:
-			return { title: "That didn't land — try again in a moment." };
+			return { title: "That didn't land. Try again in a moment." };
 	}
 }
 

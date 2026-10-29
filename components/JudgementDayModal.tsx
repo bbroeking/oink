@@ -263,7 +263,7 @@ export function JudgementDayModal({ result, visible = true, onDismiss }: Props) 
 						)}
 					</View>
 					<T role="kicker" tone="secondary" align="center" style={styles.resetNote}>
-						Season 1 begins — alignment reset to Neutral.
+						Season 1 begins. Alignment reset to Neutral.
 					</T>
 				</Sticker>
 

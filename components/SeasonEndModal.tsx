@@ -101,7 +101,7 @@ function beatsFor(tier: BetaTier): Beat[] {
 			key: "settled",
 			bg: require("../assets/images/backgrounds/golden_mire_bg.png"),
 			kicker: "the season settles",
-			line: "The first season is done. Before the gates open to the world — a word for the pigs who were here first.",
+			line: "The first season is done. Before the gates open to the world, a word for the pigs who were here first.",
 			heroScale: 1,
 		},
 		{
@@ -116,7 +116,7 @@ function beatsFor(tier: BetaTier): Beat[] {
 			key: "stirs",
 			bg: require("../assets/images/backgrounds/bog_dusk_bg.png"),
 			kicker: "something stirs",
-			line: "Rest well — something enormous is snuffling at the fences. Season 1 is coming.",
+			line: "Rest well. Something enormous is snuffling at the fences. Season 1 is coming.",
 			hero: HUNGER,
 			heroTint: WHIMSY.ink,
 			heroScale: 1.9,
@@ -398,7 +398,7 @@ function BetaGiftReveal({
 					<Glyph name="gift" size={GIFT_ART} />
 				</RNAnimated.View>
 				<T role="hand" align="center">
-					A little something, just for you — for being here first.
+					A little something, just for you. For being here first.
 				</T>
 			</View>
 		);

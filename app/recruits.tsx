@@ -1,10 +1,15 @@
 // The recruiter leaderboard — top referrers across the app. Reachable
-// from the "Refer friends" card's downline strip on the Me page. Mirrors
-// the regular leaderboard's visual language so it feels native.
+// from Referral Rewards' "the board ›". Mirrors the regular leaderboard's
+// visual language so it feels native.
 //
-// Header is titled "Your Recruits" (kicker "refer friends"), NOT "The
-// Sounder" — the player-facing word "Sounder" was reclaimed for the war
-// crew, so the referral downline surface can't wear it.
+// Header is titled "Top Recruiters" (kicker "grow the herd", the Me section
+// its door hangs in), NOT "The Sounder" — the player-facing word "Sounder" was
+// reclaimed for the crew, so the referral surface can't wear it. It was "Your
+// Recruits" until the 2026-10-04 polish pass, which was a label that lied: the
+// RPC (sounder_leaderboard) ranks EVERY pig with a completed referral, so most
+// players saw a board of strangers under the word "Your". The board now ends
+// with the way onto it (one hand line and the Share), where half a screen of
+// blank paper used to sit.
 //
 // B-15 (2026-09-11, wave 4): the ROUTE now matches that ruling too. This file
 // was `app/sounder.tsx` (with `app/sounder-progress.tsx` beside it) while
@@ -19,7 +24,11 @@
 // Serves **Connect**: the board is now a way back to the friends you brought in.
 import React, { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
-import { StackPage } from "../components/ui/StackPage";
+import {
+	StackPage,
+	STACK_SCROLL_EDGES,
+	useStackScrollPad,
+} from "../components/ui/StackPage";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -28,8 +37,10 @@ import { Sticker } from "../components/ui/Sticker";
 import { ListRow } from "../components/ui/ListRow";
 import { Button } from "../components/ui/Button";
 import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
-import { KickerPill, SectionTitle, T } from "../components/ui/Text";
+import { Hand, KickerPill, SectionTitle, T } from "../components/ui/Text";
 import { UserSheet } from "../components/UserSheet";
+import { ReferralShareButton } from "../components/ReferralShareButton";
+import { myReferralSummary } from "@/utils/referrals";
 import {
 	BORDER,
 	PAGE_PAD,
@@ -39,6 +50,10 @@ import {
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
+
+// A referral counts on the board once the new pig reaches this many lifetime
+// tickles (SKILL.md 2026-07-21).
+const TICKLE_TARGET = 100;
 
 interface SounderRow {
 	rank: number;
@@ -50,8 +65,9 @@ interface SounderRow {
 	is_self: boolean;
 }
 
-// The champion's count medallion — a 44pt lilac disc. Drawing geometry (a
-// drawn coin), not a spacing step, so it is named here.
+// The champion's count medallion — a lilac coin at least 44pt across that
+// grows into a capsule for a three- or four-digit count rather than letting
+// it spill past the ring. Drawing geometry, not a spacing step.
 const MEDALLION = TAP_MIN;
 // The rank column: wide enough for "#50" without the name jumping row to row.
 const RANK_COL = 36;
@@ -63,12 +79,18 @@ export default function SounderScreen() {
 	const [loading, setLoading] = useState(true);
 	// The open profile door. `null` closes the sheet. [B-16]
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	// Your own code, for the Share at the foot of the board. Fail-soft: no
+	// code, no button; the board still reads.
+	const [code, setCode] = useState<string | null>(null);
 
 	const load = useCallback(() => {
 		setLoading(true);
 		rpc<SounderRow[]>("sounder_leaderboard", { limit_n: 50 }).then((data) => {
 			setRows(data ?? null);
 			setLoading(false);
+		});
+		myReferralSummary().then((r) => {
+			if (r?.ok) setCode(r.code);
 		});
 	}, []);
 
@@ -80,19 +102,22 @@ export default function SounderScreen() {
 
 	const champ = rows?.[0];
 	const rest = rows?.slice(1) ?? [];
+	// A stack screen has no tab bar: the list ends one loose step past the
+	// home indicator, and the page leaves its bottom edge to the list.
+	const scrollPad = useStackScrollPad();
 
 	return (
 		<>
-			<StackPage>
+			<StackPage edges={STACK_SCROLL_EDGES}>
 				<PageHeader
-					kicker="refer friends"
-					title="Your Recruits"
+					kicker="grow the herd"
+					title="Top Recruiters"
 					onBack={() => router.back()}
 				/>
 
 				<ScrollView
 					style={styles.scroll}
-					contentContainerStyle={styles.list}
+					contentContainerStyle={[styles.list, { paddingBottom: scrollPad }]}
 					showsVerticalScrollIndicator={false}
 				>
 					{loading && <LoadingBeat label="gathering your recruits" />}
@@ -115,8 +140,10 @@ export default function SounderScreen() {
 					{!loading && rows?.length === 0 && (
 						<EmptyState
 							glyph="friends"
-							title="No recruits yet"
+							title="No recruiters yet"
 							sub="Be the first to bring a friend in."
+							flush
+							action={code ? <ReferralShareButton code={code} label="Share your code" /> : undefined}
 						/>
 					)}
 
@@ -139,7 +166,7 @@ export default function SounderScreen() {
 							<View style={styles.champRow}>
 								<View style={styles.champBody}>
 									<SectionTitle numberOfLines={2}>
-										{champ.username ?? "—"}
+										{champ.username ?? "–"}
 										{champ.is_self && (
 											<T role="kicker" tone="accent">
 												{" "}
@@ -174,7 +201,7 @@ export default function SounderScreen() {
 							}
 							title={
 								<T role="cardTitleSm" numberOfLines={2}>
-									{r.username ?? "—"}
+									{r.username ?? "–"}
 									{r.is_self && (
 										<T role="kicker" tone="accent">
 											{" "}
@@ -195,6 +222,16 @@ export default function SounderScreen() {
 							accessibilityHint="Opens this pig's page"
 						/>
 					))}
+
+					{/* The way onto the board, where blank paper used to end it. */}
+					{!loading && !!rows?.length && (
+						<View style={styles.footer}>
+							<Hand tone="secondary" align="center">
+								A pig you bring in counts here once they reach {TICKLE_TARGET} tickles.
+							</Hand>
+							{!!code && <ReferralShareButton code={code} label="Share your code" />}
+						</View>
+					)}
 				</ScrollView>
 			</StackPage>
 
@@ -218,9 +255,10 @@ const styles = StyleSheet.create({
 	champBody: { flex: 1, minWidth: 0 },
 	champCount: { marginTop: SPACE.xxs },
 	medallion: {
-		width: MEDALLION,
+		minWidth: MEDALLION,
 		height: MEDALLION,
-		borderRadius: MEDALLION / 2,
+		paddingHorizontal: SPACE.sm,
+		borderRadius: RADII.pill,
 		alignItems: "center",
 		justifyContent: "center",
 		backgroundColor: WHIMSY.lilac,
@@ -229,4 +267,5 @@ const styles = StyleSheet.create({
 	},
 	rowRank: { width: RANK_COL },
 	rowCount: { textAlign: "right" },
+	footer: { alignItems: "center", gap: SPACE.sm, marginTop: SPACE.lg },
 });

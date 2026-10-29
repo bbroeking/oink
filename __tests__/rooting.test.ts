@@ -533,13 +533,13 @@ describe("bannerDigStatus — phase × dug copy matrix", () => {
 
   test("open + dug → countdown-free copy (a closes-in can never ride it)", () => {
     const s = bannerDigStatus(true, true, openMs)!;
-    expect(s).toBe("dug this feeding — back next feeding ★");
+    expect(s).toBe("dug this feeding · back next feeding ★");
     expect(s).not.toMatch(/\d+\s*[hm]/); // no time under this copy, ever
   });
 
   test("guarded + dug → 'opens in' pairs with the NEXT-OPEN countdown", () => {
     expect(bannerDigStatus(false, true, guardedMs)).toBe(
-      `dug this feeding — opens in ${nextOpenCountdown(guardedMs)}`,
+      `dug this feeding · opens in ${nextOpenCountdown(guardedMs)}`,
     );
   });
 
@@ -577,7 +577,7 @@ describe("feedingPhaseView — the shared Feeding clock", () => {
     // so the number in the banner equals the number the CTA would show.
     const view = feedingPhaseView(guardedMid);
     expect(bannerDigStatus(false, true, guardedMid)).toBe(
-      `dug this feeding — opens in ${view.countdown}`,
+      `dug this feeding · opens in ${view.countdown}`,
     );
     expect(bannerDigStatus(false, false, guardedMid)).toBe(
       `Opening in ${view.countdown}`,
@@ -586,7 +586,7 @@ describe("feedingPhaseView — the shared Feeding clock", () => {
 
   test("open + dug still carries no number (a closes-in can't ride 'opens in')", () => {
     const s = bannerDigStatus(true, true, openMid)!;
-    expect(s).toBe("dug this feeding — back next feeding ★");
+    expect(s).toBe("dug this feeding · back next feeding ★");
     expect(s).not.toMatch(/\d+\s*[hm]/);
   });
 });

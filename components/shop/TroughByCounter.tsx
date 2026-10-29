@@ -165,7 +165,7 @@ export function TroughByCounter({
 					<View key={r.donation_id} style={styles.receipt}>
 						<Glyph name="pigface" size={RECEIPT_MARK} />
 						<T role="bodySm" style={styles.receiptText}>
-							You helped land the {r.item_name ?? r.item_id} — the herd came
+							You helped land the {r.item_name ?? r.item_id}. The herd came
 							through!
 						</T>
 					</View>

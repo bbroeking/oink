@@ -297,7 +297,7 @@ function TallyRow({
         valueNode={tallyValue(row)}
         onPress={join}
         pressLabel={join ? `${row.title}, +${row.tickles ?? 0}. Truffles are for herds. Find yours` : undefined}
-        pressHint={join ? "Opens the Sounder join path" : undefined}
+        pressHint={join ? "Opens Friends, where herds are found and joined" : undefined}
       />
     </Animated.View>
   );
@@ -483,6 +483,10 @@ function TallyBody({
   // at its target — the hurry target goes quiet.
   const settled = (policy.reduceMotion || landed >= slots) && shown === target;
   const total = receipt.ticklesTotal;
+  // A dig that tickled nothing is not a celebration: the count sticker takes
+  // the woke sheet's quiet cream instead of the sun, and the foot's +0 is
+  // written in mute, never in the accent that reads as an alarm.
+  const paid = total > 0;
   const nowLabel = before == null ? `+${shown}` : `${before + shown}`;
   const countLabel =
     before == null
@@ -490,19 +494,24 @@ function TallyBody({
       : `${before} before, ${before + total} tickled now`;
 
   return (
+    // The hurry is a sighted shortcut (a touch anywhere lands every row), so
+    // the body is NOT an accessibility element: VoiceOver reads what the
+    // tally says, piece by piece (the count line, the before → now count,
+    // each row as it lands, the dig's foot, the herd line, the bag). As one
+    // disabled button labelled "The tally" it said none of it (after/095).
+    // Every label already states the final figures, so a screen reader has
+    // nothing to hurry.
     <Pressable
       onPress={hurry}
       disabled={settled}
-      accessibilityRole="button"
-      accessibilityLabel={settled ? "The tally" : "Hurry the tally"}
-      accessibilityHint={settled ? undefined : "Lands every find and settles the count"}
-      accessibilityState={{ disabled: settled }}
+      accessible={false}
+      testID="dig-tally"
       style={styles.body}
     >
       <Hand tone="secondary">{receipt.countLine}</Hand>
       {receipt.wokeLine ? <Hand tone="secondary">{receipt.wokeLine}</Hand> : null}
       <Sticker
-        color={woke ? "cream2" : "sun"}
+        color={woke || !paid ? "cream2" : "sun"}
         pad
         accessibilityRole="text"
         accessibilityLabel={countLabel}
@@ -540,7 +549,7 @@ function TallyBody({
       </Ledger>
       <View style={styles.foot} accessibilityRole="text" accessibilityLabel={`the dig, +${total}`}>
         <T role="body">the dig</T>
-        <T role="sectionTitle" tone="accent" numberOfLines={1}>
+        <T role="sectionTitle" tone={paid ? "accent" : "secondary"} numberOfLines={1}>
           +{total}
         </T>
       </View>
@@ -591,7 +600,8 @@ export function DigReceiptSheet({
       onClose={onClose}
       onDismiss={onDismiss}
       animationType={animationType}
-      closeLabel={receipt.primary}
+      // A close is a "Close"; the gold button below is the named way back.
+      closeLabel="Close"
       kicker={receipt.kicker}
       title={receipt.title}
     >
@@ -615,7 +625,7 @@ export function DigReceiptSheet({
           onPress={onJoin}
           style={styles.secondary}
           accessibilityLabel="Truffles are for herds. Find yours"
-          accessibilityHint="Opens the Sounder join path"
+          accessibilityHint="Opens Friends, where herds are found and joined"
         >
           {receipt.joinLine}
         </Button>
@@ -644,10 +654,10 @@ export const HELP_ROWS: readonly { mark: "sniff" | "rub" | "shove" | "meter" | "
   { mark: "sniff", title: "Sniff", sub: "marks a tile with how many finds touch it. moves no mud. five free on every board; past that he starts to notice", value: "quietest" },
   { mark: "rub", title: "Rub", sub: "clears a little on a tile and half on its neighbours. a half-cleared tile shows the shape underneath", value: "quiet" },
   { mark: "shove", title: "Shove", sub: "clears a tile and half the four around it. holding any tile shoves. fast, and he hears it", value: "loud" },
-  { mark: "meter", title: "How deep he sleeps", sub: "the bar under his face is every action you have taken on this board — each card's +N is its step along it. the darker stretch is where he might wake: short of it he sleeps through anything, at the far end he is certainly up. dig deeper and he settles again", value: "the meter" },
-  { mark: "layers", title: "Three layers", sub: "topsoil · the mud · the root. deeper is richer — relics and Barn pieces live at the root — and he sleeps lighter", value: "deeper" },
-  { mark: "tie", title: "Tie it off", sub: "banks the loose truffle and everything loose in the pouch, and ends the dig. Dig deeper banks the truffle only — the pouch rides down with you", value: "bank" },
-  { mark: "wake", title: "If he wakes", sub: "he takes the loose truffle — it comes back gilded next Feeding — and the whole loose pouch, every layer's worth. nothing tied is ever touched", value: "his" },
+  { mark: "meter", title: "How deep he sleeps", sub: "the bar under his face is every action you have taken on this board. each card's +N is its step along it. the darker stretch is where he might wake: short of it he sleeps through anything, at the far end he is certainly up. dig deeper and he settles again", value: "the meter" },
+  { mark: "layers", title: "Three layers", sub: "topsoil · the mud · the root. deeper is richer, relics and Barn pieces live at the root, and he sleeps lighter", value: "deeper" },
+  { mark: "tie", title: "Tie it off", sub: "banks the loose truffle and everything loose in the pouch, and ends the dig. Dig deeper banks the truffle only: the pouch rides down with you", value: "bank" },
+  { mark: "wake", title: "If he wakes", sub: "he takes the loose truffle, which comes back gilded next Feeding, and the whole loose pouch, every layer's worth. nothing tied is ever touched", value: "his" },
   { mark: "things", title: "The pouch", sub: "booms, acorns, tea, charms and the like are loose until you tie it off. keepsakes, furnishings, relics and bows are yours the moment they surface", value: "loose" },
 ];
 
@@ -679,8 +689,8 @@ export function SnoutDeepHelpSheet({
   rules?: 1 | 2;
 }) {
   return (
-    <LedgerSheet visible={visible} onClose={onClose} closeLabel="Back to the patch" kicker="how it works" title="Snout Deep">
-      <Hand tone="secondary">sniff to know, rub to take, dig as deep as you dare — tie off before he wakes.</Hand>
+    <LedgerSheet visible={visible} onClose={onClose} closeLabel="Close" kicker="how it works" title="Snout Deep">
+      <Hand tone="secondary">sniff to know, rub to take, dig as deep as you dare. tie off before he wakes.</Hand>
       <Ledger>
         {helpRows(rules).map((row, i) => (
           <LedgerRow key={row.mark} first={i === 0} mark={<HelpMark mark={row.mark} />} title={row.title} sub={row.sub} value={row.value} clampSub={false} />
@@ -716,9 +726,12 @@ const styles = StyleSheet.create({
     columnGap: SPACE.sm,
     paddingVertical: SPACE.sm,
   },
+  // The colour goes on every side (`borderColor`): iOS never draws a dashed
+  // border coloured on one side only, so the old `borderTopColor` rule was
+  // invisible on device.
   rowRule: {
     borderTopWidth: BORDER.hair,
-    borderTopColor: UI_COLORS.uiMuted,
+    borderColor: UI_COLORS.uiMuted,
     borderStyle: "dashed",
   },
   disc: {

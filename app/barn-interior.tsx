@@ -29,12 +29,13 @@ import type { HabitatPresetBackend } from "@/hooks/useHabitatPresets";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, LoadingBeat } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
+import { IconButton } from "@/components/ui/IconButton";
 import { Sticker } from "@/components/ui/Sticker";
 import { Body, BodySm, CardTitle } from "@/components/ui/Text";
 import { PigRestTempoProvider } from "@/components/ui/PigRestingPose";
 import { PIG_BARN_REST_TEMPO } from "@/components/ui/pigRendererContract";
-import type { HabitatCatalogItem, HabitatPosition } from "@/utils/habitat";
-import { RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
+import type { HabitatCatalogItem, HabitatPlacedItem, HabitatPosition } from "@/utils/habitat";
+import { CHROME_TYPE_CAP, RADII, SPACE, UI_COLORS, WHIMSY } from "@/constants/theme";
 
 // The two controls that float over the room carry their mark at the size the
 // Barn's own chrome uses — a step above the 18pt Icon default so they read
@@ -43,6 +44,42 @@ const CONTROL_ICON = 22;
 // Room for the Decorate dock: the item tooltip and the notice dock both stop
 // this far above the safe area so they never sit under the gold button.
 const DOCK_CLEARANCE = 64;
+// Room for the top controls (a 44pt button under a 4pt lead, and a breath of
+// air): a furnishing card that rides the top of the room starts this far under
+// the safe area so it never sits on Home or Furnishings.
+const TOP_CONTROLS_CLEARANCE = 56;
+// The spots that stand on the floor — Rosie's level. A card about one of them
+// rides the top of the room; a card about the rafters, the wall or the shelf
+// rides the floor. Either way the card never covers the thing it describes,
+// and it never sits on her face (polish 2026-10-04, 009).
+const FLOOR_SPOTS: ReadonlySet<HabitatPosition> = new Set([
+  "floor_left",
+  "floor_right",
+  "floor_centerpiece",
+]);
+
+// A failed Barn read or write, said in the game's words. The reason is a code
+// (`invalid_response`, `pending_command`): it chooses the sentence, and never
+// becomes the sentence. (polish 2026-10-04, B-15)
+export function habitatTroubleCopy(reason: string | null | undefined): string {
+  switch (reason) {
+    case "storage":
+      return "Couldn't save that on this phone.";
+    case "pending_command":
+      return "A change is still being confirmed.";
+    case "not_authenticated":
+    case "account_changed":
+      return "This Barn belongs to another sign-in.";
+    case "network":
+    case "no_data":
+    case "invalid_response":
+    case "unknown":
+    case "not_found":
+      return "Couldn't reach your Barn just now.";
+    default:
+      return "Something in the Barn didn't take.";
+  }
+}
 
 // The doors the interior can be reached through. `structure` is the barn on the
 // Exterior's ground plane, `shop` the purchase hand-off, `visit` a friend's
@@ -110,7 +147,11 @@ export function BarnInterior({
   const ownerPig = pig ?? <HabitatOwnerPig />;
   const [editing, setEditing] = useState(false),
     [startInList, setStartInList] = useState(false),
-    [inspected, setInspected] = useState<string | null>(null),
+    [inspected, setInspected] = useState<{
+      name: string;
+      description: string;
+      position?: HabitatPosition;
+    } | null>(null),
     [message, setMessage] = useState<string | null>(null),
     [leaving, setLeaving] = useState(false),
     [initialPosition, setInitialPosition] = useState<HabitatPosition | undefined>(),
@@ -208,6 +249,9 @@ export function BarnInterior({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backend, Boolean(habitat.data)]);
   const beginEditing = (list: boolean) => {
+    // A furnishing card belongs to the room at rest; it never follows the
+    // player into Decorate, where it floated over the editor's own chrome.
+    setInspected(null);
     setInitialPosition(undefined);
     setStartInList(list);
     setEditing(true);
@@ -233,7 +277,11 @@ export function BarnInterior({
           kind="error"
           glyph="barn"
           title="The barn door is stuck."
-          sub={habitat.error ?? "Try again when you’re connected."}
+          sub={
+            habitat.error
+              ? `${habitatTroubleCopy(habitat.error)} Try again in a moment.`
+              : "Try again when you’re connected."
+          }
           action={
             <View style={styles.errorActions}>
               <Button
@@ -282,6 +330,10 @@ export function BarnInterior({
         <HabitatStarterWelcome
           visible={habitat.starterWelcomePending}
           onDismiss={habitat.dismissStarterWelcome}
+          onStart={() => {
+            habitat.dismissStarterWelcome();
+            beginEditing(false);
+          }}
         />
         {editing ? (
           <HabitatEditor
@@ -347,9 +399,18 @@ export function BarnInterior({
           <>
             <HabitatScene
               snapshot={habitat.data.snapshot}
-              onInspect={(item) =>
-                setInspected(`${item.name}\n${item.description}`)
-              }
+              onInspect={(item: HabitatPlacedItem, position?: HabitatPosition) => {
+                setInspected({
+                  name: item.name,
+                  description: item.description,
+                  position,
+                });
+                // The spot's hint promised "the story"; a card that appears in
+                // silence tells a screen reader nothing.
+                AccessibilityInfo.announceForAccessibility(
+                  `${item.name}. ${item.description}`,
+                );
+              }}
               cabinet={cabinet}
               hostPig={ownerPig}
             />
@@ -358,9 +419,12 @@ export function BarnInterior({
               testID="barn-owner-top-controls"
               style={[styles.topControls, { top: insets.top }]}
             >
+              {/* Chrome floating over the room: the three controls state the
+                  chrome type ceiling rather than growing over the art. */}
               <Button
                 variant="ghost"
                 size="sm"
+                maxFontSizeMultiplier={CHROME_TYPE_CAP}
                 accessibilityLabel="Home"
                 accessibilityHint="Closes the Barn doors and returns Home"
                 disabled={leaving}
@@ -379,6 +443,7 @@ export function BarnInterior({
               <Button
                 variant="ghost"
                 size="sm"
+                maxFontSizeMultiplier={CHROME_TYPE_CAP}
                 accessibilityLabel="Furnishings"
                 accessibilityHint="Opens your furnishing collection"
                 onPress={openCollection}
@@ -401,6 +466,7 @@ export function BarnInterior({
               <Button
                 variant="gold"
                 size="md"
+                maxFontSizeMultiplier={CHROME_TYPE_CAP}
                 accessibilityLabel="Decorate"
                 accessibilityHint="Opens the spatial Barn editor"
                 onPress={() => beginEditing(false)}
@@ -451,7 +517,7 @@ export function BarnInterior({
             >
               <BodySm accessibilityRole="alert" tone="warning">
                 {habitat.offline
-                  ? `Offline copy — changes will stay here until you reconnect.${habitat.data.snapshot.themeRecovered ? " Your saved room theme was unavailable, so Warm Plank Barn is shown." : ""}`
+                  ? `Offline copy. Changes will stay here until you reconnect.${habitat.data.snapshot.themeRecovered ? " Your saved room theme was unavailable, so Warm Plank Barn is shown." : ""}`
                   : "Your saved room theme was unavailable, so Warm Plank Barn is shown. Choose a room theme and save to update your Barn."}
               </BodySm>
             </Sticker>
@@ -480,7 +546,7 @@ export function BarnInterior({
               style={styles.strip}
             >
               <Body tone="secondary">
-                {message ?? `Barn error: ${habitat.error?.replaceAll("_", " ")}`}
+                {message ?? `${habitatTroubleCopy(habitat.error)} Tap to try again.`}
               </Body>
             </Sticker>
           ) : null}
@@ -512,28 +578,39 @@ export function BarnInterior({
           }}
           backend={presetBackend}
         />
-        {inspected ? (
+        {/* The furnishing card: its name as a title, its story under it, a
+            close in the title row. It rides the half of the room the
+            furnishing is not in (FLOOR_SPOTS), so it never hides what it
+            describes and never sits on Rosie's face. */}
+        {inspected && !editing ? (
           <Sticker
             color="paper"
             rotate={0}
             radius={RADII.lg}
             pad
             testID="habitat-item-details"
-            style={[styles.tooltip, { bottom: insets.bottom }]}
+            style={[
+              styles.tooltip,
+              inspected.position && FLOOR_SPOTS.has(inspected.position)
+                ? { top: insets.top, marginTop: TOP_CONTROLS_CLEARANCE }
+                : { bottom: insets.bottom, marginBottom: DOCK_CLEARANCE },
+            ]}
           >
+            <View style={styles.tooltipHead}>
+              <CardTitle accessibilityRole="header" style={styles.tooltipTitle}>
+                {inspected.name}
+              </CardTitle>
+              <IconButton
+                name="x"
+                label="Close item details"
+                accessibilityHint="Dismisses these furnishing details"
+                onPress={() => setInspected(null)}
+                visualSize={SPACE.xxl}
+              />
+            </View>
             <ScrollView style={styles.tooltipScroll}>
-              <Body tone="secondary">{inspected}</Body>
+              <Body tone="secondary">{inspected.description}</Body>
             </ScrollView>
-            <Button
-              variant="link"
-              size="sm"
-              accessibilityLabel="Close item details"
-              accessibilityHint="Dismisses these furnishing details"
-              onPress={() => setInspected(null)}
-              style={styles.tooltipClose}
-            >
-              Close
-            </Button>
           </Sticker>
         ) : null}
         {habitat.conflict ? (
@@ -638,10 +715,17 @@ const styles = StyleSheet.create({
     left: SPACE.xl,
     right: SPACE.xl,
     maxHeight: "35%",
-    marginBottom: DOCK_CLEARANCE,
+    zIndex: 95,
   },
+  // The title row: the name takes the room, the close keeps its 44pt frame.
+  tooltipHead: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SPACE.sm,
+  },
+  // Optically centres the one-line title against the 44pt close target.
+  tooltipTitle: { flex: 1, minWidth: 0, paddingTop: SPACE.sm },
   tooltipScroll: { flexShrink: 1 },
-  tooltipClose: { alignSelf: "flex-end" },
   conflict: {
     position: "absolute",
     left: SPACE.md,

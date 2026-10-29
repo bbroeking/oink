@@ -16,7 +16,7 @@
 //      tossable and giveable on, and wears a small "from a friend" mark.
 import { StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { SATCHEL_FINDS, isSatchelUnbounded, satchelFind, type SatchelFindId } from "@/constants/satchel";
+import { SATCHEL_FINDS, satchelFind, type SatchelFindId } from "@/constants/satchel";
 import { ART_SIZE, BORDER, RADII, SPACE, TAP_MIN } from "@/constants/theme";
 import { cameFromAFriend, satchelStanding, satchelTuning, wishHoursLeft, type SatchelState } from "@/utils/satchel";
 import { Button, EmptyState, Glyph, SectionHeader, Sheet, Sticker, T, Tag } from "../ui";
@@ -27,6 +27,9 @@ import { FindTile } from "./FindTile";
 const CATALOG_TILE_MIN_W = 96;
 // A keepsake's jar — the badge size the reveal marks share.
 const KEEPSAKE_ART = ART_SIZE.badge;
+// The bag's hold-to-toss, as a named action a screen reader can perform.
+const TOSS_ACTION = "toss";
+const TOSS_ACTIONS = [{ name: TOSS_ACTION, label: "Toss" }] as const;
 
 export function SatchelSheet({
 	open,
@@ -51,8 +54,8 @@ export function SatchelSheet({
 	const nextKeepsake = thresholds.find((t) => t > state.swapsGiven) ?? null;
 	// F10: a cap lowered under a live bag used to read "8 of 6 finds". The
 	// number the player can act on is "it's full" — and an unbounded bag
-	// (2026-09-18) never says either; it just counts.
-	const full = !isSatchelUnbounded(state.cap) && state.items.length >= state.cap;
+	// (2026-09-18) never says either; it just counts. `satchelStanding` in the
+	// title says which.
 
 	return (
 		<Sheet
@@ -63,7 +66,8 @@ export function SatchelSheet({
 			testID="satchel-sheet"
 		>
 			{/* ── 1. the wish ── */}
-			<SectionHeader kicker="your pig" title="Hoping for" />
+			{/* In-sheet sections speak a step under the sheet's own title. */}
+			<SectionHeader size="sm" kicker="your pig" title="Hoping for" />
 			{wishFind ? (
 				<Sticker color="paper" radius={RADII.xl} pad rotate={0} style={styles.wishCard} testID="satchel-my-wish">
 					<FindArt id={wishFind.id} size={ART_SIZE.glyph} />
@@ -71,7 +75,7 @@ export function SatchelSheet({
 						<T role="cardTitle">{wishFind.withArticle}</T>
 						<T role="hand" tone="secondary">
 							{hoursLeft > 0
-								? `a friend can bring it — ${hoursLeft}h before she changes her mind`
+								? `a friend can bring it · ${hoursLeft}h before she changes her mind`
 								: "a friend can bring it"}
 						</T>
 					</View>
@@ -93,7 +97,7 @@ export function SatchelSheet({
 			)}
 
 			{/* ── 2. the bag ── */}
-			<SectionHeader kicker="carried" title="In the bag" style={styles.section} />
+			<SectionHeader size="sm" kicker="carried" title="In the bag" style={styles.section} />
 			{state.items.length === 0 ? (
 				<EmptyState
 					glyph="digBag"
@@ -108,20 +112,26 @@ export function SatchelSheet({
 							// A find that arrived from a friend says so: provenance is the
 							// point of a swap, and it is what makes the bag a story.
 							const fromFriend = cameFromAFriend(it.source);
+							const toss = () => {
+								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+								onToss(it.id);
+							};
 							return (
 								<View key={it.id} style={styles.bagCell}>
+									{/* Hold to toss — and, since a screen reader can't hold, the
+									    same toss as a named VoiceOver action ("Toss"). */}
 									<FindTile
 										id={it.find_id}
-										onLongPress={() => {
-											Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-											onToss(it.id);
-										}}
-										onPress={() => {}}
+										onLongPress={toss}
 										accessibilityRole="button"
 										accessibilityLabel={
 											fromFriend ? `${f?.name ?? "a find"}, from a friend` : (f?.name ?? "a find")
 										}
 										accessibilityHint="Hold to toss it out of the bag"
+										accessibilityActions={TOSS_ACTIONS}
+										onAccessibilityAction={(event) => {
+											if (event.nativeEvent.actionName === TOSS_ACTION) toss();
+										}}
 										testID="satchel-bag-item"
 									/>
 									{fromFriend ? (
@@ -146,10 +156,12 @@ export function SatchelSheet({
 			)}
 
 			{/* ── 3. the catalog ── */}
-			<SectionHeader kicker="field guide" title="Every find" style={styles.section} />
+			<SectionHeader size="sm" kicker="field guide" title="Every find" style={styles.section} />
 			<View style={styles.catalog} accessibilityRole="list">
 				{SATCHEL_FINDS.map((f) => {
 					const known = met.has(f.id);
+					// One element a screen reader hears ("an unknown common find"),
+					// not "COMMON", "?" — a labelled Sticker is an element.
 					return (
 						<Sticker
 							key={f.id}
@@ -176,7 +188,7 @@ export function SatchelSheet({
 			</View>
 
 			{/* ── 4. swapped ── */}
-			<SectionHeader kicker="given and received" title="Swapped" style={styles.section} />
+			<SectionHeader size="sm" kicker="given and received" title="Swapped" style={styles.section} />
 			<View style={styles.shelfRow}>
 				<Tag
 					tone="sun"
@@ -212,7 +224,7 @@ export function SatchelSheet({
 				</View>
 			) : (
 				<T role="hand" tone="secondary">
-					hand a friend&apos;s pig what it&apos;s hoping for and take one of theirs back — both
+					hand a friend&apos;s pig what it&apos;s hoping for and take one of theirs back. both
 					land in the bag above.
 				</T>
 			)}

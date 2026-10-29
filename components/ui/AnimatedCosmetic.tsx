@@ -279,7 +279,7 @@ export function AnimatedCosmetic({
 						style={[
 							styles.fill,
 							{
-								tintColor: "#FFFFFF",
+								tintColor: WHIMSY.paper,
 								opacity: shimmerV.interpolate({
 									inputRange: [0, 1],
 									outputRange: [0, fx.shimmer.strength ?? 0.42],

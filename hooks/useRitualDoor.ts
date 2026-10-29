@@ -25,6 +25,13 @@ export interface RitualDoorCopy {
 	word: string;
 	/** The action cell's short label — a verb, one word. */
 	action: string;
+	/**
+	 * What today's allowance is counted in, everywhere it is drawn: the Friends
+	 * list's one line, the ritual's explain sheet and the profile sheet's panel.
+	 * The founder's words (2026-09-14) — "glimmer" is the day's blessing,
+	 * "truffle" the day's curse. Spoken labels keep "blessing" / "curse".
+	 */
+	unit: string;
 }
 
 export const RITUAL_DOOR: Record<RitualMode, RitualDoorCopy> = {
@@ -35,6 +42,7 @@ export const RITUAL_DOOR: Record<RitualMode, RitualDoorCopy> = {
 		done: "Blessed",
 		word: "blessing",
 		action: "Bless",
+		unit: "glimmer",
 	},
 	curse: {
 		// The curse pair's pale surface — the same paper an Inbox curse row sits
@@ -45,8 +53,48 @@ export const RITUAL_DOOR: Record<RitualMode, RitualDoorCopy> = {
 		done: "Cursed",
 		word: "curse",
 		action: "Curse",
+		unit: "truffle",
 	},
 };
+
+// Zero to ten in words; past ten the numeral is the shorter read. The counts
+// are single digits in practice (today's cap is 3); the numeral tail is there
+// so a raised cap can never render "Thirteen".
+const COUNT_WORDS = [
+	"No",
+	"One",
+	"Two",
+	"Three",
+	"Four",
+	"Five",
+	"Six",
+	"Seven",
+	"Eight",
+	"Nine",
+	"Ten",
+] as const;
+
+/** A count in words to ten ("No" at zero), the numeral past it. */
+export function countWord(n: number): string {
+	return COUNT_WORDS[n] ?? String(n);
+}
+
+/**
+ * Today's allowance for one mode, in the one vocabulary the 2026-09-14 ruling
+ * set for the Friends list: "Three glimmer left", "no truffle left". Counts in
+ * words to ten and "No"/"no" at zero, never "0 of 3". The list's line, the
+ * explain sheet and the profile sheet's panel all read it from here, so the
+ * same allowance is never said two ways. `lowercase` is for the second half of
+ * a line ("Three glimmer left · three truffle left").
+ */
+export function allowanceLine(
+	mode: RitualMode,
+	remaining: number,
+	{ lowercase = false }: { lowercase?: boolean } = {}
+): string {
+	const word = countWord(remaining);
+	return `${lowercase ? word.toLowerCase() : word} ${RITUAL_DOOR[mode].unit} left`;
+}
 
 // How long an armed curse stays armed. Three beats: long enough to move a thumb
 // across the panel, short enough that a forgotten arm doesn't fire tomorrow.
@@ -151,9 +199,9 @@ export function useRitualDoor({
 	const hint = disabled
 		? undefined
 		: isBless
-			? "Casts today's blessing right away — it can't be taken back"
+			? "Casts today's blessing right away. It can't be taken back"
 			: armed
-				? "Casts today's curse right away — it can't be taken back"
+				? "Casts today's curse right away. It can't be taken back"
 				: `Arms today's curse. Tap again to cast it on ${name}.`;
 
 	// The action cell's state line — the same register as the Visit cell's

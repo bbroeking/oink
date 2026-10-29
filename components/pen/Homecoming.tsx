@@ -58,8 +58,8 @@ function HomecomingFor({ row, friendFor, bagCount, claim, target, onDone }: Prop
 			const p = pigPronouns(row.pig_id);
 			setGrantedLine(
 				r.reason === "host_bag_full"
-					? `their Satchel is full — ${p.subject} kept it in yours`
-					: `someone beat ${p.object} to it — kept in your Satchel`,
+					? `their Satchel is full · ${p.subject} kept it in yours`
+					: `someone beat ${p.object} to it · kept in your Satchel`,
 			);
 			return { ok: true };
 		}

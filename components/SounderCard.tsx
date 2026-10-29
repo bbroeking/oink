@@ -30,6 +30,7 @@ import { Sticker } from "./ui/Sticker";
 import { Button } from "./ui/Button";
 import { Chip } from "./ui/Chip";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { showToast } from "./ui/Toast";
 import { LoadingBeat } from "./ui/EmptyState";
 import { Hand, SectionTitle, T } from "./ui/Text";
 import {
@@ -42,8 +43,10 @@ import {
 	FlagIcon,
 	HandLink,
 	RowStatus,
+	ScrollEdge,
 	SunPill,
 	theCrew,
+	useScrollEdge,
 } from "./ui";
 import { JoinableSounders } from "./JoinableSounders";
 import { FriendInvitePicker } from "./FriendInvitePicker";
@@ -57,7 +60,7 @@ import { useTruffles } from "@/hooks/useTruffles";
 import { HAT_IMAGES } from "@/constants/hats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import { useRosterProfiles } from "@/hooks/useRosterHats";
-import { ProfileIdentity } from "./ui/ProfileIdentity";
+import { ProfileIdentity, profileIdentityText } from "./ui/ProfileIdentity";
 import { milestoneProgress } from "@/utils/dig";
 import { CREW_CAP } from "@/constants/crews";
 import {
@@ -110,7 +113,10 @@ export function SounderCard({
 		crewHook;
 	const joinable = useJoinableCrews(!crew.crew);
 	const [busy, setBusy] = useState(false);
-	const [note, setNote] = useState<string | null>(null);
+	// Refusals are toasts (spec §3.4). The card used to print them as a line at
+	// the very END of its scroll, under the leave link, where a failed "take it
+	// back" or kick at the top of the roster was never seen. (2026-10-04)
+	const refuse = (title: string) => showToast({ tone: "fail", title });
 	const [pickerOpen, setPickerOpen] = useState(false);
 	// Leader-only recruiting picker (all-time truffle diggers + search; can poach).
 	const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
@@ -125,6 +131,9 @@ export function SounderCard({
 	// The founding form is demoted behind "or found your own ›" whenever
 	// there's anything to join; this expands it in place.
 	const [foundOpen, setFoundOpen] = useState(false);
+	// The hub crown's scroll edge, owned by the card that scrolls under it so
+	// it starts at rest every time the Sounder segment opens. (2026-10-04)
+	const edge = useScrollEdge();
 	// Tapping a member row opens UserSheet — the one door for bless (and,
 	// for friends, ask/curse/visit). Crewmates get the bless-only panel.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -174,65 +183,59 @@ export function SounderCard({
 		isInviteStale(inv, staleInviteIds, inviteCrewSizes);
 
 	async function onAccept(inv: InviteIn) {
-		setNote(null);
 		const r = await accept(inv.id);
 		if (!r.ok) {
 			const outcome = acceptInviteResult(r.reason);
 			if (outcome.kind === "stale") {
 				setStaleInviteIds((s) => new Set(s).add(inv.id));
 			} else {
-				setNote(outcome.note);
+				refuse(outcome.note);
 			}
 		}
 	}
 
 	async function onCancel(inviteId: string) {
-		setNote(null);
 		const r = await cancel(inviteId);
 		if (!r.ok) {
-			setNote("Couldn't take that ask back — try again.");
+			refuse("Couldn't take that ask back. Try again.");
 			await crewHook.refresh();
 		}
 	}
 
 	// Incoming knock: let a crewless pig in (any member may). crew_full means the
-	// door filled first — a quiet note, then the roster re-reads.
+	// door filled first — a quiet toast, then the roster re-reads.
 	async function onAcceptRequest(requestId: string) {
-		setNote(null);
 		const r = await acceptRequest(requestId);
 		if (!r.ok) {
-			setNote(
+			refuse(
 				r.reason === "crew_full"
-					? "the banner filled up first — no seat to give."
-					: "Couldn't let them in — try again."
+					? "The banner filled up first. No seat to give."
+					: "Couldn't let them in. Try again."
 			);
 		}
 	}
 
 	async function onKick(userId: string) {
 		setKickTarget(null);
-		setNote(null);
 		const r = await kickCrewMember(userId);
 		if (!r.ok) {
-			setNote("Couldn't remove them — try again.");
+			refuse("Couldn't remove them. Try again.");
 		}
 		await crewHook.refresh();
 	}
 
 	async function onLeave() {
 		setConfirmLeave(false);
-		setNote(null);
 		await leave();
 	}
 
 	async function onCreate() {
 		if (busy) return;
 		setBusy(true);
-		setNote(null);
 		// No name — the server names the Sounder for you at birth.
 		const r = await create();
 		setBusy(false);
-		if (!r.ok) setNote(createError(r.reason));
+		if (!r.ok) refuse(createError(r.reason));
 	}
 
 	if (loading && !crew.crew && crew.invitesIn.length === 0) {
@@ -257,7 +260,7 @@ export function SounderCard({
 				Found the Sounder
 			</Button>
 			<Hand tone="secondary" align="center" style={styles.foundCopy}>
-				raise the first banner — we'll name your{"\n"}Sounder for you, and the herd fills in behind.
+				raise the first banner. we'll name your{"\n"}Sounder for you, and the herd fills in behind.
 			</Hand>
 		</View>
 	);
@@ -267,102 +270,104 @@ export function SounderCard({
 		const hasJoinable = joinable.crews.length > 0;
 		const anyStale = crew.invitesIn.some(isStale);
 		return (
-			<ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-				<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.muster}>
-					{/* Invites — the warmest path, leads. Actionable ONLY while
-					    crewless (one Sounder at a time; server enforces). */}
-					{hasInvites && (
-						<View>
-							<CrewSectionKicker>a friend wants you</CrewSectionKicker>
-							{crew.invitesIn.map((inv, idx) => {
-								const stale = isStale(inv);
-								return (
-									<CrewRow
-										key={inv.id}
-										divider={idx > 0}
-										left={<CrewPortrait />}
-										title={
-											<>
-												<Accent>{inv.inviter_name ?? "A friend"}</Accent>
-												{stale ? " wanted you in " : " wants you in "}
-												<Accent>{inv.crew_name}</Accent>
-											</>
-										}
-										sub={
-											stale
-												? "filled up before you tapped"
-												: seatsLine(inviteCrewSizes.get(inv.crew_id))
-										}
-										right={
-											stale ? (
-												<RowStatus>full now</RowStatus>
-											) : (
+			<View style={styles.panel}>
+				<ScrollView
+					style={styles.scroll}
+					contentContainerStyle={styles.content}
+					onScroll={edge.onScroll}
+					scrollEventThrottle={edge.scrollEventThrottle}
+				>
+					<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.muster}>
+						{/* Invites — the warmest path, leads. Actionable ONLY while
+						    crewless (one Sounder at a time; server enforces). */}
+						{hasInvites && (
+							<View>
+								<CrewSectionKicker>a friend wants you</CrewSectionKicker>
+								{crew.invitesIn.map((inv, idx) => {
+									const stale = isStale(inv);
+									return (
+										<CrewRow
+											key={inv.id}
+											divider={idx > 0}
+											left={<CrewPortrait />}
+											title={
 												<>
-													<SunPill
-														onPress={() => onAccept(inv)}
-														accessibilityLabel={`Join ${inv.crew_name}`}
-														accessibilityHint="Takes the open seat — you can only ride with one Sounder"
-													>
-														Join
-													</SunPill>
-													<HandLink
-														onPress={() => decline(inv.id)}
-														accessibilityLabel={`Decline the invite to ${inv.crew_name}`}
-														accessibilityHint="Turns the ask down; they can ask again later"
-													>
-														not today
-													</HandLink>
+													<Accent>{inv.inviter_name ?? "A friend"}</Accent>
+													{stale ? " wanted you in " : " wants you in "}
+													<Accent>{inv.crew_name}</Accent>
 												</>
-											)
-										}
-									/>
-								);
-							})}
-							{anyStale && (
-								<AccentNote style={styles.staleNote}>
-									the herd moves fast — that banner's full.
-								</AccentNote>
-							)}
-						</View>
-					)}
+											}
+											sub={
+												stale
+													? "filled up before you tapped"
+													: seatsLine(inviteCrewSizes.get(inv.crew_id))
+											}
+											right={
+												stale ? (
+													<RowStatus>full now</RowStatus>
+												) : (
+													<>
+														<SunPill
+															onPress={() => onAccept(inv)}
+															accessibilityLabel={`Join ${inv.crew_name}`}
+															accessibilityHint="Takes the open seat. You can only ride with one Sounder"
+														>
+															Join
+														</SunPill>
+														<HandLink
+															onPress={() => decline(inv.id)}
+															accessibilityLabel={`Decline the invite to ${inv.crew_name}`}
+															accessibilityHint="Turns the ask down; they can ask again later"
+														>
+															not today
+														</HandLink>
+													</>
+												)
+											}
+										/>
+									);
+								})}
+								{anyStale && (
+									<AccentNote style={styles.staleNote}>
+										the herd moves fast. that banner's full.
+									</AccentNote>
+								)}
+							</View>
+						)}
 
-					{/* Open Sounders — slip in without an invite. */}
-					{hasJoinable && (
-						<View style={hasInvites && styles.sectGap}>
-							<CrewSectionKicker>join a Sounder</CrewSectionKicker>
-							<JoinableSounders
-								crews={joinable.crews}
-								crewHook={crewHook}
-								onStale={joinable.refresh}
-							/>
-						</View>
-					)}
+						{/* Open Sounders — slip in without an invite. */}
+						{hasJoinable && (
+							<View style={hasInvites && styles.sectGap}>
+								<CrewSectionKicker>join a Sounder</CrewSectionKicker>
+								<JoinableSounders
+									crews={joinable.crews}
+									crewHook={crewHook}
+									onStale={joinable.refresh}
+								/>
+							</View>
+						)}
 
-					{/* Founding — leads only when there's nothing to join. */}
-					{hasInvites || hasJoinable ? (
-						foundOpen ? (
-							foundForm(false)
+						{/* Founding — leads only when there's nothing to join. */}
+						{hasInvites || hasJoinable ? (
+							foundOpen ? (
+								foundForm(false)
+							) : (
+								<HandLink
+									onPress={() => setFoundOpen(true)}
+									glyph="arrowRight"
+									style={styles.foundLink}
+									accessibilityHint="Opens the form that raises your own banner"
+								>
+									or found your own
+								</HandLink>
+							)
 						) : (
-							<HandLink
-								onPress={() => setFoundOpen(true)}
-								glyph="arrowRight"
-								style={styles.foundLink}
-								accessibilityHint="Opens the form that raises your own banner"
-							>
-								or found your own
-							</HandLink>
-						)
-					) : (
-						foundForm(true)
-					)}
-				</Sticker>
-
-				{note && (
-					<T role="bodySm" tone="accent" align="center" style={styles.note}>
-						{note}
-					</T>
-				)}
-			</ScrollView>
+							foundForm(true)
+						)}
+					</Sticker>
+				</ScrollView>
+				<ScrollEdge visible={edge.edgeVisible} overlay="top" />
+			</View>
 		);
 	}
 
@@ -371,353 +376,369 @@ export function SounderCard({
 	const myCrew = crew.crew;
 
 	return (
-		<ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-			{/* Crew mini card — name, count, a pip per CREW_CAP slot (every
-			    open slot is a "+" into the friends picker), roster, CTA. */}
-			<Sticker color="paper" rotate={0} radius={RADII.xl} style={styles.crewMini}>
-				<View style={styles.crewTop}>
-					<SectionTitle numberOfLines={1} style={styles.crewName} accessibilityRole="header">
-						{myCrew.name}
-					</SectionTitle>
-					<T role="body" tone="secondary" style={styles.crewCount}>
-						{memberCount}/{CREW_CAP}
-					</T>
-				</View>
-				<View style={styles.pips}>
-					{Array.from({ length: CREW_CAP }).map((_, i) =>
-						i < memberCount ? (
-							<View key={i} style={styles.pip} />
-						) : i < memberCount + pendingOut ? (
-							// A reserved seat — an outgoing ask is out. Dashed sun ring,
-							// no "+": it's spoken for until answered or taken back.
-							<View key={i} style={styles.pipPending} />
-						) : (
-							<Pressable
-								key={i}
-								testID={`sounder-slot-plus-${i}`}
-								onPress={() => setPickerOpen(true)}
-								style={({ pressed }) => [styles.pipOpen, pressed && PRESSED_FLAT]}
-								hitSlop={PIP_HIT}
-								accessibilityRole="button"
-								accessibilityLabel="Open slot"
-								accessibilityHint="Opens the friends list to fill this seat"
-							>
-								<Icon name="plus" size={PIP_PLUS} color={UI_COLORS.uiMuted} strokeWidth={3} />
-							</Pressable>
-						)
-					)}
-				</View>
-				{/* One quiet hint line, per mock frame E: the crown hint OWNS the
-				    slot when the leader could pass it — the pips + CTA already
-				    carry the invite affordance. */}
-				{isLeader && memberCount > 1 ? (
-					<HandLink
-						accent
-						underline={false}
-						glyph="arrowRight"
-						onPress={() => setCrownOpen(true)}
-						style={styles.crownLink}
-						accessibilityLabel="You wear the crown — pass it before you leave"
-						accessibilityHint="Opens the pass-the-crown sheet"
-					>
-						you wear the crown · pass it before you leave
-					</HandLink>
-				) : openSlots > 0 ? (
-					<T role="kicker" tone="secondary" style={styles.slotHint}>
-						{openSlots} open {openSlots === 1 ? "slot" : "slots"} · tap an open slot
-						or the button below to fill them
-					</T>
-				) : null}
-
-				{/* Roster — a pig per row; tap a row → UserSheet. The leader's
-				    kick sits quietly on the right; pending invites join as
-				    ghost rows so one card tells the whole herd story. */}
-				<View style={styles.roster}>
-					{crew.members.map((m, i) => (
-						<CrewRow
-							key={m.user_id}
-							divider={i > 0}
-							left={
-								<CrewPortrait
-									size={40}
-										hatId={rosterProfiles.get(m.user_id)?.hatId ?? null}
-										bowId={rosterProfiles.get(m.user_id)?.bowId ?? null}
-									prestigeLevel={
-										__DEV__ && m.user_id === me
-											? 5
-											: rosterProfiles.get(m.user_id)?.wallowCount ?? 0
-									}
-								/>
-							}
-							title={m.username ?? "Pig"}
-							titleNode={
-								<ProfileIdentity
-									username={m.username}
-									title={rosterProfiles.get(m.user_id)?.title}
-									suffix={m.user_id === me ? "you" : null}
-								/>
-							}
-							sub={m.role === "leader" ? "wearing the crown now" : "rides with you"}
-							right={
-								m.role === "leader" ? (
-									<RowStatus accent>leader</RowStatus>
-								) : isLeader && m.user_id !== me ? (
-									<HandLink
-										onPress={() =>
-											setKickTarget({ id: m.user_id, name: m.username ?? "Pig" })
-										}
-										accessibilityLabel={`Remove ${m.username ?? "this pig"} from the Sounder`}
-										accessibilityHint="Asks you to confirm first"
-									>
-										kick
-									</HandLink>
-								) : undefined
-							}
-							onPress={() => setSelectedUserId(m.user_id)}
-							accessibilityHint="Opens their profile"
-						/>
-					))}
-					{crew.invitesOut.map((i) => (
-						<CrewRow
-							key={i.id}
-							divider
-							dim
-							left={<CrewPortrait size={40} ghost />}
-							title={i.invitee_name ?? "Someone"}
-							sub="waiting on your last ask…"
-							right={
-								<HandLink
-									onPress={() => onCancel(i.id)}
-									accessibilityLabel={`Take back the invite to ${i.invitee_name ?? "them"}`}
-									accessibilityHint="Cancels the ask and frees the seat it was holding"
+		<View style={styles.panel}>
+			<ScrollView
+				style={styles.scroll}
+				contentContainerStyle={styles.content}
+				onScroll={edge.onScroll}
+				scrollEventThrottle={edge.scrollEventThrottle}
+			>
+				{/* Crew mini card — name, count, a pip per CREW_CAP slot (every
+				    open slot is a "+" into the friends picker), roster, CTA. */}
+				<Sticker color="paper" rotate={0} radius={RADII.xl} style={styles.crewMini}>
+					<View style={styles.crewTop}>
+						<SectionTitle numberOfLines={1} style={styles.crewName} accessibilityRole="header">
+							{myCrew.name}
+						</SectionTitle>
+						<T role="body" tone="secondary" style={styles.crewCount}>
+							{memberCount}/{CREW_CAP}
+						</T>
+					</View>
+					<View style={styles.pips}>
+						{Array.from({ length: CREW_CAP }).map((_, i) =>
+							i < memberCount ? (
+								<View key={i} style={styles.pip} />
+							) : i < memberCount + pendingOut ? (
+								// A reserved seat — an outgoing ask is out. Dashed sun ring,
+								// no "+": it's spoken for until answered or taken back.
+								<View key={i} style={styles.pipPending} />
+							) : (
+								<Pressable
+									key={i}
+									testID={`sounder-slot-plus-${i}`}
+									onPress={() => setPickerOpen(true)}
+									style={({ pressed }) => [styles.pipOpen, pressed && PRESSED_FLAT]}
+									hitSlop={PIP_HIT}
+									accessibilityRole="button"
+									accessibilityLabel="Open slot"
+									accessibilityHint="Opens the friends list to fill this seat"
 								>
-									take it back
+									<Icon name="plus" size={PIP_PLUS} color={UI_COLORS.uiMuted} strokeWidth={3} />
+								</Pressable>
+							)
+						)}
+					</View>
+					{/* One quiet hint line, per mock frame E: the crown hint OWNS the
+					    slot when the leader could pass it — the pips + CTA already
+					    carry the invite affordance. */}
+					{isLeader && memberCount > 1 ? (
+						<HandLink
+							accent
+							underline={false}
+							glyph="arrowRight"
+							onPress={() => setCrownOpen(true)}
+							style={styles.crownLink}
+							accessibilityLabel="You wear the crown. Pass it before you leave"
+							accessibilityHint="Opens the pass-the-crown sheet"
+						>
+							you wear the crown · pass it before you leave
+						</HandLink>
+					) : openSlots > 0 ? (
+						<T role="kicker" tone="secondary" style={styles.slotHint}>
+							{openSlots} open {openSlots === 1 ? "slot" : "slots"} · tap an open slot
+							or the button below to fill them
+						</T>
+					) : null}
+
+					{/* Roster — a pig per row; tap a row → UserSheet. The leader's
+					    kick sits quietly on the right; pending invites join as
+					    ghost rows so one card tells the whole herd story. */}
+					<View style={styles.roster}>
+						{crew.members.map((m, i) => (
+							<CrewRow
+								key={m.user_id}
+								divider={i > 0}
+								left={
+									<CrewPortrait
+										size={40}
+											hatId={rosterProfiles.get(m.user_id)?.hatId ?? null}
+											bowId={rosterProfiles.get(m.user_id)?.bowId ?? null}
+										prestigeLevel={
+											__DEV__ && m.user_id === me
+												? 5
+												: rosterProfiles.get(m.user_id)?.wallowCount ?? 0
+										}
+									/>
+								}
+								title={m.username ?? "Pig"}
+								titleNode={
+									<ProfileIdentity
+										username={m.username}
+										title={rosterProfiles.get(m.user_id)?.title}
+										// "(you)", the mark every ranking row wears.
+										suffix={m.user_id === me ? "(you)" : null}
+									/>
+								}
+								sub={m.role === "leader" ? "wearing the crown now" : "rides with you"}
+								// The words the row draws: the pig, its title and "(you)",
+								// then its line. (It read only "rides with you".)
+								accessibilityLabel={`${profileIdentityText({
+									username: m.username ?? "Pig",
+									title: rosterProfiles.get(m.user_id)?.title,
+									suffix: m.user_id === me ? "(you)" : null,
+								})}, ${m.role === "leader" ? "wearing the crown now" : "rides with you"}`}
+								right={
+									m.role === "leader" ? (
+										<RowStatus accent>leader</RowStatus>
+									) : isLeader && m.user_id !== me ? (
+										<HandLink
+											onPress={() =>
+												setKickTarget({ id: m.user_id, name: m.username ?? "Pig" })
+											}
+											accessibilityLabel={`Remove ${m.username ?? "this pig"} from the Sounder`}
+											accessibilityHint="Asks you to confirm first"
+										>
+											kick
+										</HandLink>
+									) : undefined
+								}
+								onPress={() => setSelectedUserId(m.user_id)}
+								accessibilityHint="Opens their profile"
+							/>
+						))}
+						{crew.invitesOut.map((i) => (
+							<CrewRow
+								key={i.id}
+								divider
+								dim
+								left={<CrewPortrait size={40} ghost />}
+								title={i.invitee_name ?? "Someone"}
+								sub="waiting on your last ask…"
+								right={
+									<HandLink
+										onPress={() => onCancel(i.id)}
+										accessibilityLabel={`Take back the invite to ${i.invitee_name ?? "them"}`}
+										accessibilityHint="Cancels the ask and frees the seat it was holding"
+									>
+										take it back
+									</HandLink>
+								}
+							/>
+						))}
+						{/* Incoming knocks — a crewless pig asking to dig with you. Any
+						    member may open the door; matches the ghost invite rows'
+						    visual language, but these ACT (let them in / not now). */}
+						{crew.joinRequestsIn.map((req) => (
+							<CrewRow
+								key={req.id}
+								divider
+								left={<CrewPortrait size={40} />}
+								title={
+									<>
+										<Accent>{req.username ?? "A pig"}</Accent>
+										{" wants to dig with you"}
+									</>
+								}
+								sub="knocking at your banner"
+								right={
+									<>
+										<SunPill
+											onPress={() => onAcceptRequest(req.id)}
+											accessibilityLabel={`Let ${req.username ?? "them"} into the Sounder`}
+											accessibilityHint="Gives them one of your open seats"
+										>
+											let them in
+										</SunPill>
+										<HandLink
+											onPress={() => declineRequest(req.id)}
+											accessibilityLabel={`Turn down ${req.username ?? "their"} knock`}
+											accessibilityHint="They can knock again later"
+										>
+											not now
+										</HandLink>
+									</>
+								}
+							/>
+						))}
+					</View>
+
+					{openSlots > 0 && (
+						<Button
+							variant="gold"
+							full
+							onPress={() => setPickerOpen(true)}
+							icon={<Icon name="plus" size={CTA_ICON} color={WHIMSY.goldInk} strokeWidth={2.6} />}
+							accessibilityHint="Opens your friends list so you can fill an open seat"
+							style={styles.cta}
+						>
+							Call a snout to your banner
+						</Button>
+					)}
+					{/* Leaders reach beyond friends: all-time truffle diggers + username search
+					    (can poach a rider from another Sounder — they choose to switch).
+					    The card has ONE gold: calling a friend is the Connect path, so it
+					    leads, and recruiting a stranger takes the app's soft "add a pig"
+					    voice (lilac — Add, Accept, Ask). Two identical gold slabs stacked
+					    said "these are the same thing". (2026-10-04) */}
+					{openSlots > 0 && isLeader && (
+						<Button
+							variant="lilac"
+							full
+							onPress={() => setPlayerPickerOpen(true)}
+							icon={<Icon name="search" size={CTA_ICON} color={UI_COLORS.textPrimary} strokeWidth={2.6} />}
+							accessibilityHint="Opens the recruiting list. Any digger, not just friends"
+							style={styles.cta}
+						>
+							Recruit any snout
+						</Button>
+					)}
+					<Button
+						variant="ghost"
+						size="sm"
+						full
+						onPress={() => setOinkOpen(true)}
+						icon={<Icon name="bell" size={CTA_ICON} color={WHIMSY.ink} strokeWidth={2.4} />}
+						accessibilityHint="Opens the preset notes you can send the herd. One of each per Feeding"
+						style={styles.cta}
+					>
+						Oink the Sounder
+					</Button>
+				</Sticker>
+
+				{/* Incoming invites — NON-actionable while you ride with a crew.
+				    One Sounder at a time: the server would refuse an accept, so
+				    there's no Join that lies — just the ask and "let it go". */}
+				{crew.invitesIn.length > 0 && (
+					<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.muster}>
+						<CrewSectionKicker>asks waiting on the wind</CrewSectionKicker>
+						{crew.invitesIn.map((inv, idx) => (
+							<CrewRow
+								key={inv.id}
+								divider={idx > 0}
+								left={<CrewPortrait />}
+								title={
+									<>
+										<Accent>{inv.inviter_name ?? "A friend"}</Accent>
+										{" wants you in "}
+										<Accent>{inv.crew_name}</Accent>
+									</>
+								}
+								sub={`you're riding with ${theCrew(myCrew.name)}`}
+								right={
+								<HandLink
+									onPress={() => decline(inv.id)}
+									accessibilityLabel={`Let the invite to ${inv.crew_name} go`}
+									accessibilityHint="Clears the ask; you stay with your Sounder"
+								>
+									let it go
 								</HandLink>
 							}
-						/>
-					))}
-					{/* Incoming knocks — a crewless pig asking to dig with you. Any
-					    member may open the door; matches the ghost invite rows'
-					    visual language, but these ACT (let them in / not now). */}
-					{crew.joinRequestsIn.map((req) => (
-						<CrewRow
-							key={req.id}
-							divider
-							left={<CrewPortrait size={40} />}
-							title={
-								<>
-									<Accent>{req.username ?? "A pig"}</Accent>
-									{" wants to dig with you"}
-								</>
-							}
-							sub="knocking at your banner"
-							right={
-								<>
-									<SunPill
-										onPress={() => onAcceptRequest(req.id)}
-										accessibilityLabel={`Let ${req.username ?? "them"} into the Sounder`}
-										accessibilityHint="Gives them one of your open seats"
-									>
-										let them in
-									</SunPill>
-									<HandLink
-										onPress={() => declineRequest(req.id)}
-										accessibilityLabel={`Turn down ${req.username ?? "their"} knock`}
-										accessibilityHint="They can knock again later"
-									>
-										not now
-									</HandLink>
-								</>
-							}
-						/>
-					))}
-				</View>
-
-				{openSlots > 0 && (
-					<Button
-						variant="gold"
-						full
-						onPress={() => setPickerOpen(true)}
-						icon={<Icon name="plus" size={CTA_ICON} color={WHIMSY.goldInk} strokeWidth={2.6} />}
-						accessibilityHint="Opens your friends list so you can fill an open seat"
-						style={styles.cta}
-					>
-						Call a snout to your banner
-					</Button>
+							/>
+						))}
+						<Hand tone="accent" align="center" style={styles.oneSounderCopy}>
+							one Sounder at a time.{"\n"}leave yours to answer an invite.
+						</Hand>
+					</Sticker>
 				)}
-				{/* Leaders reach beyond friends: all-time truffle diggers + username search
-				    (can poach a rider from another Sounder — they choose to switch). */}
-				{openSlots > 0 && isLeader && (
-					<Button
-						variant="gold"
-						full
-						onPress={() => setPlayerPickerOpen(true)}
-						icon={<Icon name="search" size={CTA_ICON} color={WHIMSY.goldInk} strokeWidth={2.6} />}
-						accessibilityHint="Opens the recruiting list — any digger, not just friends"
-						style={styles.cta}
-					>
-						Recruit any snout
-					</Button>
-				)}
-				<Button
-					variant="ghost"
-					size="sm"
-					full
-					onPress={() => setOinkOpen(true)}
-					icon={<Icon name="bell" size={CTA_ICON} color={WHIMSY.ink} strokeWidth={2.4} />}
-					accessibilityHint="Opens the preset notes you can send the herd — one of each per Feeding"
-					style={styles.cta}
-				>
-					Oink the Sounder
-				</Button>
-			</Sticker>
 
-			{/* Incoming invites — NON-actionable while you ride with a crew.
-			    One Sounder at a time: the server would refuse an accept, so
-			    there's no Join that lies — just the ask and "let it go". */}
-			{crew.invitesIn.length > 0 && (
-				<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.muster}>
-					<CrewSectionKicker>asks waiting on the wind</CrewSectionKicker>
-					{crew.invitesIn.map((inv, idx) => (
-						<CrewRow
-							key={inv.id}
-							divider={idx > 0}
-							left={<CrewPortrait />}
-							title={
-								<>
-									<Accent>{inv.inviter_name ?? "A friend"}</Accent>
-									{" wants you in "}
-									<Accent>{inv.crew_name}</Accent>
-								</>
-							}
-							sub={`you're riding with ${theCrew(myCrew.name)}`}
-							right={
-							<HandLink
-								onPress={() => decline(inv.id)}
-								accessibilityLabel={`Let the invite to ${inv.crew_name} go`}
-								accessibilityHint="Clears the ask; you stay with your Sounder"
-							>
-								let it go
-							</HandLink>
-						}
+				{/* The Golden Truffle economy — the rewards catalog + the Exchange.
+				    (The herd milestone summary leads the card.) */}
+				<Sticker color="paper" rotate={0.4} radius={RADII.xl} style={styles.crewMini}>
+					{/* Herd dig-milestone summary — the Sounder's lifetime finds toward
+					    the next re-themed title (quiet accomplishment, never a chore). */}
+					<MilestoneSummary lifetimeFinds={crew.lifetime_finds} />
+					<View style={styles.troveRow}>
+						<Chip
+							label="Rewards"
+							icon="trophy"
+							tone="paper"
+							onPress={() => setSpoilsOpen(true)}
+							accessibilityHint="Opens the Golden Truffle rewards catalog"
 						/>
-					))}
-					<Hand tone="accent" align="center" style={styles.oneSounderCopy}>
-						one Sounder at a time —{"\n"}leave yours to answer an invite.
-					</Hand>
+						<Chip
+							label={truffles.available ? `Exchange · ${truffles.balance}` : "Exchange"}
+							icon={HAT_IMAGES.golden_truffle ? undefined : "gift"}
+							art={HAT_IMAGES.golden_truffle ?? undefined}
+							tone="paper"
+							onPress={() => setExchangeOpen(true)}
+							accessibilityLabel={
+								truffles.available
+									? `Truffle Exchange · ${truffles.balance} golden truffles`
+									: "Truffle Exchange"
+							}
+							accessibilityHint="Opens the Truffle Exchange"
+						/>
+					</View>
 				</Sticker>
-			)}
 
-			{/* The Golden Truffle economy — the rewards catalog + the Exchange.
-			    (The herd milestone summary leads the card.) */}
-			<Sticker color="paper" rotate={0.4} radius={RADII.xl} style={styles.crewMini}>
-				{/* Herd dig-milestone summary — the Sounder's lifetime finds toward
-				    the next re-themed title (quiet accomplishment, never a chore). */}
-				<MilestoneSummary lifetimeFinds={crew.lifetime_finds} />
-				<View style={styles.troveRow}>
-					<Chip
-						label="Rewards"
-						icon="trophy"
-						tone="paper"
-						onPress={() => setSpoilsOpen(true)}
-						accessibilityHint="Opens the Golden Truffle rewards catalog"
-					/>
-					<Chip
-						label={truffles.available ? `Exchange · ${truffles.balance}` : "Exchange"}
-						icon={HAT_IMAGES.golden_truffle ? undefined : "gift"}
-						art={HAT_IMAGES.golden_truffle ?? undefined}
-						tone="paper"
-						onPress={() => setExchangeOpen(true)}
-						accessibilityLabel={
-							truffles.available
-								? `Truffle Exchange · ${truffles.balance} golden truffles`
-								: "Truffle Exchange"
-						}
-						accessibilityHint="Opens the Truffle Exchange"
-					/>
-				</View>
-			</Sticker>
+				{/* Leaving is easy but quiet — a hand-written line, not a button. It
+				    still confirms: the seat is gone the moment you tap, and a full
+				    banner won't take you back. Warm, never shaming. [B-03] */}
+				<HandLink
+					onPress={() => setConfirmLeave(true)}
+					style={styles.leaveWrap}
+					accessibilityLabel="Leave your Sounder"
+					accessibilityHint="Asks you to confirm first"
+				>
+					leave your Sounder · no hard feelings
+				</HandLink>
 
-			{/* Leaving is easy but quiet — a hand-written line, not a button. It
-			    still confirms: the seat is gone the moment you tap, and a full
-			    banner won't take you back. Warm, never shaming. [B-03] */}
-			<HandLink
-				onPress={() => setConfirmLeave(true)}
-				style={styles.leaveWrap}
-				accessibilityLabel="Leave your Sounder"
-				accessibilityHint="Asks you to confirm first"
-			>
-				leave your Sounder · no hard feelings
-			</HandLink>
+				<FriendInvitePicker
+					visible={pickerOpen}
+					onDismiss={() => setPickerOpen(false)}
+					crewHook={crewHook}
+				/>
 
-			<FriendInvitePicker
-				visible={pickerOpen}
-				onDismiss={() => setPickerOpen(false)}
-				crewHook={crewHook}
-			/>
+				<PlayerInvitePicker
+					visible={playerPickerOpen}
+					onDismiss={() => setPlayerPickerOpen(false)}
+					crewHook={crewHook}
+				/>
 
-			<PlayerInvitePicker
-				visible={playerPickerOpen}
-				onDismiss={() => setPlayerPickerOpen(false)}
-				crewHook={crewHook}
-			/>
+				<SounderOinkSheet
+					visible={oinkOpen}
+					onDismiss={() => setOinkOpen(false)}
+				/>
 
-			<SounderOinkSheet
-				visible={oinkOpen}
-				onDismiss={() => setOinkOpen(false)}
-			/>
+				<TransferLeadershipSheet
+					visible={crownOpen}
+					onDismiss={() => setCrownOpen(false)}
+					crewHook={crewHook}
+				/>
 
-			<TransferLeadershipSheet
-				visible={crownOpen}
-				onDismiss={() => setCrownOpen(false)}
-				crewHook={crewHook}
-			/>
+				<TruffleCatalogSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
+				<TruffleExchangeSheet
+					open={exchangeOpen}
+					onClose={() => setExchangeOpen(false)}
+					truffles={truffles}
+				/>
 
-			<TruffleCatalogSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
-			<TruffleExchangeSheet
-				open={exchangeOpen}
-				onClose={() => setExchangeOpen(false)}
-				truffles={truffles}
-			/>
+				<UserSheet
+					targetUserId={selectedUserId}
+					onDismiss={() => setSelectedUserId(null)}
+					onFriendshipChanged={crewHook.refresh}
+				/>
 
-			<UserSheet
-				targetUserId={selectedUserId}
-				onDismiss={() => setSelectedUserId(null)}
-				onFriendshipChanged={crewHook.refresh}
-			/>
+				<ConfirmDialog
+					open={confirmLeave}
+					tone="warm"
+					title="Leave your Sounder?"
+					body={`You give up your seat in ${theCrew(myCrew.name)}. If the banner fills up, there's no way back in.`}
+					confirmLabel="Leave"
+					confirmHint="Gives up your seat and forfeits this week's spoils claim"
+					cancelLabel="Stay"
+					cancelHint="Keeps your seat"
+					onConfirm={onLeave}
+					onCancel={() => setConfirmLeave(false)}
+				/>
 
-			<ConfirmDialog
-				open={confirmLeave}
-				tone="warm"
-				title="Leave your Sounder?"
-				body={`You give up your seat in ${theCrew(myCrew.name)}. If the banner fills up, there's no way back in.`}
-				confirmLabel="Leave"
-				confirmHint="Gives up your seat and forfeits this week's spoils claim"
-				cancelLabel="Stay"
-				cancelHint="Keeps your seat"
-				onConfirm={onLeave}
-				onCancel={() => setConfirmLeave(false)}
-			/>
-
-			<ConfirmDialog
-				open={kickTarget !== null}
-				tone="destructive"
-				title={kickTarget ? `Remove ${kickTarget.name}?` : "Remove them?"}
-				body={`${kickTarget?.name ?? "They"} loses their seat in ${theCrew(myCrew.name)} right away. You can invite them back if a slot opens.`}
-				confirmLabel="Remove"
-				confirmHint={`Takes ${kickTarget?.name ?? "their"} seat back at once`}
-				cancelLabel="Keep them"
-				cancelHint="Leaves the roster as it is"
-				onConfirm={() => kickTarget && onKick(kickTarget.id)}
-				onCancel={() => setKickTarget(null)}
-			/>
-
-			{note && (
-				<T role="bodySm" tone="accent" align="center" style={styles.note}>
-					{note}
-				</T>
-			)}
-		</ScrollView>
+				<ConfirmDialog
+					open={kickTarget !== null}
+					tone="destructive"
+					title={kickTarget ? `Remove ${kickTarget.name}?` : "Remove them?"}
+					body={`${kickTarget?.name ?? "They"} loses their seat in ${theCrew(myCrew.name)} right away. You can invite them back if a slot opens.`}
+					confirmLabel="Remove"
+					confirmHint={`Takes ${kickTarget?.name ?? "their"} seat back at once`}
+					cancelLabel="Keep them"
+					cancelHint="Leaves the roster as it is"
+					onConfirm={() => kickTarget && onKick(kickTarget.id)}
+					onCancel={() => setKickTarget(null)}
+				/>
+			</ScrollView>
+			{/* The crown's edge, laid over the card's top (after the scroller, so it
+			    paints above it): no room taken, shown once the card slides under. */}
+			<ScrollEdge visible={edge.edgeVisible} overlay="top" />
+		</View>
 	);
 }
 
@@ -734,10 +755,12 @@ function MilestoneSummary({ lifetimeFinds }: { lifetimeFinds: number }) {
 	} else {
 		line = `${m.lifetimeFinds}/${m.nextThreshold} to ${m.nextTitle}`;
 	}
+	// Two lines, not one: the next title is a name, and "…to Truffle Baron"
+	// clipped to "…to Truffle B…" on a 375pt phone.
 	return (
 		<View style={styles.milestoneRow}>
 			<Icon name="trophy" size={MILESTONE_ICON} color={WHIMSY.accent} />
-			<Hand tone="secondary" numberOfLines={1} style={styles.milestoneText}>
+			<Hand tone="secondary" align="center" numberOfLines={2} style={styles.milestoneText}>
 				{line}
 			</Hand>
 		</View>
@@ -745,6 +768,8 @@ function MilestoneSummary({ lifetimeFinds }: { lifetimeFinds: number }) {
 }
 
 const styles = StyleSheet.create({
+	// The panel: the card's scroller, and the crown's edge laid over its top.
+	panel: { flex: 1 },
 	scroll: { flex: 1 },
 	milestoneRow: {
 		flexDirection: "row",
@@ -822,5 +847,4 @@ const styles = StyleSheet.create({
 		marginTop: SPACE.md,
 	},
 	leaveWrap: { alignSelf: "center", marginTop: SPACE.xs, marginBottom: SPACE.sm },
-	note: { marginTop: SPACE.xs },
 });

@@ -59,11 +59,11 @@ function hoursLeft(iso: string): string {
 function donateError(reason: string | undefined, have?: number): string {
 	switch (reason) {
 		case "insufficient":
-			return `Not enough snouts — you have ${have ?? 0}.`;
+			return `Not enough snouts: you have ${have ?? 0}.`;
 		case "donate_cooldown":
-			return "You've chipped into this Trough recently — once per 12h per Trough.";
+			return "You've chipped into this Trough recently: once per 12h per Trough.";
 		case "donor_cap":
-			return "You've filled your quarter — leave room for the rest of the sounder.";
+			return "You've filled your quarter. Leave room for the rest of the sounder.";
 		case "already_funded":
 			return "Already funded!";
 		case "drive_closed":
@@ -152,7 +152,7 @@ export function TroughSection({
 				...n,
 				[d.id]: prize
 					? prize.kind === "habitat"
-						? `Past a quarter! ${prize.itemName ?? "A new design"} is yours — hang it in the Barn.`
+						? `Past a quarter! ${prize.itemName ?? "A new design"} is yours. Hang it in the Barn.`
 						: `Past a quarter! A purse of ${prize.amount} tickles.`
 					: r.funded
 						? "Funded! You landed it for them."
@@ -189,7 +189,7 @@ export function TroughSection({
 				...n,
 				[d.id]:
 					r.reason === "nudge_cooldown"
-						? "You asked recently — give it a few hours."
+						? "You asked recently. Give it a few hours."
 						: "Couldn't send the ask.",
 			}));
 		}
@@ -219,7 +219,7 @@ export function TroughSection({
 				>
 					<Glyph name="pigface" size={RECEIPT_MARK} />
 					<T role="bodySm" style={styles.claimText}>
-						You helped land the {c.item_name ?? c.item_id} — the herd came through!
+						You helped land the {c.item_name ?? c.item_id}. The herd came through!
 					</T>
 				</Sticker>
 			))}

@@ -60,7 +60,7 @@ export function JoinableSounders({
 		setNote(null);
 		const r = await crewHook.cancelRequest(requestId);
 		setBusyId(null);
-		if (!r.ok) setNote("Couldn't take that ask back — try again.");
+		if (!r.ok) setNote("Couldn't take that ask back. Try again.");
 	};
 
 	if (crews.length === 0) return null;
@@ -77,7 +77,7 @@ export function JoinableSounders({
 						title={c.name}
 						sub={
 							asked
-								? "asked — waiting for the herd to open up"
+								? "asked · waiting for the herd to open up"
 								: `${c.memberCount} of ${CREW_CAP} snouts${
 										c.leaderName ? ` · ${c.leaderName}'s banner` : ""
 								  }`
@@ -106,7 +106,7 @@ export function JoinableSounders({
 									accessibilityHint={
 										atAskCap
 											? ASK_LIMIT_HINT
-											: "Knocks on this Sounder — a member opens the door"
+											: "Knocks on this Sounder. A member opens the door"
 									}
 								>
 									{busyId === c.id ? "Asking…" : "ask to join"}

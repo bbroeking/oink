@@ -399,6 +399,50 @@ const noLegacyPalette = {
 };
 
 // ---------------------------------------------------------------------------
+// ttp/no-em-dash-copy
+// ---------------------------------------------------------------------------
+//
+// The em dash (U+2014) is retired from every string a player can read — JSX
+// text, string literals, template literals. It is the most recognisable tell
+// of machine-written copy, and the house voice already owns two better joins:
+// a full stop between two thoughts, and the interpunct (" · ") between two
+// fragments on a kicker. A null placeholder wears an en dash ("–").
+// Comments are not AST nodes, so a "—" in a comment is never reported.
+// (2026-09-22 slop-tells audit.)
+
+const EM_DASH = "—";
+
+const noEmDashCopy = {
+	meta: {
+		type: "suggestion",
+		docs: { description: "No em dash in copy — a full stop, a comma, or ' · ' instead." },
+		schema: [],
+		messages: {
+			emDash:
+				"Em dash in copy. Break the sentence with a full stop, join fragments with ' · ', or use an en dash (–) for a placeholder. See docs/design/taste-standard.md (2026-09-22).",
+		},
+	},
+	create(context) {
+		return {
+			Literal(node) {
+				if (typeof node.value !== "string") return;
+				if (!node.value.includes(EM_DASH)) return;
+				context.report({ node, messageId: "emDash" });
+			},
+			TemplateElement(node) {
+				const raw = node.value && (node.value.cooked ?? node.value.raw);
+				if (typeof raw !== "string" || !raw.includes(EM_DASH)) return;
+				context.report({ node, messageId: "emDash" });
+			},
+			JSXText(node) {
+				if (typeof node.value !== "string" || !node.value.includes(EM_DASH)) return;
+				context.report({ node, messageId: "emDash" });
+			},
+		};
+	},
+};
+
+// ---------------------------------------------------------------------------
 
 module.exports = {
 	rules: {
@@ -409,5 +453,6 @@ module.exports = {
 		"no-space-arithmetic": noSpaceArithmetic,
 		"animated-needs-motion-policy": animatedNeedsMotionPolicy,
 		"no-legacy-palette": noLegacyPalette,
+		"no-em-dash-copy": noEmDashCopy,
 	},
 };

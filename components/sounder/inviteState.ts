@@ -65,16 +65,17 @@ export function createError(reason?: string): string {
 
 // Accepting an incoming invite: crew_full flips the row stale (no note, the
 // seat line already updated); everything else surfaces a note. The one-Sounder
-// invariant reads through already_in_crew.
+// invariant reads through already_in_crew. The note is a toast title now
+// (2026-10-04), so it is written in sentences.
 export type AcceptOutcome = { kind: "stale" } | { kind: "note"; note: string };
 export function acceptInviteResult(reason?: string): AcceptOutcome {
 	if (reason === "crew_full") return { kind: "stale" };
 	if (reason === "already_in_crew")
 		return {
 			kind: "note",
-			note: "one Sounder at a time — leave yours to answer an invite.",
+			note: "One Sounder at a time. Leave yours to answer an invite.",
 		};
-	return { kind: "note", note: "Couldn't join — try again." };
+	return { kind: "note", note: "Couldn't join. Try again." };
 }
 
 // Knocking on an open Sounder (request_to_join) failure copy — an open Sounder
@@ -82,15 +83,15 @@ export function acceptInviteResult(reason?: string): AcceptOutcome {
 export function askError(reason?: string): string {
 	switch (reason) {
 		case "crew_full":
-			return "Just filled up — the herd moves fast.";
+			return "Just filled up. The herd moves fast.";
 		case "already_in_crew":
 			return "You're already in a Sounder.";
 		case "already_asked":
-			return "You've already knocked here — wait for an answer.";
+			return "You've already knocked here. Wait for an answer.";
 		case "too_many_asks":
 			return ASK_LIMIT_HINT;
 		default:
-			return "Couldn't send that ask — try another Sounder.";
+			return "Couldn't send that ask. Try another Sounder.";
 	}
 }
 
@@ -100,4 +101,4 @@ export const MAX_OPEN_ASKS = 3;
 // Shown once the caller has MAX_OPEN_ASKS knocks out — the remaining ask buttons
 // go quiet and this explains why, in the game's voice.
 export const ASK_LIMIT_HINT =
-	"three doors knocked — wait for an answer, or take one back.";
+	"three doors knocked. wait for an answer, or take one back.";

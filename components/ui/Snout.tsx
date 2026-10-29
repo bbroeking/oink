@@ -27,5 +27,5 @@ export function Snout({ size = 40 }: { size?: number }) {
 	);
 }
 
-// Art fill, not a UI token: the same pink the pig's own snout wears.
-const SNOUT = "#f8a8b3";
+// The same pink the pig's own snout wears.
+const SNOUT = WHIMSY.roseDeep;

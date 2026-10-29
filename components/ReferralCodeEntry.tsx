@@ -25,12 +25,16 @@ import React, { useEffect, useState } from "react";
 import {
 	View,
 	StyleSheet,
-	SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
 	Image,
 	Dimensions,
 } from "react-native";
+// The context's safe view: React Native 0.86 deprecates its own. It ADDS
+// the insets to author padding where React Native's replaced it, so the
+// `safe` style's PAGE_PAD (silently dropped on device before) now insets the
+// card the way the sign-in card is inset. (2026-10-04)
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import {
@@ -165,7 +169,7 @@ export function ReferralCodeEntry({ onDone }: Props) {
 						<SectionTitle align="center" style={styles.title}>
 							{status.inviterName
 								? `${status.inviterName} brought you in!`
-								: "You're in — welcome!"}
+								: "You're in. Welcome!"}
 						</SectionTitle>
 						<Hand tone="secondary" align="center" style={styles.heroBody}>
 							+50 snouts in your barn.
@@ -205,7 +209,7 @@ export function ReferralCodeEntry({ onDone }: Props) {
 							Pop their code in for a +50 snout welcome.
 						</SectionTitle>
 						<Hand tone="secondary" align="center" style={styles.heroBody}>
-							Skip if not — most pigs don't have one their first time.
+							Skip if not. Most pigs don't have one their first time.
 						</Hand>
 					</View>
 
@@ -265,7 +269,7 @@ export function ReferralCodeEntry({ onDone }: Props) {
 									variant="handLink"
 									onPress={finish}
 									accessibilityLabel="Skip the invite code"
-									accessibilityHint="Continues without a code — this step won't come back"
+									accessibilityHint="Continues without a code. This step won't come back"
 								>
 									Skip
 								</Button>

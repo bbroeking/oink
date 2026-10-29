@@ -157,6 +157,13 @@ export function HabitatGiftReveal({
     }
   };
   const newlyOwned = gifts.filter((gift) => gift.newlyOwned).length;
+  // The title names what the gifts are FOR. A batch of nothing-new used to read
+  // "A Wallow worth remembering" whatever its source — over a Firefly Lantern,
+  // which a Barn journey earns, not a Wallow (polish 2026-10-04, 002). Only a
+  // batch of Wallow gifts says Wallow; anything else is a milestone.
+  const allWallow =
+    gifts.length > 0 && gifts.every((gift) => gift.source === "habitat_prestige");
+  const one = gifts.length === 1;
   return (
     <AdaptiveModalScaffold
       visible={slot.visible}
@@ -164,12 +171,15 @@ export function HabitatGiftReveal({
         void close();
       }}
       showCloseButton
-      closeLabel="Keep gifts for later"
       contentContainerStyle={styles.sheet}
     >
       <View style={styles.content}>
         <SectionTitle accessibilityRole="header">
-          {newlyOwned ? "A little more home" : "A Wallow worth remembering"}
+          {newlyOwned
+            ? "A little more home"
+            : allWallow
+              ? "A Wallow worth remembering"
+              : "A milestone worth remembering"}
         </SectionTitle>
         {/* One short line per case — the sheet is 24pt in from each edge on a
             phone, so the copy has to land in two lines, not three. */}
@@ -178,7 +188,9 @@ export function HabitatGiftReveal({
             ? newlyOwned === 1
               ? "A new furnishing is yours to keep. Try it in your Barn now, or later."
               : `${newlyOwned} new furnishings are yours to keep. Try them in your Barn now, or later.`
-            : "You already own these. The milestone is recorded, and everything stays yours."}
+            : one
+              ? "You already own this one. The milestone is recorded, and it stays yours."
+              : "You already own these. The milestone is recorded, and everything stays yours."}
         </Body>
         {gifts.map((gift, index) => {
           const item = catalog.find((entry) => entry.id === gift.itemId);
@@ -198,11 +210,14 @@ export function HabitatGiftReveal({
                 accessible={false}
               />
               <CardTitle align="center">{item.name}</CardTitle>
-              <Body tone="secondary">
+              <Body tone="secondary" align="center">
                 {gift.newlyOwned
                   ? "New · yours to keep"
                   : "Already in your collection"}
               </Body>
+              {/* The gold button spans the card (`full` now reaches the
+                  gradient Button's Pressable, so a centred card no longer
+                  shrinks it to its label). */}
               <Button
                 variant="gold"
                 size="md"
@@ -223,7 +238,7 @@ export function HabitatGiftReveal({
             above Later — not orphaned beneath the last control. Hand voice: it
             is an aside, not a second body paragraph. */}
         <Hand tone="secondary" align="center">
-          a preview only changes your draft — save it when it feels right
+          a preview only changes your draft. save it when it feels right
         </Hand>
         {error ? (
           <Body accessibilityRole="alert" tone="danger" align="center">

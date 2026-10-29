@@ -22,10 +22,10 @@ html, body { min-height: 100%; }
 body { margin: 0; }
 
 body {
-	background:
-		radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--fill-rose) 55%, transparent), transparent 38%),
-		radial-gradient(circle at 88% 82%, color-mix(in srgb, var(--fill-lilac) 50%, transparent), transparent 40%),
-		var(--paper);
+	/* Flat paper. The two corner orbs that used to sit here are the most
+	   recognisable template tell there is; the confetti stars carry the
+	   warmth on their own. (2026-09-22) */
+	background: var(--paper);
 	color: var(--text-primary);
 	font: var(--type-body);
 	padding: var(--space-xxl) var(--space-xl) var(--space-xl);
@@ -167,11 +167,6 @@ body.invite .hero-title {
 	opacity: 0;
 	animation: rise .55s ease-out .72s forwards;
 }
-.hero-sub .arrow { color: var(--accent); animation: nudge 1.6s ease-in-out infinite; }
-@keyframes nudge {
-	0%, 100% { transform: translateX(0); }
-	50%      { transform: translateX(4px); }
-}
 
 /* ------------------------------------------------------------------ Rosie -- */
 
@@ -189,12 +184,12 @@ body.invite .hero-title {
 	aspect-ratio: 370 / 383;
 	cursor: pointer;
 }
-/* the soft rose halo behind her */
+/* the rose paper disc behind her — a flat cut-out, not a glow */
 .rosie-stage::before {
 	content: "";
 	position: absolute;
 	inset: 14% 8% 16% 8%;
-	background: radial-gradient(circle, color-mix(in srgb, var(--fill-rose) 85%, transparent), transparent 70%);
+	background: var(--fill-rose);
 	border-radius: var(--radius-pill);
 	z-index: 0;
 	animation: halo 3.4s ease-in-out infinite;
@@ -338,8 +333,6 @@ body.invite .code {
 	line-height: 1.1;
 }
 .cta { margin-bottom: var(--space-card); }
-.cta .ja { transition: transform var(--motion-fade); }
-.cta:hover .ja { transform: translateX(5px); }
 
 .steps {
 	--fill: var(--fill-sage);
@@ -381,10 +374,10 @@ body.invite .code {
 	gap: var(--space-lg);
 }
 .answer-grid > .sticker { padding: var(--space-lg); }
-.answer-grid > .sticker:nth-child(4n + 1) { --fill: var(--fill-sun); }
-.answer-grid > .sticker:nth-child(4n + 2) { --fill: var(--fill-rose); }
-.answer-grid > .sticker:nth-child(4n + 3) { --fill: var(--fill-sage); }
-.answer-grid > .sticker:nth-child(4n + 4) { --fill: var(--fill-lilac); }
+/* One fill for the four cards. Cycling sun / rose / sage / lilac read as a
+   rainbow, and the highlighter swipe on the headline is the page's one hero
+   colour. (2026-09-22) */
+.answer-grid > .sticker { --fill: var(--cream); }
 .answer-grid h3 {
 	font: var(--type-card-title);
 	letter-spacing: var(--tracking-card-title);

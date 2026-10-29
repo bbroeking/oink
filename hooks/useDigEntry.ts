@@ -5,8 +5,9 @@
 //   CREWED   — the dig opens IN PLACE. `useFeedingCta` owns the window clock,
 //              the already-dug state and the TrufflePatch modal, so a crewed
 //              player never navigates to a tab to reach their own dig.
-//   UNCREWED — digging is crew-gated, so the control is a door: the Season tab,
-//              where the practice dig and the join path live. With the
+//   UNCREWED — digging is crew-gated, so the control is a door: Friends ▸
+//              Sounder, where the join path lives (the Season tab lost its herd
+//              door with the race, 2026-09-21). With the
 //              `snout_deep` flag on, the server opens the same dig for an
 //              uncrewed player (things + XP, no Golden Truffles — spec §1.7),
 //              so the uncrewed lane opens IN PLACE too, through the same
@@ -25,9 +26,12 @@ import { useSounderPath } from "@/hooks/useSounderPath";
 import { useFeedingCta } from "@/components/mudwar/useFeedingCta";
 import type { SounderStep } from "@/hooks/useSounderPath";
 
-// Where an uncrewed player is sent to start digging: the Season tab carries the
-// practice dig and the join path. It reads no params, so there are none to pass.
-const SEASON_TAB = "/(tabs)/season";
+// Where an uncrewed player is sent to start digging: the Sounder segment of the
+// Friends hub, where the join path lives. Until 2026-09-21 this was the Season
+// tab, which kept a herd door; the race's retirement moved the Sounder to
+// Friends, so the door followed it. (Only the pre-Snout Deep lane reaches this:
+// with `snout_deep` on, an uncrewed pig digs in place.)
+const SOUNDER_DOOR = "/(tabs)/friends?seg=sounder";
 
 export type DigBlocked = null | "shut" | "dug" | "no_crew";
 
@@ -47,7 +51,7 @@ export interface DigEntry {
    * Why a dig can't happen right now, or null when it can. Drives the Barn
    * button's disabled face: "shut" = the patch is in its guarded phase,
    * "dug" = already dug this Feeding, "no_crew" = an uncrewed player before
-   * Snout Deep (the press is a door to the Season tab, not a dig).
+   * Snout Deep (the press is a door to Friends ▸ Sounder, not a dig).
    */
   blocked: DigBlocked;
   /** The one hand line that explains `blocked` on a disabled control. */
@@ -60,7 +64,7 @@ export interface DigEntry {
   note: string | null;
   /** The accessibility hint for a control labelled with the Patch's name. */
   hint: string;
-  /** Pull up the digging: the patch in place, or the door to the Season tab. */
+  /** Pull up the digging: the patch in place, or the door to Friends ▸ Sounder. */
   openDig: () => void;
   /** The dig modal. Render it ONCE beside whichever trigger you show. */
   modal: ReactNode;
@@ -69,7 +73,7 @@ export interface DigEntry {
 /** The hint a crewed control carries: the dig happens right here. */
 export const DIG_HINT_CREWED = "Opens the dig";
 /** The hint an uncrewed control carries: it is a door, and it says so. */
-export const DIG_HINT_UNCREWED = "Opens the Season tab to start digging";
+export const DIG_HINT_UNCREWED = "Opens your Sounder page, where you can join a herd and dig";
 
 export function useDigEntry(
   /** A real dig landed on the server — the Barn refetches its stats so the
@@ -119,7 +123,7 @@ export function useDigEntry(
       : blocked === "dug"
         ? "dug this Feeding · back next one"
         : blocked === "no_crew"
-          ? "truffles are for herds — find yours"
+          ? "truffles are for herds · find yours"
           : null;
 
   // An uncrewed Snout Deep dig pays things and XP, never Golden Truffles —
@@ -150,7 +154,7 @@ export function useDigEntry(
       return;
     }
     Haptics.selectionAsync().catch(() => {});
-    router.push(SEASON_TAB);
+    router.push(SOUNDER_DOOR);
   }, [inPlace, start]);
 
   return {

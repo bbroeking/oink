@@ -120,5 +120,5 @@ export function feedingWindowsLine(): string {
 	const openLabel = Number.isInteger(openHours)
 		? `${openHours}h`
 		: `${openHours.toFixed(1)}h`;
-	return `${perDay} feedings a day — each open only its first ${openLabel}.`;
+	return `${perDay} feedings a day, each open only its first ${openLabel}.`;
 }

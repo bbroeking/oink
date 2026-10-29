@@ -23,7 +23,11 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { PageHeader } from "../components/ui/PageHeader";
-import { StackPage } from "../components/ui/StackPage";
+import {
+	STACK_SCROLL_EDGES,
+	StackPage,
+	useStackScrollPad,
+} from "../components/ui/StackPage";
 import { SectionHeader } from "../components/ui/SectionHeader";
 import { Glyph } from "../components/ui/Glyph";
 import { LoadingBeat } from "../components/ui/EmptyState";
@@ -50,7 +54,6 @@ import {
 	SPACE,
 	WHIMSY,
 	PAGE_PAD,
-	TAB_SAFE,
 } from "@/constants/theme";
 
 // The two silhouette veils. Neither is an OPACITY step: the ladder's faintest
@@ -61,6 +64,10 @@ const RELIC_GHOST = 0.18;
 const GUIDE_GHOST = 0.12;
 
 export default function DigCollectionScreen() {
+	// A stack screen has no tab bar: the page pads top and sides, and the
+	// scroller ends on one loose step plus the home indicator (it used to end
+	// on TAB_SAFE under a bottom-padded page, ~108pt of dead paper). (2026-10-04)
+	const scrollPad = useStackScrollPad();
 	// undefined = loading; null = feature-dark; else the caller's catches by id.
 	const [mine, setMine] = useState<
 		Record<string, MyUnique> | null | undefined
@@ -92,7 +99,7 @@ export default function DigCollectionScreen() {
 
 	return (
 		<>
-			<StackPage>
+			<StackPage edges={STACK_SCROLL_EDGES}>
 				<PageHeader
 					kicker="the truffle patch"
 					title="The Collection"
@@ -104,7 +111,7 @@ export default function DigCollectionScreen() {
 					</View>
 				) : (
 					<ScrollView
-						contentContainerStyle={styles.scroll}
+						contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
 						showsVerticalScrollIndicator={false}
 					>
 						{/* ── Shelf 1: the Burrow Book (seasonal) ─────────────────── */}
@@ -129,7 +136,7 @@ export default function DigCollectionScreen() {
 							align="center"
 							style={styles.caption}
 						>
-							found {discoveredCount} of {UNIQUE_POOL.length} — the shelf
+							found {discoveredCount} of {UNIQUE_POOL.length} · the shelf
 							remembers
 						</T>
 
@@ -156,7 +163,7 @@ export default function DigCollectionScreen() {
 							align="center"
 							style={styles.caption}
 						>
-							a journal, not a manual — pages light when you meet the thing
+							a journal, not a manual · pages light when you meet the thing
 						</T>
 					</ScrollView>
 				)}
@@ -312,7 +319,7 @@ function FieldGuideRow({
 
 const styles = StyleSheet.create({
 	loadingWrap: { marginTop: SPACE.xl, alignItems: "center" },
-	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
+	scroll: { paddingHorizontal: PAGE_PAD },
 	grid: {
 		flexDirection: "row",
 		flexWrap: "wrap",

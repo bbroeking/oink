@@ -3,7 +3,11 @@ import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { StackPage } from "@/components/ui/StackPage";
+import {
+	STACK_SCROLL_EDGES,
+	StackPage,
+	useStackScrollPad,
+} from "@/components/ui/StackPage";
 import { PrestigeAvatar } from "@/components/ui/PrestigeAvatar";
 import { Glyph } from "@/components/ui/Glyph";
 import { Sticker } from "@/components/ui/Sticker";
@@ -18,7 +22,6 @@ import {
 	PAGE_PAD,
 	RADII,
 	SPACE,
-	TAB_SAFE,
 } from "@/constants/theme";
 
 // Three friendly doorsteps finish a scrapbook page. `utils/porchRound.ts`
@@ -72,6 +75,9 @@ function StopPanel({ stop, onPress }: { stop: PorchStop; onPress: () => void }) 
 }
 
 export default function PorchRoundScreen() {
+	// A stack screen has no tab bar: the page pads top and sides, and the
+	// scroller ends on one loose step plus the home indicator. (2026-10-04)
+	const scrollPad = useStackScrollPad();
 	const [stops, setStops] = useState<PorchStop[] | null>(null);
 	const [loading, setLoading] = useState(true);
 	// A read that never came back is "unknown", not "you have no visits" — the
@@ -95,13 +101,13 @@ export default function PorchRoundScreen() {
 
 	return (
 		<>
-			<StackPage>
+			<StackPage edges={STACK_SCROLL_EDGES}>
 				<PageHeader kicker="three friendly doorsteps" title="Porch Round" onBack={() => router.back()} />
 				{loading ? (
 					<View style={styles.loading}><LoadingBeat label="opening your scrapbook" /></View>
 				) : (
 					<ScrollView
-						contentContainerStyle={styles.scroll}
+						contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad }]}
 						showsVerticalScrollIndicator={false}
 						refreshControl={
 							<RefreshControl
@@ -120,7 +126,7 @@ export default function PorchRoundScreen() {
 						>
 							<Glyph name="barn" size={ART_SIZE.glyphSm} />
 							<Body style={styles.introText}>
-								Every successful Barn visit belongs here. {PORCH_PAGE_SIZE} different pigs finish a page—no timer, streak, or prize attached.
+								Every successful Barn visit belongs here. {PORCH_PAGE_SIZE} different pigs finish a page. No timer, streak, or prize attached.
 							</Body>
 						</Sticker>
 
@@ -203,7 +209,7 @@ export default function PorchRoundScreen() {
 
 const styles = StyleSheet.create({
 	loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
+	scroll: { paddingHorizontal: PAGE_PAD },
 	intro: {
 		flexDirection: "row",
 		gap: SPACE.sm,

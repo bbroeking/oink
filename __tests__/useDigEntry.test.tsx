@@ -136,10 +136,10 @@ describe("useDigEntry", () => {
     });
 
     it("passes a refusal through as a note rather than swallowing it", () => {
-      mockCta({ note: "You rooted this feeding — he gorges again soon." });
+      mockCta({ note: "You rooted this feeding. He gorges again soon." });
       const probe = mount("done");
       expect(probe.get().note).toBe(
-        "You rooted this feeding — he gorges again soon.",
+        "You rooted this feeding. He gorges again soon.",
       );
       probe.unmount();
     });
@@ -195,7 +195,7 @@ describe("useDigEntry", () => {
         expect(probe.get().visible).toBe(true);
         act(() => probe.get().openDig());
         expect(start).not.toHaveBeenCalled();
-        expect(push).toHaveBeenCalledWith("/(tabs)/season");
+        expect(push).toHaveBeenCalledWith("/(tabs)/friends?seg=sounder");
         probe.unmount();
       },
     );

@@ -23,7 +23,7 @@ const PASS_LINES: ((name: string) => string)[] = [
 	(name) => `Oink! ${name} just trotted past you.`,
 	(name) => `${name} snouted ahead. Don't look back.`,
 	(name) => `${name} just hoofed past you on the board.`,
-	(name) => `Squeal — ${name} edged ahead of you.`,
+	(name) => `Squeal. ${name} edged ahead of you.`,
 	(name) => `${name} muddied your lead.`,
 ];
 

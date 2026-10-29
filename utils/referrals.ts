@@ -114,11 +114,11 @@ export function referralErrorMessage(
 		case "self_referral":
 			return "You can't use your own code.";
 		case "already_redeemed":
-			return "Already used — codes are one-per-pig.";
+			return "Already used. Codes are one-per-pig.";
 		case "too_old":
-			return "Codes are for new players only — you're past the welcome window.";
+			return "Codes are for new players only. You're past the welcome window.";
 		case "too_active":
-			return "Codes are for new players only — you've already tickled a few times.";
+			return "Codes are for new players only. You've already tickled a few times.";
 		case "unauthenticated":
 			return "Sign in to apply a code.";
 		default:

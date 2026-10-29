@@ -280,7 +280,7 @@ const CARD_LIST: TrickCard[] = [
 			trigger: "on_wall_start",
 			effect: "bonus_bonk",
 			magnitude: 1,
-			flavorLine: "She studied the wall — bonk +1 this fight.",
+			flavorLine: "She studied the wall. Bonk +1 this fight.",
 		},
 	},
 	{
@@ -328,7 +328,7 @@ const CARD_LIST: TrickCard[] = [
 			trigger: "on_swing",
 			effect: "bonus_bonk",
 			magnitude: 1,
-			flavorLine: "A braveheart oink — every swing bonks +1.",
+			flavorLine: "A braveheart oink: every swing bonks +1.",
 		},
 	},
 	{
@@ -340,7 +340,7 @@ const CARD_LIST: TrickCard[] = [
 			trigger: "on_return",
 			effect: "extra_find",
 			magnitude: 1,
-			flavorLine: "A Second Snack — one extra find, and it shines.",
+			flavorLine: "A Second Snack: one extra find, and it shines.",
 		},
 	},
 ];
@@ -365,7 +365,7 @@ const ENEMY_LIST: EnemyDef[] = [
 		name: "Puddle Toad",
 		hp: 5,
 		openingHit: true,
-		behaviorLine: "He splashes first — bring a lid.",
+		behaviorLine: "He splashes first. Bring a lid.",
 		segment: 6,
 	},
 	{
@@ -789,7 +789,7 @@ export function settle(
 
 		// A Cushion gate she can't meet stops her at its edge (she never enters).
 		if (seg.cushionAsk && seg.cushionAsk > cushion) {
-			wallStory = `The Bramble wants Cushion ${seg.cushionAsk} and Rosie had ${cushion}. She waited at its edge — the Quilted Vest would carry her through.`;
+			wallStory = `The Bramble wants Cushion ${seg.cushionAsk} and Rosie had ${cushion}. She waited at its edge. The Quilted Vest would carry her through.`;
 			break;
 		}
 
@@ -1070,7 +1070,7 @@ export function playCard(s: ExpeditionState): {
 		wallHpBefore: s.wallHp,
 		wallHpAfter: s.wallHp,
 		defeated: false,
-		lines: [`${card.name} — ${card.ability.flavorLine}`],
+		lines: [`${card.name} · ${card.ability.flavorLine}`],
 	};
 	return { state, result };
 }
@@ -1122,12 +1122,12 @@ export function predictFight(s: ExpeditionState): { verdict: Verdict; why: strin
 	const obstacle = nextObstacle(s);
 
 	if (!obstacle) {
-		return { verdict: "wins", why: "The road is open — she'll ramble on." };
+		return { verdict: "wins", why: "The road is open. She'll ramble on." };
 	}
 	if (obstacle.kind === "cushion") {
 		return {
 			verdict: "stuck",
-			why: `She'll wait at the Bramble — a Quilted Vest (Cushion ${obstacle.ask}) would carry her through.`,
+			why: `She'll wait at the Bramble. A Quilted Vest (Cushion ${obstacle.ask}) would carry her through.`,
 		};
 	}
 
@@ -1147,7 +1147,7 @@ export function predictFight(s: ExpeditionState): { verdict: Verdict; why: strin
 	if (bursts <= 0 && perBurst > 0) {
 		return {
 			verdict: "stuck",
-			why: "Her tickle jar is empty — a few tickles will charge her Zoomies.",
+			why: "Her tickle jar is empty. A few tickles will charge her Zoomies.",
 		};
 	}
 
@@ -1155,12 +1155,12 @@ export function predictFight(s: ExpeditionState): { verdict: Verdict; why: strin
 		bursts <= 0 ? 0 : firstBurst + Math.max(0, bursts - 1) * laterBurst;
 
 	if (maxDamage >= hp) {
-		return { verdict: "wins", why: `She'll win this one — the ${enemy.name} won't last.` };
+		return { verdict: "wins", why: `She'll win this one. The ${enemy.name} won't last.` };
 	}
 	if (maxDamage >= hp * 0.8) {
 		return {
 			verdict: "close",
-			why: `This looks close at the ${enemy.name} — one more charge would seal it.`,
+			why: `This looks close at the ${enemy.name}. One more charge would seal it.`,
 		};
 	}
 	const hint =

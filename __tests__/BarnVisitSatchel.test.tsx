@@ -344,7 +344,7 @@ describe("a visit with the Satchel", () => {
     expect(byTestID("visit-find-lifted")).toHaveLength(0);
     expect(room().props.hostPig.props.bubble.props.wish.swapped_today).toBe(true);
     expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "You two swapped today — come back tomorrow" }),
+      expect.objectContaining({ title: "You two swapped today. Come back tomorrow" }),
     );
   });
 

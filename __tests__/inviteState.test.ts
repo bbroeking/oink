@@ -95,7 +95,7 @@ describe("acceptInviteResult", () => {
 
 	it("any other failure surfaces a generic retry note", () => {
 		const r = acceptInviteResult("boom");
-		expect(r).toEqual({ kind: "note", note: "Couldn't join — try again." });
+		expect(r).toEqual({ kind: "note", note: "Couldn't join. Try again." });
 	});
 });
 
@@ -109,7 +109,7 @@ describe("askError", () => {
 		expect(askError("too_many_asks")).toBe(ASK_LIMIT_HINT);
 	});
 	it("falls back for an unknown reason", () => {
-		expect(askError(undefined)).toBe("Couldn't send that ask — try another Sounder.");
+		expect(askError(undefined)).toBe("Couldn't send that ask. Try another Sounder.");
 	});
 	it("caps open asks at three", () => {
 		expect(MAX_OPEN_ASKS).toBe(3);

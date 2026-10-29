@@ -14,15 +14,25 @@
 //
 // AsyncStorage tracks last-seen version; the modal auto-fires when
 // the current (latest available) release is newer than that.
+//
+// `version` is an INTERNAL id (the seen-key above), never shown: the app's
+// one player-facing version is the marketing version in app.json, which the
+// Me footer prints. The modal shows an entry's date instead, so "What's new"
+// can never disagree with the footer again ("v1.15.0" vs "v1.3", polish
+// 2026-10-04).
+//
+// An item's mark: `glyph` (hand-drawn art from the Glyph registry) first,
+// then the legacy `emoji` key, which the modal maps to art and never renders.
 
+import type { GlyphName } from "@/components/ui";
 import { SEASON_0_UNLOCKS } from "@/utils/season";
 
 export interface ReleaseNote {
-	version: string;
-	date: string;          // ISO date — display-only
+	version: string;       // internal id + seen-key, never displayed
+	date: string;          // ISO date, shown as e.g. "Sep 22, 2026"
 	availableFrom: string; // ISO — entry is hidden in-app until this date
 	headline: string;
-	items: { title: string; body: string; emoji?: string }[];
+	items: { title: string; body: string; glyph?: GlyphName; emoji?: string }[];
 }
 
 export const RELEASE_NOTES: ReleaseNote[] = [
@@ -36,12 +46,12 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🤝",
 				title: "Tickle Trade",
-				body: "Ask a friend for 1-5 tickles. If they answer, you pocket DOUBLE — they give it from their own bank for nothing but goodwill. Manage trades from the handshake on the home screen.",
+				body: "Ask a friend for 1-5 tickles. If they answer, you pocket DOUBLE. They give it from their own bank for nothing but goodwill. Manage trades from the handshake on the home screen.",
 			},
 			{
 				emoji: "👥",
 				title: "Friends & the Sounder",
-				body: "Add friends by username (everyone has a private #1234 code). Share your code — every friend who joins with it earns BOTH of you 100 snouts and climbs you toward titles like Drove Captain and Crown Hog.",
+				body: "Add friends by username (everyone has a private #1234 code). Share your code: every friend who joins with it earns BOTH of you 100 snouts and climbs you toward titles like Drove Captain and Crown Hog.",
 			},
 			{
 				emoji: "👀",
@@ -51,12 +61,12 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "✦",
 				title: "Lucky Pig",
-				body: "Tickling can now trigger a Lucky Pig moment — a window where your tickles have a chance to double, with a rare shot at a one-of-a-kind folklore title.",
+				body: "Tickling can now trigger a Lucky Pig moment: a window where your tickles have a chance to double, with a rare shot at a one-of-a-kind folklore title.",
 			},
 			{
 				emoji: "🏆",
 				title: "Achievements",
-				body: "A new Achievements screen with tiered rewards — titles, items, and snouts. The top tiers keep going forever.",
+				body: "A new Achievements screen with tiered rewards: titles, items, and snouts. The top tiers keep going forever.",
 			},
 			{
 				emoji: "🔔",
@@ -66,7 +76,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "⚖️",
 				title: "Your alignment is forming",
-				body: "Season 1 has begun. Every player now has an alignment that shifts with how they trade — give freely and you drift Generous, ask and pocket double and you drift Greedy. Cross far enough and you'll see your schism. More of the season unlocks week by week…",
+				body: "Season 1 has begun. Every player now has an alignment that shifts with how they trade: give freely and you drift Generous, ask and pocket double and you drift Greedy. Cross far enough and you'll see your schism. More of the season unlocks week by week…",
 			},
 		],
 	},
@@ -81,7 +91,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "☀️",
 				title: "Bless your friends",
-				body: "Once a day you can send a blessing to up to 3 friends — a warm tea that speeds their tickles, a sun beam, a halo glow, a handful of snouts. The blessing rotates daily. Casting one nudges you Generous.",
+				body: "Once a day you can send a blessing to up to 3 friends: a warm tea that speeds their tickles, a sun beam, a halo glow, a handful of snouts. The blessing rotates daily. Casting one nudges you Generous.",
 			},
 		],
 	},
@@ -98,17 +108,17 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🐷",
 				title: "Your pig has moods now",
-				body: "Tickle Rosie regularly and she'll perk up Happy — and her tickles even regenerate faster. Neglect her and she gets Sad and slows down. Her face is the tell: keep coming back to keep her smiling.",
+				body: "Tickle Rosie regularly and she'll perk up Happy, and her tickles even regenerate faster. Neglect her and she gets Sad and slows down. Her face is the tell: keep coming back to keep her smiling.",
 			},
 			{
 				emoji: "🏚️",
 				title: "Visit your friends' barns",
-				body: "Tap a friend, then Visit their Barn to see both your pigs together and tap-tickle theirs. You both get happier (and a little tickle) — until the pigs tucker out and call it a day.",
+				body: "Tap a friend, then Visit their Barn to see both your pigs together and tap-tickle theirs. You both get happier (and a little tickle), until the pigs tucker out and call it a day.",
 			},
 			{
 				emoji: "🐽",
 				title: "Bury a truffle",
-				body: "Leave a truffle on your Barn for visitors. The first friend to drop by digs it up for snouts — a little gift for whoever comes to play.",
+				body: "Leave a truffle on your Barn for visitors. The first friend to drop by digs it up for snouts, a little gift for whoever comes to play.",
 			},
 			{
 				emoji: "👗",
@@ -118,7 +128,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "✨",
 				title: "Mix and match your look",
-				body: "Hat, eyes, face, neck and more are separate slots now — so you can wear a hat AND glasses at once. Whatever you already had on moved to its right slot.",
+				body: "Hat, eyes, face, neck and more are separate slots now, so you can wear a hat AND glasses at once. Whatever you already had on moved to its right slot.",
 			},
 			{
 				emoji: "⚽",
@@ -138,7 +148,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🟢",
 				title: "Send a little mischief",
-				body: "The goblin-hearted can now cast a daily curse instead — a sluggish snout, a phantom itch, a green miasma cloud. Curses are capped and cleansable: annoying, never ruinous. A blessing washes them away.",
+				body: "The goblin-hearted can now cast a daily curse instead: a sluggish snout, a phantom itch, a green miasma cloud. Curses are capped and cleansable: annoying, never ruinous. A blessing washes them away.",
 			},
 		],
 	},
@@ -153,7 +163,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "📋",
 				title: "The bounty board",
-				body: "Three bounties now rotate onto the Season page each week — fulfill trades, get your requests answered, send blessings. Complete them for snouts.",
+				body: "Three bounties now rotate onto the Season page each week: fulfill trades, get your requests answered, send blessings. Complete them for snouts.",
 			},
 		],
 	},
@@ -168,17 +178,17 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🏆",
 				title: "Titles move to Achievements",
-				body: "Titles can no longer be bought in the shop — they're earned. Every title you already own is yours to keep, and there are new ways to earn more in the Achievements ladders, including a new Devotion track for lifetime tickling.",
+				body: "Titles can no longer be bought in the shop. They're earned. Every title you already own is yours to keep, and there are new ways to earn more in the Achievements ladders, including a new Devotion track for lifetime tickling.",
 			},
 			{
 				emoji: "✦",
 				title: "Collectibles",
-				body: "The shop's middle tab is now “Collectibles” — the full set of everything there is to collect, owned or not, with a little icon for each category so it's clear what you're filtering by.",
+				body: "The shop's middle tab is now “Collectibles”: the full set of everything there is to collect, owned or not, with a little icon for each category so it's clear what you're filtering by.",
 			},
 			{
 				emoji: "🐷",
 				title: "Barn visits, retuned",
-				body: "Visiting a friend gives a little burst of tickles, then that barn rests for 3 hours — a fair, cozy rhythm instead of an endless tap. A live countdown shows when you can come back.",
+				body: "Visiting a friend gives a little burst of tickles, then that barn rests for 3 hours: a fair, cozy rhythm instead of an endless tap. A live countdown shows when you can come back.",
 			},
 			{
 				emoji: "🔧",
@@ -198,7 +208,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "👑",
 				title: "The season ends",
-				body: "Season 0 is closing. The alignment leaderboard ranks the most generous and most greedy — when the gavel falls, the top 3 of each side earn titles no one will be able to claim again. Then the slate wipes for Season 1.",
+				body: "Season 0 is closing. The alignment leaderboard ranks the most generous and most greedy. When the gavel falls, the top 3 of each side earn titles no one will be able to claim again. Then the slate wipes for Season 1.",
 			},
 		],
 	},
@@ -212,7 +222,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		items: [
 			{
 				title: "Choose your dig",
-				body: "The patch is richer than one dig can clear. Read the mounds, pick what you chase — and what you leave behind is a story for next feeding.",
+				body: "The patch is richer than one dig can clear. Read the mounds, pick what you chase, and what you leave behind is a story for next feeding.",
 			},
 			{
 				title: "The Burrow Book",
@@ -220,11 +230,11 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 			{
 				title: "The full field",
-				body: "The Dig-Off board now opens into the whole race — every Sounder, your herd pinned at the top, load more as deep as you dare.",
+				body: "The Dig-Off board now opens into the whole race: every Sounder, your herd pinned at the top, load more as deep as you dare.",
 			},
 			{
 				title: "A quieter, louder bog",
-				body: "The dig has sounds now — scrapes, creaks, and the pop of a truffle coming free. Plus a pile of polish across the season screens.",
+				body: "The dig has sounds now: scrapes, creaks, and the pop of a truffle coming free. Plus a pile of polish across the season screens.",
 			},
 		],
 	},
@@ -238,35 +248,35 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		items: [
 			{
 				title: "A path to your Sounder",
-				body: "The season page now walks you in — taste a dig, slip into an open Sounder or found your own, and dig your first feeding with the herd.",
+				body: "The season page now walks you in: taste a dig, slip into an open Sounder or found your own, and dig your first feeding with the herd.",
 			},
 			{
 				title: "The banner calls the dig",
-				body: "When the patch is open, the Great Hunger banner says so — one tap and you're digging. Guarded? It counts down to the next feeding.",
+				body: "When the patch is open, the Great Hunger banner says so. One tap and you're digging. Guarded? It counts down to the next feeding.",
 			},
 			{
 				title: "A dig worth reading",
-				body: "The end of a dig now settles up properly — what you found, what it carried, what waits in the dirt. No more squinting at the fine print.",
+				body: "The end of a dig now settles up properly: what you found, what it carried, what waits in the dirt. No more squinting at the fine print.",
 			},
 			{
 				title: "Name yourself, any time",
-				body: "Change your name from the settings on your scrapbook page. First one's free — after that it costs snouts, so make it count.",
+				body: "Change your name from the settings on your scrapbook page. First one's free. After that it costs snouts, so make it count.",
 			},
 			{
 				title: "Favorites up front",
-				body: "Star your favorite friends and they'll hold the top of your list. And when your snout needs a rest, the barn says so plainly — no countdown clocks.",
+				body: "Star your favorite friends and they'll hold the top of your list. And when your snout needs a rest, the barn says so plainly, no countdown clocks.",
 			},
 			{
 				title: "Leaving leaves a mark",
-				body: "A digger who trots on keeps their finds with the crew they dug for — the ledger remembers, softly. The only thing you forfeit is Monday's spoils.",
+				body: "A digger who trots on keeps their finds with the crew they dug for. The ledger remembers, softly. The only thing you forfeit is Monday's spoils.",
 			},
 			{
 				title: "A hundred hats, redrawn",
-				body: "Nearly every worn thing in the closet got redrawn to sit true on Rosie — same character, better fit.",
+				body: "Nearly every worn thing in the closet got redrawn to sit true on Rosie: same character, better fit.",
 			},
 			{
 				title: "New feeding hours",
-				body: "The Hungerer gorges on a new clock — the patch now opens with your morning coffee, your ride home, and the last hour before bed.",
+				body: "The Hungerer gorges on a new clock: the patch now opens with your morning coffee, your ride home, and the last hour before bed.",
 			},
 		],
 	},
@@ -294,7 +304,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		items: [
 			{
 				title: "Sounders grow to eight",
-				body: "Your Sounder can now welcome up to eight pigs — more friends at the trough, more snouts digging together.",
+				body: "Your Sounder can now welcome up to eight pigs: more friends at the trough, more snouts digging together.",
 			},
 		],
 	},
@@ -331,9 +341,10 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🔔",
 				title: "Every Last Feeding",
-				body: "Dig in every scheduled Feeding of a full Dig-Off week to earn 500 snouts, the Every Last Feeding achievement, and the Unmissable title. Even a zero-find dig counts — showing up is what matters.",
+				body: "Dig in every scheduled Feeding of a full Dig-Off week to earn 500 snouts, the Every Last Feeding achievement, and the Unmissable title. Even a zero-find dig counts. Showing up is what matters.",
 			},
 			{
+				glyph: "flame",
 				title: "Keep the streak alive",
 				body: "Your first home tickle of the day grows Rosie's personal Streak, and visits build a shared Streak with each friend. Return within the grace window to keep it going.",
 			},
@@ -346,16 +357,50 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		headline: "A swap in the barn",
 		items: [
 			{
+				glyph: "digBag",
 				title: "Your Satchel",
-				body: "Every Dig can turn up a small find — a river pebble, a blue feather, an old key. They ride in your Satchel, by the Barn button.",
+				body: "Every Dig can turn up a small find: a river pebble, a blue feather, an old key. They ride in your Satchel, by the Barn button.",
 			},
 			{
+				glyph: "findBlueFeather",
 				title: "Every pig hopes for something",
-				body: "A friend's pig shows what it is hoping for. If it's in your bag, their row says so — and a visit is where you hand it over.",
+				body: "A friend's pig shows what it is hoping for. If it's in your bag, their row says so, and a visit is where you hand it over.",
 			},
 			{
+				glyph: "handshake",
 				title: "Take something back",
 				body: "Hand a friend's pig its find and take one of up to three things their bag can spare, or just give it. Once a day with each friend. Finds are never for sale.",
+			},
+		],
+	},
+	// ── Builds 194–197: the Me passport, Feed · Draw · Pass and the drum,
+	// the rank sheet. Facts from SKILL.md 2026-09-20/21/22 and the build
+	// changelogs; the rank-sheet item says only what the sheet itself shows.
+	{
+		version: "1.16.0",
+		date: "2026-09-22",
+		availableFrom: "2026-09-22",
+		headline: "Feed, Draw, Pass",
+		items: [
+			{
+				glyph: "tabSeason",
+				title: "Three verbs on the Season page",
+				body: "Feed is the patch and its clock, Draw is Monday's drum, Pass is the ladder. The Sounder still lives on the Friends tab.",
+			},
+			{
+				glyph: "truffle",
+				title: "Monday's drum",
+				body: "Every dig you submit drops a ball in your own drum, up to one per feeding. On Monday it turns: every ball is a roll, and you keep the best purse. The weekly Dig-Off is retired, and the bunting you earned stays yours.",
+			},
+			{
+				glyph: "crown",
+				title: "The whole Wallow ladder",
+				body: "Tap Wallow rank on your Me page: where you stand, the next rung and its prize, and every rung after it.",
+			},
+			{
+				glyph: "tabMe",
+				title: "Me, simplified",
+				body: "The Me page is your passport card and a few short rows: your story, invites, and the back door.",
 			},
 		],
 	},

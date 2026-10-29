@@ -277,6 +277,39 @@ describe("SnoutDeepPatch", () => {
     act(() => renderer.unmount());
   });
 
+  test("the pinned footer owns its top edge: the rule shows while the dig runs on under it (after/093)", () => {
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(wrap(<Harness />, true));
+    });
+    const scroll = renderer.root.findAll((n) => n.props.testID === "dig-scroll" && typeof n.props.onScroll === "function")[0];
+    const edgeOpacity = () => {
+      const edge = renderer.root.findAll((n) => typeof n.type === "string" && n.props.testID === "dig-edge-bottom")[0];
+      return Object.assign({}, ...[edge.props.style].flat(Infinity).filter(Boolean)).opacity;
+    };
+    // At rest, before anything is measured, there is nothing under the footer.
+    expect(edgeOpacity()).toBe(0);
+    // A dig that fits: still nothing.
+    act(() => scroll.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 600 } } }));
+    act(() => scroll.props.onContentSizeChange(390, 590));
+    expect(edgeOpacity()).toBe(0);
+    // The dev strip (or an SE) pushes the pouch under the footer: the rule says so.
+    act(() => scroll.props.onContentSizeChange(390, 660));
+    expect(edgeOpacity()).toBeGreaterThan(0);
+    // Scrolled to the pouch, the rule leaves.
+    act(() =>
+      scroll.props.onScroll({
+        nativeEvent: {
+          contentOffset: { x: 0, y: 60 },
+          layoutMeasurement: { width: 390, height: 600 },
+          contentSize: { width: 390, height: 660 },
+        },
+      }),
+    );
+    expect(edgeOpacity()).toBe(0);
+    act(() => renderer.unmount());
+  });
+
   test("the layer strip and the verb bar carry the a11y the taste gate asks for", () => {
     let renderer!: TestRenderer.ReactTestRenderer;
     act(() => {
@@ -308,6 +341,9 @@ describe("the sheets — the tally", () => {
   }
   const hosts = (renderer: TestRenderer.ReactTestRenderer, label: string) =>
     renderer.root.findAll((n) => typeof n.type === "string" && n.props.accessibilityLabel === label);
+  /** The tally's body: the touch-anywhere hurry (a sighted shortcut, no element). */
+  const tally = (renderer: TestRenderer.ReactTestRenderer) =>
+    renderer.root.findAll((n) => n.props.testID === "dig-tally" && typeof n.props.onPress === "function")[0];
   /** The tally rows' landed state, top to bottom (hidden = not landed yet). */
   function landedFlags(renderer: TestRenderer.ReactTestRenderer): boolean[] {
     return renderer.root
@@ -332,7 +368,7 @@ describe("the sheets — the tally", () => {
     expect(all).toContain("before");
     expect(all).toContain("tickled now");
     expect(all).toContain("a truffle");
-    expect(all).toContain("the herd's too — +1 Golden Truffle");
+    expect(all).toContain("the herd's too · +1 Golden Truffle");
     expect(all).toContain("+10");
     expect(all).toContain("+20 XP");
     expect(all).toContain("the dig");
@@ -341,9 +377,36 @@ describe("the sheets — the tally", () => {
     expect(all).toContain("the herd's board: +1 Golden Truffle. things you found are yours alone.");
     expect(all).not.toContain("GT");
     expect(landedFlags(renderer)).toEqual([true, true]);
-    // Settled: the hurry target is disabled.
-    const hurry = hosts(renderer, "The tally")[0];
-    expect(hurry.props.accessibilityState).toEqual({ disabled: true });
+    // Settled: nothing left to hurry.
+    expect(tally(renderer).props.disabled).toBe(true);
+    act(() => renderer.unmount());
+  });
+
+  test("VoiceOver reads the tally piece by piece, never one disabled \"The tally\" button (after/095)", () => {
+    const r = withBag(receipt(tiedDomino(), { tickledBefore: 38 }));
+    let renderer!: TestRenderer.ReactTestRenderer;
+    act(() => {
+      renderer = TestRenderer.create(
+        wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />),
+      );
+    });
+    // The body is a pass-through, so the elements inside it are reachable.
+    expect(tally(renderer).props.accessible).toBe(false);
+    expect(renderer.root.findAll((n) => n.props.accessibilityLabel === "The tally")).toHaveLength(0);
+    expect(renderer.root.findAll((n) => n.props.accessibilityLabel === "Hurry the tally")).toHaveLength(0);
+    // The before → now count, in words.
+    expect(hosts(renderer, "38 before, 48 tickled now")).toHaveLength(1);
+    // Each landed row is its own element, value included.
+    const rowLabels = renderer.root
+      .findAll((n) => typeof n.type === "string" && n.props.accessibilityRole === "text" && typeof n.props.accessibilityLabel === "string")
+      .map((n) => n.props.accessibilityLabel as string);
+    expect(rowLabels.some((l) => l.startsWith("a truffle") && l.includes("+10"))).toBe(true);
+    expect(rowLabels.some((l) => l.includes("+20 XP"))).toBe(true);
+    // The dig's foot, and the bag's sentence.
+    expect(hosts(renderer, "the dig, +10")).toHaveLength(1);
+    expect(
+      hosts(renderer, "your Satchel got heavier: a river pebble and an old key. Satchel's full · a pinecone stayed in the mud."),
+    ).toHaveLength(1);
     act(() => renderer.unmount());
   });
 
@@ -381,15 +444,14 @@ describe("the sheets — the tally", () => {
         wrap(<DigReceiptSheet visible receipt={r} onPrimary={() => {}} onSecondary={() => {}} onClose={() => {}} />, false),
       );
     });
-    const hurry = renderer.root.findAll((n) => n.props.accessibilityLabel === "Hurry the tally")[0];
-    expect(hurry).toBeDefined();
+    const hurry = tally(renderer);
+    expect(hurry.props.disabled).toBe(false);
     act(() => {
       hurry.props.onPress();
     });
     expect(landedFlags(renderer)).toEqual([true, true]);
     expect(texts(renderer)).toContain("48");
-    expect(hosts(renderer, "The tally")).toHaveLength(1);
-    expect(hosts(renderer, "Hurry the tally")).toHaveLength(0);
+    expect(tally(renderer).props.disabled).toBe(true);
     act(() => renderer.unmount());
     jest.useRealTimers();
   });
@@ -436,13 +498,13 @@ describe("the sheets — the tally", () => {
     ]);
     const all = texts(renderer).join("\n");
     expect(all).toContain("into your satchel");
-    expect(all).toContain("a river pebble and an old key · full now — a pinecone stayed in the mud");
+    expect(all).toContain("a river pebble and an old key · full now, a pinecone stayed in the mud");
     // The whole block reads as the receipt's one satchel sentence.
     expect(
-      hosts(renderer, "your Satchel got heavier: a river pebble and an old key. Satchel's full — a pinecone stayed in the mud."),
+      hosts(renderer, "your Satchel got heavier: a river pebble and an old key. Satchel's full · a pinecone stayed in the mud."),
     ).toHaveLength(1);
     // Settled: nothing left to hurry.
-    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(tally(renderer).props.disabled).toBe(true);
     act(() => renderer.unmount());
   });
 
@@ -462,14 +524,14 @@ describe("the sheets — the tally", () => {
     expect(landedFlags(renderer)).toEqual([true, true]);
     expect(hidden()).toBe(true); // the rows are down; the bag has its own beat
     // Still hurry-able: the bag has not landed.
-    expect(hosts(renderer, "Hurry the tally")).toHaveLength(1);
+    expect(tally(renderer).props.disabled).toBe(false);
     ticks(350, 1); // the bag
     expect(hidden()).toBe(false);
     // The tiles drop 175 ms apart; each keeps its square meanwhile.
     expect(bagTiles(renderer)).toHaveLength(3);
     ticks(175, 3);
     ticks(40, 8); // the count settles on its own clock
-    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(tally(renderer).props.disabled).toBe(true);
     act(() => renderer.unmount());
     jest.useRealTimers();
   });
@@ -487,7 +549,7 @@ describe("the sheets — the tally", () => {
     ticks(350, 1);
     ticks(40, 8);
     expect(landedFlags(renderer)).toEqual([true, true]);
-    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(tally(renderer).props.disabled).toBe(true);
     expect(bagBlock(renderer)).toHaveLength(0);
     // The server's receipt lands late with the roll.
     act(() => {
@@ -514,11 +576,11 @@ describe("the sheets — the tally", () => {
       );
     });
     act(() => {
-      renderer.root.findAll((n) => n.props.accessibilityLabel === "Hurry the tally")[0].props.onPress();
+      tally(renderer).props.onPress();
     });
     expect(landedFlags(renderer)).toEqual([true, true]);
     expect(bagBlock(renderer)[0].props.accessibilityElementsHidden).toBe(false);
-    expect(hosts(renderer, "The tally")[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(tally(renderer).props.disabled).toBe(true);
     act(() => renderer.unmount());
     jest.useRealTimers();
   });
@@ -585,7 +647,7 @@ describe("the sheets — the tally", () => {
     expect(all.join("\n")).toContain("the truffle patch · he woke at the mud");
     expect(all).toContain("his");
     expect(all.join("\n")).toContain("comes back gilded next Feeding");
-    expect(all.join("\n")).toContain("next time — tie it in topsoil?");
+    expect(all.join("\n")).toContain("next time: tie it in topsoil?");
     act(() => renderer.unmount());
   });
 
@@ -656,7 +718,7 @@ describe("the sheets — the tally", () => {
       );
     });
     const all = texts(renderer).join("\n");
-    expect(all).toContain("truffles are for herds — find yours ›");
+    expect(all).toContain("truffles are for herds · find yours ›");
     expect(all).not.toContain("GT");
     // Before unknown: the count reads the dig's own total.
     expect(all).toContain("this dig");
@@ -679,7 +741,7 @@ describe("the sheets — the tally", () => {
     });
     expect(onJoin).toHaveBeenCalledTimes(1);
     const all = texts(renderer).join("\n");
-    expect(all).toContain("truffles are for herds — find yours ›");
+    expect(all).toContain("truffles are for herds · find yours ›");
     expect(all).toContain("+10");
     act(() => renderer.unmount());
   });
@@ -786,7 +848,7 @@ describe("the meter, the gate and the bag", () => {
     for (const tile of [12, 17]) shove(renderer, tile);
     expect(seen.latest!.attention).toBe(60);
     expect(meterNode(renderer).props.accessibilityLabel).toBe(
-      "his attention, 60 of 110. past 50 — about a 2% chance the next rub is the one.",
+      "his attention, 60 of 110. past 50, about a 2% chance the next rub is the one.",
     );
     expect(texts(renderer).join("\n")).toContain("stirring");
     act(() => renderer.unmount());
@@ -861,9 +923,10 @@ describe("the meter, the gate and the bag", () => {
       renderer = TestRenderer.create(wrap(<Harness seed={QUIET} />));
     });
     expect(texts(renderer).join("\n")).toContain("Find the truffle first");
-    const shut = pressables(renderer).filter((n) => n.props.accessibilityLabel === "Dig deeper, not yet")[0];
+    // Spoken as drawn: a shut gate is never read out as "Dig deeper".
+    const shut = pressables(renderer).filter((n) => n.props.accessibilityLabel === "Find the truffle first")[0];
     expect(shut).toBeDefined();
-    expect(shut.props.accessibilityHint).toBe("Find this board's truffle first");
+    expect(shut.props.accessibilityHint).toBe("Dig deeper opens once this board's truffle is up");
     expect(shut.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
     act(() => shut.props.onPress?.());
     expect(seen.latest!.layer).toBe(0); // the reducer refuses it too

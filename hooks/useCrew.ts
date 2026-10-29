@@ -336,7 +336,7 @@ export function useInviteActions(
 		setNote(null);
 		const r = await crewHook.cancel(inviteId);
 		setBusyId(null);
-		if (!r.ok) setNote("Couldn't take that ask back — try again.");
+		if (!r.ok) setNote("Couldn't take that ask back. Try again.");
 	};
 
 	// Members + pending-out invites fill the roster (the server's combined cap),

@@ -10,8 +10,18 @@
 // at 29.1s to drop the dated marketing CTA card (players watching this are
 // already inside Season 1), 720×1280 CRF-27 → 4.0 MB. The 40 MB master stays
 // out of the bundle (nothing require()s it).
+//
+// Polish pass 2026-10-04: the sound chip rides the frame's top-right corner,
+// over sky — at the bottom it sat on the burned-in captions; the × is the
+// pinned "Close" of `AdaptiveModalScaffold card`, whose frame IS the card, so
+// at large text or on a short phone the tale scrolls under a × that stays
+// put; and the one button keeps one label for the whole tale. It used to
+// flip to "Rally your Sounder" when the narration ended, but it only ever
+// closed the card, and the Sounder is no longer the season's ask (2026-09-21).
+// A caller names where the button lands (`ctaLabel`); the Season tab's replay
+// says "Back to the season".
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
 	View,
 	Pressable,
@@ -23,57 +33,73 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import {
 	AdaptiveModalScaffold,
 	Button,
-	DialogCloseRow,
 	Icon,
 	Kicker,
 	PageTitle,
-	Sticker,
 } from "./ui";
 import {
 	BORDER,
 	PRESSED_FLAT,
 	RADII,
 	SPACE,
-	TILT,
+	TAP_MIN,
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
 
-// The sound toggle riding the tale's bottom-right corner — a paper chip sized
+// The sound toggle riding the tale's top-right corner — a paper chip sized
 // to the 34pt art well the video frame can spare, not a spacing step.
 const MUTE_CHIP = 34;
 const MUTE_ICON = 16;
+// The chip's frame grows to the 44pt floor through hitSlop, not by drawing a
+// bigger chip over the art.
+const MUTE_HIT = (TAP_MIN - MUTE_CHIP) / 2;
 
 const TALE_VIDEO = require("../assets/video/great_hunger_tale.mp4");
+
+// What the button says when the caller doesn't name its landing.
+const DEFAULT_CTA = "To the season";
 
 export function GreatHungerIntroModal({
 	visible,
 	onDone,
+	ctaLabel = DEFAULT_CTA,
 }: {
 	visible: boolean;
-	// Fired on the CTA ("Rally your Sounder") — the parent dismisses and can
-	// route on to the season. "skip" = dismissed via the hardware back.
+	// Fired on the CTA ("rally") or the × / hardware back ("skip"); every caller
+	// closes the card either way.
 	onDone: (action: "rally" | "skip") => void;
+	/** The CTA's words — where the player lands when the card closes. */
+	ctaLabel?: string;
 }) {
 	return (
 		<AdaptiveModalScaffold
 			visible={visible}
 			onRequestClose={() => onDone("skip")}
 			maxWidth={400}
+			// The card is painted (and its × pinned) only while the tale is up:
+			// the content unmounts the moment `visible` drops (below), and a
+			// painted frame would fade out as an empty card with a lone ×. Off,
+			// the frame falls back to `bare`: nothing drawn.
 			bare
+			card={visible}
 		>
 			{/* Gate on `visible` so the player mounts fresh per open (autoplay
 			    from 0:00 every retelling) and releases on close — useVideoPlayer
 			    ties the native player's lifetime to the mount. */}
-			{visible && <TaleCard onDone={onDone} />}
+			{visible && <TaleCard onDone={onDone} ctaLabel={ctaLabel} />}
 		</AdaptiveModalScaffold>
 	);
 }
 
-function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
+function TaleCard({
+	onDone,
+	ctaLabel,
+}: {
+	onDone: (action: "rally" | "skip") => void;
+	ctaLabel: string;
+}) {
 	const { height: screenH } = useWindowDimensions();
-	// The narration's end flips the CTA from a quiet leave to the rally beat.
-	const [ended, setEnded] = useState(false);
 	// Starts muted — the tale can auto-play without ambushing the room; the
 	// speaker chip on the frame unmutes the narration on demand.
 	const [muted, setMuted] = useState(true);
@@ -88,10 +114,6 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 			return !m;
 		});
 	}, [player]);
-	useEffect(() => {
-		const sub = player.addListener("playToEnd", () => setEnded(true));
-		return () => sub.remove();
-	}, [player]);
 
 	const rally = useCallback(() => {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
@@ -101,25 +123,19 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 	}, [onDone]);
 
 	return (
-		<Sticker
-			color="paper"
-			rotate={TILT.dialog}
-			radius={RADII.xxl}
-			border={3}
-			style={styles.card}
-		>
-			<DialogCloseRow onPress={() => onDone("skip")} label="Skip the tale" />
+		<>
 			<Kicker align="center" style={styles.kicker}>
-				season 1 — the tale ★
+				season 1 · the tale ★
 			</Kicker>
-			<PageTitle align="center" style={styles.headline}>
+			<PageTitle align="center" accessibilityRole="header" style={styles.headline}>
 				The Great Hunger
 			</PageTitle>
 
 			{/* The tale itself — 9:16 frame, ink-bordered like the rest of the
-			    card family. Captions ride inside the video; controls stay
-			    native-free so it reads as a story moment, not a media player.
-			    Height caps to the screen so the CTA never gets pushed off. */}
+			    card family. Captions ride inside the video, along its bottom;
+			    controls stay native-free so it reads as a story moment, not a
+			    media player. Height caps to the screen so the CTA never gets
+			    pushed off. */}
 			<View
 				style={[styles.videoFrame, { maxHeight: Math.round(screenH * 0.58) }]}
 			>
@@ -131,7 +147,7 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 				/>
 				<Pressable
 					onPress={toggleMute}
-					hitSlop={8}
+					hitSlop={MUTE_HIT}
 					accessibilityRole="button"
 					accessibilityLabel={muted ? "Unmute the tale" : "Mute the tale"}
 					accessibilityHint="Turns the narration on or off"
@@ -148,19 +164,21 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 				</Pressable>
 			</View>
 
-			<Button size="lg" variant="primary" full onPress={rally}>
-				{ended ? "Rally your Sounder" : "To the season"}
+			<Button
+				size="lg"
+				variant="primary"
+				full
+				onPress={rally}
+				accessibilityLabel={ctaLabel}
+				accessibilityHint="Closes the tale"
+			>
+				{ctaLabel}
 			</Button>
-		</Sticker>
+		</>
 	);
 }
 
 const styles = StyleSheet.create({
-	card: {
-		width: "100%",
-		paddingHorizontal: SPACE.lg,
-		paddingBottom: SPACE.lg,
-	},
 	kicker: { marginBottom: SPACE.xs },
 	headline: { marginBottom: SPACE.md },
 	videoFrame: {
@@ -176,11 +194,13 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.stage,
 		marginBottom: SPACE.md,
 	},
-	// Sound toggle riding the video's bottom-right corner — paper chip,
-	// ink ring, same sticker language as the card it sits in.
+	// Sound toggle riding the video's top-right corner, over the sky: the
+	// burned-in captions run along the bottom of every frame, and a chip there
+	// covered their last words. Paper chip, ink ring, the card's sticker
+	// language.
 	muteChip: {
 		position: "absolute",
-		bottom: SPACE.sm,
+		top: SPACE.sm,
 		right: SPACE.sm,
 		width: MUTE_CHIP,
 		height: MUTE_CHIP,

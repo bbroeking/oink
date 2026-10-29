@@ -250,7 +250,7 @@ export function MysteryHatReveal({
 									+{reveal?.fallback_snouts ?? FALLBACK_SNOUTS} snouts!
 								</T>
 								<T role="handLg" align="center" style={styles.subtitle}>
-									You already own every hat the box could hold — it
+									You already own every hat the box could hold. It
 									spilled snouts instead.
 								</T>
 							</>
@@ -268,7 +268,7 @@ export function MysteryHatReveal({
 									style={[styles.rarityTag, { backgroundColor: badge.bg }]}
 								/>
 								<T role="handLg" align="center" style={styles.subtitle}>
-									It's yours — wear it in the Closet.
+									It's yours. Wear it in the Closet.
 								</T>
 							</>
 						)}

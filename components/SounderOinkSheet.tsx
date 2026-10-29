@@ -98,8 +98,9 @@ export function SounderOinkSheet({
 			open={visible}
 			onClose={close}
 			title="Oink the Sounder"
+			// The X is a button named "Close"; the footer's quiet "Done" is the
+			// finished-here link. Two names for two places, never one name on both.
 			subtitle="preset notes only · one of each per Feeding"
-			closeLabel="Done"
 			footer={
 				<Button variant="handLink" full onPress={close} accessibilityHint="Closes the Oink list">
 					Done
@@ -145,7 +146,7 @@ export function SounderOinkSheet({
 								sent
 									? "Already sent this Feeding"
 									: available
-										? "Sends this note to every crewmate — one of each per Feeding"
+										? "Sends this note to every crewmate. One of each per Feeding"
 										: status
 							}
 							accessibilityState={{ disabled }}

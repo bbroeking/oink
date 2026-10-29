@@ -87,9 +87,9 @@ function bountyVisual(code: string): BountyVisual {
 	if (c.includes("trade") || c.includes("fulfill") || c.includes("ask"))
 		return { kind: "icon", name: "handshake" };
 	if (c.includes("bless") || c.includes("halo"))
-		return { kind: "char", text: "✦" };
+		return { kind: "glyph", name: "bless" };
 	if (c.includes("curse") || c.includes("itch"))
-		return { kind: "char", text: "☁" };
+		return { kind: "glyph", name: "curse" };
 	if (c.includes("tickle") || c.includes("tap"))
 		return { kind: "glyph", name: "heart" };
 	if (c.includes("friend") || c.includes("sounder"))
@@ -140,7 +140,7 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 			);
 			onClaimed?.();
 		} else if (r?.reason === "insufficient_snouts") {
-			setFeedback(`Not enough snouts — reroll costs ${REROLL_COST}.`);
+			setFeedback(`Not enough snouts. Reroll costs ${REROLL_COST}.`);
 		} else if (r?.reason === "already_rerolled") {
 			setFeedback("This slot's already been rerolled this week.");
 		} else {

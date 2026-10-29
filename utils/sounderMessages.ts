@@ -3,7 +3,7 @@ import { rpc, rpcAction, type RpcResult } from "./rpc";
 export const SOUNDER_COORDINATION_PRESETS = [
 	{
 		id: "patch_open",
-		body: "The Truffle Patch is open—come dig!",
+		body: "The Truffle Patch is open. Come dig!",
 	},
 	{
 		id: "feeding_waiting",

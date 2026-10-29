@@ -126,8 +126,8 @@ export function JournalHome({
 				</T>
 				<T role="hand">
 					{tucked
-						? `${tucked.name} — ${tucked.ability.flavorLine}`
-						: "Draw three, tuck one for the road — its charm rides along, then comes home."}
+						? `${tucked.name} · ${tucked.ability.flavorLine}`
+						: "Draw three, tuck one for the road. Its charm rides along, then comes home."}
 				</T>
 			</Sticker>
 
@@ -171,7 +171,7 @@ export function JournalHome({
 							{jarEmpty
 								? "The jar's empty for now"
 								: quietMaxed
-									? "She's bursting to go — join the scuffle"
+									? "She's bursting to go · join the scuffle"
 									: "Give her a quiet tickle first"}
 						</Button>
 					</>
@@ -191,9 +191,9 @@ export function JournalHome({
 				)}
 				<T role="bodySm" tone="secondary">
 					{jarEmpty
-						? "The jar refills a little with time — one tickle every few minutes."
+						? "The jar refills a little with time: one tickle every few minutes."
 						: fullOpenRoad
-							? "Zoomies at the brim — she'll carry them to the next wall."
+							? "Zoomies at the brim. She'll carry them to the next wall."
 							: "Affection helps; absence never hurts."}
 				</T>
 			</Sticker>

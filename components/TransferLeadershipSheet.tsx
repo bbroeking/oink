@@ -63,7 +63,7 @@ export function TransferLeadershipSheet({
 			setNote(
 				r.reason === "not_leader"
 					? "Only the leader can hand off the crown."
-					: "Couldn't hand off the crown — try again."
+					: "Couldn't hand off the crown. Try again."
 			);
 		}
 	};
@@ -73,10 +73,10 @@ export function TransferLeadershipSheet({
 			open={visible}
 			onClose={onDismiss}
 			title="Pass the crown"
-			subtitle={`one pig wears it — hand ${theCrew(crewName)} to a crewmate`}
+			subtitle={`one pig wears it · hand ${theCrew(crewName)} to a crewmate`}
 			footer={
 				<Hand tone="secondary" align="center">
-					the crown passes at once — you stay in the crew as a rider.
+					the crown passes at once. you stay in the crew as a rider.
 				</Hand>
 			}
 			overlay={
@@ -113,7 +113,7 @@ export function TransferLeadershipSheet({
 						<ProfileIdentity
 							username={leader.username}
 							title={rosterProfiles.get(leader.user_id)?.title}
-							suffix="you"
+							suffix="(you)"
 						/>
 					}
 					sub="wearing the crown now"

@@ -136,14 +136,14 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 			// A new client can outrun the server: the range-relaxing migration
 			// isn't pushed yet, so a Max amount off the old {10,20,50} whitelist
 			// bounces. Nudge back to a set stake — ship order stays harmless.
-			setNote("Couldn't add that amount — pick a set stake for now.");
+			setNote("Couldn't add that amount. Pick a set stake for now.");
 		} else if (r.reason === "none") {
 			// Truffle was reclaimed / fully dug elsewhere — nothing charged. Resync + close.
 			onChanged?.();
 			onClose();
 		} else {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-			setNote("Couldn't top up — try again in a moment.");
+			setNote("Couldn't top up. Try again in a moment.");
 		}
 	};
 
@@ -170,7 +170,7 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 			onClose();
 		} else {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-			setNote("Couldn't dig it back up — try again in a moment.");
+			setNote("Couldn't dig it back up. Try again in a moment.");
 		}
 	};
 
@@ -258,7 +258,7 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 			<T role="hand" tone="secondary" style={styles.sub}>
 				{dugTotal > 0
 					? `Visitors have dug up ${dugTotal} snout${dugTotal === 1 ? "" : "s"} so far.`
-					: "No one's dug it up yet — waiting for a visitor."}
+					: "No one's dug it up yet. It's waiting for a visitor."}
 			</T>
 
 			{/* diggers — the receipt for the pot, one row each */}

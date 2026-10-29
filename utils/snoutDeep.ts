@@ -635,7 +635,7 @@ export function wakeDrawAt(seed: number, k: number): number {
 // find is named the same way everywhere. `title` is the sticker/row title,
 // `tail` the reveal's second clause, `value` the reveal's short read, `sub`
 // the tally row's hand line — what the find ALSO does beside its tickles
-// (§5.7: "the herd's too — +1 Golden Truffle" / "on the shelf as well" / "+1
+// (§5.7: "the herd's too · +1 Golden Truffle" / "on the shelf as well" / "+1
 // Mote as well"). The Boom's tickles are the catch-up's `boom(H)` (§4) — the
 // client can't know H, so the reveal takes the amount as an argument (3 when
 // H = 0) and the row reads "the catch-up: 3 + N for the gap".
@@ -675,7 +675,7 @@ export function findCopy(find: Find, boomTickles = BOOM_BASE_TICKLES): FindCopy 
     case "pouch":
       return { title: "a snout pouch", tail: "+15 snouts", value: "+15 snouts", sub: "+15 snouts as well", tone: "sun" };
     case "apple":
-      return { title: "a windfall apple", tail: "Rosie is +8 happier", value: "+8 happy", sub: "Rosie ate it — +8 happy as well", tone: "rose" };
+      return { title: "a windfall apple", tail: "Rosie is +8 happier", value: "+8 happy", sub: "Rosie ate it · +8 happy as well", tone: "rose" };
     case "junk":
       return { title: JUNK_TITLES[find.variant ?? ""] ?? "a keepsake", tail: "new for the Barn", value: "new", sub: "on the shelf as well", tone: "paper" };
     case "shimmer":
@@ -768,7 +768,7 @@ export interface DigReceipt {
   countLine: string;
   /** The woke sheet's line naming the action and its odds; absent on a tie. */
   wokeLine?: string;
-  /** The woke sheet's closing hand line ("next time — tie it at the mud?"). */
+  /** The woke sheet's closing hand line ("next time: tie it at the mud?"). */
   nextTimeLine?: string;
   rows: DigReceiptRow[];
   /** The GT reasons this dig mints, in order — empty when uncrewed. */
@@ -807,7 +807,7 @@ export interface DigReceipt {
 
 export const DIG_PASS_XP = 20;
 const SCROLL_XP = 40;
-export const JOIN_LINE = "truffles are for herds — find yours ›";
+export const JOIN_LINE = "truffles are for herds · find yours ›";
 
 /** "a 13% chance" · "less than a 1% chance" · "never" — the odds a wake
  *  line names, in the same percent the verb cards wear. */
@@ -835,9 +835,9 @@ const LAYER_PUSH: Readonly<Record<Layer, string>> = {
   2: "pushed the root",
 };
 const NEXT_TIME: Readonly<Record<Layer, string>> = {
-  0: "next time — rub, not shove?",
-  1: "next time — tie it in topsoil?",
-  2: "next time — tie it at the mud?",
+  0: "next time: rub, not shove?",
+  1: "next time: tie it in topsoil?",
+  2: "next time: tie it at the mud?",
 };
 
 /** The GT reasons a state mints (§4): 'dig' topsoil, 'dig_deep' mud,
@@ -870,8 +870,8 @@ export interface ReceiptOptions {
 function truffleSub(kind: FindKind, gt: GtReason[]): string {
   const root = kind === "truffle_l" && gt.includes("dig_root");
   return root
-    ? "the herd's too — +1 Golden Truffle, +1 for the root"
-    : "the herd's too — +1 Golden Truffle";
+    ? "the herd's too · +1 Golden Truffle, +1 for the root"
+    : "the herd's too · +1 Golden Truffle";
 }
 
 /** The herd line: what went on the Sounder's board, or why nothing did. */
@@ -879,8 +879,8 @@ export function herdLine(gtCount: number, woke: boolean, truffleTaken: boolean):
   if (gtCount > 0) {
     return `the herd's board: +${gtCount} Golden Truffle${gtCount === 1 ? "" : "s"}. things you found are yours alone.`;
   }
-  if (woke && truffleTaken) return "nothing for the herd — the truffle was his. things you found are yours alone.";
-  return "nothing for the herd this dig — only a tied truffle is a Golden Truffle. things you found are yours alone.";
+  if (woke && truffleTaken) return "nothing for the herd. the truffle was his. things you found are yours alone.";
+  return "nothing for the herd this dig. only a tied truffle is a Golden Truffle. things you found are yours alone.";
 }
 
 export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigReceipt {
@@ -908,7 +908,7 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
         mark: lost.kind,
         tone: "roseDeep",
         title: findCopy(lost).title,
-        sub: "his — comes back gilded next Feeding",
+        sub: "his · comes back gilded next Feeding",
         value: "his",
         lost: true,
       });
@@ -954,7 +954,7 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
         ...(f.variant ? { variant: f.variant } : {}),
         tone: c.tone,
         title: c.title,
-        sub: "kept — its tickles went with the pouch",
+        sub: "kept · its tickles went with the pouch",
         value: "kept",
         kept: true,
       });
@@ -1015,10 +1015,10 @@ export function receipt(state: SnoutDeepState, opts: ReceiptOptions = {}): DigRe
     const wokeLine = !a
       ? "he woke on the last one."
       : state.rules === 2
-        ? `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]} ${meterPhrase(state.attention)} — this was the one.`
+        ? `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]} ${meterPhrase(state.attention)} · this was the one.`
         : `${LAYER_PUSH[a.layer]} on ${VERB_PAST[a.verb]}. ${oddsPhrase(
             wakeThreshold(a.layer, a.verb, state.coop, sniffCount(state.actions.slice(0, -1), a.layer)),
-          )} — this was the one.`;
+          )} · this was the one.`;
     const took =
       lost && lostThings > 0
         ? "the loose truffle and the pouch were his."
@@ -1153,7 +1153,7 @@ function pouchWhisper(state: SnoutDeepState): string | null {
   const them = n === 1 ? "it" : "them";
   const tail =
     state.layer === 2
-      ? `tie it off to keep ${them} — nothing carries deeper than the root.`
+      ? `tie it off to keep ${them}. nothing carries deeper than the root.`
       : `tie it off to keep ${them}, or carry ${them} down.`;
   return `${countPhrase(n, "thing")} loose in the pouch. ${tail}`;
 }
@@ -1175,7 +1175,7 @@ export function boardActions(state: Pick<SnoutDeepState, "actions" | "layer">): 
 // a hundred characters — and none of them is ever truncated.
 const BOARD_OPEN: Readonly<Record<Layer, string>> = {
   0: "topsoil. a sniff counts what touches a tile. a rub moves a little, a shove a lot.",
-  1: "the mud. fatter down here — and everything you do is louder.",
+  1: "the mud. fatter down here, and everything you do is louder.",
   2: "the root. a 1 on its own is usually a thing, not a truffle. loudest ground there is.",
 };
 
@@ -1192,18 +1192,18 @@ function meterWhisper(
   if (state.attention >= lo) return "he could wake on any of these now.";
   if (boardActions(state) === 0) return BOARD_OPEN[state.layer];
   if (state.layer === 0) {
-    if (ctx.hasHigh && ctx.hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
+    if (ctx.hasHigh && ctx.hasLow) return "a 3 beside a 1. the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
     if (ctx.pouch) return ctx.pouch;
     return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";
   }
   if (state.layer === 1) {
-    if (state.loose) return "the fat one is loose. the root grows none of its own — tie it there and it pays for this.";
+    if (state.loose) return "the fat one is loose. the root grows none of its own. tie it there and it pays for this.";
     if (ctx.pouch) return ctx.pouch;
-    return `the bar is short of ${lo} — nothing you do here can reach him yet.`;
+    return `the bar is short of ${lo}. nothing you do here can reach him yet.`;
   }
   if (ctx.pouch) return ctx.pouch;
-  return "no truffle down here is his to take. every action lifts the bar — tie it off whenever you like.";
+  return "no truffle down here is his to take. every action lifts the bar. tie it off whenever you like.";
 }
 
 export function whisperFor(state: SnoutDeepState): string {
@@ -1214,9 +1214,9 @@ export function whisperFor(state: SnoutDeepState): string {
       return f != null && !f.food;
     });
     if (lostTruffle && lostThings)
-      return "he woke. the loose truffle and the pouch are his — the truffle comes back gilded, next Feeding.";
+      return "he woke. the loose truffle and the pouch are his. the truffle comes back gilded, next Feeding.";
     if (lostThings) return "he woke. the loose pouch is his. what you'd tied is yours.";
-    return "he woke. the loose one is his — he buries it gilded, next Feeding.";
+    return "he woke. the loose one is his. he buries it gilded, next Feeding.";
   }
   const sniffed = state.scent.filter((s) => s != null).length;
   const hasHigh = state.scent.some((s) => s != null && s >= 3);
@@ -1229,15 +1229,15 @@ export function whisperFor(state: SnoutDeepState): string {
     if (sniffed === 0) return BOARD_OPEN[0];
     // The budget's turn speaks first: the moment a sniff starts to cost, say so.
     if (nextSniffAttention(state) > 0 && !state.loose)
-      return `he's noticing you — the next sniff is ${oddsPhrase(nextThreshold(state, "sniff"))} he wakes. a rub, ${oddsPhrase(nextThreshold(state, "rub"))}.`;
-    if (hasHigh && hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
+      return `he's noticing you. the next sniff is ${oddsPhrase(nextThreshold(state, "sniff"))} he wakes. a rub, ${oddsPhrase(nextThreshold(state, "rub"))}.`;
+    if (hasHigh && hasLow) return "a 3 beside a 1. the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
     if (pouch) return pouch;
     return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";
   }
   if (state.layer === 1) {
     if (sniffed === 0) return BOARD_OPEN[1];
-    if (state.loose) return "the fat one is loose. the root grows none of its own — tie it there and it pays for this.";
+    if (state.loose) return "the fat one is loose. the root grows none of its own. tie it there and it pays for this.";
     if (pouch) return pouch;
     return `a rub is ${oddsPhrase(nextThreshold(state, "rub"))} he stirs here. a sniff, ${
       wakePercent(nextThreshold(state, "sniff")) ?? "never"
@@ -1245,7 +1245,7 @@ export function whisperFor(state: SnoutDeepState): string {
   }
   if (sniffed === 0) return BOARD_OPEN[2];
   if (pouch) return pouch;
-  return "no truffle down here is his to take. every action is a roll — tie it off whenever you like.";
+  return "no truffle down here is his to take. every action is a roll. tie it off whenever you like.";
 }
 
 // ── Simulation — for tuning the thresholds ──────────────────────────────────

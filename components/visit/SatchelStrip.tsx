@@ -62,9 +62,9 @@ export function SatchelStrip({
 	} else if (wish?.swapped_today) {
 		line = "you two swapped today";
 	} else if (items.length === 0) {
-		line = "your Satchel is empty — dig to fill it";
+		line = "your Satchel is empty · dig to fill it";
 	} else if (matches.size > 0) {
-		line = `you have ${wishName} — tap it to swap`;
+		line = `you have ${wishName} · tap it to swap`;
 	} else if (wish && wish.fulfilled_by_me) {
 		line = "you already brought this one";
 	} else if (wishName) {
@@ -103,7 +103,7 @@ export function SatchelStrip({
 								accessibilityHint={
 									lifted
 										? "Opens what their pig can spare for it."
-										: "Not what their pig is hoping for — it stays in your bag."
+										: "Not what their pig is hoping for. It stays in your bag."
 								}
 								testID={lifted ? "visit-find-lifted" : "visit-find"}
 								style={[styles.tile, !lifted && open && styles.tileRest]}

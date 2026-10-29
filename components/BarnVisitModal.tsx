@@ -760,7 +760,7 @@ function BarnVisitSession({
 			showToast({
 				tone: "info",
 				title: `${pigDefinition(hostAway.pig).name}'s out looking`,
-				text: `Come back when ${pigPronouns(hostAway.pig).subject}'s home — or leave a blessing.`,
+				text: `Come back when ${pigPronouns(hostAway.pig).subject}'s home, or leave a blessing.`,
 			});
 			return;
 		}
@@ -987,7 +987,7 @@ function BarnVisitSession({
       );
 			setTruffleAvail(false);
       setDigNote(
-        `You've dug here recently — come back in ${lockLabel(r.next_at ?? null)}.`,
+        `You've dug here recently. Come back in ${lockLabel(r.next_at ?? null)}.`,
       );
 		} else if (r.reason === "none") {
 			// Terminal: someone else emptied the shared pot first. The shovel is
@@ -1278,7 +1278,7 @@ function BarnVisitSession({
 								{greeted && !hostSpent && !hostAway && (
 									<View pointerEvents="none" style={styles.guestHint}>
 										<T role="hand" tone="secondary" align="center" maxFontSizeMultiplier={VISIT_TYPE_CAP}>
-											{`You're the guest — tickle ${hostName}'s pig.`}
+											{`You're the guest. Tickle ${hostName}'s pig.`}
 										</T>
 									</View>
 								)}
@@ -1508,7 +1508,7 @@ function BarnVisitSession({
 								receipt.paid,
 							) +
 								(receipt.keepsake != null
-									? ` That's ${receipt.swaps_given} given — a keepsake for your Satchel.`
+									? ` That's ${receipt.swaps_given} given, a keepsake for your Satchel.`
 									: "")}
 						</T>
 						<Button

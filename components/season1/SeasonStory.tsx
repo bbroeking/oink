@@ -13,22 +13,22 @@ const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
 	{
 		g: "ghost",
 		kicker: "the theft",
-		line: "The Great Hungerer crept in one night and ate the valley's tickles — every last one.",
+		line: "The Great Hungerer crept in one night and ate the valley's tickles, every last one.",
 	},
 	{
 		g: "friends",
 		kicker: "the sounders",
-		line: `So pigs band into Sounders — ${CREW_CAP_WORD.toLowerCase()} snouts, one banner — because no pig shoos a hog alone.`,
+		line: `So pigs band into Sounders, ${CREW_CAP_WORD.toLowerCase()} snouts under one banner, because no pig shoos a hog alone.`,
 	},
 	{
 		g: "gem",
 		kicker: "the dig",
-		line: "He gorges in 8-hour feedings — for the first four hours the patch lies open to sneaky snouts, then he guards it while he digests.",
+		line: "He gorges in 8-hour feedings: for the first four hours the patch lies open to sneaky snouts, then he guards it while he digests.",
 	},
 	{
 		g: "crown",
 		kicker: "the last feast",
-		line: "Every truffle pried back leaves him a little weaker — until the whole herd starves him and takes the valley home.",
+		line: "Every truffle pried back leaves him a little weaker, until the whole herd starves him and takes the valley home.",
 	},
 ];
 

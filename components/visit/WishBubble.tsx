@@ -59,7 +59,7 @@ export function WishBubble({
 			accessibilityRole="text"
 			accessibilityLabel={
 				offer
-					? `${hostName}'s pig is ${line} — ${offer}`
+					? `${hostName}'s pig is ${line}. ${offer}`
 					: `${hostName}'s pig is ${line}`
 			}
 			testID="visit-wish-bubble"

@@ -10,6 +10,7 @@ import { PATCH_COLS, PATCH_ROWS, SHOVE_HOLD_MS } from "@/constants/dig";
 import {
   ART_SIZE,
   BORDER,
+  CHROME_TYPE_CAP,
   DIG_TILE,
   OPACITY,
   PAGE_PAD,
@@ -49,7 +50,21 @@ import {
   type SnoutDeepState,
   type Verb,
 } from "@/utils/snoutDeep";
-import { Button, Hand, IconButton, Label, ProgressTrack, Shovel, Snout, Sticker, T, Tag, Trotter } from "../ui";
+import {
+  Button,
+  Hand,
+  IconButton,
+  Label,
+  ProgressTrack,
+  ScrollEdge,
+  Shovel,
+  Snout,
+  Sticker,
+  T,
+  Tag,
+  Trotter,
+  useScrollEdgeBelow,
+} from "../ui";
 import { FindMark } from "./FindMark";
 import {
   Hungerer,
@@ -145,11 +160,13 @@ function VerbPrice({
   const left = v === "sniff" ? sniffsLeft(state) : 0;
   return (
     <View style={styles.price}>
-      <T role="numeral" numberOfLines={1}>
+      <T role="numeral" numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
         {loud <= 0 ? "free" : `+${loud}`}
       </T>
       {left > 0 ? (
-        <Hand tone="secondary" numberOfLines={1}>{`· ${left} left`}</Hand>
+        <Hand tone="secondary" numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+          {`· ${left} left`}
+        </Hand>
       ) : null}
     </View>
   );
@@ -198,6 +215,11 @@ export function SnoutDeepPatch({
   const [verb, setVerb] = useState<Verb>("rub");
   const [reveal, setReveal] = useState<Find | null>(null);
   const { width } = useWindowDimensions();
+  // The pinned footer owns its top edge: while the dig runs on under it (an
+  // SE, large type, the dev preview's strip) the rule shows there, so the
+  // pouch cut at the footer reads as "more below", not as two cards half
+  // under the bar (after/093). When the dig fits, nothing shows.
+  const below = useScrollEdgeBelow();
 
   const woke = state.ended?.reason === "wake";
   const atRoot = state.layer === 2;
@@ -216,7 +238,7 @@ export function SnoutDeepPatch({
     ? undefined
     : meter < lo
       ? `his attention, ${meter} of ${hi}. he sleeps through the first ${lo}.`
-      : `his attention, ${meter} of ${hi}. past ${lo} — about a ${Math.round(
+      : `his attention, ${meter} of ${hi}. past ${lo}, about a ${Math.round(
           meterHazard(state, verb) * 100,
         )}% chance the next ${VERB_LABEL[verb].toLowerCase()} is the one.`;
   // The word under the strip: what his face is saying, or — while the sniff
@@ -306,10 +328,27 @@ export function SnoutDeepPatch({
 
   return (
     <View style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scroll} bounces={false} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scroll}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+        onScroll={below.onScroll}
+        scrollEventThrottle={below.scrollEventThrottle}
+        onLayout={below.onLayout}
+        onContentSizeChange={below.onContentSizeChange}
+        testID="dig-scroll"
+      >
         {/* THE RAIL: the close chip and the sign; under rules 1, his face too. */}
         <View style={styles.header}>
-          <IconButton name="x" label="Leave the patch" onPress={onExit} variant="paper" />
+          {/* A close is a "Close"; the hint says what closing a dig means. */}
+          <IconButton
+            name="x"
+            label="Close"
+            accessibilityHint="Leaves the patch without ending the dig"
+            onPress={onExit}
+            variant="paper"
+          />
           {/* One line each: the sign must not wrap, or the header eats the patch. */}
           <Sticker
             color="paper"
@@ -321,8 +360,10 @@ export function SnoutDeepPatch({
             accessibilityHint="Opens the explanation of the dig"
             style={styles.sign}
           >
-            <Label numberOfLines={1}>the truffle patch · Feeding</Label>
-            <Hand tone="secondary" numberOfLines={1}>
+            <Label numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+              the truffle patch · Feeding
+            </Label>
+            <Hand tone="secondary" numberOfLines={1} maxFontSizeMultiplier={CHROME_TYPE_CAP}>
               {closesIn ? `${closesIn} · ` : ""}how it works ›
             </Hand>
           </Sticker>
@@ -406,11 +447,15 @@ export function SnoutDeepPatch({
                 ]}
               >
                 <VerbMark verb={v} size={VERB_ART} />
-                <Label>{VERB_LABEL[v]}</Label>
+                <Label maxFontSizeMultiplier={CHROME_TYPE_CAP}>{VERB_LABEL[v]}</Label>
                 {metered ? (
                   <VerbPrice state={state} verb={v} />
                 ) : (
-                  <Hand tone={selected ? "primary" : "secondary"} numberOfLines={1}>
+                  <Hand
+                    tone={selected ? "primary" : "secondary"}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={CHROME_TYPE_CAP}
+                  >
                     {verbSub(state, v)}
                   </Hand>
                 )}
@@ -469,7 +514,7 @@ export function SnoutDeepPatch({
         <View style={styles.pouch}>
           <PouchWell
             kicker="loose"
-            sub={woke ? "his — he took it" : "his if he wakes"}
+            sub={woke ? "his · he took it" : "his if he wakes"}
             finds={looseFinds}
             empty="nothing loose yet"
             tone={woke ? "rose" : "paper"}
@@ -483,74 +528,85 @@ export function SnoutDeepPatch({
           />
         </View>
 
-        {/* THE FOOTER: at the root the tie is the gold primary and Dig deeper is gone. */}
-        <View style={styles.footer}>
-          {atRoot ? (
-            <Button
-              variant="gold"
-              size="md"
-              full
-              disabled={!!state.ended}
-              onPress={() => dispatch({ type: "tie" })}
-              accessibilityLabel={`Tie it off, plus ${gtIfTied} Golden Truffles`}
-              accessibilityHint="Banks everything and ends the dig"
-            >
-              {`Tie it off · +${gtIfTied} Golden Truffle${gtIfTied === 1 ? "" : "s"}`}
-            </Button>
-          ) : (
-            <>
-              {/* Two different acts, said in the labels (2026-09-16; the screen
-                  fits a phone without a scroll, so no line under them, and the
-                  half-width holds ~18 characters, so no counts — the pouch card
-                  above already lists what is loose): the tie LEAVES with what's
-                  banked — the gold one; digging deeper RESETS the board one
-                  layer down, where he sleeps lighter. The counts stay in the
-                  accessibility labels. */}
-              <View style={styles.footerHalf}>
-                <Button
-                  variant="gold"
-                  size="sm"
-                  full
-                  disabled={!!state.ended}
-                  onPress={() => dispatch({ type: "tie" })}
-                  accessibilityLabel={looseCount > 0 ? `Tie it off, leave with ${looseCount}` : "Tie it off and leave"}
-                  accessibilityHint="Banks everything loose, leaves the patch and ends the dig"
-                >
-                  Tie it off · leave
-                </Button>
-              </View>
-              {/* THE DESCENT GATE (2026-09-17 §4): deeper stays shut until
-                  this board's truffle is out of the ground — the layer you
-                  are on is the one you finish. The label says which of the
-                  two acts is on offer; the reducer refuses either way. */}
-              <View style={styles.footerHalf}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  full
-                  disabled={!!state.ended || !deeperOpen}
-                  onPress={() => dispatch({ type: "descend" })}
-                  accessibilityLabel={
-                    deeperOpen
-                      ? `Dig deeper, a new board in ${LAYER_NAMES[(state.layer + 1) as Layer]}${
-                          looseCount > 0 ? `, carry ${looseCount} down` : ""
-                        }`
-                      : "Dig deeper, not yet"
-                  }
-                  accessibilityHint={
-                    deeperOpen
-                      ? "Banks the loose truffle, carries the loose things down and opens a fresh board one layer down"
-                      : "Find this board's truffle first"
-                  }
-                >
-                  {deeperOpen ? "Dig deeper · reset" : "Find the truffle first"}
-                </Button>
-              </View>
-            </>
-          )}
-        </View>
-
       </ScrollView>
+
+      {/* THE FOOTER: at the root the tie is the gold primary and Dig deeper is
+          gone. Pinned under the scroller, never inside it (2026-10-04): the
+          dig fits a 17 Pro without a scroll, but on an SE, under large type
+          or under the dev preview's strip the scroller takes over, and the
+          two acts that end or deepen the dig must never be the thing that
+          scrolls off the bottom — the Sheet primitive's pinned-footer rule.
+          When the dig fits, the footer sits right under the pouch exactly as
+          before (the scroller does not grow). */}
+      <View style={styles.footer}>
+        <ScrollEdge visible={below.edgeVisible} overlay="top" testID="dig-edge-bottom" />
+        {atRoot ? (
+          <Button
+            variant="gold"
+            size="md"
+            full
+            disabled={!!state.ended}
+            onPress={() => dispatch({ type: "tie" })}
+            accessibilityLabel={`Tie it off, plus ${gtIfTied} Golden Truffles`}
+            accessibilityHint="Banks everything and ends the dig"
+          >
+            {`Tie it off · +${gtIfTied} Golden Truffle${gtIfTied === 1 ? "" : "s"}`}
+          </Button>
+        ) : (
+          <>
+            {/* Two different acts, said in the labels (2026-09-16; the screen
+                fits a phone without a scroll, so no line under them, and the
+                half-width holds ~18 characters, so no counts — the pouch card
+                above already lists what is loose): the tie LEAVES with what's
+                banked — the gold one; digging deeper RESETS the board one
+                layer down, where he sleeps lighter. The counts stay in the
+                accessibility labels. */}
+            <View style={styles.footerHalf}>
+              <Button
+                variant="gold"
+                size="sm"
+                full
+                disabled={!!state.ended}
+                onPress={() => dispatch({ type: "tie" })}
+                accessibilityLabel={looseCount > 0 ? `Tie it off, leave with ${looseCount}` : "Tie it off and leave"}
+                accessibilityHint="Banks everything loose, leaves the patch and ends the dig"
+              >
+                Tie it off · leave
+              </Button>
+            </View>
+            {/* THE DESCENT GATE (2026-09-17 §4): deeper stays shut until
+                this board's truffle is out of the ground — the layer you
+                are on is the one you finish. The label says which of the
+                two acts is on offer; the reducer refuses either way. The
+                spoken label is the drawn one, and the hint says what it
+                is waiting to become (a label never disagrees with what is
+                drawn — the shut gate used to be read as "Dig deeper"). */}
+            <View style={styles.footerHalf}>
+              <Button
+                variant="ghost"
+                size="sm"
+                full
+                disabled={!!state.ended || !deeperOpen}
+                onPress={() => dispatch({ type: "descend" })}
+                accessibilityLabel={
+                  deeperOpen
+                    ? `Dig deeper, a new board in ${LAYER_NAMES[(state.layer + 1) as Layer]}${
+                        looseCount > 0 ? `, carry ${looseCount} down` : ""
+                      }`
+                    : "Find the truffle first"
+                }
+                accessibilityHint={
+                  deeperOpen
+                    ? "Banks the loose truffle, carries the loose things down and opens a fresh board one layer down"
+                    : "Dig deeper opens once this board's truffle is up"
+                }
+              >
+                {deeperOpen ? "Dig deeper · reset" : "Find the truffle first"}
+              </Button>
+            </View>
+          </>
+        )}
+      </View>
 
       {/* THE REVEAL: a sticker slapped over the header for a beat. It floats
           above the scroll — never in its flow — so surfacing a thing does
@@ -701,13 +757,13 @@ function PouchWell({
     >
       <View style={styles.wellHead}>
         <Label>{kicker}</Label>
-        <Hand tone="secondary" numberOfLines={1} style={styles.wellSub}>
+        <Hand tone="secondary" style={styles.wellSub}>
           {sub}
         </Hand>
       </View>
       <View style={styles.wellMarks}>
         {finds.length === 0 ? (
-          <Hand tone="disabled" numberOfLines={1}>
+          <Hand tone="disabled" style={styles.wellEmpty}>
             {empty}
           </Hand>
         ) : (
@@ -720,13 +776,22 @@ function PouchWell({
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: WHIMSY.cream },
+  // The scroller takes its content's height and gives some back only when the
+  // page is too short for it, so the pinned footer follows the pouch when the
+  // dig fits and holds the bottom edge when it does not (the Sheet primitive's
+  // scroller, same three properties).
+  scrollArea: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
   // Tight on purpose: the whole dig fits a 17 Pro's modal without a scroll
-  // (header 84 · strip 28 · patch ≈ 270 · whisper 56 · pouch 56 · footer 40 ·
-  // verbs 48, plus these gaps). The ScrollView is the safety net for small
-  // phones and large type, not the design.
+  // (rail 60 · sleeper 56 · verbs 100 · layers 27 · patch ≈ 290 · whisper 58 ·
+  // pouch 66, plus these gaps; then the 44pt footer). The ScrollView is the
+  // safety net for small phones and large type, not the design.
+  // The 8pt between the pouch and the footer is split (SPACE.xs here, SPACE.xs
+  // on the footer's top) so the footer's scroll edge sits on paper above the
+  // buttons, and the pouch's sticker shadow still fits inside the clip.
   scroll: {
     paddingHorizontal: PAGE_PAD,
-    paddingVertical: SPACE.sm,
+    paddingTop: SPACE.sm,
+    paddingBottom: SPACE.xs,
     gap: SPACE.sm,
   },
   header: {
@@ -794,13 +859,23 @@ const styles = StyleSheet.create({
   sleeperLine: { flexDirection: "row", alignItems: "baseline", gap: SPACE.sm },
   sleeperWord: { flex: 1, minWidth: 0 },
   sleeperStamps: { flexDirection: "row", justifyContent: "space-between" },
-  // The card's price row: the number, then that much bar.
-  price: { flexDirection: "row", alignItems: "center", gap: SPACE.xxs, minWidth: 0 },
-  // One slice of the meter, drawn at card scale — same ink edge as the bar.
+  // The card's price row: the number, then its "· N left". It wraps rather
+  // than clip, so at large text the count drops under the number whole.
+  price: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    columnGap: SPACE.xxs,
+    minWidth: 0,
+  },
+  // The two pouch wells, side by side.
   pouch: { flexDirection: "row", gap: SPACE.md },
   well: { flex: 1, minWidth: 0, gap: SPACE.xxs, paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
   wellHead: { flexDirection: "row", alignItems: "baseline", gap: SPACE.xs, minWidth: 0 },
   wellSub: { flex: 1, minWidth: 0 },
+  // A row child does not shrink by default; this one wraps inside the well.
+  wellEmpty: { flexShrink: 1 },
   wellMarks: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -808,7 +883,16 @@ const styles = StyleSheet.create({
     gap: SPACE.xs,
     minHeight: POUCH_MARK,
   },
-  footer: { flexDirection: "row", gap: SPACE.md },
+  // Out of the scroller now, so it carries the page pad itself; the gap above
+  // it is the scroller's SPACE.xs plus its own, the same SPACE.sm as before.
+  // Its scroll edge rides its top edge (absolute, so it takes no room).
+  footer: {
+    flexDirection: "row",
+    gap: SPACE.md,
+    paddingHorizontal: PAGE_PAD,
+    paddingTop: SPACE.xs,
+    paddingBottom: SPACE.sm,
+  },
   footerHalf: { flex: 1, minWidth: 0 },
   verbBar: { flexDirection: "row", gap: SPACE.sm },
   // A picture button: the art on top, the verb, its price. Paper at rest;

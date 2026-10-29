@@ -1,14 +1,15 @@
 // The pig card — the one card the Pen shows, about whichever medallion is
-// selected. Nameplate, coat, the hand line (how the pig looks and how long
-// it takes), the JOB SEGMENT (At home · In the Pen · Out looking — the first
-// two are the roster's activate toggle; the third is a readout), and ONE
+// selected. Nameplate, coat (always the label line under it), the hand line
+// (the pig's state in a sentence: how it looks and how long it takes, where it
+// is, why it rests), the JOB SEGMENT (At home · In the Pen · Out looking — the
+// first two are the roster's activate toggle; the third is a readout), and ONE
 // action by state: join / recruit / send / call home / see what it found /
 // back tomorrow / resting.
 import { StyleSheet, View } from "react-native";
 import { Button, Hand, PigPortrait, SegmentedControl, Sticker, T, Tag, type SegmentOption } from "@/components/ui";
 import { FindArt } from "@/components/satchel/FindArt";
 import type { ErrandTuning } from "@/constants/errands";
-import { ART_SIZE, BORDER, PIG_ACCENT, RADII, SPACE, TILT, UI_COLORS } from "@/constants/theme";
+import { ART_SIZE, BORDER, CHROME_TYPE_CAP, PIG_ACCENT, RADII, SPACE, TILT, UI_COLORS } from "@/constants/theme";
 import { backByLabel, errandDurationLabel, targetLabel, type ErrandFriend } from "@/utils/errands";
 import { pigPronouns, type PigId } from "@/utils/pigs";
 import type { PigCardState } from "./penState";
@@ -42,10 +43,16 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 	const p = pigPronouns(pig.id);
 	const jobOptions: readonly SegmentOption<Job>[] = [
 		{ value: "home", label: "At home", disabled: !state.jobEditable },
-		{ value: "pen", label: "In the Pen", disabled: !state.jobEditable },
+		// Asleep when there is no other pig to come home (penState): a live
+		// segment that does nothing on a tap is a broken control.
+		{ value: "pen", label: "In the Pen", disabled: !state.jobEditable || !state.penChoosable },
 		{ value: "out", label: "Out looking", disabled: true },
 	];
 
+	// The coat is always the label line under the nameplate; this line is the
+	// pig's state, and only that. (The coat used to move between the two by
+	// state: a hand line on the roster card, a bold label beside an errand,
+	// 064 vs 099, polish pass 2026-10-04.)
 	const handLine = (() => {
 		switch (action.kind) {
 			case "out": {
@@ -53,7 +60,7 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 				return `${targetLabel(action.row, friend)} · ${backByLabel(action.row.ends_at)}`;
 			}
 			case "back":
-				return `${p.subject} is back — see what ${p.subject} found`;
+				return `${p.subject} is back · see what ${p.subject} found`;
 			case "used_today":
 				return `${p.subject} has been out today · back tomorrow`;
 			case "board_full":
@@ -61,13 +68,13 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 			case "resting":
 				return "resting until Slop Club resumes";
 			case "join":
-				return `${pig.coat} · Slop Club members choose one companion`;
+				return "Slop Club members choose one companion";
 			case "recruit":
-				return `${pig.coat} · one long-term choice`;
+				return "one long-term choice";
 			case "choice_locked":
-				return `${pig.coat} · your companion choice is locked for now`;
+				return "your companion choice is locked for now";
 			case "none":
-				return pig.coat;
+				return null;
 			default:
 				return `looks anywhere · back in ${errandDurationLabel(pig.id, tuning)}`;
 		}
@@ -86,14 +93,16 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 			<Sticker color={PIG_ACCENT[pig.id].solid} rotate={0} radius={RADII.sm} shadow="none" border={BORDER.thin} style={styles.nameplate}>
 				<T role="handDisplay">{pig.name}</T>
 			</Sticker>
-			{action.kind === "out" || action.kind === "back" || action.kind === "send" || action.kind === "used_today" || action.kind === "board_full" ? (
+			{pig.coat ? (
 				<T role="label" tone="secondary" align="center">
 					{pig.coat}
 				</T>
 			) : null}
-			<Hand tone="secondary" align="center" style={styles.hand} testID={`pig-card-${pig.id}-line`}>
-				{handLine}
-			</Hand>
+			{handLine ? (
+				<Hand tone="secondary" align="center" style={styles.hand} testID={`pig-card-${pig.id}-line`}>
+					{handLine}
+				</Hand>
+			) : null}
 
 			{pig.owned ? (
 				<SegmentedControl<Job>
@@ -104,6 +113,9 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 						onJob(pig.id, job);
 					}}
 					label={`${pig.name}'s job`}
+					// Compact chrome states its ceiling: "Out looking" broke
+					// mid-word at accessibility sizes in a third of the card.
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
 					style={styles.segment}
 				/>
 			) : null}
@@ -116,10 +128,10 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 						full
 						loading={busy}
 						onPress={() => onJoin(pig.id)}
-						accessibilityLabel={`Join Slop Club — ${pig.name} moves in`}
+						accessibilityLabel={`Join Slop Club. ${pig.name} moves in`}
 						accessibilityHint="Opens the Slop Club purchase, then puts this pig in the Pen"
 					>
-						Join Slop Club — {pig.name} moves in
+						Join Slop Club · {pig.name} moves in
 					</Button>
 				) : null}
 				{action.kind === "recruit" ? (
@@ -145,11 +157,14 @@ export function PigCard({ state, tuning, friendFor, busy, onJob, onJoin, onRecru
 						full
 						loading={busy}
 						onPress={() => onSend(pig.id)}
-						accessibilityLabel={`Send ${pig.name} to look for something`}
+						accessibilityLabel={`Send ${pig.name} out looking`}
 						accessibilityHint="Opens the list of things a pig can look for"
 						testID={`send-${pig.id}`}
 					>
-						Send {pig.name} to look for…
+						{/* Whole words, the job segment's own ("Out looking"): the
+						    old label ended in its own "…" and read as cut off
+						    (099, polish pass 2026-10-04). */}
+						Send {pig.name} out looking
 					</Button>
 				) : null}
 				{action.kind === "out" ? (

@@ -80,7 +80,7 @@ const NOT_ELIGIBLE_TITLE = "No purse this Monday.";
 const NOT_ELIGIBLE_SUB = "Dig once this week and you're in Monday's drum.";
 const PEEK_TITLE = "Your purse is waiting.";
 const DRAWING_TITLE = "Drawing your purse…";
-const FAILED_TITLE = "The purse slipped — try again.";
+const FAILED_TITLE = "The purse slipped. Try again.";
 const DRAW_LABEL = "Draw your Monday purse";
 const DRAWING_LABEL = "drawing your purse";
 const DONE_LABEL = "Back to the season";
@@ -211,7 +211,7 @@ export function MondayDrawSheet({
 				variant="gold"
 				full
 				onPress={fire}
-				accessibilityHint="Turns the drum — one purse per snout, yours to keep"
+				accessibilityHint="Turns the drum. One purse per snout, yours to keep"
 				testID="monday-draw-draw"
 			>
 				{DRAW_LABEL}
@@ -238,7 +238,6 @@ export function MondayDrawSheet({
 			open={open}
 			onClose={close}
 			kicker={KICKER}
-			closeLabel="Close the Monday draw"
 			testID={testID ?? "monday-draw-sheet"}
 			footer={footer}
 		>

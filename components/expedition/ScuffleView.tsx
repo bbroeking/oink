@@ -100,7 +100,7 @@ export function ScuffleView({
 			setLog((l) =>
 				[
 					state.mockTickles <= 0
-						? "Out of tickles for now — she waits, warmly."
+						? "Out of tickles for now. She waits, warmly."
 						: "Rosie feels braver. The Zoomies charge.",
 					...l,
 				].slice(0, 6)
@@ -157,7 +157,7 @@ export function ScuffleView({
 					</T>
 					{state.openingHitPending && (
 						<T role="bodySm" tone="accent" align="center">
-							She flinches — the {enemy.name} pecks first. A lid or Warm Tea would
+							She flinches. The {enemy.name} pecks first. A lid or Warm Tea would
 							block it.
 						</T>
 					)}
@@ -215,7 +215,7 @@ export function ScuffleView({
 									{card.name} is a road card
 								</Button>
 								<T role="bodySm" tone="secondary" align="center">
-									Its charm shapes the walk, not the wall — save it for the
+									Its charm shapes the walk, not the wall. Save it for the
 									send-off.
 								</T>
 							</>

@@ -186,7 +186,7 @@ describe("useSwap", () => {
 		});
 		expect(h.api.offerFor).toBeNull();
 		expect(h.wish?.swapped_today).toBe(true);
-		expect(refusals[0].copy.title).toBe("You two swapped today — come back tomorrow");
+		expect(refusals[0].copy.title).toBe("You two swapped today. Come back tomorrow");
 		h.unmount();
 	});
 
@@ -198,7 +198,7 @@ describe("useSwap", () => {
 			await h.api.swap(null);
 		});
 		expect(h.api.offerFor).toEqual(ITEM);
-		expect(refusals[0].copy.title).toBe("Their Satchel is full — try the swap instead");
+		expect(refusals[0].copy.title).toBe("Their Satchel is full. Try the swap instead");
 		h.unmount();
 	});
 

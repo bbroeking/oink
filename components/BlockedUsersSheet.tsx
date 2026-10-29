@@ -22,6 +22,13 @@
 // §3.4 says a component named `*Sheet` mounts `SlideUpSheet` and a `*Modal`
 // mounts `AdaptiveModalScaffold`. This mounts `Sheet`, so the file was lying
 // about its own shape — one concept, one name (spec §3.6).
+//
+// Polish 2026-10-04: the sheet stays mounted while closed so it slides out
+// like every other sheet; it used to `return null` the instant `visible`
+// dropped, so the panel and its scrim vanished in one frame. Until the first
+// read lands the body is the loading beat, never the error card. On screen it
+// keeps the safety vocabulary every block surface uses ("Blocked users", "this
+// user"; UserSheet's block dialog points here by that name).
 import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -102,13 +109,12 @@ export function BlockedUsersSheet({ visible, blockerId, onClose }: Props) {
 		);
 	};
 
-	if (!visible) return null;
-
-	const body = loading ? (
+	const body = loading || (users === null && error === null) ? (
 		<LoadingBeat label="checking the gate" />
 	) : users === null ? (
 		<EmptyState
 			kind="error"
+			flush
 			title="Couldn't check the gate"
 			sub={error ?? "We couldn't read your block list just now."}
 			action={
@@ -129,6 +135,7 @@ export function BlockedUsersSheet({ visible, blockerId, onClose }: Props) {
 			glyph="check"
 			title="Nobody blocked"
 			sub="Your block list is clear."
+			flush
 		/>
 	) : (
 		<View style={styles.list}>
@@ -183,7 +190,7 @@ export function BlockedUsersSheet({ visible, blockerId, onClose }: Props) {
 					presentation="inline"
 					tone="destructive"
 					title={`Unblock ${pendingUnblock ? blockedHandle(pendingUnblock) : "this user"}?`}
-					body="They'll be able to interact with you again — friend requests, trades and visits. Blocking them back is a separate step."
+					body="They'll be able to interact with you again: friend requests, trades and visits. Blocking them back is a separate step."
 					confirmLabel="Unblock"
 					confirmHint="Removes the block immediately. You'd have to block them again to stop interaction."
 					cancelHint="Keeps them blocked"

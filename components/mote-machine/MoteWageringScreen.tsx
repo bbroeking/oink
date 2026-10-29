@@ -330,7 +330,7 @@ function outcomeHeadline(r: Pick<MoteGameReceipt, "outcome" | "resource_amount">
     returned_stake: "Your stake came right back.",
     small: "A little something!",
     big: "The reels loved that one!",
-    jackpot: "Jackpot — the whole cabinet sings!",
+    jackpot: "Jackpot: the whole cabinet sings!",
   } as const)[r.outcome];
 }
 

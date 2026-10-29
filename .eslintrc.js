@@ -57,6 +57,8 @@ const TTP_WAVE_1_RULES = {
   "ttp/no-space-arithmetic": "error",
   "ttp/animated-needs-motion-policy": "error",
   "ttp/no-legacy-palette": "error",
+  // No em dash in any string a player can read (2026-09-22 slop-tells audit).
+  "ttp/no-em-dash-copy": "error",
 };
 
 module.exports = {
@@ -109,14 +111,14 @@ module.exports = {
       ),
     },
     {
-      // Dev tools, prototypes, the audit harness, and the one sanctioned
-      // vector-icons importer are exempt from the taste gate.
+      // Dev tools, prototypes and the audit harness are exempt from the taste
+      // gate. (Icon.tsx lost its vector-icons exemption 2026-09-22: every
+      // icon is now a hand-cut path.)
       files: [
         "components/dev/**",
         "components/prototypes/**",
         "app/*-prototype.tsx",
         "app/ui-audit.tsx",
-        "components/ui/Icon.tsx",
       ],
       rules: {
         "no-restricted-properties": "off",
@@ -124,8 +126,6 @@ module.exports = {
         "no-restricted-syntax": "off",
       },
     },
-  ],
-};
     {
       // multiplayer/ is shared with the Render play server (server/), which
       // bundles it for Node, and with the app, which runs it in Hermes for
@@ -153,3 +153,5 @@ module.exports = {
         ],
       },
     },
+  ],
+};

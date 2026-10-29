@@ -142,7 +142,7 @@ describe("redemptionErrorMessage", () => {
 		msgs.forEach((m) => expect(m.length).toBeGreaterThan(0));
 	});
 	it("falls back to the gentle retry copy for network/no_data/unknown-reason", () => {
-		const fallback = "Couldn't check the code — try again in a bit.";
+		const fallback = "Couldn't check the code. Try again in a bit.";
 		expect(redemptionErrorMessage("network")).toBe(fallback);
 		expect(redemptionErrorMessage("no_data")).toBe(fallback);
 		expect(redemptionErrorMessage(undefined)).toBe(fallback);

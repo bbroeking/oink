@@ -6,12 +6,13 @@ import {
 	StyleSheet,
 	Dimensions,
 	Platform,
-	SafeAreaView,
 	Pressable,
 	Animated,
 	AppState,
 	Share,
+	useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -43,6 +44,7 @@ import {
 import { useRitualPresentation } from "@/hooks/useRitualPresentation";
 import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import {
+	ART_SIZE,
 	AVATAR_SIZE,
 	BORDER,
 	MOTION,
@@ -54,6 +56,7 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 import { MOTION_DURATION, useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { PHONE_NARROW_MAX } from "@/constants/layoutBreakpoints";
 import type { PigFacing } from "./ui/pigRendererContract";
 import { HAT_IMAGES } from "@/constants/hats";
 import { LuckyPigModal } from "./LuckyPigModal";
@@ -136,6 +139,19 @@ const YARD_GROUND = 54;
 // object, parked above the tab bar with the same breathing room the comp gives
 // it (docs/design/claude-design/barn/barn-home.html). A drawing measurement.
 const BARN_BUTTON_BOTTOM = 22;
+// The safe edges the Exterior pads: the bottom belongs to the tab bar.
+const BARN_SAFE_EDGES = ["top", "left", "right"] as const;
+// A narrow phone (iPhone SE / mini, under PHONE_NARROW_MAX) draws Rosie's
+// stage a step smaller. At the full 300pt she stood 1.5pt off the mound and
+// 12pt off the Barn button's word on a 375pt SE (the 2026-10-04 capture,
+// 114); at nine-tenths both corners keep ~13pt of yard and she is still the
+// stage. She shrinks toward her own hooves, never off the ground: the scale
+// pivots on her hoof line, HOOF_INSET above the 300pt stage's floor (measured
+// off the sprite), so the lift is that line's distance from the frame's
+// centre, times the step.
+const COMPACT_STAGE_SCALE = 0.9;
+const HOOF_INSET = 14;
+const COMPACT_STAGE_LIFT = (ART_SIZE.stage / 2 - HOOF_INSET) * (1 - COMPACT_STAGE_SCALE);
 // The turn button's slot (below the tickle-bank pill, clear of the mound at
 // the bottom-left), its glyph, and what a screen reader hears for each pose.
 const TURN_BUTTON_TOP = 170;
@@ -320,6 +336,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// Every duration on this screen is run past the policy, so a player with
 	// Reduce Motion on gets the same information without the travel. [A-07]
 	const motion = useMotionPolicy();
+	// The narrow tier — the one place this screen asks how wide the phone is.
+	const compactStage = useWindowDimensions().width < PHONE_NARROW_MAX;
 	const rewardedAdsEnabled = useFeatureFlag("rewarded_ads");
 	const rewardedAdBackend = React.useMemo(createSupabaseRewardedAdBackend, []);
 	const rewardedAdProvider = React.useMemo(createAdMobRewardedProvider, []);
@@ -597,7 +615,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		const sign = delta > 0 ? "+" : "";
 		const label = alignmentDisplay(alignmentLabel(score));
 		const scoreText = (score >= 0 ? "+" : "") + score;
-		showToast(`${sign}${delta} toward ${dir}`, `Now ${scoreText} — ${label}`);
+		showToast(`${sign}${delta} toward ${dir}`, `Now ${scoreText} · ${label}`);
 	};
 
 	// fetchStats is homeStats.refresh from useHomeStats (hooks/useHomeStats.ts).
@@ -727,7 +745,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				observeFieldGuide("lucky_number");
 				showToast(
 					"You hit today's lucky number!",
-          `Lucky #${res.lucky_won} — +5 tickles land in your bank.`,
+          `Lucky #${res.lucky_won}. +5 tickles land in your bank.`,
 				);
 			}
 
@@ -761,7 +779,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			showToast(
 				"Tickle bank full",
 				stats.itemCount > stats.cap
-					? `${stats.itemCount} banked — regen resumes under ${stats.cap}.`
+					? `${stats.itemCount} banked. Regen resumes under ${stats.cap}.`
           : `You're at the ${stats.cap} max.`,
 			);
 			return;
@@ -842,7 +860,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// (useTrader keeps the arrival callback in a ref, so a plain function is fine.)
 	const trader = useTrader({
 		onArrive: () =>
-			showToast("A hooded stranger is at the hedge", "The Ghost Sheep Trader — finds for tickles, while he stays", () =>
+			showToast("A hooded stranger is at the hedge", "The Ghost Sheep Trader · finds for tickles, while he stays", () =>
 				setTraderOpen(true),
 			),
 	});
@@ -949,7 +967,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			// The number the player can act on is "it's full".
 			sub:
 				n === 0
-					? "empty — dig to fill it"
+					? "empty · dig to fill it"
 					: (satchelStanding(n, satchel.state.cap) ?? `${n} finds`),
 			label: "satchel",
 			mark: "bag",
@@ -1023,7 +1041,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			onPress: () => {
 				void trader.summon().then((ok) => {
 					if (ok) setTraderOpen(true);
-					else showToast("No summoning", "The server refused — not a test account, or not pushed yet");
+					else showToast("No summoning", "The server refused: not a test account, or not pushed yet");
 				});
 			},
 			accessibilityLabel: "Summon the trader (dev)",
@@ -1247,7 +1265,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				</Sticker>
 			) : null}
 
-			<SafeAreaView style={styles.contentContainer}>
+			{/* react-native-safe-area-context's view (React Native deprecates its
+			    own). It pads top and sides only: React Native's measured its own
+			    overlap with the home indicator — none, since the tab bar sits
+			    under this screen — while this one reads the window's insets, so
+			    an all-edges pad would lift Rosie off the yard by 34pt. */}
+			<SafeAreaView style={styles.contentContainer} edges={BARN_SAFE_EDGES}>
 				{/* TWO CORNERS. Earned on the left — the permanent number, a rose
 				    heart stamp — and to-spend on the right — the coin, which carries
 				    everything live: the streak on its shoulder, the regen clock as
@@ -1258,7 +1281,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 				    joined the counter — and left Rosie — 2026-09-22, per
 				    docs/prestige-wallow-spec.md.) */}
 				<View style={styles.corners}>
-					<EarnedStamp total={stats.ticklesEarned} />
+					<EarnedStamp total={stats.ticklesEarned} loaded={statsLoaded} />
 					<TickleCoin
 						count={stats.itemCount}
 						cap={stats.cap}
@@ -1300,7 +1323,12 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 
 				<View style={styles.mainSection}>
 					<View style={styles.swipeContainer}>
+						{/* Rosie's stage: full size, or a step smaller on a narrow phone so
+						    the mound and the Barn button keep their yard. Only the pig scales —
+						    the mound stays planted in its corner. */}
+						<View style={[styles.stageFrame, compactStage && styles.stageCompact]}>
 {pigPresentedInHabitat ? null : pigContent}
+						</View>
 						{/* A buried truffle is a thing in the yard, so it shows as one:
 						    a mound bottom-left on Rosie's ground plane, folded until
 						    tapped (then it says how many snouts are down). ABSOLUTE ON THE
@@ -1481,6 +1509,16 @@ const styles = StyleSheet.create({
 		// pig sitting noticeably higher than the original 11%/7% clip
 		// values so all 4 corners + the tickle CTAs above breathe.
 		marginBottom: -Math.round(SCREEN_HEIGHT * 0.03),
+	},
+	// The frame Rosie's stage scales inside: the swipe container's width, its
+	// height set by the stage, so the heart floats and the confetti keep their
+	// anchors whichever size she draws at.
+	stageFrame: {
+		width: "100%",
+		alignItems: "center",
+	},
+	stageCompact: {
+		transform: [{ translateY: COMPACT_STAGE_LIFT }, { scale: COMPACT_STAGE_SCALE }],
 	},
 	// Equipped tickle particle — drifts up from the same anchor the
 	// typographic glyph used. Rides the portrait-mark frame so it reads

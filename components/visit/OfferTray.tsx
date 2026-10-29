@@ -153,7 +153,7 @@ export function OfferTray({
 					</View>
 				) : (
 					<T role="hand" tone="secondary" maxFontSizeMultiplier={VISIT_TYPE_CAP}>
-						a gift still tickles you both — and it lands in the bag over there, so
+						a gift still tickles you both, and it lands in the bag over there, so
 						next time there may be something to spare.
 					</T>
 				)}

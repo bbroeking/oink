@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tickle the Pig — Report a Bug or Idea</title>
+<title>Tickle the Pig · Report a Bug or Idea</title>
 <meta name="robots" content="index,follow" />
 <link rel="icon" href="/rosie.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,10 +17,7 @@
   body {
     margin:0;
     color:var(--text-primary);
-    background:
-      radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--fill-rose) 35%, transparent), transparent 32%),
-      radial-gradient(circle at 90% 96%, color-mix(in srgb, var(--fill-lilac) 30%, transparent), transparent 34%),
-      var(--paper);
+    background:var(--paper);
     font:var(--type-body-lg);
   }
   .wrap { max-width:720px; margin:0 auto; padding:var(--space-sm) var(--space-xl) var(--tab-safe); }
@@ -68,7 +65,7 @@
 
   /* Radio card — the .sticker primitive wrapped round a visually-hidden native
      radio. Selected = BORDER.heavy + a fill, never colour alone (§3 state law). */
-  .kind { flex:1 1 180px; cursor:pointer; transition:background var(--motion-tap) ease-out; }
+  .kind { flex:1 1 180px; cursor:pointer; }
   .kind input { position:absolute; opacity:0; width:0; height:0; }
   .kind .k-title { display:block; font:var(--type-card-title-sm); letter-spacing:var(--tracking-card-title-sm); }
   .kind .k-sub { display:block; margin-top:var(--space-xxs); font:var(--type-body-sm); color:var(--text-secondary); }
@@ -100,7 +97,7 @@
 <h1>Report a bug or share an idea</h1>
 <div class="rule" aria-hidden="true"></div>
 
-<p>Found something broken, thought of something better, or just want to say hi? Whisper it here and it drops straight into the Den — the founder reads every one. No account needed.</p>
+<p>Found something broken, thought of something better, or just want to say hi? Whisper it here and it drops straight into the Den, where the founder reads every one. No account needed.</p>
 
 <form class="report" id="report-form" novalidate>
   <fieldset class="kinds">
@@ -148,7 +145,7 @@
 </form>
 
 <div class="done sticker sticker--straight" id="done" style="display:none">
-  <h2 class="text-section-title">Folded into the Den — thank you</h2>
+  <h2 class="text-section-title">Folded into the Den. Thank you</h2>
   <p class="empty-state__line">The founder reads every whisper. This one landed.</p>
   <p class="again"><button type="button" class="btn btn--link" id="again">Send another ›</button></p>
 </div>
@@ -192,9 +189,9 @@
 
   var REASONS = {
     bad_kind: "Pick what kind of whisper this is first.",
-    too_short: "Just a touch more — at least a few characters.",
-    too_long: "That's a long one — keep it under 1000 characters.",
-    resting: "The Den is napping — try again in a little bit."
+    too_short: "Just a touch more: at least a few characters.",
+    too_long: "That's a long one. Keep it under 1000 characters.",
+    resting: "The Den is napping. Try again in a little bit."
   };
 
   form.addEventListener("submit", function (e) {
@@ -206,8 +203,8 @@
     var honey = document.getElementById("website").value;
 
     if (!kindEl) { setNote("Pick what kind of whisper this is first.", "err"); return; }
-    if (text.length < 3) { setNote("Just a touch more — at least a few characters.", "err"); return; }
-    if (text.length > 1000) { setNote("That's a long one — keep it under 1000 characters.", "err"); return; }
+    if (text.length < 3) { setNote("Just a touch more: at least a few characters.", "err"); return; }
+    if (text.length > 1000) { setNote("That's a long one. Keep it under 1000 characters.", "err"); return; }
 
     btn.disabled = true;
     setNote("Sending…", "");
@@ -235,11 +232,11 @@
         return;
       }
       var reason = data && data.reason;
-      setNote(REASONS[reason] || "Something hiccuped — please try again in a moment.", "err");
+      setNote(REASONS[reason] || "Something hiccuped. Please try again in a moment.", "err");
     })
     .catch(function () {
       btn.disabled = false;
-      setNote("Couldn't reach the bog — check your connection and try again.", "err");
+      setNote("Couldn't reach the bog. Check your connection and try again.", "err");
     });
   });
 

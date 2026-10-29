@@ -31,7 +31,7 @@
 //     `Button` (every action, 44pt floor), `Stat` + `Tag` (the season row)
 //     and `Tag` (the keepsake).
 import React, { useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
@@ -53,6 +53,7 @@ import { blockUser, reportUser } from "@/utils/moderation";
 import {
 	ART_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	MOTION,
 	RADII,
 	SPACE,
@@ -66,7 +67,6 @@ import {
 	ConfirmDialog,
 	EmptyState,
 	Glyph,
-	Icon,
 	Kicker,
 	LoadingBeat,
 	PrestigeAvatar,
@@ -170,15 +170,6 @@ function deriveAskState(
 	return { kind: "ready" };
 }
 
-function formatHandle(s: UserStats): string {
-	const name = s.username ?? "Anonymous";
-	const disc = s.discriminator ? `#${s.discriminator}` : "";
-	if (!s.active_title_name) return `${name}${disc}`;
-	return s.active_title_placement === "post"
-		? `${name} ${s.active_title_name}`
-		: `${s.active_title_name} ${name}`;
-}
-
 // "2h 15m" / "15m" remaining until an ISO timestamp.
 function formatRemaining(iso: string): string {
 	const ms = new Date(iso).getTime() - Date.now();
@@ -243,6 +234,16 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [actionTab, setActionTab] = useState<ActionTab>("ask");
 	// Amount for the friends-only Ask row (1-5).
 	const [askAmount, setAskAmount] = useState(1);
+	// The Ask / Bless / Curse panel slot keeps the tallest height it has drawn
+	// this session, so switching panels never moves the sheet: the sheet sizes
+	// to its content, and the shorter Ask panel used to drop the whole panel
+	// ~64pt under the thumb. A slot that empties keeps its size (2026-09-18).
+	// The session is keyed by target, so a new pig starts from zero.
+	const [panelFloor, setPanelFloor] = useState(0);
+	const onPanelLayout = (e: LayoutChangeEvent) => {
+		const h = e.nativeEvent.layout.height;
+		setPanelFloor((floor) => (h > floor ? h : floor));
+	};
 	// The Ask row is state-aware: a pending trade or a 24h pair
 	// cooldown blocks a new request. Derived from my_tickle_trades.
 	const [askState, setAskState] = useState<AskState>({ kind: "ready" });
@@ -380,9 +381,9 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const visitBlock: { label: string } | null = !visitGate
 		? null
 		: visitGate.locked
-			? { label: visitGate.next_at ? `Napping · back in ${formatRemaining(visitGate.next_at)}` : "Napping — come back soon" }
+			? { label: visitGate.next_at ? `Napping · back in ${formatRemaining(visitGate.next_at)}` : "Napping · come back soon" }
 			: visitGate.resting
-				? { label: "Their pig is resting — come back soon" }
+				? { label: "Their pig is resting. Come back soon" }
 				: null;
 
 	const addFriend = async () => {
@@ -477,12 +478,16 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-			setFeedback(`Asked for ${askAmount} ♥ — they'll see it.`);
+			// Words, not a text ♥: the heart is a semantic mark, drawn as art
+			// wherever it appears (the 2026-07-13 dingbat ruling).
+			setFeedback(
+				`Asked for ${askAmount} ${askAmount === 1 ? "tickle" : "tickles"}. They'll see it.`
+			);
 			// The request is now a pending trade — flip the Ask state.
 			setAskState({ kind: "pending" });
 		} else if (r?.reason === "cooldown") {
 			const h = Math.max(1, Math.ceil(r.hours_remaining ?? 24));
-			setFeedback(`Cooldown — wait ${h}h.`);
+			setFeedback(`Cooldown · wait ${h}h.`);
 			setAskState({ kind: "cooldown", hours: h });
 		} else if (r?.reason === "already_active") {
 			setFeedback("You already have a trade going with them.");
@@ -608,7 +613,7 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 					onPress={visitBlock ? undefined : () => setShowVisit(true)}
 					disabled={!!visitBlock}
 					accessibilityLabel={
-						visitBlock ? `Visit Barn — ${visitBlock.label}` : "Visit Barn"
+						visitBlock ? `Visit Barn. ${visitBlock.label}` : "Visit Barn"
 					}
 					accessibilityHint={
 						visitBlock
@@ -646,36 +651,43 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 						style={styles.actionTabs}
 					/>
 
-					{actionTab === "ask" && (
-						<AskRow
-							amount={askAmount}
-							onPick={setAskAmount}
-							onAsk={sendTickle}
-							busy={busy}
-							state={askState}
-							name={stats.username ?? "this friend"}
-						/>
-					)}
-					{actionTab === "curse" &&
-						curseStatus?.cursed &&
-						curseStatus.expires_at && (
-							<T
-								role="hand"
-								tone="secondary"
-								align="center"
-								style={styles.curseCountdown}
-							>
-								Already cursed — wears off in{" "}
-								{formatRemaining(curseStatus.expires_at)}
-							</T>
+					<View
+						onLayout={onPanelLayout}
+						style={{ minHeight: panelFloor }}
+						testID="user-sheet-action-panel"
+					>
+						{actionTab === "ask" && (
+							<AskRow
+								amount={askAmount}
+								onPick={setAskAmount}
+								onAsk={sendTickle}
+								busy={busy}
+								state={askState}
+								name={stats.username ?? "this friend"}
+								s1={s1}
+							/>
 						)}
-					{actionTab !== "ask" && (
-						<RitualPicker
-							mode={actionTab}
-							targetUserId={stats.user_id}
-							targetName={stats.username ?? "friend"}
-						/>
-					)}
+						{actionTab === "curse" &&
+							curseStatus?.cursed &&
+							curseStatus.expires_at && (
+								<T
+									role="hand"
+									tone="secondary"
+									align="center"
+									style={styles.curseCountdown}
+								>
+									Already cursed. Wears off in{" "}
+									{formatRemaining(curseStatus.expires_at)}
+								</T>
+							)}
+						{actionTab !== "ask" && (
+							<RitualPicker
+								mode={actionTab}
+								targetUserId={stats.user_id}
+								targetName={stats.username ?? "friend"}
+							/>
+						)}
+					</View>
 				</>
 			) : isCrewmate && stats.friendship_status !== "self" ? (
 				<>
@@ -792,7 +804,10 @@ function UserSheetSession({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 							<BarnVisitModal
 								key={targetUserId}
 								targetUserId={targetUserId}
-								targetName={formatHandle(stats)}
+								// The plain name, the same one the friend row's Visit hands
+								// over: it is the plaque's fallback ("…'s Barn"), and a
+								// title or a #code has no place in it.
+								targetName={stats.username ?? "friend"}
 								onClose={() => setShowVisit(false)}
 								onLeaveForCollection={onDismiss}
 							/>
@@ -820,14 +835,18 @@ function StatCol({
 	tier?: string | null;
 	tone: ChipTone;
 }) {
+	// Three columns in a sheet, ~94pt of text each on an SE: the numeral and
+	// the tier tag state the passport's ceiling, so "12,480" and "Generous"
+	// never break mid-word at accessibility sizes. (2026-10-04)
 	return (
 		<View style={styles.statCol}>
 			<Stat
 				label={label}
-				value={value == null ? "—" : value.toLocaleString()}
+				value={value == null ? "–" : value.toLocaleString()}
 				glyph={value == null ? undefined : "heart"}
+				maxFontSizeMultiplier={CHROME_TYPE_CAP}
 			/>
-			{tier ? <Tag label={tier} tone={tone} /> : null}
+			{tier ? <Tag label={tier} tone={tone} maxFontSizeMultiplier={CHROME_TYPE_CAP} /> : null}
 		</View>
 	);
 }
@@ -896,6 +915,7 @@ function AskRow({
 	busy,
 	state,
 	name,
+	s1,
 }: {
 	amount: number;
 	onPick: (n: number) => void;
@@ -903,12 +923,14 @@ function AskRow({
 	busy: boolean;
 	state: AskState;
 	name: string;
+	/** Season 1 retired alignment (its bar, badge and board all hide). */
+	s1: boolean;
 }) {
 	if (state.kind === "pending") {
 		return (
 			<AskBlocked
 				title="Trade in progress"
-				sub="You've already got a trade going with them — answer or withdraw it first."
+				sub="You've already got a trade going with them. Answer or withdraw it first."
 			/>
 		);
 	}
@@ -916,13 +938,18 @@ function AskRow({
 		return (
 			<AskBlocked
 				title="Cooling off"
-				sub={`You traded recently — you can ask again in about ${state.hours}h.`}
+				sub={`You traded recently. You can ask again in about ${state.hours}h.`}
 			/>
 		);
 	}
 	// Economic hint copy — explains the trade math to the asker BEFORE
-	// they tap submit. From the design's RitualPicker.
+	// they tap submit. From the design's RitualPicker. The "you become a
+	// little greedy" clause is Season 0's alignment, and only Season 0 says
+	// it: in Season 1 nothing on screen shows a greedy side any more, so the
+	// line would promise a change the player can never see. (2026-10-04)
 	const greedyShade = amount > 2 ? "more greedy" : "a little greedy";
+	const greedyLine = s1 ? "" : ` you become ${greedyShade}.`;
+	const greedyHint = s1 ? "" : ` and you become ${greedyShade}`;
 	return (
 		<View style={styles.askWrap}>
 			<View style={styles.askPills}>
@@ -940,8 +967,7 @@ function AskRow({
 				))}
 			</View>
 			<T role="hand" tone="secondary" align="center" style={styles.askHint}>
-				★ they spend {amount} from their bank. you pocket {amount * 2}. you
-				become {greedyShade}. ★
+				{`★ they spend ${amount} from their bank. you pocket ${amount * 2}.${greedyLine} ★`}
 			</T>
 			<Button
 				full
@@ -949,7 +975,7 @@ function AskRow({
 				onPress={onAsk}
 				loading={busy}
 				accessibilityLabel={`Ask ${name} for ${amount}`}
-				accessibilityHint={`Spends nothing now; they give ${amount} from their bank and you become ${greedyShade}`}
+				accessibilityHint={`Spends nothing now; they give ${amount} from their bank${greedyHint}`}
 				testID="user-sheet-ask"
 			>
 				<>

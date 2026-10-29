@@ -175,9 +175,9 @@ export function flyKeyframes(from: Point, to: Point, lift = -48): { input: numbe
 export function grantFailureLine(reason: string): string {
 	switch (reason) {
 		case "bag_full":
-			return "Your Satchel is full — he's keeping it in his mouth until there's room.";
+			return "Your Satchel is full. He's keeping it in his mouth until there's room.";
 		case "wish_moved":
-			return "Someone beat him to it — that wish is already filled. Keep it instead?";
+			return "Someone beat him to it. That wish is already filled. Keep it instead?";
 		case "host_bag_full":
 			return "Their Satchel is full right now. Keep it, or try again later.";
 		case "offline":

@@ -709,12 +709,12 @@ export function bannerDigStatus(
   nowMs: number = feedingNowMs(),
 ): string | null {
   if (phaseOpen && !dug) return null; // the button state — no status line
-  if (phaseOpen) return "dug this feeding — back next feeding ★";
+  if (phaseOpen) return "dug this feeding · back next feeding ★";
   // Guarded: read the opens-in number off the shared view (identical to the
   // CTA's countdown while guarded), so both surfaces show the same number.
   const opensIn = feedingPhaseView(nowMs).countdown;
   return dug
-    ? `dug this feeding — opens in ${opensIn}`
+    ? `dug this feeding · opens in ${opensIn}`
     : patchCtaLabel(false, opensIn);
 }
 

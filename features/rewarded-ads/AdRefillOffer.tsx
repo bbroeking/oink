@@ -223,7 +223,7 @@ export function AdRefillOffer({
 								Watch an ad for {offer.rewardAmount} personal tickles
 							</CardTitle>
 							<Body tone="secondary" align="center">
-								For Rosie only—these can&apos;t answer tickle trades. Your normal
+								For Rosie only. These can&apos;t answer tickle trades. Your normal
 								regen keeps running either way.
 							</Body>
 

@@ -13,6 +13,7 @@ import {
 	FlatList,
 	findNodeHandle,
 	useWindowDimensions,
+	type AccessibilityActionEvent,
 	type GestureResponderEvent
 } from "react-native";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -48,11 +49,13 @@ import {
 	ListRow,
 	LoadingBeat,
 	PrestigeAvatar,
+	ScrollEdge,
 	SegmentedControl,
 	Sticker,
 	T,
 	Tag,
 	TextField,
+	useScrollEdge,
 	type AvatarFill,
 	type SegmentOption,
 } from "@/components/ui";
@@ -65,6 +68,7 @@ import {
 	AVATAR_SIZE,
 	BORDER,
 	BUTTON_SIZE,
+	CHROME_TYPE_CAP,
 	FONTS,
 	LIST_BLEED,
 	MOTION,
@@ -97,6 +101,7 @@ import {
 } from "@/hooks/useRitualCaster";
 import {
 	RITUAL_DOOR,
+	allowanceLine,
 	useRitualDoor,
 	type RitualDoorView,
 } from "@/hooks/useRitualDoor";
@@ -157,28 +162,19 @@ const ROW_TYPE_CAP = 1.3;
 // text. Half above and half below the line it sits on.
 const COUNT_HIT = (TAP_MIN - TYPE.kicker.lineHeight) / 2;
 
-// Zero to ten in words; past ten the numeral is the shorter read. The counts
-// are single digits in practice (today's cap is 3) — the numeral tail is there
-// so a raised cap can never render "Thirteen".
-const COUNT_WORDS = [
-	"No",
-	"One",
-	"Two",
-	"Three",
-	"Four",
-	"Five",
-	"Six",
-	"Seven",
-	"Eight",
-	"Nine",
-	"Ten",
-] as const;
-
-function countWord(n: number): string {
-	return COUNT_WORDS[n] ?? String(n);
-}
-
-export default function Friends({ userId }: { userId: string }) {
+export default function Friends({
+	userId,
+	top,
+}: {
+	userId: string;
+	/**
+	 * A door that belongs above the friends themselves (the Play together door,
+	 * 2026-10-04). It leads the list, above today's ritual line, and it stays
+	 * there for a pig with no friends yet, because a stranger can be played with
+	 * too. Absent by default. Only the Friends side draws it, never Add.
+	 */
+	top?: React.ReactNode;
+}) {
 	// THE ERRAND'S DOOR (2026-09-18): a wish you cannot fill from your bag gets
 	// a "send a pig" tag that opens the Pen's ticket with the friend preset;
 	// one a pig is already out for says when it is back. Fail-soft: an
@@ -393,11 +389,15 @@ export default function Friends({ userId }: { userId: string }) {
 				options={TAB_OPTIONS(friends.length)}
 				value={tab}
 				onChange={setTab}
+				// The control is fixed chrome over the list, not scroll content:
+				// it states its ceiling rather than growing into the rows.
+				maxFontSizeMultiplier={CHROME_TYPE_CAP}
 				style={styles.tabsRow}
 			/>
 
 			{tab === "friends" ? (
 				<FriendsList
+					top={top}
 					friends={friends}
 					crewNames={crewNames}
 					errandsOn={errands.available && errands.state.enabled}
@@ -417,13 +417,7 @@ export default function Friends({ userId }: { userId: string }) {
 					onVisit={(f) => setVisiting({ id: f.id, name: f.username ?? "friend" })}
 				/>
 			) : (
-				<ScrollView
-					style={styles.scroll}
-					contentContainerStyle={styles.scrollContent}
-					showsVerticalScrollIndicator={false}
-				>
-					<AddFriend userId={userId} onSent={load} />
-				</ScrollView>
+				<AddFriendPanel userId={userId} onSent={load} />
 			)}
 
 			<UserSheet
@@ -919,6 +913,18 @@ function openPenFor(friendId: string): void {
 	router.push({ pathname: "/pen", params: { send: friendId } });
 }
 
+// One item of the row's meta line, with the dot that introduces it. The dot and
+// its item wrap as one, so a herd name that drops to the next line takes its
+// dot along instead of leaving it hanging at the end of the line above.
+function MetaItem({ children }: { children: React.ReactNode }) {
+	return (
+		<View style={styles.rowMetaItem}>
+			<View style={styles.rowMetaDot} />
+			{children}
+		</View>
+	);
+}
+
 const FriendRow = React.memo(function FriendRow({
 	friend,
 	index,
@@ -1025,6 +1031,30 @@ const FriendRow = React.memo(function FriendRow({
 	);
 	const pressCurse = curse.press;
 
+	// The meta line's "send a pig" tag is a door drawn INSIDE the row's button,
+	// where VoiceOver cannot reach it (an element hides its children), so the
+	// row offers it as a custom action too. Same condition as the tag below.
+	const sendPigOpen =
+		!haveWish && !!wish && wishOpenForMe(wish) && !errandOut && canSendPig;
+	const sendPigActions = useMemo(
+		() =>
+			sendPigOpen && wish
+				? [
+						{
+							name: "sendPig",
+							label: `Send a pig to look for ${satchelFind(wish.find_id)?.withArticle ?? "their wish"}`,
+						},
+					]
+				: undefined,
+		[sendPigOpen, wish]
+	);
+	const onRowAction = useCallback(
+		(event: AccessibilityActionEvent) => {
+			if (event.nativeEvent.actionName === "sendPig") openPenFor(id);
+		},
+		[id]
+	);
+
 	const visitSub = visitsSpent
 		? "None left"
 		: pairSpent
@@ -1045,9 +1075,9 @@ const FriendRow = React.memo(function FriendRow({
 				closesOnPress: true,
 				onPress: visitBarn,
 				accessibilityLabel: visitsSpent
-					? "All tickled out — your snout needs a rest"
+					? "All tickled out · your snout needs a rest"
 					: pairSpent
-						? `You've tickled ${name}'s barn today — come back tomorrow.`
+						? `You've tickled ${name}'s barn today. Come back tomorrow.`
 						: `Visit ${name}'s barn`,
 				accessibilityHint: rowSpent
 					? "Your barn visits come back later today"
@@ -1158,6 +1188,8 @@ const FriendRow = React.memo(function FriendRow({
 				isFav ? ", pinned" : ""
 			}`}
 			accessibilityHint="Opens their profile"
+			accessibilityActions={sendPigActions}
+			onAccessibilityAction={sendPigActions ? onRowAction : undefined}
 			style={styles.friendRow}
 			leading={
 				/* PigAvatar instead of the initial circle — the equipped hat shows
@@ -1179,7 +1211,7 @@ const FriendRow = React.memo(function FriendRow({
 						maxFontSizeMultiplier={ROW_TYPE_CAP}
 						style={styles.rowName}
 					>
-						{f.username ?? "—"}
+						{f.username ?? "–"}
 					</T>
 					{/* The friend code rides the name line as a lookup, one tier
 					    down in secondary ink: the name is the identity. */}
@@ -1220,8 +1252,7 @@ const FriendRow = React.memo(function FriendRow({
 						)}
 					</View>
 					{visitStreak?.active && visitStreak.current_streak > 0 ? (
-						<>
-							<View style={styles.rowMetaDot} />
+						<MetaItem>
 							<View
 								style={styles.rowMetaLine}
 								accessible
@@ -1237,18 +1268,17 @@ const FriendRow = React.memo(function FriendRow({
 									{`${visitStreak.current_streak} day${visitStreak.current_streak === 1 ? "" : "s"}`}
 								</T>
 							</View>
-						</>
+						</MetaItem>
 					) : null}
 					{/* The wish mark: their pig wants a thing you are carrying. The
 					    entire discovery surface for the Satchel — no list of who
 					    wants what, just the rows where you can act. */}
 					{haveWish && wish ? (
-						<>
-							<View style={styles.rowMetaDot} />
+						<MetaItem>
 							<View
 								style={styles.rowMetaLine}
 								accessible
-								accessibilityLabel={`Their pig is hoping for ${satchelFind(wish.find_id)?.withArticle ?? "a find"} — you have one.`}
+								accessibilityLabel={`Their pig is hoping for ${satchelFind(wish.find_id)?.withArticle ?? "a find"}. You have one.`}
 								testID="friend-wish-mark"
 							>
 								<FindArt id={wish.find_id} size={SPACE.lg} />
@@ -1261,36 +1291,33 @@ const FriendRow = React.memo(function FriendRow({
 									you have it
 								</T>
 							</View>
-						</>
+						</MetaItem>
 					) : null}
 					{/* The errand's door (2026-09-18): a wish you cannot fill can
 					    have a pig sent for it; one a pig is out for says when. */}
 					{!haveWish && wish && wishOpenForMe(wish) && errandOut ? (
-						<>
-							<View style={styles.rowMetaDot} />
+						<MetaItem>
 							<View style={styles.rowMetaLine} testID="friend-wish-out">
 								<Tag tone="muted" glyph="search" label={backAboutLabel(errandOut.ends_at)} maxFontSizeMultiplier={ROW_TYPE_CAP} />
 							</View>
-						</>
+						</MetaItem>
 					) : !haveWish && wish && wishOpenForMe(wish) && canSendPig ? (
-						<>
-							<View style={styles.rowMetaDot} />
+						<MetaItem>
 							<Pressable
 								style={styles.rowMetaLine}
 								onPress={() => openPenFor(id)}
 								accessibilityRole="button"
-								accessibilityLabel={`Their pig is hoping for ${satchelFind(wish.find_id)?.withArticle ?? "a find"} — send a pig to look for it`}
+								accessibilityLabel={`Their pig is hoping for ${satchelFind(wish.find_id)?.withArticle ?? "a find"}. Send a pig to look for it`}
 								accessibilityHint="Opens the Pen with this wish on the ticket"
 								hitSlop={SPACE.sm}
 								testID="friend-wish-send"
 							>
 								<Tag tone="sun" glyph="signPen" label="send a pig" maxFontSizeMultiplier={ROW_TYPE_CAP} />
 							</Pressable>
-						</>
+						</MetaItem>
 					) : null}
 					{!!wears && (
-						<>
-							<View style={styles.rowMetaDot} />
+						<MetaItem>
 							<T
 								role="kicker"
 								tone="secondary"
@@ -1300,11 +1327,10 @@ const FriendRow = React.memo(function FriendRow({
 							>
 								wears {wears}
 							</T>
-						</>
+						</MetaItem>
 					)}
 					{!!crewName && (
-						<>
-							<View style={styles.rowMetaDot} />
+						<MetaItem>
 							<T
 								role="kicker"
 								tone="accent"
@@ -1314,7 +1340,7 @@ const FriendRow = React.memo(function FriendRow({
 							>
 								in {crewName}
 							</T>
-						</>
+						</MetaItem>
 					)}
 					{/* The cast's answer, on the row it landed on: once this friend
 					    has today's ritual from you the mark is there, and stays
@@ -1333,7 +1359,12 @@ const FriendRow = React.memo(function FriendRow({
 					)}
 				</View>
 			}
-			trailing={
+			// The trigger is the row's `action`, OUTSIDE the identity's button: in
+			// `trailing` it sat inside the row's one accessibility element, so
+			// VoiceOver could reach neither it nor the panel it opens (and Pin had
+			// no door at all). It is still the rightmost 44pt control, so the
+			// panel's right inset clears it exactly as before. (2026-10-04)
+			action={
 				<RowMenuTrigger
 					ref={triggerRef}
 					friendId={id}
@@ -1342,7 +1373,7 @@ const FriendRow = React.memo(function FriendRow({
 					onPress={toggleMenu}
 				/>
 			}
-			// After the rail, never before it: focus order is tree order, so a
+			// After the trigger, never before it: focus order is tree order, so a
 			// screen reader reaches the trigger and then what it opened. (req 4)
 			after={
 				<RowActionsPanel
@@ -1369,7 +1400,9 @@ const FriendRow = React.memo(function FriendRow({
 // asked for. (2026-09-14)
 //
 // "glimmer" is the day's blessing and "truffle" the day's curse — the founder's
-// words, and the only place in the app that abbreviates a ritual to its feel.
+// words. The two sheets that count the same allowance (the ritual's explain
+// sheet, the profile sheet's panel) speak them too, through `allowanceLine`, so
+// one allowance is never said two ways. (2026-10-04 polish)
 function CountHalf({
 	mode,
 	text,
@@ -1408,7 +1441,7 @@ function VisitsSpentHint() {
 			style={styles.visitsSpentHint}
 		>
 			<GameIcon name="visit" size={SPACE.card} muted />
-			<T role="kicker">all tickled out — your snout needs a rest</T>
+			<T role="kicker">all tickled out · your snout needs a rest</T>
 		</Sticker>
 	);
 }
@@ -1426,7 +1459,7 @@ function RitualCountLine({
 		<View style={styles.countLine}>
 			<CountHalf
 				mode="bless"
-				text={`${countWord(bless.remaining)} glimmer left`}
+				text={allowanceLine("bless", bless.remaining)}
 				onPress={() => onExplain("bless")}
 			/>
 			{/* `·` is typography, not an icon (the 2026-07-13 dingbat ruling). */}
@@ -1435,7 +1468,7 @@ function RitualCountLine({
 			</T>
 			<CountHalf
 				mode="curse"
-				text={`${countWord(curse.remaining).toLowerCase()} truffle left`}
+				text={allowanceLine("curse", curse.remaining, { lowercase: true })}
 				onPress={() => onExplain("curse")}
 			/>
 		</View>
@@ -1445,6 +1478,7 @@ function RitualCountLine({
 // Exported for the friend-row ritual-door tests, which drive the list directly
 // rather than through the whole Friends hub.
 export function FriendsList({
+	top,
 	friends,
 	crewNames,
 	errandsOn = false,
@@ -1463,6 +1497,8 @@ export function FriendsList({
 	onPick,
 	onVisit
 }: {
+	/** The door above the list (see `Friends`'s `top`). Leads every state. */
+	top?: React.ReactNode;
 	friends: Profile[];
 	crewNames: Map<string, string>;
 	/** The errand is on for this player: a wish you cannot fill gets its door. */
@@ -1501,6 +1537,10 @@ export function FriendsList({
 	// every door and the strip agree on, one memory of who's already had today's
 	// ritual from you.
 	const caster = useRitualCaster();
+	// The Friends · Add control's scroll edge: the list scrolls under that
+	// control (not under the crown), so the edge is drawn on the list's top and
+	// starts at rest whenever the list mounts. (2026-10-04)
+	const edge = useScrollEdge();
 	// A cast that LANDS is the ritual bubble — the cast's own art rising the
 	// whole screen (see `RitualBubble`) — and the row's line grows a
 	// "blessed · Cloud Nine" notice (see `RitualCastNotice`) as the record.
@@ -1522,7 +1562,7 @@ export function FriendsList({
 				showToast({
 					tone: "fail",
 					title: `${name} already has today's ${door.word}`,
-					text: `Next ${door.word} in ${untilDailyReset()} — one per friend a day.`,
+					text: `Next ${door.word} in ${untilDailyReset()}, one per friend a day.`,
 				});
 			} else if (outcome.kind === "capped") {
 				showToast({
@@ -1640,7 +1680,8 @@ export function FriendsList({
 
 	if (friends.length === 0) {
 		return (
-			<View style={styles.scroll}>
+			<View style={styles.emptyWrap}>
+				{top}
 				{!loaded ? (
 					<LoadingBeat label="rounding up your pals" />
 				) : loadFailed ? (
@@ -1677,19 +1718,24 @@ export function FriendsList({
 	const blessLeft = caster.usage("bless");
 	const curseLeft = caster.usage("curse");
 	// Nothing to say → no header at all, so the list's own gap doesn't open a
-	// step of paper above the first row for an empty box.
-	const listHeader =
+	// step of paper above the first row for an empty box. The door above the
+	// list (`top`) leads; the count line stays the last thing before the rows,
+	// because it is the caption of the doors those rows open.
+	const countLine =
 		blessLeft && curseLeft ? (
-			<>
-				<RitualCountLine
-					bless={blessLeft}
-					curse={curseLeft}
-					onExplain={setExplain}
-				/>
+			<RitualCountLine
+				bless={blessLeft}
+				curse={curseLeft}
+				onExplain={setExplain}
+			/>
+		) : null;
+	const listHeader =
+		top || countLine || visitsSpent ? (
+			<View style={styles.listHeader}>
+				{top}
+				{countLine}
 				{visitsSpent && <VisitsSpentHint />}
-			</>
-		) : visitsSpent ? (
-			<VisitsSpentHint />
+			</View>
 		) : null;
 	// The list's own root carries the outside-touch hit test: a capture-phase
 	// read of every touch in the list, never a scrim over it.
@@ -1705,6 +1751,8 @@ export function FriendsList({
 				windowSize={7}
 				removeClippedSubviews
 				showsVerticalScrollIndicator={false}
+				onScroll={edge.onScroll}
+				scrollEventThrottle={edge.scrollEventThrottle}
 				// An anchored panel must not float off its row.
 				onScrollBeginDrag={closeMenu}
 				// The one thing that changes on the list when a menu opens; `memo`
@@ -1745,7 +1793,31 @@ export function FriendsList({
 					/>
 				)}
 			/>
+			{/* Laid over the list's top edge (after it, so it paints above the
+			    rows) and run out to the page edges: no room taken, so the
+			    segment → count line → first row rhythm (2026-09-14) is untouched. */}
+			<ScrollEdge visible={edge.edgeVisible} overlay="top" bleed={PAGE_PAD} />
 			<RitualExplainSheet mode={explain} caster={caster} onClose={closeExplain} />
+		</View>
+	);
+}
+
+// The Add side: its own scroller, and the same edge under the Friends · Add
+// control. Mounted only while Add is showing, so the edge starts at rest.
+function AddFriendPanel({ userId, onSent }: { userId: string; onSent: () => void }) {
+	const edge = useScrollEdge();
+	return (
+		<View style={styles.listWrap}>
+			<ScrollView
+				style={styles.scroll}
+				contentContainerStyle={styles.scrollContent}
+				showsVerticalScrollIndicator={false}
+				onScroll={edge.onScroll}
+				scrollEventThrottle={edge.scrollEventThrottle}
+			>
+				<AddFriend userId={userId} onSent={onSent} />
+			</ScrollView>
+			<ScrollEdge visible={edge.edgeVisible} overlay="top" bleed={PAGE_PAD} />
 		</View>
 	);
 }
@@ -1825,7 +1897,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		onSent();
 	};
 
-	const addRow = (p: Profile, sub: string | undefined, index: number) => (
+	const addRow = (p: Profile, index: number) => (
 		<ListRow
 			key={p.id}
 			index={index}
@@ -1838,7 +1910,6 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					{!!p.discriminator && <Label tone="secondary">#{p.discriminator}</Label>}
 				</View>
 			}
-			sub={sub}
 			trailing={
 				<Button
 					variant="lilac"
@@ -1880,7 +1951,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 			{/* Real search results, when the user has typed. */}
 			{!searching && !!results && results.length > 0 && (
 				<View style={styles.rowStack}>
-					{results.map((p, i) => addRow(p, undefined, i))}
+					{results.map((p, i) => addRow(p, i))}
 				</View>
 			)}
 
@@ -1907,7 +1978,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 				<EmptyState
 					glyph="search"
 					title="No users found"
-					sub="Discriminators (#1234) are auto-assigned; ask your friend to share their code from their Account page."
+					sub="Every name comes with a #code. Ask your friend for theirs; it's on their Me tab."
 				/>
 			)}
 
@@ -1919,23 +1990,25 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					<KickerPill star={false} style={styles.sectionKicker}>
 						suggestions
 					</KickerPill>
+					{/* No per-row "suggested": the kicker above already says it, and
+					    a one-line row is the one that takes the scrapbook tilt. */}
 					<View style={styles.rowStack}>
-						{suggestions.map((p, i) => addRow(p, "suggested", i))}
+						{suggestions.map((p, i) => addRow(p, i))}
 					</View>
 				</>
 			)}
 
 			{/* Referral footer — share-your-code call to action lives at
 			    the bottom of the Add panel per the design. The actual
-			    code lives on the Sounder/Account card; this is just a
-			    nudge. */}
+			    code rides the passport on the Me tab (the tab was "Account"
+			    until the 2026-09-20 passport); this is just a nudge. */}
 			{query.length === 0 && (
 				<T role="kicker" tone="secondary" align="center" style={styles.footerNote}>
-					★ share your code from{" "}
+					★ share your code from the{" "}
 					<T role="kicker" style={styles.referralFooterBold}>
-						Account
+						Me
 					</T>{" "}
-					for 100 tickles
+					tab for 100 tickles
 				</T>
 			)}
 		</View>
@@ -1955,7 +2028,16 @@ const styles = StyleSheet.create({
 	// content back by the same, so the rows keep the page inset and the shadow
 	// is whole on both sides. (2026-09-15)
 	scroll: { flex: 1, marginHorizontal: -LIST_BLEED },
-	scrollContent: { paddingBottom: TAB_SAFE },
+	// The Add side scrolls through the same bled edge, so it pads back by the
+	// same amount; without it the search card and the suggestions sat 8pt wider
+	// than the segment above them. (2026-10-04)
+	scrollContent: { paddingHorizontal: LIST_BLEED, paddingBottom: TAB_SAFE },
+	// A pig with no friends yet: the door above the list, then the one state.
+	// No bleed — nothing here scrolls or casts a shadow past the page inset.
+	emptyWrap: { flex: 1, gap: SPACE.sm },
+	// The list's head: the door above the list, today's count line and the
+	// out-of-visits hint, one step apart (the list's own gap is the step after).
+	listHeader: { gap: SPACE.sm },
 	// Each row is its own tilted sticker now, so the stack needs a gutter
 	// rather than a shared card edge.
 	listContent: { paddingHorizontal: LIST_BLEED, paddingBottom: TAB_SAFE, gap: SPACE.sm },
@@ -2002,6 +2084,16 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm
+	},
+	// A dot and the item it introduces — one wrap unit. It yields before the
+	// card edge does, so a long herd name truncates inside the line it lands on.
+	rowMetaItem: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		flexShrink: 1,
+		minWidth: 0,
+		maxWidth: "100%"
 	},
 	rowMetaDot: {
 		width: BORDER.heavy,
@@ -2073,14 +2165,13 @@ const styles = StyleSheet.create({
 	// The cast ritual's own art, riding the cell once it's been sent — sized by
 	// the cell's tier, so only the fit lives here.
 	actionArt: { resizeMode: "contain" },
-	// One-time "out of visits" hint above the list. Its gap BELOW is the list's
-	// own; only the step off the count line is its own to spend.
+	// One-time "out of visits" hint above the list. The header's gap is the
+	// step off the count line and the list's own gap the step below.
 	visitsSpentHint: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
 		gap: SPACE.xs,
-		marginTop: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.sm
 	},

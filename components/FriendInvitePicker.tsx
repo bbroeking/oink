@@ -97,8 +97,9 @@ export function FriendInvitePicker({
 			open={visible}
 			onClose={onDismiss}
 			title="Call a snout to your banner"
+			// The X is a button named "Close"; the footer's quiet "Done" is the
+			// finished-here link. Two names for two places, never one name on both.
 			subtitle="tap a friend to pin them to an open slot"
-			closeLabel="Done"
 			footer={
 				<Button variant="handLink" full onPress={onDismiss} accessibilityHint="Closes the invite list">
 					Done
@@ -128,7 +129,7 @@ export function FriendInvitePicker({
 								? "waiting on your last ask…"
 								: seatsFull
 									? "the banner's full"
-									: "no crew yet — free to ride";
+									: "no crew yet · free to ride";
 					const right = crewmate ? (
 						<RowStatus>crewmate</RowStatus>
 					) : fc ? (
@@ -162,7 +163,7 @@ export function FriendInvitePicker({
 							left={<CrewPortrait hatId={f.active_hat_id ?? null} />}
 							title={
 								<>
-									{f.username ?? "—"}
+									{f.username ?? "–"}
 									{f.discriminator ? <DiscText> #{f.discriminator}</DiscText> : null}
 								</>
 							}

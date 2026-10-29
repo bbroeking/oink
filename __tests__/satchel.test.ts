@@ -156,10 +156,10 @@ describe("the lines", () => {
 
 	it("says what stayed in the mud when the bag was full", () => {
 		expect(satchelReceiptLine({ found: [], lost: ["pinecone"] })).toBe(
-			"Satchel's full — a pinecone stayed in the mud.",
+			"Satchel's full · a pinecone stayed in the mud.",
 		);
 		expect(satchelReceiptLine({ found: ["clover"], lost: ["marble"] })).toBe(
-			"your Satchel got heavier: a four-leaf clover. Satchel's full — a glass marble stayed in the mud.",
+			"your Satchel got heavier: a four-leaf clover. Satchel's full · a glass marble stayed in the mud.",
 		);
 	});
 
@@ -171,7 +171,7 @@ describe("the lines", () => {
 
 	it("names the host's gain first, the tickles second — never 'you earned'", () => {
 		expect(deliveryLine("Maple", "blue_feather", 3)).toBe(
-			"Maple's pig got the blue feather it was hoping for — you both got 3 tickles.",
+			"Maple's pig got the blue feather it was hoping for. You both got 3 tickles.",
 		);
 		expect(deliveryLine("Maple", "blue_feather", 0)).toBe(
 			"Maple's pig got the blue feather it was hoping for.",
@@ -244,11 +244,11 @@ describe("the receipt's bag roll and its words", () => {
 	it("says what the full bag turned away", () => {
 		expect(satchelReceiptCopy({ found: [], lost: ["pinecone"], count: 6, cap: 6 })).toEqual({
 			kicker: "the satchel's full",
-			line: "a pinecone stayed in the mud · full — 6 finds",
+			line: "a pinecone stayed in the mud · full · 6 finds",
 		});
 		expect(satchelReceiptCopy({ found: ["clover"], lost: ["marble"], count: 6, cap: 6 })).toEqual({
 			kicker: "into your satchel",
-			line: "a four-leaf clover · full now — a glass marble stayed in the mud",
+			line: "a four-leaf clover · full now, a glass marble stayed in the mud",
 		});
 	});
 });
@@ -344,10 +344,10 @@ describe("the swap's line", () => {
 
 	it("a pair past the daily paid cap is told plainly, never shown a zero", () => {
 		expect(swapLine("Maple", "blue_feather", "old_key", 0, false)).toBe(
-			"Maple's pig got the blue feather it was hoping for; you took the old key. (no tickles — you've swapped plenty today)",
+			"Maple's pig got the blue feather it was hoping for; you took the old key. (no tickles: you've swapped plenty today)",
 		);
 		expect(swapLine("Maple", "blue_feather", null, 0, false)).toContain(
-			"(no tickles — you've swapped plenty today)",
+			"(no tickles: you've swapped plenty today)",
 		);
 	});
 
@@ -384,14 +384,14 @@ describe("the swap's refusals", () => {
 	it("says the named things the plan asks for", () => {
 		expect(swapRefusalCopy("wish_changed").title).toBe("Their pig changed its mind");
 		expect(swapRefusalCopy("already_today").title).toBe(
-			"You two swapped today — come back tomorrow",
+			"You two swapped today. Come back tomorrow",
 		);
 		expect(swapRefusalCopy("option_gone", "Maple").title).toBe(
 			"Maple's pig changed its mind about that one",
 		);
 		expect(swapRefusalCopy("option_gone").title).toBe("Their pig changed its mind about that one");
 		expect(swapRefusalCopy("host_bag_full").title).toBe(
-			"Their Satchel is full — try the swap instead",
+			"Their Satchel is full. Try the swap instead",
 		);
 	});
 
@@ -405,7 +405,7 @@ describe("the swap's refusals", () => {
 
 	it("an unknown reason still lands somewhere warm", () => {
 		expect(swapRefusalCopy("something_new").title).toBe(
-			"That didn't land — try again in a moment.",
+			"That didn't land. Try again in a moment.",
 		);
 	});
 });
@@ -555,7 +555,7 @@ describe("an unbounded satchel (2026-09-18)", () => {
 	it("an unbounded bag only counts — never 'full', never 'of'", () => {
 		expect(satchelStanding(4, SATCHEL_UNBOUNDED_CAP)).toBe("4 finds");
 		expect(satchelStanding(1, null)).toBe("1 find");
-		expect(satchelStanding(9, 6)).toBe("full — 9 finds");
+		expect(satchelStanding(9, 6)).toBe("full · 9 finds");
 		expect(satchelStanding(3, 6)).toBe("3 of 6 finds");
 		expect(satchelStanding(null, 6)).toBeNull();
 	});

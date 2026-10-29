@@ -130,14 +130,14 @@ export function redemptionErrorMessage(reason: string | undefined): string {
 		case "not_signed_in":
 			return "Sign in to claim a code.";
 		case "bad_grant":
-			return "Something's off with this code — try another.";
+			return "Something's off with this code. Try another.";
 		case "pouch_full":
-			return "Your pouch is bursting — spend a little, then come back for this.";
+			return "Your pouch is bursting. Spend a little, then come back for this.";
 		case "item_sold_out":
 			return "All ten copies have found a pig.";
 		case "network":
 		case "no_data":
 		default:
-			return "Couldn't check the code — try again in a bit.";
+			return "Couldn't check the code. Try again in a bit.";
 	}
 }

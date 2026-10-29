@@ -44,7 +44,7 @@ export interface FieldGuideEntry {
  *  the server's gate. */
 export function penLine(): string {
 	const hours = errandDurationLabel("rosie", errandTuning()).replace(/^about /, "");
-	return `Send a pig to look for a Find — usually the one a friend's pig is hoping for. Back in about ${hours}, with it or without it; give it or keep it. One errand a day per pig.`;
+	return `Send a pig to look for a Find, usually the one a friend's pig is hoping for. Back in about ${hours}, with it or without it; give it or keep it. One errand a day per pig.`;
 }
 
 /** The Satchel page's value line — the bag cap and the tray size come from the
@@ -63,7 +63,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		whimsy:
 			"A fat knot of flavor the Hunger buried deep. Rosie can smell one from a field away.",
 		value: () =>
-			"Dig it from the patch to drain the Hungerer — every truffle you pull mints Golden Truffles.",
+			"Dig it from the patch to drain the Hungerer. Every truffle you pull mints Golden Truffles.",
 		placeholder: true, // needs a raw-truffle sprite (see art-todo)
 	},
 	{
@@ -71,7 +71,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		name: "Golden Truffle",
 		whimsy: "The truffle, polished to a coin. Too pretty to eat, just right to spend.",
 		value: (cfg) =>
-			`Spend them in the Exchange — cosmetics start at ${cfg.exchangeMinPrice} Golden Truffles.`,
+			`Spend them in the Exchange: cosmetics start at ${cfg.exchangeMinPrice} Golden Truffles.`,
 		image: HAT_IMAGES.golden_truffle,
 	},
 	{
@@ -80,7 +80,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		whimsy:
 			"Somewhere in the day's tickles hides a golden count. Land on it and the whole herd cheers.",
 		value: (cfg) =>
-			`${cfg.luckyDailyCount} lucky numbers hide in the herd's daily counter — hit one and +${cfg.luckyPayout} tickles land in your bank.`,
+			`${cfg.luckyDailyCount} lucky numbers hide in the herd's daily counter. Hit one and +${cfg.luckyPayout} tickles land in your bank.`,
 		placeholder: true, // needs a lucky-ticket / golden-number sprite (see art-todo)
 	},
 	{
@@ -109,7 +109,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		id: "exchange",
 		name: "The Exchange",
 		whimsy: "A muddy little market where truffles become finery.",
-		value: () => "Trade Golden Truffles for cosmetics. Earn-only — no shortcuts, no cash.",
+		value: () => "Trade Golden Truffles for cosmetics. Earn-only: no shortcuts, no cash.",
 		glyph: "scales",
 	},
 	{
@@ -137,7 +137,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		name: "The Ghost Sheep Trader",
 		whimsy: "A hooded stranger who drifts by the hedge now and then. Never says where he's been.",
 		value: () =>
-			"Hands finds from your Satchel over for tickles while he stays — the one he fancies pays double. He comes when he comes.",
+			"Hands finds from your Satchel over for tickles while he stays. The one he fancies pays double. He comes when he comes.",
 		glyph: "trader",
 	},
 	{

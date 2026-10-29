@@ -31,11 +31,11 @@ export const HUNGER_STAGES: HungerStage[] = [
 // Player-facing stage whisper (Patrick-Hand voice; the vignette shows the
 // feeling, this line names it — never a number, per the taste standard).
 export const HUNGER_STAGE_LINE: Record<HungerStage, string> = {
-	gorged: "He's gorged — the whole valley's joy in his belly.",
+	gorged: "He's gorged. The whole valley's joy in his belly.",
 	stuffed: "Stuffed, and still smug about it.",
-	full: "Full — but the hoard is thinning.",
+	full: "Full, but the hoard is thinning.",
 	peckish: "Peckish. He's noticed the missing truffles.",
-	hungry: "Hungry — his crown sits crooked.",
+	hungry: "Hungry. His crown sits crooked.",
 	famished: "Famished. One good shove and he's gone.",
 };
 

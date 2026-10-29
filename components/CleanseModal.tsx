@@ -69,7 +69,7 @@ export function CleanseModal({ curses, onDismiss, onConfirm }: Props) {
 			);
 			onDismiss();
 		} else if (r.reason === "insufficient_snouts") {
-			setFeedback("Not enough snouts — you need 5.");
+			setFeedback("Not enough snouts. You need 5.");
 		} else {
 			setFeedback("Couldn't cleanse. Try again.");
 		}

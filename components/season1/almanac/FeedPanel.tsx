@@ -33,8 +33,11 @@ const HERO_ART = 84;
 const DIG_PASS_XP_FALLBACK = 20;
 
 // The one sentence under the meter — the day is the season's real last day.
+// Truffles, not finds: the dig credits the Hungerer's meter with the truffles
+// the herd brings home and nothing else (Snout Deep, "truffles only"; things
+// are yours alone, 2026-09-17), and the guide's third step says the same.
 const meterLine = (lastDay: number) =>
-	`Every find starves him a little — the herd wants him Famished by day ${lastDay}.`;
+	`Every truffle dug back starves him a little. The herd wants him Famished by day ${lastDay}.`;
 
 /**
  * `3 balls this week · +1 if you dig now` while the patch is open and untaken,
@@ -187,10 +190,10 @@ function RemindButton({ nextFeeding = false }: { nextFeeding?: boolean }) {
 			const r = await setFeedingPushPreference(!enabled);
 			if (r === "enabled") setEnabled(true);
 			else if (r === "disabled") setEnabled(false);
-			else if (r === "denied") setNote("Notifications are off for this device — turn them on in Settings.");
-			else setNote("Couldn't set the reminder — give it another tap.");
+			else if (r === "denied") setNote("Notifications are off for this device. Turn them on in Settings.");
+			else setNote("Couldn't set the reminder. Give it another tap.");
 		} catch {
-			setNote("Couldn't set the reminder — give it another tap.");
+			setNote("Couldn't set the reminder. Give it another tap.");
 		} finally {
 			setBusy(false);
 		}
@@ -203,11 +206,11 @@ function RemindButton({ nextFeeding = false }: { nextFeeding?: boolean }) {
 				full
 				onPress={toggle}
 				loading={busy}
-				accessibilityLabel={enabled ? "Reminder set — tap to turn it off" : offLabel}
+				accessibilityLabel={enabled ? "Reminder set. Tap to turn it off" : offLabel}
 				accessibilityHint="Oinks you when the patch opens, on every device you're signed in on"
 				accessibilityState={{ checked: !!enabled }}
 			>
-				{enabled ? "Reminder set — we'll oink you" : offLabel}
+				{enabled ? "Reminder set · we'll oink you" : offLabel}
 			</Button>
 			{!!note && (
 				<Hand tone="accent" align="center" style={styles.note}>

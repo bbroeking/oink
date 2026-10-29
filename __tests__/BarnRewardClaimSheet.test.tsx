@@ -120,7 +120,7 @@ describe("BarnRewardClaimSheet", () => {
 			button(renderer, "barn-reward-hang").props.onPress();
 		});
 		expect(onClose).not.toHaveBeenCalled();
-		expect(texts(renderer)).toContain("Couldn't claim it — give it another tap.");
+		expect(texts(renderer)).toContain("Couldn't claim it. Give it another tap.");
 		act(() => {
 			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS);
 		});

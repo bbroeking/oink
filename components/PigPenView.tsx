@@ -13,9 +13,14 @@
 // EmptyState ("Couldn't round up your pigs"), the join / recruit / home-toggle
 // actions and the recruit ConfirmDialog.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import {
+	ScrollView,
+	StyleSheet,
+	type NativeScrollEvent,
+	type NativeSyntheticEvent,
+} from "react-native";
 import * as Haptics from "expo-haptics";
-import { Button, ConfirmDialog, EmptyState, LoadingBeat } from "./ui";
+import { Button, ConfirmDialog, EmptyState, LoadingBeat, useStackScrollPad } from "./ui";
 import { showPurchaseToast } from "./PurchaseToast";
 import { Paddock } from "./pen/Paddock";
 import { FenceRow } from "./pen/FenceRow";
@@ -26,7 +31,7 @@ import { Homecoming } from "./pen/Homecoming";
 import { paddockNote, pigCardState } from "./pen/penState";
 import type { ErrandRow } from "@/constants/errands";
 import type { SatchelFindId } from "@/constants/satchel";
-import { PAGE_PAD, SPACE, TAB_SAFE } from "@/constants/theme";
+import { PAGE_PAD, SPACE } from "@/constants/theme";
 import type { UsePigErrands } from "@/hooks/usePigErrands";
 import type { WishTargets } from "@/hooks/useFriendWishTargets";
 import { errandRefusalCopy, errandTuning, type ErrandFriend } from "@/utils/errands";
@@ -58,7 +63,12 @@ interface Props {
 	/** The Friends row's door: open the ticket with this friend's wish preset. */
 	sendFor?: string | null;
 	onSendForConsumed?: () => void;
+	/** The route's scroll listener — the crown's `useScrollEdge().onScroll`. */
+	onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
+
+/** One frame at 60fps: the edge reads the offset, it does not animate on it. */
+const SCROLL_THROTTLE = 16;
 
 /** The `back` rows whose homecoming has already played this session. */
 const AUTO_OPENED = new Set<number>();
@@ -79,7 +89,13 @@ export function PigPenView({
 	loadTargets,
 	sendFor = null,
 	onSendForConsumed,
+	onScroll,
 }: Props) {
+	// The Pen is a pushed route with no tab bar: the board runs to the
+	// screen's foot (app/pen.tsx pads only the top and sides) and its last
+	// card clears the home indicator by the stack scroller's one pad, instead
+	// of a TAB_SAFE band over a bar that is not there.
+	const scrollPad = useStackScrollPad();
 	const tuning = errands.state.tuning ?? errandTuning();
 	const [selectedPig, setSelectedPig] = useState<PigId>("rosie");
 	const [joining, setJoining] = useState(false);
@@ -189,7 +205,7 @@ export function PigPenView({
 		const row = errands.state.out.find((r) => r.pig_id === pigId);
 		if (!row) return;
 		const ok = await errands.summon(row.id);
-		if (!ok) showPurchaseToast({ type: "fail", title: "No summoning", text: "The server refused — not a test account, or not pushed yet" });
+		if (!ok) showPurchaseToast({ type: "fail", title: "No summoning", text: "The server refused: not a test account, or not pushed yet" });
 	};
 
 	const pendingRecruitPig = pendingRecruitId ? pigDefinition(pendingRecruitId) : null;
@@ -201,7 +217,13 @@ export function PigPenView({
 		.map((c) => ({ id: c.pig.id, name: c.pig.name, sendable: c.action.kind === "send", out: !!c.outRow }));
 
 	return (
-		<ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+		<ScrollView
+			style={styles.root}
+			contentContainerStyle={[styles.content, { paddingBottom: scrollPad }]}
+			showsVerticalScrollIndicator={false}
+			onScroll={onScroll}
+			scrollEventThrottle={SCROLL_THROTTLE}
+		>
 			{/* The crown is the route's (app/pen.tsx); the view draws the room. */}
 			<Paddock
 				pigs={["rosie", companion?.id ?? previewFriend ?? null]}
@@ -286,7 +308,7 @@ export function PigPenView({
 				title={`Choose ${pendingRecruitPig?.name ?? "this pig"} as Rosie’s friend?`}
 				body="This is your one long-term companion choice. You can’t change it right now."
 				confirmLabel={`Choose ${pendingRecruitPig?.name ?? "pig"}`}
-				confirmHint="Puts this pig in the Pen for good — the choice can't be changed right now"
+				confirmHint="Puts this pig in the Pen for good. The choice can't be changed right now"
 				cancelLabel="Keep looking"
 				cancelHint="Closes this without choosing"
 				onCancel={() => setPendingRecruitId(null)}
@@ -347,10 +369,10 @@ export function PigPenView({
 
 const styles = StyleSheet.create({
 	root: { flex: 1 },
+	// paddingBottom is the stack scroller's one pad, inline (useStackScrollPad).
 	content: {
 		paddingHorizontal: PAGE_PAD,
 		paddingTop: SPACE.lg,
-		paddingBottom: TAB_SAFE,
 		gap: SPACE.xs,
 	},
 });

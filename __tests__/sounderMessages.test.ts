@@ -13,6 +13,16 @@ const migration = fs.readFileSync(
 	),
 	"utf8"
 );
+// The preset bodies were re-issued (em dash → full stop) in a follow-up that
+// moves the CHECK, the sent rows and the deriving function together; the copy
+// pin reads that file.
+const copyMigration = fs.readFileSync(
+	path.join(
+		ROOT,
+		"supabase/migrations/20260922120000_preset_sounder_message_copy.sql"
+	),
+	"utf8"
+);
 const oinkSheet = fs.readFileSync(
 	path.join(ROOT, "components/SounderOinkSheet.tsx"),
 	"utf8"
@@ -32,7 +42,7 @@ describe("preset Sounder messages", () => {
 	it("pins the five approved pieces of copy", () => {
 		expect(SOUNDER_RECRUITING_COPY).toBe("We saved you a place in our Sounder.");
 		expect(SOUNDER_COORDINATION_PRESETS.map((preset) => preset.body)).toEqual([
-			"The Truffle Patch is open—come dig!",
+			"The Truffle Patch is open. Come dig!",
 			"Dig when you can; the Feeding is waiting.",
 			"One more pig can unlock our Sounder Bonus.",
 			"Fine digging, Sounder!",
@@ -41,7 +51,7 @@ describe("preset Sounder messages", () => {
 			SOUNDER_RECRUITING_COPY,
 			...SOUNDER_COORDINATION_PRESETS.map((preset) => preset.body),
 		]) {
-			expect(migration).toContain(body);
+			expect(copyMigration).toContain(body);
 		}
 	});
 

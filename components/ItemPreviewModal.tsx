@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Image, Animated } from "react-native";
-import { PigStage, type EquippedItem } from "./ui/PigStage";
+import { View, StyleSheet, Image, Animated, type LayoutChangeEvent } from "react-native";
+import { PigStage, resolveSlot, type EquippedItem } from "./ui/PigStage";
 import {
 	AdaptiveModalScaffold,
 	Button,
 	ConfirmDialog,
+	DialogCloseRow,
 	Hand,
 	PageTitle,
 	SectionTitle,
@@ -16,16 +17,17 @@ import {
 } from "./ui";
 import { rpcAction } from "@/utils/rpc";
 import { showPurchaseToast } from "./PurchaseToast";
-import { HAT_IMAGES, HatRow } from "@/constants/hats";
+import { HAT_IMAGES, HatRow, PIG_CANVAS } from "@/constants/hats";
 import {
-	ART_SIZE,
 	BORDER,
 	RADII,
 	RARITY_BADGE,
 	RARITY_BG_SOLID,
 	SPACE,
+	TAP_MIN,
 	UI_COLORS,
 } from "@/constants/theme";
+import { fitStage, type CanvasBox } from "@/utils/previewFit";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
@@ -38,12 +40,6 @@ const PARTICLE = 56;
 const PARTICLE_FLOOR = 36;
 /** Half a sprite — the centring offset for an absolutely-placed particle. */
 const PARTICLE_HALF = PARTICLE / 2;
-/**
- * Top padding that clears the scaffold's 44pt close affordance, so the preview
- * card — and the pig's ears inside it — can never slide under the dismiss
- * target.
- */
-const CLOSE_CLEARANCE = 58;
 /** Taller than wide, so a tall item (a hat) has headroom above the pig. */
 const PREVIEW_RATIO = 0.85;
 /** The coin riding the spend CTAs' labels. */
@@ -260,6 +256,9 @@ export function ItemPreviewModal({
 	// [D-09] (2026-09-11)
 	const [confirmTrough, setConfirmTrough] = useState(false);
 	const [troughBusy, setTroughBusy] = useState(false);
+	// The frame's inner size, measured: the stage is fitted to it (below)
+	// rather than drawn at 1:1 and cut wherever it overhangs.
+	const [frame, setFrame] = useState<{ w: number; h: number } | null>(null);
 	if (!item) return null;
 	const rarity = item.rarity ?? "common";
 	const badge = RARITY_BADGE[rarity] ?? RARITY_BADGE.common;
@@ -292,6 +291,35 @@ export function ItemPreviewModal({
 	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
 	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
 
+	// The product shot is fitted, never cut (polish pass, 2026-10-04): the
+	// Wizard Hat's tip ran ~62pt past the top of a 300pt stage drawn at 1:1 in
+	// a frame with ~60pt of headroom, and on a 375pt phone the stage was wider
+	// than the frame. Every worn item's box comes from the renderer's own math
+	// (`resolveSlot`, frame 0, the frozen rest pose drawn below), and the stage
+	// plus whatever overhangs it is scaled into the frame, never up.
+	const stageBoxes: CanvasBox[] = [
+		stageEquipped,
+		stageEquippedBow,
+		stageEquippedGlasses,
+		stageEquippedMask,
+		stageEquippedNeck,
+		stageEquippedAura,
+		stageEquippedHeld,
+	].flatMap((slot) => {
+		const overlay = resolveSlot(slot, "idle", 0)?.overlay;
+		return overlay ? [overlay] : [];
+	});
+	const fit = frame
+		? fitStage(stageBoxes, PIG_CANVAS, frame.w, frame.h, SPACE.sm)
+		: null;
+	const onFrameLayout = (e: LayoutChangeEvent) => {
+		const { width, height } = e.nativeEvent.layout;
+		// The frame's ink border is inside its box; the stage fits inside that.
+		const w = width - BORDER.ink * 2;
+		const h = height - BORDER.ink * 2;
+		if (!frame || frame.w !== w || frame.h !== h) setFrame({ w, h });
+	};
+
 	const openTrough = async () => {
 		if (troughBusy) return;
 		setTroughBusy(true);
@@ -307,7 +335,7 @@ export function ItemPreviewModal({
 			showPurchaseToast({
 				type: "success",
 				title: "Trough opened!",
-				text: "Your Sounder can chip in now — find it in the Shop.",
+				text: "Your Sounder can chip in now. Find it in the Shop.",
 				cost: seed,
 			});
 			onTroughOpened?.(seed, r.balance);
@@ -316,7 +344,7 @@ export function ItemPreviewModal({
 		}
 		const msg =
 			r.reason === "opener_cooldown"
-				? "You opened a Trough recently — one per 3 days."
+				? "You opened a Trough recently, one per 3 days."
 				: r.reason === "insufficient"
 					? "Not enough snouts for the seed."
 					: r.reason === "seed_too_low"
@@ -334,13 +362,18 @@ export function ItemPreviewModal({
 			visible={!!item}
 			onRequestClose={onClose}
 			bare
-			showCloseButton
-			closeLabel="Close item preview"
 			maxWidth={430}
 			contentContainerStyle={styles.modalContent}
 			testID="item-preview-modal"
 		>
 				<Sticker color="paper" radius={RADII.xxl} style={styles.sheet}>
+					{/* The ✕ lives on the card it closes. The scaffold's own rail
+					    sat in the bare frame ABOVE the card, so the ✕ floated off
+					    its top-right corner while the card kept 58pt of empty
+					    paper where it was meant to be (063, polish pass
+					    2026-10-04). In layout, like every dialog's rail, so a
+					    long name can never slide under it. */}
+					<DialogCloseRow onPress={onClose} label="Close" style={styles.closeRow} />
 					{/* Big preview. Two modes:
 					    • Backgrounds → render the image filling the
 					      preview card (no pig). The user will see it
@@ -354,6 +387,7 @@ export function ItemPreviewModal({
 							styles.previewCard,
 							{ backgroundColor: RARITY_BG_SOLID[rarity] },
 						]}
+						onLayout={onFrameLayout}
 					>
 						{isTickleParticle ? (
 							<TickleParticlePreview source={itemSrc ?? null} />
@@ -363,21 +397,34 @@ export function ItemPreviewModal({
 								style={styles.fillImage}
 								resizeMode="cover"
 							/>
-						) : (
-							<View style={styles.previewStage}>
-								<PigStage
-									pigAnimation="idle"
-									pigFrozen
-									equipped={stageEquipped}
-									equippedBow={stageEquippedBow}
-									equippedGlasses={stageEquippedGlasses}
-									equippedMask={stageEquippedMask}
-									equippedNeck={stageEquippedNeck}
-									equippedAura={stageEquippedAura}
-									equippedHeld={stageEquippedHeld}
-								/>
+						) : fit ? (
+							// The fitted box stands on the frame's floor; the
+							// 300pt canvas inside it is scaled about its centre.
+							<View style={{ width: fit.width, height: fit.height }}>
+								<View
+									style={[
+										styles.previewCanvas,
+										{
+											left: fit.canvasLeft,
+											top: fit.canvasTop,
+											transform: [{ scale: fit.scale }],
+										},
+									]}
+								>
+									<PigStage
+										pigAnimation="idle"
+										pigFrozen
+										equipped={stageEquipped}
+										equippedBow={stageEquippedBow}
+										equippedGlasses={stageEquippedGlasses}
+										equippedMask={stageEquippedMask}
+										equippedNeck={stageEquippedNeck}
+										equippedAura={stageEquippedAura}
+										equippedHeld={stageEquippedHeld}
+									/>
+								</View>
 							</View>
-						)}
+						) : null}
 					</View>
 
 					{/* Rarity tag — the rarity's own dark ink on its own light fill,
@@ -452,7 +499,7 @@ export function ItemPreviewModal({
 								disabled
 								accessibilityHint="This item isn't in today's shop"
 							>
-								Rotates in soon — not today's pick
+								Rotates in soon · not today's pick
 							</Button>
 						) : locked ? (
 							<Button
@@ -473,7 +520,7 @@ export function ItemPreviewModal({
 								accessibilityLabel={`Not enough snouts, ${item.cost.toLocaleString()} needed`}
 								accessibilityHint={`Earn ${(item.cost - balance).toLocaleString()} more snouts to buy this`}
 							>
-								Not enough · need {item.cost - balance}
+								Not enough · need {(item.cost - balance).toLocaleString()}
 							</Button>
 						) : (
 							<Button
@@ -513,7 +560,7 @@ export function ItemPreviewModal({
 								Open a Trough · {seed.toLocaleString()}
 							</Button>
 							<T role="hand" tone="accent" align="center" style={styles.troughHint}>
-								Start it for {seed.toLocaleString()} snouts — your Sounder
+								Start it for {seed.toLocaleString()} snouts. Your Sounder
 								chips in the rest.
 							</T>
 						</View>
@@ -523,7 +570,7 @@ export function ItemPreviewModal({
 				open={confirmTrough}
 				presentation="inline"
 				title="Open a Trough for this item?"
-				body={`Seeding it costs ${seed.toLocaleString()} snouts — you'll have ${Math.max(
+				body={`Seeding it costs ${seed.toLocaleString()} snouts. You'll have ${Math.max(
 					0,
 					balance - seed,
 				).toLocaleString()} left. You can only open one Trough every 3 days.`}
@@ -555,8 +602,18 @@ const styles = StyleSheet.create({
 	},
 	sheet: {
 		paddingHorizontal: SPACE.xl,
-		paddingTop: CLOSE_CLEARANCE,
+		paddingTop: SPACE.md,
 		paddingBottom: SPACE.xl,
+	},
+	// The rail reaches into the card's right pad so the ✕ sits SPACE.md off
+	// the card's corner, level with the pad above it.
+	closeRow: {
+		alignSelf: "stretch",
+		width: "auto",
+		minHeight: TAP_MIN,
+		marginRight: -SPACE.md,
+		paddingTop: 0,
+		paddingRight: 0,
 	},
 	previewCard: {
 		width: "100%",
@@ -569,14 +626,13 @@ const styles = StyleSheet.create({
 		justifyContent: "flex-end",
 		marginBottom: SPACE.card,
 	},
-	// Fixed-size inner stage. Card-coord overlays land correctly only
-	// when the pig is at a known native size. Centered inside the
-	// (sometimes larger) preview card. Items position relative to
-	// THIS box, not the card.
-	previewStage: {
-		width: ART_SIZE.stage,
-		height: ART_SIZE.stage,
-		position: "relative",
+	// The stage at its native canvas size — card-coord overlays land
+	// correctly only when the pig is at a known size — placed and scaled
+	// inline by the fit.
+	previewCanvas: {
+		position: "absolute",
+		width: PIG_CANVAS,
+		height: PIG_CANVAS,
 	},
 	fillImage: {
 		width: "100%",

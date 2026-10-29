@@ -95,7 +95,6 @@ export function DrawRevealSheet({
 		<Sheet
 			open={open}
 			onClose={onClose}
-			closeLabel="Close the draw"
 			testID={testID}
 			footer={
 				<View style={styles.actions}>
@@ -112,16 +111,32 @@ export function DrawRevealSheet({
 							>
 								Hang it in the Barn
 							</Button>
-							<Button variant="ghost" size="lg" full onPress={onClose} testID="draw-reveal-later">
+							<Button
+								variant="ghost"
+								size="lg"
+								full
+								onPress={onClose}
+								accessibilityLabel="Later"
+								accessibilityHint="Closes the reveal; the furnishing waits in your Barn collection"
+								testID="draw-reveal-later"
+							>
 								Later
 							</Button>
 							<Hand tone="secondary" style={styles.centered}>
-								It&apos;s in your Barn collection already — yours to keep.
+								It&apos;s in your Barn collection already, yours to keep.
 							</Hand>
 						</>
 					) : (
 						<>
-							<Button variant="gold" size="lg" full onPress={onClose} testID="draw-reveal-close">
+							<Button
+								variant="gold"
+								size="lg"
+								full
+								onPress={onClose}
+								accessibilityLabel={mine ? "Lovely" : "Good for them"}
+								accessibilityHint="Closes the reveal"
+								testID="draw-reveal-close"
+							>
 								{mine ? "Lovely" : "Good for them"}
 							</Button>
 							{mine && purse ? (

@@ -38,9 +38,12 @@ import {
 	Label,
 	ListRow,
 	LoadingBeat,
+	ScrollEdge,
 	SectionHeader,
 	Sticker,
 	T,
+	showToast,
+	useScrollEdge,
 	type AvatarFill,
 	type GlyphName,
 } from "@/components/ui";
@@ -55,6 +58,7 @@ import {
 	type RitualMeta,
 	type RitualMode,
 } from "../utils/rituals";
+import { effectMeta } from "@/utils/activeEffects";
 import { DigPostcardInbox } from "./DigPostcardInbox";
 import {
 	fetchSounderMessages,
@@ -129,20 +133,44 @@ const KIND_MARK: Record<
 // flavor-only label map that drifted — the recipient was getting
 // vague poetry while every other surface showed the actual rule
 // the effect was applying. Source of truth: utils/rituals.ts.
-function blessingDescription(kind: string): string {
-	// Raw server string → the lookup can miss; annotate so the fallback below
-	// is type-visible instead of looking like dead code.
-	const m: RitualMeta | undefined = BLESSING_META[kind as BlessingKind];
-	return m ? `${m.name} — ${m.blurb}` : kind;
+//
+// The feed is HISTORY, so it also holds rows cast before the weekday rotation
+// (2026-09-14). A retired kind keeps its own name (through `effectMeta`, the
+// one reader of the retired table) and never its blurb, because the mechanic
+// that blurb describes is gone. A kind nobody knows says nothing at all: the
+// raw server id ("warm_tea") is never copy. (2026-10-04 polish)
+function ritualDescription(mode: RitualMode, kind: string): string | null {
+	// Raw server string → the lookup can miss; annotate so the fallbacks below
+	// are type-visible instead of looking like dead code.
+	const live: RitualMeta | undefined =
+		mode === "bless"
+			? BLESSING_META[kind as BlessingKind]
+			: CURSE_META[kind as CurseKind];
+	if (live) return `${live.name} · ${live.blurb}`;
+	const { meta } = effectMeta({
+		source: mode === "bless" ? "blessing" : "curse",
+		kind,
+		expires_at: "",
+		sender_id: null,
+		sender_username: null,
+	});
+	return meta?.name ?? null;
 }
-function curseDescription(kind: string): string {
-	const m: RitualMeta | undefined = CURSE_META[kind as CurseKind];
-	return m ? `${m.name} — ${m.blurb}` : kind;
+
+function ritualLine(who: string, verb: string, description: string | null): string {
+	return description ? `${who} ${verb} you · ${description}` : `${who} ${verb} you`;
+}
+
+/** The feed line for a received blessing or curse. Exported for its test. */
+export function ritualFeedLine(mode: RitualMode, who: string, kind: string): string {
+	return ritualLine(who, mode === "bless" ? "blessed" : "cursed", ritualDescription(mode, kind));
 }
 
 // The swap band's one line, in the dig-tally voice: whoever's pig GAINED is
-// named first, and the take (if there was one) closes the sentence. A gift
-// reads as a gift — the word "swap" is reserved for a hand-off both ways.
+// named first, and the take (if there was one) closes the sentence: "gave …
+// and took …", the plain verbs a hand-off both ways is made of. A gift reads
+// as a gift. (Was "you swapped DemoHelper1's pig the old key", which no one
+// says; the band's own title already says these are swaps. 2026-10-04)
 export function swapFeedLine(row: SatchelSwapRow): string {
 	const who = row.partner_username ?? "A friend";
 	const name = (id: string | null) => (id ? (satchelFind(id)?.name ?? "find") : null);
@@ -150,11 +178,11 @@ export function swapFeedLine(row: SatchelSwapRow): string {
 	const took = name(row.took_find_id);
 	if (row.direction === "received") {
 		return took
-			? `${who} swapped your pig the ${gave} it was hoping for and took the ${took}`
+			? `${who} gave your pig the ${gave} it was hoping for and took the ${took}`
 			: `${who} brought your pig the ${gave}`;
 	}
 	return took
-		? `you swapped ${who}'s pig the ${gave} and took the ${took}`
+		? `you gave ${who}'s pig the ${gave} and took the ${took}`
 		: `you gave ${who}'s pig the ${gave}`;
 }
 
@@ -166,7 +194,6 @@ interface Props {
 export function Inbox({ userId, onActionableCount }: Props) {
 	const [loading, setLoading] = useState(true);
 	const [busy, setBusy] = useState<string | null>(null);
-	const [feedback, setFeedback] = useState("");
 
 	const [friendReqs, setFriendReqs] = useState<FriendReq[]>([]);
 	const [incomingTrades, setIncomingTrades] = useState<TradeRow[]>([]);
@@ -190,6 +217,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	// What-happened pagination: newest 10, then "Load more" pages by 10.
 	const [shownCount, setShownCount] = useState(10);
 	const [hasPostcards, setHasPostcards] = useState(false);
+	// The hub crown's scroll edge, owned by the list that scrolls under it, so
+	// it starts at rest every time the Inbox segment opens. (2026-10-04)
+	const edge = useScrollEdge();
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
@@ -354,6 +384,10 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		onActionableCount?.(friendReqs.length + incomingTrades.length);
 	}, [friendReqs.length, incomingTrades.length, onActionableCount]);
 
+	// Every outcome is a toast (spec §3.4: refusals are toasts). It used to be a
+	// kicker line at the TOP of the feed — off-screen when you answered a pen
+	// card further down, and it never cleared: "Request declined." sat there
+	// until the next tap. (2026-10-04 polish)
 	const doRpc = async (rpcName: RpcName, args: Record<string, unknown>, id: string, ok: string) => {
 		if (busy) return;
 		setBusy(id);
@@ -369,23 +403,31 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			// Surface specific reasons — they tell the user what to do
 			// instead of a vague retry.
 			if (r?.reason === "at_cap") {
-				setFeedback(`You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone first.`);
+				showToast({
+					tone: "fail",
+					title: `You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap`,
+					text: "Remove someone first.",
+				});
 			} else if (r?.reason === "target_at_cap") {
-				setFeedback("They're at the friend cap.");
+				showToast({ tone: "fail", title: "They're at the friend cap." });
 			} else if (r?.reason === "insufficient_bank") {
 				// Lost the race with regen / a different action. Refresh
 				// balance so the UI catches up to whatever the actual
 				// number is, and tell the user how short they were.
 				const have = r.balance ?? 0;
 				const need = r.needed ?? 0;
-				setFeedback(`Not enough tickles — you have ${have}, they asked for ${need}.`);
+				showToast({
+					tone: "fail",
+					title: "Not enough tickles",
+					text: `You have ${have}, they asked for ${need}.`,
+				});
 				load();
 			} else {
-				setFeedback("That didn't take — try again.");
+				showToast({ tone: "fail", title: "That didn't take. Try again." });
 			}
 			return;
 		}
-		setFeedback(ok);
+		showToast({ tone: "success", title: ok });
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 		load();
 	};
@@ -412,7 +454,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			"fulfill_tickle_trade",
 			{ trade_id: t.id },
 			t.id,
-			`Gave ${t.amount} — ${t.partner_username ?? "they"} pocket ${t.amount * 2}.`
+			`Gave ${t.amount} · ${t.partner_username ?? "they"} pocket ${t.amount * 2}.`
 		);
 	const passTrade = (t: TradeRow) =>
 		doRpc("cancel_tickle_trade", { trade_id: t.id }, t.id, "Passed.");
@@ -427,7 +469,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			[
 		...answered.map((t) => ({
 			id: `ans-${t.id}`,
-			text: `${t.partner_username ?? "A friend"} answered your trade — +${t.amount * 2} tickles`,
+			text: `${t.partner_username ?? "A friend"} answered your trade · +${t.amount * 2} tickles`,
 			kind: "answered" as const,
 					at: Date.parse(t.fulfilled_at ?? t.created_at)
 		})),
@@ -445,19 +487,19 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
-			text: `${b.from_username ?? "A friend"} blessed you — ${blessingDescription(b.kind)}`,
+			text: ritualFeedLine("bless", b.from_username ?? "A friend", b.kind),
 			kind: "blessed" as const,
 					at: Date.parse(b.sent_at)
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
-			text: `${c.from_username ?? "Someone"} cursed you — ${curseDescription(c.kind)}`,
+			text: ritualFeedLine("curse", c.from_username ?? "Someone", c.kind),
 			kind: "cursed" as const,
 					at: Date.parse(c.sent_at)
 				})),
 		...sounderMessages.map((message) => ({
 			id: `sounder-${message.id}`,
-			text: `${message.sender_username ?? "A crewmate"} Oinked ${message.crew_name} — ${message.body}`,
+			text: `${message.sender_username ?? "A crewmate"} Oinked ${message.crew_name}: ${message.body}`,
 			kind: "sounder" as const,
 			at: Date.parse(message.created_at),
 		}))
@@ -486,299 +528,308 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		!hasPostcards;
 
 	return (
-		<FlatList
-			style={styles.scroll}
-			contentContainerStyle={styles.content}
-			showsVerticalScrollIndicator={false}
-			data={passiveShown}
-			keyExtractor={(event) => event.id}
-			initialNumToRender={10}
-			maxToRenderPerBatch={8}
-			windowSize={7}
-			removeClippedSubviews
-			ListHeaderComponent={
-				<>
-					{!!feedback && (
-						<T role="kicker" tone="accent" align="center" style={styles.feedback}>
-							{feedback}
-						</T>
-					)}
+		<View style={styles.panel}>
+			<FlatList
+				style={styles.scroll}
+				contentContainerStyle={styles.content}
+				showsVerticalScrollIndicator={false}
+				onScroll={edge.onScroll}
+				scrollEventThrottle={edge.scrollEventThrottle}
+				data={passiveShown}
+				keyExtractor={(event) => event.id}
+				initialNumToRender={10}
+				maxToRenderPerBatch={8}
+				windowSize={7}
+				removeClippedSubviews
+				ListHeaderComponent={
+					// One stack, one step between everything in it. The bands above
+					// the history used to sit in a bare fragment, so their rows had no
+					// gap at all (the swap rows touched, tilt to tilt) while the
+					// history rows below got the list's — the same row, two rhythms.
+					// (2026-10-04 polish)
+					<View style={styles.header}>
+						{/* Receiver bless/curse status — what's active on you now. */}
+						<ActiveEffects />
+						<DigPostcardInbox userId={userId} onPresence={setHasPostcards} />
 
-					{/* Receiver bless/curse status — what's active on you now. */}
-					<ActiveEffects />
-					<DigPostcardInbox userId={userId} onPresence={setHasPostcards} />
-
-					{empty && (
-						<EmptyState
-							glyph="bell"
-							title="The yard's quiet"
-							sub="Trade or bless a friend and the news lands here."
-						/>
-					)}
-
-					{/* Out to market — your pending outgoing trade requests */}
-					{outgoingTrades.length > 0 && (
-						<>
-							<SectionHeader
-								kicker="out to market"
-								title="Your trades"
-								style={styles.bandHeader}
+						{empty && (
+							<EmptyState
+								glyph="bell"
+								title="The yard's quiet"
+								sub="Trade or bless a friend and the news lands here."
 							/>
-							{outgoingTrades.map((t, i) => (
-								<ListRow
-									key={t.id}
-									index={i}
-									title={
-										<T role="kicker" numberOfLines={1}>
-											{t.partner_username ?? "—"}
-											{t.partner_discriminator ? (
-												<Label tone="secondary"> #{t.partner_discriminator}</Label>
-											) : null}
-											{` · you'd pocket ${t.amount * 2}`}
-										</T>
-									}
-									accessibilityLabel={`Your trade with ${t.partner_username ?? "a friend"} — you'd pocket ${t.amount * 2} tickles`}
-									trailing={
-										<Button
-											variant="handLink"
-											size="xs"
-											onPress={() => withdrawTrade(t)}
-											loading={busy === t.id}
-											accessibilityLabel={`Withdraw your trade with ${t.partner_username ?? "a friend"}`}
-											accessibilityHint="Takes the lot off the market; nothing is spent"
-										>
-											withdraw
-										</Button>
-									}
+						)}
+
+						{/* Out to market — your pending outgoing trade requests */}
+						{outgoingTrades.length > 0 && (
+							<>
+								<SectionHeader
+									kicker="out to market"
+									title="Your trades"
+									style={styles.bandHeader}
 								/>
-							))}
-						</>
-					)}
-
-					{/* Actionable — friend + trade requests */}
-					{actionableCount > 0 && (
-						<>
-							<SectionHeader
-								kicker="needs you"
-								title="Pen cards"
-								style={styles.bandHeader}
-							/>
-							{friendReqs.map((r, i) => {
-								const who = r.username ?? "Someone";
-								return (
+								{outgoingTrades.map((t, i) => (
 									<ListRow
-										key={`fr-${r.requester_id}`}
+										key={t.id}
 										index={i}
-										leading={
-											<Avatar
-												size={AVATAR_SIZE[0]}
-												fill="sage"
-												glyph="handshake"
-												label="Friend request"
-											/>
+										title={
+											<T role="kicker" numberOfLines={1}>
+												{t.partner_username ?? "–"}
+												{t.partner_discriminator ? (
+													<Label tone="secondary"> #{t.partner_discriminator}</Label>
+												) : null}
+												{` · you'd pocket ${t.amount * 2}`}
+											</T>
 										}
-										title={who}
-										sub="wants to be friends"
-										accessibilityLabel={`${who} wants to be friends`}
+										accessibilityLabel={`Your trade with ${t.partner_username ?? "a friend"}. You'd pocket ${t.amount * 2} tickles`}
 										trailing={
-											<View style={styles.rowActions}>
-												<Button
-													variant="lilac"
-													size="xs"
-													onPress={() => acceptFriend(r)}
-													loading={busy === r.requester_id}
-													accessibilityLabel={`Accept ${who}'s friend request`}
-													accessibilityHint="Adds them to your friends list"
-												>
-													Accept
-												</Button>
-												<IconButton
-													name="x"
-													variant="none"
-													iconSize={SPACE.card}
-													label={`Decline ${who}'s friend request`}
-													accessibilityHint="Removes the request; they aren't told"
-													disabled={busy === r.requester_id}
-													onPress={() => declineFriend(r)}
-												/>
-											</View>
-										}
-									/>
-								);
-							})}
-							{incomingTrades.map((t) => {
-								// Affordance: can we actually pay this trade right
-								// now? Disable + relabel "Need N more" when the
-								// balance is short, so the player isn't tapping a
-								// button just to get a rejection toast back.
-								const canAfford = balance !== null && balance >= t.amount;
-								const shortBy = balance !== null && balance < t.amount ? t.amount - balance : 0;
-								const who = t.partner_username ?? "A friend";
-								return (
-									<Sticker key={`tr-${t.id}`} color="peach" style={styles.pen}>
-										<View style={styles.penHeader}>
-											<Avatar
-												size={AVATAR_SIZE[0]}
-												fill="cream"
-												glyph="pigface"
-												label="Tickle trade"
-											/>
-											<View style={styles.penBody}>
-												<CardTitle numberOfLines={1}>
-													{who}
-													{t.partner_discriminator ? (
-														<Label tone="secondary"> #{t.partner_discriminator}</Label>
-													) : null}
-												</CardTitle>
-												<T role="hand" tone="secondary">
-													asks for {t.amount} tickles
-													{balance !== null && (
-														<T role="hand" tone={canAfford ? "secondary" : "primary"}>
-															{"  ·  you have "}
-															{balance}
-														</T>
-													)}
-												</T>
-											</View>
-										</View>
-										<View style={styles.penActions}>
 											<Button
-												variant="purple"
-												size="sm"
-												style={styles.penBtn}
-												onPress={() => giveTrade(t)}
-												disabled={!canAfford}
+												variant="handLink"
+												size="xs"
+												onPress={() => withdrawTrade(t)}
 												loading={busy === t.id}
-												accessibilityLabel={
-													canAfford
-														? `Give ${t.amount} tickles to ${who}`
-														: `Need ${shortBy} more tickles to answer ${who}`
-												}
-												accessibilityHint={
-													canAfford
-														? `Spends ${t.amount} of your tickles; they pocket ${t.amount * 2}.`
-														: "Earn more tickles and come back to this pen card."
-												}
+												accessibilityLabel={`Withdraw your trade with ${t.partner_username ?? "a friend"}`}
+												accessibilityHint="Takes the lot off the market; nothing is spent"
 											>
-												{canAfford ? `Give ${t.amount}` : `Need ${shortBy} more`}
+												withdraw
 											</Button>
-											<Button
-												variant="ghost"
-												size="sm"
-												style={styles.penBtn}
-												onPress={() => passTrade(t)}
-												disabled={busy === t.id}
-												accessibilityLabel={`Pass on ${who}'s ask`}
-												accessibilityHint="Closes the pen card; nothing is spent and they aren't told"
-											>
-												Pass
-											</Button>
-										</View>
-									</Sticker>
-								);
-							})}
-						</>
-					)}
-
-					{/* Swaps — the Satchel ledger, both sides. Same row idiom as the
-					    feed below (an Avatar and one line), its own band so the
-					    finds don't disappear into the trades and the rituals. */}
-					{swaps.length > 0 && (
-						<>
-							<SectionHeader
-								kicker="the satchel"
-								title="Swaps"
-								style={styles.bandHeader}
-							/>
-							{swaps.map((row, i) => {
-								const line = swapFeedLine(row);
-								const age = relTime(Date.parse(row.created_at));
-								return (
-									<ListRow
-										key={`swap-${row.id}`}
-										index={i}
-										leading={
-											<Avatar
-												size={AVATAR_SIZE[0]}
-												fill={row.direction === "received" ? "sky" : "sun"}
-												glyph="digBag"
-												label={row.direction === "received" ? "find received" : "find given"}
-											/>
-										}
-										title={<T role="kicker">{line}</T>}
-										accessibilityLabel={age ? `${line}, ${age} ago` : line}
-										testID="inbox-swap-row"
-										trailing={
-											age ? (
-												<T role="kickerPillSm" tone="secondary">
-													{age}
-												</T>
-											) : undefined
 										}
 									/>
-								);
-							})}
-						</>
-					)}
+								))}
+							</>
+						)}
 
-					{/* Recent — passive events */}
-					{passive.length > 0 && (
-						<SectionHeader
-							kicker="recent"
-							title="What happened"
-							style={styles.bandHeader}
-						/>
-					)}
-				</>
-			}
-			renderItem={({ item: event, index }) => {
-				const mark = KIND_MARK[event.kind];
-				const age = relTime(event.at);
-				return (
-					<ListRow
-						index={index}
-						leading={
-							<Avatar
-								size={AVATAR_SIZE[0]}
-								fill={mark.fill}
-								glyph={mark.glyph}
-								label={mark.word}
-							>
-								{mark.gameIcon ? <GameIcon name={mark.gameIcon} size={20} /> : null}
-							</Avatar>
-						}
-						title={<T role="kicker">{event.text}</T>}
-						accessibilityLabel={age ? `${event.text}, ${age} ago` : event.text}
-						trailing={
-							age ? (
-								<T role="kickerPillSm" tone="secondary">
-									{age}
-								</T>
-							) : undefined
-						}
-					/>
-				);
-			}}
-			ListFooterComponent={
-				hasMorePassive ? (
-					<View style={styles.loadMore}>
-						<Button
-							variant="ghost"
-							size="sm"
-							onPress={() => setShownCount((n) => Math.min(n + 10, FEED_CAP))}
-							accessibilityLabel="Load more of what happened"
-							accessibilityHint="Shows ten older events"
-						>
-							Load more
-						</Button>
+						{/* Actionable — friend + trade requests */}
+						{actionableCount > 0 && (
+							<>
+								<SectionHeader
+									kicker="needs you"
+									title="Pen cards"
+									style={styles.bandHeader}
+								/>
+								{friendReqs.map((r, i) => {
+									const who = r.username ?? "Someone";
+									return (
+										<ListRow
+											key={`fr-${r.requester_id}`}
+											index={i}
+											leading={
+												<Avatar
+													size={AVATAR_SIZE[0]}
+													fill="sage"
+													glyph="handshake"
+													label="Friend request"
+												/>
+											}
+											title={who}
+											sub="wants to be friends"
+											accessibilityLabel={`${who} wants to be friends`}
+											trailing={
+												<View style={styles.rowActions}>
+													<Button
+														variant="lilac"
+														size="xs"
+														onPress={() => acceptFriend(r)}
+														loading={busy === r.requester_id}
+														accessibilityLabel={`Accept ${who}'s friend request`}
+														accessibilityHint="Adds them to your friends list"
+													>
+														Accept
+													</Button>
+													<IconButton
+														name="x"
+														variant="none"
+														iconSize={SPACE.card}
+														label={`Decline ${who}'s friend request`}
+														accessibilityHint="Removes the request; they aren't told"
+														disabled={busy === r.requester_id}
+														onPress={() => declineFriend(r)}
+													/>
+												</View>
+											}
+										/>
+									);
+								})}
+								{incomingTrades.map((t) => {
+									// Affordance: can we actually pay this trade right
+									// now? Disable + relabel "Need N more" when the
+									// balance is short, so the player isn't tapping a
+									// button just to get a rejection toast back.
+									const canAfford = balance !== null && balance >= t.amount;
+									const shortBy = balance !== null && balance < t.amount ? t.amount - balance : 0;
+									const who = t.partner_username ?? "A friend";
+									return (
+										<Sticker key={`tr-${t.id}`} color="peach" style={styles.pen}>
+											<View style={styles.penHeader}>
+												<Avatar
+													size={AVATAR_SIZE[0]}
+													fill="cream"
+													glyph="pigface"
+													label="Tickle trade"
+												/>
+												<View style={styles.penBody}>
+													<CardTitle numberOfLines={1}>
+														{who}
+														{t.partner_discriminator ? (
+															<Label tone="secondary"> #{t.partner_discriminator}</Label>
+														) : null}
+													</CardTitle>
+													<T role="hand" tone="secondary">
+														asks for {t.amount} tickles
+														{balance !== null && (
+															<T role="hand" tone={canAfford ? "secondary" : "primary"}>
+																{"  ·  you have "}
+																{balance}
+															</T>
+														)}
+													</T>
+												</View>
+											</View>
+											<View style={styles.penActions}>
+												<Button
+													variant="purple"
+													size="sm"
+													style={styles.penBtn}
+													onPress={() => giveTrade(t)}
+													disabled={!canAfford}
+													loading={busy === t.id}
+													accessibilityLabel={
+														canAfford
+															? `Give ${t.amount} tickles to ${who}`
+															: `Need ${shortBy} more tickles to answer ${who}`
+													}
+													accessibilityHint={
+														canAfford
+															? `Spends ${t.amount} of your tickles; they pocket ${t.amount * 2}.`
+															: "Earn more tickles and come back to this pen card."
+													}
+												>
+													{canAfford ? `Give ${t.amount}` : `Need ${shortBy} more`}
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													style={styles.penBtn}
+													onPress={() => passTrade(t)}
+													disabled={busy === t.id}
+													accessibilityLabel={`Pass on ${who}'s ask`}
+													accessibilityHint="Closes the pen card; nothing is spent and they aren't told"
+												>
+													Pass
+												</Button>
+											</View>
+										</Sticker>
+									);
+								})}
+							</>
+						)}
+
+						{/* Swaps — the Satchel ledger, both sides. Same row idiom as the
+						    feed below (an Avatar and one line), its own band so the
+						    finds don't disappear into the trades and the rituals. */}
+						{swaps.length > 0 && (
+							<>
+								<SectionHeader
+									kicker="the satchel"
+									title="Swaps"
+									style={styles.bandHeader}
+								/>
+								{swaps.map((row, i) => {
+									const line = swapFeedLine(row);
+									const age = relTime(Date.parse(row.created_at));
+									return (
+										<ListRow
+											key={`swap-${row.id}`}
+											index={i}
+											leading={
+												<Avatar
+													size={AVATAR_SIZE[0]}
+													fill={row.direction === "received" ? "sky" : "sun"}
+													glyph="digBag"
+													label={row.direction === "received" ? "find received" : "find given"}
+												/>
+											}
+											title={<T role="kicker">{line}</T>}
+											accessibilityLabel={age ? `${line}, ${age} ago` : line}
+											testID="inbox-swap-row"
+											trailing={
+												age ? (
+													<T role="kickerPillSm" tone="secondary">
+														{age}
+													</T>
+												) : undefined
+											}
+										/>
+									);
+								})}
+							</>
+						)}
+
+						{/* Recent — passive events */}
+						{passive.length > 0 && (
+							<SectionHeader
+								kicker="recent"
+								title="What happened"
+								style={styles.bandHeader}
+							/>
+						)}
 					</View>
-				) : null
-			}
-		/>
+				}
+				renderItem={({ item: event, index }) => {
+					const mark = KIND_MARK[event.kind];
+					const age = relTime(event.at);
+					return (
+						<ListRow
+							index={index}
+							leading={
+								<Avatar
+									size={AVATAR_SIZE[0]}
+									fill={mark.fill}
+									glyph={mark.glyph}
+									label={mark.word}
+								>
+									{mark.gameIcon ? <GameIcon name={mark.gameIcon} size={20} /> : null}
+								</Avatar>
+							}
+							title={<T role="kicker">{event.text}</T>}
+							accessibilityLabel={age ? `${event.text}, ${age} ago` : event.text}
+							trailing={
+								age ? (
+									<T role="kickerPillSm" tone="secondary">
+										{age}
+									</T>
+								) : undefined
+							}
+						/>
+					);
+				}}
+				ListFooterComponent={
+					hasMorePassive ? (
+						<View style={styles.loadMore}>
+							<Button
+								variant="ghost"
+								size="sm"
+								onPress={() => setShownCount((n) => Math.min(n + 10, FEED_CAP))}
+								accessibilityLabel="Load more of what happened"
+								accessibilityHint="Shows ten older events"
+							>
+								Load more
+							</Button>
+						</View>
+					) : null
+				}
+			/>
+			{/* The crown's edge, laid over the list's top (after it, so it paints
+			    above the rows): it takes no room, so the panel sits exactly where
+			    it did, and it shows once a row has slid under the crown. */}
+			<ScrollEdge visible={edge.edgeVisible} overlay="top" />
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
+	// The panel: the feed, and the crown's edge laid over its top.
+	panel: { flex: 1 },
 	scroll: { flex: 1 },
 	// PAGE_PAD, same as the hub header and the Friends segment — the band used
 	// to sit 4pt wider than its own header, which jogged on a segment switch.
@@ -789,7 +840,8 @@ const styles = StyleSheet.create({
 		gap: SPACE.sm,
 	},
 	center: { flex: 1, alignItems: "center", justifyContent: "center" },
-	feedback: { paddingVertical: SPACE.sm },
+	// Everything above the history: the same step the list puts between rows.
+	header: { gap: SPACE.sm },
 	// Band crowns get the same breathing room the old hand-rolled labels did.
 	bandHeader: { marginTop: SPACE.sm, marginBottom: 0 },
 	rowActions: {

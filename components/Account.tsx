@@ -27,17 +27,25 @@
 //   · the three hand-rolled modal shells are `AdaptiveModalScaffold` (rename,
 //     whisper) and `Sheet` (the long story) [E12]
 //   · settings rows and the two nav rows are one `NavRow` geometry, grouped [E18, E25]
+//
+// Polish pass (2026-10-04, docs/design/polish-2026-10-04/findings-me.md): the
+// passport draws the pig wearing her hat (it drew the hat alone), membership is
+// printed on the card rather than a pressable-looking capsule, the stats share
+// one numeral line, the rank is said once on its row, the rank sheet states one
+// clock, closing anything Settings opened goes back to Settings, and the long
+// story's rules draw at last (iOS never drew their one-side-coloured dashes).
 import { useCallback, useState } from "react";
 import {
 	ScrollView,
 	StyleSheet,
 	View,
-	SafeAreaView,
 	Image,
 	Linking,
-	Share,
 	type ImageSourcePropType,
 } from "react-native";
+// React Native's own SafeAreaView is deprecated in 0.86; the context one pads
+// the same four edges by default. (2026-10-04)
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -51,6 +59,7 @@ import { submitFeedback, type FeedbackKind } from "@/utils/feedback";
 import { stampFeedbackEverSent } from "@/utils/feedbackNudge";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { BlockedUsersSheet } from "./BlockedUsersSheet";
+import { ReferralShareButton } from "./ReferralShareButton";
 import {
 	AdaptiveModalScaffold,
 	Body,
@@ -61,6 +70,7 @@ import {
 	ConfirmDialog,
 	DashedRule,
 	DialogButtonRow,
+	Divider,
 	EmptyState,
 	Glyph,
 	Hand,
@@ -71,6 +81,7 @@ import {
 	LoadingBeat,
 	NavRow,
 	PageHeader,
+	PigAvatar,
 	PigPortrait,
 	PrestigeAvatar,
 	ProfileIdentity,
@@ -87,12 +98,14 @@ import {
 	TextField,
 	useUnmanagedModalHold,
 	wallowAuraArt,
-} from "@/components/ui";
+	} from "@/components/ui";
 import type { TitlePlacement } from "@/constants/title_types";
 import Constants from "expo-constants";
 import {
 	ART_SIZE,
+	AVATAR_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	MOTION,
 	PAGE_PAD,
 	RADII,
@@ -114,7 +127,6 @@ import {
 } from "../utils/iap";
 import {
 	myReferralSummary,
-	shareMessageForCode,
 	redeemReferralCode,
 	referralErrorMessage,
 	rewardNameForMilestone,
@@ -122,7 +134,7 @@ import {
 	REFERRAL_CODE_PATTERN,
 	type ReferralSummary,
 } from "@/utils/referrals";
-import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
+import { clearPushToken } from "@/utils/pushNotifications";
 import { isUsernameAllowed } from "@/constants/bannedWords";
 import { showHabitatIntro } from "@/utils/habitatIntro";
 import {
@@ -136,8 +148,7 @@ import {
 	wallowRankPrize,
 	wallowRegaliaFor,
 	wallowRegaliaOwned,
-	wallowRegenPercent,
-	wallowRegenSeconds as compiledWallowRegenSeconds,
+	wallowRegenSeconds as rankRegenSeconds,
 	wallowVisitCooldownHours,
 	type WallowRankPrize,
 	type WallowRegaliaPiece,
@@ -164,6 +175,7 @@ type LifetimeAgg = {
 // `PageHeader`'s PLAQUE_WIDTH are, so no raw number sits in a StyleSheet.
 // (2026-09-11)
 const RANK_PORTRAIT = 64; // the current rung's pig, ring and numeral badge
+const PASSPORT_PORTRAIT_RANKED = 76; // the passport's pig inside her aura ring
 const STEP_DROP = 28; // the rail between two rungs
 const PRIZE_ART = 64; // the next rung's prize, in its own frame
 const PIECE_ART = 48; // the regalia piece on the rung that granted it
@@ -175,7 +187,8 @@ const PRIZE_PAIR_FRAC = 0.56;
 const SLOP_PAIR_W = 126; // the overlapping Rosie + companion portrait frame
 const SLOP_PAIR_H = 100;
 const PORTRAIT_SIZE = 82; // the companion portraits inside that frame
-// The inline mark beside a button label (copy / check).
+// The inline mark beside a button label (copy / check). `Button` grows it with
+// the label under Dynamic Type (up to 2x), so it is stated at its rest size.
 const LABEL_MARK = ART_SIZE.mark;
 // __DEV__ only: the four shapes the rank sheet can take — unwallowed, the
 // first chapter, the set complete, and long past it — so all four are
@@ -241,11 +254,10 @@ export function Account({ session }: { session: Session }) {
 	// (server: claimed && viewed_at IS NULL). Refreshed on focus.
 	const [unclaimedAchv, setUnclaimedAchv] = useState(0);
 	const [wallowCount, setWallowCount] = useState(0);
-	const [wallowRegenSeconds, setWallowRegenSeconds] = useState<number | null>(null);
 	// The lap-local XP and the pass length the rank sheet's "how to wallow"
-	// band draws — both off the same season_state read that already fed the
-	// clock. The pass is `total_tiers × xp_per_tier`, the one number a Wallow
-	// costs (utils/wallow owns the arithmetic). (the endless ladder, 2026-09-22)
+	// band draws, off one season_state read. The pass is `total_tiers ×
+	// xp_per_tier`, the one number a Wallow costs (utils/wallow owns the
+	// arithmetic). (the endless ladder, 2026-09-22)
 	const [seasonXp, setSeasonXp] = useState<number | null>(null);
 	const [passXp, setPassXp] = useState<number | null>(null);
 	// What the pig is wearing, per slot column — so an earned regalia piece can
@@ -289,7 +301,7 @@ export function Account({ session }: { session: Session }) {
 		const code = codeInput.trim().toUpperCase();
 		if (codeBusy || !code) return;
 		if (!REFERRAL_CODE_PATTERN.test(code)) {
-			setCodeError("Codes look like PIGGY-1234 — check with your friend?");
+			setCodeError("Codes look like PIGGY-1234. Check with your friend?");
 			return;
 		}
 		setCodeBusy(true);
@@ -304,7 +316,7 @@ export function Account({ session }: { session: Session }) {
 			showToast({
 				tone: "success",
 				title: "Code applied!",
-				text: `${r.inviter_username ?? "Your friend"} brought you in — +50 snouts.`,
+				text: `${r.inviter_username ?? "Your friend"} brought you in. +50 snouts.`,
 			});
 		} else {
 			setCodeError(referralErrorMessage(r && "reason" in r ? r.reason : undefined));
@@ -380,18 +392,36 @@ export function Account({ session }: { session: Session }) {
 		close();
 		setTimeout(action, MOTION.modalHandoff);
 	};
+	// …and the way back. Something Settings opened (the blocked list, a dialog
+	// that was cancelled) hands the player back to Settings when it closes,
+	// the beat after its own dismissal, rather than dropping them on the page
+	// behind it. Only a finished job (renamed, signed out, deleted) ends on Me.
+	const backToSettings = () => {
+		setTimeout(() => setSettingsOpen(true), MOTION.modalHandoff);
+	};
 	const [lifetimeAgg, setLifetimeAgg] = useState<LifetimeAgg | null>(null);
-	const [lifetimeAggBusy, setLifetimeAggBusy] = useState(false);
+	// The aggregate read's own state: a failed read is an error with a retry,
+	// never a loading beat that waits forever. [E7]
+	const [lifetimeAggState, setLifetimeAggState] = useState<"idle" | "loading" | "error">(
+		"idle",
+	);
+	const loadLifetimeAgg = () => {
+		setLifetimeAggState("loading");
+		rpc<LifetimeAgg & { ok?: boolean }>("me_lifetime_stats").then((r) => {
+			if (r?.ok) {
+				setLifetimeAgg(r);
+				setLifetimeAggState("idle");
+			} else {
+				setLifetimeAggState("error");
+			}
+		});
+	};
 	const openLongStory = () => {
 		setLongStoryOpen(true);
-		// Lazy: fetch the aggregate counts once, the first time the sheet opens.
-		if (lifetimeAgg || lifetimeAggBusy) return;
-		setLifetimeAggBusy(true);
-		rpc<LifetimeAgg & { ok?: boolean }>("me_lifetime_stats")
-			.then((r) => {
-				if (r?.ok) setLifetimeAgg(r);
-			})
-			.finally(() => setLifetimeAggBusy(false));
+		// Lazy: fetch the aggregate counts the first time the sheet opens (and
+		// again on a later open if that read failed).
+		if (lifetimeAgg || lifetimeAggState === "loading") return;
+		loadLifetimeAgg();
 	};
 	// Show the user's currently equipped title alongside their code so
 	// they can confirm at-a-glance that their title is wired up. Manage
@@ -505,9 +535,6 @@ export function Account({ session }: { session: Session }) {
 					if (!error) setWallowCount(data?.wallow_count ?? 0);
 				});
 			rpc<SeasonState>("season_state").then((state) => {
-				if (typeof state?.wallow_regen_seconds === "number") {
-					setWallowRegenSeconds(state.wallow_regen_seconds);
-				}
 				if (typeof state?.xp === "number") setSeasonXp(state.xp);
 				const season = state?.season;
 				if (season) {
@@ -568,7 +595,7 @@ export function Account({ session }: { session: Session }) {
 				month: "short",
 				year: "numeric",
 			})
-		: "—";
+		: "–";
 
 	// Cost of the NEXT rename, mirroring the server ladder in
 	// rename_username: first free, second 1,000, third+ 10,000 snouts.
@@ -586,11 +613,8 @@ export function Account({ session }: { session: Session }) {
 			? `${referral.code} · every reward earned`
 			: `${referral.code} · ${referral.referrals_completed}/${referral.next_milestone_at} · ${rewardNameForMilestone(referral.next_milestone_at).replace(/^the /, "")}`
 		: undefined;
-	const visibleRegenSeconds =
-		__DEV__ && devWallowRank !== null
-			? compiledWallowRegenSeconds(devWallowRank)
-			: wallowRegenSeconds ??
-				Math.round(3600 * (1 - wallowRegenPercent(visibleWallowCount) / 100));
+
+	const lifetimeTickleCount = lifetimeTickles(ticklesLifetimeBase, ticklesEarned);
 	// Untouched, the sheet shows the live rank; the first press jumps to the
 	// first previewed rank that is not W0, then cycles.
 	const nextDevWallowRank =
@@ -649,7 +673,7 @@ export function Account({ session }: { session: Session }) {
 		// trigger is authoritative (same pattern as UsernameSetup).
 		const allowed = isUsernameAllowed(next);
 		if (!allowed.ok) {
-			setRenameError("That name won't fly in the barn — pick a different one.");
+			setRenameError("That name won't fly in the barn. Pick a different one.");
 			return;
 		}
 		setRenameBusy(true);
@@ -674,9 +698,9 @@ export function Account({ session }: { session: Session }) {
 		const reason = r && "reason" in r ? r.reason : undefined;
 		setRenameError(
 			reason === "name_taken"
-				? "That name is taken — try another."
+				? "That name is taken. Try another."
 				: reason === "not_allowed"
-					? "That name won't fly in the barn — pick a different one."
+					? "That name won't fly in the barn. Pick a different one."
 					: reason === "not_enough_snouts"
 						? "Not enough snouts for this rename."
 						: reason === "bad_name"
@@ -711,7 +735,7 @@ export function Account({ session }: { session: Session }) {
 		if (feedbackBusy) return;
 		const body = feedbackInput.trim();
 		if (body.length < 3) {
-			setFeedbackError("the whisper got lost — try again?");
+			setFeedbackError("The whisper got lost. Try again?");
 			return;
 		}
 		setFeedbackBusy(true);
@@ -732,8 +756,8 @@ export function Account({ session }: { session: Session }) {
 		// feature-dark miss when the migration is unpushed) is a lost whisper.
 		setFeedbackError(
 			r.reason === "resting"
-				? "the den's ears are full for today — come whisper tomorrow."
-				: "the whisper got lost — try again?"
+				? "The den's ears are full for today. Come whisper tomorrow."
+				: "The whisper got lost. Try again?"
 		);
 	};
 
@@ -777,7 +801,7 @@ export function Account({ session }: { session: Session }) {
 			showToast({
 				tone: "success",
 				title: "Welcome to the Slop Club!",
-				text: "You're in — manage anytime in Settings.",
+				text: "You're in. Manage anytime in Settings.",
 			});
 			return;
 		}
@@ -792,7 +816,7 @@ export function Account({ session }: { session: Session }) {
 				showToast({
 					tone: "fail",
 					title: "Slop Club",
-					text: "The Slop Club isn't available right now — please try again soon.",
+					text: "The Slop Club isn't available right now. Please try again soon.",
 				});
 			}
 			return;
@@ -806,26 +830,6 @@ export function Account({ session }: { session: Session }) {
 
 	const handleManage = async () => {
 		await presentCustomerCenter();
-	};
-
-	// Open the system share sheet with the pre-filled invite message
-	// from utils/referrals. Errors swallowed — share sheet rejections
-	// are user actions, not bugs.
-	//
-	// Share is the second push-permission ask site after Friends. A user
-	// sharing their code is about to trigger inbound social activity
-	// (friend requests, the +100 referral-completed push); permission
-	// makes sense at this exact moment. Awaited so the prompt resolves
-	// before the share sheet covers it. Idempotent — no-op after grant
-	// or denial; the function in utils/pushNotifications coalesces.
-	const handleShareReferral = async () => {
-		if (!referral?.code) return;
-		await ensurePushPermission();
-		try {
-			await Share.share({ message: shareMessageForCode(referral.code) });
-		} catch {
-			// User cancelled or share sheet errored — nothing to do.
-		}
 	};
 
 	const handleRestore = async () => {
@@ -856,12 +860,23 @@ export function Account({ session }: { session: Session }) {
 		}
 	};
 
-	// Drop the push token while still authenticated so this device stops
-	// receiving pushes for the signed-out account.
+	// Signs THIS device out, as the dialog says ("Signs this device out and
+	// stops its notifications"). Supabase's default scope is global, which
+	// revoked every device's session: signing out the SE signed the 17 Pro out
+	// too (2026-10-04). The push token goes first, while still authenticated,
+	// and only if the account's one token is still this device's (read here,
+	// where the session lives; see clearPushToken).
 	const handleSignOut = async () => {
 		setSignOutOpen(false);
-		await clearPushToken();
-		await supabase.auth.signOut();
+		const { data: pushRow, error: pushReadError } = await supabase
+			.from("profiles")
+			.select("expo_push_token")
+			.eq("id", session.user.id)
+			.maybeSingle();
+		await clearPushToken(
+			pushReadError || !pushRow ? undefined : pushRow.expo_push_token,
+		);
+		await supabase.auth.signOut({ scope: "local" });
 	};
 
 	return (
@@ -936,18 +951,40 @@ export function Account({ session }: { session: Session }) {
 									}
 								>
 									<View style={styles.codeRow}>
-										<PrestigeAvatar
-											size={visibleWallowCount > 0 ? 76 : 56}
-											hatId={activeHat}
-											prestigeLevel={visibleWallowCount}
-										/>
+										{/* The passport's portrait is the pig, wearing what she
+										    wears (`mode="worn"`). The avatar's default is the
+										    leaderboard's hat-as-icon, which drew a paper boat
+										    floating on the rose card with no pig under it (and no
+										    disc: a rose frame on a rose card). A wallowed pig wears
+										    hers inside the aura ring; an unwallowed one gets the
+										    ink-outlined disc, so the frame reads on the rose card. */}
+										{visibleWallowCount > 0 ? (
+											<PrestigeAvatar
+												size={PASSPORT_PORTRAIT_RANKED}
+												hatId={activeHat}
+												bowId={activeSlotIds.active_bow_id}
+												prestigeLevel={visibleWallowCount}
+												mode="worn"
+											/>
+										) : (
+											<PigAvatar
+												size={AVATAR_SIZE[2]}
+												hatId={activeHat}
+												bowId={activeSlotIds.active_bow_id}
+												border={UI_COLORS.border}
+												mode="worn"
+											/>
+										)}
 										<View style={styles.codeCol}>
-											<Hand tone="secondary">your friend code</Hand>
 											<ProfileIdentity
 												username={username}
 												title={activeTitle}
 												variant="profile"
 											/>
+											{/* The friend code, under the name it belongs to. The
+											    "your friend code" kicker that floated ABOVE the
+											    title read as a label for the title; the copy
+											    button below names the code. */}
 											{!!handle && discriminator && (
 												<T
 													role="kicker"
@@ -957,19 +994,32 @@ export function Account({ session }: { session: Session }) {
 													{handle}
 												</T>
 											)}
-											<Tag
-												label={isVip ? "SLOP CLUB" : "FREE RANGE"}
-												tone={isVip ? "sun" : "paper"}
-												style={styles.memberTag}
-											/>
+											{/* Membership is a status printed on the card, not a
+											    capsule with a shadow that looks pressable. */}
+											<KickerPill
+												star={isVip}
+												tone={isVip ? "accent" : "secondary"}
+												style={styles.memberLine}
+											>
+												{isVip ? "slop club" : "free range"}
+											</KickerPill>
 										</View>
 									</View>
 
-									{/* Identity-card band — 3-col cluster inside the card.
-									    Divided by 1px ink-mute verticals + a dashed top
-									    border. Lifetime figures live HERE (the standalone
-									    "long story" card was folded in 2026-07-17); tapping
-									    the band opens the full long-story ledger sheet. */}
+									{/* Identity-card band — 3-col cluster inside the card,
+									    under a dashed rule (a DashedRule: the old top border
+									    coloured one side only, which iOS refuses to dash, so
+									    it never showed). Lifetime figures live HERE (the
+									    standalone "long story" card was folded in
+									    2026-07-17); tapping the band opens the full ledger.
+									    The numerals share a top line however their labels
+									    wrap, and the label says them aloud. The band is a
+									    fixed three-up summary (~94pt of text a column on an
+									    SE), so its numerals state the chrome ceiling: a
+									    five-digit count broke mid-number past it at
+									    accessibility sizes. The ledger it opens carries the
+									    same figures at full scale. */}
+									<DashedRule style={styles.bandRule} />
 									<Sticker
 										color="rose"
 										rotate={0}
@@ -977,27 +1027,27 @@ export function Account({ session }: { session: Session }) {
 										shadow="none"
 										radius={RADII.md}
 										onPress={openLongStory}
-										accessibilityLabel="Your lifetime story"
+										accessibilityLabel={`Your lifetime story: ${lifetimeTickleCount.toLocaleString()} lifetime tickles, ${activeDays.toLocaleString()} active days, joined ${joinedLabel}`}
 										accessibilityHint="Opens the full lifetime ledger"
 										style={styles.lifetimeStatsRow}
 									>
 										<Stat
 											label="lifetime tickles"
-											value={lifetimeTickles(
-												ticklesLifetimeBase,
-												ticklesEarned
-											).toLocaleString()}
+											maxFontSizeMultiplier={CHROME_TYPE_CAP}
+											value={lifetimeTickleCount.toLocaleString()}
 											style={styles.lifetimeStatCol}
 										/>
 										<View style={styles.lifetimeStatDivider} />
 										<Stat
 											label="active days"
+											maxFontSizeMultiplier={CHROME_TYPE_CAP}
 											value={activeDays.toLocaleString()}
 											style={styles.lifetimeStatCol}
 										/>
 										<View style={styles.lifetimeStatDivider} />
 										<Stat
 											label="joined"
+											maxFontSizeMultiplier={CHROME_TYPE_CAP}
 											value={joinedLabel}
 											style={styles.lifetimeStatCol}
 										/>
@@ -1013,23 +1063,26 @@ export function Account({ session }: { session: Session }) {
 							<View style={styles.groupWrap}>
 								<SectionHeader kicker="your prestige" title="Your story" />
 								<View style={styles.group}>
+									{/* The rank is said once, in the label (which is also
+									    what VoiceOver reads: a NavRow speaks its label, not
+									    its badge). The W-pill beside it repeated it. */}
 									<NavRow
 										icon="crown"
 										label={`Wallow rank W${wallowRank}`}
-										sub={`${wallowRegaliaOwned(wallowRank)} of ${WALLOW_REGALIA_COUNT} regalia · next: ${wallowNextPrizeLabel(wallowRank)}`}
-										badge={<Tag label={`W${wallowRank}`} tone="rose" />}
+										sub={`${wallowRegaliaOwned(wallowRank)}/${WALLOW_REGALIA_COUNT} regalia · next: ${wallowNextPrizeLabel(wallowRank)}`}
 										onPress={() => setWallowOpen(true)}
 										accessibilityHint="Opens your Wallow rank and what the next one unlocks"
 									/>
 									<NavRow
 										icon="trophy"
 										label="Achievements"
-										sub="Devotion, generous + greedy ladders."
+										sub="Ladders for tickling, trading, friends and the dig."
 										badge={
 											unclaimedAchv > 0 ? (
 												<Tag
 													label={unclaimedAchv > 99 ? "99+" : String(unclaimedAchv)}
 													tone="sun"
+													flat
 													accessibilityLabel={`${unclaimedAchv} ready to claim`}
 												/>
 											) : undefined
@@ -1048,7 +1101,7 @@ export function Account({ session }: { session: Session }) {
 													? `Companion access through ${referralGrantDateLabel}`
 													: "Your companion is waiting in the Pen."
 											}
-											badge={<Tag label="ACTIVE" tone="sun" />}
+											badge={<Tag label="ACTIVE" tone="sun" flat />}
 											onPress={() => router.push("/pen" as Href)}
 											accessibilityHint="Opens the Pen, where you choose your companion"
 										/>
@@ -1068,27 +1121,11 @@ export function Account({ session }: { session: Session }) {
 											icon="friends"
 											label="Invite new pigs"
 											sub={referralRowSub}
-											badge={
-												<Button
-													variant="ghost"
-													size="xs"
-													icon={
-														<Icon
-															name="share"
-															size={LABEL_MARK}
-															color={UI_COLORS.textPrimary}
-															strokeWidth={2.2}
-														/>
-													}
-													onPress={handleShareReferral}
-													accessibilityLabel="Share your referral code"
-													accessibilityHint="Opens the share sheet with your invite message"
-												>
-													Share
-												</Button>
-											}
+											// The Share is the row's ACTION: drawn before the chevron but
+											// outside the row's button, so VoiceOver reaches it.
+											action={<ReferralShareButton code={referral.code} size="xs" />}
 											onPress={() => router.push("/recruits-progress" as Href)}
-											accessibilityHint="Opens Referral Rewards — who's on the way and the reward ladder"
+											accessibilityHint="Opens Referral Rewards. Who's on the way and the reward ladder"
 										/>
 									)}
 									{canRedeemCode && (
@@ -1100,17 +1137,13 @@ export function Account({ session }: { session: Session }) {
 											accessibilityHint="Opens the box to type a friend's referral code"
 										/>
 									)}
+									{/* The +50 is snouts, so it says so: the pig face that
+									    used to follow the bare number read as "+50 pigs". */}
 									{codeInviter && (
 										<View style={styles.successRow}>
 											<BodySm tone="success">
-												You&apos;re in — thanks to {codeInviter}! +50
+												You&apos;re in, thanks to {codeInviter}! +50 snouts.
 											</BodySm>
-											<Image
-												source={require("@/assets/images/emoji/pig.png")}
-												style={styles.successPig}
-												resizeMode="contain"
-												accessible={false}
-											/>
 										</View>
 									)}
 									<NavRow
@@ -1133,9 +1166,10 @@ export function Account({ session }: { session: Session }) {
 									rotate={TILT.card}
 									radius={RADII.xl}
 									pad
-									style={styles.slopWrap}
 								>
-									<Ribbon label="ONE FRIEND" tone="sun" />
+									{/* The ribbon clips itself (`clipRadius`), so the band
+									    keeps its hard shadow. */}
+									<Ribbon label="ONE FRIEND" tone="sun" clipRadius={RADII.xl} />
 									<View style={styles.slopHero}>
 										<View style={styles.slopPigPair} accessibilityElementsHidden>
 											<View style={styles.slopPigRosie}>
@@ -1201,7 +1235,7 @@ export function Account({ session }: { session: Session }) {
 								</Sticker>
 							)}
 
-							{/* The back door — one Settings door (name, blocked pigs,
+							{/* The back door — one Settings door (name, blocked users,
 							    purchases, the two ways out) plus the two rows that are
 							    content, not settings. */}
 							<View style={styles.groupWrap}>
@@ -1210,7 +1244,7 @@ export function Account({ session }: { session: Session }) {
 									<NavRow
 										icon="gear"
 										label="Settings"
-										sub="Name, blocked pigs, purchases, sign out."
+										sub="Name, blocked users, purchases, sign out."
 										onPress={() => setSettingsOpen(true)}
 										accessibilityHint="Opens your account settings"
 									/>
@@ -1241,10 +1275,15 @@ export function Account({ session }: { session: Session }) {
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
 			/>
+			{/* The blocked list is a room off Settings, so closing it goes back
+			    to Settings (it used to land on Me with Settings gone). */}
 			<BlockedUsersSheet
 				visible={blockedUsersOpen}
 				blockerId={session.user.id}
-				onClose={() => setBlockedUsersOpen(false)}
+				onClose={() => {
+					setBlockedUsersOpen(false);
+					backToSettings();
+				}}
 			/>
 			{/* Leaving should ask as warmly as arriving did. [E6] */}
 			<ConfirmDialog
@@ -1254,21 +1293,27 @@ export function Account({ session }: { session: Session }) {
 				confirmLabel="Sign out"
 				cancelLabel="Stay"
 				confirmHint="Signs this device out and stops its notifications"
-				cancelHint="Keeps you signed in"
-				onCancel={() => setSignOutOpen(false)}
+				cancelHint="Keeps you signed in and goes back to Settings"
+				onCancel={() => {
+					setSignOutOpen(false);
+					backToSettings();
+				}}
 				onConfirm={handleSignOut}
 			/>
 			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete your account?"
-				body="This wipes your username, friends, trades, blessings/curses, owned items, season progress, and achievements. Permanent — no undo. The account is also signed out."
+				body="This wipes your username, friends, trades, blessings/curses, owned items, season progress, and achievements. Permanent, no undo. The account is also signed out."
 				confirmLabel="Delete"
 				cancelLabel="Keep account"
 				tone="destructive"
 				confirmHint="Erases your account and everything in it. This cannot be undone."
-				cancelHint="Keeps your account exactly as it is"
+				cancelHint="Keeps your account exactly as it is and goes back to Settings"
 				busy={deleting}
-				onCancel={() => setDeleteOpen(false)}
+				onCancel={() => {
+					setDeleteOpen(false);
+					backToSettings();
+				}}
 				onConfirm={async () => {
 					if (deleting) return;
 					setDeleting(true);
@@ -1277,7 +1322,9 @@ export function Account({ session }: { session: Session }) {
 					// asked us to destroy. (rpc() never rejects; it resolves null.)
 					await rpc("delete_my_account");
 					await clearPushToken();
-					await supabase.auth.signOut();
+					// Account-wide on purpose, unlike Sign out: the account itself is
+					// going ("The account is also signed out"), so no device keeps it.
+					await supabase.auth.signOut({ scope: "global" });
 					setDeleting(false);
 					setDeleteOpen(false);
 				}}
@@ -1305,7 +1352,9 @@ export function Account({ session }: { session: Session }) {
 			<AdaptiveModalScaffold
 				visible={renameOpen}
 				onRequestClose={() => {
-					if (!renameBusy) setRenameOpen(false);
+					if (renameBusy) return;
+					setRenameOpen(false);
+					backToSettings();
 				}}
 				bare
 				keyboardAware
@@ -1347,7 +1396,11 @@ export function Account({ session }: { session: Session }) {
 							cancelLabel="Cancel"
 							busy={renameBusy}
 							onConfirm={handleRename}
-							onCancel={() => setRenameOpen(false)}
+							onCancel={() => {
+								setRenameOpen(false);
+								backToSettings();
+							}}
+							cancelHint="Keeps your name and goes back to Settings"
 							confirmHint={
 								renameCost === 0
 									? "Renames you for free"
@@ -1359,8 +1412,13 @@ export function Account({ session }: { session: Session }) {
 			</AdaptiveModalScaffold>
 
 			{/* "Send an idea to the den" — the whisper dialog. A 3-way kind picker
-			    (Chips), a note, and a "whisper it" commit. On success the body
-			    swaps to a one-beat confirmation that auto-dismisses. */}
+			    (Chips), a note, and a "Whisper it" commit. On success the body
+			    swaps to a one-beat confirmation that auto-dismisses. The picker
+			    is one choice of three, so it reads as one: the picked capsule is
+			    sun with the heavy outline, the others paper (all three used to
+			    wear lilac, so every capsule looked picked), and it announces as
+			    a radio group. Its confirm is the shared DialogButtonRow's, the
+			    same commit every warm decision dialog wears. */}
 			<AdaptiveModalScaffold
 				visible={feedbackOpen}
 				onRequestClose={() => {
@@ -1380,15 +1438,19 @@ export function Account({ session }: { session: Session }) {
 				>
 					{feedbackSent ? (
 						// One-beat confirmation — auto-dismisses (~1.5s) or a backdrop tap.
-						<CardTitle align="center" style={styles.sentText}>
-							the bog heard you. thank you for the whisper.
+						<CardTitle
+							align="center"
+							style={styles.sentText}
+							accessibilityLiveRegion="polite"
+						>
+							The bog heard you. Thank you for the whisper.
 						</CardTitle>
 					) : (
 						<>
 							<CardTitle align="center" accessibilityRole="header">
-								send an idea to the den
+								Send an idea to the den
 							</CardTitle>
-							<View style={styles.chipRow}>
+							<View style={styles.chipRow} accessibilityRole="radiogroup">
 								{(
 									[
 										["idea", "an idea"],
@@ -1399,7 +1461,8 @@ export function Account({ session }: { session: Session }) {
 									<Chip
 										key={k}
 										label={label}
-										tone="lilac"
+										role="radio"
+										tone={feedbackKind === k ? "sun" : "paper"}
 										selected={feedbackKind === k}
 										disabled={feedbackBusy}
 										onPress={() => setFeedbackKind(k)}
@@ -1425,7 +1488,7 @@ export function Account({ session }: { session: Session }) {
 							/>
 							<View style={styles.dialogButtons}>
 								<DialogButtonRow
-									confirmLabel="whisper it"
+									confirmLabel="Whisper it"
 									cancelLabel="Cancel"
 									busy={feedbackBusy}
 									onConfirm={handleFeedback}
@@ -1440,23 +1503,24 @@ export function Account({ session }: { session: Session }) {
 
 			{/* The long story — full lifetime ledger. The shared bottom-sheet
 			    panel, which gives the list its own scroll path and retires the
-			    hardcoded 380pt cap. [E12] */}
+			    hardcoded 380pt cap. [E12] Its title is sentence case like every
+			    sibling sheet's; the war's tally ("war wins", a retired mode) is
+			    named for what it was, and only shows for a pig who has one. */}
 			<Sheet
 				open={longStoryOpen}
 				onClose={() => setLongStoryOpen(false)}
 				kicker="the long story"
-				title="all you've done"
+				title="All you've done"
 			>
 				<LedgerRow
 					label="lifetime tickles"
-					value={lifetimeTickles(
-						ticklesLifetimeBase,
-						ticklesEarned
-					).toLocaleString()}
+					value={lifetimeTickleCount.toLocaleString()}
 				/>
 				<LedgerRow label="tickles wasted" value={ticklesWasted.toLocaleString()} />
 				<LedgerRow label="active days" value={activeDays.toLocaleString()} />
-				<LedgerRow label="war wins" value={warWins.toLocaleString()} />
+				{warWins > 0 && (
+					<LedgerRow label="scuffles won" value={warWins.toLocaleString()} />
+				)}
 				<LedgerRow
 					label="referrals completed"
 					value={referralsCompleted.toLocaleString()}
@@ -1465,10 +1529,11 @@ export function Account({ session }: { session: Session }) {
 				<LedgerRow label="joined" value={joinedLabel} />
 				<LedgerRow
 					label="membership"
-					value={isVip ? "slop club" : "free range"}
+					value={isVip ? "Slop Club" : "free range"}
+					last
 				/>
 
-				<View style={styles.ledgerDivider} />
+				<Divider space="sm" />
 
 				{lifetimeAgg ? (
 					<>
@@ -1502,6 +1567,24 @@ export function Account({ session }: { session: Session }) {
 							last
 						/>
 					</>
+				) : lifetimeAggState === "error" ? (
+					<EmptyState
+						kind="error"
+						title="Couldn't tally the rest"
+						sub="Your visits, truffles and sends didn't come back."
+						flush
+						action={
+							<Button
+								variant="ghost"
+								size="sm"
+								onPress={loadLifetimeAgg}
+								accessibilityLabel="Try again"
+								accessibilityHint="Reads your lifetime tallies again"
+							>
+								Try again
+							</Button>
+						}
+					/>
 				) : (
 					<LoadingBeat label="tallying it up" />
 				)}
@@ -1532,7 +1615,6 @@ export function Account({ session }: { session: Session }) {
 				)}
 				<WallowRankBody
 					count={visibleWallowCount}
-					regenSeconds={visibleRegenSeconds}
 					xp={seasonXp}
 					passXp={passXp}
 					wornIds={activeSlotIds}
@@ -1578,7 +1660,7 @@ export function Account({ session }: { session: Session }) {
 					errorText={codeError ?? undefined}
 				/>
 				<Button
-					variant="ghost"
+					variant="primary"
 					full
 					style={styles.applyBtn}
 					onPress={handleApplyCode}
@@ -1593,11 +1675,16 @@ export function Account({ session }: { session: Session }) {
 
 			{/* Settings — the rows that used to end the page. Each one that opens
 			    another modal dismisses this sheet first and runs a beat later
-			    (the iOS nested-modal handoff gap ActionSheet works around). */}
+			    (the iOS nested-modal handoff gap ActionSheet works around), and
+			    comes back here when it closes without finishing (backToSettings).
+			    The kicker is the section the door hangs in, not the title again.
+			    "Blocked users" is the safety vocabulary every block surface shares
+			    (UserSheet's block dialog sends players to it by that name); the Me
+			    row's sub line, which said "blocked pigs", now says it too. */}
 			<Sheet
 				open={settingsOpen}
 				onClose={() => setSettingsOpen(false)}
-				kicker="settings"
+				kicker="the back door"
 				title="Settings"
 			>
 				<View style={styles.group}>
@@ -1614,11 +1701,11 @@ export function Account({ session }: { session: Session }) {
 						onPress={() =>
 							runAfterSheet(() => setSettingsOpen(false), () => setBlockedUsersOpen(true))
 						}
-						accessibilityHint="Opens the list of pigs you've blocked"
+						accessibilityHint="Opens the list of users you've blocked"
 					/>
 					<NavRow
 						icon="refresh"
-						label="Barn introduction"
+						label="Replay the Barn introduction"
 						onPress={() =>
 							runAfterSheet(() => setSettingsOpen(false), () =>
 								showHabitatIntro(session.user.id),
@@ -1669,8 +1756,11 @@ export function Account({ session }: { session: Session }) {
 	);
 }
 
-// One "label · value" line in the long-story ledger sheet. Dashed bottom
-// divider unless it's the last row.
+// One "label · value" line in the long-story ledger sheet, with a dashed rule
+// under it unless it's the last row. The rule is a `DashedRule`: the old
+// bottom border set its colour on one side only, and iOS draws a dashed border
+// only when all four colours agree ("Unsupported dashed / dotted border
+// style"), so it never drew and the rows floated unruled.
 function LedgerRow({
 	label,
 	value,
@@ -1681,10 +1771,13 @@ function LedgerRow({
 	last?: boolean;
 }) {
 	return (
-		<View style={[styles.ledgerRow, !last && styles.ledgerRowDivider]}>
-			<Body style={styles.ledgerLabel}>{label}</Body>
-			<T role="numeral">{value}</T>
-		</View>
+		<>
+			<View style={styles.ledgerRow}>
+				<Body style={styles.ledgerLabel}>{label}</Body>
+				<T role="numeral">{value}</T>
+			</View>
+			{!last && <DashedRule />}
+		</>
 	);
 }
 
@@ -1791,7 +1884,6 @@ function prizeSubline(prize: WallowRankPrize, rank: number): string {
 
 function WallowRankBody({
 	count,
-	regenSeconds,
 	xp,
 	passXp,
 	wornIds,
@@ -1800,7 +1892,6 @@ function WallowRankBody({
 	onOpenSeason,
 }: {
 	count: number;
-	regenSeconds: number;
 	xp: number | null;
 	passXp: number | null;
 	wornIds: Record<string, string | null>;
@@ -1816,9 +1907,14 @@ function WallowRankBody({
 	const pieceRank = Math.min(rank, WALLOW_REGALIA_COUNT);
 	const earned = wallowRegaliaFor(pieceRank);
 	const nextPrize = wallowRankPrize(nextRank);
-	const currentInterval = formatRegenInterval(regenSeconds);
-	const currentBaseInterval = formatRegenInterval(compiledWallowRegenSeconds(rank));
-	const nextBaseInterval = formatRegenInterval(compiledWallowRegenSeconds(nextRank));
+	// One clock, one truth: the rung you stand on states the same rank-clock
+	// the next rung strikes through. It used to print the server's LIVE refill
+	// (mood, rituals and Streak folded in: "1h 5m" on a sad pig) above a W1
+	// card striking "1h" as the current refill, two numbers for one thing. The
+	// live figure is the Barn's coin to tell; this sheet is about what a rank
+	// grants. (server-tuned through refreshWallowTuning, polish 2026-10-04)
+	const currentBaseInterval = formatRegenInterval(rankRegenSeconds(rank));
+	const nextBaseInterval = formatRegenInterval(rankRegenSeconds(nextRank));
 	const currentVisitHours = wallowVisitCooldownHours(rank);
 	const nextVisitHours = wallowVisitCooldownHours(nextRank);
 	// The clock is a perk of the first chapter only; past the cap the rung says
@@ -1857,7 +1953,7 @@ function WallowRankBody({
 						<T role="kickerPill" tone="secondary">W{rank} · now</T>
 						<CardTitle>{wallowRankLabel(rank)}</CardTitle>
 						<BodySm tone="secondary">
-							tickle every {currentInterval} · visits every {currentVisitHours}h
+							tickle every {currentBaseInterval} · visits every {currentVisitHours}h
 						</BodySm>
 					</View>
 				</View>
@@ -1911,7 +2007,7 @@ function WallowRankBody({
 					pad
 					style={wallowWallStyles.nextCard}
 				>
-					<Ribbon label="next" tone="sun" />
+					<Ribbon label="next" tone="sun" clipRadius={RADII.xl} />
 					<View style={wallowWallStyles.rungHead}>
 						<WallowPrizeArt prize={nextPrize} rank={nextRank} size={PRIZE_ART} />
 						<View style={wallowWallStyles.rungCopy}>
@@ -1969,7 +2065,7 @@ function WallowRankBody({
 						if (!prize) return null;
 						const clockLine =
 							r <= WALLOW_CLOCK_CAP_RANK
-								? `tickle every ${formatRegenInterval(compiledWallowRegenSeconds(r))} · visits every ${wallowVisitCooldownHours(r)}h`
+								? `tickle every ${formatRegenInterval(rankRegenSeconds(r))} · visits every ${wallowVisitCooldownHours(r)}h`
 								: prizeSubline(prize, r);
 						return (
 							<ListRow
@@ -2058,22 +2154,28 @@ const styles = StyleSheet.create({
 	},
 	codeCol: { flex: 1, minWidth: 0, marginLeft: SPACE.md },
 	codeHandle: { marginTop: SPACE.xxs },
-	// Membership capsule under the handle — gold for Slop Club members, quiet
-	// paper for free-range pigs. Status, not a sales pitch.
-	memberTag: { alignSelf: "flex-start", marginTop: SPACE.xs },
-	// 3-col lifetime-stats band inside the identity card. Dashed top border
+	// Membership, printed on the card under the handle: the tracked caps of a
+	// field on an ID, accent with the star for a Slop Club member. Status,
+	// not a sales pitch, and nothing about it says "press me".
+	memberLine: { marginTop: SPACE.xs },
+	// 3-col lifetime-stats band inside the identity card: a dashed rule
 	// separates it from the avatar/handle; inner hairline verticals divide the
 	// three columns. Tapping it opens the long-story ledger.
+	bandRule: { marginTop: SPACE.card },
 	lifetimeStatsRow: {
 		flexDirection: "row",
 		alignItems: "stretch",
-		marginTop: SPACE.card,
 		paddingTop: SPACE.md,
-		borderTopWidth: BORDER.thin,
-		borderTopColor: UI_COLORS.uiMuted,
-		borderStyle: "dashed",
 	},
-	lifetimeStatCol: { flex: 1, justifyContent: "center" },
+	// Top-aligned, so the three numerals share one line however their labels
+	// wrap ("LIFETIME TICKLES" takes two lines; centring dropped 10 and
+	// Sep 2026 half a line below 452). The side pad keeps a long value (Sep
+	// 2026 at large type) off the hairlines.
+	lifetimeStatCol: {
+		flex: 1,
+		justifyContent: "flex-start",
+		paddingHorizontal: SPACE.xs,
+	},
 	lifetimeStatDivider: {
 		width: 1,
 		backgroundColor: UI_COLORS.uiMuted,
@@ -2085,8 +2187,6 @@ const styles = StyleSheet.create({
 	group: { gap: SPACE.sm },
 	groupGap: { marginTop: SPACE.md },
 	// ── Slop Club band (non-members) ──────────────────────────────
-	// The Ribbon crosses the corner, so the card clips.
-	slopWrap: { overflow: "hidden" },
 	slopHero: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -2129,7 +2229,6 @@ const styles = StyleSheet.create({
 		gap: SPACE.xs,
 		paddingHorizontal: SPACE.card,
 	},
-	successPig: { width: ART_SIZE.mark, height: ART_SIZE.mark },
 	// ── Settings ───────────────────────────────────────────────────
 	footer: { marginTop: SPACE.md },
 	// ── Dialog shells ──────────────────────────────────────────────
@@ -2154,18 +2253,8 @@ const styles = StyleSheet.create({
 		gap: SPACE.md,
 		paddingVertical: SPACE.md,
 	},
-	ledgerRowDivider: {
-		borderBottomWidth: BORDER.thin,
-		borderBottomColor: UI_COLORS.uiMuted,
-		borderStyle: "dashed",
-	},
 	ledgerLabel: { flex: 1, minWidth: 0 },
-	ledgerDivider: {
-		height: BORDER.thin,
-		backgroundColor: UI_COLORS.uiMuted,
-		marginVertical: SPACE.sm,
-	},
-});
+	});
 
 const wallowWallStyles = StyleSheet.create({
 	body: { paddingBottom: SPACE.sm },
@@ -2209,8 +2298,9 @@ const wallowWallStyles = StyleSheet.create({
 		backgroundColor: UI_COLORS.uiMuted,
 	},
 	// ── one pass away ────────────────────────────────────────────────────
-	// The Ribbon crosses the corner, so the card clips.
-	nextCard: { overflow: "hidden", gap: SPACE.sm },
+	// The NEXT ribbon clips itself (`clipRadius`), so the card keeps the hard
+	// shadow its neighbours wear.
+	nextCard: { gap: SPACE.sm },
 	ledger: { gap: SPACE.xxs },
 	deltaRow: {
 		minHeight: SPACE.xl,

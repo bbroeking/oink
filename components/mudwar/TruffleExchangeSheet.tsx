@@ -87,18 +87,18 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 		setConfirming(null);
 		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-			setNote("Traded. It's yours — wear it proud.");
+			setNote("Traded. It's yours. Wear it proud.");
 		} else {
 			setNote(
 				r.reason === "insufficient"
-					? `Not enough truffles — you have ${r.have ?? 0}, it wants ${r.need ?? price}.`
+					? `Not enough truffles: you have ${r.have ?? 0}, it wants ${r.need ?? price}.`
 					: r.reason === "already_owned"
 					? "Already in your trunk."
 					: r.reason === "heirloom_rested"
-					? "The heirloom shelf rests a while after a trade — come back in a few weeks."
+					? "The heirloom shelf rests a while after a trade. Come back in a few weeks."
 					: r.reason === "not_in_stock"
-					? "That one's left the shelf — the stock turned over."
-					: "The trade didn't go through — try again."
+					? "That one's left the shelf. The stock turned over."
+					: "The trade didn't go through. Try again."
 			);
 		}
 	};
@@ -107,13 +107,16 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 		<Sheet
 			open={open}
 			onClose={onClose}
-			kicker="THE TRUFFLE EXCHANGE"
+			// A sheet kicker is the hand voice, written the way it is spoken
+			// (every other sheet's is lowercase); the X is a button named "Close".
+			kicker="the truffle exchange"
 			title="Spend your golden truffles"
-			closeLabel="Close the Truffle Exchange"
 			footer={
 				// Pinned, like the panel pinned them before: the outcome line and
-				// the "never bought" promise sit with the CTA rather than scrolling
-				// away under the shelf.
+				// the "never bought" promise stay put rather than scrolling away
+				// under the shelf. No gold "Done" under them any more: the X is the
+				// close, and a gold close sat beside gold prices as if it were one
+				// more thing to buy. (2026-10-04)
 				<View>
 					{note ? (
 						<T
@@ -126,19 +129,9 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 							{note}
 						</T>
 					) : null}
-					<Hand tone="secondary" align="center" style={styles.footnote}>
+					<Hand tone="secondary" align="center">
 						Earned at the feedings, never bought.
 					</Hand>
-					<Button
-						variant="gold"
-						full
-						onPress={onClose}
-						accessibilityLabel="Done at the Truffle Exchange"
-						accessibilityHint="Closes the Exchange. Your truffles stay in your pouch."
-						style={styles.doneBtn}
-					>
-						Done
-					</Button>
 				</View>
 			}
 		>
@@ -166,7 +159,7 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 					glyph="zzz"
 					color="cream2"
 					title="The stall is still being built."
-					sub="The Exchange opens with the season — dig truffles at every feeding so your pouch is heavy on opening day."
+					sub="The Exchange opens with the season. Dig truffles at every feeding so your pouch is heavy on opening day."
 				/>
 			) : (
 				<View style={styles.shelf}>
@@ -199,9 +192,10 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 								<View style={[styles.thumbWrap, { backgroundColor: thumbFill }]}>
 									{img ? <Image source={img} style={styles.thumb} resizeMode="contain" /> : null}
 								</View>
+								{/* Two lines before an item's name ever ends in "…". */}
 								<Label
 									align="center"
-									numberOfLines={1}
+									numberOfLines={2}
 									tone={item.owned ? "secondary" : "primary"}
 									style={styles.name}
 								>
@@ -298,6 +292,4 @@ const styles = StyleSheet.create({
 	priceImg: { width: PRICE_MARK, height: PRICE_MARK },
 
 	note: { marginBottom: SPACE.sm },
-	footnote: { marginBottom: SPACE.sm },
-	doneBtn: { marginTop: SPACE.xs },
 });

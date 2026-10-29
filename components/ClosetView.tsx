@@ -16,6 +16,7 @@
 import {
 	forwardRef,
 	useCallback,
+	useEffect,
 	useImperativeHandle,
 	useMemo,
 	useRef,
@@ -57,6 +58,7 @@ import {
 	PIG_CANVAS
 } from "@/constants/hats";
 import { categoryIcon } from "@/constants/emojiArt";
+import { cosmeticAccessibility } from "@/utils/cosmetics";
 import { cardBadge, cardTag, cardTagFace } from "@/utils/shopShelves";
 import {
 	SLOT_ORDER,
@@ -68,9 +70,11 @@ import {
 import {
 	ART_SIZE,
 	BORDER,
+	CHROME_TYPE_CAP,
 	OPACITY,
 	WHIMSY,
 	RADII,
+	SHADOW_SM,
 	SPACE,
 	TAB_SAFE,
 	TAP_MIN,
@@ -119,6 +123,14 @@ interface Props {
 	// `scrollToCloset` lands the crown just under it. (The folded strip that
 	// sat there retired 2026-09-18.)
 	closetScrollInset?: number;
+	// The catalog rows of what the pig is wearing, hidden categories included
+	// (useShopCatalog's `wornItems`). The slots name and take off a worn item
+	// from these when `allItems` (the shoppable catalog) does not carry it.
+	wornItems?: HatRow[];
+	// The page's own scroll listener — the crown's `useScrollEdge().onScroll`,
+	// so the fitting room slides under the crown's drawn edge instead of being
+	// cut by an invisible one. Composed with the fold. (polish pass, 2026-10-04)
+	onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
 /** What the store drives from outside: one scroll, one destination. */
@@ -159,6 +171,21 @@ const HIDDEN_CLOSET_IDS = new Set<string>([
 	"vampire_cape"
 ]);
 
+// The category a profiles column clears through — so a worn item the catalog
+// cannot name (a retired id) can still be taken off its slot. equipCosmetic
+// routes by category, and each of these resolves back to its own column.
+const COLUMN_CATEGORY: Record<string, string> = {
+	active_hat_id: "hat",
+	active_bow_id: "bow",
+	active_glasses_id: "glasses",
+	active_mask_id: "mask",
+	active_neck_id: "necklace",
+	active_held_id: "held",
+	active_aura_id: "aura",
+	active_background_id: "background",
+	active_tickle_particle_id: "tickle_particle",
+};
+
 // Category sections, in order, with player-facing headings.
 const CAT_ORDER = [
 	"hat",
@@ -181,7 +208,10 @@ const CAT_LABEL: Record<string, string> = {
 	necklace: "Necklaces",
 	held: "Held",
 	aura: "Auras",
-	background: "BG",
+	// Was the two-letter dev shorthand for background; a background is the
+	// scenery behind the pig, and the slot chip above calls it a Scene.
+	// (polish pass, 2026-10-04)
+	background: "Scenes",
 	tickle_particle: "Tickle Effects"
 };
 
@@ -213,11 +243,19 @@ const SLOT_TINT: Record<string, string> = {
 const PIG_PREVIEW = 150;
 // The scene window behind Rosie is a touch wider + taller than she is so a
 // margin of background shows all around her (room for the hat and aura to
-// read). Capped so the flanking slot columns still clear a 64px chip on an SE
-// (card inner width = SCREEN_W − 60; each column = (inner − PIG_WINDOW_W) / 2).
+// read). PIG_WINDOW_W is its widest; the window is the paper doll's ONE
+// yielding child. The old comment budgeted an SE inner width of SCREEN_W − 60
+// (315pt), but the card spends 64 (the list's 16 a side, the Sticker's 2pt
+// border and 14pt pad a side): 311pt left two flex columns 63.5pt each for a
+// 64pt chip plus its 2pt shadow, so the chips sat on the window's edges
+// (117-se-shop, polish pass 2026-10-04). The columns now state their width and
+// the window gives: 311 − 2 × 66 − 2 × 8 = 163pt on an SE, never less than
+// the pig it frames.
 const PIG_WINDOW_W = 184;
 const PIG_WINDOW_H = 210;
 const SLOT_CHIP_W = 64;
+/** A slot column: the chip plus the hard shadow it throws to the right. */
+const SLOT_COL_W = SLOT_CHIP_W + SHADOW_SM.shadowOffset.width;
 // The "remove" badge rides the slot chip's corner, half off the edge.
 const SLOT_REMOVE_INSET = -10;
 const SLOT_REMOVE_ICON = 10;
@@ -226,6 +264,19 @@ const SLOT_THUMB_ART = 30;
 const TITLE_CHIP_MAX_W = 240;
 // Three tiles per row; the gutter is both the gap and the row rhythm.
 const TILE_GAP = 10;
+/**
+ * How many lines a tile's name may take. The name speaks in `label` (Nunito
+ * ExtraBold 12, the fence row's and the ticket's tile voice), not the
+ * Caprasimo card title: measured across the 217 closet items in a 3-up tile,
+ * Caprasimo needed three lines for 42 names at default size on an SE and could
+ * not fit "Masquerade", "Magnifying" or "Champions'" on a line at all, so it
+ * truncated ("Squire Fea…"). In `label`, with the foot's inset at SPACE.xs,
+ * every name fits in three lines with no word broken, at 1.0x and at the
+ * CHROME_TYPE_CAP ceiling, on the SE and the 17 Pro. (polish pass, 2026-10-04)
+ */
+const TILE_NAME_LINES = 3;
+/** The title chip's name may wrap once rather than end in "…". */
+const TITLE_CHIP_LINES = 2;
 const TILE_INSET = 4;
 const TILE_ART_INSET = 24;
 const TILE_ART_MIN = 44;
@@ -300,6 +351,8 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		storeContent,
 		closetScrollInset = 0,
 		onFoldChange,
+		wornItems,
+		onScroll,
 	}: Props,
 	ref,
 ) {
@@ -327,8 +380,15 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		});
 	}, []);
 
+	// The shoppable catalog first, then the worn rows it leaves out (a hidden
+	// category), so a slot can always name what the pig has on.
 	const byId = useRef<Map<string, HatRow>>(new Map());
-	byId.current = new Map(allItems.map((i) => [i.id, i]));
+	byId.current = new Map(
+		[...(wornItems ?? []), ...allItems].map((i) => [i.id, i]),
+	);
+	// The window's measured width: it yields on a narrow phone, and the scene
+	// behind the pig must cover the window it actually got.
+	const [pigWindowW, setPigWindowW] = useState(PIG_WINDOW_W);
 
 	// Build a PigStage slot ({id, category, emoji}) from a profiles column.
 	const slot = (column: string) => {
@@ -450,27 +510,54 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 		return { closetRows: rows, categoryIndex: indices };
 	}, [groups, categoryTotals]);
 
+	// A slot chip jumps to its section. Under a filter that hides every item of
+	// that slot (the Members segment and a bow, say) the chip used to do
+	// nothing at all; it now opens the whole rack and lands there once the rows
+	// have rebuilt. (polish pass, 2026-10-04)
+	const pendingCategory = useRef<string | null>(null);
+	const landOnCategory = useCallback(
+		(category: string) => {
+			setCollapsedCategories((current) => {
+				if (!current.has(category)) return current;
+				const next = new Set(current);
+				next.delete(category);
+				return next;
+			});
+			listRef.current?.scrollToIndex({
+				index: categoryIndex[category],
+				animated: true,
+				viewOffset: SPACE.sm
+			});
+		},
+		[categoryIndex]
+	);
 	const scrollToCategory = useCallback(
 		(slotKey: EquipSlotKey) => {
 			const category = CAT_ORDER.find(
 				(candidate) => slotForCategory(candidate) === slotKey && categoryIndex[candidate] != null
 			);
 			if (category != null) {
-				setCollapsedCategories((current) => {
-					if (!current.has(category)) return current;
-					const next = new Set(current);
-					next.delete(category);
-					return next;
-				});
-				listRef.current?.scrollToIndex({
-					index: categoryIndex[category],
-					animated: true,
-					viewOffset: SPACE.sm
-				});
+				landOnCategory(category);
+				return;
+			}
+			const anywhere = CAT_ORDER.find(
+				(candidate) =>
+					slotForCategory(candidate) === slotKey &&
+					(categoryTotals[candidate]?.total ?? 0) > 0
+			);
+			if (anywhere != null && filter !== "all") {
+				pendingCategory.current = anywhere;
+				setFilter("all");
 			}
 		},
-		[categoryIndex]
+		[categoryIndex, categoryTotals, filter, landOnCategory]
 	);
+	useEffect(() => {
+		const category = pendingCategory.current;
+		if (category == null || categoryIndex[category] == null) return;
+		pendingCategory.current = null;
+		requestAnimationFrame(() => landOnCategory(category));
+	}, [categoryIndex, landOnCategory]);
 
 	/** Back to the top of the one scroll — the shelves, from the bare rack. */
 	const scrollToTop = useCallback(() => {
@@ -519,6 +606,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 	const handleScroll = useCallback(
 		(e: NativeSyntheticEvent<NativeScrollEvent>) => {
 			const y = e.nativeEvent.contentOffset.y;
+			onScroll?.(e);
 			if (onFoldChange && fittingRoomH.current > 0) {
 				const foldAt = CONTENT_TOP + fittingRoomH.current;
 				// A band, not a line: a one-pixel rubber-band wobble at the seam
@@ -530,7 +618,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 				}
 			}
 		},
-		[onFoldChange],
+		[onFoldChange, onScroll],
 	);
 
 	// Slot chips map 1:1 to the sections below: show a chip only for a slot you
@@ -561,42 +649,50 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 	const rightSlots = flankSlots.slice(splitAt);
 
 	// One equip slot: tinted thumb (item art → category art → +), tap scrolls to
-	// that section, ✕ takes it off.
+	// that section, ✕ takes it off. What the chip SAYS follows what it DRAWS:
+	// a slot holding an item the shoppable catalog leaves out (a hidden-category
+	// scarf) used to draw the bandana, announce "Neck slot, empty" and offer no
+	// ✕ (055-shop-top). The name now comes from the worn rows as well, and the
+	// ✕ clears the slot's own column even for an id nothing can name.
 	const renderSlot = (s: EquipSlotKey) => {
-		const equippedId =
-			columnsForSlot(s)
-				.map((c) => activeIds[c])
-				.find((v) => v) ?? null;
+		const equippedColumn =
+			columnsForSlot(s).find((c) => activeIds[c]) ?? null;
+		const equippedId = equippedColumn ? activeIds[equippedColumn] : null;
 		const it = equippedId ? byId.current.get(equippedId) : null;
 		const src = equippedId ? (HAT_THUMBNAILS_128[equippedId] ?? HAT_IMAGES[equippedId]) : null;
 		const thumbSrc = src ?? (it ? categoryIcon(it.category) : null);
-		const slotName = s === "background" ? "BG" : SLOT_LABEL[s];
+		const slotName = SLOT_LABEL[s];
+		const removeCategory =
+			it?.category ?? (equippedColumn ? COLUMN_CATEGORY[equippedColumn] : null);
+		// Only a slot with a section somewhere in the rack is a door to it; the
+		// legacy scarf's Neck slot has none, so it is a plain label there.
+		const jumpable = CAT_ORDER.some(
+			(category) =>
+				slotForCategory(category) === s &&
+				(categoryTotals[category]?.total ?? 0) > 0,
+		);
+		const wearing = equippedId
+			? `${slotName} slot, wearing ${it?.name ?? "something"}`
+			: `${slotName} slot, empty`;
+		// The ✕ is the chip's SIBLING, drawn over its corner: nested inside the
+		// pressable chip it was part of one VoiceOver element (an accessible
+		// Pressable is a leaf on iOS), so a screen-reader player could hear the
+		// slot but never reach its ✕. (polish pass, 2026-10-04)
 		return (
+			<View key={s} style={styles.slotWrap}>
 			<Sticker
-				key={s}
 				color="paper"
 				rotate={0}
 				radius={RADII.lg}
 				shadow="sm"
-				onPress={() => scrollToCategory(s)}
-				accessibilityLabel={
-					it ? `${slotName} slot, wearing ${it.name}` : `${slotName} slot, empty`
+				onPress={jumpable ? () => scrollToCategory(s) : undefined}
+				accessibilityRole={jumpable ? "button" : "text"}
+				accessibilityLabel={wearing}
+				accessibilityHint={
+					jumpable ? "Scrolls down to the items for this slot" : undefined
 				}
-				accessibilityHint="Jumps to this category in the Closet"
 				style={styles.slotChip}
 			>
-				{equippedId && it ? (
-					<IconButton
-						name="x"
-						label={`Remove ${it.name}`}
-						onPress={() => onEquip(null, it.category)}
-						variant="paper"
-						iconSize={SLOT_REMOVE_ICON}
-						visualSize={SLOT_REMOVE_VISUAL}
-						strokeWidth={SLOT_REMOVE_STROKE}
-						style={styles.slotRemove}
-					/>
-				) : null}
 				<View style={[styles.slotThumb, { backgroundColor: SLOT_TINT[s] ?? WHIMSY.cream2 }]}>
 					{thumbSrc ? (
 						<Image source={thumbSrc} style={styles.slotThumbImg} resizeMode="contain" />
@@ -604,16 +700,35 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 						<Icon name="plus" size={ART_SIZE.glyphSm} color={UI_COLORS.uiMuted} />
 					)}
 				</View>
+				{/* One line, always, at a stated ceiling: the chip cannot grow
+				    sideways, so past it the label stops growing instead of
+				    breaking mid-word ("HEL/D", 106-dyntype-ax-large-shop). Every
+				    label is measured to fit the chip at CHROME_TYPE_CAP
+				    (constants/slots.ts), so the two columns stay level. */}
 				<T
 					role="kickerPillSm"
 					tone="secondary"
 					align="center"
-					numberOfLines={2}
+					numberOfLines={1}
+					maxFontSizeMultiplier={CHROME_TYPE_CAP}
 					style={styles.slotLabel}
 				>
 					{slotName}
 				</T>
 			</Sticker>
+				{equippedId && removeCategory ? (
+					<IconButton
+						name="x"
+						label={it ? `Take off ${it.name}` : `Take off the ${slotName.toLowerCase()} item`}
+						onPress={() => onEquip(null, removeCategory)}
+						variant="paper"
+						iconSize={SLOT_REMOVE_ICON}
+						visualSize={SLOT_REMOVE_VISUAL}
+						strokeWidth={SLOT_REMOVE_STROKE}
+						style={styles.slotRemove}
+					/>
+				) : null}
+			</View>
 		);
 	};
 
@@ -625,7 +740,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 			style={styles.root}
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
-			onScroll={onFoldChange ? handleScroll : undefined}
+			onScroll={onFoldChange || onScroll ? handleScroll : undefined}
 			scrollEventThrottle={SCROLL_THROTTLE}
 			data={closetRows}
 			keyExtractor={(row) => row.key}
@@ -652,9 +767,18 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 					    Rosie composited in front and a margin of scene around her so the
 					    hat and aura read. Clipped (overflow hidden) — the aura's
 					    baked radial falloff keeps that clip soft, no hard box. */}
-					<View style={styles.pigWindow}>
+					<View
+						style={styles.pigWindow}
+						onLayout={(e: LayoutChangeEvent) =>
+							setPigWindowW(e.nativeEvent.layout.width)
+						}
+					>
 						{bgPreviewSrc && (
-									<Image source={bgPreviewSrc} style={styles.pigWindowBg} resizeMode="cover" />
+									<Image
+										source={bgPreviewSrc}
+										style={[styles.pigWindowBg, { width: pigWindowW }]}
+										resizeMode="cover"
+									/>
 						)}
 						<View style={styles.pigVisualBox}>
 							<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
@@ -693,14 +817,26 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 								accessibilityHint="Opens your titles"
 								style={styles.titleChip}
 							>
-						<T role="kickerPillSm" tone="secondary">title</T>
+						<T
+							role="kickerPillSm"
+							tone="secondary"
+							maxFontSizeMultiplier={CHROME_TYPE_CAP}
+						>
+							title
+						</T>
+						{/* A title is a name: it wraps once before it ever ends in
+						    "…". Every title fits one line at default size (the
+						    widest, "Leopard-Hearted Friend", is 187pt of the
+						    chip's 204pt) and wraps once at the chrome ceiling. */}
 						<T
 							role="cardTitleSm"
 							tone={activeTitleName == null ? "secondary" : "primary"}
-							numberOfLines={1}
+							align="center"
+							numberOfLines={TITLE_CHIP_LINES}
+							maxFontSizeMultiplier={CHROME_TYPE_CAP}
 							style={styles.titleChipName}
 						>
-							{activeTitleName ?? "No title — tap to pick"}
+							{activeTitleName ?? "No title · tap to pick"}
 						</T>
 					</Sticker>
 				)}
@@ -789,6 +925,22 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 							};
 							const face = cardTagFace(cardTag(item, cardState));
 							const badge = cardBadge(cardState);
+							// The shop's one spoken grammar for a cosmetic: name,
+							// rarity, whose it is and, while it is for sale, its
+							// price; the hint says what the tap does and why it
+							// can't buy yet. The tile used to say only "not owned"
+							// over a price tag it never read out.
+							const a11y = cosmeticAccessibility(
+								{ name: item.name, rarity: item.rarity, cost: item.cost },
+								{
+									owned,
+									active,
+									locked: cardState.locked,
+									canAfford: cardState.canAfford,
+									buyable: cardState.inDrop,
+									action: owned ? "equip" : "preview",
+								},
+							);
 								return (
 									<Sticker
 										key={item.id}
@@ -807,17 +959,9 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 										owned ? styles.itemCardOwned : styles.itemCardUnowned,
 										active && styles.itemCardActive,
 									]}
-									accessibilityState={{ selected: active }}
-									accessibilityLabel={`${item.name}, ${active ? "wearing" : owned ? "owned" : "not owned"}`}
-									accessibilityHint={
-										owned
-											? active
-												? "Removes this item from your pig"
-												: "Equips this item on your pig"
-											: item.members_only && !isVip
-												? "Opens a preview; Slop Club membership is required"
-												: "Opens a preview of this item"
-									}
+									accessibilityState={a11y.accessibilityState}
+									accessibilityLabel={a11y.accessibilityLabel}
+									accessibilityHint={a11y.accessibilityHint}
 								>
 										<View style={[styles.itemStripe, { backgroundColor: stripe(item.rarity) }]} />
 									<View
@@ -875,11 +1019,15 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 											active && styles.itemFootActive,
 										]}
 									>
+										{/* The name is a label here (TILE_NAME_LINES): it wraps,
+										    it never ends in "…", and the row's tiles stretch to
+										    one height so every tag sits on the same line. */}
 										<T
-											role="cardTitleSm"
+											role="label"
 											tone={owned ? "primary" : "secondary"}
 											align="center"
-											numberOfLines={1}
+											numberOfLines={TILE_NAME_LINES}
+											maxFontSizeMultiplier={CHROME_TYPE_CAP}
 										>
 											{item.name}
 										</T>
@@ -888,6 +1036,7 @@ export const ClosetView = forwardRef<ClosetViewHandle, Props>(function ClosetVie
 											icon={face.icon}
 											coin={face.coin}
 											label={face.label}
+											maxFontSizeMultiplier={CHROME_TYPE_CAP}
 											style={styles.itemTag}
 										/>
 										</View>
@@ -968,17 +1117,20 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: SPACE.sm,
 	},
-	// Paper-doll: flex columns flank Rosie so she stays centred no matter how many
-	// slots each side has.
+	// Paper-doll: two slot columns of stated width flank Rosie, and the window
+	// between them is the one child that yields (see PIG_WINDOW_W). The row's
+	// gap is the least air a chip's shadow ever gets from the window.
 	paperDoll: {
 		flexDirection: "row",
 		alignItems: "center",
-		alignSelf: "stretch"
+		justifyContent: "space-between",
+		alignSelf: "stretch",
+		gap: SPACE.sm,
 	},
 	slotCol: {
-		flex: 1,
+		width: SLOT_COL_W,
 		gap: SPACE.sm,
-		alignItems: "center",
+		alignItems: "flex-start",
 		justifyContent: "center"
 	},
 	// Scene window behind Rosie: the equipped background clipped to a rounded
@@ -989,6 +1141,9 @@ const styles = StyleSheet.create({
 	pigWindow: {
 		width: PIG_WINDOW_W,
 		height: PIG_WINDOW_H,
+		// Yields on a narrow phone, never below the pig it frames.
+		flexShrink: 1,
+		minWidth: PIG_PREVIEW,
 		borderRadius: RADII.xl,
 		borderWidth: BORDER.ink,
 		borderColor: UI_COLORS.border,
@@ -1000,12 +1155,12 @@ const styles = StyleSheet.create({
 	},
 	// Explicit numeric size (NOT inset:0 / percentage) — an inset-sized Image
 	// hits RN's indefinite-size fallback and renders a centered intrinsic band
-	// (see PageBackground's note). Cover-fills the window edge to edge.
+	// (see PageBackground's note). Cover-fills the window edge to edge; the
+	// width is the window's measured one (it yields), passed inline.
 	pigWindowBg: {
 		position: "absolute",
 		top: 0,
 		left: 0,
-		width: PIG_WINDOW_W,
 		height: PIG_WINDOW_H
 	},
 	// The pig's displayed footprint. overflow:"visible" lets a tall hat spill up
@@ -1021,6 +1176,12 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		left: (PIG_PREVIEW - PIG_CANVAS) / 2,
 		top: (PIG_PREVIEW - PIG_CANVAS) / 2
+	},
+	// The chip and its ✕ share this box, so the ✕'s corner inset is the
+	// chip's corner.
+	slotWrap: {
+		width: SLOT_CHIP_W,
+		position: "relative",
 	},
 	slotChip: {
 		width: SLOT_CHIP_W,
@@ -1065,7 +1226,8 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.lg
 	},
 	titleChipName: {
-		marginTop: 1
+		marginTop: 1,
+		flexShrink: 1,
 	},
 	filterRow: {
 		marginBottom: SPACE.md,
@@ -1083,6 +1245,8 @@ const styles = StyleSheet.create({
 		gap: TILE_GAP,
 		marginBottom: TILE_GAP
 	},
+	// A row's tiles stretch to its tallest (gridRow aligns by stretch), and
+	// the foot takes the extra so a two-line name never lifts its tag.
 	itemCard: {
 		overflow: "hidden",
 	},
@@ -1121,10 +1285,14 @@ const styles = StyleSheet.create({
 	// backstop CROPPED it — giant zoomed art in every tile. Fixed-point
 	// insets always resolve; resizeMode="contain" does the fitting.
 	itemFoot: {
+		flexGrow: 1,
+		justifyContent: "space-between",
 		borderTopWidth: BORDER.ink,
 		borderTopColor: UI_COLORS.border,
 		paddingVertical: SPACE.xs,
-		paddingHorizontal: SPACE.sm,
+		// SPACE.xs, not SPACE.sm: the 8pt a name gets back is what lets every
+		// closet name fit TILE_NAME_LINES on a 375pt phone.
+		paddingHorizontal: SPACE.xs,
 		backgroundColor: WHIMSY.paper
 	},
 	itemFootUnowned: {

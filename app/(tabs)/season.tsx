@@ -3,13 +3,14 @@ import {
 	View,
 	StyleSheet,
 	ScrollView,
-	SafeAreaView,
 	Image,
 	Pressable,
 	type ViewStyle,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect, useIsFocused } from "expo-router/react-navigation";
+// The context's SafeAreaView, not React Native's (deprecated in RN 0.86): it
+// pads the same four edges by default, so the layout is unchanged.
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useIsFocused } from "expo-router/react-navigation";
 import { router } from "expo-router";
 import {
 	IAP_ENABLED,
@@ -39,13 +40,16 @@ import {
 	ProgressTrack,
 	SectionHeader,
 	SegmentedControl,
+	ScrollEdge,
 	Sheet,
+	showToast,
 	Sticker,
 	T,
 	Tag,
 	TickleIcon,
 	TierUpBanner,
 	usePopupSlot,
+	useScrollEdge,
 	useUnmanagedModalHold,
 	type GlyphName,
 	type TierUpBannerHandle,
@@ -96,7 +100,6 @@ import {
 	HUNGER_STAGES,
 	useHungerMeter,
 } from "@/hooks/useHungerMeter";
-import { useCrew } from "../../hooks/useCrew";
 import { useSeason1Active } from "@/hooks/useSeason1Active";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
 import { alignmentEffects } from "@/utils/alignment";
@@ -114,6 +117,7 @@ import type {
 } from "@/utils/seasonPass";
 import {
 	BORDER,
+	CHROME_TYPE_CAP,
 	OPACITY,
 	PAGE_PAD,
 	PRESSED_FLAT,
@@ -309,7 +313,8 @@ function WallowCard({
 					<Glyph name="flame" size={STONE_ICON} />
 				</View>
 				<View style={wallowStyles.copy}>
-					<Kicker>THE MUD IS WARM</Kicker>
+					{/* A hand kicker speaks lowercase, like every other one in the app. */}
+					<Kicker>the mud is warm</Kicker>
 					<T role="sectionTitle">Wallow Rank {count + 1}</T>
 					<Hand tone="secondary" style={wallowStyles.body}>
 						{powerLevel >= WALLOW_MAX_POWER_LEVEL
@@ -711,8 +716,17 @@ const collapseStyles = StyleSheet.create({
 // browsing the premium track without membership. States the truth — the premium
 // track is a Slop Club perk (not a separate pass) — and its CTA opens the same
 // Slop Club paywall the shop + Account use. Slop Club gold identity, matching
-// the members band elsewhere.
-function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
+// the members band elsewhere. While it is up it is the sheet's one Slop Club
+// ask (the header's chip steps aside), and in a build with no store behind it
+// (IAP off) it says "coming soon" instead of offering a Join that does nothing
+// — the same truth the header chip tells on the free track. (2026-10-04)
+function PremiumLockedBanner({
+	canJoin,
+	onUnlock,
+}: {
+	canJoin: boolean;
+	onUnlock: () => void;
+}) {
 	return (
 		<Sticker color={WHIMSY.slopBand} radius={RADII.xl} style={passBannerStyles.wrap}>
 			<View style={passBannerStyles.crest}>
@@ -721,47 +735,55 @@ function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
 			<View style={passBannerStyles.textCol}>
 				<Numeral>A Slop Club perk</Numeral>
 				<Hand style={passBannerStyles.body}>
-					The premium track comes with Slop Club — join to claim every reward on it.
+					{canJoin
+						? "The premium track comes with Slop Club. Join to claim every reward on it."
+						: "The premium track comes with Slop Club."}
 				</Hand>
 			</View>
-			<Button
-				size="xs"
-				variant="dark"
-				onPress={onUnlock}
-				accessibilityLabel="Join the Slop Club"
-				accessibilityHint="Opens the Slop Club subscription — it unlocks every premium tier"
-			>
-				Join ›
-			</Button>
+			{canJoin ? (
+				<Button
+					size="xs"
+					variant="dark"
+					onPress={onUnlock}
+					accessibilityLabel="Join the Slop Club"
+					accessibilityHint="Opens the Slop Club subscription. It unlocks every premium tier"
+				>
+					Join ›
+				</Button>
+			) : (
+				// A button asleep, not a dissolved one. [C-07]
+				<Button size="xs" variant="locked" disabled accessibilityLabel="Slop Club coming soon">
+					Coming soon
+				</Button>
+			)}
 		</Sticker>
 	);
 }
 
-// The ready-claim shortcut — a sticker bar above the pass track whenever ANY
-// tier is ready to claim (the founder's note: a ready reward announced only at
-// the page bottom is a ready reward nobody sees). One ready tier names its
-// reward ("25 tickles is ready — claim ›"); two or more sweep in one tap. The
-// row itself is the affordance (no separate CTA), and it sinks into its own
-// hard shadow when pressed — the `Sticker` press, not a fade.
+// The claim-all shortcut — a sticker bar above the pass track whenever TWO OR
+// MORE tiers are ready (the founder's note: a ready reward announced only at
+// the page bottom is a ready reward nobody sees), sweeping them in one tap. A
+// single ready tier has no bar: its own row is already in the track's opening
+// window with its Claim button, and a bar naming the same reward over it was
+// two claim buttons for one reward on one screen (2026-10-04; the 2026-09-18
+// rule: a fact is stated once, on the control that acts on it). The row itself
+// is the affordance (no separate CTA), and it sinks into its own hard shadow
+// when pressed — the `Sticker` press, not a fade.
 //
 // `hero` is the one-hero rule (C-26): the bar wears the sun-yellow highlight
 // only when claiming IS the tab's primary action. When the dig is open, the
 // bar keeps its shape and its words on paper and lets the dig be the loud one.
 function ClaimAllBar({
 	count,
-	label,
 	busy,
 	hero,
 	onPress,
 }: {
 	count: number;
-	/** The single ready tier's display label (count === 1 only) — names the reward. */
-	label?: string;
 	busy: boolean;
 	hero: boolean;
 	onPress: () => void;
 }) {
-	const single = count === 1;
 	return (
 		<Sticker
 			color={hero ? "sun" : "paper"}
@@ -773,25 +795,15 @@ function ClaimAllBar({
 				if (!busy) onPress();
 			}}
 			accessibilityRole="button"
-			accessibilityLabel={
-				single
-					? `Claim ${label ?? "your ready reward"}`
-					: `Claim all ${count} ready rewards`
-			}
-			accessibilityHint={
-				single
-					? "Adds it to your account"
-					: "Claims every ready tier on this track in one go"
-			}
+			accessibilityLabel={`Claim all ${count} ready rewards`}
+			accessibilityHint="Claims every ready tier on this track in one go"
 			accessibilityState={{ busy }}
 			style={claimAllStyles.bar}
 		>
 			<Glyph name="gift" size={CREST_ICON} />
-			<Numeral style={claimAllStyles.text}>
-				{single ? `${label ?? "a reward"} is ready` : `${count} rewards ready`}
-			</Numeral>
+			<Numeral style={claimAllStyles.text}>{`${count} rewards ready`}</Numeral>
 			<Hand tone="accent" style={claimAllStyles.cta}>
-				{busy ? "claiming…" : single ? "claim ›" : "claim all ›"}
+				{busy ? "claiming…" : "claim all ›"}
 			</Hand>
 		</Sticker>
 	);
@@ -836,18 +848,20 @@ const vlStyles = StyleSheet.create({
 		width: NODE_COL,
 		alignItems: "center",
 	},
+	// A one-sided DASHED border sets its colour on every side (`borderColor`):
+	// iOS never draws a dashed border whose colour is set on one side only.
 	connectorTop: {
 		width: 0,
 		height: SPACE.md,
 		borderLeftWidth: BORDER.thin,
-		borderLeftColor: UI_COLORS.uiMuted,
+		borderColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	connectorBottom: {
 		flex: 1,
 		width: 0,
 		borderLeftWidth: BORDER.thin,
-		borderLeftColor: UI_COLORS.uiMuted,
+		borderColor: UI_COLORS.uiMuted,
 		borderStyle: "dashed",
 	},
 	node: {
@@ -1006,6 +1020,12 @@ export default function SeasonScreen() {
 	const habitatJournal = useHabitatJournal(uid);
 	const isFocused = useIsFocused();
 	const insets = useSafeAreaInsets();
+	// The pinned strip owns its scroll edge: the app's one scroll-edge rule
+	// shows once panel content passes under it, never a hard clip with no edge.
+	// The crown and the strip are pinned chrome at every text size and state
+	// their ceiling (CHROME_TYPE_CAP), so at accessibility sizes they stay a
+	// fixed band instead of eating the screen (2026-10-04, ax-large capture).
+	const panelEdge = useScrollEdge();
 	const [wallowGiftAccount, setWallowGiftAccount] = useState<string | null>(null);
 	useEffect(() => {
 		if (wallowGiftAccount && wallowGiftAccount !== uid) setWallowGiftAccount(null);
@@ -1016,10 +1036,11 @@ export default function SeasonScreen() {
 	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
 	// re-opens any time from the title row's `?` door.
 	const [introOpen, setIntroOpen] = useState(false);
-	// Crew state, for the guide dialog's "leave your Sounder" footer. The page
-	// itself never shows the herd — the Sounder lives on the Friends tab
-	// (docs/design/2026-09-21-season-page-rewrite.md §1).
-	const crewHook = useCrew(s1);
+	// The page never shows the herd, and since 2026-10-04 it holds no door to it
+	// either: leaving a Sounder lives on Friends ▸ Sounder with the rest of the
+	// herd (docs/design/2026-09-21-season-page-rewrite.md §1, "not a cell, not a
+	// row, not a one-line door"). The guide's old "leave your Sounder" link and
+	// the crew fetch + realtime channel it kept alive here are gone.
 	const devSeason = useDevSeasonOverrides();
 	const [devSeasonSheetOpen, setDevSeasonSheetOpen] = useState(false);
 	// Bumped after every real dig submit — the patch modal never blurs this
@@ -1033,13 +1054,8 @@ export default function SeasonScreen() {
 	// 2026-07-12) — one instance makes disagreement impossible.
 	const handleDug = useCallback(() => {
 		setDigTick((t) => t + 1);
-		crewHook.refresh?.().catch?.(() => {});
-	}, [crewHook.refresh]);
+	}, []);
 	const feedingCta = useFeedingCta(handleDug, ticklesEarned);
-	// Leaving your Sounder now lives in the season-guide dialog's footer.
-	const handleLeave = useCallback(() => {
-		crewHook.leave().catch(() => {});
-	}, [crewHook.leave]);
 	// The Almanac's reads — the Hungerer's stage (the title row's kicker and the
 	// Feed panel's meter) and this week's quests (the Pass panel). The drum's own
 	// read is `useMondayDraw` below; it feeds the Draw panel, the Draw cell and
@@ -1184,16 +1200,8 @@ export default function SeasonScreen() {
 	// NO auto-open: the first session already carries the tale video and the
 	// step card teaches by doing — a guide popped onto a tab the player hasn't
 	// seen yet was the third modal in a row (critique run 2, P1). It lives
-	// behind the `?` door only. GUIDE_EVERY_VISIT is a dev-only loop for
-	// exercising the flow and can never ship on (gated behind __DEV__).
-	const GUIDE_EVERY_VISIT = __DEV__ && false;
+	// behind the `?` door only.
 	const [guideOpen, setGuideOpen] = useState(false);
-	useFocusEffect(
-		useCallback(() => {
-			if (!s1 || !GUIDE_EVERY_VISIT) return;
-			setGuideOpen(true);
-		}, [s1])
-	);
 	const dismissGuide = useCallback(() => {
 		setGuideOpen(false);
 	}, []);
@@ -1263,7 +1271,7 @@ export default function SeasonScreen() {
 		if (!r.ok) {
 			const body =
 				r.reason === "claim_rewards_first"
-					? "Claim the rewards waiting on your pass first — they come with you."
+					? "Claim the rewards waiting on your pass first: they come with you."
 					: r.reason === "not_ready"
 						? "The mud needs a little more XP before you can Wallow."
 						: "The Wallow didn't settle. Give it another tap in a moment.";
@@ -1274,7 +1282,7 @@ export default function SeasonScreen() {
 		afterSheet(() =>
 			setClaimAllSummary({
 				title: `Wallow Rank ${r.wallow_count}`,
-				body: `Your aura burns brighter. Tickle ${wallowWaitReductionLabel(r.regen_percent)} — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
+				body: `Your aura burns brighter. Tickle ${wallowWaitReductionLabel(r.regen_percent)}, one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
 			})
 		);
 		await load();
@@ -1296,7 +1304,7 @@ export default function SeasonScreen() {
 			if (reason === "pass_changed") await load();
 			const bodyMap: Record<string, string> = {
 				pass_changed: "Your pass moved to a new lap or season. Review its rewards and claim again.",
-				tier_locked: `Reach tier ${tier} first — you're at ${r.current_tier}.`,
+				tier_locked: `Reach tier ${tier} first: you're at ${r.current_tier}.`,
 				premium_locked: "Join the Slop Club to claim the premium track.",
 				already_claimed: "You've already claimed this one.",
 				no_active_season: "No season is running right now.",
@@ -1427,7 +1435,7 @@ export default function SeasonScreen() {
 					<EmptyState
 						kind="error"
 						title="Couldn't reach the season"
-						sub="The bog is slow right now — give it another go."
+						sub="The bog is slow right now. Give it another go."
 						action={
 							<Button
 								variant="ghost"
@@ -1505,234 +1513,271 @@ export default function SeasonScreen() {
 	const stageName = HUNGER_LEVEL_NAME[HUNGER_STAGES[Math.max(0, Math.min(HUNGER_STAGES.length - 1, stageIndex))]];
 	const { day, total: totalDays } = seasonDay(season.starts_at, season.ends_at);
 
+	// The title row. Season 1 wears the Hungerer's name; Season 0 keeps its
+	// framing. The crown is `PageHeader variant="tab"` — the kicker + title
+	// rulings live in that component's header comment. [C-10] The Hungerer
+	// sprite rides the right slot everywhere but the Feed panel, whose hero
+	// already carries him — he never appears twice on one screen.
+	const crown = (
+		<PageHeader
+			variant="tab"
+			maxFontSizeMultiplier={CHROME_TYPE_CAP}
+			kicker={
+				s1
+					? `day ${day} of ${totalDays} · the Hungerer is ${stageName}`
+					: season.name.toLowerCase()
+			}
+			title={s1 ? "The Great Hunger" : "Goblins vs Angels"}
+			right={
+				s1 ? (
+					<>
+						{selectedTab !== "feed" ? (
+							<Image
+								source={HUNGERER_SPRITE}
+								style={styles.titleSprite}
+								resizeMode="contain"
+								accessibilityIgnoresInvertColors
+							/>
+						) : (
+							// The Feed panel's hero carries him instead — but his slot
+							// keeps its size, or the whole crown drops 6pt (the sprite
+							// is taller than the door) every time the tab changes.
+							<View style={styles.titleSprite} accessible={false} />
+						)}
+						<HeaderDoor
+							label="How the season works"
+							hint="Opens the guide, the story, the tale and your tickle receipt"
+							onPress={() => setDoorsOpen(true)}
+						>
+							<T role="cardTitle" maxFontSizeMultiplier={CHROME_TYPE_CAP}>
+								?
+							</T>
+						</HeaderDoor>
+					</>
+				) : undefined
+			}
+			below={
+				__DEV__ ? (
+				<>
+					{/* Live entry point is the full-track sheet's recap door (only
+					    shows when a real grant exists). This __DEV__-only chip
+					    cycles the four founder tiers so the reveal is previewable
+					    without a grant; it never renders in production. */}
+					{__DEV__ && (
+						<View style={styles.devChipRow}>
+							<Pressable
+								onPress={() => {
+									const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
+									setDevTierIdx((n) => n + 1);
+									setDevReward(r);
+								}}
+								hitSlop={SPACE.sm}
+								accessibilityRole="button"
+								accessibilityLabel="Dev: preview the founder gift"
+								style={({ pressed }) => [styles.devRewardChip, pressed && PRESSED_FLAT]}
+							>
+								<T role="hand" tone="onDark" style={styles.devRewardChipText}>
+									dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
+								</T>
+							</Pressable>
+							<Pressable
+								onPress={() => setDevSeasonSheetOpen(true)}
+								hitSlop={SPACE.sm}
+								accessibilityRole="button"
+								accessibilityLabel="Dev: season states"
+								style={({ pressed }) => [styles.devRewardChip, pressed && PRESSED_FLAT]}
+							>
+								<T role="hand" tone="onDark" style={styles.devRewardChipText}>
+									dev · season states
+								</T>
+							</Pressable>
+						</View>
+					)}
+				</>
+				) : undefined
+			}
+		/>
+	);
+
+	// The verb tab strip — Feed · Draw · Pass.
+	const strip = (
+		<View style={styles.strip}>
+			<VerbTabStrip
+				values={almanacValues(facts)}
+				todo={almanacTodo(facts)}
+				selected={selectedTab}
+				onSelect={setPickedTab}
+				passProgress={passProgress}
+				testID="almanac-strip"
+			/>
+		</View>
+	);
+
 	return (
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
-				{/* The title row. Season 1 wears the Hungerer's name; Season 0 keeps
-				    its framing. The crown is `PageHeader variant="tab"` — the kicker
-				    + title rulings live in that component's header comment. [C-10]
-				    The Hungerer sprite rides the right slot everywhere but the Feed
-				    panel, whose hero already carries him — he never appears twice
-				    on one screen. */}
-				<PageHeader
-					variant="tab"
-					kicker={
-						s1
-							? `day ${day} of ${totalDays} · the Hungerer is ${stageName}`
-							: season.name.toLowerCase()
-					}
-					title={s1 ? "The Great Hunger" : "Goblins vs Angels"}
-					right={
-						s1 ? (
-							<>
-								{selectedTab !== "feed" ? (
-									<Image
-										source={HUNGERER_SPRITE}
-										style={styles.titleSprite}
-										resizeMode="contain"
-										accessibilityIgnoresInvertColors
-									/>
-								) : (
-									// The Feed panel's hero carries him instead — but his slot
-									// keeps its size, or the whole crown drops 6pt (the sprite
-									// is taller than the door) every time the tab changes.
-									<View style={styles.titleSprite} accessible={false} />
-								)}
-								<HeaderDoor
-									label="How the season works"
-									hint="Opens the guide, the story, the tale, and what you can earn"
-									onPress={() => setDoorsOpen(true)}
-								>
-									<T role="cardTitle">?</T>
-								</HeaderDoor>
-							</>
-						) : undefined
-					}
-					below={
-						__DEV__ ? (
-						<>
-							{/* Live entry point is the full-track sheet's recap door (only
-							    shows when a real grant exists). This __DEV__-only chip
-							    cycles the four founder tiers so the reveal is previewable
-							    without a grant; it never renders in production. */}
-							{__DEV__ && (
-								<View style={styles.devChipRow}>
-									<Pressable
-										onPress={() => {
-											const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
-											setDevTierIdx((n) => n + 1);
-											setDevReward(r);
-										}}
-										hitSlop={SPACE.sm}
-										accessibilityRole="button"
-										accessibilityLabel="Dev: preview the founder gift"
-										style={({ pressed }) => [styles.devRewardChip, pressed && PRESSED_FLAT]}
-									>
-										<T role="hand" tone="onDark" style={styles.devRewardChipText}>
-											dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
-										</T>
-									</Pressable>
-									<Pressable
-										onPress={() => setDevSeasonSheetOpen(true)}
-										hitSlop={SPACE.sm}
-										accessibilityRole="button"
-										accessibilityLabel="Dev: season states"
-										style={({ pressed }) => [styles.devRewardChip, pressed && PRESSED_FLAT]}
-									>
-										<T role="hand" tone="onDark" style={styles.devRewardChipText}>
-											dev · season states
-										</T>
-									</Pressable>
-								</View>
-							)}
-						</>
-						) : undefined
-					}
-				/>
-
 				{s1 ? (
 					<>
-						{/* The verb tab strip — Feed · Draw · Pass. */}
-						<View style={styles.strip}>
-							<VerbTabStrip
-								values={almanacValues(facts)}
-								todo={almanacTodo(facts)}
-								selected={selectedTab}
-								onSelect={setPickedTab}
-								passProgress={passProgress}
-								testID="almanac-strip"
-							/>
-						</View>
+						{crown}
+						{strip}
 
 						{/* The selected panel, fitted to the space above the hanging-signs
 						    tab bar. The bar is in flow (it owns its own height + home
-						    indicator), so the panel simply fills what's left; the scroller
-						    is a safety net for large Dynamic Type — on a 17 Pro every
-						    panel fits and it never moves. */}
-						<ScrollView
-							style={styles.panelScroll}
-							contentContainerStyle={[
-								styles.panel,
-								{ paddingBottom: Math.max(SPACE.lg, insets.bottom) },
-							]}
-							bounces={false}
-							showsVerticalScrollIndicator={false}
-						>
-							{selectedTab === "feed" && (
-								<FeedPanel
-									cta={feedingCta}
-									stageIndex={stageIndex}
-									seasonDays={totalDays}
-									draw={drawState}
-									testID="almanac-feed"
-								/>
-							)}
-							{selectedTab === "draw" && (
-								<DrawPanel
-									state={drawState}
-									onDraw={() => openDrawSheet(true)}
-									onOpenSheet={() => openDrawSheet(false)}
-									hero={heroSurface === "draw"}
-									testID="almanac-draw"
-								/>
-							)}
-							{selectedTab === "pass" && (
-								<>
-									<PassPanel
-										xp={xp}
-										xpPerTier={xpPer}
-										currentTier={tier}
-										totalTiers={season.total_tiers}
-										tiersByNumber={activeTiersByNumber}
-										claimedSet={activeClaimedSet}
-										track={prestigeMode ? "free" : shownTrack}
-										busy={busy}
-										onClaim={handleClaim}
-										onClaimHabitat={(t) => setHabitatClaimTier(t)}
-										onOpenTrack={() => setTrackOpen(true)}
-										quests={quests.quests}
-										questBusyCode={quests.busyCode}
-										onClaimQuest={(code) => void quests.claim(code)}
-										testID="almanac-pass"
-									/>
-									{MOTE_MACHINE_VISIBLE && <MoteMachineCard balance={state.motes} />}
-								</>
-							)}
-						</ScrollView>
+						    indicator), so the panel simply fills what's left. Feed and
+						    Draw fit a 17 Pro; the Pass panel and small phones scroll,
+						    under a strip that owns its edge. */}
+						<View style={styles.panelScroll}>
+							<ScrollView
+								style={styles.panelScroll}
+								contentContainerStyle={[
+									styles.panelContent,
+									{ paddingBottom: Math.max(SPACE.lg, insets.bottom) },
+								]}
+								bounces={false}
+								showsVerticalScrollIndicator={false}
+								onScroll={panelEdge.onScroll}
+								scrollEventThrottle={panelEdge.scrollEventThrottle}
+								testID="almanac-panel-scroll"
+							>
+								<View style={styles.panel}>
+									{selectedTab === "feed" && (
+										<FeedPanel
+											cta={feedingCta}
+											stageIndex={stageIndex}
+											seasonDays={totalDays}
+											draw={drawState}
+											testID="almanac-feed"
+										/>
+									)}
+									{selectedTab === "draw" && (
+										<DrawPanel
+											state={drawState}
+											onDraw={() => openDrawSheet(true)}
+											onOpenSheet={() => openDrawSheet(false)}
+											hero={heroSurface === "draw"}
+											testID="almanac-draw"
+										/>
+									)}
+									{selectedTab === "pass" && (
+										<>
+											<PassPanel
+												xp={xp}
+												xpPerTier={xpPer}
+												currentTier={tier}
+												totalTiers={season.total_tiers}
+												tiersByNumber={activeTiersByNumber}
+												claimedSet={activeClaimedSet}
+												track={prestigeMode ? "free" : shownTrack}
+												busy={busy}
+												onClaim={handleClaim}
+												onClaimHabitat={(t) => setHabitatClaimTier(t)}
+												onOpenTrack={() => setTrackOpen(true)}
+												quests={quests.quests}
+												questBusyCode={quests.busyCode}
+												onClaimQuest={(code) => {
+													// One claim at a time; a refused or dropped claim says so
+													// instead of leaving the button sitting there unexplained.
+													if (quests.busyCode) return;
+													void quests.claim(code).then((ok) => {
+														if (!ok)
+															showToast({
+																tone: "fail",
+																title: "Couldn't claim the quest",
+																text: "Give it another tap in a moment.",
+															});
+													});
+												}}
+												testID="almanac-pass"
+											/>
+											{MOTE_MACHINE_VISIBLE && <MoteMachineCard balance={state.motes} />}
+										</>
+									)}
+								</View>
+							</ScrollView>
+							{/* On the scroller's top edge, taking no room. */}
+							<ScrollEdge
+								visible={panelEdge.edgeVisible}
+								overlay="top"
+								testID="almanac-scroll-edge"
+							/>
+						</View>
 					</>
 				) : (
-					<ScrollView contentContainerStyle={styles.tierList}>
-						<PassTrackBody
-							state={state}
-							season={season}
-							tier={tier}
-							premium={premium}
-							prestigeMode={prestigeMode}
-							hasPremiumTrack={hasPremiumTrack}
-							passTrack={passTrack}
-							onPassTrack={setPassTrack}
-							shownTrack={shownTrack}
-							readyTiers={readyTiers}
-							tiersByNumber={activeTiersByNumber}
-							claimedSet={activeClaimedSet}
-							busy={busy}
-							showRecap={seasonEnd.reward != null}
-							onOpenRecap={() => setRecapOpen(true)}
-							onOpenXpHelp={() => setXpHelpOpen(true)}
-							onUnlockPremium={handleUnlockPremium}
-							onWallow={handleWallow}
-							onClaim={handleClaim}
-							onClaimAll={handleClaimAll}
-						/>
+					<>
+						{crown}
+						<ScrollView contentContainerStyle={styles.tierList}>
+							<PassTrackBody
+								state={state}
+								season={season}
+								tier={tier}
+								premium={premium}
+								prestigeMode={prestigeMode}
+								hasPremiumTrack={hasPremiumTrack}
+								passTrack={passTrack}
+								onPassTrack={setPassTrack}
+								shownTrack={shownTrack}
+								readyTiers={readyTiers}
+								tiersByNumber={activeTiersByNumber}
+								claimedSet={activeClaimedSet}
+								busy={busy}
+								showRecap={seasonEnd.reward != null}
+								onOpenRecap={() => setRecapOpen(true)}
+								onOpenXpHelp={() => setXpHelpOpen(true)}
+								onUnlockPremium={handleUnlockPremium}
+								onWallow={handleWallow}
+								onClaim={handleClaim}
+								onClaimAll={handleClaimAll}
+							/>
 
-						{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
-						    in Season 1 (the mechanics still hum server-side, but the
-						    identity UI retires with Judgement Day). */}
-						<View style={styles.sectionGap}>
-							<SectionHeader kicker="standing" title="Alignment" />
-						</View>
-						<Sticker color="cream" rotate={TILT.card} radius={RADII.xl} style={alignmentStoryStyles.wrap}>
-							<View style={alignmentStoryStyles.labelRow}>
-								<T role="kickerPill" style={alignmentStoryStyles.greedy}>Greedy</T>
-								<Numeral>
-									{alignmentScore >= 0 ? "+" : ""}
-									{alignmentScore}
-								</Numeral>
-								<T role="kickerPill" style={alignmentStoryStyles.generous}>Generous</T>
+							{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
+							    in Season 1 (the mechanics still hum server-side, but the
+							    identity UI retires with Judgement Day). */}
+							<View style={styles.sectionGap}>
+								<SectionHeader kicker="standing" title="Alignment" />
 							</View>
-							<AlignmentBar score={alignmentScore} />
-							{(() => {
-								const fx = alignmentEffects(alignmentScore);
-								const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
-								return (
-									<View style={alignmentStoryStyles.effectsRow}>
-										<Tag tone="paper" label={`Regen ${sgn(fx.regenPct)}%`} />
-										<Tag tone="paper" label={`Blessings ${sgn(fx.blessingPct)}%`} />
-										<Tag tone="paper" label={`Curses ${sgn(fx.cursePct)}%`} />
-									</View>
-								);
-							})()}
-							<Hand tone="secondary" align="center" style={alignmentStoryStyles.effectHint}>
-								Give freely → your blessings grow stronger. Keep to
-								yourself → your curses bite harder.
-							</Hand>
-							<Hand tone="secondary" align="center" style={alignmentStoryStyles.hint}>
-								★ blessings push you up. asks for tickles pull you
-								down. ★
-							</Hand>
-							<Button
-								testID="alignment-how-it-works"
-								variant="link"
-								size="sm"
-								style={alignmentStoryStyles.howLink}
-								onPress={() => setAlignmentExplainerOpen(true)}
-								accessibilityLabel="How alignment works"
-								accessibilityHint="Opens the alignment explainer"
-							>
-								how alignment works ›
-							</Button>
-						</Sticker>
-					</ScrollView>
+							<Sticker color="cream" rotate={TILT.card} radius={RADII.xl} style={alignmentStoryStyles.wrap}>
+								<View style={alignmentStoryStyles.labelRow}>
+									<T role="kickerPill" style={alignmentStoryStyles.greedy}>Greedy</T>
+									<Numeral>
+										{alignmentScore >= 0 ? "+" : ""}
+										{alignmentScore}
+									</Numeral>
+									<T role="kickerPill" style={alignmentStoryStyles.generous}>Generous</T>
+								</View>
+								<AlignmentBar score={alignmentScore} />
+								{(() => {
+									const fx = alignmentEffects(alignmentScore);
+									const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+									return (
+										<View style={alignmentStoryStyles.effectsRow}>
+											<Tag tone="paper" label={`Regen ${sgn(fx.regenPct)}%`} />
+											<Tag tone="paper" label={`Blessings ${sgn(fx.blessingPct)}%`} />
+											<Tag tone="paper" label={`Curses ${sgn(fx.cursePct)}%`} />
+										</View>
+									);
+								})()}
+								<Hand tone="secondary" align="center" style={alignmentStoryStyles.effectHint}>
+									Give freely → your blessings grow stronger. Keep to
+									yourself → your curses bite harder.
+								</Hand>
+								<Hand tone="secondary" align="center" style={alignmentStoryStyles.hint}>
+									★ blessings push you up. asks for tickles pull you
+									down. ★
+								</Hand>
+								<Button
+									testID="alignment-how-it-works"
+									variant="link"
+									size="sm"
+									style={alignmentStoryStyles.howLink}
+									onPress={() => setAlignmentExplainerOpen(true)}
+									accessibilityLabel="How alignment works"
+									accessibilityHint="Opens the alignment explainer"
+								>
+									how alignment works ›
+								</Button>
+							</Sticker>
+						</ScrollView>
+					</>
 				)}
 
 				{/* The one shared dig modal — rendered once, beside every trigger. */}
@@ -1747,13 +1792,13 @@ export default function SeasonScreen() {
 				onClose={() => setBreakdownOpen(false)}
 			/>
 
-			{/* The `?` door's chooser — the guide, the story, the tale, the earnables
-			    shelf and the tickle receipt. Items dismiss first and open a beat later. */}
+			{/* The `?` door's chooser — the guide, the story, the tale and the
+			    tickle receipt. Items dismiss first and open a beat later. No
+			    subtitle: "how the season works" is its first door, said once. */}
 			<ActionSheet
 				open={doorsOpen}
 				onClose={() => setDoorsOpen(false)}
 				title="The Great Hunger"
-				subtitle="how the season works"
 				items={[
 					{ label: "How the season works", onPress: () => setGuideOpen(true) },
 					{ label: "The season's story", onPress: () => setInfoTopic("story") },
@@ -1851,20 +1896,25 @@ export default function SeasonScreen() {
 				onDone={() => setMysteryReveal(null)}
 			/>
 
-			{/* Season 1 intro — the tale cinematic. Auto-plays on the first
-			    Season-1 visit (per-user AsyncStorage stamp) and re-opens from
-			    the `?` chooser's "Hear the tale again". */}
-			{s1 && <GreatHungerIntroModal visible={introOpen} onDone={dismissIntro} />}
+			{/* Season 1 intro — the tale cinematic. The first telling is root's
+			    (app/_layout.tsx); this is the `?` chooser's "Hear the tale again",
+			    and its one button says where it lands: back on this page. */}
+			{s1 && (
+				<GreatHungerIntroModal
+					visible={introOpen}
+					onDone={dismissIntro}
+					ctaLabel="Back to the season"
+				/>
+			)}
 
-			{/* The season guide — every visit while testing (GUIDE_EVERY_VISIT);
-			    yields to the intro storybook when both want the stage. */}
+			{/* The season guide — from the `?` chooser; yields to the tale when
+			    both want the stage. */}
 			{s1 && (
 				<SeasonGuideModal
-						visible={guideOpen && !introOpen}
-						onDismiss={dismissGuide}
-						onLeave={crewHook.crew.crew ? handleLeave : undefined}
-					/>
-				)}
+					visible={guideOpen && !introOpen}
+					onDismiss={dismissGuide}
+				/>
+			)}
 
 				{isFocused && wallowGiftAccount === uid && claimAllSummary === null && habitatJournal.supported ? (
 					<HabitatGiftReveal
@@ -1992,10 +2042,13 @@ function PassTrackBody({
 	onClaim: (tier: number, track: PassTrack) => void;
 	onClaimAll: () => void;
 }) {
-	// Show the VIP marker + a CTA whenever the caller isn't a member. When IAP
-	// is live it's the real "Unlock"; when IAP is off (TestFlight) it's a
-	// disabled "Coming Soon".
-	const showVip = !premium && !prestigeMode;
+	// The locked-premium banner is up while a non-member browses the premium
+	// track; then IT is the sheet's one Slop Club ask.
+	const premiumBanner = hasPremiumTrack && !prestigeMode && passTrack === "premium" && !premium;
+	// Otherwise the header carries the ask whenever the caller isn't a member:
+	// the real "Slop Club" door when IAP is live, a button asleep reading
+	// "Coming soon" in a build with no store behind it (IAP off).
+	const showVip = !premium && !prestigeMode && !premiumBanner;
 	const xpPer = season.xp_per_tier || 1;
 	const xp = state.xp ?? 0;
 	const progress = wallowProgress({
@@ -2038,7 +2091,7 @@ function PassTrackBody({
 										/>
 									}
 									accessibilityLabel="Join the Slop Club"
-									accessibilityHint="Opens the Slop Club subscription — it unlocks the premium track"
+									accessibilityHint="Opens the Slop Club subscription. It unlocks the premium track"
 								>
 									Slop Club
 								</Button>
@@ -2050,7 +2103,7 @@ function PassTrackBody({
 									disabled
 									accessibilityLabel="Slop Club coming soon"
 								>
-									Coming Soon
+									Coming soon
 								</Button>
 							))}
 						{showRecap && (
@@ -2132,20 +2185,15 @@ function PassTrackBody({
 					]}
 				/>
 			)}
-			{hasPremiumTrack && !prestigeMode && passTrack === "premium" && !premium && (
-				<PremiumLockedBanner onUnlock={onUnlockPremium} />
+			{premiumBanner && (
+				<PremiumLockedBanner canJoin={IAP_ENABLED} onUnlock={onUnlockPremium} />
 			)}
-			{/* Ready-claim shortcut — surfaces at the TOP of the track whenever
-			    anything is claimable. One ready tier names its reward; two or
-			    more sweep in one tap and end on a single summary beat. */}
-			{readyTiers.length >= 1 && (
+			{/* Claim-all shortcut — surfaces at the TOP of the track when two or
+			    more tiers are claimable and sweeps them in one tap, ending on a
+			    single summary beat. One ready tier claims from its own row. */}
+			{readyTiers.length >= 2 && (
 				<ClaimAllBar
 					count={readyTiers.length}
-					label={
-						readyTiers.length === 1
-							? activeTiersByNumber[readyTiers[0]]?.[shownTrack]?.display_label
-							: undefined
-					}
 					busy={busy}
 					hero
 					onPress={onClaimAll}
@@ -2487,8 +2535,10 @@ const styles = StyleSheet.create({
 		paddingBottom: SPACE.md,
 	},
 	panelScroll: { flex: 1 },
+	// The scroll's content grows to the viewport, so a short panel still owns
+	// the whole space under the strip.
+	panelContent: { flexGrow: 1 },
 	panel: {
-		flexGrow: 1,
 		paddingHorizontal: PAGE_PAD,
 		paddingTop: SPACE.xs,
 	},

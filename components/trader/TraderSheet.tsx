@@ -146,7 +146,7 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onRe
 	const footer =
 		items.length === 0 ? null : hadEnough ? (
 			<Hand tone="secondary" align="center">
-				what&apos;s left stays yours — he&apos;s back another day
+				what&apos;s left stays yours. he&apos;s back another day
 			</Hand>
 		) : (
 			// A trade ticket: the stub is the price, the face is the verb. The find

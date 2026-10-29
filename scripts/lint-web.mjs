@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 // The web lane of the taste standard (docs/design/taste-standard.md,
-// design-system-spec §3 rule 7). Two gates:
+// design-system-spec §3 rule 7). Three gates:
 //
 //   1. No emoji in the web UI ("no emoji in UI, ever" reaches past the app).
-//   2. tokens.css + sticker.css are in sync with constants/theme.ts — in web/
+//   2. No em dash in anything a reader sees, and no radial-gradient orb behind
+//      a page (the two template tells the 2026-09-22 slop audit found on the
+//      public pages). Comments are stripped before the check.
+//   3. tokens.css + sticker.css are in sync with constants/theme.ts — in web/
 //      (canonical) and in every served copy (landing/, analytics-dashboard/app/).
 //      A theme edit without a rebuild is caught here, not in review.
 //
@@ -23,8 +26,8 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const TARGETS = [
   {
     dir: "landing",
-    exts: [".html"],
-    skip: ["landing/mocks", "landing/labs", "landing/den", "landing/plan"],
+    exts: [".html", ".css", ".js"],
+    skip: ["landing/mocks", "landing/labs", "landing/den", "landing/plan", "landing/adventures", "landing/cards"],
   },
   { dir: "analytics-dashboard/app", exts: [".js", ".css"], skip: [] },
 ];
@@ -79,7 +82,42 @@ for (const target of TARGETS) {
   }
 }
 
-// ----------------------------------------------- 2. generated token freshness --
+// ------------------------------------------------ 2. em dashes + radial orbs --
+
+// Strip HTML / block / line comments so a "—" in an authoring note is not a
+// reader-facing one. Line numbers survive: each stripped comment keeps its
+// newlines.
+function stripComments(src) {
+  const keepLines = (m) => m.replace(/[^\n]/g, "");
+  return src
+    .replace(/<!--[\s\S]*?-->/g, keepLines)
+    .replace(/\/\*[\s\S]*?\*\//g, keepLines)
+    .replace(/^[ \t]*\/\/.*$/gm, "");
+}
+
+const TELLS = [
+  [/\u2014/, "em dash — break the sentence, join fragments with ' · ', or use an en dash (–) as a placeholder"],
+  [/radial-gradient\(/, "radial-gradient orb — pages sit on flat paper (var(--paper) / var(--cream))"],
+];
+
+for (const target of TARGETS) {
+  if (target.dir !== "landing") continue;
+  const base = join(ROOT, target.dir);
+  for (const file of walk(base, target.skip)) {
+    if (!target.exts.some((ext) => file.endsWith(ext))) continue;
+    const rel = relative(ROOT, file).split(sep).join("/");
+    const lines = stripComments(readFileSync(file, "utf8")).split(/\r?\n/);
+    lines.forEach((line, i) => {
+      for (const [re, why] of TELLS) {
+        if (!re.test(line)) continue;
+        const col = line.search(re);
+        hits.push(`${rel}:${i + 1}: ${why}: ${line.slice(Math.max(0, col - 30), col + 40).trim()}`);
+      }
+    });
+  }
+}
+
+// ----------------------------------------------- 3. generated token freshness --
 
 // Regenerate into a scratch dir and diff. Cheap (one esbuild transform), and it
 // is the only way to notice that someone edited theme.ts and not web/.
@@ -119,7 +157,7 @@ if (hits.length) {
   failed = true;
   for (const hit of hits) console.log(hit);
   console.error(
-    `\n${hits.length} emoji ${hits.length === 1 ? "hit" : "hits"} in web UI. Use an inline SVG or the hand-drawn art instead (docs/design/taste-standard.md).`,
+    `\n${hits.length} taste ${hits.length === 1 ? "hit" : "hits"} in the web UI (emoji, em dash, radial orb). See docs/design/taste-standard.md.`,
   );
 }
 
@@ -134,5 +172,5 @@ if (stale.length) {
 if (failed) process.exit(1);
 
 console.log(
-  "lint:web — no emoji in the web surfaces; tokens.css + sticker.css match constants/theme.ts in web/, landing/ and analytics-dashboard/app/.",
+  "lint:web — no emoji, em dash or radial orb in the web surfaces; tokens.css + sticker.css match constants/theme.ts in web/, landing/ and analytics-dashboard/app/.",
 );

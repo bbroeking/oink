@@ -72,7 +72,7 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 			// A new client can outrun the server: the range-relaxing migration
 			// isn't pushed yet, so a Max amount off the old {10,20,50} whitelist
 			// bounces. Nudge back to a set stake — ship order stays harmless.
-			setNote("Couldn't bury that amount — pick a set stake for now.");
+			setNote("Couldn't bury that amount. Pick a set stake for now.");
 		} else if (r.reason === "reclaim_cooldown") {
 			// Host dug up their own truffle — 12h settle before the next bury
 			// (server-enforced; see 20260738400000_truffle_reclaim_cooldown).
@@ -81,12 +81,12 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 				? Math.max(1, Math.ceil((nextAt - Date.now()) / 3.6e6))
 				: 12;
 			setNote(
-				`You dug this spot up yourself — the patch needs ${hours}h to settle before another bury.`
+				`You dug this spot up yourself. The patch needs ${hours}h to settle before another bury.`
 			);
 		} else {
 			// Transient network / SQL failure — keep the sheet open + retryable.
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-			setNote("Couldn't bury that truffle — try again in a moment.");
+			setNote("Couldn't bury that truffle. Try again in a moment.");
 		}
 	};
 
@@ -116,8 +116,8 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 			}
 		>
 			<T role="body" tone="secondary" style={styles.blurb}>
-				Leave a truffle on your barn for visitors. The stake becomes a shared pot
-				— friends who drop by dig shares of it for snouts.
+				Bury a truffle in your yard for visitors. The stake becomes a shared pot.
+				Friends who drop by dig shares of it for snouts.
 			</T>
 
 			<T role="label" tone="secondary" style={styles.label}>

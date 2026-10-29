@@ -3,9 +3,14 @@
 // Spec: docs/design/2026-09-21-season-page-rewrite.md §1 (the Draw cell) and
 // §2 (the drum). The panel prints exactly THREE lines and one act:
 //
-//   · `7 of 21 balls this week`               — your own digs, the week's count
-//   · `rare or better: 1 in 2`                — the closed form off those balls
-//   · `the drum turns Monday 00:00 UTC (in 2d 5h)` — a clock
+//   · `7 of 21 balls this week`   — your own digs, the week's count
+//   · `rare or better: 1 in 2`    — the closed form off those balls
+//   · `the drum turns in 2d 5h`   — a clock
+//
+// The clock is a countdown, the way every other clock in the app reads
+// ("Opens in 43m", the shop's restock). It used to print "Monday 00:00 UTC"
+// first — a server's time zone, and for the Americas not even the right day
+// (the turn lands on Sunday evening there). (2026-10-04)
 //
 // then the purse for the week that just ended: the draw when one waits, the
 // receipt when it's drawn, one quiet invitation when the week held no balls.
@@ -43,9 +48,12 @@ const MS_PER_DAY = 86_400_000;
 const MS_PER_HOUR = 3_600_000;
 
 const KICKER = "monday's drum";
-const TURN_BASE = "the drum turns Monday 00:00 UTC";
+const TURN_BASE = "the drum turns";
+// No clock from the server (an older backend), or one already past: say the
+// rhythm, never a time the player would have to convert.
+const TURN_UNKNOWN = "the drum turns once a week";
 const DRAW_LABEL = "Draw your Monday purse";
-const NO_PURSE_LINE = "no purse this Monday — dig once this week and you're in Monday's drum";
+const NO_PURSE_LINE = "no purse this Monday · dig once this week and you're in Monday's drum";
 const LOADING_LABEL = "finding your drum";
 
 /** Which face the panel's bottom wears. */
@@ -56,7 +64,7 @@ export interface DrumLines {
 	balls: string;
 	/** `rare or better: 1 in 2`, at this week's balls. */
 	odds: string;
-	/** `the drum turns Monday 00:00 UTC (in 2d 5h)`. */
+	/** `the drum turns in 2d 5h`. */
 	turn: string;
 	/** The drawable week's purse: one waiting, one drawn, or none at all. */
 	purse: DrumPurse;
@@ -91,10 +99,10 @@ export function drumLines(state: MondayDrawState, now: number = Date.now()): Dru
 				? `${balls} of ${cap} balls this week`
 				: `${ballsWord(balls)} this week`;
 
-	let turn = TURN_BASE;
+	let turn = TURN_UNKNOWN;
 	if (state.nextTurnAt) {
 		const at = Date.parse(state.nextTurnAt);
-		if (Number.isFinite(at) && at > now) turn = `${TURN_BASE} (in ${awayWord(at - now)})`;
+		if (Number.isFinite(at) && at > now) turn = `${TURN_BASE} in ${awayWord(at - now)}`;
 	}
 
 	const purse: DrumPurse = !state.eligible
@@ -113,18 +121,21 @@ export function drumLines(state: MondayDrawState, now: number = Date.now()): Dru
 }
 
 /**
- * The strip cell's nowrap value: `Ready` while a purse waits (the cell is gold
- * then too), `Drawn · 60` once it's pocketed, and otherwise this week's own
- * count. `—` before the first read lands.
+ * The strip cell's nowrap value: `Ready` while a purse waits (the cell wears
+ * the act-now badge then too), `Drawn` once it's pocketed, and otherwise this
+ * week's own count. `–` before the first read lands. The pocketed purse's
+ * amount lives in the panel ("Drawn · 60 tickles"), not the cell: "Drawn ·
+ * 60" measured 92pt against an SE cell's 88 and "Drawn · 400" overran a
+ * 17 Pro's, so the cell ended in "…" at default text size (2026-10-04).
  */
 export function drawCellValue(state: MondayDrawState | null): string {
-	if (!state) return "—";
+	if (!state) return "–";
 	if (drawCellTodo(state)) return "Ready";
-	if (state.drawn && state.amount != null) return `Drawn · ${state.amount}`;
+	if (state.drawn && state.amount != null) return "Drawn";
 	return ballsWord(Math.max(0, Math.floor(state.runningBalls)));
 }
 
-/** Gold on the strip: a purse is drawable and still undrawn. */
+/** Act-now on the strip: a purse is drawable and still undrawn. */
 export function drawCellTodo(state: MondayDrawState | null): boolean {
 	return !!state && state.eligible && !state.drawn;
 }
@@ -163,7 +174,14 @@ export function DrawPanel({ state, onDraw, onOpenSheet, hero, testID }: DrawPane
 						<T role="kickerPill" tone="secondary">
 							{KICKER}
 						</T>
-						<T role="pageTitle" accessibilityRole="header" testID="draw-balls-line">
+						{/* "1 of 21 balls this / week" left one word on the second line;
+						    push-out breaks earlier so the line ends in a pair. */}
+						<T
+							role="pageTitle"
+							accessibilityRole="header"
+							lineBreakStrategyIOS="push-out"
+							testID="draw-balls-line"
+						>
 							{lines.balls}
 						</T>
 						<Hand tone="secondary" testID="draw-odds-line">
@@ -190,7 +208,7 @@ export function DrawPanel({ state, onDraw, onOpenSheet, hero, testID }: DrawPane
 						full
 						onPress={onDraw}
 						accessibilityLabel={lines.purseLine}
-						accessibilityHint="Turns the drum — one purse per snout, yours to keep"
+						accessibilityHint="Turns the drum. One purse per snout, yours to keep"
 						testID="draw-panel-draw"
 					>
 						{lines.purseLine}

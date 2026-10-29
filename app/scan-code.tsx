@@ -16,13 +16,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	View,
 	StyleSheet,
-	SafeAreaView,
 	Image,
 	Linking,
 	ScrollView,
 	KeyboardAvoidingView,
 	Platform,
 } from "react-native";
+// React Native's own SafeAreaView is deprecated in 0.86; the context one takes
+// explicit edges. A scrolling stack screen leaves the bottom edge to its
+// scroller (the StackPage rule), so the field and the ticket end one loose
+// step past the home indicator instead of TAB_SAFE's tab-bar clearance on a
+// screen with no tab bar. (2026-10-04)
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -35,11 +40,13 @@ import {
 	LoadingBeat,
 	PageHeader,
 	SnoutCoin,
+	STACK_SCROLL_EDGES,
 	Sticker,
 	T,
 	Tag,
 	TextField,
 	TicketButton,
+	useStackScrollPad,
 } from "@/components/ui";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
@@ -62,8 +69,7 @@ import {
 	UI_COLORS,
 	WHIMSY_LENS,
 	PAGE_PAD,
-	TAB_SAFE,
-} from "@/constants/theme";
+	} from "@/constants/theme";
 // `import type` is fully erased at compile time (no verbatimModuleSyntax) and
 // stripped by Babel's TS preset, so it never emits the runtime `require` that
 // the defensive block below guards against — it only pulls in the prop types.
@@ -140,6 +146,7 @@ export default function ScanCodeScreen() {
 	// re-runs the prefill effect; without this guard the effect would resubmit on
 	// every refusal → infinite auto-resubmit loop (finding #1).
 	const prefillFired = useRef<string | null>(null);
+	const scrollPad = useStackScrollPad();
 
 	const submit = useCallback(async (rawCode: string) => {
 		const p_code = rawCode.trim();
@@ -175,7 +182,7 @@ export default function ScanCodeScreen() {
 				scanLock.current = true;
 				Linking.openURL(payload.url).catch(() => {
 					scanLock.current = false;
-					setError("Couldn't open the App Store — try the QR with your phone camera.");
+					setError("Couldn't open the App Store. Try the QR with your phone camera.");
 				});
 				return;
 			}
@@ -232,7 +239,7 @@ export default function ScanCodeScreen() {
 	// this screen no longer opts out for itself.
 	return (
 		<View style={styles.bg}>
-			<SafeAreaView style={{ flex: 1 }}>
+			<SafeAreaView style={styles.safe} edges={STACK_SCROLL_EDGES}>
 				<PageHeader
 					kicker="golden ticket"
 					title="Redeem a Code"
@@ -245,6 +252,7 @@ export default function ScanCodeScreen() {
 					<ScrollView
 						contentContainerStyle={[
 							styles.scroll,
+							{ paddingBottom: scrollPad },
 							// Center the reveal card in the available height; the
 							// scan/type flow flows from the top.
 							reveal && styles.scrollCentered,
@@ -303,7 +311,7 @@ function CameraPane({
 				<Glyph name="search" size={ART_SIZE.glyph} style={styles.permGlyph} />
 				<CardTitle align="center">Type your code below</CardTitle>
 				<PermSub>
-					The camera scanner isn't available on this device — pop your Golden
+					The camera scanner isn't available on this device. Pop your Golden
 					Ticket code into the field below.
 				</PermSub>
 			</Sticker>
@@ -326,7 +334,7 @@ function CameraPane({
 				<Glyph name="search" size={ART_SIZE.glyph} style={styles.permGlyph} />
 				<CardTitle align="center">Point at a Golden Ticket</CardTitle>
 				<PermSub>
-					Rosie only peeks through the camera to read a giveaway QR — nothing else.
+					Rosie only peeks through the camera to read a giveaway QR, nothing else.
 				</PermSub>
 				<Button
 					variant="primary"
@@ -348,7 +356,7 @@ function CameraPane({
 				<Glyph name="zzz" size={ART_SIZE.glyph} style={styles.permGlyph} />
 				<CardTitle align="center">Camera's napping</CardTitle>
 				<PermSub>
-					Type the code below instead — or wake the camera in Settings.
+					Type the code below instead, or wake the camera in Settings.
 				</PermSub>
 				<Button
 					variant="ghost"
@@ -394,7 +402,9 @@ function PermSub({ children }: { children: React.ReactNode }) {
 // The always-visible manual-entry row: the shared `TextField` + the ticket
 // button. This is the whole UI on a simulator / no-camera device. A refusal is
 // the field's own error state now (danger fill, written line, spoken hint)
-// rather than a loose accent-coloured string underneath it.
+// rather than a loose accent-coloured string underneath it. The code variant
+// draws its example in the lighter placeholder ink (2026-10-04), so
+// "PIG-XXXX-XXXX" reads as the shape to type, not a code already typed in.
 function ManualEntry({
 	value,
 	onChange,
@@ -474,7 +484,7 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 				) : null}
 				<Hand tone="secondary" align="center" style={styles.grantSub}>
 					{reveal.already_owned
-						? "Rosie already has this one — it's still yours."
+						? "Rosie already has this one. It's still yours."
 						: "A new one for Rosie's closet."}
 				</Hand>
 			</>
@@ -533,7 +543,9 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: UI_COLORS.surfaceMuted },
-	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
+	safe: { flex: 1 },
+	// paddingBottom is the stack scroll pad, set inline.
+	scroll: { paddingHorizontal: PAGE_PAD },
 	// When the reveal card is up it's the only content — grow to fill and
 	// center it vertically so the gift sits mid-screen, not pinned to the top.
 	scrollCentered: { flexGrow: 1, justifyContent: "center" },

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleProp, ViewStyle, View } from "react-native";
+import { StyleProp, ViewStyle } from "react-native";
 import Svg, {
 	G,
 	Path,
@@ -10,9 +10,8 @@ import Svg, {
 	LinearGradient,
 	Stop,
 } from "react-native-svg";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import Feather from "@expo/vector-icons/Feather";
 import { GameIcon } from "./GameIcon";
+import { ART, WHIMSY } from "@/constants/theme";
 
 // The star's hand-cut outline, shared by `star` and `premium` so the two read
 // as one family. Generated from a 5-tip star (R 9.9 / r 5.5, −5° lean, tips
@@ -64,9 +63,10 @@ export type IconName =
 	| "undo"
 	| "save"
 	| "furnishings"
-	// ── Vector-icons-backed entries (delegated to MCI / Feather). ──
-	// Added during the no-emoji sweep so call sites stay
-	// <Icon name="crown" /> and we keep one consumer surface.
+	// ── Hand-cut since 2026-09-22. These fourteen were delegated to
+	// MaterialCommunityIcons / Feather (Lucide's parent set) during the
+	// no-emoji sweep; a generic icon family beside the storybook outlines was
+	// the one place the app still looked like every other app.
 	| "crown"
 	| "gift"
 	| "scales"
@@ -79,29 +79,6 @@ export type IconName =
 	| "pig"
 	| "target"
 	| "scroll";
-
-// MCI / Feather names per delegated IconName. Filled-by-default
-// variants chosen to read against the ink-outline storybook DNA;
-// the *-outline variants exist if we want to swap later.
-const VECTOR_ICON_MAP: Partial<Record<IconName, {
-	family: "mci" | "feather";
-	name: string;
-}>> = {
-	crown:     { family: "mci",     name: "crown" },
-	gift:      { family: "mci",     name: "gift" },
-	scales:    { family: "mci",     name: "scale-balance" },
-	trophy:    { family: "mci",     name: "trophy" },
-	ghost:     { family: "mci",     name: "ghost" },
-	gear:      { family: "feather", name: "settings" },
-	edit:      { family: "feather", name: "edit-2" },
-	refresh:   { family: "feather", name: "refresh-ccw" },
-	exit:      { family: "feather", name: "log-out" },
-	handshake: { family: "mci",     name: "handshake" },
-	pig:       { family: "mci",     name: "pig" },
-	target:    { family: "feather", name: "target" },
-	scroll:    { family: "mci",     name: "script-text-outline" },
-	chevronDown: { family: "feather", name: "chevron-down" },
-};
 
 interface Props {
 	name: IconName;
@@ -129,14 +106,14 @@ function Render({
 				<G>
 					<Path
 						d="M3 11 L12 3.5 L21 11 V20 a1.5 1.5 0 0 1 -1.5 1.5 H4.5 A1.5 1.5 0 0 1 3 20 Z"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
 					/>
 					<Path
 						d="M9.5 21.5 V14 a1 1 0 0 1 1 -1 h3 a1 1 0 0 1 1 1 V21.5"
-						fill={filled ? "#fff" : "none"}
+						fill={filled ? WHIMSY.paper : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -148,7 +125,7 @@ function Render({
 				<G>
 					<Path
 						d="M7 4 H17 V9 a5 5 0 0 1 -10 0 Z"
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -172,7 +149,7 @@ function Render({
 						y="14"
 						width="6"
 						height="2.5"
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -183,7 +160,7 @@ function Render({
 						width="11"
 						height="3"
 						rx="0.5"
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -194,7 +171,7 @@ function Render({
 			return (
 				<Path
 					d="M12 2.5 L14.5 8.5 L21 9.2 L16 13.5 L17.6 20 L12 16.5 L6.4 20 L8 13.5 L3 9.2 L9.5 8.5 Z"
-					fill={filled ? "#7B5FFF" : "none"}
+					fill={filled ? WHIMSY.lilacDeep : "none"}
 					stroke={c}
 					strokeWidth={sw}
 					strokeLinejoin="round"
@@ -205,7 +182,7 @@ function Render({
 				<G>
 					<Path
 						d="M5 8 H19 L18 21 a1.5 1.5 0 0 1 -1.5 1.4 H7.5 A1.5 1.5 0 0 1 6 21 Z"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -228,13 +205,13 @@ function Render({
 						cx="12"
 						cy="8.5"
 						r="4.2"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
 					<Path
 						d="M3.5 21 a8.5 8.5 0 0 1 17 0"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinecap="round"
@@ -250,12 +227,12 @@ function Render({
 						cy="13"
 						rx="7.5"
 						ry="6"
-						fill="#E8A7B9"
-						stroke="#A05A72"
+						fill={ART.tickleFace}
+						stroke={ART.tickleOutline}
 						strokeWidth={sw}
 					/>
-					<Ellipse cx="9.5" cy="12.5" rx="1.1" ry="1.5" fill="#1A1A1A" />
-					<Ellipse cx="14.5" cy="12.5" rx="1.1" ry="1.5" fill="#1A1A1A" />
+					<Ellipse cx="9.5" cy="12.5" rx="1.1" ry="1.5" fill={WHIMSY.ink} />
+					<Ellipse cx="14.5" cy="12.5" rx="1.1" ry="1.5" fill={WHIMSY.ink} />
 				</G>
 			);
 		case "flame":
@@ -278,7 +255,7 @@ function Render({
 				<G>
 					<Path
 						d={STAR_PATH}
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -287,7 +264,7 @@ function Render({
 						<Path
 							d={STAR_GLINT}
 							fill="none"
-							stroke="#FFF6D6"
+							stroke={WHIMSY.paper}
 							strokeWidth={1.6}
 							strokeLinecap="round"
 						/>
@@ -298,7 +275,7 @@ function Render({
 			return (
 				<Path
 					d={STAR_PATH}
-					fill={filled ? "#7B5FFF" : "none"}
+					fill={filled ? WHIMSY.lilacDeep : "none"}
 					stroke={c}
 					strokeWidth={sw}
 					strokeLinejoin="round"
@@ -320,7 +297,7 @@ function Render({
 						width="14"
 						height="9.5"
 						rx="2"
-						fill={filled ? "#EFEAE3" : "none"}
+						fill={filled ? WHIMSY.cream : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -370,11 +347,11 @@ function Render({
 		case "check":
 			return (
 				<G>
-					{filled && <Circle cx="12" cy="12" r="10" fill="#5BC97D" />}
+					{filled && <Circle cx="12" cy="12" r="10" fill={WHIMSY.grass} />}
 					<Path
 						d="M6 12.5 L10.5 17 L18.5 8"
 						fill="none"
-						stroke={filled ? "#fff" : c}
+						stroke={filled ? WHIMSY.paper : c}
 						strokeWidth={sw + 0.4}
 						strokeLinecap="round"
 						strokeLinejoin="round"
@@ -450,7 +427,7 @@ function Render({
 						cx="12"
 						cy="12"
 						r="9"
-						fill={filled ? "#BCE0F0" : "none"}
+						fill={filled ? WHIMSY.sky : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -484,7 +461,7 @@ function Render({
 						cx="9"
 						cy="9"
 						r="3.5"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -492,20 +469,20 @@ function Render({
 						cx="16"
 						cy="10.5"
 						r="2.8"
-						fill={filled ? "#EFE9FF" : "none"}
+						fill={filled ? WHIMSY.lilac : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
 					<Path
 						d="M3 20 a6 6 0 0 1 12 0"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinecap="round"
 					/>
 					<Path
 						d="M14 20 a4.5 4.5 0 0 1 7 -3.5"
-						fill={filled ? "#EFE9FF" : "none"}
+						fill={filled ? WHIMSY.lilac : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinecap="round"
@@ -517,7 +494,7 @@ function Render({
 				<G>
 					<Path
 						d="M6 17 V11 a6 6 0 0 1 12 0 V17 L19 19 H5 Z"
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -554,7 +531,7 @@ function Render({
 						width="11.5"
 						height="12.5"
 						rx="2.4"
-						fill={filled ? "#FBE6EC" : "none"}
+						fill={filled ? WHIMSY.rose : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -617,7 +594,7 @@ function Render({
 				<G>
 					<Path
 						d="M4.5 5.5 a1 1 0 0 1 1 -1 H15.5 L19.5 8.5 V18.5 a1 1 0 0 1 -1 1 H5.5 a1 1 0 0 1 -1 -1 Z"
-						fill={filled ? "#EFEAE3" : "none"}
+						fill={filled ? WHIMSY.cream : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -656,7 +633,7 @@ function Render({
 						width="18"
 						height="12.5"
 						rx="2"
-						fill={filled ? "#EFEAE3" : "none"}
+						fill={filled ? WHIMSY.cream : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -668,7 +645,7 @@ function Render({
 						width="3.2"
 						height="3"
 						rx="0.8"
-						fill={filled ? "#fff" : "none"}
+						fill={filled ? WHIMSY.paper : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -688,7 +665,7 @@ function Render({
 						cx="8.5"
 						cy="12"
 						r="5.5"
-						fill={filled ? "#ffd87a" : "none"}
+						fill={filled ? WHIMSY.sun : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -696,7 +673,7 @@ function Render({
 						cx="15.5"
 						cy="12"
 						r="5.5"
-						fill={filled ? "#ffd87a" : "none"}
+						fill={filled ? WHIMSY.sun : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -717,14 +694,14 @@ function Render({
 					/>
 					<Path
 						d="M2.5 12 Q5 14 7.5 12 L5 8 Z"
-						fill={filled ? "#ffd87a" : "none"}
+						fill={filled ? WHIMSY.sun : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
 					/>
 					<Path
 						d="M16.5 12 Q19 14 21.5 12 L19 8 Z"
-						fill={filled ? "#ffd87a" : "none"}
+						fill={filled ? WHIMSY.sun : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -737,7 +714,7 @@ function Render({
 				<G>
 					<Path
 						d="M5 9 L19 9 L17.5 20 L6.5 20 Z"
-						fill={filled ? "#ffd87a" : "none"}
+						fill={filled ? WHIMSY.sun : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -761,7 +738,7 @@ function Render({
 						cy="12"
 						rx="6.5"
 						ry="5"
-						fill={filled ? "#ffd87a" : "none"}
+						fill={filled ? WHIMSY.sun : "none"}
 						stroke={c}
 						strokeWidth={sw}
 					/>
@@ -775,7 +752,7 @@ function Render({
 				<G>
 					<Path
 						d="M4 9.5 H8 L13 5 V19 L8 14.5 H4 Z"
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -801,7 +778,7 @@ function Render({
 				<G>
 					<Path
 						d="M4 9.5 H8 L13 5 V19 L8 14.5 H4 Z"
-						fill={filled ? "#F5C44A" : "none"}
+						fill={filled ? WHIMSY.slopGold : "none"}
 						stroke={c}
 						strokeWidth={sw}
 						strokeLinejoin="round"
@@ -815,6 +792,129 @@ function Render({
 					/>
 				</G>
 			);
+		case "gear":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.cream : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M19.63 9.96 L22.00 9.98 L22.20 11.89 L19.89 12.41 L18.84 15.95 L20.50 17.64 L19.29 19.14 L17.29 17.87 L14.04 19.63 L14.02 22.00 L12.11 22.20 L11.59 19.89 L8.05 18.84 L6.36 20.50 L4.86 19.29 L6.13 17.29 L4.37 14.04 L2.00 14.02 L1.80 12.11 L4.11 11.59 L5.16 8.05 L3.50 6.36 L4.71 4.86 L6.71 6.13 L9.96 4.37 L9.98 2.00 L11.89 1.80 L12.41 4.11 L15.95 5.16 L17.64 3.50 L19.14 4.71 L17.87 6.71 Z" />
+					<Circle fill={filled ? WHIMSY.paper : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="12" cy="12" r="2.7" />
+				</G>
+			);
+		case "edit":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.sun : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M4.2 19.8 L5 15.6 L15.6 5 a1.8 1.8 0 0 1 2.6 0 L19.2 6 a1.8 1.8 0 0 1 0 2.6 L8.6 19.2 Z" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M13.8 6.8 L17.4 10.4" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M5 15.6 L8.6 19.2" />
+				</G>
+			);
+		case "refresh":
+			return (
+				<G>
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M19.4 12.6 a7.4 7.4 0 0 1 -12.9 4.6" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M4.6 11.4 a7.4 7.4 0 0 1 12.9 -4.6" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M17.5 3.2 L17.8 7.4 L13.6 7.2" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M6.5 20.8 L6.2 16.6 L10.4 16.8" />
+				</G>
+			);
+		case "exit":
+			return (
+				<G>
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M10 4.2 H5.4 a1.2 1.2 0 0 0 -1.2 1.2 V18.6 a1.2 1.2 0 0 0 1.2 1.2 H10" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M14.2 8.2 L18.6 12 L14.2 15.8" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M18.6 12 H8.4" />
+				</G>
+			);
+		case "chevronDown":
+			return (
+				<G>
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M6 9.4 L12 15.4 L18 9.4" />
+				</G>
+			);
+		case "crown":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.slopGold : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M4.4 17.4 L3.4 7.6 L8.2 11.2 L12.2 5.4 L15.9 11.2 L20.7 7.6 L19.7 17.4 Z" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M4.6 20 H19.5" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="12.1" cy="13.6" r="0.9" />
+				</G>
+			);
+		case "gift":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.rose : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M4.4 11.4 H19.6 V19.2 a1.2 1.2 0 0 1 -1.2 1.2 H5.6 a1.2 1.2 0 0 1 -1.2 -1.2 Z" />
+					<Path fill={filled ? WHIMSY.rose : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M3.4 8 H20.6 V11.4 H3.4 Z" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M12 8 V20.4" />
+					<Path fill={filled ? WHIMSY.rose : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M12 8 C9.2 8 7.4 6.2 8.2 4.6 C9.2 3 11.4 5.2 12 8 C12.6 5.2 14.8 3 15.8 4.6 C16.6 6.2 14.8 8 12 8 Z" />
+				</G>
+			);
+		case "scales":
+			return (
+				<G>
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M12 4.2 V19.6" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M8.2 20 H15.8" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M4.8 8 H19.2" />
+					<Circle fill={filled ? WHIMSY.paper : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="12" cy="5.6" r="1.3" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M5.2 8 L2.6 14 M5.2 8 L7.8 14" />
+					<Path fill={filled ? WHIMSY.sun : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M2.4 14 a2.8 2.4 0 0 0 5.6 0 Z" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M18.8 8 L16.2 14 M18.8 8 L21.4 14" />
+					<Path fill={filled ? WHIMSY.sun : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M16 14 a2.8 2.4 0 0 0 5.6 0 Z" />
+				</G>
+			);
+		case "trophy":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.slopGold : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M7 4.4 H17 V10 a5 5 0 0 1 -10 0 Z" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M7 6.2 H4.6 a2.4 2.6 0 0 0 2.6 4.2" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M17 6.2 H19.4 a2.4 2.6 0 0 1 -2.6 4.2" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M12 15.2 V17.8" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M9.2 18 H14.8" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M8.2 20.2 H15.8" />
+				</G>
+			);
+		case "ghost":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.cream : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M5.8 20 V11.2 a6.2 6.2 0 0 1 12.4 0 V20 L15.4 18.2 L12 20.2 L8.8 18.2 Z" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="9.6" cy="11.4" r="1.0" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="14.4" cy="11.4" r="1.0" />
+				</G>
+			);
+		case "handshake":
+			return (
+				<G>
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M2.6 9.4 L6.4 7.2 L10.6 8.6 L14.2 6.8 L17.8 8.2 L21.4 10" />
+					<Path fill={filled ? WHIMSY.rose : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M2.6 9.4 L6 15.2 L9 17.6 L11.6 18.2 L14 17 L16.4 15.4 L18.6 13.4 L21.4 10" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M10.6 8.6 L8.4 11 a1.4 1.4 0 0 0 2 2 L12.4 11.2 L14 12.8 M13 14.2 L15 15.8" />
+				</G>
+			);
+		case "pig":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.roseDeep : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M12 5.2 C7.2 5.2 4.2 8.4 4.2 12.6 C4.2 16.6 7.4 19.6 12 19.6 C16.6 19.6 19.8 16.6 19.8 12.6 C19.8 8.4 16.8 5.2 12 5.2 Z" />
+					<Path fill={filled ? WHIMSY.roseDeep : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M5.6 8.6 L4.4 4.6 L8.4 6.2 M18.4 8.6 L19.6 4.6 L15.6 6.2" />
+					<Path fill={filled ? WHIMSY.rose : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M8.6 12.4 H15.4 a1.6 2 0 0 1 0 4 H8.6 a1.6 2 0 0 1 0 -4 Z" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="10.4" cy="14.4" r="0.8" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="13.6" cy="14.4" r="0.8" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="8.6" cy="10.2" r="0.8" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="15.4" cy="10.2" r="0.8" />
+				</G>
+			);
+		case "target":
+			return (
+				<G>
+					<Circle fill={filled ? WHIMSY.paper : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="12" cy="12" r="8.6" />
+					<Circle fill={filled ? WHIMSY.rose : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="12" cy="12" r="5.2" />
+					<Circle fill={WHIMSY.ink} stroke="none" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" cx="12" cy="12" r="1.8" />
+				</G>
+			);
+		case "scroll":
+			return (
+				<G>
+					<Path fill={filled ? WHIMSY.paper : "none"} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M7 5.4 H18.4 a1.4 1.4 0 0 1 1.4 1.4 V18.6 a1.4 1.4 0 0 1 -1.4 1.4 H6.8 a2.4 2.4 0 0 1 -2.4 -2.4 V8 a2.6 2.6 0 0 1 2.6 -2.6 Z" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M7 5.4 a2.6 2.6 0 0 0 -2.6 2.6 V10 H7" />
+					<Path fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" d="M10 10 H16 M10 13.2 H16 M10 16.4 H13.6" />
+				</G>
+			);
 		default:
 			return null;
 	}
@@ -823,36 +923,13 @@ function Render({
 export function Icon({
 	name,
 	size = 24,
-	color = "#1A1A1A",
+	color = WHIMSY.ink,
 	filled = false,
 	strokeWidth = 1.8,
 	style,
 }: Props) {
 	if (name === "tabBarn") {
 		return <GameIcon name="visit" size={size} style={style} />;
-	}
-	// Vector-icons delegates — render via MCI / Feather. The wrapping
-	// View carries the style prop so callers can position the icon the
-	// same way they do for the hand-rolled Svg path entries.
-	const vec = VECTOR_ICON_MAP[name];
-	if (vec) {
-		return (
-			<View style={style}>
-				{vec.family === "mci" ? (
-					<MaterialCommunityIcons
-						name={vec.name as React.ComponentProps<typeof MaterialCommunityIcons>["name"]}
-						size={size}
-						color={color}
-					/>
-				) : (
-					<Feather
-						name={vec.name as React.ComponentProps<typeof Feather>["name"]}
-						size={size}
-						color={color}
-					/>
-				)}
-			</View>
-		);
 	}
 	return (
 		<Svg
@@ -864,9 +941,9 @@ export function Icon({
 		>
 			<Defs>
 				<LinearGradient id="flameG" x1="0" y1="0" x2="0" y2="1">
-					<Stop offset="0" stopColor="#FFB84A" />
-					<Stop offset="0.5" stopColor="#F58F4A" />
-					<Stop offset="1" stopColor="#D85858" />
+					<Stop offset="0" stopColor={ART.flameTop} />
+					<Stop offset="0.5" stopColor={ART.flame} />
+					<Stop offset="1" stopColor={ART.flameDeep} />
 				</LinearGradient>
 			</Defs>
 			<Render name={name} c={color} sw={strokeWidth} filled={filled} />

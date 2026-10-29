@@ -16,11 +16,21 @@
 //     (squashy bounce) so the selection lands with weight.
 //
 // Drop-in for <Tabs tabBar={(p) => <HangingSignsTabBar {...p} />}>.
+//
+// Dynamic Type (2026-10-04 polish). The bar is fixed chrome at the foot of
+// every tab, so its words state a ceiling (`CHROME_TYPE_CAP`) instead of
+// following the 200% rule — at accessibility-large the old fixed 64pt sign broke
+// every name mid-word ("Bar/n", "Frie/nds"). A sign is `SIGN_W` at least and
+// grows to hold its word at the cap ("Friends" wants 68pt; a 375pt phone's
+// column gives 73), and each sign offers iOS's Large Content Viewer, the way
+// the system tab bar does, so a large-text reader can long-press for the word
+// at full size. The label is a `DynamicTypeText`: after a live text-size change
+// the old native measurement stayed (RN #57512) and the bar kept its
+// accessibility-size height with the words pinned to the top.
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	View,
-	Text,
 	Pressable,
 	StyleSheet,
 	Animated,
@@ -31,13 +41,34 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Ellipse } from "react-native-svg";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
+import { DynamicTypeText } from "./DynamicTypeText";
+import { TAB_LIST_ROLE, TAB_ROLE } from "./tabRoles";
 import { Glyph, type GlyphName } from "./Glyph";
+import {
+	BORDER,
+	CHROME_TYPE_CAP,
+	FONTS,
+	RADII,
+	SPACE,
+	TINT,
+	WHIMSY,
+	WOOD,
+} from "@/constants/theme";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 // The sign's mark: painted glyphs carry their own outline, so they sit a
 // touch larger than the 22pt ink-line icons did.
 const SIGN_ICON = 26;
-import { WHIMSY, FONTS } from "@/constants/theme";
-import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+
+// The sign's drawn width at rest — its MINIMUM. A word that needs more at the
+// type cap widens its own sign; at the default size every name fits in 64.
+const SIGN_W = 64;
+
+// iOS gives a role of "tab" no trait at all, so VoiceOver read a bare "Barn"
+// with no hint it could be pressed. The signs are buttons inside a container
+// with the tab-bar trait on iOS (`./tabRoles`, shared with every tab row).
+const SIGN_ROLE = TAB_ROLE;
+const RAIL_ROLE = TAB_LIST_ROLE;
 
 // Tab config keyed by the route name set in app/(tabs)/_layout.tsx.
 // Owns the label + icon name + active color so the bar doesn't have
@@ -54,11 +85,11 @@ const TAB_CONFIG: Record<
 	account:  { label: "Me",      icon: "tabMe",      activeBg: WHIMSY.sage },
 };
 
-// Wood-rail color stops. Pulled directly off the design's
-// linear-gradient(180deg, #8d5a2c 0%, #74441e 100%).
-const WOOD_TOP = "#8d5a2c";
-const WOOD_BOT = "#74441e";
-const WOOD_FRAME = "#8d5a2c"; // matches the sign's inner wood frame
+// Wood-rail color stops — the WOOD tokens (theme.ts), read here rather than
+// retyped. (2026-09-22)
+const WOOD_TOP = WOOD.top;
+const WOOD_BOT = WOOD.bottom;
+const WOOD_FRAME = WOOD.frame;
 
 const SWAY_DURATION_MS = 2750; // half-cycle; full loop = 5500ms
 const BREATHE_DURATION_MS = 2100; // active tab's slower rhythm
@@ -87,9 +118,10 @@ export function HangingSignsTabBar({
 				colors={[WOOD_TOP, WOOD_BOT]}
 				start={{ x: 0, y: 0 }}
 				end={{ x: 0, y: 1 }}
+				accessibilityRole={RAIL_ROLE}
 				style={[
 					styles.rail,
-					{ paddingBottom: 14 + Math.max(insets.bottom, 0) },
+					{ paddingBottom: SPACE.card + Math.max(insets.bottom, 0) },
 				]}
 			>
 				{/* Thin top highlight — emulates the design's
@@ -154,12 +186,13 @@ function HangingSign({
 }) {
 	// Continuous sway value, 0..1, mapped to -1.4° → 1.4° (or
 	// -0.8° → 0.8° while focused via the breathe rhythm).
-	const sway = useRef(new Animated.Value(0.5)).current;
+	// Lazy state, not a ref: the values are render inputs (RitualBubble's idiom).
+	const [sway] = useState(() => new Animated.Value(0.5));
 	// One-shot swing-in fired on tap. 0 = at rest; 1 = the over-
 	// rotated start of the swing-in arc.
-	const swing = useRef(new Animated.Value(0)).current;
+	const [swing] = useState(() => new Animated.Value(0));
 	// Chain tug — vertical squash + slight stretch on tap.
-	const tug = useRef(new Animated.Value(0)).current;
+	const [tug] = useState(() => new Animated.Value(0));
 
 	// Sway loop. Restarts when focus flips so the focused tab can
 	// breathe slower; idle tabs sway on the longer rhythm.
@@ -257,13 +290,15 @@ function HangingSign({
 		<Pressable
 			onPress={handlePress}
 			style={styles.col}
-			accessibilityRole="tab"
+			accessibilityRole={SIGN_ROLE}
 			accessibilityLabel={
 				badge > 0
 					? `${label}, ${badge} ${badge === 1 ? "item" : "items"} ready`
 					: label
 			}
 			accessibilityState={{ selected: focused }}
+			accessibilityShowsLargeContentViewer
+			accessibilityLargeContentTitle={label}
 		>
 			{/* Chain — two interlocked SVG ovals + a small top link
 			    that anchors to the rail. */}
@@ -294,7 +329,7 @@ function HangingSign({
 						rx={3.5}
 						ry={3.5}
 						fill="none"
-						stroke="#3a3026"
+						stroke={WOOD.grain}
 						strokeWidth={1.7}
 					/>
 					<Ellipse
@@ -303,7 +338,7 @@ function HangingSign({
 						rx={3.5}
 						ry={3.5}
 						fill="none"
-						stroke="#3a3026"
+						stroke={WOOD.grain}
 						strokeWidth={1.7}
 					/>
 				</Svg>
@@ -326,7 +361,7 @@ function HangingSign({
 			>
 				{/* Golden halo behind the active sign — soft glow via
 				    a translucent yellow oval beneath the sign card. */}
-				{focused && <View style={[styles.halo, { backgroundColor: "rgba(255,216,122,0.55)" }]} />}
+				{focused && <View style={styles.halo} />}
 
 				{/* Outer = wood frame (brown ring). The inner padded
 				    View carries the active color so the wood ring
@@ -351,9 +386,12 @@ function HangingSign({
 						{badge > 0 && (
 							<View style={styles.badge}>
 								{badge > 1 && (
-									<Text style={styles.badgeText}>
+									<DynamicTypeText
+										maxFontSizeMultiplier={CHROME_TYPE_CAP}
+										style={styles.badgeText}
+									>
 										{badge > 9 ? "9+" : String(badge)}
-									</Text>
+									</DynamicTypeText>
 								)}
 							</View>
 						)}
@@ -361,7 +399,12 @@ function HangingSign({
 						    Barn button's fan. The focused sign says "on" with its fill,
 						    so the mark itself never changes. */}
 						<Glyph name={iconName as GlyphName} size={SIGN_ICON} />
-						<Text style={styles.lbl}>{label}</Text>
+						<DynamicTypeText
+							maxFontSizeMultiplier={CHROME_TYPE_CAP}
+							style={styles.lbl}
+						>
+							{label}
+						</DynamicTypeText>
 					</View>
 				</View>
 			</Animated.View>
@@ -374,9 +417,9 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "flex-end",
 		justifyContent: "space-around",
-		paddingHorizontal: 4,
-		paddingTop: 4,
-		borderTopWidth: 3,
+		paddingHorizontal: SPACE.xs,
+		paddingTop: SPACE.xs,
+		borderTopWidth: BORDER.heavy,
 		borderTopColor: WHIMSY.ink,
 		position: "relative",
 		// Slight elevation so the rail reads above the screen's
@@ -417,7 +460,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 		maxWidth: 80,
 		alignItems: "center",
-		paddingTop: 4,
+		paddingTop: SPACE.xs,
 	},
 	chainWrap: {
 		width: 14,
@@ -427,17 +470,21 @@ const styles = StyleSheet.create({
 	signWrap: {
 		position: "relative",
 	},
+	// The "one hero" sun bloom behind the focused sign (TINT.sunGlow — it was
+	// the same sun hand-typed at 0.55).
 	halo: {
 		position: "absolute",
 		top: -10,
 		left: -10,
 		right: -10,
 		bottom: -10,
-		borderRadius: 18,
+		borderRadius: RADII.xl,
+		backgroundColor: TINT.sunGlow,
 	},
 	sign: {
-		width: 64,
-		borderWidth: 2,
+		// At least SIGN_W; a word that needs more at the type cap widens it.
+		minWidth: SIGN_W,
+		borderWidth: BORDER.ink,
 		borderColor: WHIMSY.ink,
 		borderRadius: 4,
 		// Hard ink drop shadow — same pattern as the other stickers.
@@ -449,12 +496,12 @@ const styles = StyleSheet.create({
 		// Wood-frame ring around the paper face — drawn as a 2px
 		// brown border on the inner view (see signInner).
 		backgroundColor: WOOD_FRAME,
-		padding: 2,
+		padding: SPACE.xxs,
 	},
 	signInner: {
 		alignItems: "center",
 		paddingVertical: 6,
-		paddingHorizontal: 4,
+		paddingHorizontal: SPACE.xs,
 		position: "relative",
 	},
 	nail: {
@@ -463,7 +510,7 @@ const styles = StyleSheet.create({
 		width: 4,
 		height: 4,
 		borderRadius: 2,
-		backgroundColor: "#7a5223",
+		backgroundColor: WOOD.nail,
 		borderWidth: 0.75,
 		borderColor: WHIMSY.ink,
 	},
@@ -482,19 +529,21 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		top: -4,
 		right: -4,
-			minWidth: 18,
-			height: 18,
+		minWidth: 18,
+		// A floor, not a height: the count is capped at CHROME_TYPE_CAP and the
+		// disc grows with it rather than letting "9+" spill out of an 18pt ring.
+		minHeight: 18,
 		paddingHorizontal: 3,
-			borderRadius: 9,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.accent,
-		borderWidth: 1.5,
+		borderWidth: BORDER.thin,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	badgeText: {
 		fontFamily: FONTS.bodyExtra,
-			fontSize: 11,
+		fontSize: 11,
 		fontWeight: "900",
 		color: WHIMSY.paper,
 		letterSpacing: 0,

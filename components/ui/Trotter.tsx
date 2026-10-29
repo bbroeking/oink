@@ -1,5 +1,5 @@
 import Svg, { Path } from "react-native-svg";
-import { WHIMSY } from "@/constants/theme";
+import { ART, WHIMSY } from "@/constants/theme";
 
 // A pig's trotter, rubbing the mud away — the Rub verb's face in the Snout
 // Deep dig. Ink-outline sticker art like `Shovel` (and the retired `BarnDoor`): the leg
@@ -38,6 +38,6 @@ export function Trotter({ size = 40 }: { size?: number }) {
 	);
 }
 
-// Art fills, not UI tokens: Rosie's skin and the dark hoof she stands on.
-const SKIN = "#f8c9d2";
-const HOOF = "#6b4a4a";
+// Rosie's skin and the dark hoof she stands on (ART, theme.ts).
+const SKIN = ART.trotterSkin;
+const HOOF = ART.trotterHoof;

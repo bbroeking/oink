@@ -75,7 +75,7 @@ describe("the Pen page", () => {
 		const entry = FIELD_GUIDE_ENTRIES.find((e: { id: string }) => e.id === "pen");
 		expect(entry?.glyph).toBe("signPen");
 		expect(penLine()).toBe(
-			"Send a pig to look for a Find — usually the one a friend's pig is hoping for. Back in about 4h, with it or without it; give it or keep it. One errand a day per pig.",
+			"Send a pig to look for a Find, usually the one a friend's pig is hoping for. Back in about 4h, with it or without it; give it or keep it. One errand a day per pig.",
 		);
 	});
 });
@@ -195,7 +195,7 @@ describe("feeding-windows value line recomputes with the schedule", () => {
 		// 8h windows → 3 feedings/day; 4h open head.
 		expect(DEFAULT_FEEDING_SCHEDULE.windowSecs).toBe(28800);
 		expect(feedingWindowsLine()).toBe(
-			"3 feedings a day — each open only its first 4h."
+			"3 feedings a day, each open only its first 4h."
 		);
 	});
 
@@ -205,6 +205,6 @@ describe("feeding-windows value line recomputes with the schedule", () => {
 		applyFeedingSchedule({ windowSecs: 21600, openSecs: 10800, offsetSecs: 0 });
 		const after = feedingWindowsLine();
 		expect(after).not.toBe(before);
-		expect(after).toBe("4 feedings a day — each open only its first 3h.");
+		expect(after).toBe("4 feedings a day, each open only its first 3h.");
 	});
 });

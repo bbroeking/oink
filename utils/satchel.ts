@@ -550,11 +550,11 @@ export function satchelReceiptLine(
 	if (!roll) return null;
 	const name = (id: SatchelFindId) => satchelFind(id)?.withArticle ?? id;
 	if (roll.found.length === 0) {
-		return `Satchel's full — ${joinNames(roll.lost.map(name))} stayed in the mud.`;
+		return `Satchel's full · ${joinNames(roll.lost.map(name))} stayed in the mud.`;
 	}
 	const heavier = `your Satchel got heavier: ${joinNames(roll.found.map(name))}.`;
 	if (roll.lost.length === 0) return heavier;
-	return `${heavier} Satchel's full — ${joinNames(roll.lost.map(name))} stayed in the mud.`;
+	return `${heavier} Satchel's full · ${joinNames(roll.lost.map(name))} stayed in the mud.`;
 }
 
 /** Where the bag stands, as a phrase: "4 finds" on an unbounded bag, "4 of 6
@@ -564,7 +564,7 @@ export function satchelStanding(count: number | null | undefined, cap: number | 
 	if (count == null) return null;
 	const finds = `${count} ${count === 1 ? "find" : "finds"}`;
 	if (isSatchelUnbounded(cap)) return finds;
-	return count >= (cap as number) ? `full — ${finds}` : `${count} of ${cap} finds`;
+	return count >= (cap as number) ? `full · ${finds}` : `${count} of ${cap} finds`;
 }
 
 /** The bag block's words, in the hand voice: the kicker over the tiles and
@@ -584,7 +584,7 @@ export function satchelReceiptCopy(roll: SatchelReceiptRoll): { kicker: string; 
 	if (roll.lost.length === 0) {
 		return { kicker: "into your satchel", line: standing ? `${got} · ${standing}` : got };
 	}
-	return { kicker: "into your satchel", line: `${got} · full now — ${left} stayed in the mud` };
+	return { kicker: "into your satchel", line: `${got} · full now, ${left} stayed in the mud` };
 }
 
 function joinNames(names: string[]): string {
@@ -599,7 +599,7 @@ export function deliveryLine(hostName: string, findId: SatchelFindId, tickles: n
 	const f = satchelFind(findId);
 	const thing = f ? `the ${f.name}` : "the thing";
 	const her = `${hostName}'s pig got ${thing} it was hoping for`;
-	return tickles > 0 ? `${her} — you both got ${tickles} tickles.` : `${her}.`;
+	return tickles > 0 ? `${her}. You both got ${tickles} tickles.` : `${her}.`;
 }
 
 /** The swap's receipt sentence — the HOST's gain first, then what you took,
@@ -619,7 +619,7 @@ export function swapLine(
 	// Unpaid because a daily cap is spent — not because tickles are tuned to 0
 	// (then the swap simply pays nothing, and the line says nothing about it).
 	if (satchelTuning().tickles <= 0) return half;
-	if (!paid || tickles <= 0) return `${half} (no tickles — you've swapped plenty today)`;
+	if (!paid || tickles <= 0) return `${half} (no tickles: you've swapped plenty today)`;
 	return took
 		? `${half} You both got ${tickles} tickles.`
 		: `${half} You both got ${tickles} tickles, and a generous tick.`;
@@ -638,7 +638,7 @@ export function swapRefusalCopy(
 			return { title: "Their pig changed its mind", text: "See the bubble for what it wants now." };
 		case "already_today":
 			return {
-				title: "You two swapped today — come back tomorrow",
+				title: "You two swapped today. Come back tomorrow",
 				text: "One swap a day keeps the visit worth making.",
 			};
 		case "option_gone":
@@ -647,7 +647,7 @@ export function swapRefusalCopy(
 				text: "Pick another, or just give it.",
 			};
 		case "host_bag_full":
-			return { title: "Their Satchel is full — try the swap instead", text: "Take one back and it fits." };
+			return { title: "Their Satchel is full. Try the swap instead", text: "Take one back and it fits." };
 		case "wrong_find":
 			return { title: "Not what they're hoping for", text: "See the bubble for what it wants now." };
 		case "not_in_bag":
@@ -662,14 +662,14 @@ export function swapRefusalCopy(
 		case "not_authenticated":
 			return { title: "Sign back in to swap." };
 		case "bad_nonce":
-			return { title: "That didn't land — try again in a moment." };
+			return { title: "That didn't land. Try again in a moment." };
 		case "not_offered":
 			// The client renders exactly what friend_wishes returned, so this
 			// means the server's rule and ours diverged — a bug, not a state.
-			reportSwapBug(`swap_with_host refused not_offered — options diverged`);
+			reportSwapBug(`swap_with_host refused not_offered: options diverged`);
 			return { title: "That one isn't on offer", text: "Pick another, or just give it." };
 		default:
-			return { title: "That didn't land — try again in a moment." };
+			return { title: "That didn't land. Try again in a moment." };
 	}
 }
 

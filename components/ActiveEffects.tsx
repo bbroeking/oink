@@ -84,7 +84,7 @@ function BlessBack({
 			showToast({
 				tone: "fail",
 				title: `${senderName} already has today's blessing`,
-				text: `Next blessing in ${untilDailyReset()} — one per friend a day.`,
+				text: `Next blessing in ${untilDailyReset()}, one per friend a day.`,
 			});
 		} else if (r.kind === "capped") {
 			showToast({
@@ -118,7 +118,7 @@ function BlessBack({
 			accessibilityHint={
 				capped || settled
 					? undefined
-					: `Sends today's blessing, ${ritual.name}, straight back — it can't be taken back.`
+					: `Sends today's blessing, ${ritual.name}, straight back. It can't be taken back.`
 			}
 			accessibilityState={{ disabled: busy || capped || settled }}
 			testID={`bless-back-${senderId}`}

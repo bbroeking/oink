@@ -77,7 +77,9 @@ export function PostcardModal({
 		>
 			<Animated.View style={cardStyle}>
 				<Sticker color="paper" rotate={-1} radius={RADII.md} style={styles.card}>
-					<DialogCloseRow onPress={onClose} label="Tuck the postcard away" />
+					{/* The × is a close and is named one (its default "Close"); the
+					    hand voice belongs to the card, not to the control. */}
+					<DialogCloseRow onPress={onClose} />
 					<T role="kicker" tone="accent" align="center">
 						★ a postcard from the road
 					</T>
@@ -114,7 +116,7 @@ export function PostcardModal({
 					</T>
 					{report.finds.length === 0 ? (
 						<T role="bodySm" tone="secondary">
-							Nothing in the satchel this time — just a good walk.
+							Nothing in the satchel this time, just a good walk.
 						</T>
 					) : (
 						<View style={styles.finds}>

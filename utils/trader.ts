@@ -230,7 +230,7 @@ export function traderStayLine(minutes: number): string {
 export function traderGreeting(status: TraderStatus): string {
 	const want = status.visit?.wantFindId ? satchelFind(status.visit.wantFindId) : null;
 	if (status.visit && status.visit.findsLeft <= 0) return "Enough for one visit, little pig.";
-	if (want) return `Finds for tickles. Today I fancy ${want.withArticle} — that one pays double.`;
+	if (want) return `Finds for tickles. Today I fancy ${want.withArticle}. That one pays double.`;
 	return "Finds for tickles, little pig. Sets. Singles. Whatever's in the bag.";
 }
 
@@ -244,7 +244,7 @@ export function traderRefusalCopy(reason: string): string {
 		case "not_in_bag":
 			return "That one isn't in your bag any more.";
 		case "network":
-			return "The hedge is quiet — try again in a moment.";
+			return "The hedge is quiet. Try again in a moment.";
 		default:
 			return "He shook his head. Try again.";
 	}

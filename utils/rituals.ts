@@ -117,13 +117,13 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 	chorus_glow: {
 		name: "Chorus Glow",
 		icon: require("../assets/images/emoji/blessed.png"),
-		blurb: "The Sounder sang together — regen runs double for the hour.",
+		blurb: "The Sounder sang together. Regen runs double for the hour.",
 	},
 	war_winner_regen: {
 		name: "Winner's Glow",
 		// System-granted, never in a ritual door — shares chorus_glow's icon.
 		icon: require("../assets/images/emoji/blessed.png"),
-		blurb: "Your crew took the Dig-Off — regen runs double for three days.",
+		blurb: "Your crew took the Dig-Off. Regen runs double for three days.",
 	},
 };
 
@@ -180,7 +180,7 @@ export const LEGACY_RITUAL_META: Record<string, RitualMeta> = {
 	sun_beam: {
 		name: "Sun Beam",
 		icon: require("../assets/images/emoji/sun-beam.png"),
-		blurb: "A big Lucky-Pig boost — pops on the next lucky pig.",
+		blurb: "A big Lucky-Pig boost: pops on the next lucky pig.",
 	},
 	halo_kiss: {
 		name: "Halo Kiss",
@@ -195,12 +195,12 @@ export const LEGACY_RITUAL_META: Record<string, RitualMeta> = {
 	mud_wrap: {
 		name: "Mud Wrap",
 		icon: require("../assets/images/emoji/warm-tea.png"),
-		blurb: "A warm mud wrap — tickle regen runs double speed for a few hours.",
+		blurb: "A warm mud wrap: tickle regen runs double speed for a few hours.",
 	},
 	glimmer_truffle: {
 		name: "Glimmer Truffle",
 		icon: require("../assets/images/emoji/sun-beam.png"),
-		blurb: "A glimmering truffle — pops on your next lucky pig.",
+		blurb: "A glimmering truffle: pops on your next lucky pig.",
 	},
 	snoot_boop: {
 		name: "Snoot Boop",
@@ -220,12 +220,12 @@ export const LEGACY_RITUAL_META: Record<string, RitualMeta> = {
 	phantom_itch: {
 		name: "Phantom Itch",
 		icon: require("../assets/images/emoji/phantom-itch.png"),
-		blurb: "1 in 3 taps slip off — for a few hours.",
+		blurb: "1 in 3 taps slip off, for a few hours.",
 	},
 	goblin_whisper: {
 		name: "Goblin Whisper",
 		icon: require("../assets/images/emoji/goblin-whisper.png"),
-		blurb: "A green haze hangs over the Barn — spooky, but harmless.",
+		blurb: "A green haze hangs over the Barn: spooky, but harmless.",
 	},
 	coin_pinch: {
 		name: "Coin Pinch",

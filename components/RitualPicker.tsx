@@ -26,6 +26,7 @@ import { RitualIconWell } from "./ui/RitualIconWell";
 import { CardTitle, Hand, Kicker, Label, T } from "./ui/Text";
 import { Sticker } from "./ui/Sticker";
 import { useRitualCaster } from "@/hooks/useRitualCaster";
+import { allowanceLine } from "@/hooks/useRitualDoor";
 import { untilDailyReset, type RitualMode } from "../utils/rituals";
 import { BORDER, OPACITY, RADII, SPACE, WHIMSY } from "@/constants/theme";
 
@@ -135,8 +136,8 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						{isBless ? "already blessed today" : "already cursed today"}
 					</CardTitle>
 					<Hand align="center" style={styles.beatSub}>
-						Next {isBless ? "blessing" : "curse"} in {untilDailyReset()} —
-						one per friend a day.
+						Next {isBless ? "blessing" : "curse"} in {untilDailyReset()}.
+						One per friend a day.
 					</Hand>
 				</View>
 			)}
@@ -148,10 +149,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						{isBless ? "blessing spent" : "curse spent"}
 					</CardTitle>
 					<Hand align="center" style={styles.beatSub}>
-						{usage
-							? `All ${usage.cap} ${isBless ? "blessings" : "curses"} used today`
-							: `${isBless ? "Blessings" : "Curses"} spent`}{" "}
-						— your next is in {untilDailyReset()}.
+						{`${allowanceLine(mode, 0)} today. Your next is in ${untilDailyReset()}.`}
 					</Hand>
 				</View>
 			)}
@@ -184,17 +182,19 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						accessibilityLabel={castLabel}
 						accessibilityHint={
 							isBless
-								? `Sends today's blessing to ${targetName}. One blessing per friend a day — it can't be taken back.`
-								: `Casts today's curse on ${targetName}. One curse per friend a day — it can't be taken back.`
+								? `Sends today's blessing to ${targetName}. One blessing per friend a day. It can't be taken back.`
+								: `Casts today's curse on ${targetName}. One curse per friend a day. It can't be taken back.`
 						}
 						accessibilityState={{ disabled: busy || spent }}
 					>
 						{castLabel}
 					</Button>
-					{remaining !== null && usage && (
+					{/* The Friends list's words for the same allowance ("Three
+					    glimmer left"), so the sheet and the list never count one
+					    thing two ways (2026-09-14 ruling; aligned 2026-10-04). */}
+					{remaining !== null && (
 						<T role="kicker" tone="secondary" align="center" style={styles.left}>
-							{remaining} of {usage.cap} {isBless ? "blessings" : "curses"} left
-							today · resets in {untilDailyReset()}
+							{`${allowanceLine(mode, remaining)} today · resets in ${untilDailyReset()}`}
 						</T>
 					)}
 					{phase === "error" && !!result && (

@@ -69,7 +69,7 @@ export function GearRack({
 								/>
 							) : (
 								<T role="cardTitle" tone="disabled" style={styles.slotEmpty}>
-									—
+									–
 								</T>
 							)}
 							<T role="kickerPillSm" tone="secondary">

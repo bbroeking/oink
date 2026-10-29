@@ -65,26 +65,26 @@ const REVIEW_PROMPTED_KEY = "review_prompted_v1";
 
 async function maybeAskForReview() {
 	if (Platform.OS !== "ios") {
-		log.info("[review] skipped — non-iOS");
+		log.info("[review] skipped: non-iOS");
 		return;
 	}
 	if (__DEV__) {
-		log.info("[review] skipped — __DEV__ build (Expo Go / dev client)");
+		log.info("[review] skipped: __DEV__ build (Expo Go / dev client)");
 		return;
 	}
 	if (!StoreReview) {
-		log.info("[review] skipped — native module not available in this build");
+		log.info("[review] skipped: native module not available in this build");
 		return;
 	}
 	try {
 		const seen = await AsyncStorage.getItem(REVIEW_PROMPTED_KEY);
 		if (seen === "1") {
-			log.info("[review] skipped — already prompted (review_prompted_v1=1)");
+			log.info("[review] skipped: already prompted (review_prompted_v1=1)");
 			return;
 		}
 		const hasAction = await StoreReview.hasAction();
 		if (!hasAction) {
-			log.info("[review] skipped — StoreReview.hasAction() returned false");
+			log.info("[review] skipped: StoreReview.hasAction() returned false");
 			return;
 		}
 		// Mark BEFORE prompting — if the prompt or app crashes mid-flow
@@ -212,7 +212,7 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 						if (!r) {
 							showToastRef.current(
 								"Couldn't unlock",
-								"Title grant failed — try again next time."
+								"Title grant failed. Try again next time."
 							);
 							return;
 						}
@@ -235,7 +235,7 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 					.catch(() => {
 						showToastRef.current(
 							"Couldn't unlock",
-							"Title grant failed — try again next time."
+							"Title grant failed. Try again next time."
 						);
 					});
 			}

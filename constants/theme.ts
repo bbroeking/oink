@@ -382,6 +382,29 @@ export const STATUS_SAFE = 56;
 // viewfinder is black because that is what a camera shows, not a palette
 // choice. Text over it wears LENS_TEXT_SHADOW for legibility over video.
 // (2026-09-11)
+// Illustration ramps — the few hues an SVG ILLUSTRATION needs that no UI
+// surface may borrow: the tickle token's pink shading and plum outline, the
+// flame's ember ramp. Named once here so Icon.tsx / TickleIcon.tsx stop
+// carrying hex; never a text, fill or border colour on a UI surface.
+// (2026-09-22 slop-tells audit)
+export const ART = {
+	tickleFace: WHIMSY.roseDeep,
+	tickleFaceLight: "#FFD0DC",
+	tickleFaceShade: "#F0B8C8",
+	tickleFaceDeep: "#C47A8E",
+	tickleOutline: "#A05A72",
+	flameTop: "#FFB84A",
+	flame: WHIMSY.flame,
+	flameDeep: "#D85858",
+	// The Shovel's steel blade and two-tone wooden handle; the Trotter's skin
+	// and hoof.
+	shovelSteel: "#c3ccd4",
+	shovelWood: "#c98a5e",
+	shovelHandle: "#e0a36e",
+	trotterSkin: "#f8c9d2",
+	trotterHoof: "#6b4a4a",
+} as const;
+
 export const WHIMSY_LENS = "#000";
 export const LENS_TEXT_SHADOW = {
 	textShadowColor: "rgba(0, 0, 0, 0.6)",

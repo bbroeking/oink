@@ -71,6 +71,7 @@ import {
 } from "@/components/season1/almanac/almanacState";
 import { HERO_SURFACES, seasonHeroSurface, seasonPrimaryAction } from "@/utils/seasonHero";
 import { VerbTabStrip } from "@/components/season1/almanac/VerbTabStrip";
+import { TAB_LIST_ROLE, TAB_ROLE } from "@/components/ui/tabRoles";
 import { FeedPanel } from "@/components/season1/almanac/FeedPanel";
 import { PassPanel } from "@/components/season1/almanac/PassPanel";
 import { REWARD_KIND_TONE } from "@/components/season1/almanac/LadderRow";
@@ -78,8 +79,16 @@ import { rewardKind } from "@/utils/rewardArt";
 import { MONDAY_DRAW_TUNING, type MondayDrawState } from "@/utils/mondayDraw";
 import type { FeedingCta } from "@/components/mudwar/useFeedingCta";
 import type { TierRow, TiersByNumber } from "@/utils/seasonPass";
+import { WHIMSY } from "@/constants/theme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SeasonGuideModal } from "@/components/season1/SeasonGuideModal";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+const GUIDE_METRICS = {
+	frame: { x: 0, y: 0, width: 402, height: 874 },
+	insets: { top: 62, left: 0, right: 0, bottom: 34 },
+};
 
 function textOf(tree: TestRenderer.ReactTestInstance): string {
 	const out: string[] = [];
@@ -191,7 +200,7 @@ describe("almanac state", () => {
 		expect(via({ digAvailable: false, readyTierCount: 0, drawReady: false })).toBe("feed");
 	});
 
-	test("gold means act-now: Feed while open + untaken, Draw until the purse is drawn, Pass while a claim waits", () => {
+	test("act-now (the badge): Feed while open + untaken, Draw until the purse is drawn, Pass while a claim waits", () => {
 		expect(almanacTodo(baseFacts)).toEqual({ feed: false, draw: false, pass: false });
 		expect(almanacTodo({ ...baseFacts, phaseOpen: true }).feed).toBe(true);
 		expect(almanacTodo({ ...baseFacts, phaseOpen: true, dugThisWindow: true }).feed).toBe(false);
@@ -201,7 +210,7 @@ describe("almanac state", () => {
 		expect(almanacTodo({ ...baseFacts, draw: draw({ eligible: false }) }).draw).toBe(false);
 		// Nothing read yet is never gold.
 		expect(almanacTodo({ ...baseFacts, draw: null }).draw).toBe(false);
-		// Two golds can coexist — the strip is a row of doors, not the one hero.
+		// Two badges can coexist — the strip is a row of doors, not the one hero.
 		const both = almanacTodo({ ...baseFacts, phaseOpen: true, readyTierCount: 2 });
 		expect(both.feed && both.pass).toBe(true);
 	});
@@ -216,9 +225,9 @@ describe("almanac state", () => {
 		expect(almanacValues({ ...baseFacts, draw: draw({ eligible: true }) }).draw).toBe("Ready");
 		expect(
 			almanacValues({ ...baseFacts, draw: draw({ eligible: true, drawn: true, amount: 60 }) }).draw
-		).toBe("Drawn · 60");
+		).toBe("Drawn");
 		expect(almanacValues({ ...baseFacts, draw: draw({ runningBalls: 1 }) }).draw).toBe("1 ball");
-		expect(almanacValues({ ...baseFacts, draw: null }).draw).toBe("—");
+		expect(almanacValues({ ...baseFacts, draw: null }).draw).toBe("–");
 	});
 
 	test("nothing on the strip names another pig, a herd or a standing", () => {
@@ -292,7 +301,7 @@ describe("VerbTabStrip", () => {
 		expect(text).not.toContain("Herd");
 		expect(text).not.toContain("Race");
 		const tabs = r.root.findAll(
-			(n) => typeof n.type === "string" && n.props.accessibilityRole === "tab"
+			(n) => typeof n.type === "string" && n.props.accessibilityRole === TAB_ROLE
 		);
 		expect(tabs).toHaveLength(3);
 		expect(tabs[0].props.accessibilityState).toEqual({ selected: true, disabled: false });
@@ -302,6 +311,77 @@ describe("VerbTabStrip", () => {
 			r.root.findByProps({ testID: "almanac-tab-pass" }).props.onPress();
 		});
 		expect(onSelect).toHaveBeenCalledWith("pass");
+		act(() => r.unmount());
+	});
+
+	test("VoiceOver hears tabs on iOS: buttons with selected state inside a tab-bar container (after/042)", async () => {
+		// React Native gives role "tab" no iOS trait, so a cell read as a bare
+		// element; the tab bar's own fix (2026-10-04) is the shape here too.
+		const facts = { ...baseFacts, readyTierCount: 0 };
+		const r = await render(
+			<VerbTabStrip
+				values={almanacValues(facts)}
+				todo={almanacTodo(facts)}
+				selected="draw"
+				onSelect={jest.fn()}
+				testID="almanac-strip"
+			/>
+		);
+		expect(TAB_ROLE).toBe("button");
+		expect(TAB_LIST_ROLE).toBe("tabbar");
+		const strip = r.root.findAll(
+			(n) => typeof n.type === "string" && n.props.testID === "almanac-strip"
+		)[0];
+		expect(strip.props.accessibilityRole).toBe("tabbar");
+		const cells = strip.findAll(
+			(n) => typeof n.type === "string" && n.props.accessibilityRole === "button"
+		);
+		expect(cells.map((c) => c.props.testID)).toEqual([
+			"almanac-tab-feed",
+			"almanac-tab-draw",
+			"almanac-tab-pass",
+		]);
+		expect(cells.map((c) => c.props.accessibilityState.selected)).toEqual([false, true, false]);
+		expect(r.root.findAll((n) => n.props.accessibilityRole === "tab")).toHaveLength(0);
+		act(() => r.unmount());
+	});
+
+	test("selection and act-now are two signals: the sun says open, the badge says act", async () => {
+		// The 2026-10-04 capture: a selected Pass cell and a ready Draw cell both
+		// wore the sun, so nobody could tell which panel was open.
+		const facts = { ...baseFacts, readyTierCount: 1, draw: draw({ eligible: true }) };
+		const r = await render(
+			<VerbTabStrip
+				values={almanacValues(facts)}
+				todo={almanacTodo(facts)}
+				selected="pass"
+				onSelect={jest.fn()}
+				passProgress={0.4}
+			/>
+		);
+		const fill = (tab: string) => {
+			const host = r.root.findAll(
+				(n) => typeof n.type === "string" && n.props.testID === `almanac-tab-${tab}`
+			)[0];
+			const flat = Object.assign({}, ...[host.props.style].flat(Infinity).filter(Boolean));
+			return flat.backgroundColor;
+		};
+		const badge = (tab: string) =>
+			r.root.findAll((n) => typeof n.type === "string" && n.props.testID === `almanac-todo-${tab}`).length;
+		// Only the open panel's cell wears the sun…
+		expect(fill("pass")).toBe(WHIMSY.sun);
+		expect(fill("draw")).toBe(WHIMSY.paper);
+		expect(fill("feed")).toBe(WHIMSY.paper);
+		// …and act-now is the badge, on the selected cell and an unselected one alike.
+		expect(badge("pass")).toBe(1);
+		expect(badge("draw")).toBe(1);
+		expect(badge("feed")).toBe(0);
+		// VoiceOver hears the act-now too, not just the value.
+		const label = (tab: string) =>
+			r.root.findAll((n) => typeof n.type === "string" && n.props.accessibilityRole === TAB_ROLE)
+				.find((n) => n.props.testID === `almanac-tab-${tab}`)?.props.accessibilityLabel;
+		expect(label("draw")).toBe("Draw: Ready, draw now");
+		expect(label("feed")).toBe("Feed: 2h 59m");
 		act(() => r.unmount());
 	});
 });
@@ -316,7 +396,7 @@ describe("FeedPanel", () => {
 		const text = textOf(r.root);
 		expect(text).toContain("Opens in 2h 59m");
 		expect(text).toContain("Remind me when it opens");
-		expect(text).toContain("Every find starves him a little — the herd wants him Famished by day 60.");
+		expect(text).toContain("Every truffle dug back starves him a little. The herd wants him Famished by day 60.");
 		expect(text).toContain("Peckish");
 		// The ball counter, without the dig-now promise: the patch is shut.
 		expect(text).toContain("3 balls this week");
@@ -489,5 +569,103 @@ describe("PassPanel", () => {
 		expect(onClaim).toHaveBeenCalledWith(5, "free");
 		expect(textOf(r.root)).not.toContain("This week's quests");
 		act(() => r.unmount());
+	});
+});
+
+// ── polish pass 2026-10-04 ───────────────────────────────────────────────────
+
+describe("SeasonGuideModal", () => {
+	test("closes with a Close, says where its button lands, and holds no Sounder door", async () => {
+		const r = await render(
+			<SafeAreaProvider initialMetrics={GUIDE_METRICS}>
+				<SeasonGuideModal visible onDismiss={jest.fn()} />
+			</SafeAreaProvider>
+		);
+		const labels = r.root
+			.findAll((n) => typeof n.type === "string" && typeof n.props.accessibilityLabel === "string")
+			.map((n) => n.props.accessibilityLabel as string);
+		expect(labels).toContain("Close");
+		expect(labels).toContain("Back to the season");
+		// The × used to be read out as "To the patch" — a close named for a place
+		// it never went.
+		expect(labels).not.toContain("To the patch");
+		// The × is the scaffold's pinned close, outside the scroller: on the long
+		// guide it used to scroll away with the words (capture 051).
+		const close = r.root.findAll(
+			(n) => typeof n.type === "string" && n.props.accessibilityLabel === "Close"
+		)[0];
+		let insideScroller = false;
+		for (let n: TestRenderer.ReactTestInstance | null = close; n; n = n.parent) {
+			if ((n.type as unknown) === "RCTScrollView") insideScroller = true;
+		}
+		expect(insideScroller).toBe(false);
+		// …and the body really does scroll in one: the steps are in the scroller.
+		const step = r.root.findAll(
+			(n) => typeof n.type === "string" && n.props.accessibilityLabel === "Dig every feeding"
+		)[0];
+		let stepScrolls = false;
+		for (let n: TestRenderer.ReactTestInstance | null = step; n; n = n.parent) {
+			if ((n.type as unknown) === "RCTScrollView") stepScrolls = true;
+		}
+		expect(stepScrolls).toBe(true);
+		const text = textOf(r.root);
+		// The Sounder keeps no door on the Season page (2026-09-21 §1).
+		expect(text).not.toMatch(/leave your sounder/i);
+		// The dig that ships: things tied off are yours; truffles drain him.
+		expect(text).not.toContain("Every truffle is yours to keep");
+		expect(text).not.toMatch(/dig and blessing/);
+		act(() => r.unmount());
+	});
+});
+
+describe("the Season page's chrome (source guards)", () => {
+	const fs = require("node:fs") as typeof import("node:fs");
+	const path = require("node:path") as typeof import("node:path");
+	const src = fs.readFileSync(path.join(__dirname, "..", "app", "(tabs)", "season.tsx"), "utf8");
+
+	test("the pinned crown states its ceiling, so at accessibility sizes it stays a band", () => {
+		// The ax-large capture: an uncapped crown wrapped to five lines and left
+		// the panel a sliver. Crown and strip cells both stop at the chrome cap.
+		expect(src).toMatch(/<PageHeader\s+variant="tab"\s+maxFontSizeMultiplier=\{CHROME_TYPE_CAP\}/);
+		expect(src).toMatch(/\{crown\}\s+\{strip\}/);
+	});
+
+	test("the pinned strip owns its scroll edge with the app's one rule", () => {
+		expect(src).toContain("const panelEdge = useScrollEdge();");
+		expect(src).toMatch(/onScroll=\{panelEdge\.onScroll\}/);
+		expect(src).toMatch(/<ScrollEdge\s+visible=\{panelEdge\.edgeVisible\}\s+overlay="top"/);
+	});
+
+	test("every dashed rule sets its colour on all sides (iOS draws nothing otherwise)", () => {
+		for (const rel of [
+			["app", "(tabs)", "season.tsx"],
+			["components", "season1", "almanac", "PassPanel.tsx"],
+			["components", "mudwar", "SnoutDeepSheets.tsx"],
+		]) {
+			const file = fs.readFileSync(path.join(__dirname, "..", ...rel), "utf8");
+			for (const block of file.match(/\{[^{}]*borderStyle: "dashed"[^{}]*\}/g) ?? []) {
+				if (/border(Top|Left|Right|Bottom)Color/.test(block)) {
+					expect(block).toMatch(/borderColor:/);
+				}
+				expect(block).not.toMatch(/border(Top|Left|Right|Bottom)Color/);
+			}
+		}
+	});
+
+	test("the safe area is the context's, not React Native's deprecated view", () => {
+		expect(src).toContain('import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";');
+		expect(src).not.toMatch(/^\s*SafeAreaView,$/m);
+	});
+
+	test("the page holds no Sounder door and no crew fetch", () => {
+		expect(src).not.toMatch(/useCrew|onLeave=|handleLeave/);
+	});
+
+	test("the whole ladder asks for Slop Club once, and honestly when no store is behind it", () => {
+		expect(src).toContain("<PremiumLockedBanner canJoin={IAP_ENABLED} onUnlock={onUnlockPremium} />");
+		expect(src).toContain("const showVip = !premium && !prestigeMode && !premiumBanner;");
+		expect(src).not.toContain("Coming Soon");
+		// One ready tier claims from its own row; the bar is for sweeping two or more.
+		expect(src).toContain("{readyTiers.length >= 2 && (");
 	});
 });

@@ -39,6 +39,11 @@ const GOOGLE_RED = "#EA4335";
 // The mark's drawing box — a glyph, not a spacing step.
 const MARK_BOX = ART_SIZE.glyphSm;
 
+// The one refusal every failed hop says. Sentence case, like the email path's
+// refusals on the same card ("Wrong email or password."), and the provider's
+// name as the provider writes it. (2026-10-04)
+const GOOGLE_FAILED = "Google didn't answer. Try email instead.";
+
 function GoogleMark() {
 	return (
 		<View accessible={false}>
@@ -95,7 +100,7 @@ export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 			// No URL back usually means the provider isn't configured server-side
 			// yet (Supabase dashboard work pending) — degrade to the note, no crash.
 			if (error || !data?.url) {
-				fail("google didn't answer — try email instead.", error ?? undefined);
+				fail(GOOGLE_FAILED, error ?? undefined);
 				return;
 			}
 
@@ -105,14 +110,14 @@ export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 				return;
 			}
 			if (result.type !== "success" || !result.url) {
-				fail("google didn't answer — try email instead.");
+				fail(GOOGLE_FAILED);
 				return;
 			}
 
 			const params = paramsFromUrl(result.url);
 			const oauthErr = params.get("error_description") || params.get("error");
 			if (oauthErr) {
-				fail("google didn't answer — try email instead.", oauthErr);
+				fail(GOOGLE_FAILED, oauthErr);
 				return;
 			}
 
@@ -121,14 +126,14 @@ export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 				const { error: exchErr } =
 					await supabase.auth.exchangeCodeForSession(code);
 				if (exchErr) {
-					fail("google didn't answer — try email instead.", exchErr);
+					fail(GOOGLE_FAILED, exchErr);
 					return;
 				}
 			} else {
 				const access_token = params.get("access_token");
 				const refresh_token = params.get("refresh_token");
 				if (!access_token || !refresh_token) {
-					fail("google didn't answer — try email instead.");
+					fail(GOOGLE_FAILED);
 					return;
 				}
 				const { error: sessErr } = await supabase.auth.setSession({
@@ -136,14 +141,14 @@ export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 					refresh_token,
 				});
 				if (sessErr) {
-					fail("google didn't answer — try email instead.", sessErr);
+					fail(GOOGLE_FAILED, sessErr);
 					return;
 				}
 			}
 			// On success the Supabase session is set and the app's auth listener
 			// routes onward — nothing to do here.
 		} catch (e) {
-			fail("google didn't answer — try email instead.", e);
+			fail(GOOGLE_FAILED, e);
 		} finally {
 			setBusy(false);
 		}

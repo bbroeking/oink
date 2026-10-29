@@ -40,7 +40,7 @@ export const BETA_TIER_LINE: Record<BetaTier, string> = {
 	snoutfather:
 		"No snout dug deeper than yours. The whole bog knows your name.",
 	bog_royalty: "You finished among the top three of the founding herd.",
-	trough_table: "You earned a seat at the trough table — top ten of the herd.",
+	trough_table: "You earned a seat at the trough table: top ten of the herd.",
 	founding_herd: "You were here before the gates opened. The bog remembers.",
 };
 
