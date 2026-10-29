@@ -1,0 +1,170 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T17:45:35Z"
+ },
+ "title": "TTP Costumes — 2026-10-29",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A1 · Closet: a Costume slot",
+   "is_interactive": true
+  },
+  "A2_TryOn.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A2 · Try on (preview modal)",
+   "is_interactive": true
+  },
+  "A3_Wearing.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A3 · Wearing: slots asleep",
+   "is_interactive": true
+  },
+  "A4_TakeOff.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A4 · Take off",
+   "is_interactive": true
+  },
+  "A5_Stall.dc.html": {
+   "x": 1880,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A5 · Stall grid",
+   "is_interactive": true
+  },
+  "A6_Visit.dc.html": {
+   "x": 2350,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "A6 · A friend visits",
+   "is_interactive": true
+  },
+  "B1_Closet.dc.html": {
+   "x": 0,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B1 · Closet: the Wardrobe Hook",
+   "is_interactive": true
+  },
+  "B2_TryOn.dc.html": {
+   "x": 470,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B2 · Fitting room sheet",
+   "is_interactive": true
+  },
+  "B3_Wearing.dc.html": {
+   "x": 940,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B3 · Wearing: outfit tucked",
+   "is_interactive": true
+  },
+  "B4_TakeOff.dc.html": {
+   "x": 1410,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B4 · Take off",
+   "is_interactive": true
+  },
+  "B5_Stall.dc.html": {
+   "x": 1880,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B5 · Stall costume band",
+   "is_interactive": true
+  },
+  "B6_Visit.dc.html": {
+   "x": 2350,
+   "y": 1320,
+   "w": 390,
+   "h": 844,
+   "title": "B6 · A friend visits (Boo)",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A2_TryOn.dc.html",
+  "A3_Wearing.dc.html",
+  "A4_TakeOff.dc.html",
+  "A5_Stall.dc.html",
+  "A6_Visit.dc.html",
+  "B1_Closet.dc.html",
+  "B2_TryOn.dc.html",
+  "B3_Wearing.dc.html",
+  "B4_TakeOff.dc.html",
+  "B5_Stall.dc.html",
+  "B6_Visit.dc.html"
+ ],
+ "notes": {
+  "titleA": {
+   "x": 0,
+   "y": -300,
+   "text": "Direction A · a Costume slot (costume is a category; the covered chips fall asleep)",
+   "kind": "title1",
+   "maxW": 2740
+  },
+  "titleB": {
+   "x": 0,
+   "y": 1020,
+   "text": "Direction B · the Wardrobe Hook (costumes hang on their own rail; the outfit folds into a strip)",
+   "kind": "title1",
+   "maxW": 2740
+  },
+  "stickyA": {
+   "x": 2820,
+   "y": 0,
+   "w": 420,
+   "text": "DIRECTION A · A Costume slot\n\nWhat it is: 'costume' is one more category. A ninth slot chip (lilac, at the head of the tray) and a Costumes section at the top of the rack. Wearing one puts the covered chips to sleep (cream2, 'under' tag) and a hand line under Rosie says what waits. The preview modal, the stall tile and the visit nameplate all reuse today's parts.\n\nPillar: Collect (a showpiece that sits beside everything else you own). Connect lightly (the nameplate tag on a visit).\n\nChanges vs today: constants/slots.ts (+costume slot, label, tint); ClosetView CAT_ORDER/CAT_LABEL (+Costumes first) and an asleep style on chips when a costume is on; ItemPreviewModal routes category costume to the stage; StallPig.stallSlot +case; a Tag on the visit nameplate.\n\nBuild: ~1.25 h UI. slots+labels 15m · asleep chips+hand line 25m · preview routing+cover line 15m · stall tile tag 15m · visit tag 10m · buffer 15m.\n\nCopy: slot 'Costume'; tile corner 'costume' / stall 'full costume'; hand line 'Hollow Jack is on. Hat, Bow and Face wait underneath.'; toast 'Hollow Jack is off. Your hat and bow are back.'; preview 'Covers everything but her face and hooves. Your hat, bow and glasses stay put underneath.' No em dashes; prices are numerals.",
+   "fill": "purple"
+  },
+  "stickyB": {
+   "x": 2820,
+   "y": 1320,
+   "w": 420,
+   "text": "DIRECTION B · The Wardrobe Hook\n\nWhat it is: costumes live on their own hook, a lilac rail between the fitting room and the rack, with the suits hanging by name. Wearing one folds the covered chips into a 'tucked under' strip with 'Take it off'; the hook marks the one that's on. Trying on is a full-bleed fitting-room sheet (the B3 try-on the stall cut). The stall gets a costume band of wide cards; a friend visiting a costumed pig gets a 'Boo!' bubble (the provisional Spook).\n\nPillar: Collect (the hook makes 11 suits a set to fill) and Connect (Boo is the visit reaction the 2026-10-14 entry promised).\n\nChanges vs today: new CostumeHook component in the Closet; a folded-strip state replacing four chips; a fitting-room sheet route; a stall band with a wide card; the visit bubble.\n\nBuild: ~2 h UI as drawn. hook rail 35m · folded strip 30m · fitting sheet 30m · stall band 20m · Boo bubble 15m. To land in 1.5 h: drop the Boo bubble and use the existing preview modal instead of the sheet (1.4 h).\n\nCopy: kicker '★ dress-up'; strip 'Hat, Bow and Face / tucked under Count Snout'; button 'Take it off'; sheet 'Goes on over her whole outfit. Nothing comes off; it all waits on the hook until she changes back.'; toast 'Count Snout is back on the hook. Your hat and bow are back on.'",
+   "fill": "teal"
+  },
+  "stickyRec": {
+   "x": 3300,
+   "y": 0,
+   "w": 380,
+   "text": "RECOMMENDATION\n\nShip A for the 1.5 h window. It keeps the Closet's one rule (owned dresses Rosie, unowned previews), adds no new component, and the data layer already lands costume as a category. 'Asleep' chips with an 'under' tag teach the hide-but-keep rule in place, without a dialog.\n\nB is the better home once a second season of suits exists: the hook makes the 11 read as a collection, and the strip is a cleaner answer than nine chips. Keep B's copy ('tucked under', 'Take it off') even if A ships.\n\nBoth: Rosie-only in v1 (the art is fitted to her); other pigs see the tile greyed with 'fits Rosie'. The cover rule is render-side: a worn costume hides head, bow, face, neck, held; tickle, aura and scene still show.",
+   "fill": "orange"
+  }
+ },
+ "designSystems": [
+  {
+   "title": "Tickle the Pig",
+   "namespace": "tickle-the-pig",
+   "artifact": "https://claude.ai/artifact/A3L11psUnnGUQ36714vrCz",
+   "version": "1793291966-be33",
+   "copiedAt": "2026-10-29T17:45:35Z"
+  }
+ ]
+}
