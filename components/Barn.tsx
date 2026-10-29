@@ -28,6 +28,7 @@ import {
 	BarnOverlay,
 	Glyph,
 	glyphSource,
+	type GlyphName,
 	Hand,
 	Icon,
 	PageBackground,
@@ -185,6 +186,11 @@ const REST_FLOAT_MS = 600;
 // Mark sizes on the toast. A glyph is art, so its size is a picture size, not
 // a spacing step.
 const TOAST_GLYPH = 18;
+type ToastLook = { glyph: GlyphName; color: "paper" | "cream" };
+// The Ghost Sheep's words in the yard: paper when he turns up, cream when he
+// has wandered off (canvas A1 / A5).
+const TRADER_ARRIVE_LOOK: ToastLook = { glyph: "trader", color: "paper" };
+const TRADER_LEAVE_LOOK: ToastLook = { glyph: "trader", color: "cream" };
 const RECOVERY_ICON = 20;
 // How far above its resting place the toast starts (and returns to). A travel
 // distance, not a margin.
@@ -422,6 +428,10 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		title: string;
 		body: string;
 		onPress?: () => void;
+		/** A visitor's own word (the Ghost Sheep's arrival and leave, canvas
+		 *  A1/A5): his painted mark on a paper or cream sticker instead of the
+		 *  heart on rose. */
+		look?: ToastLook;
 	} | null>(null);
 	const toastOpacity = useRef(new Animated.Value(0)).current;
 	const toastY = useRef(new Animated.Value(TOAST_OFFSET)).current;
@@ -481,8 +491,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const truffleBuried = !!truffle.status?.buried;
 
 	const showToast = useCallback(
-		(title: string, body: string, onPress?: () => void) => {
-			setToast({ title, body, onPress });
+		(title: string, body: string, onPress?: () => void, look?: ToastLook) => {
+			setToast({ title, body, onPress, look });
 			toastOpacity.setValue(0);
 			toastY.setValue(TOAST_OFFSET);
 			Animated.sequence([
@@ -870,9 +880,9 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const trader = useTrader({
 		onArrive: (s) => {
 			const word = traderArrivalCopy(s);
-			showToast(word.title, word.sub, () => setTraderOpen(true));
+			showToast(word.title, word.sub, () => setTraderOpen(true), TRADER_ARRIVE_LOOK);
 		},
-		onLeave: () => showToast(TRADER_LEAVE_COPY.title, TRADER_LEAVE_COPY.sub),
+		onLeave: () => showToast(TRADER_LEAVE_COPY.title, TRADER_LEAVE_COPY.sub, undefined, TRADER_LEAVE_LOOK),
 	});
 	const { sell, tradeUp } = trader;
 	const { applyBag } = satchel;
@@ -1193,15 +1203,19 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 							accessibilityLiveRegion="polite"
 						>
 							<Sticker
-								color="rose"
+								color={toast.look?.color ?? "rose"}
 								rotate={TOAST_TILT}
 								radius={RADII.lg}
 								style={styles.toast}
 							>
 								<View style={styles.toastInner}>
-									<View style={styles.toastIcon}>
-										<Glyph name="heart" size={TOAST_GLYPH} />
-									</View>
+									{toast.look ? (
+										<Glyph name={toast.look.glyph} size={AVATAR_SIZE[0]} />
+									) : (
+										<View style={styles.toastIcon}>
+											<Glyph name="heart" size={TOAST_GLYPH} />
+										</View>
+									)}
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<T role="cardTitleSm">{toast.title}</T>
 										<Hand tone="secondary" style={styles.toastBody}>
