@@ -214,11 +214,16 @@ export function shopKicker(state: {
 	shelfCount: number;
 	/** How many of those (and the counter's) a tap can buy right now. */
 	inReach: number;
+	/** A seasonal stall is open at the top of the wall (B1, 2026-10-29). */
+	stallOpen?: boolean;
 }): string {
 	if (state.shelfCount === 0) {
 		if (state.failed) return "can't reach the shelves";
 		return state.loading ? "stocking the shelves" : "sold out till sunrise";
 	}
-	if (state.inReach > 0) return `${countWord(state.inReach)} you can buy today`;
-	return `${countWord(state.shelfCount)} on the shelves today`;
+	const day =
+		state.inReach > 0
+			? `${countWord(state.inReach)} you can buy today`
+			: `${countWord(state.shelfCount)} on the shelves today`;
+	return state.stallOpen ? `a stall is open · ${day}` : day;
 }

@@ -204,3 +204,20 @@ describe("shopKicker", () => {
 		);
 	});
 });
+
+describe("shopKicker with a stall open (Pop-up Stall B1, 2026-10-29)", () => {
+	it("leads with the stall and keeps the day's count", () => {
+		expect(
+			shopKicker({ loading: false, failed: false, shelfCount: 11, inReach: 3, stallOpen: true }),
+		).toBe("a stall is open · three you can buy today");
+		expect(
+			shopKicker({ loading: false, failed: false, shelfCount: 11, inReach: 0, stallOpen: true }),
+		).toBe("a stall is open · 11 on the shelves today");
+	});
+
+	it("never claims a stall over an empty or failed store", () => {
+		expect(
+			shopKicker({ loading: true, failed: false, shelfCount: 0, inReach: 0, stallOpen: true }),
+		).toBe("stocking the shelves");
+	});
+});

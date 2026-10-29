@@ -15,23 +15,16 @@ import { useShopCatalog } from "@/hooks/useShopCatalog";
 import { usePigRoster } from "@/hooks/usePigRoster";
 import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { useScreenReader } from "@/hooks/useScreenReader";
-import { cosmeticAccessibility, equipCosmetic } from "@/utils/cosmetics";
+import { equipCosmetic } from "@/utils/cosmetics";
 import { formatCountdownHM } from "@/utils/duration";
 import {
   BuyCelebration,
   Button,
   EmptyState,
-  Icon,
   LoadingBeat,
-  Numeral,
   PageHeader,
-  Ribbon,
   ScrollEdge,
   SectionHeader,
-  SnoutCoin,
-  Sticker,
-  T,
-  Tag,
   useScrollEdge,
   type BuyCelebrationHandle,
 } from "../../components/ui";
@@ -39,7 +32,18 @@ import {
   ClosetView,
   type ClosetViewHandle,
 } from "../../components/ClosetView";
-import { HatThumb } from "@/components/shop/HatThumb";
+import {
+  GRID_PAD,
+  RarityLegend,
+  ShopCard,
+  gridTileWidth,
+  shopCardStyles,
+} from "@/components/shop/ShopCard";
+import { SnoutsPocket } from "@/components/shop/SnoutsPocket";
+import { StallCardSlot } from "@/components/shop/StallCard";
+import { useSeasonalShelf, stallVisible } from "@/hooks/useSeasonalShelf";
+import { stallBuyCopy } from "@/utils/seasonalShelf";
+import { leavingLabel } from "@/utils/shelfCountdown";
 import { HangingSign } from "@/components/shop/HangingSign";
 import { Chalkboard } from "@/components/shop/Chalkboard";
 import { Shelf, ShelfItem, SlopClubShelf } from "@/components/shop/Shelf";
@@ -47,8 +51,6 @@ import { Counter } from "@/components/shop/Counter";
 import { HatRow } from "@/constants/hats";
 import {
   buyableNow,
-  cardTag,
-  cardTagFace,
   cardTapAction,
   chunkShelves,
   shopKicker,
@@ -62,12 +64,8 @@ import {
   CHROME_TYPE_CAP,
   WHIMSY,
   SPACE,
-  RADII,
   PAGE_PAD,
-  SHADOW_SM,
   TINT,
-  RARITY_BG_SOLID,
-  RARITY_STRIPE,
 } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -78,40 +76,10 @@ const deniedSound = require("../../assets/sounds/denied.mp3");
 const equipSound = require("../../assets/sounds/equip.mp3");
 
 // ── Drawing constants ───────────────────────────────────────────────────────
-// Geometry, not spacing: the sizes of the marks and thumbnails this screen
-// draws. Named here so no style block carries a bare number. (2026-09-11)
-/** The rarity dot on a card corner, and the smaller one in the legend. */
-const RARITY_DOT = 14;
-const LEGEND_DOT = 12;
-/** The round owned-check badge in the card's other corner. */
-const OWNED_BADGE = 26;
-/** Marks riding inside those badges / chips. */
-const CHECK_MARK = 14;
-const COIN_MARK = 20;
-/** The card thumbnail's letterbox: a touch wider than it is tall. */
-const THUMB_RATIO = 1.18;
-/** The alternating scrapbook lean across the two grid columns. */
-const CARD_TILT = 0.5;
-/**
- * The card's inner corner, inside its RADII.xl outline and 2pt ink border: the
- * next step down the radius scale (the true 16pt inner curve is within 0.6pt
- * of it at the corner). The thumb's top corners and the MEMBERS ribbon's clip
- * both round to it, so the card itself never clips — an `overflow: hidden`
- * card loses its hard shadow on iOS.
- */
-const CARD_INNER_RADIUS = RADII.lg;
-/** The snouts pocket leans the other way, like a chip tucked in a pocket. */
-const BALANCE_TILT = 2;
-/** The 2-column grid's own page inset and card-to-card gap. */
-const GRID_PAD = SPACE.md;
-const GRID_GAP = SPACE.md;
+// Geometry, not spacing: the sizes of the marks this screen draws. The card's
+// own geometry moved with it to components/shop/ShopCard. (2026-10-29)
 /** The shelves hold three items each (Storefront build 2). */
 const PER_SHELF = 3;
-/**
- * The fallback card's name lines: every closet name fits two at 1.0x in the
- * 2-up card (measured, 375pt phone), three at CHROME_TYPE_CAP.
- */
-const CARD_NAME_LINES = 3;
 /** The plank wall's faint horizontal grain: one hairline every so often. */
 const WALL_STRIPE_PITCH = 48;
 /**
@@ -120,272 +88,10 @@ const WALL_STRIPE_PITCH = 48;
  */
 const FALLBACK_BURST = { x: 200, y: 400 };
 
-const RARITIES = ["common", "uncommon", "rare", "epic", "legendary"] as const;
-
 // The Shop tab is ONE room: the fitting room, the doorway, the shelves, the
 // counter, the catalog, on one scroll (2026-09-17). The Pen and Furnish are
 // pushed routes behind their signs — a hanging sign always leaves the page —
 // and `utils/shopNav` holds the rule that redirects an old `?view=pen` link.
-
-// ── Shop redesign (Claude Design handoff, Shop Layout.html) ─────────
-// Less text, more readable: rarity is a COLOR DOT + one legend (no word
-// pills), the image is the hero on a rarity-tinted panel, and the price
-// chip carries the buy-state (sun = affordable, muted = not yet,
-// "Owned" tag = owned). No per-card buttons — tapping opens the
-// preview/buy sheet. Uniform 2-col grid replaces the bento mosaic.
-function RarityLegend() {
-  return (
-    <View
-      style={shopCardStyles.legend}
-      accessibilityRole="summary"
-      accessibilityLabel={`Rarity colours, least to most rare: ${RARITIES.join(", ")}`}
-    >
-      {RARITIES.map((r) => (
-        <View key={r} style={shopCardStyles.legendItem} accessible={false}>
-          <View
-            style={[
-              shopCardStyles.legendDot,
-              { backgroundColor: RARITY_STRIPE[r] },
-            ]}
-          />
-          <T role="kickerPillSm" tone="secondary">
-            {r}
-          </T>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function ShopCard({
-  item,
-  owned,
-  active,
-  canAfford,
-  inDrop,
-  index,
-  locked,
-  membersOnly,
-  onPress,
-  onLongPress,
-  onCenter,
-}: {
-  item: HatRow;
-  owned: boolean;
-  active: boolean;
-  canAfford: boolean;
-  // On today's shelf — the only day it can be bought (the price goes muted
-  // otherwise, one grammar with the coaster).
-  inDrop: boolean;
-  // Position in the grid — drives the alternating ±0.5° sticker tilt.
-  index: number;
-  // Members-only item + caller isn't a Slop Club member → the ribbon says so
-  // in words (it's still a gate, not just identity).
-  locked?: boolean;
-  // Members-only item, regardless of VIP status. Drives the MEMBERS ribbon —
-  // which stays for members too (it's Slop Club identity, not a lock).
-  membersOnly?: boolean;
-  // An owned card wears / takes off on tap (cardTapAction); an unowned one
-  // opens the sheet. Long press opens the sheet for an owned card.
-  onPress: () => void;
-  onLongPress?: () => void;
-  // Reports the card's window-space center (the buy celebration anchor).
-  onCenter?: (x: number, y: number) => void;
-}) {
-  const rarity = item.rarity ?? "common";
-  const ref = useRef<View>(null);
-  // The grid is the game's storefront: every card states its rarity, its
-  // ownership, its cost and what a tap will do. [D-03] (2026-09-11)
-  const a11y = cosmeticAccessibility(
-    { name: item.name, rarity, cost: item.cost },
-    {
-      owned,
-      active,
-      locked,
-      canAfford,
-      buyable: inDrop,
-      action: owned ? "equip" : "preview",
-    },
-  );
-  // One grammar for every card in the store (utils/shopShelves cardTag).
-  const face = cardTagFace(
-    cardTag(item, { owned, active, inDrop, canAfford, locked: !!locked }),
-  );
-  return (
-    <View
-      ref={ref}
-      style={shopCardStyles.cardWrap}
-      onLayout={() => {
-        ref.current?.measureInWindow?.((x, y, w, h) =>
-          onCenter?.(x + w / 2, y + h / 2),
-        );
-      }}
-    >
-      <Sticker
-        // A gated card keeps its whole shape and mutes its FILL — the
-        // 2026-07-07 ruling; the old blanket opacity dissolved the outline
-        // it needs to still read as a card. [D-12] (2026-09-11)
-        color={locked ? "cream2" : "paper"}
-        rotate={index % 2 === 0 ? -CARD_TILT : CARD_TILT}
-        radius={RADII.xl}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        accessibilityLabel={a11y.accessibilityLabel}
-        accessibilityHint={a11y.accessibilityHint}
-        accessibilityState={a11y.accessibilityState}
-        style={shopCardStyles.card}
-      >
-        <View
-          style={[
-            shopCardStyles.thumb,
-            { backgroundColor: RARITY_BG_SOLID[rarity] },
-          ]}
-        >
-          <View
-            style={[
-              shopCardStyles.rdot,
-              { backgroundColor: RARITY_STRIPE[rarity] },
-            ]}
-          />
-          {owned ? (
-            <View style={shopCardStyles.ownedBadge}>
-              <Icon
-                name="check"
-                size={CHECK_MARK}
-                color={UI_COLORS.textPrimary}
-                strokeWidth={2.6}
-              />
-            </View>
-          ) : membersOnly ? (
-            // Slop Club corner ribbon. The lock rides it only while the item
-            // is still gated; for members it stays as identity, no lock (the
-            // 2026-07-12 ruling). [D-08] (2026-09-11)
-            <Ribbon
-              tone="slopGold"
-              label="Members"
-              icon={locked ? "lock" : undefined}
-              clipRadius={CARD_INNER_RADIUS}
-            />
-          ) : null}
-          <HatThumb item={item} fill />
-        </View>
-        <View style={shopCardStyles.foot}>
-          {/* A name never ends in "…": two lines hold every catalog name
-              at default size in this 2-up card, three at the chrome
-              ceiling, and the row's cards stretch to one height. */}
-          <T
-            role="cardTitleSm"
-            numberOfLines={CARD_NAME_LINES}
-            maxFontSizeMultiplier={CHROME_TYPE_CAP}
-          >
-            {item.name}
-          </T>
-          {/* The tag is the action's face: "Wear" / "Wearing" for an owned
-              item, otherwise the price — sun when you can pay it today, the
-              muted (locked) fill when you cannot, never an opacity crush.
-              [D-12] (2026-09-11) */}
-          <Tag
-            tone={face.tone}
-            icon={face.icon}
-            coin={face.coin}
-            label={face.label}
-            maxFontSizeMultiplier={CHROME_TYPE_CAP}
-            style={shopCardStyles.footTag}
-          />
-        </View>
-      </Sticker>
-    </View>
-  );
-}
-
-const shopCardStyles = StyleSheet.create({
-  legend: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    // Tight chip-to-chip gaps so the five rarities flow across 1–2 lines
-    // instead of stacking one-per-row.
-    columnGap: SPACE.sm,
-    rowGap: SPACE.sm,
-    // Flush with the grid: the parent scroll content already insets
-    // PAGE-grid's gutter, so the legend carries no extra horizontal pad.
-    paddingBottom: SPACE.md,
-  },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
-  legendDot: {
-    width: LEGEND_DOT,
-    height: LEGEND_DOT,
-    borderRadius: RADII.pill,
-    borderWidth: BORDER.thin,
-    borderColor: UI_COLORS.border,
-    ...SHADOW_SM,
-  },
-  // The card fills its grid cell, which a wrapping row stretches to the
-  // line's tallest card, so a two-line name never lifts its neighbour's tag.
-  // It does not clip: the thumb rounds its own top corners and the ribbon
-  // clips itself (Ribbon clipRadius), so the card keeps its sticker shadow.
-  cardWrap: { flex: 1 },
-  card: {
-    flex: 1,
-  },
-  // aspectRatio is safe on VIEWS — HatThumb measures inside, so the
-  // image itself still gets explicit numerics (the Yoga-quirk cure). The
-  // thumb clips a full-bleed scene to the card's inner corner.
-  thumb: {
-    aspectRatio: THUMB_RATIO,
-    borderBottomWidth: BORDER.ink,
-    borderColor: UI_COLORS.border,
-    borderTopLeftRadius: CARD_INNER_RADIUS,
-    borderTopRightRadius: CARD_INNER_RADIUS,
-    overflow: "hidden",
-    position: "relative",
-  },
-  // Corner badges share a single SPACE.sm inset (UI audit).
-  rdot: {
-    position: "absolute",
-    top: SPACE.sm,
-    left: SPACE.sm,
-    width: RARITY_DOT,
-    height: RARITY_DOT,
-    borderRadius: RADII.pill,
-    borderWidth: BORDER.ink,
-    borderColor: UI_COLORS.border,
-    zIndex: 2,
-    ...SHADOW_SM,
-  },
-  ownedBadge: {
-    position: "absolute",
-    top: SPACE.sm,
-    right: SPACE.sm,
-    width: OWNED_BADGE,
-    height: OWNED_BADGE,
-    borderRadius: RADII.pill,
-    backgroundColor: WHIMSY.sage,
-    borderWidth: BORDER.ink,
-    borderColor: UI_COLORS.border,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-    ...SHADOW_SM,
-  },
-  foot: {
-    flexGrow: 1,
-    justifyContent: "space-between",
-    padding: SPACE.md,
-    gap: SPACE.sm,
-  },
-  // The footer capsule spans the card, so OWNED / SEASON PASS / the price all
-  // share one footprint and the grid never reflows between states.
-  footTag: { alignSelf: "stretch" },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    // Card-to-card gap. Mirrored in the dailyTileW formula — keep the two in
-    // sync (numeric-width Yoga discipline).
-    gap: GRID_GAP,
-    paddingBottom: SPACE.sm,
-  },
-});
 
 export default function ShopScreen() {
   // Catalog data lifecycle (fetch + derived state + reset countdown) lives in
@@ -409,13 +115,29 @@ export default function ShopScreen() {
     wornItems,
     ownedItems,
     dailyIds,
-    buyableIds,
+    buyableIds: catalogBuyableIds,
     refresh,
     setCounter,
     setOwned,
     setActiveTitleId,
     patchActiveIds,
   } = useShopCatalog();
+  // The Pop-up Stall (2026-10-29): its card rides the top of the wall while a
+  // stall is open or boarded, and an open stall's pieces are on sale today
+  // wherever they show (the catalog below, the counter), so they join the one
+  // "today only" gate the screen and the sheet read.
+  const stall = useSeasonalShelf();
+  const stallOpen = stall.phase === "open" && !!stall.shelf;
+  const stallIds = useMemo(
+    () => new Set(stallOpen ? stall.items.map((i) => i.id) : []),
+    [stallOpen, stall.items],
+  );
+  const buyableIds = useMemo(() => {
+    if (stallIds.size === 0) return catalogBuyableIds;
+    const ids = new Set(catalogBuyableIds);
+    for (const id of stallIds) ids.add(id);
+    return ids;
+  }, [catalogBuyableIds, stallIds]);
   const hasCatalogData =
     daily.length > 0 || allItems.length > 0 || owned.size > 0;
   // Wearing implies owning: a dangling equip (the profile points at an item
@@ -454,6 +176,7 @@ export default function ShopScreen() {
     failed: !!error,
     shelfCount: daily.length + membersShelf.length,
     inReach,
+    stallOpen,
   });
   // The store's one scroller, and the two things the screen drives on it: the
   // fold (the hero fitting room scrolled off — the hero pig rests while it is
@@ -672,9 +395,9 @@ export default function ShopScreen() {
 
   // Redesigned Today grid: numeric 2-col tile width (GRID_PAD scroll padding
   // ×2, GRID_GAP between — never %-size grid children; Yoga-quirk discipline).
-  // GRID_GAP MUST equal shopCardStyles.grid.gap.
+  // The formula lives with the card (components/shop/ShopCard gridTileWidth).
   const { width: shopScreenW } = useWindowDimensions();
-  const dailyTileW = Math.floor((shopScreenW - GRID_PAD * 2 - GRID_GAP) / 2);
+  const dailyTileW = gridTileWidth(shopScreenW, GRID_PAD);
   // The wall's grain is drawn to the measured height of the store's content.
   const [wallH, setWallH] = useState(0);
   const stripes = Math.floor(wallH / WALL_STRIPE_PITCH);
@@ -775,6 +498,28 @@ export default function ShopScreen() {
             />
           ))}
         </View>
+        {/* The Pop-up Stall's card hangs at the top of the wall while a
+            stall is open or boarded (B1); no stall, no card. */}
+        {stall.shelf && stallVisible(stall.phase) ? (
+          <View style={styles.stall}>
+            <StallCardSlot
+              shelf={stall.shelf}
+              phase={stall.phase}
+              items={stall.items}
+              now={stall.now}
+              ownedCount={
+                stall.items.filter((i) => i.owned || owned.has(i.id)).length
+              }
+              onPress={() => {
+                if (!stall.shelf) return;
+                router.push({
+                  pathname: "/stall/[key]",
+                  params: { key: stall.shelf.key },
+                });
+              }}
+            />
+          </View>
+        ) : null}
         {doorway}
         <View style={styles.shelves}>
           {daily.length === 0 ? (
@@ -861,19 +606,7 @@ export default function ShopScreen() {
           // The crown is pinned above the one scroller: past the chrome
           // ceiling it stops growing instead of eating the page (106).
           maxFontSizeMultiplier={CHROME_TYPE_CAP}
-          right={
-            <Sticker
-              color="sun"
-              radius={RADII.md}
-              rotate={BALANCE_TILT}
-              accessibilityRole="text"
-              accessibilityLabel={`${counter.toLocaleString()} snouts`}
-              style={styles.balance}
-            >
-              <SnoutCoin size={COIN_MARK} />
-              <Numeral>{counter.toLocaleString()}</Numeral>
-            </Sticker>
-          }
+          right={<SnoutsPocket balance={counter} />}
         />
         {/* The crown's scroll edge (one rule app-wide), there only once
             something has slid under the crown; always laid out. */}
@@ -951,6 +684,18 @@ export default function ShopScreen() {
           // row picks the new Trough up on its next focus.)
           setCounter((c) => newBalance ?? Math.max(0, c - spent));
         }}
+        // A stall piece says how long it stays and asks before it sells
+        // (the Pop-up Stall's grammar, wherever the piece is tapped).
+        windowTag={
+          previewItem && stallIds.has(previewItem.id) && stall.shelf
+            ? leavingLabel(stall.shelf.closesAt, stall.now)
+            : null
+        }
+        buyConfirm={
+          previewItem && stallIds.has(previewItem.id) && stall.shelf
+            ? stallBuyCopy(previewItem, counter, stall.shelf.closesAt, stall.now)
+            : null
+        }
         onClose={() => setPreviewItem(null)}
         onBuy={() => {
           if (previewItem) {
@@ -981,15 +726,6 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: WHIMSY.cream },
   safeArea: { flex: 1 },
-  // Snouts pocket — tilted sun sticker (the redesign's "snouts pocket":
-  // makes the balance feel like a chip you keep, not a system bar).
-  balance: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACE.sm,
-    paddingHorizontal: SPACE.md,
-    paddingVertical: SPACE.sm,
-  },
   // The list area — the store's one scroller.
   listArea: { flex: 1, position: "relative" },
   // The door: chalkboard left, the hanging signs right, on one line under
@@ -1023,6 +759,8 @@ const styles = StyleSheet.create({
     borderColor: UI_COLORS.border,
   },
   room: { position: "relative", paddingTop: SPACE.sm },
+  // The stall card hangs at the top of the wall, above the doorway (B1).
+  stall: { paddingHorizontal: PAGE_PAD, paddingTop: SPACE.card },
   grain: {
     position: "absolute",
     top: 0,

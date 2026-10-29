@@ -26,7 +26,7 @@ import { RADII, SPACE, STICKER_SHADOW, TILT } from "@/constants/theme";
 import { AdaptiveModalScaffold } from "./AdaptiveModalScaffold";
 import { DialogButtonRow, type DialogTone } from "./DialogButtonRow";
 import { Sticker } from "./Sticker";
-import { BodySm, CardTitle } from "./Text";
+import { BodySm, CardTitle, T } from "./Text";
 
 interface Props {
 	open: boolean;
@@ -40,6 +40,9 @@ interface Props {
 	// visible and nothing changes for them.
 	visible?: boolean;
 	title: string;
+	// A line above the title naming the stakes (the stall's buy confirm:
+	// "1,200 snouts · leaves in 6 days"). Optional; every older dialog omits it.
+	kicker?: string;
 	body?: string;
 	confirmLabel: string;
 	confirmCoin?: boolean;
@@ -63,6 +66,7 @@ export function ConfirmDialog({
 	open,
 	visible,
 	title,
+	kicker,
 	body,
 	confirmLabel,
 	confirmCoin,
@@ -97,6 +101,11 @@ export function ConfirmDialog({
 				radius={RADII.xl}
 				style={[styles.card, STICKER_SHADOW]}
 			>
+				{!!kicker && (
+					<T role="kicker" tone="accent" align="center" style={styles.kicker}>
+						{kicker}
+					</T>
+				)}
 				<CardTitle accessibilityRole="header" align="center">
 					{title}
 				</CardTitle>
@@ -132,6 +141,9 @@ const styles = StyleSheet.create({
 	card: {
 		padding: SPACE.card,
 		alignItems: "center",
+	},
+	kicker: {
+		marginBottom: SPACE.xs,
 	},
 	body: {
 		marginTop: SPACE.sm,

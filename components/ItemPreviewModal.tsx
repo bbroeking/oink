@@ -226,6 +226,18 @@ interface Props {
 	// snouts"). `newBalance` comes from the RPC when the server is on
 	// 20260639+; `spent` is the seed for the optimistic fallback.
 	onTroughOpened?: (spent: number, newBalance?: number) => void;
+	// The Pop-up Stall (2026-10-29): how long the piece stays, as a lilac tag
+	// beside its rarity ("leaving in 6 days"). Omitted everywhere else.
+	windowTag?: string | null;
+	// The stall's buy asks first: Buy now opens this ConfirmDialog (inline, so
+	// no second native modal stacks on the sheet) and only its confirm calls
+	// onBuy. Omitted, Buy now buys in one tap as it always has.
+	buyConfirm?: {
+		kicker?: string;
+		title: string;
+		body: string;
+		confirmLabel: string;
+	} | null;
 }
 
 export function ItemPreviewModal({
@@ -245,6 +257,8 @@ export function ItemPreviewModal({
 	onEquip,
 	onUnequip,
 	onTroughOpened,
+	windowTag = null,
+	buyConfirm = null,
 }: Props) {
 	// Unmanaged native Modal (direct-tap from the shop, outside the popup queue):
 	// hold the queue while an item is previewed so a foreground poll can't present
@@ -255,6 +269,10 @@ export function ItemPreviewModal({
 	// player three days — so the seed spend is a DECISION, not a one-tap.
 	// [D-09] (2026-09-11)
 	const [confirmTrough, setConfirmTrough] = useState(false);
+	// Keyed by the piece it asks about, so a different piece (or the sheet
+	// closing) never inherits an open confirm.
+	const [confirmBuyFor, setConfirmBuyFor] = useState<string | null>(null);
+	const confirmBuy = !!item && confirmBuyFor === item.id;
 	const [troughBusy, setTroughBusy] = useState(false);
 	// The frame's inner size, measured: the stage is fitted to it (below)
 	// rather than drawn at 1:1 and cut wherever it overhangs.
@@ -430,12 +448,15 @@ export function ItemPreviewModal({
 					{/* Rarity tag — the rarity's own dark ink on its own light fill,
 					    so "rare" still reads blue. The old saturated badge wrote
 					    paper on a mid-tone and failed AA at all five. [D-02] */}
-					<Tag
-						label={rarityLabel}
-						ink={badge.ink}
-						accessibilityLabel={`${rarity} rarity`}
-						style={[styles.rarityBadge, { backgroundColor: badge.bg }]}
-					/>
+					<View style={styles.tagRow}>
+						<Tag
+							label={rarityLabel}
+							ink={badge.ink}
+							accessibilityLabel={`${rarity} rarity`}
+							style={{ backgroundColor: badge.bg }}
+						/>
+						{windowTag ? <Tag tone="lilac" label={windowTag} /> : null}
+					</View>
 
 					<PageTitle style={styles.itemName}>{item.name}</PageTitle>
 					{item.description && (
@@ -527,7 +548,7 @@ export function ItemPreviewModal({
 								size="md"
 								variant={rarity === "legendary" ? "gold" : "primary"}
 								full
-								onPress={onBuy}
+								onPress={buyConfirm ? () => setConfirmBuyFor(item.id) : onBuy}
 								disabled={busy}
 								loading={busy}
 								accessibilityLabel={`Buy ${item.name} for ${item.cost.toLocaleString()} snouts`}
@@ -566,6 +587,26 @@ export function ItemPreviewModal({
 						</View>
 					)}
 				</Sticker>
+			{buyConfirm ? (
+				<ConfirmDialog
+					open={confirmBuy}
+					presentation="inline"
+					kicker={buyConfirm.kicker}
+					title={buyConfirm.title}
+					body={buyConfirm.body}
+					confirmLabel={buyConfirm.confirmLabel}
+					confirmCoin
+					confirmHint={`Spends ${item.cost.toLocaleString()} snouts and adds this to your closet`}
+					cancelLabel="Not now"
+					cancelHint="Closes this without spending"
+					busy={busy}
+					onCancel={() => setConfirmBuyFor(null)}
+					onConfirm={() => {
+						setConfirmBuyFor(null);
+						onBuy();
+					}}
+				/>
+			) : null}
 			<ConfirmDialog
 				open={confirmTrough}
 				presentation="inline"
@@ -638,8 +679,11 @@ const styles = StyleSheet.create({
 		width: "100%",
 		height: "100%",
 	},
-	rarityBadge: {
-		alignSelf: "flex-start",
+	tagRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: SPACE.sm,
 		marginBottom: SPACE.sm,
 	},
 	itemName: {
