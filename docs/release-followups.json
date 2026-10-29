@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-13T01:23:09.350Z",
+  "updatedAt": "2026-10-14T23:14:35.024Z",
   "items": [
     {
       "id": "sounder-capacity-eight",
@@ -498,10 +498,10 @@
         "Check VoiceOver, large text, Reduce Motion, frame pacing and repeated-session memory",
         "Confirm packaged scene assets and existing reward visibility match the approved Living Mud Patch direction"
       ],
-      "status": "queued",
+      "status": "included",
       "queuedAt": "2026-09-12T23:02:50.570Z",
-      "build": null,
-      "releaseVersion": null,
+      "build": 183,
+      "releaseVersion": "1.3",
       "releasedAt": null,
       "notifiedAt": null
     },
@@ -520,6 +520,358 @@
       "queuedAt": "2026-09-13T00:58:19.891Z",
       "build": 182,
       "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "weekday-rituals",
+      "title": "Verify weekday cosmetic rituals in production",
+      "summary": "Build 184 replaces gameplay-affecting blessings and curses with a server-selected seven-day cosmetic rotation, six-hour effects, visitor presentation, and migrated Field Guide state.",
+      "owner": "Brian",
+      "checks": [
+        "Cast blessings and curses across a UTC day boundary and confirm the server-selected weekday kinds and six-hour expiry",
+        "Confirm rituals never change regeneration, Lucky Pig odds, Tickles, Snouts, or tap success",
+        "Verify host, visitor, friend portrait, Reduce Motion, legacy-effect naming, and block/privacy behavior on the public build"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:07.337Z",
+      "build": 184,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "snout-deep-loose-pouch",
+      "title": "Verify Snout Deep loose-pouch accounting",
+      "summary": "Build 184 adds server-authoritative loose finds that remain at stake during Snout Deep until the player ties off, while a wake forfeits every unbanked item.",
+      "owner": "Brian",
+      "checks": [
+        "Collect loose items, tie off, and confirm each item is granted exactly once in the final receipt",
+        "Wake the Hungerer with loose items and confirm all unbanked items are lost with no stale grant after retry",
+        "Retry, relaunch, and reconcile a submitted receipt without duplicating or losing banked rewards"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:07.707Z",
+      "build": 184,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "satchel-finds-and-wishes",
+      "title": "Verify Satchel finds, wishes, and delivery rewards",
+      "summary": "Build 186 adds server-rolled Dig finds, private Satchel inventory, rotating pig wishes, idempotent friend deliveries, flat bilateral Tickles, keepsake milestones, and while-away notices.",
+      "owner": "Brian",
+      "checks": [
+        "Complete ordinary and Snout Deep digs and confirm receipt finds, inventory caps, and retry idempotency",
+        "Reroll and fulfil wishes between two real accounts and confirm the item moves once, both pigs receive exactly three Tickles, and the wish advances",
+        "Verify toss, discovery silhouettes, delivery totals, keepsake thresholds, block/privacy rules, and while-away copy"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:08.075Z",
+      "build": 186,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "satchel-swaps",
+      "title": "Verify Satchel swaps and provenance",
+      "summary": "Build 191 replaces one-way delivery storage with a provenance-preserving swap ledger, moves shelf items into the Satchel, and enforces one paid exchange per pair and wish.",
+      "owner": "Brian",
+      "checks": [
+        "Swap and gift finds between two friends and confirm both inventories, provenance, wishes, receipts, and three-Tickle rewards agree",
+        "Retry the same nonce and attempt concurrent, stale-wish, blocked, non-friend, full-bag, and daily-repeat cases without duplicate movement or rewards",
+        "Confirm migrated shelf items remain owned, the Field Guide Satchel page unlocks, and private ledger data stays isolated"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:08.438Z",
+      "build": 191,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "snout-deep-sniff-attention",
+      "title": "Verify Snout Deep sniff attention budget",
+      "summary": "Build 192 aligns client and server on five free sniffs followed by increasing Hungerer attention, with live odds, reset behavior, and authoritative wake outcomes.",
+      "owner": "Brian",
+      "checks": [
+        "Use five free sniffs and confirm the displayed budget and server receipt agree",
+        "Sniff beyond the free budget and confirm attention rises at the published odds without client/server divergence",
+        "Tie off, dig deeper, wake, retry, and resume sessions while preserving loose-pouch and reward accounting"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:08.813Z",
+      "build": 192,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "pig-errands",
+      "title": "Verify Pig Errands and return claims",
+      "summary": "Build 193 adds daily server-authoritative pig errands, away-state effects, scheduled return pushes, durable claim recovery, and Satchel give-or-keep settlement.",
+      "owner": "Brian",
+      "checks": [
+        "Send Rosie and an eligible companion on errands and verify daily limits, local-day handling, away Barn behavior, recall, and board capacity",
+        "Confirm scheduled and lazy returns produce at most one push and each return can be claimed exactly once after retry or relaunch",
+        "Give and keep successful finds and verify Satchel provenance, moved wishes, bilateral Tickles, refusal recovery, and private friend visibility"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:09.185Z",
+      "build": 193,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "trader-tickle-payout",
+      "title": "Verify Trader Tickles replace Snout payouts",
+      "summary": "The migration present by build 195 changes Trader settlement from Snouts to Tickles and requires production wallet and receipt verification.",
+      "owner": "Brian",
+      "checks": [
+        "Complete each available Trader settlement path and confirm the displayed and applied reward is Tickles, never Snouts",
+        "Retry or reopen a completed trade and confirm the payout is granted once with stable receipt history",
+        "Compare player counters and production receipts before and after settlement and check for legacy Snout payout anomalies"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:09.556Z",
+      "build": 195,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "monday-drum-draw",
+      "title": "Verify Monday Drum draws and retired race behavior",
+      "summary": "Build 196 replaces the herd race and Dig-Off settlement with per-player Drum balls, best-of-N purse draws, perfect-week awards, Monday pushes, and compatibility stubs for older clients.",
+      "owner": "Brian",
+      "checks": [
+        "Accumulate balls across player-local Feedings and confirm caps, odds, countdowns, perfect-week awards, and timezone boundaries",
+        "Draw once after Monday turn and confirm best-of-N rolls, one idempotent payout, receipt history, and symbolicated errors",
+        "Verify the Monday push routes to Draw and old clients remain safe through compatibility RPCs while race and Dig-Off sweeps stay retired and pay nobody"
+      ],
+      "status": "included",
+      "queuedAt": "2026-10-03T16:24:09.927Z",
+      "build": 196,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "endless-wallow",
+      "title": "Verify endless Wallow ranks and prizes",
+      "summary": "First packaged in local build 197 (v1.3): endless Wallow ranks, six regalia grants, W7+ receipts and migration back-pay, aura stages, keepsakes, and currency prizes. Deferred from the selected public v1.3 build 196; keep queued and reassign to the future store release that actually contains it.",
+      "owner": "Brian",
+      "checks": [
+        "After a containing public build and required migration ship, verify W7+ back-pay and new-rank grants are complete and idempotent",
+        "Confirm Truffles, Motes, keepsakes, aura stages, wallet revisions, and prize receipts match the rank rule",
+        "Verify Marsh Wreath re-slotting, rank visibility, regalia ownership, removed decor-rank grants, and old/new client compatibility"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-03T16:24:10.302Z",
+      "build": 197,
+      "releaseVersion": "1.3",
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "drum-drop-race-tables",
+      "title": "Retire obsolete race and Dig-Off storage after client retirement",
+      "summary": "Build 196 leaves legacy race, Dig-Off, herd-prize tables and compatibility RPC stubs in place for shipped clients; remove them only after production telemetry proves no supported client still calls them.",
+      "owner": "Brian",
+      "checks": [
+        "Confirm supported-client adoption and production telemetry show no calls to the legacy race, Dig-Off, herd-prize, or compatibility RPC paths",
+        "Review retention and rollback needs, then author and test a forward cleanup migration without changing active Drum history",
+        "After separately authorized deployment, verify Drum draws and older retained receipts remain intact and regenerate database types"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-03T16:24:10.492Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "matchmade-play",
+      "title": "Open matchmade play after the server, database and links are live",
+      "summary": "Five live and play-by-push games (Rootle, Fence the Pen, Mud Volley, Snout Says, Out Looking), random matchmaking, invites by link, push and Sounder, and a wins-only monthly board, served by the Render play server; dark behind the multiplayer flag (is_test on).",
+      "owner": "Brian",
+      "checks": [
+        "Push 20261004230000_matchmade_play.sql on the founder's go and regenerate utils/database.types.ts",
+        "Create the Render service from render.yaml (Ohio, paid instance), set SUPABASE_SECRET_KEY and SUPABASE_JWT_SECRET, confirm /healthz, then set app_settings.multiplayer.url to the wss URL",
+        "Deploy landing/ (AASA /play/*, the /play/:code rewrite, play/index.html) at least 24 h before testers get the build; confirm Apple's CDN lists /play/*",
+        "Two test accounts on two devices: queue match, rematch, direct invite push, link invite, a 10 s background resume, a 30 s drop forfeit, a play-by-push open seat, the wins board",
+        "Flip app_config.multiplayer on only after the playtest metrics read well"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-04T18:05:56.476Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "catalog-copy-polish",
+      "title": "Push the catalog copy polish",
+      "summary": "Title and achievement descriptions lose em dashes, write 1,000 for 1000, stop naming the retired Dig-Off and stop calling friends a sounder.",
+      "owner": "Brian",
+      "checks": [
+        "Push 20261004231000_catalog_copy_polish.sql on the founder's go",
+        "Spot-check the titles picker (World Cup titles read 'World Cup 2026: represent …') and the achievements list (Hog of Hearts reads 1,000)"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-04T18:05:56.508Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "account-deletion-referral-cleanup",
+      "title": "Verify account deletion with surviving referred players",
+      "summary": "Referral foreign key now clears the deleted referrer link so in-app account deletion succeeds while referred players keep their accounts; verify the public build and backend together.",
+      "owner": "Brian",
+      "checks": [
+        "On an explicitly disposable public-store test account with a surviving referee, verify in-app deletion removes the deleting account and clears its referral reference",
+        "Verify the referee can still sign in and retains profile and gameplay state",
+        "Check account-deletion error reports and privacy-policy consistency after release"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-04T20:13:46.021Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "collectible-card-prototype",
+      "title": "Collectible cards and Hedge Run pilot",
+      "summary": "Adds a development-only card opening, album, Rive asset and deterministic Hedge Run prototype. Production enablement still needs atomic server integration, exact native asset acceptance and economy approval.",
+      "owner": "Brian",
+      "checks": [
+        "Verify five-card receipts are atomic and idempotent before enabling any real grants",
+        "Verify exact Rive export on installed iOS and Android runtimes with reduced motion and fallback",
+        "Playtest 2–3 minute Hedge Run sessions and concealed named-friend results",
+        "Confirm repeat cadence and foil goal progress preserve every owned copy"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-13T16:23:07.385Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "pig-accessory-frame-attachment",
+      "title": "Verify equipped pig items after release",
+      "summary": "PigStage now owns atomic sprite and equipment playback; six-pig crown calibration replaces shared head-edge anchors and stabilizes hat size across expression frames.",
+      "owner": "Brian",
+      "checks": [
+        "Equip rigid, tall, side-art and legacy hats on all six pigs at normal size; verify idle, jump, wave, seated turn, mirroring and loop/transition seams.",
+        "Verify hat plus bow, glasses or mask, neckwear and held-item loadouts together, including Mote machine and visits.",
+        "Recheck the documented Aurora hood, astronaut helmet and Hungerer crown artwork exceptions; confirm no new clipping or alignment regressions."
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-14T16:00:25.216Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "seasonal-card-cosmetic-unlocks",
+      "title": "Verify seasonal card cosmetic unlocks after release",
+      "summary": "Seasonal card ownership and opening receipts grant matching cosmetics and backgrounds atomically, with replay protection and a draft Halloween collection.",
+      "owner": "Brian",
+      "checks": [
+        "Open a newly earned seasonal pack and confirm matching first-copy cosmetics and backgrounds appear in the Closet on a second device.",
+        "Replay and concurrently open the same pack; verify identical receipt contents and no duplicate cosmetic or inventory credits.",
+        "Open a repeat card and verify card quantity increases while the item remains owned once; confirm expired collection ownership stays permanent.",
+        "Verify only eligible server-earned pack grants can be opened, and users cannot inspect or consume another account pack.",
+        "Before activating Halloween, verify final front/profile artwork for all six pigs and every animation at normal size."
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-14T16:55:30.550Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "halloween-fullbody-and-card-exchange",
+      "title": "Halloween costumes and seasonal card exchange",
+      "summary": "Isolated local exchange demo and full-body mask feasibility study. Production requires dedicated costume entitlements, complete six-pig fitted masks, authenticated atomic card exchange and cross-device receipts.",
+      "owner": "Brian",
+      "checks": [
+        "Verify six pigs and all animation frames at 300px, loop transitions and equipment hide/restore",
+        "Verify exact-finish spare-copy exchange, both confirmations, cancellation, expiry and atomic server commit",
+        "Verify permanent cosmetic ownership and replay across devices, blocked users and account deletion",
+        "Verify Spook is cosmetic and does not change score, currency or streak"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-14T20:31:48.333Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "halloween-personal-wearable-trader",
+      "title": "Personal Halloween wearable errands",
+      "summary": "Old Wisp daily per-player wanted garments, actual wearable swaps with friends, and consumption for earned Tickles. Local prototype only; requires instance ownership and atomic server redemption before rollout.",
+      "owner": "Brian",
+      "checks": [
+        "Verify request stable per user and local day across cohort changes and devices",
+        "Verify mutually confirmed wearable exchanges conserve ownership and clear stale confirmations",
+        "Verify handover removes usable garment, preserves historical card discovery and cannot be reminted by replay",
+        "Verify one daily reward, idempotent retries, earned provenance, equipped-item removal and tuned economy on the installed build"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-14T21:58:11.674Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "halloween-fitted-costume-expansion",
+      "title": "Five more fitted Halloween costumes",
+      "summary": "Five new costume cards and transparent Rosie idle garment layers with a saved ownership-gated fitting room and five-card local packet; production activation remains gated.",
+      "owner": "Brian",
+      "checks": [
+        "Verify all six costume first grants and replay after the live ownership contract exists",
+        "Verify locked previews never grant or equip",
+        "Verify Take off restores source appearance and saved modular equipment",
+        "Verify all pig poses and native device fit before production activation",
+        "Verify 040-044 mappings and all44 card art survive season updates"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-14T22:32:02.510Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "halloween-one-time-login-gift",
+      "title": "Five new Halloween costumes and one-time login gift",
+      "summary": "Adds costume cards 045–049, layered Rosie front-idle fits, server-owned single random costume receipt, and authenticated queued reveal/ack UI. Campaign and costume catalog remain inactive pending reviewed migration and exact-binary acceptance.",
+      "owner": "Brian",
+      "checks": [
+        "One instance and one discovery after concurrent claims and second-device replay",
+        "Account isolation and receipt-bound acknowledgement",
+        "Later/relaunch preserves the same gift; Continue does not equip",
+        "Native Closet/Home/Barn/Visit ownership and accepted pose fit",
+        "Old builds and absent/inactive schema receive no gift",
+        "Activate only after accepted public binary and explicit owner go",
+        "Single-page 49-item gallery and all eleven Rosie front-idle costumes retain shared source-frame playback, pause/resume and reduced-motion inspection"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-14T23:14:35.023Z",
+      "build": null,
+      "releaseVersion": null,
       "releasedAt": null,
       "notifiedAt": null
     }
