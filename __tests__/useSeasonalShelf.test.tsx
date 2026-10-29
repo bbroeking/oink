@@ -10,7 +10,8 @@ jest.mock("expo-router/react-navigation", () => ({
 }));
 
 import { stallVisible, useSeasonalShelf, type UseSeasonalShelf } from "@/hooks/useSeasonalShelf";
-import { DAY_MS } from "@/utils/shelfCountdown";
+import { parseSeasonalShelf } from "@/utils/seasonalShelf";
+import { DAY_MS, leavingLabel } from "@/utils/shelfCountdown";
 
 function Probe({ onCommit }: { onCommit: (v: UseSeasonalShelf) => void }) {
 	const value = useSeasonalShelf();
@@ -115,6 +116,34 @@ describe("useSeasonalShelf", () => {
 		mockRpc.mockResolvedValue(payload({ now: new Date(realNow - 2 * DAY_MS).toISOString() }));
 		const h = await mount();
 		expect(Math.abs(h.value.now - (realNow - 2 * DAY_MS))).toBeLessThan(5_000);
+		h.unmount();
+	});
+
+	it("shows a previewed dark stall (preview: true, synthetic window) exactly like an open one", async () => {
+		// 20261029250000: feature_overrides.shelf_preview hands one account its
+		// dark shelf as open, opens_at = now - 1 day, closes_at = now + 14 days.
+		const now = Date.now();
+		const open = payload({
+			opens_at: new Date(now - DAY_MS).toISOString(),
+			closes_at: new Date(now + 14 * DAY_MS).toISOString(),
+			items: [
+				{ id: "moonbrew_witch_hat", name: "Moonbrew Witch Hat", cost: 1600, category: "hat", shelf_lane: "new", owned: false },
+				{ id: "candy_lantern_trail_bg", name: "Candy Lantern Trail", cost: 900, category: "background", shelf_lane: "new", owned: false },
+				{ id: "halloween_2026_count_snout_costume", name: "Count Snout", cost: 2400, category: "costume", shelf_lane: "new", owned: false },
+			],
+		});
+		mockRpc.mockResolvedValue({ ...open, preview: true });
+		const h = await mount();
+		expect(h.value.phase).toBe("open");
+		expect(stallVisible(h.value.phase)).toBe(true);
+		expect(leavingLabel(h.value.shelf!.closesAt, h.value.now)).toBe("leaving in 14 days");
+		expect(h.value.items.map((i) => i.id)).toEqual([
+			"moonbrew_witch_hat",
+			"candy_lantern_trail_bg",
+			"halloween_2026_count_snout_costume",
+		]);
+		// The extra key changes nothing: the stall parses as the same open stall.
+		expect(h.value.shelf).toEqual(parseSeasonalShelf(open));
 		h.unmount();
 	});
 
