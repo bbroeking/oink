@@ -345,6 +345,10 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/00ze_shelf_preview_prep.sql \
 		supabase/migrations/20261029250000_shelf_preview_override.sql \
 		scripts/db-harness/A6_shelf_preview_smoke.sql \
+		scripts/db-harness/00zf_great_hunger_ends_prep.sql \
+		supabase/migrations/20261029260000_great_hunger_ends_nov9.sql \
+		supabase/migrations/20261029260000_great_hunger_ends_nov9.sql \
+		scripts/db-harness/A7_great_hunger_ends_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 
