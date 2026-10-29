@@ -114,12 +114,12 @@ ON CONFLICT (id) DO NOTHING;
 -- ── 2. Titles (earn-only; ids = title_id_from_name(name)) ────────────────────
 INSERT INTO public.titles (id, name, placement, description, source, for_sale, display_order)
 VALUES
-	('trencherman',       'Trencherman',       'pre',  'Ate a hearty share at the long table.',     'season', false, 506),
-	('of_the_long_table', 'Of the Long Table', 'post', 'Had a seat saved at the Feast.',            'season', false, 507),
-	('larder_keeper',     'Larder Keeper',     'pre',  'Kept the Larder full all winter.',          'season', false, 508),
-	('second_helpings',   'Second Helpings',   'post', 'Went back for more, and nobody minded.',    'season', false, 509),
-	('the_well_rested',   'The Well-Rested',   'post', 'Napped off the Feast in the warm hay.',     'season', false, 510),
-	('feast_bringer',     'Feast-Bringer',     'post', 'Carried the last truffle to the table.',    'season', false, 511)
+	('trencherman',       'Trencherman',       'pre',  'Ate a hearty share at the long table.',     'season', false, 512),
+	('of_the_long_table', 'Of the Long Table', 'post', 'Had a seat saved at the Feast.',            'season', false, 513),
+	('larder_keeper',     'Larder Keeper',     'pre',  'Kept the Larder full all winter.',          'season', false, 514),
+	('second_helpings',   'Second Helpings',   'post', 'Went back for more, and nobody minded.',    'season', false, 515),
+	('the_well_rested',   'The Well-Rested',   'post', 'Napped off the Feast in the warm hay.',     'season', false, 516),
+	('feast_bringer',     'Feast-Bringer',     'post', 'Carried the last truffle to the table.',    'season', false, 517)
 ON CONFLICT (id) DO NOTHING;
 
 
@@ -195,7 +195,9 @@ $function$;
 UPDATE public.profiles
 	SET feature_overrides = COALESCE(feature_overrides, '{}'::jsonb)
 		|| '{"season_preview": "snout_season_2"}'::jsonb
-	WHERE lower(username) = 'brian';
+	-- One account, never a namesake: (username, discriminator) is the unique key
+	-- (20260520000000); the 20260604000000 precedent.
+	WHERE username = 'Brian' AND discriminator = '4075' AND is_test = true;
 
 
 -- ── 5. hunger_meter(): the season baseline ───────────────────────────────────
@@ -679,7 +681,8 @@ BEGIN
 			p_at
 		FROM public.user_items ui JOIN auth.users u ON u.id = ui.user_id;
 		UPDATE public.user_items ui
-			SET item_count = 0, last_increment = p_at, regen_progress = 0
+			-- now(), not p_at: a backdated flip must not re-credit regen since p_at.
+			SET item_count = 0, last_increment = now(), regen_progress = 0
 			FROM public.season_reset_archive a
 			WHERE a.user_id = ui.user_id AND a.season_id = 'snout_season_2' AND a.kind = 'tickle_bank';
 		GET DIAGNOSTICS n_bank = ROW_COUNT;
@@ -707,9 +710,15 @@ BEGIN
 			jsonb_agg(to_jsonb(si) ORDER BY si.id), p_at
 		FROM public.satchel_items si JOIN auth.users u ON u.id = si.user_id
 		GROUP BY si.user_id;
-		DELETE FROM public.satchel_items si
-			USING public.season_reset_archive a
-			WHERE a.user_id = si.user_id AND a.season_id = 'snout_season_2' AND a.kind = 'satchel';
+		-- Delete exactly the archived rows, by id: FOR UPDATE does not block an
+		-- INSERT, so a find that lands mid-flip stays in the bag rather than
+		-- being wiped without an archive copy.
+		DELETE FROM public.satchel_items
+			WHERE id IN (
+				SELECT (r ->> 'id')::bigint
+				FROM public.season_reset_archive a,
+					jsonb_array_elements(a.payload) r
+				WHERE a.season_id = 'snout_season_2' AND a.kind = 'satchel');
 		GET DIAGNOSTICS n_satchel = ROW_COUNT;
 	END IF;
 
@@ -805,7 +814,10 @@ BEGIN
 
 	-- 4. The bank, the snouts, the Satchel.
 	UPDATE public.user_items ui
-		SET item_count = ui.item_count + GREATEST(0, (a.payload ->> 'balance')::int)
+		-- The bank is capped and regenerates, so restoring is GREATEST, not a sum
+		-- (a sum pushed a player past the cap in review). Snouts and finds stay
+		-- additive below: they don't regenerate.
+		SET item_count = GREATEST(ui.item_count, GREATEST(0, (a.payload ->> 'balance')::int))
 		FROM public.season_reset_archive a
 		WHERE a.user_id = ui.user_id AND a.season_id = 'snout_season_2' AND a.kind = 'tickle_bank';
 	GET DIAGNOSTICS n_bank = ROW_COUNT;
