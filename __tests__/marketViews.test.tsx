@@ -153,6 +153,7 @@ describe("Bullion's Market screens", () => {
 				sheepHere={false}
 				nowMs={NOW_MS}
 				weekdayOf={() => "Thu"}
+				isDayStart={() => false}
 				ticksPerDay={48}
 				onTake={jest.fn()}
 				onOpen={jest.fn()}
@@ -253,13 +254,13 @@ describe("Bullion's Market receipts", () => {
 	const trade = (raw: Record<string, unknown>) => toMarketTrade({ id: 1, find_id: "pinecone", qty: 4, tick: 1, at: "x", ...raw }) as MarketTrade;
 
 	it("tells a counter sale with its cost and the move", () => {
-		const r = tradeReceipt(trade({ kind: "counter", side: "sell", price: 9, from: 12, to: 11.64, seller: { id: "me", you: true } }), 4);
+		const r = tradeReceipt(trade({ kind: "counter", side: "sell", price: 9, from: 12, to: 11.64, seller: { id: "me", you: true } }));
 		expect(r.title).toBe("Bullion bought your 4 pinecones for 9");
 		expect(r.line).toBe("you dug them up · +9 · the price went 12 → 11.6");
 	});
 
 	it("ribbons a pig sale that beat the counter", () => {
-		const r = tradeReceipt(trade({ kind: "pig", how: "listing", price: 12, bid: 9, ask: 15, seller: { id: "me", you: true }, buyer: { id: "maya", name: "Maya", friend: true } }), 4);
+		const r = tradeReceipt(trade({ kind: "pig", how: "listing", price: 12, bid: 9, ask: 15, seller: { id: "me", you: true }, buyer: { id: "maya", name: "Maya", friend: true } }));
 		expect(r.ribbon).toBe("beat the counter");
 		expect(r.line).toBe("Bullion would have paid 9 · +3 for listing it");
 	});
@@ -267,5 +268,43 @@ describe("Bullion's Market receipts", () => {
 	it("shrugs a refusal", () => {
 		const r = refusalReceipt({ ok: false, reason: "price_moved", now: 8, ready: null, needed: null, held: null, setSize: null }, "pinecone", 4, 30);
 		expect(r).toMatchObject({ pose: "shrug", title: "The price moved", line: "It's 8 now. Take another look." });
+	});
+});
+
+describe("Bullion's Market audit regressions", () => {
+	it("sizes a notice from the server's own qty, not a default", () => {
+		const { noticeReceipt, bullionSays } = jest.requireActual("@/components/market/marketCopy");
+		const r = noticeReceipt({
+			id: 1,
+			kind: "expired",
+			offer: { id: 9, findId: "tin_whistle", side: "sell", price: 70, qty: 3, targetId: null, wantFindId: null, wantQty: null, createdAt: "", expiresAt: "", status: "expired" },
+			trade: null,
+		});
+		expect(r.title).toBe("Your 3 tin whistles came home");
+		expect(bullionSays(0, { findId: "pinecone", sets: 1, lo: 11, hi: 12 })).toContain("1 set, the price");
+	});
+
+	it("queues receipts, holds them under a sheet, and drops none", () => {
+		const { useReceipts } = jest.requireActual("@/components/market/ReceiptStack");
+		let api: { shown: { title: string }[]; push: (r: unknown) => void; dismiss: (id: number) => void } | null = null;
+		function Probe({ held }: { held: boolean }) {
+			api = useReceipts(held);
+			return null;
+		}
+		const r = render(<Probe held />);
+		act(() => {
+			for (let i = 1; i <= 5; i++) api!.push({ pose: "stand", title: `n${i}`, tone: "plain" });
+		});
+		expect(api!.shown).toHaveLength(0);
+		act(() => r.update(<SafeAreaProvider initialMetrics={METRICS}><Probe held={false} /></SafeAreaProvider>));
+		expect(api!.shown.map((x) => x.title).sort()).toEqual(["n1", "n2", "n3"]);
+		act(() => api!.dismiss((api!.shown[0] as unknown as { id: number }).id));
+		expect(api!.shown).toHaveLength(3);
+	});
+
+	it("locks a wanted ad whose pig can't pay", () => {
+		const s = toMarketState({ ...RAW, board: [{ ...RAW.board[1], poster_coin_ok: false }] });
+		const r = render(<BoardView state={s} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={jest.fn()} onCancel={jest.fn()} busyId={null} />);
+		expect(textOf(r)).toContain("can't pay right now");
 	});
 });

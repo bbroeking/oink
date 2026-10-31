@@ -14,7 +14,7 @@
 // then a nudge to their first sale at the counter.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -42,33 +42,32 @@ import {
 	type PostDraft,
 } from "@/components/market/MarketSheets";
 import { ReceiptStack, useReceipts } from "@/components/market/ReceiptStack";
-import { movedMoment, noticeReceipt, refusalReceipt, tradeReceipt } from "@/components/market/marketCopy";
+import { movedMoment, noticeReceipt, refusalReceipt, tradeReceipt, type MarketReceipt } from "@/components/market/marketCopy";
 import { useMarket } from "@/hooks/useMarket";
 import { useTrader } from "@/hooks/useTrader";
-import { holdingOf, setsOf, type BoardCard, type MarketFindView, type MarketNotice, type MarketOutcome } from "@/utils/market";
+import { holdingOf, newMarketNonce, setsOf, type BoardCard, type MarketFindView, type MarketNotice, type MarketOutcome } from "@/utils/market";
 
 type Place = "home" | "counter" | "find" | "board";
 
 const ONBOARDED_KEY = "ttp.market.onboarded";
 const MOVED_KEY = "ttp.market.moment.moved";
 const SAY_TURN_MS = 12_000;
+// The confirm sheet's slide-out, before the post sheet slides in.
+const POST_AFTER_CONFIRM_MS = 350;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function MarketScreen() {
 	const insets = useSafeAreaInsets();
 	const scrollPad = useStackScrollPad();
-	const receipts = useReceipts();
-	const sizeOfRef = useRef<(id: SatchelFindId) => number>(() => 4);
-
-	const onNotices = useCallback(
-		(ns: MarketNotice[]) => {
-			for (const n of ns) {
-				const r = noticeReceipt(n, sizeOfRef.current);
-				if (r) receipts.push(r);
-			}
-		},
-		[receipts],
-	);
+	// Notices arrive from the hook's read; the receipt queue is declared below
+	// (it holds while a sheet is open), so they reach it through a ref.
+	const pushRef = useRef<(r: MarketReceipt) => void>(() => {});
+	const onNotices = useCallback((ns: MarketNotice[]) => {
+		for (const n of ns) {
+			const r = noticeReceipt(n);
+			if (r) pushRef.current(r);
+		}
+	}, []);
 	const market = useMarket({ onNotices });
 	const trader = useTrader();
 	const state = market.state;
@@ -89,11 +88,16 @@ export default function MarketScreen() {
 	const [busyId, setBusyId] = useState<number | null>(null);
 	const [sayTurn, setSayTurn] = useState(0);
 	const [nowMs, setNowMs] = useState(() => Date.now());
+	const [barH, setBarH] = useState(0);
 	const scrollRef = useRef<ScrollView>(null);
-
+	// The in-route stack, readable outside a state updater (navigation side
+	// effects must never run inside one).
+	const stackRef = useRef(stack);
 	useEffect(() => {
-		if (state) sizeOfRef.current = (id) => state.finds.find((f) => f.id === id)?.size ?? 4;
-	}, [state]);
+		stackRef.current = stack;
+	}, [stack]);
+	// One nonce per confirm / post sheet: a double tap or a retry is the same trade.
+	const nonceRef = useRef<string>(newMarketNonce());
 
 	// First visit: the three cards.
 	useEffect(() => {
@@ -110,6 +114,13 @@ export default function MarketScreen() {
 	// now" for this visit), and again from "How does the market work?".
 	const [obSkipped, setObSkipped] = useState(false);
 	const showOb = obOpen || (onboarded === false && state != null && !obSkipped);
+
+	// Receipts wait while any sheet covers the screen.
+	const sheetOpen = confirm != null || draft != null || bagOpen || showOb;
+	const receipts = useReceipts(sheetOpen);
+	useEffect(() => {
+		pushRef.current = receipts.push;
+	}, [receipts.push]);
 
 	// Bullion turns his line, and the board's clocks tick.
 	useEffect(() => {
@@ -140,14 +151,21 @@ export default function MarketScreen() {
 		scrollRef.current?.scrollTo({ y: 0, animated: false });
 	}, []);
 	const back = useCallback(() => {
-		setStack((s) => {
-			if (s.length <= 1) {
-				router.back();
-				return s;
-			}
-			return s.slice(0, -1);
-		});
+		if (stackRef.current.length <= 1) router.back();
+		else setStack((s) => s.slice(0, -1));
 	}, []);
+	// The edge swipe and Android's back walk the in-route stack first; only
+	// from the market home do they leave the market.
+	const navigation = useNavigation();
+	useEffect(
+		() =>
+			navigation.addListener("beforeRemove", (e) => {
+				if (stackRef.current.length <= 1) return;
+				e.preventDefault();
+				setStack((s) => s.slice(0, -1));
+			}),
+		[navigation],
+	);
 	const openFind = useCallback(
 		(id: SatchelFindId) => {
 			setFindId(id);
@@ -160,12 +178,16 @@ export default function MarketScreen() {
 
 	// The Ghost Sheep: what he fancies (only once he is here) and what he pays.
 	const fancy = trader.present ? (trader.status.visit?.wantFindId ?? null) : null;
-	const sheepEach = useMemo(() => {
-		const f = state?.finds.find((x) => x.id === findId);
-		if (!f || !trader.available) return null;
-		const base = trader.status.tuning.prices[f.rarity];
-		return fancy === f.id ? Math.floor(base * trader.status.tuning.wantMultiplier) : base;
-	}, [state, findId, trader.available, trader.status, fancy]);
+	const sheepEachFor = useCallback(
+		(id: SatchelFindId): number | null => {
+			const f = state?.finds.find((x) => x.id === id);
+			if (!f || !trader.available) return null;
+			const base = trader.status.tuning.prices[f.rarity];
+			return fancy === f.id ? Math.floor(base * trader.status.tuning.wantMultiplier) : base;
+		},
+		[state, trader.available, trader.status, fancy],
+	);
+	const sheepEach = useMemo(() => sheepEachFor(findId), [sheepEachFor, findId]);
 
 	// ── Writes ──
 	const answer = useCallback(
@@ -178,10 +200,10 @@ export default function MarketScreen() {
 			}
 			void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 			if (res.trade) {
-				const size = sizeOfRef.current(res.trade.findId);
+				const each = sheepEachFor(res.trade.findId);
 				const sheepPays =
-					trader.present && fancy === res.trade.findId && res.trade.buyer?.you && sheepEach != null ? sheepEach * size : null;
-				receipts.push(tradeReceipt(res.trade, size, sheepPays));
+					trader.present && fancy === res.trade.findId && res.trade.buyer?.you && each != null ? each * res.trade.qty : null;
+				receipts.push(tradeReceipt(res.trade, sheepPays));
 				if (res.trade.kind === "counter" || res.trade.kind === "pig") {
 					const seen = await AsyncStorage.getItem(MOVED_KEY);
 					if (seen !== "1") {
@@ -202,13 +224,13 @@ export default function MarketScreen() {
 				});
 			}
 		},
-		[state, receipts, trader.present, fancy, sheepEach],
+		[state, receipts, trader.present, fancy, sheepEachFor],
 	);
 
 	const doCounter = useCallback(
 		async (id: SatchelFindId, side: "buy" | "sell", limit: number) => {
 			setBusy(true);
-			const res = await market.counter(id, side, limit);
+			const res = await market.counter(id, side, limit, nonceRef.current);
 			setBusy(false);
 			setConfirm(null);
 			await answer(res, id);
@@ -218,7 +240,7 @@ export default function MarketScreen() {
 	const doTake = useCallback(
 		async (card: BoardCard) => {
 			setBusy(true);
-			const res = await market.take(card.id, card.side === "sell" ? card.price : null);
+			const res = await market.take(card.id, card.side === "sell" ? card.price : null, nonceRef.current);
 			setBusy(false);
 			setConfirm(null);
 			await answer(res, card.side === "swap" ? card.wantFindId : card.findId);
@@ -234,20 +256,34 @@ export default function MarketScreen() {
 		},
 		[market, receipts],
 	);
+	// A fresh nonce for every sheet that can trade.
+	const openConfirm = useCallback((t: ConfirmTarget) => {
+		nonceRef.current = newMarketNonce();
+		setConfirm(t);
+	}, []);
 	const openPost = useCallback(
 		(side: "sell" | "buy" | "swap", id: SatchelFindId) => {
 			if (!state) return;
-			setConfirm(null);
-			setPostError(null);
-			setDraft(newDraft(state, side, id, draft));
+			const next = newDraft(state, side, id, draft);
+			const show = () => {
+				nonceRef.current = newMarketNonce();
+				setPostError(null);
+				setDraft(next);
+			};
+			// From the confirm sheet: let its native Modal finish leaving before
+			// the post sheet's presents (iOS drops a Modal shown mid-dismiss).
+			if (confirm) {
+				setConfirm(null);
+				setTimeout(show, POST_AFTER_CONFIRM_MS);
+			} else show();
 		},
-		[state, draft],
+		[state, draft, confirm],
 	);
 	const doPost = useCallback(
 		async (spec: Parameters<typeof market.post>[0]) => {
 			if (!state) return;
 			setBusy(true);
-			const res = await market.post(spec);
+			const res = await market.post(spec, nonceRef.current);
 			setBusy(false);
 			if (!res.ok) {
 				const r = refusalReceipt(res, spec.findId, state.tuning.openOffers, state.tuning.dailyPosts);
@@ -261,11 +297,13 @@ export default function MarketScreen() {
 		[market, state, answer],
 	);
 	const finishOnboarding = useCallback(() => {
+		const firstTime = onboarded !== true;
 		void AsyncStorage.setItem(ONBOARDED_KEY, "1");
 		setOnboarded(true);
 		setObOpen(false);
-		// The guided first trade: a set you already hold, at the counter.
-		if (state) {
+		// The guided first trade (first time only; a replay just closes): a set
+		// you already hold, at the counter.
+		if (state && firstTime) {
 			const held = state.finds.find((f) => f.id === "pinecone" && setsOf(holdingOf(state, f.id), f.size).sets > 0) ??
 				state.finds.find((f) => setsOf(holdingOf(state, f.id), f.size).sets > 0);
 			if (held) {
@@ -281,7 +319,7 @@ export default function MarketScreen() {
 				setStack(["home", "counter"]);
 			}
 		}
-	}, [state, receipts]);
+	}, [state, receipts, onboarded]);
 
 	// ── Render ──
 	const title = place === "counter" ? "The Counter" : place === "find" ? "A set up close" : place === "board" ? "The Noticeboard" : "Bullion's Market";
@@ -290,7 +328,15 @@ export default function MarketScreen() {
 			kicker={place === "home" ? "one price, two ways to trade" : "Bullion's Market"}
 			title={title}
 			onBack={back}
-			backLabel={place === "find" ? "back to the counter" : place === "home" ? undefined : "back to the market"}
+			backLabel={
+				place === "home"
+					? undefined
+					: stack[stack.length - 2] === "counter"
+						? "back to the counter"
+						: stack[stack.length - 2] === "board"
+							? "back to the board"
+							: "back to the market"
+			}
 			right={
 				state ? (
 					<View style={styles.coin} accessible accessibilityLabel={`${state.me.coin} tickles ready`}>
@@ -326,6 +372,10 @@ export default function MarketScreen() {
 	const f = state.finds.find((x) => x.id === findId) ?? state.finds[0];
 	const ticksPerDay = Math.round((24 * 60) / state.tuning.tickMinutes);
 	const weekdayOf = (tick: number) => WEEKDAYS[new Date(tick * state.tuning.tickMinutes * 60_000).getDay()];
+	const isDayStart = (tick: number) => {
+		const d = new Date(tick * state.tuning.tickMinutes * 60_000);
+		return d.getHours() === 0 && d.getMinutes() < state.tuning.tickMinutes;
+	};
 	const h = f ? holdingOf(state, f.id) : null;
 	const sets = f && h ? setsOf(h, f.size).sets : 0;
 
@@ -338,7 +388,7 @@ export default function MarketScreen() {
 					<Button
 						variant={canBuy ? "gold" : "locked"}
 						disabled={!canBuy}
-						onPress={() => setConfirm({ via: "counter", findId: f.id, side: "buy" })}
+						onPress={() => openConfirm({ via: "counter", findId: f.id, side: "buy" })}
 						accessibilityLabel={`Buy a set from Bullion for ${f.ask}`}
 						style={styles.flex}
 					>
@@ -347,7 +397,7 @@ export default function MarketScreen() {
 					<Button
 						variant={sets ? "success" : "locked"}
 						disabled={!sets}
-						onPress={() => setConfirm({ via: "counter", findId: f.id, side: "sell" })}
+						onPress={() => openConfirm({ via: "counter", findId: f.id, side: "sell" })}
 						accessibilityLabel={`Sell a set to Bullion for ${f.bid}`}
 						style={styles.flex}
 					>
@@ -374,7 +424,7 @@ export default function MarketScreen() {
 			{header}
 			<ScrollView
 				ref={scrollRef}
-				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad + (bar ? SPACE.xxl * 3 : 0) }]}
+				contentContainerStyle={[styles.scroll, { paddingBottom: scrollPad + (bar ? barH : 0) }]}
 				showsVerticalScrollIndicator={false}
 			>
 				{place === "home" ? (
@@ -401,8 +451,9 @@ export default function MarketScreen() {
 						sheepHere={trader.present}
 						nowMs={nowMs}
 						weekdayOf={weekdayOf}
+						isDayStart={isDayStart}
 						ticksPerDay={ticksPerDay}
-						onTake={(card) => setConfirm({ via: "board", card })}
+						onTake={(card) => openConfirm({ via: "board", card })}
 						onOpen={openFind}
 						onCancel={doCancel}
 						busyId={busyId}
@@ -418,13 +469,17 @@ export default function MarketScreen() {
 						shown={boardShown}
 						onMore={() => setBoardShown((n) => n + BoardView.PAGE)}
 						nowMs={nowMs}
-						onTake={(card) => setConfirm({ via: "board", card })}
+						onTake={(card) => openConfirm({ via: "board", card })}
 						onCancel={doCancel}
 						busyId={busyId}
 					/>
 				)}
 			</ScrollView>
-			{bar ? <View style={[styles.barWrap, { paddingBottom: insets.bottom }]}>{bar}</View> : null}
+			{bar ? (
+				<View style={[styles.barWrap, { paddingBottom: insets.bottom }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
+					{bar}
+				</View>
+			) : null}
 
 			<ReceiptStack shown={receipts.shown} onDismiss={receipts.dismiss} top={insets.top + SPACE.xxl * 2} />
 
@@ -436,7 +491,7 @@ export default function MarketScreen() {
 				onClose={() => setConfirm(null)}
 				onCounter={doCounter}
 				onTake={doTake}
-				onSwitchToCard={(card) => setConfirm({ via: "board", card })}
+				onSwitchToCard={(card) => openConfirm({ via: "board", card })}
 				onPostHere={(id) => openPost("sell", id)}
 			/>
 			{draft ? (

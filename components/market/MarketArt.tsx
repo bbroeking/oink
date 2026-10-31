@@ -114,6 +114,8 @@ export interface PriceChartProps {
 	/** A day's line on the onboarding card: shorter, no trade dots. */
 	mini?: boolean;
 	weekdayOf?: (tick: number) => string;
+	/** Does this tick start the player's local day? (Ticks count from UTC.) */
+	isDayStart?: (tick: number) => boolean;
 	accessibilityLabel: string;
 }
 
@@ -135,6 +137,7 @@ export function PriceChart({
 	ticksPerDay,
 	mini = false,
 	weekdayOf,
+	isDayStart = (tick: number) => tick % ticksPerDay === 0,
 	accessibilityLabel,
 }: PriceChartProps) {
 	const H = mini ? CHART_H_MINI : CHART_H;
@@ -188,7 +191,7 @@ export function PriceChart({
 			))}
 			{!mini && weekdayOf
 				? hs
-						.filter((h, i) => i > 0 && h.t % ticksPerDay === 0)
+						.filter((h, i) => i > 0 && isDayStart(h.t))
 						.map((h) => (
 							<SvgText key={`d${h.t}`} x={x(h.t) + 3} y={H - 5} fill={chalkMute} {...axisText}>
 								{weekdayOf(h.t)}

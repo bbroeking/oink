@@ -54,6 +54,7 @@ CREATE OR REPLACE FUNCTION public.grant_tickles(uid uuid, n int) RETURNS int LAN
 DECLARE b int;
 BEGIN
 	UPDATE public.user_items SET item_count = item_count + GREATEST(0, n) WHERE user_id = uid RETURNING item_count INTO b;
+	IF b IS NULL THEN RAISE EXCEPTION 'No user_items row for user %', uid; END IF;
 	RETURN b;
 END $$;
 
@@ -80,6 +81,17 @@ CREATE TABLE public.satchel_items (
 	user_id uuid NOT NULL REFERENCES auth.users(id),
 	find_id text NOT NULL REFERENCES public.satchel_finds(id),
 	source text NOT NULL DEFAULT 'dig',
+	from_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
 	created_at timestamptz NOT NULL DEFAULT now()
+);
+-- The Season 2 fresh start's archive (20261029190000): the market reads when
+-- the Satchels were last archived.
+CREATE TABLE public.season_reset_archive (
+	user_id uuid NOT NULL REFERENCES auth.users(id),
+	season_id text NOT NULL,
+	kind text NOT NULL,
+	payload jsonb NOT NULL,
+	archived_at timestamptz NOT NULL DEFAULT now(),
+	PRIMARY KEY (user_id, season_id, kind)
 );
 CREATE TABLE public.satchel_met (user_id uuid, find_id text, PRIMARY KEY (user_id, find_id));

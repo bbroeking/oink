@@ -207,7 +207,7 @@ export function ConfirmSheet({
 		title = `Swap with ${who}`;
 		cta = "Swap straight up";
 		variant = "lilac";
-		if (have < wq) blocked = `You have ${have} of ${wq} ${wq === 1 ? findPlural(c.wantFindId).replace(/s$/, "") : findPlural(c.wantFindId)}.`;
+		if (have < wq) blocked = `You have ${have} of ${qtyOf(c.wantFindId, wq)}.`;
 		body = (
 			<View style={styles.centered}>
 				<View style={styles.row}>
@@ -232,6 +232,7 @@ export function ConfirmSheet({
 		variant = buying ? "primary" : "success";
 		if (buying && coin < price) blocked = `You have ${coin} tickles ready.`;
 		if (!buying && holdingOf(state, f.id).held < f.size) blocked = `You have ${holdingOf(state, f.id).held} of ${f.size}.`;
+		if (!buying && c.posterCoinOk === false) blocked = `${who} can't pay ${price} right now.`;
 		body = (
 			<View>
 				<View style={styles.cfTop}>
@@ -354,6 +355,7 @@ export function PostSheet({
 	const price = Math.max(range.min, Math.min(range.max, draft.price));
 	const set = (patch: Partial<PostDraft>) => setDraft({ ...draft, ...patch });
 	const openFull = state.me.offers.length >= state.tuning.openOffers;
+	const holdsASet = state.finds.some((x) => holdingOf(state, x.id).held >= x.size);
 
 	const order =
 		side === "buy"
@@ -482,11 +484,12 @@ export function PostSheet({
 				value={side}
 				onChange={(s) => setDraft(newDraft(state, s, draft.findId, draft))}
 				options={[
-					{ value: "sell", label: "For sale" },
+					{ value: "sell", label: "For sale", disabled: !holdsASet },
 					{ value: "buy", label: "Wanted" },
-					{ value: "swap", label: "Swap" },
+					{ value: "swap", label: "Swap", disabled: !holdsASet },
 				]}
 			/>
+			{!holdsASet ? <Kicker tone="secondary">You hold no full set yet: post a Wanted ad, or buy a set first.</Kicker> : null}
 			<View style={styles.lab}>
 				<KickerPill>{side === "buy" ? "A set you want" : "A set you hold"}</KickerPill>
 				<Kicker tone="secondary">{side === "buy" ? "any find" : "four of a common, three of the rest"}</Kicker>
@@ -535,9 +538,9 @@ export function PostSheet({
 						}}
 						style={styles.band}
 					>
-						<View style={[styles.zone, { left: `${crossL[0] * 100}%`, width: `${(crossL[1] - crossL[0]) * 100}%`, backgroundColor: WHIMSY.sun }]} />
-						<View style={[styles.zone, { left: `${bidF * 100}%`, width: `${(askF - bidF) * 100}%`, backgroundColor: WHIMSY.sage }]} />
-						<View style={[styles.zone, { left: `${sitL[0] * 100}%`, width: `${(sitL[1] - sitL[0]) * 100}%`, backgroundColor: WHIMSY.cream2 }]} />
+						<View pointerEvents="none" style={[styles.zone, { left: `${crossL[0] * 100}%`, width: `${(crossL[1] - crossL[0]) * 100}%`, backgroundColor: WHIMSY.sun }]} />
+						<View pointerEvents="none" style={[styles.zone, { left: `${bidF * 100}%`, width: `${(askF - bidF) * 100}%`, backgroundColor: WHIMSY.sage }]} />
+						<View pointerEvents="none" style={[styles.zone, { left: `${sitL[0] * 100}%`, width: `${(sitL[1] - sitL[0]) * 100}%`, backgroundColor: WHIMSY.cream2 }]} />
 						<View style={[styles.bandMark, { left: `${frac(price) * 100}%` }]} pointerEvents="none" />
 					</Pressable>
 					<View style={styles.bandLabels}>

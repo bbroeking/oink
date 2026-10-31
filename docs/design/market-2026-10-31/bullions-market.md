@@ -98,13 +98,28 @@ Smoke: `scripts/db-harness/00x_market_prep.sql` + `C1_bullions_market_smoke.sql`
 - **The drag slider**: the price band is tappable (and VoiceOver-adjustable) with − / + steppers, showing the same
   three zones (crosses with Bullion · the green gap · just sits).
 
+## Audit hardening (2026-10-31)
+
+An independent review of the SQL and the client found, and this build fixes: finds minted when the bag shrank
+mid-trade (every `_market_take_units` result is now the locked check), prices growing ~2 decimal digits a tick
+(rounded to 6 places), one unsettleable listing taking every pig's read down (each crossing is its own
+subtransaction; a pig with no bank row is refused), the tape leaking stranger ids, one-friend targets and other
+pigs' cost basis, notices handed over twice by overlapping reads, the tape out of order after a quiet spell (sorted
+by tick), listings coming home as fresh `market` rows (escrow now keeps source, age and giver), notices carrying a
+stale `open` status, and a moved-back test clock rewriting history. Client: notices sized from the server's own
+qty, a receipt queue that drops nothing and waits under sheets, the price band's taps, VoiceOver reach on board
+cards, back gestures walking the in-route stack, local times on the tape and chart, a write's refresh never reusing
+an older read, one nonce per sheet (true double-tap idempotency), unpayable wanted ads locked, and copy edge cases.
+Smoke section 11 + a two-session race check cover the SQL; Jest covers the client.
+
 ## Open questions for the founder
 
 - **Economy.** Buying a set at the counter and handing it to a Ghost Sheep who fancies it can pay more (in score
   tickles) than the set cost (in bank tickles). The prototype embraces this ("your Ghost Sheep pays 24 today"); the
   Sheep's daily visit and per-visit cap bound it. Watch the `market_trades` ledger after launch.
-- **Season 2's fresh start** archives and zeroes the bank and the Satchel at the flip. Open listings hold sets in
-  escrow and wanted ads promise bank tickles; the flip should cancel every open listing first (its sets would then
-  be zeroed with the bag). Not wired yet.
+- **Season 2's fresh start** archives and zeroes the bank and the Satchel at the flip. The market handles its side
+  without touching `flip_season_2`: any listing pinned before the latest `season_reset_archive` (kind `satchel`) is
+  ended by the next market read, and its held set does **not** come home (it was part of the bag that was reset).
+  Wanted ads lapse naturally against a zeroed bank.
 - **The tick lock** serialises every market write. Fine at today's volume; per-find locks are the next step if the
   market gets busy.

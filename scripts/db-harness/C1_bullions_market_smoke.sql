@@ -268,3 +268,84 @@ BEGIN
 	RAISE NOTICE 'C1 bullions market smoke: all green';
 END
 $later$;
+
+-- 11. Audit regressions (2026-10-31): stored prices stay at 6 places; the tape
+-- carries no stranger ids, no one-friend target and no one else's cost; a
+-- notice says how its listing ended; a listing whose pig has no bank row is
+-- taken down instead of breaking every pig's read; a listing pinned before a
+-- season reset ends without its set coming home; a returning set keeps its
+-- source and age.
+SELECT set_config('ttp.fake_now', '2026-11-06 16:10:00+00', false);
+DO $audit$
+DECLARE
+	a uuid := '00000000-0000-0000-0000-00000000c101';
+	b uuid := '00000000-0000-0000-0000-00000000c102';
+	c uuid := '00000000-0000-0000-0000-00000000c103';
+	d uuid := '00000000-0000-0000-0000-00000000c104';
+	st jsonb; res jsonb; oid bigint; n int; t0 timestamptz;
+BEGIN
+	PERFORM pg_temp.ok((SELECT MAX(scale(price)) FROM public.market_prices) <= 6, '11 prices rounded');
+	PERFORM pg_temp.ok((SELECT MAX(scale(price)) FROM public.market_price_points) <= 6, '11 points rounded');
+
+	-- Privacy: c (a stranger to a and b) reads the tape.
+	PERFORM pg_temp.as_user(c);
+	st := public.market_state();
+	PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(st->'tape') x
+		WHERE x ? 'seller_id' OR x ? 'buyer_id' OR x ? 'target_id' OR x ? 'poster_id'), '11 no raw ids on the tape');
+	PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(st->'tape') x
+		WHERE (x->'seller'->>'you') IS DISTINCT FROM 'true' AND x ? 'cost'), '11 no one else''s cost');
+	PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(st->'tape') x
+		WHERE x->'seller' ? 'id' AND (x->'seller'->>'friend') = 'false'), '11 strangers have no id');
+
+	-- Notice status: a filled listing's notice says filled.
+	PERFORM pg_temp.ok((SELECT offer->>'status' FROM public.market_notices WHERE kind = 'filled' ORDER BY id LIMIT 1) = 'filled', '11 notice status');
+
+	-- A pig with no bank row: its resting listing is crossed out of the way, the market keeps reading.
+	INSERT INTO auth.users (id) VALUES (d);
+	INSERT INTO public.profiles (id, username) VALUES (d, 'nobank');
+	INSERT INTO public.user_items (user_id, item_count) VALUES (d, 10);
+	PERFORM pg_temp.as_user(d);
+	PERFORM pg_temp.give(d, 'clover', 4);
+	UPDATE public.market_prices SET price = 12 WHERE find_id = 'clover';
+	res := public.market_post('sell', 'clover', 10, NULL, NULL, NULL, gen_random_uuid());
+	PERFORM pg_temp.ok(res->>'filled' = 'false', '11 nobank listing rests');
+	oid := (res->'offer'->>'id')::bigint;
+	DELETE FROM public.user_items WHERE user_id = d;
+	res := public.market_counter('clover', 'buy', NULL, gen_random_uuid());
+	PERFORM pg_temp.ok(res->>'reason' = 'no_bank', '11 a pig with no bank is refused');
+	UPDATE public.market_prices SET price = 13.8, tick = tick - 1 WHERE find_id = 'clover';
+	PERFORM pg_temp.as_user(a);
+	st := public.market_state();
+	PERFORM pg_temp.ok(st->>'ok' = 'true', '11 the market still reads');
+	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'cancelled', '11 the listing came down');
+	PERFORM pg_temp.ok(pg_temp.held(d, 'clover') = 4, '11 its set came home');
+
+	-- Provenance: a cancelled listing's set returns with its source and age.
+	PERFORM pg_temp.as_user(a);
+	DELETE FROM public.satchel_items WHERE user_id = a AND find_id = 'honeycomb';
+	INSERT INTO public.satchel_items (user_id, find_id, source, created_at)
+	SELECT a, 'honeycomb', 'gift', '2026-10-01'::timestamptz FROM generate_series(1, 3);
+	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
+	oid := (res->'offer'->>'id')::bigint;
+	PERFORM public.market_cancel(oid);
+	PERFORM pg_temp.ok((SELECT COUNT(*) FROM public.satchel_items WHERE user_id = a AND find_id = 'honeycomb'
+		AND source = 'gift' AND created_at = '2026-10-01'::timestamptz) = 3, '11 provenance kept');
+
+	-- Season reset: a listing pinned before the archive ends, its set does not come home.
+	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
+	oid := (res->'offer'->>'id')::bigint;
+	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 0, '11 pinned');
+	INSERT INTO public.season_reset_archive (user_id, season_id, kind, payload, archived_at)
+	VALUES (b, 'snout_season_2', 'satchel', '[]', public._patch_now() + interval '1 second');
+	PERFORM set_config('ttp.fake_now', '2026-11-06 16:10:05+00', false);
+	st := public.market_state();
+	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'expired', '11 reset listing ended');
+	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 0, '11 its set stayed reset');
+	-- A listing pinned after the reset behaves normally.
+	PERFORM pg_temp.give(a, 'honeycomb', 3);
+	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
+	PERFORM public.market_cancel((res->'offer'->>'id')::bigint);
+	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 3, '11 post-reset listing comes home');
+	RAISE NOTICE 'C1 audit regressions: all green';
+END
+$audit$;

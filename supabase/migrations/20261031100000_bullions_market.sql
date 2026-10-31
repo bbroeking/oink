@@ -211,7 +211,8 @@ CREATE TABLE IF NOT EXISTS public.market_trades (
 	created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS market_trades_find_idx ON public.market_trades (find_id, id DESC);
-CREATE INDEX IF NOT EXISTS market_trades_tick_idx ON public.market_trades (tick);
+CREATE INDEX IF NOT EXISTS market_trades_want_find_idx ON public.market_trades (want_find_id) WHERE want_find_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS market_trades_tick_idx ON public.market_trades (tick DESC, id DESC);
 CREATE INDEX IF NOT EXISTS market_trades_seller_idx ON public.market_trades (seller_id) WHERE seller_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS market_trades_buyer_idx ON public.market_trades (buyer_id) WHERE buyer_id IS NOT NULL;
 
@@ -326,19 +327,24 @@ REVOKE ALL ON FUNCTION public._market_clamp(int, numeric, jsonb) FROM PUBLIC, an
 REVOKE ALL ON FUNCTION public._market_ask(int, numeric, jsonb) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_bid(int, numeric, jsonb) FROM PUBLIC, anon, authenticated;
 
--- Move a find's price (clamped) and stamp the tick's point.
+-- Move a find's price (clamped, ROUNDED to 6 places: numeric arithmetic
+-- otherwise grows ~2 decimal digits a tick, forever) and stamp the tick's
+-- point. Never stamps the past: a point lands on the later of the trade's
+-- tick and the walk's (a test clock moved back must not rewrite history).
 CREATE OR REPLACE FUNCTION public._market_set_price(p_find text, p_price numeric, p_tick bigint, p_active boolean, p_t jsonb)
 RETURNS numeric LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 DECLARE
-	np numeric := public._market_clamp(public._market_usual(p_find, p_t), p_price, p_t);
+	np numeric := ROUND(public._market_clamp(public._market_usual(p_find, p_t), p_price, p_t), 6);
+	at_tick bigint;
 BEGIN
 	UPDATE public.market_prices
 	SET price = np,
 	    tick = GREATEST(tick, p_tick),
-	    last_active_tick = CASE WHEN p_active THEN p_tick ELSE last_active_tick END
-	WHERE find_id = p_find;
-	INSERT INTO public.market_price_points (find_id, tick, price) VALUES (p_find, p_tick, np)
+	    last_active_tick = CASE WHEN p_active THEN GREATEST(tick, p_tick) ELSE last_active_tick END
+	WHERE find_id = p_find
+	RETURNING tick INTO at_tick;
+	INSERT INTO public.market_price_points (find_id, tick, price) VALUES (p_find, COALESCE(at_tick, p_tick), np)
 	ON CONFLICT (find_id, tick) DO UPDATE SET price = EXCLUDED.price;
 	RETURN np;
 END;
@@ -346,20 +352,28 @@ $function$;
 REVOKE ALL ON FUNCTION public._market_set_price(text, numeric, bigint, boolean, jsonb) FROM PUBLIC, anon, authenticated;
 
 -- ── 4. Bags and the bank ─────────────────────────────────────────────────────
+-- A "lot" is one unit as it travels: {cost (number | null), source, at, from}.
+-- Escrow keeps each unit's provenance so a listing that comes home puts back
+-- the same dug / gifted / swapped find with its age (the trader's trade-up
+-- spends oldest first and gifts last), not a fresh 'market' row.
+--
 -- Take n units of a find out of a bag, newest first (a set you just bought is
--- the set you sell next). Returns the per-unit costs, or NULL (and takes
--- nothing) when the bag holds fewer than n.
+-- the set you sell next). Returns the lots, or NULL (and takes nothing) when
+-- the bag holds fewer than n. EVERY caller must check for NULL: this is the
+-- one locked check (a COUNT before it is advisory only — the trader or a swap
+-- can take a find from the same bag outside the market lock).
 CREATE OR REPLACE FUNCTION public._market_take_units(p_user uuid, p_find text, p_n int)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 DECLARE
 	ids bigint[];
-	costs jsonb;
+	lots jsonb;
 BEGIN
-	SELECT array_agg(x.id), jsonb_agg(to_jsonb(x.market_cost))
-	INTO ids, costs
+	SELECT array_agg(x.id),
+	       jsonb_agg(jsonb_build_object('cost', x.market_cost, 'source', x.source, 'at', x.created_at, 'from', x.from_user_id))
+	INTO ids, lots
 	FROM (
-		SELECT s.id, s.market_cost FROM public.satchel_items s
+		SELECT s.id, s.market_cost, s.source, s.created_at, s.from_user_id FROM public.satchel_items s
 		WHERE s.user_id = p_user AND s.find_id = p_find
 		ORDER BY s.created_at DESC, s.id DESC
 		LIMIT p_n
@@ -369,41 +383,56 @@ BEGIN
 		RETURN NULL;
 	END IF;
 	DELETE FROM public.satchel_items WHERE id = ANY (ids);
-	RETURN costs;
+	RETURN lots;
 END;
 $function$;
 
--- Put units in a bag, one row per cost (a json array of numbers or nulls).
-CREATE OR REPLACE FUNCTION public._market_give_units(p_user uuid, p_find text, p_costs jsonb, p_at timestamptz)
+-- A lot's cost: a number, or null (dug up / given / swapped). Accepts a bare
+-- number too.
+CREATE OR REPLACE FUNCTION public._market_lot_cost(p_lot jsonb)
+RETURNS numeric LANGUAGE sql IMMUTABLE
+AS $function$
+	SELECT CASE
+		WHEN jsonb_typeof(p_lot) = 'number' THEN (p_lot #>> '{}')::numeric
+		WHEN jsonb_typeof(p_lot) = 'object' AND jsonb_typeof(p_lot->'cost') = 'number' THEN (p_lot->>'cost')::numeric
+		ELSE NULL END;
+$function$;
+
+-- Put lots in a bag. A lot with a source/at/from keeps them (a listing coming
+-- home); a bare lot is a market acquisition, 'market', now.
+CREATE OR REPLACE FUNCTION public._market_give_units(p_user uuid, p_find text, p_lots jsonb, p_at timestamptz)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 BEGIN
-	INSERT INTO public.satchel_items (user_id, find_id, source, created_at, market_cost)
-	SELECT p_user, p_find, 'market', p_at,
-	       CASE WHEN jsonb_typeof(c.v) = 'number' THEN (c.v #>> '{}')::numeric ELSE NULL END
-	FROM jsonb_array_elements(COALESCE(p_costs, '[]'::jsonb)) AS c(v);
+	INSERT INTO public.satchel_items (user_id, find_id, source, created_at, market_cost, from_user_id)
+	SELECT p_user, p_find,
+	       COALESCE(CASE WHEN jsonb_typeof(c.v) = 'object' THEN c.v->>'source' END, 'market'),
+	       COALESCE(CASE WHEN jsonb_typeof(c.v) = 'object' THEN (c.v->>'at')::timestamptz END, p_at),
+	       public._market_lot_cost(c.v),
+	       CASE WHEN jsonb_typeof(c.v) = 'object' THEN (c.v->>'from')::uuid END
+	FROM jsonb_array_elements(COALESCE(p_lots, '[]'::jsonb)) AS c(v);
 	INSERT INTO public.satchel_met (user_id, find_id) VALUES (p_user, p_find) ON CONFLICT DO NOTHING;
 END;
 $function$;
 
--- n units at one total cost, spread evenly.
+-- n fresh market lots at one total cost, spread evenly (null = no cost).
 CREATE OR REPLACE FUNCTION public._market_costs(p_n int, p_total numeric)
 RETURNS jsonb LANGUAGE sql IMMUTABLE
 AS $function$
-	SELECT COALESCE(jsonb_agg(CASE WHEN p_total IS NULL THEN 'null'::jsonb ELSE to_jsonb(p_total / p_n) END), '[]'::jsonb)
+	SELECT COALESCE(jsonb_agg(jsonb_build_object('cost', CASE WHEN p_total IS NULL THEN NULL ELSE ROUND(p_total / p_n, 6) END)), '[]'::jsonb)
 	FROM generate_series(1, GREATEST(0, p_n));
 $function$;
 
 -- {cost (rounded, null when nothing in it was paid for), paid_units, dug}.
-CREATE OR REPLACE FUNCTION public._market_lots_cost(p_costs jsonb)
+CREATE OR REPLACE FUNCTION public._market_lots_cost(p_lots jsonb)
 RETURNS jsonb LANGUAGE sql IMMUTABLE
 AS $function$
 	SELECT jsonb_build_object(
-		'cost', CASE WHEN COUNT(*) FILTER (WHERE jsonb_typeof(c.v) = 'number') > 0
-			THEN ROUND(SUM((c.v #>> '{}')::numeric) FILTER (WHERE jsonb_typeof(c.v) = 'number'))::int END,
-		'paid_units', COUNT(*) FILTER (WHERE jsonb_typeof(c.v) = 'number'),
-		'dug', COUNT(*) FILTER (WHERE jsonb_typeof(c.v) IS DISTINCT FROM 'number'))
-	FROM jsonb_array_elements(COALESCE(p_costs, '[]'::jsonb)) AS c(v);
+		'cost', CASE WHEN COUNT(public._market_lot_cost(c.v)) > 0
+			THEN ROUND(SUM(public._market_lot_cost(c.v)))::int END,
+		'paid_units', COUNT(public._market_lot_cost(c.v)),
+		'dug', COUNT(*) - COUNT(public._market_lot_cost(c.v)))
+	FROM jsonb_array_elements(COALESCE(p_lots, '[]'::jsonb)) AS c(v);
 $function$;
 
 -- Spend from the tickle bank. False (and nothing spent) when it is short.
@@ -419,6 +448,14 @@ BEGIN
 	UPDATE public.user_items SET item_count = bal - p_n WHERE user_id = p_user;
 	RETURN true;
 END;
+$function$;
+
+-- Does this pig have a tickle bank at all? (A missing user_items row makes
+-- settle_tickles / grant_tickles raise; a market write refuses instead.)
+CREATE OR REPLACE FUNCTION public._market_has_bank(p_user uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+	SELECT EXISTS (SELECT 1 FROM public.user_items WHERE user_id = p_user);
 $function$;
 
 CREATE OR REPLACE FUNCTION public._market_ledger(p_user uuid, p_spent int, p_took int)
@@ -438,26 +475,47 @@ AS $function$
 		'created_at', o.created_at, 'expires_at', o.expires_at, 'status', o.status);
 $function$;
 
+-- A notice carries the listing as it ENDED (its status follows the notice's
+-- kind), not the open row it was read as.
 CREATE OR REPLACE FUNCTION public._market_notice(p_user uuid, p_kind text, p_offer public.market_offers, p_trade bigint)
 RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 	INSERT INTO public.market_notices (user_id, kind, offer, trade_id)
-	VALUES (p_user, p_kind, CASE WHEN p_offer.id IS NULL THEN NULL ELSE public._market_offer_json(p_offer) END, p_trade);
+	VALUES (p_user, p_kind,
+		CASE WHEN p_offer.id IS NULL THEN NULL
+		ELSE public._market_offer_json(p_offer) || jsonb_build_object('status',
+			CASE p_kind WHEN 'swapped' THEN 'filled' WHEN 'for_you' THEN 'open' ELSE p_kind END) END,
+		p_trade);
 $function$;
 
--- Close an open listing; a set on offer comes home.
+-- When the Season 2 fresh start last archived the Satchels (NULL if never).
+-- A set held on a listing posted before it must not come home into the new
+-- season's bag, nor be sold: it was part of the bag that was reset.
+CREATE OR REPLACE FUNCTION public._market_reset_at()
+RETURNS timestamptz LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+	SELECT MAX(archived_at) FROM public.season_reset_archive WHERE kind = 'satchel';
+$function$;
+
+-- Close an open listing; a set on offer comes home — unless a season reset
+-- archived the Satchels since it was pinned.
 CREATE OR REPLACE FUNCTION public._market_close(p_offer public.market_offers, p_status text, p_at timestamptz)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
+DECLARE
+	reset_at timestamptz := public._market_reset_at();
 BEGIN
 	UPDATE public.market_offers SET status = p_status, closed_at = p_at WHERE id = p_offer.id;
-	IF jsonb_array_length(p_offer.escrow) > 0 THEN
+	IF jsonb_array_length(p_offer.escrow) > 0 AND (reset_at IS NULL OR reset_at <= p_offer.created_at) THEN
 		PERFORM public._market_give_units(p_offer.user_id, p_offer.find_id, p_offer.escrow, p_at);
 	END IF;
 END;
 $function$;
 
 REVOKE ALL ON FUNCTION public._market_take_units(uuid, text, int) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public._market_lot_cost(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public._market_has_bank(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public._market_reset_at() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_give_units(uuid, text, jsonb, timestamptz) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_costs(int, numeric) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_lots_cost(jsonb) FROM PUBLIC, anon, authenticated;
@@ -655,7 +713,9 @@ BEGIN
 	IF NOT EXISTS (SELECT 1 FROM public.satchel_finds sf
 	               LEFT JOIN public.market_prices mp ON mp.find_id = sf.id
 	               WHERE mp.find_id IS NULL OR mp.tick < now_t)
-	   AND NOT EXISTS (SELECT 1 FROM public.market_offers WHERE status = 'open' AND expires_at <= v_now) THEN
+	   AND NOT EXISTS (SELECT 1 FROM public.market_offers WHERE status = 'open' AND expires_at <= v_now)
+	   AND NOT EXISTS (SELECT 1 FROM public.market_offers
+	                   WHERE status = 'open' AND created_at < COALESCE(public._market_reset_at(), '-infinity')) THEN
 		RETURN now_t;
 	END IF;
 
@@ -664,8 +724,8 @@ BEGIN
 	-- 0. A find with no price yet starts near its usual price.
 	INSERT INTO public.market_prices (find_id, price, tick, last_active_tick)
 	SELECT sf.id,
-	       public._market_clamp(public._market_usual(sf.id, t),
-	           public._market_usual(sf.id, t) * (0.97 + 0.06 * public._market_unit('p0:' || sf.id))::numeric, t),
+	       ROUND(public._market_clamp(public._market_usual(sf.id, t),
+	           public._market_usual(sf.id, t) * (0.97 + 0.06 * public._market_unit('p0:' || sf.id))::numeric, t), 6),
 	       now_t, now_t
 	FROM public.satchel_finds sf
 	WHERE NOT EXISTS (SELECT 1 FROM public.market_prices mp WHERE mp.find_id = sf.id)
@@ -684,7 +744,7 @@ BEGIN
 			w := 2 * public._market_unit('w:' || f.find_id || ':' || tk) - 1;
 			p := p + u * (t->'price'->>'wiggle')::numeric * w::numeric;
 			p := p + (t->'price'->>'home')::numeric * (u - p);
-			p := public._market_clamp(u, p, t);
+			p := ROUND(public._market_clamp(u, p, t), 6);
 			INSERT INTO public.market_price_points (find_id, tick, price) VALUES (f.find_id, tk, p)
 			ON CONFLICT (find_id, tick) DO UPDATE SET price = EXCLUDED.price;
 			-- A print on the tape is one of those small trades (only the last day's).
@@ -705,9 +765,13 @@ BEGIN
 	DELETE FROM public.market_price_points WHERE tick < now_t - keep_ticks;
 	DELETE FROM public.market_trades WHERE kind = 'print' AND tick < now_t - keep_ticks;
 
-	-- 2. Listings older than 24 hours lapse; a set on offer comes home.
+	-- 2. Listings older than 24 hours lapse; a set on offer comes home. A
+	-- listing pinned before a season's fresh start ends too, its set reset
+	-- with the bag it came from (_market_close keeps it from coming home).
 	FOR o IN SELECT * FROM public.market_offers
-	         WHERE status = 'open' AND expires_at <= v_now ORDER BY id FOR UPDATE LOOP
+	         WHERE status = 'open'
+	           AND (expires_at <= v_now OR created_at < COALESCE(public._market_reset_at(), '-infinity'))
+	         ORDER BY id FOR UPDATE LOOP
 		PERFORM public._market_close(o, 'expired', v_now);
 		PERFORM public._market_notice(o.user_id, 'expired', o, NULL);
 	END LOOP;
@@ -720,16 +784,24 @@ BEGIN
 		SELECT price INTO p FROM public.market_prices WHERE find_id = o.find_id;
 		bid := public._market_bid(u, p, t);
 		ask := public._market_ask(u, p, t);
-		IF o.side = 'sell' AND o.price <= bid AND public._market_counter_open(o.user_id, 'sell', now_t, t) THEN
-			PERFORM public._market_counter_sell(o.user_id, o.find_id, o.escrow, 'crossed', o, now_t, t);
-		ELSIF o.side = 'buy' AND o.price >= ask AND public._market_counter_open(o.user_id, 'buy', now_t, t) THEN
-			IF public.tickle_balance(o.user_id) < ask THEN
-				PERFORM public._market_close(o, 'lapsed', v_now);
-				PERFORM public._market_notice(o.user_id, 'lapsed', o, NULL);
-			ELSE
-				PERFORM public._market_counter_buy(o.user_id, o.find_id, 'crossed', o, now_t, t);
+		-- Each crossing is its own subtransaction: one listing that cannot
+		-- settle (a pig with no bank row, a bank spent since the check) is
+		-- taken down, and the market — every pig's read — keeps working.
+		BEGIN
+			IF o.side = 'sell' AND o.price <= bid AND public._market_counter_open(o.user_id, 'sell', now_t, t) THEN
+				PERFORM public._market_counter_sell(o.user_id, o.find_id, o.escrow, 'crossed', o, now_t, t);
+			ELSIF o.side = 'buy' AND o.price >= ask AND public._market_counter_open(o.user_id, 'buy', now_t, t) THEN
+				IF COALESCE(public.tickle_balance(o.user_id), 0) < ask THEN
+					PERFORM public._market_close(o, 'lapsed', v_now);
+					PERFORM public._market_notice(o.user_id, 'lapsed', o, NULL);
+				ELSE
+					PERFORM public._market_counter_buy(o.user_id, o.find_id, 'crossed', o, now_t, t);
+				END IF;
 			END IF;
-		END IF;
+		EXCEPTION WHEN OTHERS THEN
+			PERFORM public._market_close(o, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'cancelled' END, v_now);
+			PERFORM public._market_notice(o.user_id, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'expired' END, o, NULL);
+		END;
 	END LOOP;
 
 	RETURN now_t;
@@ -748,7 +820,9 @@ AS $function$
 		WHEN public.are_friends(p_viewer, p_pig) THEN (
 			SELECT jsonb_build_object('id', pr.id, 'name', pr.username, 'pig_id', pr.active_pig_id, 'friend', true)
 			FROM public.profiles pr WHERE pr.id = p_pig)
-		ELSE jsonb_build_object('id', p_pig, 'friend', false)
+		-- A stranger is "a pig": no id, no name (a uuid on the tape would let
+		-- anyone follow one pig's trades).
+		ELSE jsonb_build_object('friend', false)
 	END;
 $function$;
 REVOKE ALL ON FUNCTION public._market_who(uuid, uuid) FROM PUBLIC, anon, authenticated;
@@ -757,9 +831,19 @@ REVOKE ALL ON FUNCTION public._market_who(uuid, uuid) FROM PUBLIC, anon, authent
 CREATE OR REPLACE FUNCTION public._market_tape_json(p_viewer uuid, tr public.market_trades)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
 AS $function$
-	SELECT public._market_trade_json(tr) || jsonb_strip_nulls(jsonb_build_object(
-		'seller', public._market_who(p_viewer, tr.seller_id),
-		'buyer', public._market_who(p_viewer, tr.buyer_id)));
+	-- Raw ids never leave (the pigs come back resolved for the viewer), nor does
+	-- who a one-friend listing was for. A cost basis is its owner's alone: the
+	-- seller sees what the set cost them; a swap's taker sees what they gave.
+	SELECT (public._market_trade_json(tr)
+	        - 'seller_id' - 'buyer_id' - 'poster_id' - 'target_id' - 'offer_id'
+	        - 'cost' - 'paid_units' - 'dug' - 'gave_cost')
+		|| jsonb_strip_nulls(jsonb_build_object(
+			'seller', public._market_who(p_viewer, tr.seller_id),
+			'buyer', public._market_who(p_viewer, tr.buyer_id),
+			'cost', CASE WHEN tr.seller_id = p_viewer THEN tr.cost END,
+			'paid_units', CASE WHEN tr.seller_id = p_viewer THEN tr.paid_units END,
+			'dug', CASE WHEN tr.seller_id = p_viewer THEN tr.dug END,
+			'gave_cost', CASE WHEN tr.buyer_id = p_viewer THEN tr.gave_cost END));
 $function$;
 REVOKE ALL ON FUNCTION public._market_tape_json(uuid, public.market_trades) FROM PUBLIC, anon, authenticated;
 
@@ -791,7 +875,8 @@ CREATE OR REPLACE FUNCTION public._market_visible(p_viewer uuid, o public.market
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 	SELECT o.user_id = p_viewer
-	    OR ((o.target_id IS NULL OR o.target_id = p_viewer) AND NOT public.are_blocked(p_viewer, o.user_id));
+	    OR ((o.target_id IS NULL OR (o.target_id = p_viewer AND public.are_friends(p_viewer, o.user_id)))
+	        AND NOT public.are_blocked(p_viewer, o.user_id));
 $function$;
 REVOKE ALL ON FUNCTION public._market_visible(uuid, public.market_offers) FROM PUBLIC, anon, authenticated;
 
@@ -858,17 +943,28 @@ BEGIN
 		'for_you', o.target_id IS NOT DISTINCT FROM uid,
 		'poster_coin_ok', CASE WHEN o.side = 'buy' THEN public.tickle_balance(o.user_id) >= o.price END)
 		ORDER BY (o.target_id IS NOT DISTINCT FROM uid) DESC, o.id DESC), '[]'::jsonb) INTO board
-	FROM (SELECT * FROM public.market_offers o
-	      WHERE o.status = 'open' AND o.user_id <> uid AND public._market_visible(uid, o)
-	      ORDER BY (o.target_id IS NOT DISTINCT FROM uid) DESC, o.id DESC LIMIT 80) o;
+	-- Cut the candidates cheaply first (open, not mine, public or for me; the
+	-- newest 120), then run the per-row friendship / block checks on those.
+	FROM (SELECT c.* FROM (
+	          SELECT * FROM public.market_offers o
+	          WHERE o.status = 'open' AND o.user_id <> uid AND (o.target_id IS NULL OR o.target_id = uid)
+	          ORDER BY (o.target_id IS NOT DISTINCT FROM uid) DESC, o.id DESC LIMIT 120) c
+	      WHERE public._market_visible(uid, c)
+	      ORDER BY (c.target_id IS NOT DISTINCT FROM uid) DESC, c.id DESC LIMIT 80) o;
 
-	SELECT COALESCE(jsonb_agg(public._market_tape_json(uid, x) ORDER BY x.id DESC), '[]'::jsonb) INTO tape
-	FROM (SELECT * FROM public.market_trades tr ORDER BY tr.id DESC LIMIT 24) x;
+	-- By tick: a catch-up after a quiet spell inserts backdated prints find by
+	-- find, so id order is not time order.
+	SELECT COALESCE(jsonb_agg(public._market_tape_json(uid, x) ORDER BY x.tick DESC, x.id DESC), '[]'::jsonb) INTO tape
+	FROM (SELECT * FROM public.market_trades tr ORDER BY tr.tick DESC, tr.id DESC LIMIT 24) x;
 
 	WITH pending AS (
 		UPDATE public.market_notices SET delivered_at = v_now
+		-- Once: two overlapping reads (focus + poll, two devices) must not both
+		-- hand the same notice over.
 		WHERE id IN (SELECT n.id FROM public.market_notices n
-		             WHERE n.user_id = uid AND n.delivered_at IS NULL ORDER BY n.id LIMIT 20)
+		             WHERE n.user_id = uid AND n.delivered_at IS NULL ORDER BY n.id LIMIT 20
+		             FOR UPDATE SKIP LOCKED)
+		  AND delivered_at IS NULL
 		RETURNING *)
 	SELECT COALESCE(jsonb_agg(jsonb_build_object(
 		'id', n.id, 'kind', n.kind, 'offer', n.offer,
@@ -881,7 +977,7 @@ BEGIN
 	FROM (SELECT pr.* FROM public.friendships fs
 	      JOIN public.profiles pr ON pr.id = CASE WHEN fs.requester_id = uid THEN fs.receiver_id ELSE fs.requester_id END
 	      WHERE fs.status = 'accepted' AND (fs.requester_id = uid OR fs.receiver_id = uid)
-	      ORDER BY lower(pr.username) LIMIT 24) pr;
+	      ORDER BY lower(pr.username) LIMIT 100) pr;
 
 	SELECT * INTO led FROM public.market_ledgers WHERE user_id = uid;
 	SELECT COUNT(*)::int INTO posts FROM public.market_offers o
@@ -962,10 +1058,10 @@ BEGIN
 	      WHERE tr.find_id = p_find AND tr.tick >= t0 AND tr.kind IN ('counter', 'pig', 'print')
 	      ORDER BY tr.id DESC LIMIT 120) tr;
 
-	SELECT COALESCE(jsonb_agg(public._market_tape_json(uid, x) ORDER BY x.id DESC), '[]'::jsonb) INTO recent
+	SELECT COALESCE(jsonb_agg(public._market_tape_json(uid, x) ORDER BY x.tick DESC, x.id DESC), '[]'::jsonb) INTO recent
 	FROM (SELECT * FROM public.market_trades tr
 	      WHERE (tr.find_id = p_find OR tr.want_find_id = p_find)
-	      ORDER BY tr.id DESC LIMIT 10) x;
+	      ORDER BY tr.tick DESC, tr.id DESC LIMIT 10) x;
 
 	SELECT jsonb_build_object(
 		'counter_buys', COUNT(*) FILTER (WHERE kind = 'counter' AND side = 'buy'),
@@ -1041,6 +1137,9 @@ BEGIN
 	PERFORM pg_advisory_xact_lock(hashtext('market')::bigint);
 	prior := public._market_replay(uid, p_nonce);
 	IF prior IS NOT NULL THEN RETURN prior; END IF;
+	IF NOT public._market_has_bank(uid) THEN
+		RETURN jsonb_build_object('ok', false, 'reason', 'no_bank');
+	END IF;
 	now_t := public._market_advance();
 
 	IF NOT public._market_counter_open(uid, p_side, now_t, t) THEN
@@ -1131,6 +1230,9 @@ BEGIN
 	PERFORM pg_advisory_xact_lock(hashtext('market')::bigint);
 	prior := public._market_replay(uid, p_nonce);
 	IF prior IS NOT NULL THEN RETURN prior; END IF;
+	IF NOT public._market_has_bank(uid) THEN
+		RETURN jsonb_build_object('ok', false, 'reason', 'no_bank');
+	END IF;
 	now_t := public._market_advance();
 
 	u := public._market_usual(p_find, t);
@@ -1160,6 +1262,10 @@ BEGIN
 			RETURN jsonb_build_object('ok', false, 'reason', 'bad_want', 'max', public._market_set_size(p_want_find, t));
 		END IF;
 		costs := public._market_take_units(uid, p_find, sz);
+		IF costs IS NULL THEN  -- the bag shrank since the count (outside the market lock)
+			RETURN jsonb_build_object('ok', false, 'reason', 'not_a_set', 'set_size', sz,
+				'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = p_find));
+		END IF;
 		INSERT INTO public.market_offers (user_id, find_id, side, qty, target_id, want_find_id, want_qty, escrow, created_at, expires_at)
 		VALUES (uid, p_find, 'swap', sz, p_target, p_want_find, p_want_qty, costs, v_now, exp)
 		RETURNING * INTO newo;
@@ -1182,7 +1288,7 @@ BEGIN
 		LOOP
 			SELECT * INTO w FROM public.market_offers o
 			WHERE o.status = 'open' AND o.side = 'buy' AND o.find_id = p_find AND o.user_id <> uid
-			  AND o.price >= p_price AND public._market_visible(uid, o)
+			  AND o.price >= p_price AND public._market_visible(uid, o) AND public._market_has_bank(o.user_id)
 			  AND (p_target IS NULL OR o.user_id = p_target)
 			ORDER BY o.price DESC, o.id
 			LIMIT 1 FOR UPDATE;
@@ -1194,6 +1300,10 @@ BEGIN
 		END LOOP;
 		IF w.id IS NOT NULL AND (w.price >= bid OR p_price > bid) THEN
 			costs := public._market_take_units(uid, p_find, sz);
+			IF costs IS NULL THEN  -- the bag shrank since the count (outside the market lock)
+				RETURN jsonb_build_object('ok', false, 'reason', 'not_a_set', 'set_size', sz,
+					'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = p_find));
+			END IF;
 			INSERT INTO public.market_offers (user_id, find_id, side, price, qty, target_id, status, created_at, expires_at, closed_at)
 			VALUES (uid, p_find, 'sell', p_price, sz, p_target, 'filled', v_now, exp, v_now);
 			tr := public._market_settle_pig(uid, w.user_id, p_find, w.price, costs, 'wanted', w, now_t, t);
@@ -1202,6 +1312,10 @@ BEGIN
 		END IF;
 		IF p_price <= bid AND public._market_counter_open(uid, 'sell', now_t, t) THEN
 			costs := public._market_take_units(uid, p_find, sz);
+			IF costs IS NULL THEN  -- the bag shrank since the count (outside the market lock)
+				RETURN jsonb_build_object('ok', false, 'reason', 'not_a_set', 'set_size', sz,
+					'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = p_find));
+			END IF;
 			INSERT INTO public.market_offers (user_id, find_id, side, price, qty, target_id, status, created_at, expires_at, closed_at)
 			VALUES (uid, p_find, 'sell', p_price, sz, p_target, 'crossed', v_now, exp, v_now);
 			tr := public._market_counter_sell(uid, p_find, costs, 'crossed', none, now_t, t);
@@ -1212,6 +1326,10 @@ BEGIN
 			RETURN jsonb_build_object('ok', false, 'reason', 'too_many_offers');
 		END IF;
 		costs := public._market_take_units(uid, p_find, sz);
+		IF costs IS NULL THEN  -- the bag shrank since the count (outside the market lock)
+			RETURN jsonb_build_object('ok', false, 'reason', 'not_a_set', 'set_size', sz,
+				'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = p_find));
+		END IF;
 		INSERT INTO public.market_offers (user_id, find_id, side, price, qty, target_id, escrow, created_at, expires_at)
 		VALUES (uid, p_find, 'sell', p_price, sz, p_target, costs, v_now, exp)
 		RETURNING * INTO newo;
@@ -1229,7 +1347,7 @@ BEGIN
 	END IF;
 	SELECT * INTO s FROM public.market_offers o
 	WHERE o.status = 'open' AND o.side = 'sell' AND o.find_id = p_find AND o.user_id <> uid
-	  AND o.price <= p_price AND public._market_visible(uid, o)
+	  AND o.price <= p_price AND public._market_visible(uid, o) AND public._market_has_bank(o.user_id)
 	  AND (p_target IS NULL OR o.user_id = p_target)
 	ORDER BY o.price, o.id
 	LIMIT 1 FOR UPDATE;
@@ -1287,6 +1405,9 @@ BEGIN
 	PERFORM pg_advisory_xact_lock(hashtext('market')::bigint);
 	prior := public._market_replay(uid, p_nonce);
 	IF prior IS NOT NULL THEN RETURN prior; END IF;
+	IF NOT public._market_has_bank(uid) THEN
+		RETURN jsonb_build_object('ok', false, 'reason', 'no_bank');
+	END IF;
 	now_t := public._market_advance();
 
 	SELECT * INTO o FROM public.market_offers WHERE id = p_offer_id FOR UPDATE;
@@ -1295,6 +1416,11 @@ BEGIN
 	END IF;
 	IF o.user_id = uid THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'own_offer');
+	END IF;
+	IF NOT public._market_has_bank(o.user_id) THEN
+		-- Its pig can't be paid (or pay): take it down rather than fail every taker.
+		PERFORM public._market_close(o, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'cancelled' END, v_now);
+		RETURN jsonb_build_object('ok', false, 'reason', 'not_found');
 	END IF;
 	sz := public._market_set_size(o.find_id, t);
 
@@ -1318,6 +1444,10 @@ BEGIN
 			RETURN public._market_done(uid, p_nonce, jsonb_build_object('ok', false, 'reason', 'lapsed'));
 		END IF;
 		costs := public._market_take_units(uid, o.find_id, sz);
+		IF costs IS NULL THEN  -- the bag shrank since the count (outside the market lock)
+			RETURN jsonb_build_object('ok', false, 'reason', 'not_a_set', 'set_size', sz,
+				'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = o.find_id));
+		END IF;
 		tr := public._market_settle_pig(uid, o.user_id, o.find_id, o.price, costs, 'wanted', o, now_t, t);
 	ELSE
 		-- Straight up: both sides move at once; no tickles; a swapped find
@@ -1327,6 +1457,10 @@ BEGIN
 			RETURN jsonb_build_object('ok', false, 'reason', 'not_enough', 'held', held, 'needed', o.want_qty);
 		END IF;
 		costs := public._market_take_units(uid, o.want_find_id, o.want_qty);
+		IF costs IS NULL THEN
+			RETURN jsonb_build_object('ok', false, 'reason', 'not_enough', 'needed', o.want_qty,
+				'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = o.want_find_id));
+		END IF;
 		PERFORM public._market_give_units(uid, o.find_id, public._market_costs(o.qty, NULL), v_now);
 		PERFORM public._market_give_units(o.user_id, o.want_find_id, public._market_costs(o.want_qty, NULL), v_now);
 		INSERT INTO public.market_trades (kind, find_id, qty, seller_id, buyer_id, want_find_id, want_qty,

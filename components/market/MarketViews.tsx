@@ -397,6 +397,7 @@ export function FindView({
 	sheepHere,
 	nowMs,
 	weekdayOf,
+	isDayStart,
 	ticksPerDay,
 	onTake,
 	onOpen,
@@ -412,6 +413,7 @@ export function FindView({
 	sheepHere: boolean;
 	nowMs: number;
 	weekdayOf: (tick: number) => string;
+	isDayStart: (tick: number) => boolean;
 	ticksPerDay: number;
 	onTake: (card: BoardCard) => void;
 	onOpen: (id: SatchelFindId) => void;
@@ -461,6 +463,7 @@ export function FindView({
 						tuning={state.tuning}
 						ticksPerDay={ticksPerDay}
 						weekdayOf={weekdayOf}
+						isDayStart={isDayStart}
 						accessibilityLabel={`The price of ${findPlural(f.id)} over the last two days, now ${fmtPrice(f.price)}. Bullion sells at ${f.ask} and buys at ${f.bid}.`}
 					/>
 				) : (
@@ -538,7 +541,9 @@ export function FindView({
 			<MyListings offers={mine} state={state} nowMs={nowMs} onCancel={onCancel} busyId={busyId} />
 
 			<Sticker color="paper" rotate={0} pad title="Last trades" right={<Kicker tone="secondary">counter, board and town on one tape</Kicker>} style={styles.gapT}>
-				{view && view.recent.length > 0 ? (
+				{!view ? (
+					<BodySm tone="secondary">Reading the tape…</BodySm>
+				) : view.recent.length > 0 ? (
 					view.recent.map((tr) => <RecentRow key={tr.id} tr={tr} viewing={f.id} size={sizeOf(tr.findId)} ticksPerDay={ticksPerDay} state={state} />)
 				) : (
 					<BodySm tone="secondary">No trades yet.</BodySm>
@@ -566,10 +571,12 @@ function HoldNum({ n, label }: { n: number; label: string }) {
 	);
 }
 
-function clockOf(tick: number, tickMinutes: number): string {
-	const m = (((tick * tickMinutes) % 1440) + 1440) % 1440;
-	const hh = Math.floor(m / 60);
-	const mm = m % 60;
+/** The trade's time on the player's own clock (ticks count from the UTC epoch). */
+function clockOf(tick: number, tickMinutes: number, at: string): string {
+	const ms = Date.parse(at);
+	const d = new Date(Number.isFinite(ms) ? ms : tick * tickMinutes * 60_000);
+	const hh = d.getHours();
+	const mm = d.getMinutes();
 	return `${hh < 10 ? "0" : ""}${hh}:${mm < 10 ? "0" : ""}${mm}`;
 }
 
@@ -577,7 +584,7 @@ function RecentRow({ tr, viewing, size, state }: { tr: MarketTrade; viewing: Sat
 	const line = tradeLine(tr, viewing, size);
 	return (
 		<View style={styles.recent}>
-			<Kicker tone="secondary" style={styles.recentTime}>{clockOf(tr.tick, state.tuning.tickMinutes)}</Kicker>
+			<Kicker tone="secondary" style={styles.recentTime}>{clockOf(tr.tick, state.tuning.tickMinutes, tr.at)}</Kicker>
 			<BodySm style={styles.flex}>{line.text}</BodySm>
 			<Tag label={line.tag} tone={TAG_TONE[line.tag] ?? "paper"} />
 			<Label style={styles.recentPrice}>{tr.price != null ? String(tr.price) : ""}</Label>
@@ -719,7 +726,9 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 				{f ? <Kicker tone="secondary">{`Bullion would pay ${f.bid} / charge ${f.ask}`}</Kicker> : null}
 			</View>
 		);
-		if (c.side === "sell") {
+		if (c.side === "buy" && c.posterCoinOk === false) {
+			action = { label: "can't pay right now", ok: false, variant: "success" };
+		} else if (c.side === "sell") {
 			action = coin >= price ? { label: `Buy for ${price}`, ok: true, variant: "primary" } : { label: `you have ${coin} ready`, ok: false, variant: "primary" };
 		} else {
 			const held = holdingOf(state, c.findId).held;
@@ -732,7 +741,7 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 			rotate={tilt}
 			pad
 			style={styles.pcard}
-			accessibilityLabel={`${c.forYou ? "For you" : KIND_LABEL[c.side]}: ${setOf(c.findId, size)}${c.price != null ? ` for ${c.price}` : ""}, from ${who}`}
+			accessible={false}
 		>
 			<View style={styles.rowBetween}>
 				<KickerPill>{c.forYou ? "For you" : KIND_LABEL[c.side]}</KickerPill>

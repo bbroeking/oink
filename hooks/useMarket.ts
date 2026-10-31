@@ -19,7 +19,6 @@ import {
 	marketCounter,
 	marketPost,
 	marketTake,
-	newMarketNonce,
 	type MarketFindView,
 	type MarketNotice,
 	type MarketOutcome,
@@ -38,11 +37,14 @@ export interface UseMarket {
 	loading: boolean;
 	/** The last read failed (and why), while `state` keeps the last good one. */
 	error: string | null;
-	refresh: () => Promise<MarketState | null>;
+	refresh: (fresh?: boolean) => Promise<MarketState | null>;
 	loadFind: (id: SatchelFindId) => Promise<MarketFindView | null>;
-	counter: (findId: SatchelFindId, side: "buy" | "sell", limit: number | null) => Promise<MarketOutcome>;
-	post: (spec: PostSpec) => Promise<MarketOutcome>;
-	take: (offerId: number, limit: number | null) => Promise<MarketOutcome>;
+	/** Every write takes the caller's nonce: mint ONE per confirm/post sheet
+	 *  (newMarketNonce) and reuse it for that target, so a double tap or a
+	 *  retry after a dropped answer is the same trade, never two. */
+	counter: (findId: SatchelFindId, side: "buy" | "sell", limit: number | null, nonce: string) => Promise<MarketOutcome>;
+	post: (spec: PostSpec, nonce: string) => Promise<MarketOutcome>;
+	take: (offerId: number, limit: number | null, nonce: string) => Promise<MarketOutcome>;
 	cancel: (offerId: number) => Promise<{ ok: boolean; reason: string | null }>;
 }
 
@@ -65,28 +67,35 @@ export function useMarket({
 	}, [onNotices]);
 	const inFlight = useRef<Promise<MarketState | null> | null>(null);
 
-	const refresh = useCallback((): Promise<MarketState | null> => {
-		if (inFlight.current) return inFlight.current;
-		const run = (async () => {
-			setLoading(true);
-			const r = await fetchMarketState();
-			setLoading(false);
-			if (!r.ok) {
-				setError(r.reason);
-				return null;
-			}
-			setError(null);
-			setAvailable(true);
-			setState(r.state);
-			if (r.state.notices.length > 0) onNoticesRef.current?.(r.state.notices);
-			return r.state;
-		})();
-		inFlight.current = run;
-		void run.finally(() => {
-			inFlight.current = null;
-		});
-		return run;
+	// A read that began before a write can't answer for it: `fresh` chains a
+	// new read behind one already in flight instead of reusing its promise.
+	const read = useCallback(async (): Promise<MarketState | null> => {
+		setLoading(true);
+		const r = await fetchMarketState();
+		setLoading(false);
+		if (!r.ok) {
+			setError(r.reason);
+			return null;
+		}
+		setError(null);
+		setAvailable(true);
+		setState(r.state);
+		if (r.state.notices.length > 0) onNoticesRef.current?.(r.state.notices);
+		return r.state;
 	}, []);
+
+	const refresh = useCallback(
+		(fresh = false): Promise<MarketState | null> => {
+			const prior = inFlight.current;
+			if (prior && !fresh) return prior;
+			const run = (prior ? prior.then(() => read(), () => read()) : read()).finally(() => {
+				if (inFlight.current === run) inFlight.current = null;
+			});
+			inFlight.current = run;
+			return run;
+		},
+		[read],
+	);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -106,20 +115,20 @@ export function useMarket({
 	const after = useCallback(
 		async <T>(p: Promise<T>): Promise<T> => {
 			const out = await p;
-			await refresh();
+			await refresh(true);
 			return out;
 		},
 		[refresh],
 	);
 
 	const counter = useCallback(
-		(findId: SatchelFindId, side: "buy" | "sell", limit: number | null) =>
-			after(marketCounter(findId, side, limit, newMarketNonce())),
+		(findId: SatchelFindId, side: "buy" | "sell", limit: number | null, nonce: string) =>
+			after(marketCounter(findId, side, limit, nonce)),
 		[after],
 	);
-	const post = useCallback((spec: PostSpec) => after(marketPost(spec, newMarketNonce())), [after]);
+	const post = useCallback((spec: PostSpec, nonce: string) => after(marketPost(spec, nonce)), [after]);
 	const take = useCallback(
-		(offerId: number, limit: number | null) => after(marketTake(offerId, limit, newMarketNonce())),
+		(offerId: number, limit: number | null, nonce: string) => after(marketTake(offerId, limit, nonce)),
 		[after],
 	);
 	const cancel = useCallback((offerId: number) => after(marketCancel(offerId)), [after]);

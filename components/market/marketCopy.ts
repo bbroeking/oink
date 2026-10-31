@@ -70,7 +70,7 @@ export function bullionSays(
 	yesterday: { findId: SatchelFindId; sets: number; lo: number; hi: number } | null,
 ): string {
 	if (turn % 2 === 0 && yesterday && yesterday.sets > 0) {
-		return `${cap1(findPlural(yesterday.findId))} were busy yesterday: ${yesterday.sets} sets, the price between ${fmtPrice(yesterday.lo)} and ${fmtPrice(yesterday.hi)}.`;
+		return `${cap1(findPlural(yesterday.findId))} were busy yesterday: ${yesterday.sets} ${yesterday.sets === 1 ? "set" : "sets"}, the price between ${fmtPrice(yesterday.lo)} and ${fmtPrice(yesterday.hi)}.`;
 	}
 	return BULLION_TIPS[Math.floor(turn / 2) % BULLION_TIPS.length];
 }
@@ -140,8 +140,8 @@ function moveLine(tr: MarketTrade): string {
 }
 
 /** The receipt for a trade YOU made or that happened to your listing. */
-export function tradeReceipt(tr: MarketTrade, size: number, sheepPays?: number | null): MarketReceipt {
-	const set = setOf(tr.findId, size);
+export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): MarketReceipt {
+	const set = setOf(tr.findId, tr.qty);
 	const mv = moveLine(tr);
 	const sheep = sheepPays ? ` · your Ghost Sheep pays ${sheepPays} today` : "";
 	if (tr.kind === "counter") {
@@ -196,13 +196,14 @@ export function tradeReceipt(tr: MarketTrade, size: number, sheepPays?: number |
 }
 
 /** The receipt a NOTICE wears (things that happened while you were away). */
-export function noticeReceipt(n: MarketNotice, sizeOf: (id: SatchelFindId) => number): MarketReceipt | null {
+export function noticeReceipt(n: MarketNotice): MarketReceipt | null {
 	const o: MarketOffer | null = n.offer;
 	if ((n.kind === "filled" || n.kind === "crossed" || n.kind === "swapped") && n.trade) {
-		return tradeReceipt(n.trade, sizeOf(n.trade.findId));
+		return tradeReceipt(n.trade);
 	}
 	if (!o) return null;
-	const set = setOf(o.findId, sizeOf(o.findId));
+	// A listing's qty is its set size, straight from the server.
+	const set = setOf(o.findId, o.qty);
 	if (n.kind === "expired") {
 		if (o.side === "sell") return { pose: "shrug", title: `Your ${set} came home`, line: `Nobody took them at ${o.price} in a day.`, tone: "meh" };
 		if (o.side === "buy") return { pose: "shrug", title: `Your wanted ad for ${findPlural(o.findId)} ran out`, line: `Nobody sold at ${o.price} in a day.`, tone: "meh" };
@@ -244,6 +245,8 @@ export function refusalReceipt(res: Extract<MarketOutcome, { ok: false }>, findI
 			return meh("Only friends", "A listing can go to everyone, or to one friend.");
 		case "counter_limit":
 			return meh("That's enough at my counter today", "Come back tomorrow.");
+		case "no_bank":
+			return meh("Your tickle bank isn't ready", "Tickle your pig once, then come back.");
 		case "closed":
 			return meh("The market's shut", "Bullion's packed up for now.");
 		case "network":
