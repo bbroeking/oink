@@ -243,16 +243,20 @@ CREATE TABLE IF NOT EXISTS public.market_requests (
 	created_at timestamptz NOT NULL DEFAULT now()
 );
 
-DO $rls$
-DECLARE t text;
-BEGIN
-	FOREACH t IN ARRAY ARRAY['market_prices', 'market_price_points', 'market_offers', 'market_trades',
-	                         'market_ledgers', 'market_notices', 'market_requests'] LOOP
-		EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
-		EXECUTE format('REVOKE ALL ON TABLE public.%I FROM PUBLIC, anon, authenticated', t);
-	END LOOP;
-END
-$rls$;
+ALTER TABLE public.market_prices ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_prices FROM PUBLIC, anon, authenticated;
+ALTER TABLE public.market_price_points ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_price_points FROM PUBLIC, anon, authenticated;
+ALTER TABLE public.market_offers ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_offers FROM PUBLIC, anon, authenticated;
+ALTER TABLE public.market_trades ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_trades FROM PUBLIC, anon, authenticated;
+ALTER TABLE public.market_ledgers ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_ledgers FROM PUBLIC, anon, authenticated;
+ALTER TABLE public.market_notices ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_notices FROM PUBLIC, anon, authenticated;
+ALTER TABLE public.market_requests ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.market_requests FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON SEQUENCE public.market_offers_id_seq FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON SEQUENCE public.market_trades_id_seq FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON SEQUENCE public.market_notices_id_seq FROM PUBLIC, anon, authenticated;
