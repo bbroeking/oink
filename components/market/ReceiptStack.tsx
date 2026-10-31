@@ -30,6 +30,7 @@ export function useReceipts(held: boolean) {
 	const [queue, setQueue] = useState<Shown[]>([]);
 	const seq = useRef(1);
 	const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+	const announced = useRef(new Set<number>());
 
 	const dismiss = useCallback((id: number) => {
 		setQueue((xs) => xs.filter((x) => x.id !== id));
@@ -38,20 +39,33 @@ export function useReceipts(held: boolean) {
 		timers.current.delete(id);
 	}, []);
 
-	const push = useCallback((r: MarketReceipt) => {
+	/** `urgent`: the player's own action (a trade, a refusal) goes to the front;
+	 *  notices from the server wait their turn. */
+	const push = useCallback((r: MarketReceipt, opts?: { urgent?: boolean }) => {
 		const id = seq.current++;
-		setQueue((xs) => [...xs, { ...r, id }]);
+		setQueue((xs) => (opts?.urgent ? [{ ...r, id }, ...xs] : [...xs, { ...r, id }]));
 	}, []);
 
 	const shown = held ? [] : queue.slice(0, MAX_SHOWN);
 
-	// Start each card's clock (and say it) only once it is actually on screen.
+	// A card's clock runs only while it is on screen: covering the screen with
+	// a sheet stops every clock, and uncovering it starts them afresh.
 	const shownKey = shown.map((r) => r.id).join(",");
 	useEffect(() => {
+		const live = new Set(shown.map((r) => r.id));
+		for (const [id, t] of timers.current) {
+			if (!live.has(id)) {
+				clearTimeout(t);
+				timers.current.delete(id);
+			}
+		}
 		for (const r of shown) {
 			if (timers.current.has(r.id)) continue;
 			timers.current.set(r.id, setTimeout(() => dismiss(r.id), r.tone === "moment" ? MOMENT_LIFE_MS : LIFE_MS));
-			AccessibilityInfo.announceForAccessibility(r.line ? `${r.title}. ${r.line}` : r.title);
+			if (!announced.current.has(r.id)) {
+				announced.current.add(r.id);
+				AccessibilityInfo.announceForAccessibility(r.line ? `${r.title}. ${r.line}` : r.title);
+			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the shown ids
 	}, [shownKey, dismiss]);
@@ -61,8 +75,7 @@ export function useReceipts(held: boolean) {
 		return () => all.forEach((t) => clearTimeout(t));
 	}, []);
 
-	// Newest on top, as before.
-	return { shown: [...shown].reverse(), push, dismiss };
+	return { shown, push, dismiss };
 }
 
 export function ReceiptStack({ shown, onDismiss, top }: { shown: Shown[]; onDismiss: (id: number) => void; top: number }) {

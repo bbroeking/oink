@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY);
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
 	SELECT NULLIF(current_setting('smoke.uid', true), '')::uuid $$;
 
-CREATE TABLE public.app_settings (key text PRIMARY KEY, value jsonb, description text);
+CREATE TABLE public.app_settings (key text PRIMARY KEY, value jsonb, description text, updated_at timestamptz DEFAULT now());
+CREATE TABLE public.app_config (key text PRIMARY KEY, enabled boolean, updated_at timestamptz DEFAULT now());
 INSERT INTO public.app_settings (key, value) VALUES
 	('trader_tuning', '{"prices": {"common": 3, "uncommon": 8, "rare": 20}}');
 

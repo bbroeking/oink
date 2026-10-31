@@ -13,7 +13,7 @@
 // card at the top. New pigs get three onboarding cards on the first visit,
 // then a nudge to their first sale at the counter.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { BackHandler, ScrollView, StyleSheet, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -115,8 +115,14 @@ export default function MarketScreen() {
 	const [obSkipped, setObSkipped] = useState(false);
 	const showOb = obOpen || (onboarded === false && state != null && !obSkipped);
 
-	// Receipts wait while any sheet covers the screen.
-	const sheetOpen = confirm != null || draft != null || bagOpen || showOb;
+	// Receipts wait while any sheet covers the screen (or is about to: the
+	// post sheet's short wait for the confirm sheet to leave).
+	const [postPending, setPostPending] = useState(false);
+	const postTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => () => {
+		if (postTimer.current) clearTimeout(postTimer.current);
+	}, []);
+	const sheetOpen = confirm != null || draft != null || bagOpen || showOb || postPending;
 	const receipts = useReceipts(sheetOpen);
 	useEffect(() => {
 		pushRef.current = receipts.push;
@@ -154,18 +160,23 @@ export default function MarketScreen() {
 		if (stackRef.current.length <= 1) router.back();
 		else setStack((s) => s.slice(0, -1));
 	}, []);
-	// The edge swipe and Android's back walk the in-route stack first; only
-	// from the market home do they leave the market.
+	// Deeper than the market home, the iOS edge swipe is off (the native
+	// stack would remove the whole route behind JS's back; the header's back
+	// walks the in-route stack) and Android's back pops one place. Nothing
+	// else is intercepted, so a sign-out, a deep link or a replace still leaves.
 	const navigation = useNavigation();
-	useEffect(
-		() =>
-			navigation.addListener("beforeRemove", (e) => {
-				if (stackRef.current.length <= 1) return;
-				e.preventDefault();
-				setStack((s) => s.slice(0, -1));
-			}),
-		[navigation],
-	);
+	const deep = stack.length > 1;
+	useEffect(() => {
+		navigation.setOptions({ gestureEnabled: !deep });
+	}, [navigation, deep]);
+	useEffect(() => {
+		if (!deep) return undefined;
+		const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+			setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+			return true;
+		});
+		return () => sub.remove();
+	}, [deep]);
 	const openFind = useCallback(
 		(id: SatchelFindId) => {
 			setFindId(id);
@@ -195,7 +206,7 @@ export default function MarketScreen() {
 			if (!state) return;
 			if (!res.ok) {
 				void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-				receipts.push(refusalReceipt(res, refusalFind, state.tuning.openOffers, state.tuning.dailyPosts));
+				receipts.push(refusalReceipt(res, refusalFind, state.tuning.openOffers, state.tuning.dailyPosts), { urgent: true });
 				return;
 			}
 			void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -203,12 +214,12 @@ export default function MarketScreen() {
 				const each = sheepEachFor(res.trade.findId);
 				const sheepPays =
 					trader.present && fancy === res.trade.findId && res.trade.buyer?.you && each != null ? each * res.trade.qty : null;
-				receipts.push(tradeReceipt(res.trade, sheepPays));
+				receipts.push(tradeReceipt(res.trade, sheepPays), { urgent: true });
 				if (res.trade.kind === "counter" || res.trade.kind === "pig") {
 					const seen = await AsyncStorage.getItem(MOVED_KEY);
 					if (seen !== "1") {
 						void AsyncStorage.setItem(MOVED_KEY, "1");
-						setTimeout(() => receipts.push(movedMoment(res.trade!)), 700);
+						setTimeout(() => receipts.push(movedMoment(res.trade!), { urgent: true }), 700);
 					}
 				}
 			} else if (res.offer) {
@@ -221,7 +232,7 @@ export default function MarketScreen() {
 							? "Straight up, for 24 hours. Take it down any time."
 							: `${res.offer.side === "sell" ? "For sale" : "Wanted"} at ${res.offer.price}${f ? `: Bullion pays ${f.bid}, charges ${f.ask}` : ""}.`,
 					tone: "plain",
-				});
+				}, { urgent: true });
 			}
 		},
 		[state, receipts, trader.present, fancy, sheepEachFor],
@@ -232,20 +243,30 @@ export default function MarketScreen() {
 			setBusy(true);
 			const res = await market.counter(id, side, limit, nonceRef.current);
 			setBusy(false);
+			// A lost answer may still have traded: keep the sheet (and its nonce)
+			// so the retry replays the original instead of trading twice.
+			if (!res.ok && res.reason === "network") {
+				receipts.push(refusalReceipt(res, id, 0, 0), { urgent: true });
+				return;
+			}
 			setConfirm(null);
 			await answer(res, id);
 		},
-		[market, answer],
+		[market, answer, receipts],
 	);
 	const doTake = useCallback(
 		async (card: BoardCard) => {
 			setBusy(true);
 			const res = await market.take(card.id, card.side === "sell" ? card.price : null, nonceRef.current);
 			setBusy(false);
+			if (!res.ok && res.reason === "network") {
+				receipts.push(refusalReceipt(res, card.findId, 0, 0), { urgent: true });
+				return;
+			}
 			setConfirm(null);
 			await answer(res, card.side === "swap" ? card.wantFindId : card.findId);
 		},
-		[market, answer],
+		[market, answer, receipts],
 	);
 	const doCancel = useCallback(
 		async (id: number) => {
@@ -257,15 +278,27 @@ export default function MarketScreen() {
 		[market, receipts],
 	);
 	// A fresh nonce for every sheet that can trade.
-	const openConfirm = useCallback((t: ConfirmTarget) => {
-		nonceRef.current = newMarketNonce();
-		setConfirm(t);
+	const cancelPendingPost = useCallback(() => {
+		if (postTimer.current) clearTimeout(postTimer.current);
+		postTimer.current = null;
+		setPostPending(false);
 	}, []);
+	const openConfirm = useCallback(
+		(t: ConfirmTarget) => {
+			cancelPendingPost();
+			nonceRef.current = newMarketNonce();
+			setConfirm(t);
+		},
+		[cancelPendingPost],
+	);
 	const openPost = useCallback(
 		(side: "sell" | "buy" | "swap", id: SatchelFindId) => {
 			if (!state) return;
 			const next = newDraft(state, side, id, draft);
+			cancelPendingPost();
 			const show = () => {
+				postTimer.current = null;
+				setPostPending(false);
 				nonceRef.current = newMarketNonce();
 				setPostError(null);
 				setDraft(next);
@@ -274,10 +307,11 @@ export default function MarketScreen() {
 			// the post sheet's presents (iOS drops a Modal shown mid-dismiss).
 			if (confirm) {
 				setConfirm(null);
-				setTimeout(show, POST_AFTER_CONFIRM_MS);
+				setPostPending(true);
+				postTimer.current = setTimeout(show, POST_AFTER_CONFIRM_MS);
 			} else show();
 		},
-		[state, draft, confirm],
+		[state, draft, confirm, cancelPendingPost],
 	);
 	const doPost = useCallback(
 		async (spec: Parameters<typeof market.post>[0]) => {
@@ -314,7 +348,7 @@ export default function MarketScreen() {
 					title: `You've got a set of ${held.size}. Sell it to me for ${held.bid}?`,
 					line: "Or put it on the noticeboard for more. Tap Sell, or Put it on the noticeboard instead.",
 					tone: "moment",
-				});
+				}, { urgent: true });
 			} else {
 				setStack(["home", "counter"]);
 			}

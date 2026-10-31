@@ -317,7 +317,7 @@ BEGIN
 	PERFORM pg_temp.as_user(a);
 	st := public.market_state();
 	PERFORM pg_temp.ok(st->>'ok' = 'true', '11 the market still reads');
-	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'cancelled', '11 the listing came down');
+	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'expired', '11 the listing came down');
 	PERFORM pg_temp.ok(pg_temp.held(d, 'clover') = 4, '11 its set came home');
 
 	-- Provenance: a cancelled listing's set returns with its source and age.
@@ -331,21 +331,43 @@ BEGIN
 	PERFORM pg_temp.ok((SELECT COUNT(*) FROM public.satchel_items WHERE user_id = a AND find_id = 'honeycomb'
 		AND source = 'gift' AND created_at = '2026-10-01'::timestamptz) = 3, '11 provenance kept');
 
-	-- Season reset: a listing pinned before the archive ends, its set does not come home.
+	-- Season reset: a listing pinned before the flip RAN ends, its set does not
+	-- come home; the guard reads the real clock, so ttp.fake_now can't misfire it.
 	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
 	oid := (res->'offer'->>'id')::bigint;
 	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 0, '11 pinned');
-	INSERT INTO public.season_reset_archive (user_id, season_id, kind, payload, archived_at)
-	VALUES (b, 'snout_season_2', 'satchel', '[]', public._patch_now() + interval '1 second');
-	PERFORM set_config('ttp.fake_now', '2026-11-06 16:10:05+00', false);
-	st := public.market_state();
-	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'expired', '11 reset listing ended');
+	INSERT INTO public.app_settings (key, value) VALUES ('season2_flip',
+		jsonb_build_object('ran_at', clock_timestamp(), 'flipped_at', '2026-10-01'::timestamptz, 'scope', '{"satchel": true}'::jsonb));
+	INSERT INTO public.app_config (key, enabled) VALUES ('season2_flipped', true);
+	PERFORM pg_temp.ok(public.market_cancel(oid)->>'returned' = 'nothing', '11 a pre-reset cancel says nothing came home');
 	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 0, '11 its set stayed reset');
-	-- A listing pinned after the reset behaves normally.
+	-- And one ended by the read: post another pre-reset listing (backdate its real clock).
 	PERFORM pg_temp.give(a, 'honeycomb', 3);
 	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
-	PERFORM public.market_cancel((res->'offer'->>'id')::bigint);
-	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 3, '11 post-reset listing comes home');
+	oid := (res->'offer'->>'id')::bigint;
+	UPDATE public.market_offers SET posted_at = posted_at - interval '1 hour' WHERE id = oid;
+	st := public.market_state();
+	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'reset', '11 reset listing ended by the read');
+	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 0, '11 its set stayed reset too');
+	PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM jsonb_array_elements(st->'notices') x WHERE x->>'kind' = 'reset'), '11 told it was reset');
+	-- A listing pinned after the flip behaves normally, whatever the test clock says.
+	PERFORM set_config('ttp.fake_now', '2026-09-01 10:00:00+00', false);
+	PERFORM pg_temp.give(a, 'honeycomb', 3);
+	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
+	st := public.market_state();
+	PERFORM pg_temp.ok(public.market_cancel((res->'offer'->>'id')::bigint)->>'returned' = 'find', '11 post-reset listing comes home');
+	PERFORM pg_temp.ok(pg_temp.held(a, 'honeycomb') = 3, '11 post-reset set back');
+	PERFORM set_config('ttp.fake_now', '2026-11-06 16:10:05+00', false);
+	-- A giver who deleted their account: the set still comes home (giver NULL), the market keeps reading.
+	DELETE FROM public.app_config WHERE key = 'season2_flipped';
+	DELETE FROM public.satchel_items WHERE user_id = a AND find_id = 'honeycomb';
+	INSERT INTO auth.users (id) VALUES ('00000000-0000-0000-0000-00000000c1ff');
+	INSERT INTO public.satchel_items (user_id, find_id, source, from_user_id)
+	SELECT a, 'honeycomb', 'gift', '00000000-0000-0000-0000-00000000c1ff' FROM generate_series(1, 3);
+	res := public.market_post('sell', 'honeycomb', 70, NULL, NULL, NULL, gen_random_uuid());
+	DELETE FROM auth.users WHERE id = '00000000-0000-0000-0000-00000000c1ff';
+	PERFORM pg_temp.ok(public.market_cancel((res->'offer'->>'id')::bigint)->>'ok' = 'true', '11 deleted giver: cancel works');
+	PERFORM pg_temp.ok((SELECT COUNT(*) FROM public.satchel_items WHERE user_id = a AND find_id = 'honeycomb' AND source = 'gift' AND from_user_id IS NULL) = 3, '11 giver nulled');
 	RAISE NOTICE 'C1 audit regressions: all green';
 END
 $audit$;

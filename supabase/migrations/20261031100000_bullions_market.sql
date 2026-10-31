@@ -159,8 +159,11 @@ CREATE TABLE IF NOT EXISTS public.market_offers (
 	-- Empty for a wanted ad (not set aside).
 	escrow jsonb NOT NULL DEFAULT '[]'::jsonb,
 	status text NOT NULL DEFAULT 'open'
-		CHECK (status IN ('open', 'filled', 'crossed', 'cancelled', 'expired', 'lapsed')),
+		CHECK (status IN ('open', 'filled', 'crossed', 'cancelled', 'expired', 'lapsed', 'reset')),
 	created_at timestamptz NOT NULL DEFAULT now(),
+	-- The REAL clock at insert (never ttp.fake_now): the season-reset guard
+	-- compares it with when the flip actually ran.
+	posted_at timestamptz NOT NULL DEFAULT clock_timestamp(),
 	expires_at timestamptz NOT NULL,
 	closed_at timestamptz,
 	trade_id bigint,
@@ -228,7 +231,7 @@ CREATE TABLE IF NOT EXISTS public.market_ledgers (
 CREATE TABLE IF NOT EXISTS public.market_notices (
 	id bigserial PRIMARY KEY,
 	user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-	kind text NOT NULL CHECK (kind IN ('filled', 'crossed', 'expired', 'lapsed', 'swapped', 'for_you')),
+	kind text NOT NULL CHECK (kind IN ('filled', 'crossed', 'expired', 'lapsed', 'swapped', 'for_you', 'reset')),
 	offer jsonb,
 	trade_id bigint,
 	created_at timestamptz NOT NULL DEFAULT now(),
@@ -409,7 +412,10 @@ BEGIN
 	       COALESCE(CASE WHEN jsonb_typeof(c.v) = 'object' THEN c.v->>'source' END, 'market'),
 	       COALESCE(CASE WHEN jsonb_typeof(c.v) = 'object' THEN (c.v->>'at')::timestamptz END, p_at),
 	       public._market_lot_cost(c.v),
-	       CASE WHEN jsonb_typeof(c.v) = 'object' THEN (c.v->>'from')::uuid END
+	       -- A giver who has since deleted their account is NULL, as the FK's
+	       -- ON DELETE SET NULL made it on the bag row (never a dangling id).
+	       (SELECT u.id FROM auth.users u
+	        WHERE jsonb_typeof(c.v) = 'object' AND u.id = (c.v->>'from')::uuid)
 	FROM jsonb_array_elements(COALESCE(p_lots, '[]'::jsonb)) AS c(v);
 	INSERT INTO public.satchel_met (user_id, find_id) VALUES (p_user, p_find) ON CONFLICT DO NOTHING;
 END;
@@ -488,27 +494,42 @@ AS $function$
 		p_trade);
 $function$;
 
--- When the Season 2 fresh start last archived the Satchels (NULL if never).
--- A set held on a listing posted before it must not come home into the new
--- season's bag, nor be sold: it was part of the bag that was reset.
+-- When the Season 2 fresh start actually RAN (its real clock, `ran_at` in
+-- app_settings.season2_flip — never the backdatable flipped_at), while it
+-- stands and only if it reset the Satchel; NULL otherwise. A set held on a
+-- listing posted (real clock) before it must not come home into the new
+-- season's bag, nor be sold: it was part of the bag that was reset. Two
+-- single-row lookups; callers read it once per call, never per row.
 CREATE OR REPLACE FUNCTION public._market_reset_at()
 RETURNS timestamptz LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
 AS $function$
-	SELECT MAX(archived_at) FROM public.season_reset_archive WHERE kind = 'satchel';
+	SELECT CASE
+		WHEN COALESCE((SELECT enabled FROM public.app_config WHERE key = 'season2_flipped'), false)
+		 AND COALESCE((v.value->'scope'->>'satchel')::boolean, false)
+		THEN (v.value->>'ran_at')::timestamptz END
+	FROM (SELECT (SELECT value FROM public.app_settings WHERE key = 'season2_flip') AS value) v;
 $function$;
 
--- Close an open listing; a set on offer comes home — unless a season reset
--- archived the Satchels since it was pinned.
-CREATE OR REPLACE FUNCTION public._market_close(p_offer public.market_offers, p_status text, p_at timestamptz)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+-- Was this listing pinned before the season reset that now stands?
+CREATE OR REPLACE FUNCTION public._market_pre_reset(p_offer public.market_offers, p_reset_at timestamptz)
+RETURNS boolean LANGUAGE sql IMMUTABLE
 AS $function$
-DECLARE
-	reset_at timestamptz := public._market_reset_at();
+	SELECT p_reset_at IS NOT NULL AND p_offer.posted_at < p_reset_at;
+$function$;
+
+-- Close an open listing; a set on offer comes home — unless it was pinned
+-- before the season reset that now stands (then it was part of the bag that
+-- was reset). Answers whether the set came home.
+CREATE OR REPLACE FUNCTION public._market_close(p_offer public.market_offers, p_status text, p_at timestamptz)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
 BEGIN
 	UPDATE public.market_offers SET status = p_status, closed_at = p_at WHERE id = p_offer.id;
-	IF jsonb_array_length(p_offer.escrow) > 0 AND (reset_at IS NULL OR reset_at <= p_offer.created_at) THEN
+	IF jsonb_array_length(p_offer.escrow) > 0 AND NOT public._market_pre_reset(p_offer, public._market_reset_at()) THEN
 		PERFORM public._market_give_units(p_offer.user_id, p_offer.find_id, p_offer.escrow, p_at);
+		RETURN true;
 	END IF;
+	RETURN false;
 END;
 $function$;
 
@@ -516,6 +537,7 @@ REVOKE ALL ON FUNCTION public._market_take_units(uuid, text, int) FROM PUBLIC, a
 REVOKE ALL ON FUNCTION public._market_lot_cost(jsonb) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_has_bank(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_reset_at() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public._market_pre_reset(public.market_offers, timestamptz) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_give_units(uuid, text, jsonb, timestamptz) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_costs(int, numeric) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public._market_lots_cost(jsonb) FROM PUBLIC, anon, authenticated;
@@ -708,14 +730,15 @@ DECLARE
 	b int;
 	bid int;
 	ask int;
+	reset_at timestamptz := public._market_reset_at();
 BEGIN
 	-- Nothing due? (No lock, no writes: the common read.)
 	IF NOT EXISTS (SELECT 1 FROM public.satchel_finds sf
 	               LEFT JOIN public.market_prices mp ON mp.find_id = sf.id
 	               WHERE mp.find_id IS NULL OR mp.tick < now_t)
 	   AND NOT EXISTS (SELECT 1 FROM public.market_offers WHERE status = 'open' AND expires_at <= v_now)
-	   AND NOT EXISTS (SELECT 1 FROM public.market_offers
-	                   WHERE status = 'open' AND created_at < COALESCE(public._market_reset_at(), '-infinity')) THEN
+	   AND NOT (reset_at IS NOT NULL AND EXISTS (SELECT 1 FROM public.market_offers
+	                   WHERE status = 'open' AND posted_at < reset_at)) THEN
 		RETURN now_t;
 	END IF;
 
@@ -770,10 +793,21 @@ BEGIN
 	-- with the bag it came from (_market_close keeps it from coming home).
 	FOR o IN SELECT * FROM public.market_offers
 	         WHERE status = 'open'
-	           AND (expires_at <= v_now OR created_at < COALESCE(public._market_reset_at(), '-infinity'))
+	           AND (expires_at <= v_now OR (reset_at IS NOT NULL AND posted_at < reset_at))
 	         ORDER BY id FOR UPDATE LOOP
-		PERFORM public._market_close(o, 'expired', v_now);
-		PERFORM public._market_notice(o.user_id, 'expired', o, NULL);
+		-- Each its own subtransaction: one listing that cannot close must not
+		-- stop every pig's read (it stays open and is retried next read).
+		BEGIN
+			IF public._market_pre_reset(o, reset_at) THEN
+				PERFORM public._market_close(o, 'reset', v_now);
+				PERFORM public._market_notice(o.user_id, 'reset', o, NULL);
+			ELSE
+				PERFORM public._market_close(o, 'expired', v_now);
+				PERFORM public._market_notice(o.user_id, 'expired', o, NULL);
+			END IF;
+		EXCEPTION WHEN OTHERS THEN
+			RAISE WARNING 'market: closing listing % failed: %', o.id, SQLERRM;
+		END;
 	END LOOP;
 
 	-- 3. The counter keeps the board honest. Each crossing moves the price, so
@@ -799,8 +833,13 @@ BEGIN
 				END IF;
 			END IF;
 		EXCEPTION WHEN OTHERS THEN
-			PERFORM public._market_close(o, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'cancelled' END, v_now);
-			PERFORM public._market_notice(o.user_id, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'expired' END, o, NULL);
+			RAISE WARNING 'market: crossing listing % failed, taking it down: %', o.id, SQLERRM;
+			BEGIN
+				PERFORM public._market_close(o, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'expired' END, v_now);
+				PERFORM public._market_notice(o.user_id, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'expired' END, o, NULL);
+			EXCEPTION WHEN OTHERS THEN
+				RAISE WARNING 'market: taking listing % down failed too: %', o.id, SQLERRM;
+			END;
 		END;
 	END LOOP;
 
@@ -1419,7 +1458,8 @@ BEGIN
 	END IF;
 	IF NOT public._market_has_bank(o.user_id) THEN
 		-- Its pig can't be paid (or pay): take it down rather than fail every taker.
-		PERFORM public._market_close(o, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'cancelled' END, v_now);
+		PERFORM public._market_close(o, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'expired' END, v_now);
+		PERFORM public._market_notice(o.user_id, CASE WHEN o.side = 'buy' THEN 'lapsed' ELSE 'expired' END, o, NULL);
 		RETURN jsonb_build_object('ok', false, 'reason', 'not_found');
 	END IF;
 	sz := public._market_set_size(o.find_id, t);
@@ -1491,6 +1531,7 @@ AS $function$
 DECLARE
 	uid uuid := auth.uid();
 	o public.market_offers;
+	came_home boolean;
 BEGIN
 	IF uid IS NULL THEN RETURN jsonb_build_object('ok', false, 'reason', 'not_authenticated'); END IF;
 	PERFORM pg_advisory_xact_lock(hashtext('market')::bigint);
@@ -1498,9 +1539,9 @@ BEGIN
 	IF NOT FOUND OR o.status <> 'open' THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'not_found');
 	END IF;
-	PERFORM public._market_close(o, 'cancelled', public._patch_now());
+	came_home := public._market_close(o, 'cancelled', public._patch_now());
 	RETURN jsonb_build_object('ok', true, 'offer_id', o.id,
-		'returned', CASE WHEN jsonb_array_length(o.escrow) > 0 THEN 'find' ELSE 'nothing' END,
+		'returned', CASE WHEN came_home THEN 'find' ELSE 'nothing' END,
 		'held', (SELECT COUNT(*) FROM public.satchel_items WHERE user_id = uid AND find_id = o.find_id));
 END;
 $function$;
@@ -1521,7 +1562,8 @@ AS $function$
 		'notices', (SELECT COUNT(*) FROM public.market_notices n
 		            WHERE n.user_id = auth.uid() AND n.delivered_at IS NULL),
 		'for_you', (SELECT COUNT(*) FROM public.market_offers o
-		            WHERE o.target_id = auth.uid() AND o.status = 'open' AND o.expires_at > public._patch_now()),
+		            WHERE o.target_id = auth.uid() AND o.status = 'open' AND o.expires_at > public._patch_now()
+		              AND public._market_visible(auth.uid(), o)),
 		'listings', (SELECT COUNT(*) FROM public.market_offers o
 		             WHERE o.user_id = auth.uid() AND o.status = 'open'))
 	END;

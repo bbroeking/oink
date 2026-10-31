@@ -58,9 +58,9 @@ const RAW = {
 	},
 	board: [
 		{ id: 1, find_id: "pinecone", side: "sell", price: 13, qty: 4, poster: { id: "maya", name: "Maya", friend: true }, for_you: false, expires_at: "2026-11-06T09:00:00Z" },
-		{ id: 2, find_id: "pinecone", side: "buy", price: 11, qty: 4, poster: { id: "s1", friend: false }, poster_coin_ok: true, expires_at: "2026-11-06T09:00:00Z" },
+		{ id: 2, find_id: "pinecone", side: "buy", price: 11, qty: 4, poster: { friend: false }, poster_coin_ok: true, expires_at: "2026-11-06T09:00:00Z" },
 		{ id: 3, find_id: "marble", side: "swap", price: null, qty: 3, want_find_id: "pinecone", want_qty: 2, poster: { id: "biscuit", name: "Biscuit", friend: true }, for_you: true, expires_at: "2026-11-06T09:00:00Z" },
-		{ id: 4, find_id: "old_key", side: "sell", price: 40, qty: 3, poster: { id: "s2", friend: false }, expires_at: "2026-11-06T09:00:00Z" },
+		{ id: 4, find_id: "old_key", side: "sell", price: 40, qty: 3, poster: { friend: false }, expires_at: "2026-11-06T09:00:00Z" },
 	],
 	tape: [
 		{ id: 9, kind: "counter", side: "sell", find_id: "pinecone", qty: 4, price: 9, seller: { id: "me", you: true }, tick: 990000, at: "x" },
@@ -284,22 +284,26 @@ describe("Bullion's Market audit regressions", () => {
 		expect(bullionSays(0, { findId: "pinecone", sets: 1, lo: 11, hi: 12 })).toContain("1 set, the price");
 	});
 
-	it("queues receipts, holds them under a sheet, and drops none", () => {
+	it("queues receipts, holds them under a sheet, drops none, and puts your own first", () => {
 		const { useReceipts } = jest.requireActual("@/components/market/ReceiptStack");
-		let api: { shown: { title: string }[]; push: (r: unknown) => void; dismiss: (id: number) => void } | null = null;
+		let api: { shown: { title: string; id: number }[]; push: (r: unknown, o?: unknown) => void; dismiss: (id: number) => void } | null = null;
 		function Probe({ held }: { held: boolean }) {
 			api = useReceipts(held);
 			return null;
 		}
 		const r = render(<Probe held />);
 		act(() => {
-			for (let i = 1; i <= 5; i++) api!.push({ pose: "stand", title: `n${i}`, tone: "plain" });
+			for (let i = 1; i <= 4; i++) api!.push({ pose: "stand", title: `n${i}`, tone: "plain" });
 		});
 		expect(api!.shown).toHaveLength(0);
 		act(() => r.update(<SafeAreaProvider initialMetrics={METRICS}><Probe held={false} /></SafeAreaProvider>));
-		expect(api!.shown.map((x) => x.title).sort()).toEqual(["n1", "n2", "n3"]);
-		act(() => api!.dismiss((api!.shown[0] as unknown as { id: number }).id));
-		expect(api!.shown).toHaveLength(3);
+		expect(api!.shown.map((x) => x.title)).toEqual(["n1", "n2", "n3"]);
+		act(() => api!.push({ pose: "gavel", title: "mine", tone: "plain" }, { urgent: true }));
+		expect(api!.shown.map((x) => x.title)).toEqual(["mine", "n1", "n2"]);
+		act(() => api!.dismiss(api!.shown[0].id));
+		expect(api!.shown.map((x) => x.title)).toEqual(["n1", "n2", "n3"]);
+		act(() => api!.dismiss(api!.shown[0].id));
+		expect(api!.shown.map((x) => x.title)).toEqual(["n2", "n3", "n4"]);
 	});
 
 	it("locks a wanted ad whose pig can't pay", () => {
