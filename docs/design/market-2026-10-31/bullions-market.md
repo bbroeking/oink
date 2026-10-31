@@ -112,6 +112,15 @@ cards, back gestures walking the in-route stack, local times on the tape and cha
 an older read, one nonce per sheet (true double-tap idempotency), unpayable wanted ads locked, and copy edge cases.
 Smoke section 11 + a two-session race check cover the SQL; Jest covers the client.
 
+Lap 2 of the same audit fixed what lap 1 introduced: a deleted gift-giver no longer breaks a returning set,
+every expiry and crossing is its own subtransaction (failures log a WARNING), the season guard is read once per
+call, the in-route back no longer intercepts navigation (the iOS edge swipe is off while deeper than the market
+home), your own receipts jump the queue and no card's clock runs under a sheet, and a network failure keeps the
+confirm sheet and its nonce so a retry replays rather than trading twice.
+
+Still open (low): `poster_coin_ok` tells anyone whether a wanted ad's pig can pay; the board runs one
+`tickle_balance` per wanted ad per poll; a Satchel swap or gift keeps the giver's `market_cost` on the moved row.
+
 ## Open questions for the founder
 
 - **Economy.** Buying a set at the counter and handing it to a Ghost Sheep who fancies it can pay more (in score
@@ -120,6 +129,9 @@ Smoke section 11 + a two-session race check cover the SQL; Jest covers the clien
 - **Season 2's fresh start** archives and zeroes the bank and the Satchel at the flip. The market handles its side
   without touching `flip_season_2`: any listing pinned before the latest `season_reset_archive` (kind `satchel`) is
   ended by the next market read, and its held set does **not** come home (it was part of the bag that was reset).
-  Wanted ads lapse naturally against a zeroed bank.
+  Wanted ads lapse naturally against a zeroed bank. The guard reads when the flip actually **ran**
+  (`app_settings.season2_flip.ran_at`, only while `app_config.season2_flipped` is on and the Satchel was in scope)
+  against each listing's real-clock `posted_at`, so a test clock can't misfire it. Such a listing ends as `reset`
+  with its own notice. Known gap: `unflip_season_2()` does not restore sets on listings ended this way.
 - **The tick lock** serialises every market write. Fine at today's volume; per-find locks are the next step if the
   market gets busy.
