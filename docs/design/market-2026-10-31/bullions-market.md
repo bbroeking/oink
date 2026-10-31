@@ -135,3 +135,11 @@ Still open (low): `poster_coin_ok` tells anyone whether a wanted ad's pig can pa
   with its own notice. Known gap: `unflip_season_2()` does not restore sets on listings ended this way.
 - **The tick lock** serialises every market write. Fine at today's volume; per-find locks are the next step if the
   market gets busy.
+
+## Pushing the migration (2026-10-31)
+
+The remote holds three older local migrations that were never applied, deliberately (dark features):
+`20261004230000_matchmade_play`, `20261014180000_seasonal_card_item_unlocks`,
+`20261014200000_halloween_login_costume_gift`. `supabase db push` refuses while they exist; **never pass
+`--include-all`**. Move the three out of `supabase/migrations/`, `npx supabase db push --linked --dry-run` (it must
+list only `20261031100000_bullions_market.sql`), push, then move them back.

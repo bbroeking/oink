@@ -44,10 +44,20 @@ else
 	echo "(market tables + functions, satchel_items.market_cost, source 'market')."
 	read -r -p 'Type "push it now" to apply it, or press Enter to skip: ' answer
 	if [ "$answer" = "push it now" ]; then
-		npx supabase db push --dry-run
-		read -r -p "That's what will be applied. Continue? [y/N] " ok
+		# Never --include-all: older migrations left unapplied on purpose (dark
+		# features) must stay unapplied. If the dry run reports them, set them
+		# aside for the push (see docs/design/market-2026-10-31/bullions-market.md).
+		if ! dry=$(npx supabase db push --linked --dry-run 2>&1); then
+			echo "$dry"
+			echo
+			echo "The dry run refused (often: older local migrations never applied to the remote)."
+			echo "Do NOT use --include-all. Move those files aside, re-run, then move them back."
+			exit 1
+		fi
+		echo "$dry"
+		read -r -p "That's what will be applied. Only the market migration? Continue? [y/N] " ok
 		if [ "$ok" = "y" ] || [ "$ok" = "Y" ]; then
-			npm run db:push
+			npx supabase db push --linked
 		else
 			echo "Skipped the push."
 		fi
