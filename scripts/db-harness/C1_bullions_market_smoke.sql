@@ -368,6 +368,35 @@ BEGIN
 	DELETE FROM auth.users WHERE id = '00000000-0000-0000-0000-00000000c1ff';
 	PERFORM pg_temp.ok(public.market_cancel((res->'offer'->>'id')::bigint)->>'ok' = 'true', '11 deleted giver: cancel works');
 	PERFORM pg_temp.ok((SELECT COUNT(*) FROM public.satchel_items WHERE user_id = a AND find_id = 'honeycomb' AND source = 'gift' AND from_user_id IS NULL) = 3, '11 giver nulled');
+	-- Undo the flip: a listing it ended gives its set back.
+	PERFORM pg_temp.give(a, 'old_key', 3);
+	INSERT INTO public.app_config (key, enabled) VALUES ('season2_flipped', true);
+	res := public.market_post('sell', 'old_key', 30, NULL, NULL, NULL, gen_random_uuid());
+	oid := (res->'offer'->>'id')::bigint;
+	UPDATE public.market_offers SET posted_at = posted_at - interval '1 hour' WHERE id = oid;
+	st := public.market_state();
+	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'reset', '11 ended by the flip');
+	n := pg_temp.held(a, 'old_key');
+	DELETE FROM public.app_config WHERE key = 'season2_flipped';
+	st := public.market_state();
+	PERFORM pg_temp.ok((SELECT status FROM public.market_offers WHERE id = oid) = 'cancelled', '11 unflip: listing restored');
+	PERFORM pg_temp.ok(pg_temp.held(a, 'old_key') = n + 3, '11 unflip: its set came home');
+	-- A swap/gift moving a row clears its cost basis.
+	INSERT INTO public.satchel_items (user_id, find_id, market_cost) VALUES (a, 'marble', 8) RETURNING id INTO oid;
+	UPDATE public.satchel_items SET user_id = b WHERE id = oid;
+	PERFORM pg_temp.ok((SELECT market_cost FROM public.satchel_items WHERE id = oid) IS NULL, '11 moved find carries no cost');
+	-- A wanted ad its pig can't pay is not on anyone else's board.
+	PERFORM pg_temp.as_user(b);
+	UPDATE public.user_items SET item_count = 25 WHERE user_id = b;
+	res := public.market_post('buy', 'river_pebble', 11, NULL, NULL, NULL, gen_random_uuid());
+	oid := (res->'offer'->>'id')::bigint;
+	UPDATE public.user_items SET item_count = 2 WHERE user_id = b;
+	PERFORM pg_temp.as_user(c);
+	st := public.market_state();
+	PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(st->'board') x WHERE (x->>'id')::bigint = oid), '11 unpayable ad hidden');
+	UPDATE public.user_items SET item_count = 25 WHERE user_id = b;
+	st := public.market_state();
+	PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM jsonb_array_elements(st->'board') x WHERE (x->>'id')::bigint = oid), '11 payable again, shown');
 	RAISE NOTICE 'C1 audit regressions: all green';
 END
 $audit$;

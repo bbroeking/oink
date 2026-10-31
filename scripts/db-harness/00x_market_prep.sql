@@ -6,6 +6,7 @@
 --   createdb market && psql -d market -v ON_ERROR_STOP=1 \
 --     -f scripts/db-harness/00x_market_prep.sql \
 --     -f supabase/migrations/20261031100000_bullions_market.sql \
+--     -f supabase/migrations/20261031110000_market_followups.sql \
 --     -f scripts/db-harness/C1_bullions_market_smoke.sql
 --
 -- The tickle bank is stubbed WITHOUT regen (tickle_balance = item_count), so
