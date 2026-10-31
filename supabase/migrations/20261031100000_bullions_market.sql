@@ -1368,3 +1368,25 @@ END;
 $function$;
 REVOKE ALL ON FUNCTION public.market_cancel(bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.market_cancel(bigint) TO authenticated;
+
+-- ── 9. The Barn fan's peek ───────────────────────────────────────────────────
+-- Read-only (no tick, no hand-over): is the market open, and is anything
+-- waiting for you there — notices not yet handed over, listings sent to you.
+-- The fan row reads this so it never consumes market_state's notices.
+CREATE OR REPLACE FUNCTION public.market_ping()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+	SELECT CASE WHEN auth.uid() IS NULL THEN jsonb_build_object('ok', false, 'reason', 'not_authenticated')
+	ELSE jsonb_build_object(
+		'ok', true,
+		'open', COALESCE((public._market_tuning()->>'enabled')::boolean, true),
+		'notices', (SELECT COUNT(*) FROM public.market_notices n
+		            WHERE n.user_id = auth.uid() AND n.delivered_at IS NULL),
+		'for_you', (SELECT COUNT(*) FROM public.market_offers o
+		            WHERE o.target_id = auth.uid() AND o.status = 'open' AND o.expires_at > public._patch_now()),
+		'listings', (SELECT COUNT(*) FROM public.market_offers o
+		             WHERE o.user_id = auth.uid() AND o.status = 'open'))
+	END;
+$function$;
+REVOKE ALL ON FUNCTION public.market_ping() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.market_ping() TO authenticated;

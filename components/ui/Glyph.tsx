@@ -62,6 +62,9 @@ const GLYPHS = {
 	ghost: require("../../assets/images/glyphs/ghost.png"),
 	// The Ghost Sheep Trader — his own sticker (2026-09-17), for the fan row's mark.
 	trader: require("../../assets/images/glyphs/trader.png"),
+	// Bullion the bull, keeper of the Market (2026-10-31) — the fan row's mark,
+	// the same painted 256² sticker family as the trader's.
+	market: require("../../assets/images/market/bullion.png"),
 	// The Barn button's door — the barn front with the right leaf swung open,
 	// painted in the satchel sticker style (2026-09-17; replaces the BarnDoor SVG).
 	barnDoor: require("../../assets/images/glyphs/barn_door.png"),

@@ -91,7 +91,7 @@ const FAB_TILT = "-3deg";
 const LABEL_TILT = "-2deg";
 
 /** The marks the button can wear — on its face and in the fan. */
-export type BarnMark = "door" | "shovel" | "truffle" | "bag" | "trough" | "trader" | "pen" | "riddle";
+export type BarnMark = "door" | "shovel" | "truffle" | "bag" | "trough" | "trader" | "pen" | "riddle" | "market";
 
 export interface BarnFanOption {
 	key: string;
@@ -146,6 +146,8 @@ function Mark({ mark, size }: { mark: BarnMark; size: number }) {
 	if (mark === "pen") return <Glyph name="signPen" size={size} />;
 	// The Sheep's Riddle (2026-10-29): the looking glass, for a picture riddle.
 	if (mark === "riddle") return <Glyph name="search" size={size} />;
+	// Bullion's Market (2026-10-31): the bull himself.
+	if (mark === "market") return <Glyph name="market" size={size} />;
 	return <Glyph name="barnDoor" size={size} />;
 }
 

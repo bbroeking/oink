@@ -92,6 +92,8 @@ import { satchelStanding } from "@/utils/satchel";
 import { TraderSheet } from "./trader/TraderSheet";
 import { useTrader } from "@/hooks/useTrader";
 import { useDailyRiddle } from "@/hooks/useDailyRiddle";
+import { useMarketPing } from "@/hooks/useMarketPing";
+import { marketFanLine } from "@/utils/market";
 import { riddleFanLine } from "@/utils/dailyRiddle";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
@@ -921,6 +923,9 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	const traderRefused = useCallback((line: string) => showToast("He shook his head", line), [showToast]);
 	// The Sheep's Riddle's day, read from the device (no server in v1).
 	const dailyRiddle = useDailyRiddle();
+	// BULLION'S MARKET (2026-10-31): a read-only peek, so the row only draws
+	// once the server has the market and can say what waits there.
+	const marketPing = useMarketPing();
 
 	// THE FAN, in its fixed order: Dig · Barn · the truffle · the Satchel.
 	// Burying rides along whenever the truffle status has loaded — as the act
@@ -1043,6 +1048,21 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 			onPress: () => router.push("/riddle"),
 			accessibilityLabel: "The Sheep's Riddle",
 			accessibilityHint: "Opens today's riddle: three clues, nine pictures, two guesses",
+		});
+	}
+	// BULLION'S MARKET (2026-10-31): one price, two ways to trade. A standing
+	// shop (unlike the wandering Trader), so the row is on the fan whenever the
+	// market is open; its line says when something waits there for you.
+	if (marketPing?.open) {
+		fanOptions.push({
+			key: "market",
+			title: "Market",
+			sub: marketFanLine(marketPing),
+			label: "market",
+			mark: "market",
+			onPress: () => router.push("/market"),
+			accessibilityLabel: "Bullion's Market",
+			accessibilityHint: "Opens the market: buy or sell sets at Bullion's counter, or trade with pigs on the noticeboard",
 		});
 	}
 	// THE ERRAND'S ROW (2026-09-18): beside the Trader's, never replacing it.

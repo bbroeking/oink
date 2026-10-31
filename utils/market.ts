@@ -601,3 +601,34 @@ export async function marketCancel(offerId: number): Promise<{ ok: boolean; reas
 	const r = await rpcAction<Raw>("market_cancel", { p_offer_id: offerId });
 	return r.ok ? { ok: true, reason: null } : { ok: false, reason: r.reason };
 }
+
+export interface MarketPing {
+	open: boolean;
+	/** Notices waiting to be handed over (your listings filled, crossed …). */
+	notices: number;
+	/** Open listings a friend sent to just you. */
+	forYou: number;
+	/** Your own open listings. */
+	listings: number;
+}
+
+/** The Barn fan's peek: read-only, never hands a notice over. */
+export async function fetchMarketPing(): Promise<MarketPing | null> {
+	const r = await rpcAction<Raw>("market_ping");
+	if (!r.ok) return null;
+	const o = r as Raw;
+	return {
+		open: o.open !== false,
+		notices: Math.max(0, int(o.notices)),
+		forYou: Math.max(0, int(o.for_you)),
+		listings: Math.max(0, int(o.listings)),
+	};
+}
+
+/** The fan row's hand line. */
+export function marketFanLine(p: MarketPing): string {
+	if (p.forYou > 0) return p.forYou === 1 ? "an offer for you" : `${p.forYou} offers for you`;
+	if (p.notices > 0) return p.notices === 1 ? "news on your listing" : `news on ${p.notices} listings`;
+	if (p.listings > 0) return p.listings === 1 ? "one listing pinned up" : `${p.listings} listings pinned up`;
+	return "buy, sell, swap";
+}

@@ -20,7 +20,7 @@
 --   8. A wanted ad whose pig tickled its tickles away lapses when a seller comes.
 --   9. The counter crosses a resting listing once its price reaches it.
 --  10. A day later: the walk caught up (one point per tick), listings
---      expired with their sets home, notices handed over once.
+--      expired with their sets home, notices handed over once; market_ping.
 \set ON_ERROR_STOP on
 
 INSERT INTO auth.users (id) VALUES
@@ -263,6 +263,8 @@ BEGIN
 	st2 := public.market_find('pinecone');
 	PERFORM pg_temp.ok(st2->>'ok' = 'true' AND jsonb_array_length(st2->'hist') > 48 AND jsonb_array_length(st2->'recent') > 0, '10 market_find');
 	PERFORM pg_temp.ok(public.market_find('nope')->>'reason' = 'unknown_find', '10 unknown find');
+	st2 := public.market_ping();
+	PERFORM pg_temp.ok(st2->>'ok' = 'true' AND st2->>'open' = 'true' AND (st2->>'notices')::int = 0 AND (st2->>'listings')::int = 0, '10 ping');
 	RAISE NOTICE 'C1 bullions market smoke: all green';
 END
 $later$;
