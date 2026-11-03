@@ -76,6 +76,15 @@ describe("routeForScreen — push deep-link map", () => {
 		expect(routeForScreen("trough")).toBe("/");
 	});
 
+	test("market routes to Bullion's Market (an offer for you, your listing filled)", () => {
+		expect(routeForScreen("market")).toBe("/market");
+		const target = tapTargetFromResponse({ notification: { request: { content: { data: { kind: "market", screen: "market" } } } } });
+		expect(routeForPush(target)).toBe("/market");
+		expect(planTapRoute(target, true)).toEqual({ action: "navigate", path: "/market" });
+		// A cold start holds the route until the shell mounts.
+		expect(planTapRoute(target, false)).toEqual({ action: "defer", path: "/market" });
+	});
+
 	test("pen routes to the Pen (the errand's homecoming waits on its corkboard)", () => {
 		expect(routeForScreen("pen")).toBe("/pen");
 	});
