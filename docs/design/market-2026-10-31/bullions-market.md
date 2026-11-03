@@ -22,13 +22,13 @@ wanders home.
 | The price **P** | a float kept in [0.85 U, 1.15 U]; seeded near U |
 | Bullion sells at | max(U + 1, ceil(1.2 P)) |
 | Bullion buys at | min(U, floor(0.8 P)) |
-| A set at the counter | moves P ± 3% of U |
+| A set at the counter | moves P ± 5% of U (3% until the 2026-11-02 balance pass) |
 | A pig sale | moves P a third of the way to what was paid |
 | A swap | moves nothing |
-| Every tick (30 min) | P += U × 0.01 × (2r − 1), then P += 0.05 × (U − P); r = md5(find, tick) |
+| Every tick (30 min) | P += U × 0.02 × (2r − 1), then P += 0.05 × (U − P); r = md5(find, tick) (wiggle 0.01 until 2026-11-02) |
 | A townsfolk print on the tape | per tick, 20% / 10% / 3% by rarity (one of the wiggle's small trades) |
 | Listing price | 1 … 3 × U per set |
-| Listings up at a time / posts a day / lifetime | 4 / 30 / 24 h |
+| Listings up at a time / posts a day / lifetime | 4 / 30 / 48 h (24 h until 2026-11-02) |
 | Counter caps | off (`counter_caps: null`; `{sell, buy}` per pig per UTC day is the valve) |
 
 **Crossing.** The counter keeps the board honest: a resting for-sale listing at or under Bullion's buying price sells
@@ -135,7 +135,7 @@ by tick), listings coming home as fresh `market` rows (escrow now keeps source, 
 stale `open` status, and a moved-back test clock rewriting history. Client: notices sized from the server's own
 qty, a receipt queue that drops nothing and waits under sheets, the price band's taps, VoiceOver reach on board
 cards, back gestures walking the in-route stack, local times on the tape and chart, a write's refresh never reusing
-an older read, one nonce per sheet (true double-tap idempotency), unpayable wanted ads locked, and copy edge cases.
+an older read, one nonce per sheet (true double-tap idempotency; since 2026-11-02 a write with no answer keeps its nonce for that exact trade until a definite answer, so a reopened sheet replays instead of trading twice), unpayable wanted ads locked, and copy edge cases.
 Smoke section 11 + a two-session race check cover the SQL; Jest covers the client.
 
 Lap 2 of the same audit fixed what lap 1 introduced: a deleted gift-giver no longer breaks a returning set,
@@ -146,6 +146,26 @@ confirm sheet and its nonce so a retry replays rather than trading twice.
 
 Still open (low): `poster_coin_ok` tells anyone whether a wanted ad's pig can pay; the board runs one
 `tickle_balance` per wanted ad per poll; a Satchel swap or gift keeps the giver's `market_cost` on the moved row.
+
+## Launch fixes and balance (2026-11-02)
+
+A fresh server audit, a client audit and a simulation balance pass (`docs/design/market-2026-10-31/balance-pass-2026-11-02.md`,
+`tools/balance_market.py`) ran on 2026-11-02. Fixed in `20261102200000_market_launch_fixes.sql` (smoke `C3`):
+a friend-only target deleting their account no longer destroys the poster's held set (`SET NULL` + a trigger that
+brings it home); listings settle by the units they hold, so a set-size change can't mint or destroy finds; a validating
+`_market_tuning()` (deep merge, clamps, the fairness invariant, `tick_minutes` pinned at 30; bad edits fall back to
+defaults); a closed market still expires listings and lets a pig take theirs down; one daily-shelf set per pig a day
+(`bullion_board.per_pig`, refusal `shelf_limit`); the tick advance re-checks under the lock; daily pruning of old
+rows; pushes for an offer for you and for your listing filling or crossing; and the Season 2 flip now runs through
+`_season2_flip_market_locked()` (the market lock, then `flip_season_2`, then any listing still open ends as `reset`).
+**A manual flip must call `_season2_flip_market_locked(p_at)`, not `flip_season_2` directly.** Balance levers moved:
+impact 0.05, wiggle 0.02, listings 48 h. Client: a lost write keeps its nonce and says so in the sheet; writes no longer
+wait on a full read; `reset` and "your friend left" notices; persisted notices; foreground refresh; cold-start back;
+the bank cap explained; per-find accessibility labels.
+
+Open, for the founder (from the balance pass): set sizes (3/2/1, 3/3/1 or 4/3/1 all beat 4/3/3; a set of 3 tin
+whistles is unaffordable under any bank cap), the Ghost Sheep paying his ×2 only for finds not bought at the market
+(the always-best loop), and the Sheep's fancy formula (meant 70/25/5 by rarity, in practice a common 99.995% of days).
 
 ## Open questions for the founder
 
