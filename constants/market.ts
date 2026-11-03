@@ -245,3 +245,33 @@ export function swapVerdict(giveVal: number, wantVal: number): "asking_more" | "
 	if (wantVal < giveVal * 0.9) return "giving_more";
 	return "fair";
 }
+
+// ── Onboarding and the one-time moments (round-4 design, 2026-10-30) ─────────
+// Device-local flags: the cards and each moment play once per install. The
+// first two strings are the ones the market shipped with, so a pig who has
+// already been through them never sees them again.
+export const MARKET_ONBOARDED_KEY = "ttp.market.onboarded";
+export const MARKET_MOMENT_KEYS = Object.freeze({
+	/** "You moved the price!" after your first counter or pig trade. */
+	moved: "ttp.market.moment.moved",
+	/** "Nobody's traded pinecones for a while" the first time you see a price wander home. */
+	quiet: "ttp.market.moment.quiet",
+	/** "Nice selling." the first time a pig pays you more than Bullion would have. */
+	soldHigh: "ttp.market.moment.soldhigh",
+});
+
+/** Ticks without a trade before a price counts as quiet (3 hours of 30-minute ticks). */
+export const QUIET_TICKS = 6;
+
+/**
+ * Is a quiet price visibly wandering home? Nothing has traded it for
+ * QUIET_TICKS, it still sits at least 2% of the usual price away, and it is
+ * nearer home than it was QUIET_TICKS ago. `spark` is one point a tick, oldest
+ * first, ending at the price now.
+ */
+export function wanderingHome(f: { usual: number; price: number; quietFor: number; spark: readonly { p: number }[] }): boolean {
+	if (f.quietFor < QUIET_TICKS || f.spark.length <= QUIET_TICKS) return false;
+	const gap = Math.abs(f.price - f.usual);
+	const before = Math.abs(f.spark[f.spark.length - 1 - QUIET_TICKS].p - f.usual);
+	return gap >= 0.02 * f.usual && gap < before;
+}

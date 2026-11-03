@@ -195,6 +195,29 @@ export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): Market
 	return { pose: "stand", title: "A trade", tone: "plain" };
 }
 
+/** A one-time moment: the first quiet price you watch wander home. */
+export function quietMoment(findId: SatchelFindId, price: number, usual: number): MarketReceipt {
+	return {
+		pose: "stand",
+		title: `Nobody's traded ${findPlural(findId)} for a while`,
+		line: `The price is wandering home: ${fmtPrice(price)} now, and ${usual} is usual.`,
+		tone: "moment",
+	};
+}
+
+/** A one-time moment: the first time a pig pays you more than Bullion would have. */
+export function soldHighMoment(tr: MarketTrade): MarketReceipt | null {
+	if (tr.kind !== "pig" || !tr.seller?.you || tr.price == null || tr.bid == null) return null;
+	const plus = tr.price - tr.bid;
+	if (plus <= 0) return null;
+	return {
+		pose: "cheer",
+		title: "Nice selling.",
+		line: `${cap1(pigName(tr.buyer))} paid ${plus} more than I would have.`,
+		tone: "moment",
+	};
+}
+
 /** The receipt a NOTICE wears (things that happened while you were away). */
 export function noticeReceipt(n: MarketNotice): MarketReceipt | null {
 	const o: MarketOffer | null = n.offer;

@@ -103,7 +103,15 @@ Smoke: `scripts/db-harness/00x_market_prep.sql` + `C1_bullions_market_smoke.sql`
 - `components/market/`: `MarketViews` (the four places), `MarketSheets`, `MarketArt` (Bullion's five poses, the
   corkboard, the sparkline and the price chart), `ReceiptStack`, `marketCopy` (every sentence).
 - Entry: a **Market** row on the Barn button's fan, drawn once `market_ping` answers; its line says
-  "an offer for you" / "news on your listing" / "N listings pinned up" / "buy, sell, swap".
+  "an offer for you" / "news on your listing" / "new here? · buy, sell, swap" (until the cards are done) /
+  "N listings pinned up" / "buy, sell, swap".
+- Onboarding (round-4 design): three cards in Bullion's voice, "Step up to the counter", the guided first trade on a
+  set you hold, and three one-time moments, each once per install (device flags in `constants/market.ts`,
+  `MARKET_ONBOARDED_KEY` / `MARKET_MOMENT_KEYS`): **moved** ("You moved the price!", your first counter or pig
+  trade), **quiet** ("Nobody's traded pinecones for a while", the first find you open whose price nothing has traded
+  for `QUIET_TICKS` (3 h) and that is wandering home: `wanderingHome()`), **sold high** ("Nice selling. Maya paid 5
+  more than I would have.", the first pig sale above Bullion's buying price, from your own sale or a notice).
+  Tests: `__tests__/marketMoments.test.ts`.
 
 ## Prototype parts deliberately not shipped
 

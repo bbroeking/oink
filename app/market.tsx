@@ -42,15 +42,14 @@ import {
 	type PostDraft,
 } from "@/components/market/MarketSheets";
 import { ReceiptStack, useReceipts } from "@/components/market/ReceiptStack";
-import { movedMoment, noticeReceipt, refusalReceipt, tradeReceipt, type MarketReceipt } from "@/components/market/marketCopy";
+import { MARKET_MOMENT_KEYS, MARKET_ONBOARDED_KEY, wanderingHome } from "@/constants/market";
+import { movedMoment, noticeReceipt, quietMoment, refusalReceipt, soldHighMoment, tradeReceipt, type MarketReceipt } from "@/components/market/marketCopy";
 import { useMarket } from "@/hooks/useMarket";
 import { useTrader } from "@/hooks/useTrader";
 import { holdingOf, newMarketNonce, setsOf, type BoardCard, type MarketFindView, type MarketNotice, type MarketOutcome } from "@/utils/market";
 
 type Place = "home" | "counter" | "find" | "board";
 
-const ONBOARDED_KEY = "ttp.market.onboarded";
-const MOVED_KEY = "ttp.market.moment.moved";
 const SAY_TURN_MS = 12_000;
 // The confirm sheet's slide-out, before the post sheet slides in.
 const POST_AFTER_CONFIRM_MS = 350;
@@ -61,13 +60,25 @@ export default function MarketScreen() {
 	const scrollPad = useStackScrollPad();
 	// Notices arrive from the hook's read; the receipt queue is declared below
 	// (it holds while a sheet is open), so they reach it through a ref.
-	const pushRef = useRef<(r: MarketReceipt) => void>(() => {});
+	const pushRef = useRef<(r: MarketReceipt, opts?: { urgent?: boolean }) => void>(() => {});
+	// The one-time moments: once per install (a device flag) and once per
+	// visit (this ref, so two triggers in one breath can't both play one).
+	const momentsRef = useRef(new Set<string>());
+	const playMoment = useCallback(async (key: string, r: MarketReceipt | null, delayMs: number) => {
+		if (!r || momentsRef.current.has(key)) return;
+		momentsRef.current.add(key);
+		if ((await AsyncStorage.getItem(key)) === "1") return;
+		void AsyncStorage.setItem(key, "1");
+		setTimeout(() => pushRef.current(r, { urgent: true }), delayMs);
+	}, []);
 	const onNotices = useCallback((ns: MarketNotice[]) => {
 		for (const n of ns) {
 			const r = noticeReceipt(n);
 			if (r) pushRef.current(r);
+			// A listing a pig bought for more than Bullion would have paid.
+			if (n.trade) void playMoment(MARKET_MOMENT_KEYS.soldHigh, soldHighMoment(n.trade), 1400);
 		}
-	}, []);
+	}, [playMoment]);
 	const market = useMarket({ onNotices });
 	const trader = useTrader();
 	const state = market.state;
@@ -102,7 +113,7 @@ export default function MarketScreen() {
 	// First visit: the three cards.
 	useEffect(() => {
 		let cancelled = false;
-		void AsyncStorage.getItem(ONBOARDED_KEY).then((v) => {
+		void AsyncStorage.getItem(MARKET_ONBOARDED_KEY).then((v) => {
 			if (cancelled) return;
 			setOnboarded(v === "1");
 		});
@@ -200,6 +211,14 @@ export default function MarketScreen() {
 	);
 	const sheepEach = useMemo(() => sheepEachFor(findId), [sheepEachFor, findId]);
 
+	// The quiet-drift moment: the first time a pig, past the cards, looks at a
+	// find whose price nobody has traded for a while and is wandering home.
+	useEffect(() => {
+		if (place !== "find" || !state || onboarded !== true) return;
+		const f = state.finds.find((x) => x.id === findId);
+		if (f && wanderingHome(f)) void playMoment(MARKET_MOMENT_KEYS.quiet, quietMoment(f.id, f.price, f.usual), 900);
+	}, [place, findId, state, onboarded, playMoment]);
+
 	// ── Writes ──
 	const answer = useCallback(
 		async (res: MarketOutcome, refusalFind: SatchelFindId | null) => {
@@ -216,12 +235,9 @@ export default function MarketScreen() {
 					trader.present && fancy === res.trade.findId && res.trade.buyer?.you && each != null ? each * res.trade.qty : null;
 				receipts.push(tradeReceipt(res.trade, sheepPays), { urgent: true });
 				if (res.trade.kind === "counter" || res.trade.kind === "pig") {
-					const seen = await AsyncStorage.getItem(MOVED_KEY);
-					if (seen !== "1") {
-						void AsyncStorage.setItem(MOVED_KEY, "1");
-						setTimeout(() => receipts.push(movedMoment(res.trade!), { urgent: true }), 700);
-					}
+					void playMoment(MARKET_MOMENT_KEYS.moved, movedMoment(res.trade), 700);
 				}
+				void playMoment(MARKET_MOMENT_KEYS.soldHigh, soldHighMoment(res.trade), 1400);
 			} else if (res.offer) {
 				const f = state.finds.find((x) => x.id === res.offer!.findId);
 				receipts.push({
@@ -235,7 +251,7 @@ export default function MarketScreen() {
 				}, { urgent: true });
 			}
 		},
-		[state, receipts, trader.present, fancy, sheepEachFor],
+		[state, receipts, trader.present, fancy, sheepEachFor, playMoment],
 	);
 
 	const doCounter = useCallback(
@@ -332,7 +348,7 @@ export default function MarketScreen() {
 	);
 	const finishOnboarding = useCallback(() => {
 		const firstTime = onboarded !== true;
-		void AsyncStorage.setItem(ONBOARDED_KEY, "1");
+		void AsyncStorage.setItem(MARKET_ONBOARDED_KEY, "1");
 		setOnboarded(true);
 		setObOpen(false);
 		// The guided first trade (first time only; a replay just closes): a set

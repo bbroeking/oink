@@ -631,9 +631,11 @@ export async function fetchMarketPing(): Promise<MarketPing | null> {
 }
 
 /** The fan row's hand line. */
-export function marketFanLine(p: MarketPing): string {
+export function marketFanLine(p: MarketPing, newHere = false): string {
 	if (p.forYou > 0) return p.forYou === 1 ? "an offer for you" : `${p.forYou} offers for you`;
 	if (p.notices > 0) return p.notices === 1 ? "news on your listing" : `news on ${p.notices} listings`;
+	// Until this device has been through Bullion's three cards.
+	if (newHere) return "new here? · buy, sell, swap";
 	if (p.listings > 0) return p.listings === 1 ? "one listing pinned up" : `${p.listings} listings pinned up`;
 	return "buy, sell, swap";
 }

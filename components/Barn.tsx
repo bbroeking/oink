@@ -92,7 +92,7 @@ import { satchelStanding } from "@/utils/satchel";
 import { TraderSheet } from "./trader/TraderSheet";
 import { useTrader } from "@/hooks/useTrader";
 import { useDailyRiddle } from "@/hooks/useDailyRiddle";
-import { useMarketPing } from "@/hooks/useMarketPing";
+import { useMarketOnboarded, useMarketPing } from "@/hooks/useMarketPing";
 import { marketFanLine } from "@/utils/market";
 import { riddleFanLine } from "@/utils/dailyRiddle";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
@@ -926,6 +926,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 	// BULLION'S MARKET (2026-10-31): a read-only peek, so the row only draws
 	// once the server has the market and can say what waits there.
 	const marketPing = useMarketPing();
+	// Until the three cards are done, the row says "new here?".
+	const marketOnboarded = useMarketOnboarded();
 
 	// THE FAN, in its fixed order: Dig · Barn · the truffle · the Satchel.
 	// Burying rides along whenever the truffle status has loaded — as the act
@@ -1057,7 +1059,7 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		fanOptions.push({
 			key: "market",
 			title: "Market",
-			sub: marketFanLine(marketPing),
+			sub: marketFanLine(marketPing, marketOnboarded === false),
 			label: "market",
 			mark: "market",
 			onPress: () => router.push("/market"),
