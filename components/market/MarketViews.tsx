@@ -11,6 +11,7 @@
 //     and your listings.
 // Every number comes off market_state / market_find; the rules in
 // constants/market only phrase what the server already decided.
+import { memo } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { SatchelFindId } from "@/constants/satchel";
 import {
@@ -39,6 +40,8 @@ import {
 	holdingOf,
 	pigName,
 	setsOf,
+	shelfDone,
+	takeableBoard,
 	type BoardCard,
 	type MarketFind,
 	type MarketFindView,
@@ -67,7 +70,7 @@ import {
 } from "../ui";
 import { FindArt } from "../satchel/FindArt";
 import { BullionArt, CorkboardArt, PriceChart, Sparkline, chartStyles } from "./MarketArt";
-import { bullionSays, qtyOf, setOf, tickerLine, tradeLine } from "./marketCopy";
+import { LEDGER_SPAN, bullionSays, capLine, qtyOf, setOf, tickerLine, tradeLine } from "./marketCopy";
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -114,7 +117,9 @@ export function VsChip({ vs }: { vs: VsPrice }) {
 	return <Tag label={vs.word} tone={vs.diff < 0 ? "sage" : vs.diff > 0 ? "rose" : "paper"} />;
 }
 
-/** Your listings: what is pinned up, how long it has, and a way to take it down. */
+/** Your listings: what is pinned up, how long it has, and a way to take it down.
+ *  Reads only the friends, finds and tuning, so the closed market (which
+ *  answers your listings alone) can draw it too. */
 export function MyListings({
 	offers,
 	state,
@@ -123,7 +128,7 @@ export function MyListings({
 	busyId,
 }: {
 	offers: MarketOffer[];
-	state: MarketState;
+	state: Pick<MarketState, "friends" | "finds" | "tuning">;
 	nowMs: number;
 	onCancel: (id: number) => void;
 	busyId: number | null;
@@ -226,7 +231,10 @@ export function MarketHome({
 
 			<Sticker color="paper" rotate={0} pad style={styles.ledger}>
 				<View style={styles.flex}>
-					<KickerPill>Your ledger</KickerPill>
+					<View style={styles.rowWrap}>
+						<KickerPill>Your ledger</KickerPill>
+						<Kicker tone="secondary">{LEDGER_SPAN}</Kicker>
+					</View>
 					<Body>
 						{`spent ${state.me.spent} · took in ${state.me.tookIn} · `}
 						<T role="body" tone={net > 0 ? "success" : net < 0 ? "danger" : "secondary"}>
@@ -348,7 +356,9 @@ export function CounterView({
 	);
 }
 
-function CounterRow({ f, state, fancy, onOpen }: { f: MarketFind; state: MarketState; fancy: boolean; onOpen: (id: SatchelFindId) => void }) {
+// Memoised: the screen re-renders on Bullion's line turn and the board's
+// clock; a row (and its sparkline) only redraws when its find or the market does.
+const CounterRow = memo(function CounterRow({ f, state, fancy, onOpen }: { f: MarketFind; state: MarketState; fancy: boolean; onOpen: (id: SatchelFindId) => void }) {
 	const h = holdingOf(state, f.id);
 	const { sets } = setsOf(h, f.size);
 	const c = changeWords(f.price - f.prev);
@@ -384,7 +394,7 @@ function CounterRow({ f, state, fancy, onOpen }: { f: MarketFind; state: MarketS
 			</View>
 		</Pressable>
 	);
-}
+});
 
 // ── One find up close ────────────────────────────────────────────────────────
 
@@ -392,6 +402,8 @@ export function FindView({
 	state,
 	find,
 	view,
+	viewFailed = false,
+	onRetryView,
 	fancy,
 	sheepEach,
 	sheepHere,
@@ -407,6 +419,9 @@ export function FindView({
 	state: MarketState;
 	find: MarketFind;
 	view: MarketFindView | null;
+	/** The find's read failed (or timed out) and there is no chart to show. */
+	viewFailed?: boolean;
+	onRetryView?: () => void;
 	fancy: SatchelFindId | null;
 	/** What your Ghost Sheep pays for one of these today (null when unknown). */
 	sheepEach: number | null;
@@ -425,7 +440,7 @@ export function FindView({
 	const h = holdingOf(state, f.id);
 	const { sets } = setsOf(h, f.size);
 	const c = changeWords(f.price - f.prev);
-	const best = boardBest(state.board, f.id);
+	const best = boardBest(takeableBoard(state), f.id);
 	const dug = h.held - h.paidUnits;
 	const paidLine = h.held
 		? h.paidUnits
@@ -466,6 +481,20 @@ export function FindView({
 						isDayStart={isDayStart}
 						accessibilityLabel={`The price of ${findPlural(f.id)} over the last two days, now ${fmtPrice(f.price)}. Bullion sells at ${f.ask} and buys at ${f.bid}.`}
 					/>
+				) : viewFailed ? (
+					<EmptyState
+						kind="error"
+						flush
+						title="The chart didn't load"
+						sub="I couldn't chalk this one up. Try again in a moment."
+						action={
+							onRetryView ? (
+								<Button variant="ghost" onPress={onRetryView}>
+									Try again
+								</Button>
+							) : undefined
+						}
+					/>
 				) : (
 					<LoadingBeat label="Bullion is chalking the board" />
 				)}
@@ -482,6 +511,7 @@ export function FindView({
 				<View style={styles.flex}>
 					<CardTitle>{`“I'll sell for ${f.ask} · I'll buy for ${f.bid}”`}</CardTitle>
 					<Kicker tone="secondary">{`The price is ${fmtPrice(f.price)}. My cut is the gap. Buy or sell below.`}</Kicker>
+					{f.ask > state.me.cap && state.me.coin < f.ask ? <Kicker tone="secondary">{capLine(state.me.cap)}</Kicker> : null}
 				</View>
 			</Sticker>
 
@@ -542,7 +572,7 @@ export function FindView({
 
 			<Sticker color="paper" rotate={0} pad title="Last trades" right={<Kicker tone="secondary">counter, board and town on one tape</Kicker>} style={styles.gapT}>
 				{!view ? (
-					<BodySm tone="secondary">Reading the tape…</BodySm>
+					<BodySm tone="secondary">{viewFailed ? "The tape didn't load." : "Reading the tape…"}</BodySm>
 				) : view.recent.length > 0 ? (
 					view.recent.map((tr) => <RecentRow key={tr.id} tr={tr} viewing={f.id} size={sizeOf(tr.findId)} ticksPerDay={ticksPerDay} state={state} />)
 				) : (
@@ -696,7 +726,11 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 	const size = f?.size ?? c.qty;
 	const coin = state.me.coin;
 	const who = cap1(pigName(c.poster));
-	let action: { label: string; ok: boolean; variant: "primary" | "success" | "lilac" };
+	const set = setOf(c.findId, size);
+	const bullion = c.source === "bullion";
+	// Who is on the other side, for the button's spoken label.
+	const party = bullion ? " from Bullion's daily shelf" : c.side === "buy" ? ` to ${pigName(c.poster)}` : ` from ${pigName(c.poster)}`;
+	let action: { label: string; ok: boolean; variant: "primary" | "success" | "lilac"; a11y: string };
 	let body: React.ReactNode;
 	if (c.side === "swap" && c.wantFindId) {
 		const have = holdingOf(state, c.wantFindId).held;
@@ -704,7 +738,11 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 		const wf = state.finds.find((x) => x.id === c.wantFindId);
 		const giveVal = f?.price ?? 0;
 		const wantVal = wf ? (wf.price / wf.size) * wq : 0;
-		action = have >= wq ? { label: "Swap", ok: true, variant: "lilac" } : { label: `you have ${have} of ${wq}`, ok: false, variant: "lilac" };
+		const swap = `Swap ${qtyOf(c.wantFindId, wq)} for ${set}${party}`;
+		action =
+			have >= wq
+				? { label: "Swap", ok: true, variant: "lilac", a11y: swap }
+				: { label: `you have ${have} of ${wq}`, ok: false, variant: "lilac", a11y: `${swap}: you have ${have} of ${wq}` };
 		body = (
 			<View>
 				<View style={styles.row}>
@@ -726,13 +764,23 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 				{f ? <Kicker tone="secondary">{`Bullion would pay ${f.bid} / charge ${f.ask}`}</Kicker> : null}
 			</View>
 		);
-		if (c.side === "buy" && c.posterCoinOk === false) {
-			action = { label: "can't pay right now", ok: false, variant: "success" };
+		const deal = `${c.side === "sell" ? "Buy" : "Sell"} ${set} for ${price}${party}`;
+		if (bullion && shelfDone(state)) {
+			// One pig's share of the shelf a day: his card stays up, asleep.
+			action = { label: "you had yours today", ok: false, variant: "primary", a11y: `${deal}: you had yours today` };
+		} else if (c.side === "buy" && c.posterCoinOk === false) {
+			action = { label: "can't pay right now", ok: false, variant: "success", a11y: `${deal}: they can't pay right now` };
 		} else if (c.side === "sell") {
-			action = coin >= price ? { label: `Buy for ${price}`, ok: true, variant: "primary" } : { label: `you have ${coin} ready`, ok: false, variant: "primary" };
+			action =
+				coin >= price
+					? { label: `Buy for ${price}`, ok: true, variant: "primary", a11y: deal }
+					: { label: `you have ${coin} ready`, ok: false, variant: "primary", a11y: `${deal}: you have ${coin} ready` };
 		} else {
 			const held = holdingOf(state, c.findId).held;
-			action = held >= size ? { label: `Sell for ${price}`, ok: true, variant: "success" } : { label: `you have ${held} of ${size}`, ok: false, variant: "success" };
+			action =
+				held >= size
+					? { label: `Sell for ${price}`, ok: true, variant: "success", a11y: deal }
+					: { label: `you have ${held} of ${size}`, ok: false, variant: "success", a11y: `${deal}: you have ${held} of ${size}` };
 		}
 	}
 	return (
@@ -744,19 +792,19 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 			accessible={false}
 		>
 			<View style={styles.rowBetween}>
-				<KickerPill>{c.source === "bullion" ? "Daily shelf" : c.forYou ? "For you" : KIND_LABEL[c.side]}</KickerPill>
+				<KickerPill>{bullion ? "Daily shelf" : c.forYou ? "For you" : KIND_LABEL[c.side]}</KickerPill>
 				<Kicker tone="secondary">{hoursLeftWord(Date.parse(c.expiresAt), nowMs).replace(" left", "")}</Kicker>
 			</View>
 			<View style={styles.row}>
 				<FindArt id={c.findId} size={CARD_GLYPH} />
-				<CardTitle style={styles.flex}>{setOf(c.findId, size)}</CardTitle>
+				<CardTitle style={styles.flex}>{set}</CardTitle>
 			</View>
 			{body}
 			<View style={styles.row}>
-				{c.source !== "bullion" ? <Glyph name="pigface" size={ART_SIZE.glyphSm} /> : null}
+				{!bullion ? <Glyph name="pigface" size={ART_SIZE.glyphSm} /> : null}
 				<BodySm>{who}</BodySm>
 			</View>
-			<Button variant={action.ok ? action.variant : "locked"} size="sm" disabled={!action.ok} onPress={() => onTake(c)} accessibilityLabel={c.source === "bullion" ? `${action.label}: ${setOf(c.findId, size)} from Bullion, daily shelf` : undefined} full>
+			<Button variant={action.ok ? action.variant : "locked"} size="sm" disabled={!action.ok} onPress={() => onTake(c)} accessibilityLabel={action.a11y} full>
 				{action.label}
 			</Button>
 		</Sticker>

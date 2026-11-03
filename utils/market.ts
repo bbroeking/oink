@@ -77,6 +77,9 @@ export interface MarketOffer {
 	createdAt: string;
 	expiresAt: string;
 	status: string;
+	/** Why a listing ended, when a notice says (`target_left`: the one friend
+	 *  it was offered to left the game). */
+	ended?: string | null;
 }
 
 export interface BoardCard extends MarketOffer {
@@ -128,7 +131,9 @@ export interface Holding {
 	onOffer: number;
 }
 
-export type NoticeKind = "filled" | "crossed" | "expired" | "lapsed" | "swapped" | "for_you";
+/** `reset`: the season's fresh start ended a listing pinned before it, and a
+ *  held set went with the reset bag (it never comes home). */
+export type NoticeKind = "filled" | "crossed" | "expired" | "lapsed" | "swapped" | "for_you" | "reset";
 
 export interface MarketNotice {
 	id: number;
@@ -151,6 +156,8 @@ export interface MarketMe {
 	spent: number;
 	tookIn: number;
 	postsToday: number;
+	/** Sets bought off Bullion's daily shelf today (tuning.bullionBoard.perPig caps it). */
+	shelfToday: number;
 	holdings: Partial<Record<SatchelFindId, Holding>>;
 	offers: MarketOffer[];
 }
@@ -166,6 +173,17 @@ export interface MarketState {
 	notices: MarketNotice[];
 	friends: MarketFriend[];
 	yesterday: { findId: SatchelFindId; sets: number; lo: number; hi: number } | null;
+}
+
+/**
+ * The market with its switch off: nothing trades, but your own listings stay
+ * in reach so you can take them down (market_cancel ignores the switch). An
+ * older server answers a bare {ok:false, reason:'closed'}: no listings then.
+ */
+export interface MarketClosed {
+	now: string;
+	tick: number;
+	me: { id: string; offers: MarketOffer[]; holdings: Partial<Record<SatchelFindId, Holding>> };
 }
 
 export interface MarketFindView {
@@ -229,6 +247,7 @@ export function toMarketTuning(raw: unknown): MarketTuning {
 	const p = obj(o.price);
 	const f = MARKET_TUNING.price;
 	const caps = obj(o.counter_caps);
+	const shelf = obj(o.bullion_board);
 	return {
 		setSize: byRarity(o.set_size, MARKET_TUNING.setSize),
 		base: byRarity(o.base, MARKET_TUNING.base),
@@ -249,6 +268,11 @@ export function toMarketTuning(raw: unknown): MarketTuning {
 		tickMinutes: Math.max(1, int(o.tick_minutes, MARKET_TUNING.tickMinutes)),
 		counterCaps:
 			typeof caps.sell === "number" && typeof caps.buy === "number" ? { sell: caps.sell, buy: caps.buy } : null,
+		bullionBoard: {
+			dailyListings: Math.max(0, int(shelf.daily_listings, MARKET_TUNING.bullionBoard.dailyListings)),
+			// An explicit null is "no limit"; a missing key is the default.
+			perPig: shelf.per_pig === null ? null : Math.max(0, int(shelf.per_pig, MARKET_TUNING.bullionBoard.perPig ?? 1)),
+		},
 	};
 }
 
@@ -314,6 +338,7 @@ export function toMarketOffer(raw: unknown): MarketOffer | null {
 		createdAt: str(o.created_at),
 		expiresAt: str(o.expires_at),
 		status: str(o.status) || "open",
+		ended: strOrNull(o.ended),
 	};
 }
 
@@ -367,16 +392,15 @@ export function toMarketTrade(raw: unknown): MarketTrade | null {
 	};
 }
 
-const NOTICE_KINDS: readonly NoticeKind[] = ["filled", "crossed", "expired", "lapsed", "swapped", "for_you"];
+const NOTICE_KINDS: readonly NoticeKind[] = ["filled", "crossed", "expired", "lapsed", "swapped", "for_you", "reset"];
 
 function compact<T>(xs: (T | null)[]): T[] {
 	return xs.filter((x): x is T => x != null);
 }
 
-export function toMarketState(raw: Raw): MarketState {
-	const me = obj(raw.me);
+function toHoldings(raw: unknown): Partial<Record<SatchelFindId, Holding>> {
 	const holdings: Partial<Record<SatchelFindId, Holding>> = {};
-	for (const [k, v] of Object.entries(obj(me.holdings))) {
+	for (const [k, v] of Object.entries(obj(raw))) {
 		if (!isSatchelFindId(k)) continue;
 		const h = obj(v);
 		holdings[k] = {
@@ -386,6 +410,26 @@ export function toMarketState(raw: Raw): MarketState {
 			onOffer: Math.max(0, int(h.on_offer)),
 		};
 	}
+	return holdings;
+}
+
+/** A closed market's answer: your own open listings (and bag), nothing else. */
+export function toMarketClosed(raw: Raw): MarketClosed {
+	const me = obj(raw.me);
+	return {
+		now: str(raw.now),
+		tick: int(raw.tick, 0),
+		me: {
+			id: str(me.id),
+			offers: compact(arr(me.offers).map(toMarketOffer)).filter((o) => o.status === "open"),
+			holdings: toHoldings(me.holdings),
+		},
+	};
+}
+
+export function toMarketState(raw: Raw): MarketState {
+	const me = obj(raw.me);
+	const holdings = toHoldings(me.holdings);
 	const y = obj(raw.yesterday);
 	const yFind = findOrNull(y.find_id);
 	return {
@@ -400,6 +444,7 @@ export function toMarketState(raw: Raw): MarketState {
 			spent: Math.max(0, int(me.spent)),
 			tookIn: Math.max(0, int(me.took_in)),
 			postsToday: Math.max(0, int(me.posts_today)),
+			shelfToday: Math.max(0, int(me.shelf_today)),
 			holdings,
 			offers: compact(arr(me.offers).map(toMarketOffer)),
 		},
@@ -490,6 +535,18 @@ export function boardBest(board: readonly BoardCard[], id: SatchelFindId): { sal
 	return { sale, wanted };
 }
 
+/** Has this pig had its share of Bullion's daily shelf today? */
+export function shelfDone(state: Pick<MarketState, "me" | "tuning">): boolean {
+	const per = state.tuning.bullionBoard.perPig;
+	return per != null && state.me.shelfToday >= per;
+}
+
+/** The listings this pig could take now: Bullion's shelf drops out once the
+ *  pig has had its share today (his cards stay on the board, asleep). */
+export function takeableBoard(state: Pick<MarketState, "me" | "tuning" | "board">): BoardCard[] {
+	return shelfDone(state) ? state.board.filter((c) => c.source !== "bullion") : state.board;
+}
+
 /** A pig's name as a sentence wants it: "you", "Maya", "a pig". */
 export function pigName(p: MarketPig | null | undefined): string {
 	if (!p) return "a pig";
@@ -500,9 +557,14 @@ export function pigName(p: MarketPig | null | undefined): string {
 
 // ── RPCs ─────────────────────────────────────────────────────────────────────
 
-export async function fetchMarketState(): Promise<RpcResult<{ state: MarketState }>> {
+export type MarketStateResult =
+	| { ok: true; state: MarketState }
+	/** `closed`: the switch is off (with your own listings, so you can take them down). */
+	| { ok: false; reason: string; closed: MarketClosed | null };
+
+export async function fetchMarketState(): Promise<MarketStateResult> {
 	const r = await rpcAction<Raw>("market_state");
-	if (!r.ok) return r as RpcResult<{ state: MarketState }>;
+	if (!r.ok) return { ok: false, reason: r.reason, closed: r.reason === "closed" ? toMarketClosed(r as Raw) : null };
 	return { ok: true, state: toMarketState(r) };
 }
 
@@ -528,13 +590,17 @@ export type MarketOutcome =
 			ok: false;
 			/** price_moved · not_enough_tickles · not_a_set · too_many_offers ·
 			 *  too_many_today · not_found · own_offer · lapsed · not_enough ·
-			 *  not_a_friend · bad_price · bad_want · counter_limit · closed · network … */
+			 *  not_a_friend · bad_price · bad_want · counter_limit · shelf_limit · closed ·
+			 *  network · no_data · timeout (the last three: no answer came back,
+			 *  see isIndefinite) … */
 			reason: string;
 			now: number | null;
 			ready: number | null;
 			needed: number | null;
 			held: number | null;
 			setSize: number | null;
+			/** shelf_limit: Bullion's shelf sets one pig may buy a day. */
+			limit?: number | null;
 	  };
 
 export function toMarketOutcome(r: RpcResult<Raw>): MarketOutcome {
@@ -548,6 +614,7 @@ export function toMarketOutcome(r: RpcResult<Raw>): MarketOutcome {
 			needed: numOrNull(o.needed),
 			held: numOrNull(o.held),
 			setSize: numOrNull(o.set_size),
+			limit: numOrNull(o.limit),
 		};
 	}
 	const trade = toMarketTrade(o.trade);
@@ -560,6 +627,100 @@ export function toMarketOutcome(r: RpcResult<Raw>): MarketOutcome {
 		offer: toMarketOffer(o.offer),
 		coin: numOrNull(o.coin),
 	};
+}
+
+// ── A lost answer ────────────────────────────────────────────────────────────
+// A write that never heard back (the connection dropped, the answer was empty,
+// or it ran past its timeout) MAY have traded on the server. Its nonce stays
+// with that exact target until a definite answer arrives, so the retry, even
+// after closing and reopening the sheet, replays the original instead of
+// trading twice. A definite answer (ok, or any refusal the server gave) frees
+// it: the next trade on that target is a new trade with a fresh nonce.
+
+const INDEFINITE: ReadonlySet<string> = new Set(["network", "no_data", "timeout"]);
+
+/** Did this answer fail to come back (so the write may or may not have happened)? */
+export function isIndefinite(res: { ok: boolean; reason?: string | null }): boolean {
+	return !res.ok && INDEFINITE.has(res.reason ?? "");
+}
+
+/** The outcome a write wears when it runs past its timeout. */
+export const MARKET_TIMED_OUT: Extract<MarketOutcome, { ok: false }> = Object.freeze({
+	ok: false as const,
+	reason: "timeout",
+	now: null,
+	ready: null,
+	needed: null,
+	held: null,
+	setSize: null,
+});
+
+/** One exact trade: the same find, side and price (or listing and limit). */
+export type MarketWriteTarget =
+	| { via: "counter"; findId: SatchelFindId; side: "buy" | "sell"; limit: number | null }
+	| { via: "take"; offerId: number; limit: number | null }
+	| { via: "post"; spec: PostSpec };
+
+export function marketWriteKey(t: MarketWriteTarget): string {
+	const v = (x: unknown) => (x == null ? "-" : String(x));
+	if (t.via === "counter") return `counter:${t.findId}:${t.side}:${v(t.limit)}`;
+	if (t.via === "take") return `take:${t.offerId}:${v(t.limit)}`;
+	const s = t.spec;
+	return s.side === "swap"
+		? `post:swap:${s.findId}:${v(s.wantFindId)}:${v(s.wantQty)}:${v(s.targetId)}`
+		: `post:${s.side}:${s.findId}:${v(s.price)}:${v(s.targetId)}`;
+}
+
+export interface MarketNonceBook {
+	/** The nonce for this exact target: the one still waiting on an answer
+	 *  (in flight, or lost), else a fresh one. */
+	nonceFor: (key: string) => string;
+	/** A write for `key` answered. A definite answer frees its nonce; a lost
+	 *  one keeps it (and marks the target lost). */
+	settle: (key: string, res: { ok: boolean; reason?: string | null }) => void;
+	/** This target's last write never heard back. */
+	isLost: (key: string) => boolean;
+}
+
+export function createNonceBook(mint: () => string = newMarketNonce): MarketNonceBook {
+	const open = new Map<string, string>();
+	const lost = new Set<string>();
+	return {
+		nonceFor(key) {
+			const had = open.get(key);
+			if (had) return had;
+			const n = mint();
+			open.set(key, n);
+			return n;
+		},
+		settle(key, res) {
+			if (isIndefinite(res)) {
+				if (open.has(key)) lost.add(key);
+				return;
+			}
+			open.delete(key);
+			lost.delete(key);
+		},
+		isLost: (key) => lost.has(key),
+	};
+}
+
+/** `p`, or `fallback` once `ms` pass (or if `p` rejects). `p` keeps running:
+ *  a caller that still wants its late answer holds on to `p` itself. */
+export function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+	return new Promise<T>((resolve) => {
+		const t = setTimeout(() => resolve(fallback), ms);
+		p.then(
+			(v) => {
+				clearTimeout(t);
+				resolve(v);
+			},
+			() => {
+				clearTimeout(t);
+				resolve(fallback);
+			},
+		);
+	});
 }
 
 export async function marketCounter(

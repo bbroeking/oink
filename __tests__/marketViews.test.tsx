@@ -26,10 +26,26 @@ jest.mock("@/hooks/useMotionPolicy", () => ({
 	}),
 }));
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BoardView, CounterView, FindView, MarketHome } from "@/components/market/MarketViews";
-import { ConfirmSheet, PostSheet, newDraft } from "@/components/market/MarketSheets";
-import { refusalReceipt, tradeReceipt } from "@/components/market/marketCopy";
-import { toMarketFindView, toMarketState, toMarketTrade, type MarketTrade } from "@/utils/market";
+import { ConfirmSheet, OnboardSheet, PostSheet, draftSpec, newDraft } from "@/components/market/MarketSheets";
+import { keepReceipt, keptReceipts, parseKept, useReceipts } from "@/components/market/ReceiptStack";
+import {
+	LOST_ANSWER,
+	capLine,
+	firstStepsCard,
+	movedMoment,
+	noticeReceipt,
+	onboardingCards,
+	pinnedReceipt,
+	refusalReceipt,
+	setSizeWords,
+	takeDownReceipt,
+	tradeReceipt,
+} from "@/components/market/marketCopy";
+import { MARKET_KEPT_RECEIPTS_KEY, MARKET_TUNING } from "@/constants/market";
+import { TAP_MIN } from "@/constants/theme";
+import { toMarketFindView, toMarketState, toMarketTrade, type MarketNotice, type MarketTrade } from "@/utils/market";
 
 const METRICS = {
 	frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -214,7 +230,8 @@ describe("Bullion's Market sheets", () => {
 		);
 		const t = textOf(r);
 		expect(t).toContain("Sell for 9.");
-		expect(t).toContain("The price goes 12 → 11.6.");
+		expect(t).toContain("The price goes 12 → 11.4.");
+		expect(t).toContain("pulls it down 5% of the usual price.");
 		expect(t).toContain("Pays more on the noticeboard");
 	});
 
@@ -327,7 +344,7 @@ describe("Bullion daily shelf", () => {
 		const onTake = jest.fn();
 		const r = render(<BoardView state={state} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={onTake} onCancel={jest.fn()} busyId={null} />);
 		expect(textOf(r)).toContain("Daily shelf");
-		pressByText(r, "Buy for 12: 4 pinecones from Bullion, daily shelf");
+		pressByText(r, "Buy 4 pinecones for 12 from Bullion's daily shelf");
 		expect(onTake).toHaveBeenCalledWith(state.board[0]);
 	});
 	it("confirms the shelf quote and counter impact, then takes that listing", () => {
@@ -336,7 +353,7 @@ describe("Bullion daily shelf", () => {
 		const text = textOf(r);
 		expect(text).toContain("Buy 4 pinecones from Bullion");
 		expect(text).toContain("Buy for 12.");
-		expect(text).toContain("Buying from Bullion pushes the price up: 12 → 12.4.");
+		expect(text).toContain("Buying from Bullion pushes the price up: 12 → 12.6.");
 		expect(text).not.toContain("A pig sale");
 		pressByText(r, "Buy for 12");
 		expect(onTake).toHaveBeenCalledWith(state.board[0]);
@@ -348,5 +365,350 @@ describe("Bullion daily shelf", () => {
 		expect(tickerLine(trade, 4)).toEqual({ tag: "board", text: "A pig bought 4 pinecones from Bullion · 12 · daily shelf" });
 		expect(tradeLine(trade, "pinecone", 4).tag).toBe("board");
 		expect(movedMoment(trade).line).toContain("Every set bought from me nudges it.");
+	});
+});
+
+// ── The 2026-11-02 launch audit ──────────────────────────────────────────────
+
+const LOST_TEXT = `${LOST_ANSWER.title}.`;
+const noEmDash = (x: string | undefined) => expect(x ?? "").not.toMatch(/\u2014/);
+const confirmProps = { busy: false, onClose: jest.fn(), onCounter: jest.fn(), onTake: jest.fn(), onSwitchToCard: jest.fn(), onPostHere: jest.fn() };
+
+describe("a lost answer, said inside the open sheet", () => {
+	it("words the lost answer as 'may have traded', never 'it didn't go through'", () => {
+		for (const reason of ["network", "no_data", "timeout"]) {
+			const r = refusalReceipt({ ok: false, reason, now: null, ready: null, needed: null, held: null, setSize: null }, "pinecone", 4, 30);
+			expect(r).toMatchObject({ title: "Couldn't hear back from Bullion", line: "Check your bag before you try again." });
+		}
+	});
+
+	it("shows the line in the confirm sheet when its trade is lost", () => {
+		const r = render(<ConfirmSheet open target={{ via: "counter", findId: "pinecone", side: "buy" }} state={STATE} lost {...confirmProps} />);
+		const t = textOf(r);
+		expect(t).toContain(LOST_TEXT);
+		expect(t).toContain("Check your bag before you try again.");
+		const quiet = render(<ConfirmSheet open target={{ via: "counter", findId: "pinecone", side: "buy" }} state={STATE} {...confirmProps} />);
+		expect(textOf(quiet)).not.toContain(LOST_TEXT);
+	});
+
+	it("shows it on a board listing, and on one that vanished (it may have gone to you)", () => {
+		const live = render(<ConfirmSheet open target={{ via: "board", card: STATE.board[0] }} state={STATE} lost {...confirmProps} />);
+		expect(textOf(live)).toContain(LOST_TEXT);
+		const gone = render(<ConfirmSheet open target={{ via: "board", card: { ...STATE.board[0], id: 999 } }} state={STATE} lost {...confirmProps} />);
+		expect(textOf(gone)).toContain(LOST_TEXT);
+		expect(textOf(gone)).toContain("it may have gone to you");
+		expect(textOf(gone)).not.toContain("Another pig got there first");
+	});
+
+	it("shows it in the post sheet", () => {
+		const draft = newDraft(STATE, "sell", "pinecone");
+		const r = render(<PostSheet open draft={draft} setDraft={jest.fn()} state={STATE} busy={false} error={null} lost onClose={jest.fn()} onPost={jest.fn()} />);
+		expect(textOf(r)).toContain(LOST_TEXT);
+	});
+
+	it("posts the same spec the screen keys its nonce on", () => {
+		const onPost = jest.fn();
+		const draft = { ...newDraft(STATE, "sell", "pinecone"), price: 999 };
+		const r = render(<PostSheet open draft={draft} setDraft={jest.fn()} state={STATE} busy={false} error={null} onClose={jest.fn()} onPost={onPost} />);
+		pressByText(r, "Pin it anyway");
+		// The price is held to the band (18 at most for pinecones here).
+		expect(onPost).toHaveBeenCalledWith(draftSpec(STATE, draft));
+		expect(draftSpec(STATE, draft)).toMatchObject({ price: 18 });
+	});
+});
+
+describe("the season reset notice", () => {
+	const offer = (side: "sell" | "buy" | "swap") => ({
+		id: 9, findId: "pinecone" as const, side, price: side === "swap" ? null : 12, qty: 4, targetId: null,
+		wantFindId: side === "swap" ? ("old_key" as const) : null, wantQty: side === "swap" ? 1 : null, createdAt: "", expiresAt: "", status: "reset",
+	});
+	const notice = (side: "sell" | "buy" | "swap"): MarketNotice => ({ id: 1, kind: "reset", offer: offer(side), trade: null });
+
+	it("tells each listing kindly, in Bullion's voice, that the fresh start took it", () => {
+		const sell = noticeReceipt(notice("sell"))!;
+		expect(sell.title).toBe("Your 4 pinecones went with the fresh start");
+		expect(sell.line).toContain("Season 2");
+		expect(sell.line).toContain("I took your listing down");
+		expect(sell.pose).toBe("stand");
+		const swap = noticeReceipt(notice("swap"))!;
+		expect(swap.title).toBe("Your swap went with the fresh start");
+		const buy = noticeReceipt(notice("buy"))!;
+		expect(buy.title).toBe("Your wanted ad for pinecones came down");
+		expect(buy.line).toContain("I cleared the board");
+		for (const r of [sell, swap, buy]) {
+			noEmDash(r.title);
+			noEmDash(r.line);
+		}
+	});
+});
+
+describe("the tunables are read off the server's tuning", () => {
+	const small = { ...MARKET_TUNING, setSize: { common: 3, uncommon: 2, rare: 1 }, offerHours: 36, price: { ...MARKET_TUNING.price, impact: 0.04, pigPull: 0.5 } };
+
+	it("says the set sizes, the listing hours, the price's step and a pig sale's pull from tuning", () => {
+		expect(setSizeWords(MARKET_TUNING)).toBe("four of a common, three of the rest");
+		expect(setSizeWords(small)).toBe("three of a common, two of an uncommon, one of a rare");
+		expect(onboardingCards(small)[0].say).toContain("Three of a common, two of an uncommon, one of a rare.");
+		expect(onboardingCards()[0].say).toContain("Four of a common, three of the rest.");
+		const expired = noticeReceipt({ id: 1, kind: "expired", offer: { id: 9, findId: "pinecone", side: "sell", price: 12, qty: 4, targetId: null, wantFindId: null, wantQty: null, createdAt: "", expiresAt: "", status: "expired" }, trade: null }, small);
+		expect(expired?.line).toBe("Nobody took them at 12 in 36 hours.");
+		const swapOffer = { id: 9, findId: "pinecone" as const, side: "swap" as const, price: null, qty: 4, targetId: null, wantFindId: "old_key" as const, wantQty: 1, createdAt: "", expiresAt: "", status: "open" };
+		expect(pinnedReceipt(swapOffer, null, MARKET_TUNING).line).toBe("Straight up, for 48 hours. Take it down any time.");
+		const pig = toMarketTrade({ id: 1, kind: "pig", find_id: "pinecone", qty: 4, price: 13, from: 12, to: 12.5, tick: 1, at: "x" })!;
+		expect(movedMoment(pig, small).line).toContain("A pig sale nudges it half of the way.");
+		expect(movedMoment(pig).line).toContain("a third of the way");
+	});
+
+	it("puts the live step and set sizes in the sheets", () => {
+		const s = toMarketState({ ...RAW, tuning: { ...RAW.tuning, set_size: { common: 3, uncommon: 2, rare: 1 }, price: { impact: 0.04 } } });
+		const confirm = render(<ConfirmSheet open target={{ via: "counter", findId: "pinecone", side: "buy" }} state={s} {...confirmProps} />);
+		expect(textOf(confirm)).toContain("pushes it up 4% of the usual price.");
+		const post = render(<PostSheet open draft={newDraft(s, "sell", "pinecone")} setDraft={jest.fn()} state={s} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />);
+		expect(textOf(post)).toContain("three of a common, two of an uncommon, one of a rare");
+		expect(textOf(post)).not.toContain("four of a common");
+	});
+});
+
+describe("ties, the bank cap, and what to do first", () => {
+	it("says a tie as the same as Bullion pays, never '0 more'", () => {
+		const tie = tradeReceipt(toMarketTrade({ id: 1, kind: "pig", how: "listing", find_id: "pinecone", qty: 4, price: 9, bid: 9, ask: 15, seller: { id: "me", you: true }, buyer: { id: "maya", name: "Maya", friend: true }, tick: 1, at: "x" })!);
+		expect(tie.line).toBe("The same as Bullion pays.");
+		expect(tie.ribbon).toBeUndefined();
+		const tied = toMarketState({ ...RAW, board: [{ ...RAW.board[1], price: 9 }] });
+		const draft = newDraft(tied, "sell", "pinecone");
+		const r = render(<PostSheet open draft={{ ...draft, price: 9 }} setDraft={jest.fn()} state={tied} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />);
+		expect(textOf(r)).toContain("it sells now, the same as Bullion pays.");
+		expect(textOf(r)).not.toContain("0 more");
+	});
+
+	it("explains the cap where an ask is over it", () => {
+		// Old keys: Bullion sells at 30, the bank holds 25, 20 are ready.
+		expect(capLine(25)).toBe("You hold up to 25 ready; selling a set can bank more.");
+		const confirm = render(<ConfirmSheet open target={{ via: "counter", findId: "old_key", side: "buy" }} state={STATE} {...confirmProps} />);
+		expect(textOf(confirm)).toContain("You have 20 tickles ready. You hold up to 25 ready; selling a set can bank more.");
+		const view = render(
+			<FindView state={STATE} find={STATE.finds[1]} view={null} fancy={null} sheepEach={null} sheepHere={false} nowMs={NOW_MS} weekdayOf={() => "Thu"} isDayStart={() => false} ticksPerDay={48} onTake={jest.fn()} onOpen={jest.fn()} onCancel={jest.fn()} busyId={null} />,
+		);
+		expect(textOf(view)).toContain(capLine(25));
+		// Pinecones (15) fit under the cap: no note.
+		const cheap = render(<ConfirmSheet open target={{ via: "counter", findId: "pinecone", side: "buy" }} state={toMarketState({ ...RAW, me: { ...RAW.me, coin: 3 } })} {...confirmProps} />);
+		expect(textOf(cheap)).not.toContain("You hold up to");
+	});
+
+	it("tells a pig with no full set what to do first", () => {
+		const r = firstStepsCard(MARKET_TUNING, true);
+		expect(r.title).toBe("First, a full set");
+		expect(r.line).toBe("A set is four of a common, three of the rest. Keep digging, or buy one from me right here.");
+		expect(firstStepsCard(MARKET_TUNING, false).line).toContain("Keep digging: when one fills");
+	});
+
+	it("branches a failed take-down on why", () => {
+		expect(takeDownReceipt("not_found").title).toBe("That listing is already down");
+		expect(takeDownReceipt("network").title).toBe("Couldn't hear back from Bullion");
+		expect(takeDownReceipt("timeout").line).toContain("may still be up");
+		expect(takeDownReceipt("not_authenticated").title).toBe("You're signed out");
+		expect(takeDownReceipt("weird").title).toBe("That listing didn't come down");
+	});
+});
+
+describe("the find, the board, the ledger and the cards", () => {
+	it("shows an error with a retry when the find's read fails, instead of chalking forever", () => {
+		const onRetry = jest.fn();
+		const r = render(
+			<FindView state={STATE} find={STATE.finds[0]} view={null} viewFailed onRetryView={onRetry} fancy={null} sheepEach={null} sheepHere={false} nowMs={NOW_MS} weekdayOf={() => "Thu"} isDayStart={() => false} ticksPerDay={48} onTake={jest.fn()} onOpen={jest.fn()} onCancel={jest.fn()} busyId={null} />,
+		);
+		const t = textOf(r);
+		expect(t).toContain("The chart didn't load");
+		expect(t).not.toContain("chalking the board");
+		pressByText(r, "Try again");
+		expect(onRetry).toHaveBeenCalled();
+	});
+
+	it("names the find and the set on every board button", () => {
+		const r = render(<BoardView state={STATE} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={jest.fn()} onCancel={jest.fn()} busyId={null} />);
+		const labels = r.root.findAll((n) => typeof n.props.onPress === "function" && typeof n.props.accessibilityLabel === "string").map((n) => n.props.accessibilityLabel as string);
+		expect(labels).toContain("Buy 4 pinecones for 13 from Maya");
+		expect(labels).toContain("Sell 4 pinecones for 11 to a pig");
+		expect(labels).toContain("Swap 2 pinecones for 3 glass marbles from Biscuit");
+		expect(labels).toContain("Buy 3 old keys for 40 from a pig: you have 20 ready");
+	});
+
+	it("says which span the ledger covers (one running total)", () => {
+		const r = render(<MarketHome state={STATE} sayTurn={0} nowMs={NOW_MS} onCounter={jest.fn()} onBoard={jest.fn()} onBag={jest.fn()} onCancel={jest.fn()} onReplayIntro={jest.fn()} busyId={null} />);
+		expect(textOf(r)).toContain("since the market opened");
+	});
+
+	it("gives the price band a 44pt touch frame and draws the swap's way as an icon", () => {
+		const draft = newDraft(STATE, "sell", "pinecone");
+		const r = render(<PostSheet open draft={draft} setDraft={jest.fn()} state={STATE} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />);
+		const band = r.root.find((n) => n.props.accessibilityRole === "adjustable" && n.props.accessibilityLabel === "Price per set");
+		const { top, bottom } = band.props.hitSlop;
+		expect(18 + top + bottom).toBeGreaterThanOrEqual(TAP_MIN);
+		const swap = render(<PostSheet open draft={{ ...draft, side: "swap", wantFindId: "old_key" }} setDraft={jest.fn()} state={STATE} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />);
+		expect(textOf(swap)).not.toContain("\u21c4");
+		const take = render(<ConfirmSheet open target={{ via: "board", card: STATE.board[2] }} state={STATE} {...confirmProps} />);
+		expect(textOf(take)).not.toMatch(/(^|\s)\u2192(\s|$)/);
+	});
+
+	it("ends a replay of the cards on Got it, without 'new here?'", () => {
+		const walk = (replay: boolean) => {
+			const r = render(<OnboardSheet open state={STATE} replay={replay} ticksPerDay={48} onClose={jest.fn()} onDone={jest.fn()} />);
+			pressByText(r, "Next");
+			pressByText(r, "Next");
+			return textOf(r);
+		};
+		const replay = walk(true);
+		expect(replay).toContain("Got it");
+		expect(replay).not.toContain("Step up to the counter");
+		expect(replay).not.toContain("new here?");
+		const first = walk(false);
+		expect(first).toContain("Step up to the counter");
+		expect(first).toContain("new here?");
+	});
+});
+
+describe("receipts kept until shown", () => {
+	type Api = ReturnType<typeof useReceipts>;
+	let api: Api | null = null;
+	function Probe({ held }: { held: boolean }) {
+		api = useReceipts(held);
+		return null;
+	}
+	const flush = async () => {
+		await act(async () => {
+			await keptReceipts("");
+		});
+	};
+	const card = (title: string) => ({ pose: "stand" as const, title, tone: "plain" as const });
+
+	beforeEach(async () => {
+		await AsyncStorage.clear();
+		api = null;
+	});
+
+	it("keeps a notice's receipt on the device until it has been on screen", async () => {
+		const r = render(<Probe held />);
+		act(() => {
+			api!.push(card("your pinecones sold"), { keep: "me:1" });
+			api!.push(card("the same notice again"), { keep: "me:1" });
+		});
+		await flush();
+		expect((await keptReceipts("me:")).map((k) => k.key)).toEqual(["me:1"]);
+		// Leaving the market with it still held under a sheet: it comes back.
+		act(() => r.unmount());
+		const again = render(<Probe held={false} />);
+		await act(async () => {
+			await api!.restore("me:");
+		});
+		expect(api!.shown.map((x) => x.title)).toEqual(["your pinecones sold"]);
+		await flush();
+		expect(await keptReceipts("me:")).toEqual([]);
+		// A restore after it has shown never brings it back twice.
+		await act(async () => {
+			await api!.restore("me:");
+		});
+		expect(api!.shown).toHaveLength(1);
+		act(() => again.unmount());
+	});
+
+	it("only restores this pig's receipts", async () => {
+		await keepReceipt("me:1", card("mine"));
+		await keepReceipt("them:2", card("theirs"));
+		render(<Probe held={false} />);
+		await act(async () => {
+			await api!.restore("me:");
+		});
+		expect(api!.shown.map((x) => x.title)).toEqual(["mine"]);
+	});
+
+	it("drops a broken or stale kept list", () => {
+		expect(parseKept("not json")).toEqual([]);
+		expect(parseKept(JSON.stringify([{ key: "a", at: 0, receipt: card("old") }]), 30 * 24 * 3_600_000)).toEqual([]);
+		expect(parseKept(JSON.stringify([{ key: "a", at: 1, receipt: { title: 3 } }, { key: "b", at: 1, receipt: card("ok") }]), 2).map((k) => k.key)).toEqual(["b"]);
+		expect(MARKET_KEPT_RECEIPTS_KEY).toBe("ttp.market.receipts");
+	});
+
+	it("runs onShow when a card is first on screen, not when it is queued, and withdraws only an unseen card", () => {
+		const onShow = jest.fn();
+		const r = render(<Probe held />);
+		let id: number | null = null;
+		act(() => {
+			id = api!.push(card("moment"), { urgent: true, onShow });
+		});
+		expect(onShow).not.toHaveBeenCalled();
+		act(() => r.update(<SafeAreaProvider initialMetrics={METRICS}><Probe held={false} /></SafeAreaProvider>));
+		expect(onShow).toHaveBeenCalledTimes(1);
+		expect(api!.withdraw(id!)).toBe(false);
+		let other: number | null = null;
+		act(() => r.update(<SafeAreaProvider initialMetrics={METRICS}><Probe held /></SafeAreaProvider>));
+		act(() => {
+			other = api!.push(card("quiet"), { urgent: true });
+		});
+		let withdrawn = false;
+		act(() => {
+			withdrawn = api!.withdraw(other!);
+		});
+		expect(withdrawn).toBe(true);
+		act(() => r.update(<SafeAreaProvider initialMetrics={METRICS}><Probe held={false} /></SafeAreaProvider>));
+		expect(api!.shown.map((x) => x.title)).toEqual(["moment"]);
+	});
+});
+
+describe("launch fixes, server round (2026-11-02)", () => {
+	const shelfCard = { id: -1, source: "bullion", find_id: "pinecone", side: "sell", price: 12, qty: 4, poster: { id: "bullion", kind: "bullion", name: "Bullion" }, expires_at: "2026-11-06T00:00:00Z" };
+	const withShelf = (shelfToday: number) => toMarketState({ ...RAW, board: [shelfCard, ...RAW.board], me: { ...RAW.me, shelf_today: shelfToday } });
+	const refusal = (reason: string, limit: number | null = null) => ({ ok: false as const, reason, now: null, ready: null, needed: null, held: null, setSize: null, limit });
+
+	it("says the shelf limit in Bullion's voice", () => {
+		expect(refusalReceipt(refusal("shelf_limit", 1), "pinecone", 4, 30)).toMatchObject({ title: "One from my shelf a day, friend", line: "Come back tomorrow." });
+		expect(refusalReceipt(refusal("shelf_limit", 2), "pinecone", 4, 30).title).toBe("Two from my shelf a day, friend");
+		expect(refusalReceipt(refusal("shelf_limit"), "pinecone", 4, 30).title).toBe("One from my shelf a day, friend");
+	});
+
+	it("puts the shelf to sleep once the pig has had its share today", () => {
+		const fresh = render(<BoardView state={withShelf(0)} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={jest.fn()} onCancel={jest.fn()} busyId={null} />);
+		expect(textOf(fresh)).not.toContain("you had yours today");
+		const onTake = jest.fn();
+		const had = render(<BoardView state={withShelf(1)} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={onTake} onCancel={jest.fn()} busyId={null} />);
+		expect(textOf(had)).toContain("you had yours today");
+		const btn = had.root.find((n) => n.props.accessibilityLabel === "Buy 4 pinecones for 12 from Bullion's daily shelf: you had yours today" && typeof n.props.onPress === "function");
+		expect(btn.props.disabled).toBe(true);
+		// Maya's listing still sells.
+		expect(textOf(had)).toContain("Buy for 13");
+	});
+
+	it("blocks the shelf in its confirm sheet, and stops pointing at it from a find", () => {
+		const had = withShelf(1);
+		const confirm = render(<ConfirmSheet open target={{ via: "board", card: had.board[0] }} state={had} {...confirmProps} />);
+		expect(textOf(confirm)).toContain("One from my shelf a day, friend. Come back tomorrow.");
+		const view = (s: typeof STATE) =>
+			textOf(render(<FindView state={s} find={s.finds[0]} view={null} fancy={null} sheepEach={null} sheepHere={false} nowMs={NOW_MS} weekdayOf={() => "Thu"} isDayStart={() => false} ticksPerDay={48} onTake={jest.fn()} onOpen={jest.fn()} onCancel={jest.fn()} busyId={null} />));
+		// Fresh: the shelf's 12 is the cheapest; had yours: Maya's 13 is.
+		expect(view(withShelf(0))).toContain("Bullion's 4 for 12");
+		expect(view(had)).toContain("Maya's 4 for 13");
+		expect(view(had)).not.toContain("Bullion's 4 for 12");
+	});
+
+	it("says listings run their 48 hours", () => {
+		const r = noticeReceipt({ id: 1, kind: "expired", offer: { id: 9, findId: "pinecone", side: "sell", price: 14, qty: 4, targetId: null, wantFindId: null, wantQty: null, createdAt: "", expiresAt: "", status: "expired" }, trade: null });
+		expect(r?.line).toBe("Nobody took them at 14 in 48 hours.");
+		expect(r?.line).not.toContain("a day");
+	});
+
+	it("brings a private offer home when its friend leaves the game", () => {
+		const offer = (side: "sell" | "buy", targetId: string | null) => ({
+			id: 9, findId: "pinecone" as const, side, price: 13, qty: 4, targetId, wantFindId: null, wantQty: null, createdAt: "", expiresAt: "", status: "expired", ended: "target_left",
+		});
+		const friends = STATE.friends;
+		const named = noticeReceipt({ id: 1, kind: "expired", offer: offer("sell", "maya"), trade: null }, MARKET_TUNING, friends)!;
+		expect(named).toMatchObject({ title: "Your offer to Maya came home", line: "They've left the game, so your set is back in your bag." });
+		const nameless = noticeReceipt({ id: 1, kind: "expired", offer: offer("sell", null), trade: null }, MARKET_TUNING, friends)!;
+		expect(nameless.title).toBe("Your private offer came home");
+		const wanted = noticeReceipt({ id: 1, kind: "expired", offer: offer("buy", null), trade: null })!;
+		expect(wanted.line).toBe("They've left the game, so I took your wanted ad down.");
+		for (const r of [named, nameless, wanted]) {
+			noEmDash(r.title);
+			noEmDash(r.line);
+		}
 	});
 });

@@ -6,6 +6,7 @@
 // family: ink outline, cel shade, two sparkles), five poses — standing,
 // behind his counter, the gavel (a sale lands), cheering (a pig beat his
 // counter, or you moved the price), and the shrug (a refusal).
+import { memo } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import Svg, { Circle, Line, Polygon, Polyline, Text as SvgText } from "react-native-svg";
 import { BORDER, FONTS, RADII, SPACE, TYPE, WHIMSY, inkAlpha } from "@/constants/theme";
@@ -54,8 +55,9 @@ const SPARK_H = 24;
 const SPARK_PAD = 3;
 const SPARK_DOT = 2.6;
 
-/** The last day of a price, its usual price as a faint line, on chalk. */
-export function Sparkline({ points, usual, ink = WHIMSY.barkText }: { points: PricePoint[]; usual: number; ink?: string }) {
+/** The last day of a price, its usual price as a faint line, on chalk.
+ *  Memoised: a find's points only change when the market is re-read. */
+export const Sparkline = memo(function Sparkline({ points, usual, ink = WHIMSY.barkText }: { points: PricePoint[]; usual: number; ink?: string }) {
 	if (points.length === 0) return <View style={{ width: SPARK_W, height: SPARK_H }} />;
 	const ps = points.map((s) => s.p);
 	let lo = Math.min(...ps);
@@ -86,7 +88,7 @@ export function Sparkline({ points, usual, ink = WHIMSY.barkText }: { points: Pr
 			<Circle cx={x(n - 1)} cy={y(ps[n - 1])} r={SPARK_DOT} fill={WHIMSY.sun} />
 		</Svg>
 	);
-}
+});
 
 // ── The find's chart ──────────────────────────────────────────────────────────
 const CHART_H = 140;
@@ -123,9 +125,10 @@ export interface PriceChartProps {
  * The price over the last day or two on chalk: Bullion's selling and buying
  * prices as a lit band (his cut is the gap), the price as the line through
  * it, a dot for every trade (sun: the counter, rose: a pig sale, chalk: the
- * townsfolk), and his three numbers labelled at the right edge.
+ * townsfolk), and his three numbers labelled at the right edge. Memoised: it
+ * redraws when the chart's own inputs change, not on every screen render.
  */
-export function PriceChart({
+export const PriceChart = memo(function PriceChart({
 	width,
 	usual,
 	price,
@@ -225,7 +228,7 @@ export function PriceChart({
 			<SvgText x={W - PAD_R + 10} y={yb} fill={WHIMSY.sage} {...labelText}>{`I buy ${bid}`}</SvgText>
 		</Svg>
 	);
-}
+});
 
 export const chartStyles = StyleSheet.create({
 	legendDot: { width: SPACE.sm, height: SPACE.sm, borderRadius: RADII.pill, borderWidth: BORDER.hair, borderColor: WHIMSY.ink },

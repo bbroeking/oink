@@ -10,8 +10,10 @@
 //   U (the usual price of a set) = the Ghost Sheep's price for one find x the
 //   set size. P (the price) lives in [0.85 U, 1.15 U]. Bullion sells at
 //   max(U + 1, ceil(1.2 P)) and buys at min(U, floor(0.8 P)). A set at the
-//   counter moves P 3% of U; a pig sale moves it a third of the way to what
-//   was paid; a swap moves nothing.
+//   counter moves P 5% of U (3% until the 2026-11-02 balance pass); a pig sale
+//   moves it a third of the way to what was paid; a swap moves nothing.
+//   The fallback below mirrors the server's market_tuning; every sentence that
+//   quotes a number reads it off `state.tuning`, never off this constant.
 import type { FindRarity } from "@/constants/satchel";
 
 export type MarketSide = "sell" | "buy" | "swap";
@@ -40,6 +42,9 @@ export interface MarketTuning {
 	tickMinutes: number;
 	/** Per-pig daily counter caps; null = off (the default). */
 	counterCaps: { sell: number; buy: number } | null;
+	/** Bullion's daily shelf: sets pinned a day, and how many one pig may buy
+	 *  a UTC day (null = no limit). */
+	bullionBoard: { dailyListings: number; perPig: number | null };
 }
 
 export const MARKET_TUNING: Readonly<MarketTuning> = Object.freeze({
@@ -50,17 +55,18 @@ export const MARKET_TUNING: Readonly<MarketTuning> = Object.freeze({
 		hi: 1.15,
 		sellFactor: 1.2,
 		buyFactor: 0.8,
-		impact: 0.03,
+		impact: 0.05,
 		pigPull: 1 / 3,
-		wiggle: 0.01,
+		wiggle: 0.02,
 		home: 0.05,
 	},
 	listMultiple: 3,
 	openOffers: 4,
 	dailyPosts: 30,
-	offerHours: 24,
+	offerHours: 48,
 	tickMinutes: 30,
 	counterCaps: null,
+	bullionBoard: { dailyListings: 3, perPig: 1 },
 });
 
 const EPS = 1e-9;
@@ -259,6 +265,13 @@ export const MARKET_MOMENT_KEYS = Object.freeze({
 	/** "Nice selling." the first time a pig pays you more than Bullion would have. */
 	soldHigh: "ttp.market.moment.soldhigh",
 });
+
+/**
+ * Receipts the server handed over (notices) that have not been on screen yet:
+ * kept on the device until shown, so leaving the market mid-queue never
+ * drops one (the server hands each notice over once).
+ */
+export const MARKET_KEPT_RECEIPTS_KEY = "ttp.market.receipts";
 
 /** Ticks without a trade before a price counts as quiet (3 hours of 30-minute ticks). */
 export const QUIET_TICKS = 6;

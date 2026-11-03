@@ -6,9 +6,18 @@
 // went, or how much a pig beat the counter by. Lifted from the round-4
 // prototype's copy, so the shipped market reads the way it was playtested.
 import { satchelFind, type SatchelFindId } from "@/constants/satchel";
-import { fmtPrice, gainWord } from "@/constants/market";
+import { MARKET_TUNING, fmtPrice, gainWord, type MarketTuning } from "@/constants/market";
 import { findPlural } from "@/utils/trader";
-import { pigName, type MarketNotice, type MarketOffer, type MarketOutcome, type MarketTrade } from "@/utils/market";
+import {
+	isIndefinite,
+	pigName,
+	type MarketFind,
+	type MarketFriend,
+	type MarketNotice,
+	type MarketOffer,
+	type MarketOutcome,
+	type MarketTrade,
+} from "@/utils/market";
 
 export type BullionPose = "stand" | "counter" | "gavel" | "cheer" | "shrug";
 
@@ -35,6 +44,57 @@ export function setOf(id: SatchelFindId, size: number): string {
 /** "1 old key" / "2 old keys". */
 export function qtyOf(id: SatchelFindId, n: number): string {
 	return `${n} ${n === 1 ? findName(id) : findPlural(id)}`;
+}
+
+// ── The tunables, in words ───────────────────────────────────────────────────
+// Every number the market quotes in a sentence comes off `state.tuning`, so a
+// rebalance (set sizes, the price's step, listing hours) never leaves a stale
+// sentence behind.
+
+const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
+
+/** "four of a common, three of the rest" (or every rarity, when they differ). */
+export function setSizeWords(t: MarketTuning = MARKET_TUNING): string {
+	const { common, uncommon, rare } = t.setSize;
+	if (common === uncommon && uncommon === rare) return `${numberWord(common)} of any find`;
+	if (uncommon === rare) return `${numberWord(common)} of a common, ${numberWord(uncommon)} of the rest`;
+	return `${numberWord(common)} of a common, ${numberWord(uncommon)} of an uncommon, ${numberWord(rare)} of a rare`;
+}
+
+/** 0.05 → "5%". */
+export function pctWord(x: number): string {
+	return `${Math.round(x * 1000) / 10}%`;
+}
+
+/** A pig sale's pull, as far as it goes: "a third", "half", or a percent. */
+export function pullWord(x: number): string {
+	const near = (y: number) => Math.abs(x - y) < 0.005;
+	if (near(1 / 2)) return "half";
+	if (near(1 / 3)) return "a third";
+	if (near(1 / 4)) return "a quarter";
+	if (near(2 / 3)) return "two thirds";
+	return pctWord(x);
+}
+
+/** A listing's life: "48 hours", "an hour". */
+export function hoursWord(h: number): string {
+	return h === 1 ? "an hour" : `${h} hours`;
+}
+
+/** The span the ledger (spent / took in) covers: the server keeps one
+ *  running total from the market's first day. */
+export const LEDGER_SPAN = "since the market opened";
+
+/** One pig's share of Bullion's daily shelf, said before and after the tap. */
+export function shelfLimitWords(perPig: number | null): { title: string; line: string } {
+	if (perPig === 0) return { title: "Nothing from my shelf today, friend", line: "Come back tomorrow." };
+	return { title: `${cap1(numberWord(perPig ?? 1))} from my shelf a day, friend`, line: "Come back tomorrow." };
+}
+
+/** Why a set costs more than the bank can hold, said where it matters. */
+export function capLine(cap: number): string {
+	return `You hold up to ${cap} ready; selling a set can bank more.`;
 }
 
 /** Short names for the find picker. */
@@ -75,12 +135,8 @@ export function bullionSays(
 	return BULLION_TIPS[Math.floor(turn / 2) % BULLION_TIPS.length];
 }
 
-/** The three onboarding cards, in Bullion's voice. */
-export const ONBOARDING: readonly { title: string; say: string }[] = [
-	{
-		title: "Buy or sell any set, any time.",
-		say: "Hand me a set and I'll pay you on the spot. Need a set? I've always got one. Four of a common, three of anything else.",
-	},
+// The second and third cards say nothing a rebalance can change.
+const ONBOARDING_REST: readonly { title: string; say: string }[] = [
 	{
 		title: "Prices move.",
 		say: "Every set you buy from me pushes the price up. Every set you sell pulls it down. When it's quiet the price wiggles, then wanders back home. I buy a little under the price and sell a little over: that's my cut.",
@@ -90,6 +146,17 @@ export const ONBOARDING: readonly { title: string; say: string }[] = [
 		say: "Post your set on the noticeboard at your own price, or swap it straight up. Price it between my two prices and you'll both beat my counter. That's how you sell high.",
 	},
 ];
+
+/** The three onboarding cards, in Bullion's voice; the set sizes off `tuning`. */
+export function onboardingCards(t: MarketTuning = MARKET_TUNING): readonly { title: string; say: string }[] {
+	return [
+		{
+			title: "Buy or sell any set, any time.",
+			say: `Hand me a set and I'll pay you on the spot. Need a set? I've always got one. ${cap1(setSizeWords(t))}.`,
+		},
+		...ONBOARDING_REST,
+	];
+}
 
 /** One trade on the market home's ticker. */
 export function tickerLine(tr: MarketTrade, size: number): { tag: "you" | "counter" | "board" | "town" | "swap"; text: string } {
@@ -172,7 +239,12 @@ export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): Market
 				pose: "cheer",
 				ribbon: plus > 0 ? "beat the counter" : undefined,
 				title: `${by} bought your ${set} for ${tr.price}`,
-				line: `Bullion would have paid ${tr.bid} · ${plus > 0 ? `+${plus} ${tr.how === "listing" ? "for listing it" : "for selling to a pig"}` : "the same as the counter"}`,
+				line:
+					plus > 0
+						? `Bullion would have paid ${tr.bid} · +${plus} ${tr.how === "listing" ? "for listing it" : "for selling to a pig"}`
+						: plus === 0
+							? "The same as Bullion pays."
+							: `${-plus} under what Bullion pays (${tr.bid}).`,
 				tone: "plain",
 			};
 		}
@@ -218,8 +290,9 @@ export function soldHighMoment(tr: MarketTrade): MarketReceipt | null {
 	};
 }
 
-/** The receipt a NOTICE wears (things that happened while you were away). */
-export function noticeReceipt(n: MarketNotice): MarketReceipt | null {
+/** The receipt a NOTICE wears (things that happened while you were away).
+ *  `friends` names the friend a private listing was offered to. */
+export function noticeReceipt(n: MarketNotice, t: MarketTuning = MARKET_TUNING, friends: readonly MarketFriend[] = []): MarketReceipt | null {
 	const o: MarketOffer | null = n.offer;
 	if ((n.kind === "filled" || n.kind === "crossed" || n.kind === "swapped") && n.trade) {
 		return tradeReceipt(n.trade);
@@ -227,10 +300,40 @@ export function noticeReceipt(n: MarketNotice): MarketReceipt | null {
 	if (!o) return null;
 	// A listing's qty is its set size, straight from the server.
 	const set = setOf(o.findId, o.qty);
+	// The one friend a listing was offered to left the game: it came down, and
+	// a held set came home (a wanted ad set nothing aside).
+	if (n.kind === "expired" && o.ended === "target_left") {
+		const name = friends.find((f) => f.id === o.targetId)?.name ?? null;
+		return {
+			pose: "stand",
+			title: name ? `Your offer to ${name} came home` : "Your private offer came home",
+			line: o.side === "buy" ? "They've left the game, so I took your wanted ad down." : "They've left the game, so your set is back in your bag.",
+			tone: "meh",
+		};
+	}
 	if (n.kind === "expired") {
-		if (o.side === "sell") return { pose: "shrug", title: `Your ${set} came home`, line: `Nobody took them at ${o.price} in a day.`, tone: "meh" };
-		if (o.side === "buy") return { pose: "shrug", title: `Your wanted ad for ${findPlural(o.findId)} ran out`, line: `Nobody sold at ${o.price} in a day.`, tone: "meh" };
+		const life = hoursWord(t.offerHours);
+		if (o.side === "sell") return { pose: "shrug", title: `Your ${set} came home`, line: `Nobody took them at ${o.price} in ${life}.`, tone: "meh" };
+		if (o.side === "buy") return { pose: "shrug", title: `Your wanted ad for ${findPlural(o.findId)} ran out`, line: `Nobody sold at ${o.price} in ${life}.`, tone: "meh" };
 		return { pose: "shrug", title: "Your swap ran out", line: `Your ${set} are back in your bag.`, tone: "meh" };
+	}
+	// The season's fresh start ended a listing pinned before it. A wanted ad
+	// set nothing aside; a for-sale or swap set was part of the bag that reset.
+	if (n.kind === "reset") {
+		if (o.side === "buy") {
+			return {
+				pose: "stand",
+				title: `Your wanted ad for ${findPlural(o.findId)} came down`,
+				line: "Season 2 started every bank and bag fresh, so I cleared the board. Post a new one whenever you like.",
+				tone: "meh",
+			};
+		}
+		return {
+			pose: "stand",
+			title: o.side === "swap" ? "Your swap went with the fresh start" : `Your ${set} went with the fresh start`,
+			line: "Season 2 swept every bag clean, so I took your listing down and the set went with it. Pin a fresh one whenever you're ready.",
+			tone: "meh",
+		};
 	}
 	if (n.kind === "lapsed") {
 		return { pose: "shrug", title: `Your wanted ad for ${findPlural(o.findId)} lapsed`, line: `A seller came, but you had fewer than ${o.price} tickles ready.`, tone: "meh" };
@@ -241,6 +344,13 @@ export function noticeReceipt(n: MarketNotice): MarketReceipt | null {
 	}
 	return null;
 }
+
+/** A write that never heard back: it may have traded. Said inside the open
+ *  sheet, where the retry is (the retry replays the same trade). */
+export const LOST_ANSWER = Object.freeze({
+	title: "Couldn't hear back from Bullion",
+	line: "Check your bag before you try again.",
+});
 
 /** A refusal, in Bullion's voice. */
 export function refusalReceipt(res: Extract<MarketOutcome, { ok: false }>, findId: SatchelFindId | null, openOffers: number, dailyPosts: number): MarketReceipt {
@@ -268,19 +378,70 @@ export function refusalReceipt(res: Extract<MarketOutcome, { ok: false }>, findI
 			return meh("Only friends", "A listing can go to everyone, or to one friend.");
 		case "counter_limit":
 			return meh("That's enough at my counter today", "Come back tomorrow.");
+		case "shelf_limit": {
+			const w = shelfLimitWords(res.limit ?? null);
+			return meh(w.title, w.line);
+		}
 		case "no_bank":
 			return meh("Your tickle bank isn't ready", "Tickle your pig once, then come back.");
 		case "closed":
 			return meh("The market's shut", "Bullion's packed up for now.");
 		case "network":
-			return meh("That didn't go through", "Check your connection and try again.");
+		case "no_data":
+		case "timeout":
+			// It may have traded: never say it didn't.
+			return meh(LOST_ANSWER.title, LOST_ANSWER.line);
 		default:
 			return meh("That didn't go through", "Take another look.");
 	}
 }
 
 /** The first price you move: shown once, ever. */
-export function movedMoment(tr: MarketTrade): MarketReceipt {
-	const how = tr.kind === "counter" ? tr.how === "board" ? "Every set bought from me nudges it." : "Every set at my counter nudges it." : "A pig sale nudges it a third of the way.";
+export function movedMoment(tr: MarketTrade, t: MarketTuning = MARKET_TUNING): MarketReceipt {
+	const how =
+		tr.kind === "counter"
+			? tr.how === "board"
+				? "Every set bought from me nudges it."
+				: "Every set at my counter nudges it."
+			: `A pig sale nudges it ${pullWord(t.price.pigPull)} of the way.`;
 	return { pose: "cheer", title: "You moved the price!", line: `${cap1(findPlural(tr.findId))} ${moveLine(tr)}. ${how}`, tone: "moment" };
+}
+
+/** Taking a listing down didn't work, and why. */
+export function takeDownReceipt(reason: string | null): MarketReceipt {
+	if (reason === "not_found") {
+		return { pose: "shrug", title: "That listing is already down", line: "It sold, ran out, or came down already.", tone: "meh" };
+	}
+	if (isIndefinite({ ok: false, reason })) {
+		return { pose: "shrug", title: LOST_ANSWER.title, line: "It may still be up. Look at Your listings before you try again.", tone: "meh" };
+	}
+	if (reason === "not_authenticated") {
+		return { pose: "shrug", title: "You're signed out", line: "Sign in again, then take it down.", tone: "meh" };
+	}
+	return { pose: "shrug", title: "That listing didn't come down", line: "Take another look.", tone: "meh" };
+}
+
+/** Your listing is up. */
+export function pinnedReceipt(offer: MarketOffer, f: MarketFind | null, t: MarketTuning = MARKET_TUNING): MarketReceipt {
+	return {
+		pose: "stand",
+		title: "Pinned to the noticeboard",
+		line:
+			offer.side === "swap"
+				? `Straight up, for ${hoursWord(t.offerHours)}. Take it down any time.`
+				: `${offer.side === "sell" ? "For sale" : "Wanted"} at ${offer.price}${f ? `: Bullion pays ${f.bid}, charges ${f.ask}` : ""}.`,
+		tone: "plain",
+	};
+}
+
+/** The onboarding's last step for a pig with no full set yet: what to do first. */
+export function firstStepsCard(t: MarketTuning, canBuy: boolean): MarketReceipt {
+	return {
+		pose: "counter",
+		title: "First, a full set",
+		line: `A set is ${setSizeWords(t)}. ${
+			canBuy ? "Keep digging, or buy one from me right here." : "Keep digging: when one fills, bring it to me or pin it on the noticeboard."
+		}`,
+		tone: "moment",
+	};
 }

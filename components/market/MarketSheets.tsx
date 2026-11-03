@@ -7,7 +7,9 @@
 //     a listing beats his counter both ways), what it would do right now, and
 //     who sees it (everyone, or one friend).
 //   · BagSheet — what you hold, what you paid, what is pinned up.
-//   · OnboardSheet — three cards in Bullion's voice.
+//   · OnboardSheet — three cards in Bullion's voice (a replay ends on "Got it").
+// A write whose answer never came back says so INSIDE the open confirm / post
+// sheet (`lost`), where the retry is; the retry replays the same trade.
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type GestureResponderEvent } from "react-native";
 import type { SatchelFindId } from "@/constants/satchel";
@@ -26,7 +28,7 @@ import {
 	vsPrice,
 	type MarketSide,
 } from "@/constants/market";
-import { ART_SIZE, BORDER, OPACITY, PRESSED, RADII, SPACE, WHIMSY } from "@/constants/theme";
+import { ART_SIZE, BORDER, OPACITY, PRESSED, RADII, SPACE, TAP_MIN, WHIMSY } from "@/constants/theme";
 import { findPlural } from "@/utils/trader";
 import {
 	boardBest,
@@ -34,6 +36,8 @@ import {
 	pigName,
 	previewBoard,
 	setsOf,
+	shelfDone,
+	takeableBoard,
 	type BoardCard,
 	type MarketState,
 	type PostSpec,
@@ -45,6 +49,7 @@ import {
 	CardTitle,
 	Hand,
 	HandLg,
+	Icon,
 	IconButton,
 	Kicker,
 	KickerPill,
@@ -57,7 +62,19 @@ import {
 } from "../ui";
 import { FindArt } from "../satchel/FindArt";
 import { BullionArt, PriceChart } from "./MarketArt";
-import { ONBOARDING, SHORT_NAME, qtyOf, setOf } from "./marketCopy";
+import {
+	LEDGER_SPAN,
+	LOST_ANSWER,
+	SHORT_NAME,
+	capLine,
+	onboardingCards,
+	pctWord,
+	pullWord,
+	qtyOf,
+	setOf,
+	setSizeWords,
+	shelfLimitWords,
+} from "./marketCopy";
 import { Price, VsChip } from "./MarketViews";
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -87,6 +104,30 @@ function MoveBand({ usual, from, to, lo, hi }: { usual: number; from: number; to
 	);
 }
 
+/** The write went out and no answer came back: it may have traded. */
+export function LostNote() {
+	return (
+		<Sticker
+			color={WHIMSY.sun}
+			rotate={0}
+			pad
+			shadow="none"
+			style={styles.lost}
+			accessible
+			accessibilityRole="alert"
+			accessibilityLabel={`${LOST_ANSWER.title}. ${LOST_ANSWER.line}`}
+		>
+			<View style={styles.row}>
+				<BullionArt pose="shrug" size={ART_SIZE.glyph} />
+				<View style={styles.flex}>
+					<CardTitle>{`${LOST_ANSWER.title}.`}</CardTitle>
+					<Hand>{LOST_ANSWER.line}</Hand>
+				</View>
+			</View>
+		</Sticker>
+	);
+}
+
 // ── Confirm ──────────────────────────────────────────────────────────────────
 
 export type ConfirmTarget = { via: "counter"; findId: SatchelFindId; side: "buy" | "sell" } | { via: "board"; card: BoardCard };
@@ -96,6 +137,7 @@ export function ConfirmSheet({
 	target,
 	state,
 	busy,
+	lost = false,
 	onClose,
 	onCounter,
 	onTake,
@@ -106,6 +148,8 @@ export function ConfirmSheet({
 	target: ConfirmTarget | null;
 	state: MarketState;
 	busy: boolean;
+	/** This exact trade went out and its answer never came back. */
+	lost?: boolean;
 	onClose: () => void;
 	onCounter: (findId: SatchelFindId, side: "buy" | "sell", limit: number) => void;
 	onTake: (card: BoardCard) => void;
@@ -114,6 +158,8 @@ export function ConfirmSheet({
 }) {
 	if (!target) return null;
 	const coin = state.me.coin;
+	const cap = state.me.cap;
+	const short = (price: number) => `You have ${coin} tickles ready.${price > cap ? ` ${capLine(cap)}` : ""}`;
 
 	if (target.via === "counter") {
 		const f = state.finds.find((x) => x.id === target.findId);
@@ -123,8 +169,8 @@ export function ConfirmSheet({
 		const to = counterMove(f.usual, f.price, target.side, state.tuning);
 		const h = holdingOf(state, f.id);
 		const { sets } = setsOf(h, f.size);
-		const best = boardBest(state.board, f.id);
-		const blocked = buy ? (coin < price ? `You have ${coin} tickles ready.` : null) : !sets ? `You have ${h.held} of ${f.size}.` : null;
+		const best = boardBest(takeableBoard(state), f.id);
+		const blocked = buy ? (coin < price ? short(price) : null) : !sets ? `You have ${h.held} of ${f.size}.` : null;
 		return (
 			<Sheet
 				open={open}
@@ -137,13 +183,14 @@ export function ConfirmSheet({
 					</Button>
 				}
 			>
+				{lost ? <LostNote /> : null}
 				<View style={styles.cfTop}>
 					<BullionArt pose="counter" size={ART_SIZE.thumb} />
 					<View style={styles.flex}>
 						<T role="sectionTitle">{`${buy ? "Buy" : "Sell"} for ${price}.`}</T>
 						<HandLg>{`The price goes ${fmtPrice(f.price)} → ${fmtPrice(to)}.`}</HandLg>
 						<Kicker tone="secondary">
-							{buy ? "Every set bought here pushes it up 3% of the usual price." : "Every set sold here pulls it down 3% of the usual price."}
+							{`Every set ${buy ? "bought here pushes it up" : "sold here pulls it down"} ${pctWord(state.tuning.price.impact)} of the usual price.`}
 						</Kicker>
 					</View>
 				</View>
@@ -184,7 +231,8 @@ export function ConfirmSheet({
 	if (!live) {
 		return (
 			<Sheet open={open} onClose={onClose} kicker="The noticeboard" title="That listing is gone" footer={<Button variant="ghost" full onPress={onClose}>Back to the board</Button>}>
-				<HandLg>Another pig got there first, or it was taken down.</HandLg>
+				{lost ? <LostNote /> : null}
+				<HandLg>{lost ? "It's off the board now. Check your bag: it may have gone to you." : "Another pig got there first, or it was taken down."}</HandLg>
 			</Sheet>
 		);
 	}
@@ -212,7 +260,7 @@ export function ConfirmSheet({
 			<View style={styles.centered}>
 				<View style={styles.row}>
 					<FindArt id={c.wantFindId} size={ART_SIZE.glyph} />
-					<T role="cardTitle">→</T>
+					<Icon name="arrowRight" size={ART_SIZE.glyphSm} color={WHIMSY.ink} />
 					<FindArt id={c.findId} size={ART_SIZE.glyph} />
 				</View>
 				<T role="sectionTitle" style={styles.center}>{`Give ${qtyOf(c.wantFindId, wq)}, get ${setOf(c.findId, f.size)}.`}</T>
@@ -231,7 +279,11 @@ export function ConfirmSheet({
 		title = bullion ? `Buy ${setOf(f.id, f.size)} from Bullion` : buying ? `Buy ${who === "A pig" ? "a pig's" : `${who}'s`} ${setOf(f.id, f.size)}` : `Sell ${setOf(f.id, f.size)} to ${pigName(c.poster)}`;
 		cta = `${buying ? "Buy" : "Sell"} for ${price}`;
 		variant = buying ? "primary" : "success";
-		if (buying && coin < price) blocked = `You have ${coin} tickles ready.`;
+		if (buying && coin < price) blocked = short(price);
+		if (bullion && shelfDone(state)) {
+			const w = shelfLimitWords(state.tuning.bullionBoard.perPig);
+			blocked = `${w.title}. ${w.line}`;
+		}
 		if (!buying && holdingOf(state, f.id).held < f.size) blocked = `You have ${holdingOf(state, f.id).held} of ${f.size}.`;
 		if (!buying && c.posterCoinOk === false) blocked = `${who} can't pay ${price} right now.`;
 		body = (
@@ -242,12 +294,12 @@ export function ConfirmSheet({
 						<T role="sectionTitle">{`${buying ? "Buy" : "Sell"} for ${price}.`}</T>
 						<HandLg>
 							{buying
-								? `${bullion ? "At his counter, Bullion charges" : "Bullion charges"} ${f.ask}${vsC > 0 ? `: you save ${vsC}.` : "."}`
-								: `Bullion would pay ${f.bid}${vsC > 0 ? `: +${vsC} for selling to a pig.` : "."}`}
+								? `${bullion ? "At his counter, Bullion charges" : "Bullion charges"} ${f.ask}${vsC > 0 ? `: you save ${vsC}.` : vsC === 0 ? " too." : "."}`
+								: `Bullion would pay ${f.bid}${vsC > 0 ? `: +${vsC} for selling to a pig.` : vsC === 0 ? " too." : "."}`}
 						</HandLg>
 						<Kicker tone="secondary">{bullion
 							? `Buying from Bullion pushes the price up: ${fmtPrice(f.price)} → ${fmtPrice(to)}.`
-							: `A pig sale nudges the price a third of the way to what was paid: ${fmtPrice(f.price)} → ${fmtPrice(to)}.`}</Kicker>
+							: `A pig sale nudges the price ${pullWord(state.tuning.price.pigPull)} of the way to what was paid: ${fmtPrice(f.price)} → ${fmtPrice(to)}.`}</Kicker>
 					</View>
 				</View>
 				<MoveBand usual={f.usual} from={f.price} to={to} lo={priceLo(f.usual, state.tuning)} hi={priceHi(f.usual, state.tuning)} />
@@ -267,6 +319,7 @@ export function ConfirmSheet({
 				</Button>
 			}
 		>
+			{lost ? <LostNote /> : null}
 			{body}
 			{blocked ? <Body tone="danger">{blocked}</Body> : null}
 		</Sheet>
@@ -323,7 +376,23 @@ export function newDraft(state: MarketState, side: MarketSide, findId: SatchelFi
 	};
 }
 
+/** What posting this draft would send (the price held to the band). The post
+ *  sheet's tap and the screen's nonce book read the same spec, so a lost post
+ *  is the same target when it is tried again. */
+export function draftSpec(state: MarketState, draft: PostDraft): PostSpec | null {
+	const f = state.finds.find((x) => x.id === draft.findId);
+	if (!f) return null;
+	if (draft.side === "swap") {
+		return { side: "swap", findId: f.id, price: null, wantFindId: draft.wantFindId, wantQty: draft.wantQty, targetId: draft.targetId };
+	}
+	const range = postRange(f.usual, f.bid, f.ask);
+	const price = Math.max(range.min, Math.min(range.max, draft.price));
+	return { side: draft.side, findId: f.id, price, wantFindId: null, wantQty: null, targetId: draft.targetId };
+}
+
 const BAND_H = 18;
+// The band draws 18pt tall; its touch frame reaches TAP_MIN above and below.
+const BAND_SLOP = (TAP_MIN - BAND_H) / 2;
 // A find chip: wide enough for its short name under the glyph.
 const FIND_CHIP_MIN_W = 68;
 const BAND_MARK = 24;
@@ -335,6 +404,7 @@ export function PostSheet({
 	state,
 	busy,
 	error,
+	lost = false,
 	onClose,
 	onPost,
 }: {
@@ -344,6 +414,8 @@ export function PostSheet({
 	state: MarketState;
 	busy: boolean;
 	error: string | null;
+	/** This exact listing went out and its answer never came back. */
+	lost?: boolean;
 	onClose: () => void;
 	onPost: (spec: PostSpec) => void;
 }) {
@@ -393,7 +465,7 @@ export function PostSheet({
 		fills = pv.fills != null;
 		if (side === "sell") {
 			if (pv.fills === "pig") {
-				verdict = `${cap1(pigName(state.board.find((c) => c.id === pv.offer.id)?.poster))}'s wanted ad pays ${pv.at}: it sells now, ${pv.at - f.bid} more than Bullion pays.`;
+				verdict = `${cap1(pigName(state.board.find((c) => c.id === pv.offer.id)?.poster))}'s wanted ad pays ${pv.at}: it sells now, ${pv.at > f.bid ? `${pv.at - f.bid} more than Bullion pays` : "the same as Bullion pays"}.`;
 				verdictTone = "good";
 				label = `Sell to ${pigName(state.board.find((c) => c.id === pv.offer.id)?.poster)} for ${pv.at}`;
 			} else if (pv.fills === "counter") {
@@ -414,7 +486,7 @@ export function PostSheet({
 			const buyTotal = state.me.offers.filter((o) => o.side === "buy").reduce((t, o) => t + (o.price ?? 0), 0);
 			const need = buyTotal + price;
 			if (pv.fills === "pig") {
-				verdict = `${cap1(pigName(state.board.find((c) => c.id === pv.offer.id)?.poster))}'s listing is ${pv.at}: you buy it now, ${f.ask - pv.at} under the counter.`;
+				verdict = `${cap1(pigName(state.board.find((c) => c.id === pv.offer.id)?.poster))}'s listing is ${pv.at}: you buy it now, ${pv.at < f.ask ? `${f.ask - pv.at} under the counter` : "the same as Bullion charges"}.`;
 				verdictTone = "good";
 				label = `Buy from ${pigName(state.board.find((c) => c.id === pv.offer.id)?.poster)} for ${pv.at}`;
 			} else if (pv.fills === "counter") {
@@ -430,7 +502,9 @@ export function PostSheet({
 				verdictTone = "good";
 				label = `Pin it: wanted, ${setOf(f.id, f.size)} for ${price}`;
 			}
-			if (coin < need) blocked = `Not set aside, but you need ${need} tickles ready for all your wanted ads (you have ${coin}).`;
+			if (coin < need) {
+				blocked = `Not set aside, but you need ${need} tickles ready for all your wanted ads (you have ${coin}).${need > state.me.cap ? ` ${capLine(state.me.cap)}` : ""}`;
+			}
 		}
 		if (!blocked && openFull && !fills) blocked = `You have ${state.tuning.openOffers} listings up. Take one down to pin another.`;
 	}
@@ -467,16 +541,10 @@ export function PostSheet({
 					disabled={!!blocked}
 					loading={busy}
 					loadingLabel="Pinning"
-					onPress={() =>
-						onPost({
-							side,
-							findId: f.id,
-							price: side === "swap" ? null : price,
-							wantFindId: side === "swap" ? draft.wantFindId : null,
-							wantQty: side === "swap" ? draft.wantQty : null,
-							targetId: draft.targetId,
-						})
-					}
+					onPress={() => {
+						const spec = draftSpec(state, draft);
+						if (spec) onPost(spec);
+					}}
 				>
 					{label}
 				</Button>
@@ -492,10 +560,11 @@ export function PostSheet({
 					{ value: "swap", label: "Swap", disabled: !holdsASet },
 				]}
 			/>
+			{lost ? <LostNote /> : null}
 			{!holdsASet ? <Kicker tone="secondary">You hold no full set yet: post a Wanted ad, or buy a set first.</Kicker> : null}
 			<View style={styles.lab}>
 				<KickerPill>{side === "buy" ? "A set you want" : "A set you hold"}</KickerPill>
-				<Kicker tone="secondary">{side === "buy" ? "any find" : "four of a common, three of the rest"}</Kicker>
+				<Kicker tone="secondary">{side === "buy" ? "any find" : setSizeWords(state.tuning)}</Kicker>
 			</View>
 			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fpick}>
 				{order.map((x) => {
@@ -531,6 +600,7 @@ export function PostSheet({
 					<Pressable
 						onPress={onBand}
 						onLayout={(e) => setBandW(e.nativeEvent.layout.width)}
+						hitSlop={{ top: BAND_SLOP, bottom: BAND_SLOP }}
 						accessibilityRole="adjustable"
 						accessibilityLabel="Price per set"
 						accessibilityValue={{ min: range.min, max: range.max, now: price, text: `${price} tickles, ${vsPrice(price, f.price).word}` }}
@@ -629,7 +699,7 @@ function SwapPicker({ state, draft, set }: { state: MarketState; draft: PostDraf
 				<View style={styles.centered}>
 					<View style={styles.row}>
 						<FindArt id={f.id} size={ART_SIZE.glyphMd} />
-						<T role="cardTitle">⇄</T>
+						<Icon name="arrowRight" size={ART_SIZE.glyphSm} color={WHIMSY.ink} />
 						<FindArt id={want.id} size={ART_SIZE.glyphMd} />
 					</View>
 					<CardTitle>{`${setOf(f.id, f.size)} for ${qtyOf(want.id, qty)}`}</CardTitle>
@@ -648,7 +718,7 @@ export function BagSheet({ open, state, onClose, onOpen }: { open: boolean; stat
 	return (
 		<Sheet open={open} onClose={onClose} kicker="Your bag" title="What you hold">
 			<BodySm>
-				{`${state.me.coin} tickles ready · spent ${state.me.spent} · took in ${state.me.tookIn} · `}
+				{`${state.me.coin} tickles ready · ${LEDGER_SPAN}: spent ${state.me.spent} · took in ${state.me.tookIn} · `}
 				<T role="bodySm" tone={net > 0 ? "success" : net < 0 ? "danger" : "secondary"}>{gainWord(net)}</T>
 			</BodySm>
 			<View style={styles.bagGrid}>
@@ -683,19 +753,24 @@ export function BagSheet({ open, state, onClose, onOpen }: { open: boolean; stat
 export function OnboardSheet({
 	open,
 	state,
+	replay = false,
 	onClose,
 	onDone,
 	ticksPerDay,
 }: {
 	open: boolean;
 	state: MarketState;
+	/** "How does the market work?" after the cards are done: no "new here?",
+	 *  and the last card closes on "Got it" instead of stepping up. */
+	replay?: boolean;
 	onClose: () => void;
 	onDone: () => void;
 	ticksPerDay: number;
 }) {
 	const [i, setI] = useState(0);
 	const { width } = useWindowDimensions();
-	const card = ONBOARDING[i];
+	const cards = onboardingCards(state.tuning);
+	const card = cards[i] ?? cards[0];
 	const pine = state.finds.find((f) => f.id === "pinecone") ?? state.finds[0];
 	const key = state.finds.find((f) => f.id === "old_key") ?? state.finds[0];
 	let art: React.ReactNode = <BullionArt pose="counter" size={ART_SIZE.portrait} />;
@@ -756,7 +831,7 @@ export function OnboardSheet({
 				setI(0);
 				onClose();
 			}}
-			kicker="Bullion's Market · new here?"
+			kicker={replay ? "Bullion's Market" : "Bullion's Market · new here?"}
 			title={card.title}
 			footer={
 				<View style={styles.two}>
@@ -765,7 +840,7 @@ export function OnboardSheet({
 					) : (
 						<Button variant="ghost" onPress={() => setI(i - 1)} style={styles.flex}>Back</Button>
 					)}
-					{i < ONBOARDING.length - 1 ? (
+					{i < cards.length - 1 ? (
 						<Button variant="gold" onPress={() => setI(i + 1)} style={styles.flex}>Next</Button>
 					) : (
 						<Button
@@ -776,13 +851,13 @@ export function OnboardSheet({
 							}}
 							style={styles.flex}
 						>
-							Step up to the counter
+							{replay ? "Got it" : "Step up to the counter"}
 						</Button>
 					)}
 				</View>
 			}
 		>
-			<PageDots count={ONBOARDING.length} index={i} />
+			<PageDots count={cards.length} index={i} />
 			<View style={styles.obArt}>{art}</View>
 			<Sticker color="paper" rotate={HINT_TILT} pad shadow="none">
 				<HandLg>{card.say}</HandLg>
@@ -821,6 +896,7 @@ const styles = StyleSheet.create({
 	moveMarkTo: { backgroundColor: WHIMSY.sun },
 	moveLabels: { flexDirection: "row", justifyContent: "space-between", marginTop: SPACE.sm },
 	hint: { flexDirection: "row", alignItems: "center", gap: SPACE.md, marginTop: SPACE.md },
+	lost: { marginBottom: SPACE.md },
 
 	lab: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: SPACE.lg, marginBottom: SPACE.xs },
 	fpick: { gap: SPACE.sm, paddingVertical: SPACE.xs },
