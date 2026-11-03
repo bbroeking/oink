@@ -57,6 +57,24 @@ prices, crossing and two bags at once; serialising them is the simplest deadlock
 friend is visible only to them (and lands in their notices as "for you"). Blocked pairs never see each other's
 listings. Targets must be accepted friends.
 
+### Bullion's daily shelf (founder choice B, 2026-11-01)
+
+Bullion pins three public For sale sets per UTC day, shared globally and explicitly named as his stock. Finds
+rotate deterministically by day. Each slot sells once, expires at the next UTC midnight, and never refills after
+a purchase or a quiet spell. Only the current day's slots are created. `market_tuning.bullion_board.daily_listings`
+defaults to 3, is clamped to 0–6, and 0 hides and refuses all shelf purchases immediately.
+
+The quote is the integer midpoint of Bullion's live bid and ask, strictly inside the gap. If no whole tickle fits,
+the offer is hidden and cannot be bought. A take recomputes the quote and respects the confirmation's maximum
+price, normal counter buy caps, bank checks, market lock and nonce replay. It spends the quoted bank tickles,
+grants exactly one set with its cost basis and applies normal counter buy price impact. The trade is
+`kind=counter, side=buy, how=board`, visibly described as the daily shelf.
+
+Stock lives in `market_bullion_offers`, separate from player escrow and accounts. Board ids are negative to select
+this stock through the existing `market_take` RPC; player offer ids stay positive. Bullion's cards participate in
+board browsing and cheaper-offer links but not automatic player wanted-ad matching or posting previews.
+Migration: `20261101150000_bullion_board.sql` (authored, not applied). Regression: `C2_bullion_board_smoke.sql`.
+
 ## RPCs
 
 | RPC | What |

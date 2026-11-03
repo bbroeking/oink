@@ -1,5 +1,5 @@
 -- Minimal stand-alone prep for the Bullion's Market smoke
--- (C1_bullions_market_smoke.sql). It stubs only what
+-- (C1_bullions_market_smoke.sql and C2_bullion_board_smoke.sql). It stubs only what
 -- 20261031100000_bullions_market.sql reads, so the market can be validated on
 -- a bare local Postgres without the whole chain:
 --
@@ -7,7 +7,9 @@
 --     -f scripts/db-harness/00x_market_prep.sql \
 --     -f supabase/migrations/20261031100000_bullions_market.sql \
 --     -f supabase/migrations/20261031110000_market_followups.sql \
---     -f scripts/db-harness/C1_bullions_market_smoke.sql
+--     -f supabase/migrations/20261101150000_bullion_board.sql \
+--     -f scripts/db-harness/C1_bullions_market_smoke.sql \
+--     -f scripts/db-harness/C2_bullion_board_smoke.sql
 --
 -- The tickle bank is stubbed WITHOUT regen (tickle_balance = item_count), so
 -- every number in the smoke is exact. The real settle_tickles /

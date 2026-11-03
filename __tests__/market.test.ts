@@ -180,3 +180,13 @@ describe("market narrowing", () => {
 		expect(no).toMatchObject({ ok: false, reason: "price_moved", now: 8 });
 	});
 });
+
+describe("Bullion daily shelf payload", () => {
+	it("keeps the canonical NPC identity and routes its sale only through take", () => {
+		const state = toMarketState({ board: [{ id: -1, source: "bullion", find_id: "pinecone", side: "sell", price: 12, qty: 4, poster: { id: "bullion", kind: "bullion", name: "Bullion" }, for_you: false, expires_at: "2026-11-06T00:00:00Z" }] });
+		expect(state.board[0]).toMatchObject({ id: -1, source: "bullion", poster: { kind: "bullion" }, forYou: false });
+		expect(pigName({ ...state.board[0].poster, name: null })).toBe("Bullion");
+		expect(previewBoard(state.board)).toEqual([]);
+		expect(boardBest(state.board, "pinecone").sale?.id).toBe(-1);
+	});
+});

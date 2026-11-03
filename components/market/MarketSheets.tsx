@@ -172,7 +172,7 @@ export function ConfirmSheet({
 					/>
 				) : null}
 				<Kicker tone="secondary" style={styles.gapT}>
-					{`You have ${coin} tickles ready · ${h.held} ${findPlural(f.id)} in your bag`}
+					{`You have ${coin} tickles ready · ${qtyOf(f.id, h.held)} in your bag`}
 				</Kicker>
 				{blocked ? <Body tone="danger">{blocked}</Body> : null}
 			</Sheet>
@@ -225,9 +225,10 @@ export function ConfirmSheet({
 	} else {
 		const price = c.price ?? 0;
 		const buying = c.side === "sell";
-		const to = pigMove(f.usual, f.price, price, state.tuning);
+		const bullion = c.source === "bullion";
+		const to = bullion ? counterMove(f.usual, f.price, "buy", state.tuning) : pigMove(f.usual, f.price, price, state.tuning);
 		const vsC = buying ? f.ask - price : price - f.bid;
-		title = buying ? `Buy ${who === "A pig" ? "a pig's" : `${who}'s`} ${setOf(f.id, f.size)}` : `Sell ${setOf(f.id, f.size)} to ${pigName(c.poster)}`;
+		title = bullion ? `Buy ${setOf(f.id, f.size)} from Bullion` : buying ? `Buy ${who === "A pig" ? "a pig's" : `${who}'s`} ${setOf(f.id, f.size)}` : `Sell ${setOf(f.id, f.size)} to ${pigName(c.poster)}`;
 		cta = `${buying ? "Buy" : "Sell"} for ${price}`;
 		variant = buying ? "primary" : "success";
 		if (buying && coin < price) blocked = `You have ${coin} tickles ready.`;
@@ -241,10 +242,12 @@ export function ConfirmSheet({
 						<T role="sectionTitle">{`${buying ? "Buy" : "Sell"} for ${price}.`}</T>
 						<HandLg>
 							{buying
-								? `Bullion charges ${f.ask}${vsC > 0 ? `: you save ${vsC}.` : "."}`
+								? `${bullion ? "At his counter, Bullion charges" : "Bullion charges"} ${f.ask}${vsC > 0 ? `: you save ${vsC}.` : "."}`
 								: `Bullion would pay ${f.bid}${vsC > 0 ? `: +${vsC} for selling to a pig.` : "."}`}
 						</HandLg>
-						<Kicker tone="secondary">{`A pig sale nudges the price a third of the way to what was paid: ${fmtPrice(f.price)} → ${fmtPrice(to)}.`}</Kicker>
+						<Kicker tone="secondary">{bullion
+							? `Buying from Bullion pushes the price up: ${fmtPrice(f.price)} → ${fmtPrice(to)}.`
+							: `A pig sale nudges the price a third of the way to what was paid: ${fmtPrice(f.price)} → ${fmtPrice(to)}.`}</Kicker>
 					</View>
 				</View>
 				<MoveBand usual={f.usual} from={f.price} to={to} lo={priceLo(f.usual, state.tuning)} hi={priceHi(f.usual, state.tuning)} />
@@ -256,7 +259,7 @@ export function ConfirmSheet({
 		<Sheet
 			open={open}
 			onClose={onClose}
-			kicker={c.forYou ? `For you, from ${who}` : "The noticeboard"}
+			kicker={c.source === "bullion" ? "Bullion’s daily shelf" : c.forYou ? `For you, from ${who}` : "The noticeboard"}
 			title={title}
 			footer={
 				<Button variant={variant} full disabled={!!blocked} loading={busy} loadingLabel="Trading" onPress={() => onTake(c)}>

@@ -55,6 +55,7 @@ export interface MarketFind {
 }
 
 export interface MarketPig {
+	kind?: "bullion";
 	id: string;
 	you: boolean;
 	/** Named only for you and your friends; "a pig" otherwise. */
@@ -64,6 +65,7 @@ export interface MarketPig {
 }
 
 export interface MarketOffer {
+	source?: "bullion";
 	id: number;
 	findId: SatchelFindId;
 	side: MarketSide;
@@ -91,7 +93,7 @@ export interface MarketTrade {
 	kind: TradeKind;
 	/** counter: "buy" (a pig bought from Bullion) | "sell". */
 	side: "buy" | "sell" | null;
-	/** counter | crossed | listing | wanted */
+	/** counter | board | crossed | listing | wanted */
 	how: string | null;
 	findId: SatchelFindId;
 	qty: number;
@@ -284,6 +286,7 @@ export function toMarketPig(raw: unknown): MarketPig | null {
 	if (!id) return null;
 	return {
 		id,
+		...(o.kind === "bullion" ? { kind: "bullion" as const } : {}),
 		you: o.you === true,
 		name: strOrNull(o.name),
 		pigId: strOrNull(o.pig_id),
@@ -300,6 +303,7 @@ export function toMarketOffer(raw: unknown): MarketOffer | null {
 	if (id == null || !findId || !SIDES.includes(o.side as MarketSide)) return null;
 	return {
 		id,
+		...(o.source === "bullion" ? { source: "bullion" as const } : {}),
 		findId,
 		side: o.side as MarketSide,
 		price: numOrNull(o.price),
@@ -464,7 +468,7 @@ export function findOf(state: MarketState, id: SatchelFindId): MarketFind | null
 
 /** The board as previewList reads it. */
 export function previewBoard(board: readonly BoardCard[]): PreviewOffer[] {
-	return board.map((c) => ({
+	return board.filter((c) => c.source !== "bullion").map((c) => ({
 		id: c.id,
 		side: c.side,
 		findId: c.findId,
@@ -489,6 +493,7 @@ export function boardBest(board: readonly BoardCard[], id: SatchelFindId): { sal
 /** A pig's name as a sentence wants it: "you", "Maya", "a pig". */
 export function pigName(p: MarketPig | null | undefined): string {
 	if (!p) return "a pig";
+	if (p.kind === "bullion") return "Bullion";
 	if (p.you) return "you";
 	return p.name ?? "a pig";
 }

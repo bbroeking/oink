@@ -254,7 +254,7 @@ export function MarketHome({
 								<View style={[styles.tkTag, { backgroundColor: TAG_FILL[line.tag] }]}>
 									<Label>{line.tag}</Label>
 								</View>
-								<BodySm numberOfLines={1}>{line.text}</BodySm>
+								<BodySm>{line.text}</BodySm>
 							</View>
 						);
 					})}
@@ -283,11 +283,11 @@ export function MarketHome({
 					pad
 					onPress={onBoard}
 					accessibilityRole="button"
-					accessibilityLabel={`The Noticeboard: trade with pigs, ${state.board.length} listings${forYou ? `, ${forYou} for you` : ""}`}
+					accessibilityLabel={`The Noticeboard: trade with pigs and Bullion, ${state.board.length} listings${forYou ? `, ${forYou} for you` : ""}`}
 					style={styles.place}
 				>
 					<CorkboardArt size={PLACE_ART} />
-					<KickerPill>Part 2 · with pigs</KickerPill>
+					<KickerPill>Part 2 · the board</KickerPill>
 					<CardTitle>The Noticeboard</CardTitle>
 					<Hand>Sell high, buy cheap, swap straight up. No cut.</Hand>
 					<View style={styles.rowWrap}>
@@ -643,9 +643,9 @@ export function BoardView({
 		<View>
 			<Sticker color="paper" rotate={0} pad style={styles.boardHead}>
 				<View style={styles.flex}>
-					<KickerPill>★ Part 2 · with pigs</KickerPill>
+					<KickerPill>Part 2 · the board</KickerPill>
 					<T role="pageTitle">The Noticeboard</T>
-					<Hand tone="secondary">No cut. Price it between Bullion&apos;s two prices and you both beat his counter.</Hand>
+					<Hand tone="secondary">Bullion pins a few sets each day, alongside the pigs&apos; own listings.</Hand>
 				</View>
 				<CorkboardArt size={ART_SIZE.thumb} />
 			</Sticker>
@@ -744,7 +744,7 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 			accessible={false}
 		>
 			<View style={styles.rowBetween}>
-				<KickerPill>{c.forYou ? "For you" : KIND_LABEL[c.side]}</KickerPill>
+				<KickerPill>{c.source === "bullion" ? "Daily shelf" : c.forYou ? "For you" : KIND_LABEL[c.side]}</KickerPill>
 				<Kicker tone="secondary">{hoursLeftWord(Date.parse(c.expiresAt), nowMs).replace(" left", "")}</Kicker>
 			</View>
 			<View style={styles.row}>
@@ -753,10 +753,10 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 			</View>
 			{body}
 			<View style={styles.row}>
-				<Glyph name="pigface" size={ART_SIZE.glyphSm} />
+				{c.source !== "bullion" ? <Glyph name="pigface" size={ART_SIZE.glyphSm} /> : null}
 				<BodySm>{who}</BodySm>
 			</View>
-			<Button variant={action.ok ? action.variant : "locked"} size="sm" disabled={!action.ok} onPress={() => onTake(c)} full>
+			<Button variant={action.ok ? action.variant : "locked"} size="sm" disabled={!action.ok} onPress={() => onTake(c)} accessibilityLabel={c.source === "bullion" ? `${action.label}: ${setOf(c.findId, size)} from Bullion, daily shelf` : undefined} full>
 				{action.label}
 			</Button>
 		</Sticker>
@@ -789,7 +789,6 @@ const styles = StyleSheet.create({
 		borderWidth: BORDER.thin,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
-		maxWidth: 300,
 	},
 	tkTag: { paddingHorizontal: SPACE.xs, borderRadius: RADII.sm, borderWidth: BORDER.hair, borderColor: WHIMSY.ink },
 	places: { flexDirection: "row", gap: SPACE.md },

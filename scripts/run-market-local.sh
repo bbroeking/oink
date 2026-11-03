@@ -5,7 +5,8 @@
 #   SKIP_DB=1 bash scripts/run-market-local.sh  # never ask about the DB push
 #
 # Steps:
-#   1. Fetch and check out claude/backend-ui-implementation-buzz5y (refuses on a dirty tree).
+#   1. Fetch and check out claude/backend-ui-implementation-buzz5y. On that branch
+#      already, preserve local edits and skip syncing rather than requiring a stash.
 #   2. pnpm install (frozen lockfile).
 #   3. OPTIONAL: apply supabase/migrations/20261031100000_bullions_market.sql with
 #      `npm run db:push` — only after you type "push it now" (CLAUDE.md: DB pushes
@@ -22,15 +23,21 @@ export NODE_OPTIONS="--max-old-space-size=16384"
 
 cd "$(git rev-parse --show-toplevel)"
 
-echo "==> 1/4  Checking out $BRANCH"
-if [ -n "$(git status --porcelain)" ]; then
+echo "==> 1/4  Checking $BRANCH"
+current_branch="$(git branch --show-current)"
+if [ -n "$(git status --porcelain)" ] && [ "$current_branch" != "$BRANCH" ]; then
 	echo "Your working tree has uncommitted changes. Commit or stash them first:" >&2
 	git status --short >&2
 	exit 1
 fi
-git fetch origin "$BRANCH"
-git checkout "$BRANCH"
-git pull --ff-only origin "$BRANCH"
+if [ -n "$(git status --porcelain)" ]; then
+	echo "Already on $BRANCH; preserving local edits and skipping fetch/pull."
+	git status --short
+else
+	git fetch origin "$BRANCH"
+	git checkout "$BRANCH"
+	git pull --ff-only origin "$BRANCH"
+fi
 
 echo "==> 2/4  Installing dependencies"
 command -v pnpm >/dev/null || npm i -g pnpm
@@ -67,6 +74,11 @@ else
 fi
 
 echo "==> 4/4  Building and running on the iOS simulator"
+# After switching branches, an older Metro process can retain a stale file map
+# (even for files that exist). Stop that process and restart with:
+# NODE_OPTIONS="--max-old-space-size=16384" npx expo start --clear --lan
+# Use the normal LAN binding: --localhost can bind only ::1 on this Mac while
+# the simulator's dev client requests its bundle at 127.0.0.1.
 if ! (cd ios && COCOAPODS_DISABLE_STATS=true pod install); then
 	echo "pod install failed; cleaning and retrying (CLAUDE.md's null-byte flake fix)"
 	(cd ios && pod cache clean --all && rm -rf Pods Podfile.lock && COCOAPODS_DISABLE_STATS=true pod install)

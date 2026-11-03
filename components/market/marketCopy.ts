@@ -100,7 +100,7 @@ export function tickerLine(tr: MarketTrade, size: number): { tag: "you" | "count
 			tr.side === "buy"
 				? `${cap1(pigName(tr.buyer))} bought ${set} from Bullion · ${tr.price}`
 				: `${cap1(pigName(tr.seller))} sold Bullion ${set} · ${tr.price}`;
-		return { tag: mine ? "you" : "counter", text };
+		return { tag: mine ? "you" : tr.how === "board" ? "board" : "counter", text: tr.how === "board" ? `${text} · daily shelf` : text };
 	}
 	if (tr.kind === "pig") {
 		return { tag: mine ? "you" : "board", text: `${cap1(pigName(tr.buyer))} bought ${set} from ${pigName(tr.seller)} · ${tr.price}` };
@@ -118,7 +118,7 @@ export function tickerLine(tr: MarketTrade, size: number): { tag: "you" | "count
 export function tradeLine(tr: MarketTrade, viewing: SatchelFindId, size: number): { text: string; tag: string } {
 	if (tr.kind === "counter") {
 		return tr.side === "buy"
-			? { text: `${cap1(pigName(tr.buyer))} bought from Bullion`, tag: "counter" }
+			? { text: `${cap1(pigName(tr.buyer))} bought from Bullion${tr.how === "board" ? "’s daily shelf" : ""}`, tag: tr.how === "board" ? "board" : "counter" }
 			: { text: `${cap1(pigName(tr.seller))} sold to Bullion`, tag: "counter" };
 	}
 	if (tr.kind === "pig") return { text: `${cap1(pigName(tr.buyer))} bought from ${pigName(tr.seller)}`, tag: "board" };
@@ -160,7 +160,7 @@ export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): Market
 		return {
 			pose: "gavel",
 			title: crossed ? `Bullion sold you ${set} for ${tr.price}` : `You bought ${set} from Bullion for ${tr.price}`,
-			line: crossed ? `His selling price came down to your ${tr.listed}: you got his price.` : `the price went ${mv}${sheep}`,
+			line: crossed ? `His selling price came down to your ${tr.listed}: you got his price.` : `${tr.how === "board" ? "From his daily shelf · " : ""}the price went ${mv}${sheep}`,
 			tone: "plain",
 		};
 	}
@@ -258,6 +258,6 @@ export function refusalReceipt(res: Extract<MarketOutcome, { ok: false }>, findI
 
 /** The first price you move: shown once, ever. */
 export function movedMoment(tr: MarketTrade): MarketReceipt {
-	const how = tr.kind === "counter" ? "Every set at my counter nudges it." : "A pig sale nudges it a third of the way.";
+	const how = tr.kind === "counter" ? tr.how === "board" ? "Every set bought from me nudges it." : "Every set at my counter nudges it." : "A pig sale nudges it a third of the way.";
 	return { pose: "cheer", title: "You moved the price!", line: `${cap1(findPlural(tr.findId))} ${moveLine(tr)}. ${how}`, tone: "moment" };
 }

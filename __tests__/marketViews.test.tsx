@@ -72,11 +72,19 @@ const RAW = {
 };
 const STATE = toMarketState(RAW);
 const NOW_MS = Date.parse("2026-11-05T14:10:00Z");
+const renderers: TestRenderer.ReactTestRenderer[] = [];
+
+afterEach(() => {
+	act(() => {
+		for (const renderer of renderers.splice(0)) renderer.unmount();
+	});
+});
 
 function render(node: React.ReactElement) {
 	let r!: TestRenderer.ReactTestRenderer;
 	act(() => {
 		r = TestRenderer.create(<SafeAreaProvider initialMetrics={METRICS}>{node}</SafeAreaProvider>);
+		renderers.push(r);
 	});
 	return r;
 }
@@ -310,5 +318,35 @@ describe("Bullion's Market audit regressions", () => {
 		const s = toMarketState({ ...RAW, board: [{ ...RAW.board[1], poster_coin_ok: false }] });
 		const r = render(<BoardView state={s} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={jest.fn()} onCancel={jest.fn()} busyId={null} />);
 		expect(textOf(r)).toContain("can't pay right now");
+	});
+});
+
+describe("Bullion daily shelf", () => {
+	const state = toMarketState({ ...RAW, board: [{ id: -1, source: "bullion", find_id: "pinecone", side: "sell", price: 12, qty: 4, poster: { id: "bullion", kind: "bullion", name: "Bullion" }, expires_at: "2026-11-06T00:00:00Z" }] });
+	it("names Bullion and the daily shelf on the board purchase action", () => {
+		const onTake = jest.fn();
+		const r = render(<BoardView state={state} filter="all" onFilter={jest.fn()} shown={24} onMore={jest.fn()} nowMs={NOW_MS} onTake={onTake} onCancel={jest.fn()} busyId={null} />);
+		expect(textOf(r)).toContain("Daily shelf");
+		pressByText(r, "Buy for 12: 4 pinecones from Bullion, daily shelf");
+		expect(onTake).toHaveBeenCalledWith(state.board[0]);
+	});
+	it("confirms the shelf quote and counter impact, then takes that listing", () => {
+		const onTake = jest.fn();
+		const r = render(<ConfirmSheet open target={{ via: "board", card: state.board[0] }} state={state} busy={false} onClose={jest.fn()} onCounter={jest.fn()} onTake={onTake} onSwitchToCard={jest.fn()} onPostHere={jest.fn()} />);
+		const text = textOf(r);
+		expect(text).toContain("Buy 4 pinecones from Bullion");
+		expect(text).toContain("Buy for 12.");
+		expect(text).toContain("Buying from Bullion pushes the price up: 12 → 12.4.");
+		expect(text).not.toContain("A pig sale");
+		pressByText(r, "Buy for 12");
+		expect(onTake).toHaveBeenCalledWith(state.board[0]);
+	});
+	it("receipts and tape preserve the actual shelf price and board source", () => {
+		const { tickerLine, tradeLine, movedMoment } = jest.requireActual("@/components/market/marketCopy");
+		const trade = toMarketTrade({ id: 1, kind: "counter", how: "board", side: "buy", find_id: "pinecone", qty: 4, price: 12, ask: 15, from: 12, to: 12.36, buyer: { id: "stranger" } })!;
+		expect(tradeReceipt(trade)).toMatchObject({ title: "You bought 4 pinecones from Bullion for 12", line: "From his daily shelf · the price went 12 → 12.4" });
+		expect(tickerLine(trade, 4)).toEqual({ tag: "board", text: "A pig bought 4 pinecones from Bullion · 12 · daily shelf" });
+		expect(tradeLine(trade, "pinecone", 4).tag).toBe("board");
+		expect(movedMoment(trade).line).toContain("Every set bought from me nudges it.");
 	});
 });
