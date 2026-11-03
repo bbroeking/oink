@@ -23,6 +23,15 @@
 --      expired with their sets home, notices handed over once; market_ping.
 \set ON_ERROR_STOP on
 
+-- Written against the launch tuning (impact 0.03, wiggle 0.01, 24-hour
+-- listings); 20261102200000 rebalanced it (0.05, 0.02, 48 h). Pin the launch
+-- values for this smoke and put the stored tuning back at the end.
+CREATE TEMP TABLE c1_saved_tuning AS SELECT value FROM public.app_settings WHERE key = 'market_tuning';
+UPDATE public.app_settings
+SET value = value || jsonb_build_object('offer_hours', 24,
+	'price', (value->'price') || '{"impact": 0.03, "wiggle": 0.01}'::jsonb)
+WHERE key = 'market_tuning';
+
 INSERT INTO auth.users (id) VALUES
 	('00000000-0000-0000-0000-00000000c101'),
 	('00000000-0000-0000-0000-00000000c102'),
@@ -400,3 +409,6 @@ BEGIN
 	RAISE NOTICE 'C1 audit regressions: all green';
 END
 $audit$;
+
+-- The stored tuning back (C2 and C3 read it).
+UPDATE public.app_settings SET value = (SELECT value FROM c1_saved_tuning) WHERE key = 'market_tuning';

@@ -1,15 +1,21 @@
 -- Minimal stand-alone prep for the Bullion's Market smoke
--- (C1_bullions_market_smoke.sql and C2_bullion_board_smoke.sql). It stubs only what
--- 20261031100000_bullions_market.sql reads, so the market can be validated on
--- a bare local Postgres without the whole chain:
+-- (C1_bullions_market_smoke.sql, C2_bullion_board_smoke.sql and
+-- C3_market_launch_fixes_smoke.sql). It stubs only what the market migrations
+-- read, so the market can be validated on a bare local Postgres without the
+-- whole chain (one psql session: C2 uses C1's pg_temp helpers):
 --
 --   createdb market && psql -d market -v ON_ERROR_STOP=1 \
 --     -f scripts/db-harness/00x_market_prep.sql \
 --     -f supabase/migrations/20261031100000_bullions_market.sql \
 --     -f supabase/migrations/20261031110000_market_followups.sql \
 --     -f supabase/migrations/20261101150000_bullion_board.sql \
+--     -f supabase/migrations/20261102200000_market_launch_fixes.sql \
 --     -f scripts/db-harness/C1_bullions_market_smoke.sql \
---     -f scripts/db-harness/C2_bullion_board_smoke.sql
+--     -f scripts/db-harness/C2_bullion_board_smoke.sql \
+--     -f scripts/db-harness/C3_market_launch_fixes_smoke.sql
+--
+-- No pg_cron here: 20261102200000 leaves the season2-flip job alone without it
+-- (C3 tests the flip wrapper against a stub flip_season_2).
 --
 -- The tickle bank is stubbed WITHOUT regen (tickle_balance = item_count), so
 -- every number in the smoke is exact. The real settle_tickles /
@@ -99,3 +105,15 @@ CREATE TABLE public.season_reset_archive (
 	PRIMARY KEY (user_id, season_id, kind)
 );
 CREATE TABLE public.satchel_met (user_id uuid, find_id text, PRIMARY KEY (user_id, find_id));
+
+-- Pushes (20261102200000): the real send_push_to_user posts to Expo through
+-- pg_net. This one records what would have gone out; smoke.push_fail = 'on'
+-- makes it raise (a failed push must never roll back a trade).
+CREATE TABLE public._smoke_pushes (id bigserial PRIMARY KEY, user_id uuid, title text, body text, data jsonb);
+CREATE OR REPLACE FUNCTION public.send_push_to_user(target_user_id uuid, push_title text, push_body text,
+	push_data jsonb DEFAULT '{}'::jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+BEGIN
+	IF current_setting('smoke.push_fail', true) = 'on' THEN RAISE EXCEPTION 'push service down'; END IF;
+	INSERT INTO public._smoke_pushes (user_id, title, body, data) VALUES (target_user_id, push_title, push_body, push_data);
+	RETURN jsonb_build_object('ok', true, 'request_id', currval('public._smoke_pushes_id_seq'));
+END $$;

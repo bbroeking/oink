@@ -22,10 +22,12 @@ DECLARE
  nonce uuid := gen_random_uuid(); oid bigint; oldid bigint; fid text;
  quote int; qty int; bank int; held int; ledger int; trades int; posts int;
  p numeric; usual int; tuning jsonb; today date := '2026-11-10';
+ saved jsonb; umax int;
 BEGIN
  PERFORM pg_temp.as_user(a);
  SELECT value INTO tuning FROM public.app_settings WHERE key='market_tuning';
- SELECT count(*) INTO posts FROM public.market_offers;
+ -- The newest offer id, not a count: the day's first read may prune old closed rows (20261102200000).
+ SELECT coalesce(max(id),0) INTO posts FROM public.market_offers;
  st := public.market_state();
  PERFORM pg_temp.ok((SELECT count(*) FROM jsonb_array_elements(st->'board') x WHERE x->>'source'='bullion')=3,'C2 three global daily offers');
  PERFORM pg_temp.ok((SELECT count(*) FROM public.market_bullion_offers WHERE day=today)=3,'C2 exactly three persisted slots');
@@ -40,7 +42,7 @@ BEGIN
  PERFORM pg_temp.as_user(b); st2:=public.market_state();
  PERFORM pg_temp.ok(st->'board'=st2->'board','C2 same global offers for both users');
  PERFORM pg_temp.ok((SELECT count(*) FROM public.market_bullion_offers WHERE day=today)=3,'C2 repeat reads do not seed more');
- PERFORM pg_temp.ok((SELECT count(*) FROM public.market_offers)=posts,'C2 no player stock allocated');
+ PERFORM pg_temp.ok((SELECT coalesce(max(id),0) FROM public.market_offers)=posts,'C2 no player stock allocated');
  PERFORM pg_temp.ok((public.market_ping()->>'listings')::int=0,'C2 ping player listing count unchanged');
  SELECT x INTO o FROM jsonb_array_elements(st->'board') x WHERE x->>'source'='bullion' ORDER BY (x->>'id')::bigint LIMIT 1;
  oid:=(o->>'id')::bigint; fid:=o->>'find_id'; quote:=(o->>'price')::int; qty:=(o->>'qty')::int;
@@ -67,7 +69,7 @@ BEGIN
  PERFORM pg_temp.ok(pg_temp.coin(a)=bank-quote AND pg_temp.held(a,fid)=held+qty,'C2 exact bank and set');
  PERFORM pg_temp.ok((SELECT round(sum(market_cost)) FROM public.satchel_items WHERE user_id=a AND find_id=fid)=quote,'C2 exact total cost basis');
  PERFORM pg_temp.ok((SELECT spent FROM public.market_ledgers WHERE user_id=a)=ledger+quote,'C2 ledger charged');
- PERFORM pg_temp.ok(abs(pg_temp.price(fid)-least(1.15*usual,p+0.03*usual))<0.00001,'C2 normal counter buy impact');
+ PERFORM pg_temp.ok(abs(pg_temp.price(fid)-least(1.15*usual,p+(public._market_tuning()->'price'->>'impact')::numeric*usual))<0.00001,'C2 normal counter buy impact');
  PERFORM pg_temp.ok((SELECT status='filled' AND buyer_id=a AND trade_id=(res->'trade'->>'id')::bigint FROM public.market_bullion_offers WHERE id=-oid),'C2 offer links winner and trade');
  replay:=public.market_take(oid,quote,nonce);
  PERFORM pg_temp.ok(replay->>'replay'='true' AND replay->'trade'->>'id'=res->'trade'->>'id','C2 nonce replay same receipt');
@@ -77,13 +79,19 @@ BEGIN
  st:=public.market_state();
  PERFORM pg_temp.ok((SELECT count(*) FROM jsonb_array_elements(st->'board') x WHERE x->>'source'='bullion')=2 AND (SELECT count(*) FROM public.market_bullion_offers WHERE day=today)=3,'C2 sold slots never refill');
  SELECT (x->>'id')::bigint INTO oldid FROM jsonb_array_elements(st->'board') x WHERE x->>'source'='bullion' LIMIT 1;
- -- Force a one-tickle gap: there is no integer strictly inside it.
+ -- Force a one-tickle gap: there is no integer strictly inside it. With a
+ -- VALID tuning (20261102200000 validates market_tuning: a buy_factor of 100
+ -- now falls back to the defaults): every find priced so that bid = U, ask = U + 1.
  bank:=pg_temp.coin(b);
- UPDATE public.app_settings SET value=jsonb_set(jsonb_set(value,'{price,buy_factor}','100'::jsonb),'{price,sell_factor}','0'::jsonb) WHERE key='market_tuning';
+ SELECT jsonb_object_agg(find_id,price) INTO saved FROM public.market_prices;
+ umax:=(SELECT max(public._market_usual(id,public._market_tuning())) FROM public.satchel_finds);
+ UPDATE public.app_settings SET value=jsonb_set(value,'{price}',(value->'price')||jsonb_build_object('lo',0.9999,'hi',1+0.6/umax,'buy_factor',(umax+0.01)/(umax+0.5),'sell_factor',(umax+0.99)/(umax+0.5))) WHERE key='market_tuning';
+ UPDATE public.market_prices SET price=public._market_usual(find_id,public._market_tuning())*(umax+0.5)/umax;
  PERFORM pg_temp.ok(public._market_bullion_price((SELECT find_id FROM public.market_bullion_offers WHERE id=-oldid),public._market_tuning()) IS NULL,'C2 one-tickle gap has no quote');
  st2:=public.market_state();
  PERFORM pg_temp.ok(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(st2->'board') x WHERE x->>'source'='bullion'),'C2 narrow spread hidden');
  PERFORM pg_temp.ok(public.market_take(oldid,NULL,gen_random_uuid())->>'reason'='not_found' AND pg_temp.coin(b)=bank,'C2 narrow spread refuses without charge');
+ UPDATE public.market_prices mp SET price=(saved->>mp.find_id)::numeric;
  UPDATE public.app_settings SET value=tuning WHERE key='market_tuning';
  -- A displayed quote is advisory: the take recomputes against live prices.
  SELECT x INTO o FROM jsonb_array_elements(st->'board') x WHERE (x->>'id')::bigint=oldid;
