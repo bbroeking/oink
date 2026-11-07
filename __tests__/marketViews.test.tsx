@@ -39,8 +39,13 @@ import {
 	onboardingCards,
 	pinnedReceipt,
 	refusalReceipt,
+	ownSetOf,
+	setOf,
+	setSizeLabel,
 	setSizeWords,
+	shortOfSet,
 	takeDownReceipt,
+	tradeLine,
 	tradeReceipt,
 } from "@/components/market/marketCopy";
 import { MARKET_KEPT_RECEIPTS_KEY, MARKET_TUNING } from "@/constants/market";
@@ -446,10 +451,14 @@ describe("the tunables are read off the server's tuning", () => {
 	const small = { ...MARKET_TUNING, setSize: { common: 3, uncommon: 2, rare: 1 }, offerHours: 36, price: { ...MARKET_TUNING.price, impact: 0.04, pigPull: 0.5 } };
 
 	it("says the set sizes, the listing hours, the price's step and a pig sale's pull from tuning", () => {
-		expect(setSizeWords(MARKET_TUNING)).toBe("four of a common, three of the rest");
-		expect(setSizeWords(small)).toBe("three of a common, two of an uncommon, one of a rare");
-		expect(onboardingCards(small)[0].say).toContain("Three of a common, two of an uncommon, one of a rare.");
-		expect(onboardingCards()[0].say).toContain("Four of a common, three of the rest.");
+		const shipped = { ...MARKET_TUNING, setSize: { common: 4, uncommon: 3, rare: 3 } };
+		expect(setSizeWords(MARKET_TUNING)).toBe("three of a common, two of an uncommon, or a rare on its own");
+		expect(setSizeWords(small)).toBe("three of a common, two of an uncommon, or a rare on its own");
+		expect(setSizeWords(shipped)).toBe("four of a common, three of the rest");
+		expect(onboardingCards()[0].say).toBe(
+			"Hand me a set and I'll pay you on the spot. Need a set? I've always got one. Three of a common, two of an uncommon, or a rare on its own.",
+		);
+		expect(onboardingCards(shipped)[0].say).toContain("Four of a common, three of the rest.");
 		const expired = noticeReceipt({ id: 1, kind: "expired", offer: { id: 9, findId: "pinecone", side: "sell", price: 12, qty: 4, targetId: null, wantFindId: null, wantQty: null, createdAt: "", expiresAt: "", status: "expired" }, trade: null }, small);
 		expect(expired?.line).toBe("Nobody took them at 12 in 36 hours.");
 		const swapOffer = { id: 9, findId: "pinecone" as const, side: "swap" as const, price: null, qty: 4, targetId: null, wantFindId: "old_key" as const, wantQty: 1, createdAt: "", expiresAt: "", status: "open" };
@@ -464,7 +473,7 @@ describe("the tunables are read off the server's tuning", () => {
 		const confirm = render(<ConfirmSheet open target={{ via: "counter", findId: "pinecone", side: "buy" }} state={s} {...confirmProps} />);
 		expect(textOf(confirm)).toContain("pushes it up 4% of the usual price.");
 		const post = render(<PostSheet open draft={newDraft(s, "sell", "pinecone")} setDraft={jest.fn()} state={s} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />);
-		expect(textOf(post)).toContain("three of a common, two of an uncommon, one of a rare");
+		expect(textOf(post)).toContain("three of a common, two of an uncommon, or a rare on its own");
 		expect(textOf(post)).not.toContain("four of a common");
 	});
 });
@@ -498,7 +507,7 @@ describe("ties, the bank cap, and what to do first", () => {
 	it("tells a pig with no full set what to do first", () => {
 		const r = firstStepsCard(MARKET_TUNING, true);
 		expect(r.title).toBe("First, a full set");
-		expect(r.line).toBe("A set is four of a common, three of the rest. Keep digging, or buy one from me right here.");
+		expect(r.line).toBe("A set is three of a common, two of an uncommon, or a rare on its own. Keep digging, or buy one from me right here.");
 		expect(firstStepsCard(MARKET_TUNING, false).line).toContain("Keep digging: when one fills");
 	});
 
@@ -710,5 +719,132 @@ describe("launch fixes, server round (2026-11-02)", () => {
 			noEmDash(r.title);
 			noEmDash(r.line);
 		}
+	});
+});
+
+describe("sets of three, two and one (2026-11 balance pass)", () => {
+	const SMALL_RAW = {
+		...RAW,
+		tuning: { ...RAW.tuning, set_size: { common: 3, uncommon: 2, rare: 1 } },
+		finds: [
+			{ id: "pinecone", rarity: "common", size: 3, usual: 9, price: 9, ask: 11, bid: 7, prev: 9, quiet_for: 0, spark: [[990000, 9]] },
+			{ id: "old_key", rarity: "uncommon", size: 2, usual: 16, price: 16, ask: 20, bid: 12, prev: 16, quiet_for: 0, spark: [[990000, 16]] },
+			{ id: "tin_whistle", rarity: "rare", size: 1, usual: 20, price: 20, ask: 24, bid: 16, prev: 20, quiet_for: 0, spark: [[990000, 20]] },
+		],
+		me: { ...RAW.me, holdings: { old_key: { held: 1, paid: 0, paid_units: 0, on_offer: 0 } }, offers: [] },
+		board: [],
+	};
+	const s = toMarketState(SMALL_RAW);
+	const whistle = s.finds[2];
+	const findProps = { view: null, fancy: null, sheepEach: null, sheepHere: false, nowMs: NOW_MS, weekdayOf: () => "Thu", isDayStart: () => false, ticksPerDay: 48, onTake: jest.fn(), onOpen: jest.fn(), onCancel: jest.fn(), busyId: null };
+	const trade = (raw: Record<string, unknown>) => toMarketTrade({ id: 1, tick: 1, at: "x", ...raw }) as MarketTrade;
+
+	it("names a set in the singular when it is one, as the server's pushes do", () => {
+		expect(setOf("tin_whistle", 1)).toBe("a tin whistle");
+		expect(setOf("old_key", 1)).toBe("an old key");
+		expect(setOf("old_key", 2)).toBe("2 old keys");
+		expect(setOf("pinecone", 3)).toBe("3 pinecones");
+		expect(ownSetOf("tin_whistle", 1)).toBe("tin whistle");
+		expect(ownSetOf("old_key", 2)).toBe("2 old keys");
+		expect(setSizeLabel(1)).toBe("one at a time");
+		expect(setSizeLabel(2)).toBe("a set of 2");
+		expect(shortOfSet("tin_whistle", 0, 1)).toBe("You have no tin whistles.");
+		expect(shortOfSet("old_key", 1, 2)).toBe("You have 1 of 2.");
+	});
+
+	it("says any mix of set sizes", () => {
+		const t = (common: number, uncommon: number, rare: number) => ({ ...MARKET_TUNING, setSize: { common, uncommon, rare } });
+		expect(setSizeWords(t(2, 2, 2))).toBe("two of any find");
+		expect(setSizeWords(t(1, 1, 1))).toBe("any find on its own");
+		expect(setSizeWords(t(3, 1, 1))).toBe("three of a common, the rest on their own");
+		expect(firstStepsCard(t(3, 2, 1), false).line).toBe(
+			"A set is three of a common, two of an uncommon, or a rare on its own. Keep digging: when one fills, bring it to me or pin it on the noticeboard.",
+		);
+	});
+
+	it("tells a trade, a listing and a refusal of one find in the singular", () => {
+		const sold = tradeReceipt(trade({ kind: "counter", side: "sell", find_id: "tin_whistle", qty: 1, price: 16, from: 20, to: 19, seller: { id: "me", you: true } }));
+		expect(sold.title).toBe("Bullion bought your tin whistle for 16");
+		const bought = tradeReceipt(trade({ kind: "counter", side: "buy", find_id: "tin_whistle", qty: 1, price: 24, from: 20, to: 21, buyer: { id: "me", you: true } }));
+		expect(bought.title).toBe("You bought a tin whistle from Bullion for 24");
+		const taken = tradeReceipt(trade({ kind: "pig", how: "listing", find_id: "tin_whistle", qty: 1, price: 22, bid: 16, ask: 24, seller: { id: "me", you: true }, buyer: { id: "maya", name: "Maya", friend: true } }));
+		expect(taken.title).toBe("Maya bought your tin whistle for 22");
+		expect(sold.line).toBe("you dug it up · +16 · the price went 20 → 19");
+		const offer = { id: 9, findId: "tin_whistle" as const, price: 24, qty: 1, targetId: null, wantFindId: null, wantQty: null, createdAt: "", expiresAt: "", status: "expired" };
+		expect(noticeReceipt({ id: 1, kind: "expired", offer: { ...offer, side: "sell" }, trade: null })).toMatchObject({
+			title: "Your tin whistle came home",
+			line: "Nobody took it at 24 in 48 hours.",
+		});
+		expect(noticeReceipt({ id: 1, kind: "expired", offer: { ...offer, side: "swap", price: null, wantFindId: "old_key", wantQty: 1 }, trade: null })?.line).toBe(
+			"Your tin whistle is back in your bag.",
+		);
+		expect(noticeReceipt({ id: 1, kind: "for_you", offer: { ...offer, side: "sell", status: "open" }, trade: null })?.line).toBe(
+			"A tin whistle for 24 · on the noticeboard, For you",
+		);
+		const notASet = (held: number, setSize: number) => ({ ok: false as const, reason: "not_a_set", now: null, ready: null, needed: null, held, setSize });
+		expect(refusalReceipt(notASet(0, 1), "tin_whistle", 4, 30)).toMatchObject({ title: "A set is just one", line: "You have 0 tin whistles." });
+		expect(refusalReceipt(notASet(1, 2), "old_key", 4, 30)).toMatchObject({ title: "A set is 2", line: "You have 1 old key." });
+		const swap = trade({ kind: "swap", find_id: "tin_whistle", qty: 1, want_find_id: "old_key", want_qty: 2, buyer: { id: "maya", name: "Maya", friend: true } });
+		expect(tradeLine(swap, "tin_whistle", 1).text).toBe("Maya swapped 2 old keys for a tin whistle");
+		const gave = trade({ kind: "swap", find_id: "pinecone", qty: 3, want_find_id: "tin_whistle", want_qty: 1, buyer: { id: "maya", name: "Maya", friend: true } });
+		expect(tradeLine(gave, "tin_whistle", 3).text).toBe("Maya swapped a tin whistle for 3 pinecones");
+	});
+
+	it("draws a one-find set without 'a set of 1'", () => {
+		const counter = textOf(render(<CounterView state={s} fancy={null} onOpen={jest.fn()} />));
+		expect(counter).toContain("Tin whistles");
+		const row = render(<CounterView state={s} fancy={null} onOpen={jest.fn()} />).root.findAll((n) => String(n.props.accessibilityLabel ?? "").startsWith("Tin whistles"))[0];
+		expect(row.props.accessibilityLabel).toContain("Tin whistles, one at a time.");
+		const view = textOf(render(<FindView state={s} find={whistle} {...findProps} />));
+		expect(view).toContain("One at a time");
+		expect(view).not.toContain("set of 1");
+		expect(view).not.toContain("sets of 1");
+		const sell = render(<ConfirmSheet open target={{ via: "counter", findId: "tin_whistle", side: "sell" }} state={s} {...confirmProps} />);
+		expect(textOf(sell)).toContain("Sell a tin whistle");
+		expect(textOf(sell)).toContain("You have no tin whistles.");
+		const keys = render(<ConfirmSheet open target={{ via: "counter", findId: "old_key", side: "sell" }} state={s} {...confirmProps} />);
+		expect(textOf(keys)).toContain("Sell 2 old keys");
+		expect(textOf(keys)).toContain("You have 1 of 2.");
+		const wanted = render(<PostSheet open draft={{ ...newDraft(s, "buy", "tin_whistle"), side: "buy" }} setDraft={jest.fn()} state={s} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />);
+		expect(textOf(wanted)).toContain("one at a time");
+		expect(textOf(wanted)).not.toContain("a set of 1");
+		expect(textOf(wanted)).toContain("wanted, a tin whistle for");
+	});
+
+	it("asks for one other find in a swap when it trades one at a time", () => {
+		const held = toMarketState({ ...SMALL_RAW, me: { ...SMALL_RAW.me, holdings: { pinecone: { held: 3, paid: 0, paid_units: 0, on_offer: 0 } } } });
+		const draft = { ...newDraft(held, "swap", "pinecone"), wantFindId: "tin_whistle" as const };
+		const t = textOf(render(<PostSheet open draft={draft} setDraft={jest.fn()} state={held} busy={false} error={null} onClose={jest.fn()} onPost={jest.fn()} />));
+		expect(t).toContain("one other find");
+		expect(t).not.toContain("1 to 1");
+		expect(t).toContain("3 pinecones for 1 tin whistle");
+	});
+});
+
+describe("the Ghost Sheep on a buy (2026-11 balance pass)", () => {
+	const trade = (raw: Record<string, unknown>) => toMarketTrade({ id: 1, find_id: "pinecone", qty: 3, tick: 1, at: "x", ...raw }) as MarketTrade;
+
+	it("a buy receipt never quotes his double", () => {
+		const me = { id: "me", you: true };
+		const buys = [
+			tradeReceipt(trade({ kind: "counter", side: "buy", price: 11, from: 9, to: 9.45, buyer: me })),
+			tradeReceipt(trade({ kind: "counter", side: "buy", how: "board", price: 10, from: 9, to: 9.45, buyer: me })),
+			tradeReceipt(trade({ kind: "pig", how: "listing", price: 10, ask: 11, buyer: me, seller: { id: "maya", name: "Maya", friend: true } })),
+		];
+		expect(buys[0]).toMatchObject({ title: "You bought 3 pinecones from Bullion for 11", line: "the price went 9 → 9.5" });
+		for (const r of buys) {
+			expect(`${r.title} ${r.line}`).not.toMatch(/Sheep|double/);
+		}
+	});
+
+	it("says his double is for ones you found, and quotes the plain price for the rest", () => {
+		const props = { view: null, sheepHere: true, nowMs: NOW_MS, weekdayOf: () => "Thu", isDayStart: () => false, ticksPerDay: 48, onTake: jest.fn(), onOpen: jest.fn(), onCancel: jest.fn(), busyId: null };
+		const fancied = textOf(render(<FindView state={STATE} find={STATE.finds[0]} fancy="pinecone" sheepEach={3} sheepFoundEach={6} {...props} />));
+		expect(fancied).toContain("He fancies pinecones today: 6 each for ones you found, 3 for ones you bought.");
+		const other = textOf(render(<FindView state={STATE} find={STATE.finds[1]} fancy="pinecone" sheepEach={8} sheepFoundEach={null} {...props} />));
+		expect(other).toContain("He pays 8 each for old keys (24 a set). Today he fancies pinecones.");
+		const counter = render(<CounterView state={STATE} fancy="pinecone" onOpen={jest.fn()} />);
+		const row = counter.root.findAll((n) => String(n.props.accessibilityLabel ?? "").startsWith("Pinecones"))[0];
+		expect(row.props.accessibilityLabel).toContain("Your Ghost Sheep fancies these today, but only ones you found pay double.");
 	});
 });

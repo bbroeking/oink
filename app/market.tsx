@@ -32,7 +32,8 @@ import { router, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import type { SatchelFindId } from "@/constants/satchel";
+import { satchelFind, type SatchelFindId } from "@/constants/satchel";
+import { traderPrice } from "@/constants/trader";
 import { BORDER, PAGE_PAD, SPACE, WHIMSY } from "@/constants/theme";
 import {
 	Button,
@@ -338,17 +339,18 @@ export default function MarketScreen() {
 	);
 
 	// The Ghost Sheep: what he fancies (only once he is here) and what he pays.
+	// His double is for finds you did not buy (2026-11 balance pass), so a set
+	// bought here pays him the plain price: the market quotes that, and the
+	// double only for ones you found, on the find he fancies.
 	const fancy = trader.present ? (trader.status.visit?.wantFindId ?? null) : null;
-	const sheepEachFor = useCallback(
-		(id: SatchelFindId): number | null => {
-			const f = state?.finds.find((x) => x.id === id);
-			if (!f || !trader.available) return null;
-			const base = trader.status.tuning.prices[f.rarity];
-			return fancy === f.id ? Math.floor(base * trader.status.tuning.wantMultiplier) : base;
-		},
-		[state, trader.available, trader.status, fancy],
-	);
-	const sheepEach = useMemo(() => sheepEachFor(findId), [sheepEachFor, findId]);
+	const sheepEach = useMemo((): number | null => {
+		const f = state?.finds.find((x) => x.id === findId);
+		return f && trader.available ? traderPrice(f, trader.status.tuning, null) : null;
+	}, [state, trader.available, trader.status, findId]);
+	const sheepFoundEach = useMemo((): number | null => {
+		const f = state?.finds.find((x) => x.id === findId);
+		return f && trader.available && fancy === f.id ? traderPrice(f, trader.status.tuning, fancy) : null;
+	}, [state, trader.available, trader.status, findId, fancy]);
 
 	// The quiet-drift moment: the first time a pig, past the cards, looks at a
 	// find whose price nobody has traded for a while and is wandering home.
@@ -369,10 +371,7 @@ export default function MarketScreen() {
 			}
 			void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 			if (res.trade) {
-				const each = sheepEachFor(res.trade.findId);
-				const sheepPays =
-					trader.present && fancy === res.trade.findId && res.trade.buyer?.you && each != null ? each * res.trade.qty : null;
-				receipts.push(tradeReceipt(res.trade, sheepPays), { urgent: true });
+				receipts.push(tradeReceipt(res.trade), { urgent: true });
 				if (res.trade.kind === "counter" || res.trade.kind === "pig") {
 					void playMoment(MARKET_MOMENT_KEYS.moved, movedMoment(res.trade, state.tuning), 700);
 				}
@@ -381,7 +380,7 @@ export default function MarketScreen() {
 				receipts.push(pinnedReceipt(res.offer, findOf(state, res.offer.findId), state.tuning), { urgent: true });
 			}
 		},
-		[state, receipts, trader.present, fancy, sheepEachFor, playMoment],
+		[state, receipts, playMoment],
 	);
 
 	// Every trade goes through here: the nonce for its exact target, one write
@@ -522,7 +521,7 @@ export default function MarketScreen() {
 				setStack(["home", "counter", "find"]);
 				receipts.push({
 					pose: "counter",
-					title: `You've got a set of ${held.size}. Sell it to me for ${held.bid}?`,
+					title: `You've got ${held.size === 1 ? (satchelFind(held.id)?.withArticle ?? "one") : `a set of ${held.size}`}. Sell it to me for ${held.bid}?`,
 					line: "Or put it on the noticeboard for more. Tap Sell, or Put it on the noticeboard instead.",
 					tone: "moment",
 				}, { urgent: true });
@@ -700,6 +699,7 @@ export default function MarketScreen() {
 						onRetryView={retryFind}
 						fancy={fancy}
 						sheepEach={sheepEach}
+						sheepFoundEach={sheepFoundEach}
 						sheepHere={trader.present}
 						nowMs={nowMs}
 						weekdayOf={weekdayOf}

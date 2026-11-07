@@ -266,6 +266,16 @@ describe("the way out, and what to say", () => {
 		expect(await AsyncStorage.getItem(MARKET_ONBOARDED_KEY)).toBe("1");
 	});
 
+	it("names a lone whistle when it is the set you hold", async () => {
+		const whistle = { id: "tin_whistle", rarity: "rare", size: 1, usual: 20, price: 20, ask: 24, bid: 16, prev: 20, quiet_for: 0, spark: [[990000, 20]] };
+		const one = toMarketState({ ...RAW, finds: [...RAW.finds, whistle], me: { ...RAW.me, holdings: { tin_whistle: { held: 1, paid: 0, paid_units: 0, on_offer: 0 } } } });
+		const r = await mount(one, false);
+		await press(r, "Next");
+		await press(r, "Next");
+		await press(r, "Step up to the counter");
+		expect(textOf(r)).toContain("You've got a tin whistle. Sell it to me for 16?");
+	});
+
 	it("says why a take-down failed", async () => {
 		const mine = toMarketState({
 			...RAW,
@@ -416,5 +426,34 @@ describe("one-time moments", () => {
 		} finally {
 			jest.useRealTimers();
 		}
+	});
+});
+
+describe("the Ghost Sheep at the market (2026-11 balance pass)", () => {
+	// The hook's mock hands out one object: point it at a sheep who fancies pinecones.
+	const mockTrader = (jest.requireMock("@/hooks/useTrader") as { useTrader: () => Record<string, unknown> }).useTrader();
+	const away = { ...mockTrader };
+	beforeEach(() => {
+		Object.assign(mockTrader, {
+			present: true,
+			available: true,
+			status: { visit: { wantFindId: "pinecone" }, tuning: { prices: { common: 3, uncommon: 8, rare: 20 }, wantMultiplier: 2 } },
+		});
+	});
+	afterEach(() => {
+		Object.assign(mockTrader, away);
+	});
+
+	it("quotes his double only for ones you found, and a buy of his fancy never promises it", async () => {
+		const r = await mount();
+		const counter = harness.market.counter as jest.Mock;
+		await openPinecones(r);
+		expect(textOf(r)).toContain("He fancies pinecones today: 6 each for ones you found, 3 for ones you bought.");
+		await press(r, "Buy 4 pinecones from Bullion for 15");
+		counter.mockResolvedValueOnce(bought);
+		await press(r, "Buy for 15");
+		const t = textOf(r);
+		expect(t).toContain("You bought 4 pinecones from Bullion for 15");
+		expect(t).not.toContain("your Ghost Sheep pays");
 	});
 });

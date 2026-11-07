@@ -68,12 +68,15 @@ import {
 	SHORT_NAME,
 	capLine,
 	onboardingCards,
+	ownSetOf,
 	pctWord,
 	pullWord,
 	qtyOf,
 	setOf,
+	setSizeLabel,
 	setSizeWords,
 	shelfLimitWords,
+	shortOfSet,
 } from "./marketCopy";
 import { Price, VsChip } from "./MarketViews";
 
@@ -170,7 +173,7 @@ export function ConfirmSheet({
 		const h = holdingOf(state, f.id);
 		const { sets } = setsOf(h, f.size);
 		const best = boardBest(takeableBoard(state), f.id);
-		const blocked = buy ? (coin < price ? short(price) : null) : !sets ? `You have ${h.held} of ${f.size}.` : null;
+		const blocked = buy ? (coin < price ? short(price) : null) : !sets ? shortOfSet(f.id, h.held, f.size) : null;
 		return (
 			<Sheet
 				open={open}
@@ -276,7 +279,7 @@ export function ConfirmSheet({
 		const bullion = c.source === "bullion";
 		const to = bullion ? counterMove(f.usual, f.price, "buy", state.tuning) : pigMove(f.usual, f.price, price, state.tuning);
 		const vsC = buying ? f.ask - price : price - f.bid;
-		title = bullion ? `Buy ${setOf(f.id, f.size)} from Bullion` : buying ? `Buy ${who === "A pig" ? "a pig's" : `${who}'s`} ${setOf(f.id, f.size)}` : `Sell ${setOf(f.id, f.size)} to ${pigName(c.poster)}`;
+		title = bullion ? `Buy ${setOf(f.id, f.size)} from Bullion` : buying ? `Buy ${who === "A pig" ? "a pig's" : `${who}'s`} ${ownSetOf(f.id, f.size)}` : `Sell ${setOf(f.id, f.size)} to ${pigName(c.poster)}`;
 		cta = `${buying ? "Buy" : "Sell"} for ${price}`;
 		variant = buying ? "primary" : "success";
 		if (buying && coin < price) blocked = short(price);
@@ -284,7 +287,7 @@ export function ConfirmSheet({
 			const w = shelfLimitWords(state.tuning.bullionBoard.perPig);
 			blocked = `${w.title}. ${w.line}`;
 		}
-		if (!buying && holdingOf(state, f.id).held < f.size) blocked = `You have ${holdingOf(state, f.id).held} of ${f.size}.`;
+		if (!buying && holdingOf(state, f.id).held < f.size) blocked = shortOfSet(f.id, holdingOf(state, f.id).held, f.size);
 		if (!buying && c.posterCoinOk === false) blocked = `${who} can't pay ${price} right now.`;
 		body = (
 			<View>
@@ -458,7 +461,7 @@ export function PostSheet({
 					: "Fair at today's price. A swap doesn't move either price.";
 		verdictTone = v === "fair" ? "good" : v === "giving_more" ? "warn" : "plain";
 		label = wf ? `Pin it: ${setOf(f.id, f.size)} for ${qtyOf(wf.id, qty)}` : "Pin it";
-		if (sets < 1) blocked = `You have ${h.held} ${findPlural(f.id)}; a swap gives a set of ${f.size}.`;
+		if (sets < 1) blocked = f.size === 1 ? `You have no ${findPlural(f.id)} to swap.` : `You have ${qtyOf(f.id, h.held)}; a swap gives a set of ${f.size}.`;
 		else if (openFull) blocked = `You have ${state.tuning.openOffers} listings up. Take one down to pin another.`;
 	} else {
 		const pv = previewList(side, f.id, price, f.bid, f.ask, previewBoard(state.board), draft.targetId);
@@ -481,7 +484,7 @@ export function PostSheet({
 				verdictTone = "good";
 				label = `Pin it: ${setOf(f.id, f.size)} for ${price}`;
 			}
-			if (sets < 1) blocked = `You have ${h.held} ${findPlural(f.id)}; a set is ${f.size}.`;
+			if (sets < 1) blocked = f.size === 1 ? `You have no ${findPlural(f.id)} to sell.` : `You have ${qtyOf(f.id, h.held)}; a set is ${f.size}.`;
 		} else {
 			const buyTotal = state.me.offers.filter((o) => o.side === "buy").reduce((t, o) => t + (o.price ?? 0), 0);
 			const need = buyTotal + price;
@@ -595,7 +598,7 @@ export function PostSheet({
 					</View>
 					<View style={styles.centerRow}>
 						<VsChip vs={vsPrice(price, f.price)} />
-						<Kicker tone="secondary">{`a set of ${f.size} · ${eachWord(price, f.size)}`}</Kicker>
+						<Kicker tone="secondary">{f.size === 1 ? setSizeLabel(f.size) : `${setSizeLabel(f.size)} · ${eachWord(price, f.size)}`}</Kicker>
 					</View>
 					<Pressable
 						onPress={onBand}
@@ -685,7 +688,7 @@ function SwapPicker({ state, draft, set }: { state: MarketState; draft: PostDraf
 		<View>
 			<View style={styles.lab}>
 				<KickerPill>Ask for</KickerPill>
-				<Kicker tone="secondary">{`1 to ${want.size} of one other find`}</Kicker>
+				<Kicker tone="secondary">{want.size > 1 ? `1 to ${want.size} of one other find` : "one other find"}</Kicker>
 			</View>
 			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fpick}>
 				{state.finds
@@ -727,7 +730,14 @@ export function BagSheet({ open, state, onClose, onOpen }: { open: boolean; stat
 					const { sets, spare } = setsOf(h, f.size);
 					const dug = h.held - h.paidUnits;
 					const cost = !h.held ? "none" : h.paidUnits ? `${h.paidUnits} paid ${h.paid}${dug ? `, ${dug} dug` : ""}` : "all dug up";
-					const setsLine = h.held ? (sets ? `${sets} ${sets === 1 ? "set" : "sets"}${spare ? ` + ${spare}` : ""}` : `${h.held} of ${f.size}`) : `set of ${f.size}`;
+					const setsLine =
+						f.size === 1
+							? setSizeLabel(f.size)
+							: h.held
+								? sets
+									? `${sets} ${sets === 1 ? "set" : "sets"}${spare ? ` + ${spare}` : ""}`
+									: `${h.held} of ${f.size}`
+								: `set of ${f.size}`;
 					return (
 						<Pressable
 							key={f.id}

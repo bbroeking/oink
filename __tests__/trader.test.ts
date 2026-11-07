@@ -1,16 +1,21 @@
 // The Ghost Sheep Trader's pure rules (utils/trader + constants/trader): the
 // price rule, the status narrowing, the stay clock, and the copy — the parts a
-// screen needs synchronously and the wire shape the server answers.
-import { SATCHEL_FINDS } from "@/constants/satchel";
+// screen needs synchronously and the wire shape the server answers. Since the
+// 2026-11 balance pass his double is for a find you did not buy: each row of a
+// hand is priced on its own, and an open pair pays off what its first sale paid.
+import { SATCHEL_FINDS, type SatchelFindId } from "@/constants/satchel";
 import { TRADER_TUNING, nextRarity, traderHandPay, traderPairBonus, traderPrice } from "@/constants/trader";
+import { toBag, type SatchelItem } from "@/utils/satchel";
 import {
 	NO_TRADER,
 	TRADER_LEAVE_COPY,
 	bagGroups,
 	findPlural,
+	itemPrice,
 	maxHand,
 	priceFor,
 	priceHand,
+	type BagGroup,
 	toTraderStatus,
 	tradeUpPick,
 	traderArrivalCopy,
@@ -84,6 +89,7 @@ describe("toTraderStatus", () => {
 			tickles: 3,
 			findsLeft: 5,
 			unpaired: [],
+			unpairedPaid: {},
 			tradeUps: {},
 		});
 		// A server that never heard of sets: no pairs, no trade-ups, whatever
@@ -230,14 +236,22 @@ describe("the pair rule", () => {
 	});
 
 	it("replays a hand sale by sale: a pair, a third that opens a new one, one already unpaired", () => {
-		expect(traderHandPay(3, 1, 1.5, false)).toEqual({ each: [3], total: 3 });
-		expect(traderHandPay(3, 2, 1.5, false)).toEqual({ each: [3, 6], total: 9 });
-		expect(traderHandPay(3, 3, 1.5, false)).toEqual({ each: [3, 6, 3], total: 12 });
+		expect(traderHandPay([3], 1.5, null)).toEqual({ each: [3], total: 3 });
+		expect(traderHandPay([3, 3], 1.5, null)).toEqual({ each: [3, 6], total: 9 });
+		expect(traderHandPay([3, 3, 3], 1.5, null)).toEqual({ each: [3, 6, 3], total: 12 });
 		// One went earlier this visit: this single completes it.
-		expect(traderHandPay(3, 1, 1.5, true)).toEqual({ each: [6], total: 6 });
-		expect(traderHandPay(16, 2, 1.5, false).total).toBe(48);
-		// No pairs on the server: plain singles.
-		expect(traderHandPay(3, 2, 1, false)).toEqual({ each: [3, 3], total: 6 });
+		expect(traderHandPay([3], 1.5, 3)).toEqual({ each: [6], total: 6 });
+		expect(traderHandPay([16, 16], 1.5, null).total).toBe(48);
+		// No pairs on the server: plain singles, an open sale or not.
+		expect(traderHandPay([3, 3], 1, null)).toEqual({ each: [3, 3], total: 6 });
+		expect(traderHandPay([3], 1, 3)).toEqual({ each: [3], total: 3 });
+	});
+
+	it("prices each sale on its own: a found fancy and a bought one make a pair off both prices", () => {
+		// 6 (found, doubled) + 3 (bought, plain); the bonus is FLOOR((6 + 3) x 0.5) = 4.
+		expect(traderHandPay([6, 3], 1.5, null)).toEqual({ each: [6, 7], total: 13 });
+		// The open sale paid 6; this bought one pays 3 and completes it.
+		expect(traderHandPay([3], 1.5, 6)).toEqual({ each: [7], total: 7 });
 	});
 
 	it("names the rarity one up, and nothing above rare", () => {
@@ -265,22 +279,31 @@ describe("toTraderStatus, sets on", () => {
 	});
 });
 
+// A group of `n` dug rows of one find (ids from `from`), or the rows given.
+function group(findId: SatchelFindId, n: number, from = 1): BagGroup {
+	return { findId, items: Array.from({ length: n }, (_, i) => ({ id: from + i, find_id: findId, source: "dig" as const })) };
+}
+
 describe("hands", () => {
 	it("prices a single, a pair, a single that completes an earlier pair, and the fancied pair", () => {
 		const s = setsStatus();
-		expect(priceHand("river_pebble", 1, s)).toMatchObject({ kind: "sell", total: 3, pair: false });
-		expect(priceHand("river_pebble", 2, s)).toMatchObject({ kind: "sell", total: 9, pair: true, each: [3, 6] });
-		expect(priceHand("blue_feather", 2, s)).toMatchObject({ kind: "sell", total: 18 });
+		expect(priceHand(group("river_pebble", 1), 1, s)).toMatchObject({ kind: "sell", total: 3, pair: false, boughtPlain: 0 });
+		expect(priceHand(group("river_pebble", 2), 2, s)).toMatchObject({ kind: "sell", total: 9, pair: true, prices: [3, 3], each: [3, 6] });
+		expect(priceHand(group("blue_feather", 2), 2, s)).toMatchObject({ kind: "sell", total: 18, prices: [6, 6] });
 		const open = setsStatus({ unpaired: ["river_pebble"] });
-		expect(priceHand("river_pebble", 1, open)).toMatchObject({ kind: "sell", total: 6, pair: true, openPair: true });
+		expect(priceHand(group("river_pebble", 1), 1, open)).toMatchObject({ kind: "sell", total: 6, pair: true, openPair: true });
 	});
 
 	it("three alike is a trade-up to his pick; rare stays a sale", () => {
 		const s = setsStatus();
-		expect(priceHand("river_pebble", 3, s)).toEqual({ kind: "tradeUp", findId: "river_pebble", count: 3, pickId: "marble" });
-		expect(priceHand("old_key", 3, s)).toMatchObject({ kind: "tradeUp", pickId: "tin_whistle" });
+		expect(priceHand(group("river_pebble", 3), 3, s)).toEqual({ kind: "tradeUp", findId: "river_pebble", count: 3, pickId: "marble" });
+		expect(priceHand(group("old_key", 3), 3, s)).toMatchObject({ kind: "tradeUp", pickId: "tin_whistle" });
 		expect(tradeUpPick("tin_whistle", s)).toBeNull();
-		expect(priceHand("tin_whistle", 2, s)).toMatchObject({ kind: "sell", total: 60 });
+		expect(priceHand(group("tin_whistle", 2), 2, s)).toMatchObject({ kind: "sell", total: 60 });
+	});
+
+	it("never holds more than the group has", () => {
+		expect(priceHand(group("river_pebble", 1), 2, setsStatus())).toMatchObject({ kind: "sell", count: 1, total: 3 });
 	});
 
 	it("caps a hand by the bag, the visit, and what the server allows", () => {
@@ -298,7 +321,7 @@ describe("hands", () => {
 		expect(tradeUpPick("river_pebble", status())).toBeNull();
 	});
 
-	it("groups the bag one tile per find, a friend's find spent last", () => {
+	it("groups the bag one tile per find, a friend's find spent after a found one", () => {
 		const groups = bagGroups([
 			{ id: 1, find_id: "river_pebble", source: "gift" },
 			{ id: 2, find_id: "clover", source: "dig" },
@@ -309,9 +332,92 @@ describe("hands", () => {
 		expect(groups[0].items.map((i) => i.id)).toEqual([3, 4, 1]);
 	});
 
+	it("spends found ones first, then a friend's, then bought ones, in bag order within each", () => {
+		const groups = bagGroups([
+			{ id: 1, find_id: "river_pebble", source: "gift" },
+			{ id: 2, find_id: "river_pebble", bought: true },
+			{ id: 3, find_id: "river_pebble", source: "dig" },
+			{ id: 4, find_id: "river_pebble", source: "swap" },
+			// An errand or trader find reads with no known source: found.
+			{ id: 5, find_id: "river_pebble" },
+			{ id: 6, find_id: "river_pebble", source: "dig", bought: true },
+		]);
+		expect(groups[0].items.map((i) => i.id)).toEqual([3, 5, 1, 4, 2, 6]);
+	});
+
 	it("says a find in the plural", () => {
 		expect(findPlural("river_pebble")).toBe("river pebbles");
 		expect(findPlural("wool_tuft")).toBe("tufts of wool");
 		expect(findPlural("clover")).toBe("four-leaf clovers");
+	});
+});
+
+describe("found, not bought (2026-11 balance pass)", () => {
+	const feather = SATCHEL_FINDS.find((f) => f.id === "blue_feather")!;
+	const found: SatchelItem = { id: 1, find_id: "blue_feather", source: "dig" };
+	const bought: SatchelItem = { id: 2, find_id: "blue_feather", bought: true };
+
+	it("doubles his fancy only on a find you did not buy", () => {
+		expect(traderPrice(feather, TRADER_TUNING, "blue_feather")).toBe(6);
+		expect(traderPrice(feather, TRADER_TUNING, "blue_feather", true)).toBe(3);
+		// Bought or not, another find pays the plain price.
+		expect(traderPrice(feather, TRADER_TUNING, "river_pebble", true)).toBe(3);
+		const s = setsStatus();
+		expect(priceFor("blue_feather", s, true)).toBe(3);
+		expect(itemPrice(found, s)).toBe(6);
+		expect(itemPrice(bought, s)).toBe(3);
+		// A swap or gift is a trade, not a buy: still double.
+		expect(itemPrice({ id: 3, find_id: "blue_feather", source: "swap" }, s)).toBe(6);
+		expect(itemPrice({ id: 4, find_id: "blue_feather", source: "gift" }, s)).toBe(6);
+	});
+
+	it("reads the bag row's flag, and a row without it as not bought", () => {
+		const bag = toBag([
+			{ id: 1, find_id: "blue_feather", source: "dig", bought: false },
+			{ id: 2, find_id: "blue_feather", source: "market", bought: true },
+			{ id: 3, find_id: "blue_feather", source: "dig" },
+		]);
+		expect(bag).toEqual([
+			{ id: 1, find_id: "blue_feather", source: "dig" },
+			{ id: 2, find_id: "blue_feather", bought: true },
+			{ id: 3, find_id: "blue_feather", source: "dig" },
+		]);
+	});
+
+	it("prices a fancied hand row by row: a found single, a bought single, a mixed pair", () => {
+		const s = setsStatus();
+		expect(priceHand({ findId: "blue_feather", items: [found] }, 1, s)).toMatchObject({ total: 6, boughtPlain: 0 });
+		expect(priceHand({ findId: "blue_feather", items: [bought] }, 1, s)).toMatchObject({ total: 3, prices: [3], boughtPlain: 1 });
+		const [mixed] = bagGroups([bought, found]);
+		expect(mixed.items.map((i) => i.id)).toEqual([1, 2]);
+		expect(priceHand(mixed, 2, s)).toMatchObject({ kind: "sell", prices: [6, 3], each: [6, 7], total: 13, pair: true, boughtPlain: 1 });
+		// A bought one of a find he does not fancy: the plain price, nothing to explain.
+		const pebble: BagGroup = { findId: "river_pebble", items: [{ id: 5, find_id: "river_pebble", bought: true }] };
+		expect(priceHand(pebble, 1, s)).toMatchObject({ total: 3, boughtPlain: 0 });
+	});
+
+	it("completes an open pair off what its first sale paid (unpaired_paid)", () => {
+		// The open sale was a bought feather (3); a found one (6) completes it: 6 + FLOOR(9 x 0.5).
+		const s = setsStatus({ unpaired: ["blue_feather"], unpaired_paid: { blue_feather: 3, moon_rock: 9, marble: "x" } });
+		expect(s.visit?.unpairedPaid).toEqual({ blue_feather: 3 });
+		expect(priceHand({ findId: "blue_feather", items: [found] }, 1, s)).toMatchObject({ each: [10], total: 10, pair: true, openPair: true });
+		// The open sale was a found one (6); a bought one (3) completes it: 3 + FLOOR(9 x 0.5).
+		const s2 = setsStatus({ unpaired: ["blue_feather"], unpaired_paid: { blue_feather: 6 } });
+		expect(priceHand({ findId: "blue_feather", items: [bought] }, 1, s2)).toMatchObject({ each: [7], total: 7, boughtPlain: 1 });
+	});
+
+	it("on a server before the pass: every row reads found, and an open pair paid what this row pays", () => {
+		const s = setsStatus({ unpaired: ["blue_feather"] });
+		expect(s.visit?.unpairedPaid).toEqual({});
+		const rows = toBag([{ id: 1, find_id: "blue_feather", source: "dig" }]);
+		expect(priceHand({ findId: "blue_feather", items: rows }, 1, s)).toMatchObject({ each: [12], total: 12, boughtPlain: 0 });
+		// Without sets at all: one at a time, his fancy doubled.
+		expect(priceHand({ findId: "blue_feather", items: rows }, 1, status())).toMatchObject({ total: 6, pair: false });
+	});
+
+	it("says bought ones do not double, in his voice", () => {
+		expect(traderGreeting(status())).toBe(
+			"Finds for tickles. Today I fancy a blue feather. That one pays double, unless you bought it.",
+		);
 	});
 });

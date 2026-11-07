@@ -11,7 +11,9 @@
 //   set size. P (the price) lives in [0.85 U, 1.15 U]. Bullion sells at
 //   max(U + 1, ceil(1.2 P)) and buys at min(U, floor(0.8 P)). A set at the
 //   counter moves P 5% of U (3% until the 2026-11-02 balance pass); a pig sale
-//   moves it a third of the way to what was paid; a swap moves nothing.
+//   moves it a third of the way to what was paid; a swap moves nothing. A set
+//   is three of a common, two of an uncommon and the rare tin whistle on its
+//   own (four / three / three until the 2026-11 balance pass).
 //   The fallback below mirrors the server's market_tuning; every sentence that
 //   quotes a number reads it off `state.tuning`, never off this constant.
 import type { FindRarity } from "@/constants/satchel";
@@ -48,7 +50,7 @@ export interface MarketTuning {
 }
 
 export const MARKET_TUNING: Readonly<MarketTuning> = Object.freeze({
-	setSize: { common: 4, uncommon: 3, rare: 3 },
+	setSize: { common: 3, uncommon: 2, rare: 1 },
 	base: { common: 3, uncommon: 8, rare: 20 },
 	price: {
 		lo: 0.85,

@@ -44,13 +44,15 @@ describe("market rules", () => {
 		expect(MARKET_TUNING.price.impact).toBe(0.05);
 		expect(MARKET_TUNING.price.wiggle).toBe(0.02);
 		expect(MARKET_TUNING.offerHours).toBe(48);
-		expect(MARKET_TUNING.setSize).toEqual({ common: 4, uncommon: 3, rare: 3 });
+		// Three of a common, two of an uncommon, the whistle on its own.
+		expect(MARKET_TUNING.setSize).toEqual({ common: 3, uncommon: 2, rare: 1 });
 	});
 
 	it("prices a set off the Ghost Sheep's price for one find", () => {
-		expect(usualFor("common")).toBe(12);
-		expect(usualFor("uncommon")).toBe(24);
-		expect(usualFor("rare")).toBe(60);
+		expect(usualFor("common")).toBe(9);
+		expect(usualFor("uncommon")).toBe(16);
+		expect(usualFor("rare")).toBe(20);
+		expect(usualFor("common", { ...MARKET_TUNING, setSize: { common: 4, uncommon: 3, rare: 3 } })).toBe(12);
 	});
 
 	it("puts Bullion's cut around the price", () => {

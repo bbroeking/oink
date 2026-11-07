@@ -70,7 +70,7 @@ import {
 } from "../ui";
 import { FindArt } from "../satchel/FindArt";
 import { BullionArt, CorkboardArt, PriceChart, Sparkline, chartStyles } from "./MarketArt";
-import { LEDGER_SPAN, bullionSays, capLine, qtyOf, setOf, tickerLine, tradeLine } from "./marketCopy";
+import { LEDGER_SPAN, bullionSays, capLine, qtyOf, setOf, setSizeLabel, tickerLine, tradeLine } from "./marketCopy";
 
 const cap1 = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -362,7 +362,9 @@ const CounterRow = memo(function CounterRow({ f, state, fancy, onOpen }: { f: Ma
 	const h = holdingOf(state, f.id);
 	const { sets } = setsOf(h, f.size);
 	const c = changeWords(f.price - f.prev);
-	const aria = `${cap1(findPlural(f.id))}, a set of ${f.size}. The price is ${fmtPrice(f.price)}, ${c.word} since yesterday. Bullion sells at ${f.ask} and buys at ${f.bid}. ${cap1(haveWords({ held: h.held, size: f.size }))}.${fancy ? " Your Ghost Sheep fancies these today." : ""}`;
+	// The star marks his fancy for a pig with found ones to sell: a set bought
+	// here pays him the plain price (2026-11 balance pass), so it never promises the double.
+	const aria = `${cap1(findPlural(f.id))}, ${setSizeLabel(f.size)}. The price is ${fmtPrice(f.price)}, ${c.word} since yesterday. Bullion sells at ${f.ask} and buys at ${f.bid}. ${cap1(haveWords({ held: h.held, size: f.size }))}.${fancy ? " Your Ghost Sheep fancies these today, but only ones you found pay double." : ""}`;
 	return (
 		<Pressable
 			onPress={() => onOpen(f.id)}
@@ -381,7 +383,7 @@ const CounterRow = memo(function CounterRow({ f, state, fancy, onOpen }: { f: Ma
 			<View style={styles.flex}>
 				<T role="cardTitleSm" tone="onDark">{cap1(findPlural(f.id))}</T>
 				<T role="kicker" tone={sets ? "onDarkAccent" : "onDarkMute"}>
-					{`${f.size}${sets ? ` · you have ${sets} ${sets === 1 ? "set" : "sets"}` : h.held ? ` · you have ${h.held}` : ""}`}
+					{`${f.size}${sets && f.size > 1 ? ` · you have ${sets} ${sets === 1 ? "set" : "sets"}` : h.held ? ` · you have ${h.held}` : ""}`}
 				</T>
 			</View>
 			<View style={styles.crPrice}>
@@ -406,6 +408,7 @@ export function FindView({
 	onRetryView,
 	fancy,
 	sheepEach,
+	sheepFoundEach = null,
 	sheepHere,
 	nowMs,
 	weekdayOf,
@@ -423,8 +426,11 @@ export function FindView({
 	viewFailed?: boolean;
 	onRetryView?: () => void;
 	fancy: SatchelFindId | null;
-	/** What your Ghost Sheep pays for one of these today (null when unknown). */
+	/** What your Ghost Sheep pays for one of these today, the plain price (a
+	 *  bought one is never doubled); null when unknown. */
 	sheepEach: number | null;
+	/** What he pays for one you found, when he fancies these today (null otherwise). */
+	sheepFoundEach?: number | null;
 	sheepHere: boolean;
 	nowMs: number;
 	weekdayOf: (tick: number) => string;
@@ -456,7 +462,7 @@ export function FindView({
 				<View style={styles.fHead}>
 					<FindArt id={f.id} size={FIND_HERO} />
 					<View style={styles.flex}>
-						<T role="kickerPillSm" tone="onDarkAccent">{`★ A set of ${f.size}`}</T>
+						<T role="kickerPillSm" tone="onDarkAccent">{`★ ${cap1(setSizeLabel(f.size))}`}</T>
 						<T role="display" tone="onDark">{cap1(findPlural(f.id))}</T>
 						<T role="kicker" tone="onDarkMute">{`usual price ${f.usual} · ${fmtPrice(f.price / f.size)} each`}</T>
 					</View>
@@ -532,14 +538,15 @@ export function FindView({
 						<FindArt id={f.id} size={ART_SIZE.glyphMd} />
 						<HandLg>{`${cap1(pigName(best.wanted.poster))} wants ${best.wanted.qty} for ${best.wanted.price}`}</HandLg>
 					</View>
-					<Kicker tone="secondary">{`${(best.wanted.price as number) - f.bid} more than Bullion pays · ${sets ? "tap to sell" : `you'd need a set of ${f.size}`}`}</Kicker>
+					<Kicker tone="secondary">{`${(best.wanted.price as number) - f.bid} more than Bullion pays · ${sets ? "tap to sell" : `you'd need ${f.size === 1 ? "one" : `a set of ${f.size}`}`}`}</Kicker>
 				</Sticker>
 			) : null}
 
 			<Sticker color="paper" rotate={0} pad title={`Your ${findPlural(f.id)}`} right={<Kicker tone="secondary">{paidLine}</Kicker>} style={styles.gapT}>
 				<View style={styles.holdNums}>
 					<HoldNum n={h.held} label="in your bag" />
-					<HoldNum n={sets} label={`${sets === 1 ? "set" : "sets"} of ${f.size}`} />
+					{/* One at a time, a set is a find: the count above already says it. */}
+					{f.size > 1 ? <HoldNum n={sets} label={`${sets === 1 ? "set" : "sets"} of ${f.size}`} /> : null}
 					{h.onOffer ? <HoldNum n={h.onOffer} label="pinned up" /> : null}
 				</View>
 			</Sticker>
@@ -552,9 +559,9 @@ export function FindView({
 						<BodySm>
 							{sheepEach == null
 								? `He buys ${findPlural(f.id)} one at a time when he's at the hedge.`
-								: fancy === f.id
-									? `He fancies ${findPlural(f.id)} today: ${sheepEach} each, ${sheepEach * f.size} a set.`
-									: `He pays ${sheepEach} each for ${findPlural(f.id)} (${sheepEach * f.size} a set).${fancy ? ` Today he fancies ${findPlural(fancy)}.` : ""}`}
+								: sheepFoundEach != null && sheepFoundEach > sheepEach
+									? `He fancies ${findPlural(f.id)} today: ${sheepFoundEach} each for ones you found, ${sheepEach} for ones you bought.`
+									: `He pays ${sheepEach} each for ${findPlural(f.id)}${f.size > 1 ? ` (${sheepEach * f.size} a set)` : ""}.${fancy && fancy !== f.id ? ` Today he fancies ${findPlural(fancy)}.` : ""}`}
 						</BodySm>
 						<Kicker tone="secondary">
 							{sheepHere ? "He's at the hedge now: open him from the Barn button." : "An outlet, outside the market: he visits once a day."}
@@ -797,7 +804,7 @@ function PinCard({ c, state, nowMs, tilt, onTake }: { c: BoardCard; state: Marke
 			</View>
 			<View style={styles.row}>
 				<FindArt id={c.findId} size={CARD_GLYPH} />
-				<CardTitle style={styles.flex}>{set}</CardTitle>
+				<CardTitle style={styles.flex}>{cap1(set)}</CardTitle>
 			</View>
 			{body}
 			<View style={styles.row}>

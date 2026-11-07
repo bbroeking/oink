@@ -11,6 +11,12 @@
 // a PAIR of one find handed over within a visit pays half again (the server
 // judges it over the visit's ledger), and THREE ALIKE trade up one rarity (his
 // seeded pick; rare has no trade-up). His bag grows from six a visit to nine.
+//
+// Found, not bought (the 2026-11 balance pass): his x2 for the find he fancies
+// pays only on a bag row with no market cost basis. Dug, given, swapped,
+// errand and trade-up finds still double; a bought one pays the plain price.
+// The pair bonus is unchanged, and each sale's price inside it already carries
+// its own x2 (or not).
 import type { FindRarity, SatchelFindDef } from "@/constants/satchel";
 
 export interface TraderTuning {
@@ -39,14 +45,16 @@ export const TRADER_TUNING: Readonly<TraderTuning> = Object.freeze({
 });
 
 /** What one find pays right now — doubled (well, ×multiplier) when it is the
- *  one he fancies. Floored like the server's FLOOR(price * mult). */
+ *  one he fancies and it was not bought. Floored like the server's
+ *  FLOOR(price * mult). */
 export function traderPrice(
 	find: Pick<SatchelFindDef, "id" | "rarity">,
 	tuning: TraderTuning,
 	wantFindId: string | null,
+	bought = false,
 ): number {
 	const base = Math.max(0, tuning.prices[find.rarity] ?? 0);
-	return find.id === wantFindId ? Math.floor(base * Math.max(1, tuning.wantMultiplier)) : base;
+	return find.id === wantFindId && !bought ? Math.floor(base * Math.max(1, tuning.wantMultiplier)) : base;
 }
 
 /** The half-again on the sale that completes a pair: the server's
@@ -57,21 +65,22 @@ export function traderPairBonus(unpairedPrice: number, price: number, pairMultip
 }
 
 /**
- * What handing `count` of one find over, one after another, pays — the
+ * What handing a hand of one find over, one after another, pays — the
  * server's pair rule replayed: a sale that finds one of the same find already
- * unpaired this visit completes the pair and carries the bonus. `openPair`
- * says one already went earlier in the visit (the status's `unpaired`).
- * Returns each sale's pay and the total.
+ * unpaired this visit completes the pair and carries the bonus. `prices` is
+ * each row's own price in hand order (a bought row of his fancy is not
+ * doubled); `openPaid` is what the open unpaired sale of this find paid
+ * earlier in the visit, or null when none is open. Returns each sale's pay
+ * and the total.
  */
 export function traderHandPay(
-	price: number,
-	count: number,
+	prices: readonly number[],
 	pairMultiplier: number,
-	openPair: boolean,
+	openPaid: number | null,
 ): { each: number[]; total: number } {
 	const each: number[] = [];
-	let unpaired: number | null = openPair ? price : null;
-	for (let i = 0; i < Math.max(0, count); i++) {
+	let unpaired: number | null = openPaid;
+	for (const price of prices) {
 		if (unpaired != null && pairMultiplier > 1) {
 			each.push(price + traderPairBonus(unpaired, price, pairMultiplier));
 			unpaired = null;

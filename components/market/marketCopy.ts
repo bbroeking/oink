@@ -36,9 +36,15 @@ export function findName(id: SatchelFindId): string {
 	return satchelFind(id)?.name ?? "find";
 }
 
-/** "4 pinecones" — a set of a find. */
+/** "3 pinecones", "a tin whistle" — a set of a find. One is said with its
+ *  article, as the server's pushes say it. */
 export function setOf(id: SatchelFindId, size: number): string {
-	return `${size} ${findPlural(id)}`;
+	return size === 1 ? (satchelFind(id)?.withArticle ?? `a ${findName(id)}`) : `${size} ${findPlural(id)}`;
+}
+
+/** A set after "your" or "Maya's": "your 3 pinecones", "your tin whistle". */
+export function ownSetOf(id: SatchelFindId, size: number): string {
+	return size === 1 ? findName(id) : `${size} ${findPlural(id)}`;
 }
 
 /** "1 old key" / "2 old keys". */
@@ -54,12 +60,25 @@ export function qtyOf(id: SatchelFindId, n: number): string {
 const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
 const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 
-/** "four of a common, three of the rest" (or every rarity, when they differ). */
+/** "three of a common, two of an uncommon, or a rare on its own" (or "four of
+ *  a common, three of the rest" when two rarities agree). Said after "A set
+ *  is", on its own as a sentence, and as a kicker. */
 export function setSizeWords(t: MarketTuning = MARKET_TUNING): string {
 	const { common, uncommon, rare } = t.setSize;
-	if (common === uncommon && uncommon === rare) return `${numberWord(common)} of any find`;
-	if (uncommon === rare) return `${numberWord(common)} of a common, ${numberWord(uncommon)} of the rest`;
-	return `${numberWord(common)} of a common, ${numberWord(uncommon)} of an uncommon, ${numberWord(rare)} of a rare`;
+	const of = (n: number, which: string) => (n === 1 ? `${which} on its own` : `${numberWord(n)} of ${which}`);
+	if (common === uncommon && uncommon === rare) return of(common, "any find");
+	if (uncommon === rare) return `${of(common, "a common")}, ${uncommon === 1 ? "the rest on their own" : `${numberWord(uncommon)} of the rest`}`;
+	return `${of(common, "a common")}, ${of(uncommon, "an uncommon")}, or ${of(rare, "a rare")}`;
+}
+
+/** "a set of 3" / "one at a time": how one find trades, for a label. */
+export function setSizeLabel(size: number): string {
+	return size === 1 ? "one at a time" : `a set of ${size}`;
+}
+
+/** Why you cannot hand over a set: "You have 2 of 3." / "You have no tin whistles." */
+export function shortOfSet(id: SatchelFindId, held: number, size: number): string {
+	return size === 1 ? `You have no ${findPlural(id)}.` : `You have ${held} of ${size}.`;
 }
 
 /** 0.05 → "5%". */
@@ -191,14 +210,16 @@ export function tradeLine(tr: MarketTrade, viewing: SatchelFindId, size: number)
 	if (tr.kind === "pig") return { text: `${cap1(pigName(tr.buyer))} bought from ${pigName(tr.seller)}`, tag: "board" };
 	if (tr.kind === "print") return { text: `${cap1(tr.who ?? "the townsfolk")} ${tr.dir === "up" ? "bought" : "sold"}`, tag: "town" };
 	const gave = tr.wantFindId ? qtyOf(tr.wantFindId, tr.wantQty ?? 1) : "a find";
+	// "these" is the find being viewed: the set they got, or what they gave.
+	const these = (n: number) => (n === 1 ? (satchelFind(viewing)?.withArticle ?? "one") : "these");
 	return tr.findId === viewing
-		? { text: `${cap1(pigName(tr.buyer))} swapped ${gave} for these`, tag: "swap" }
-		: { text: `${cap1(pigName(tr.buyer))} swapped these for ${setOf(tr.findId, size)}`, tag: "swap" };
+		? { text: `${cap1(pigName(tr.buyer))} swapped ${gave} for ${these(size)}`, tag: "swap" }
+		: { text: `${cap1(pigName(tr.buyer))} swapped ${these(tr.wantQty ?? 1)} for ${setOf(tr.findId, size)}`, tag: "swap" };
 }
 
 function costLine(tr: MarketTrade): string {
 	const price = tr.price ?? 0;
-	if (tr.cost == null) return `you dug them up · +${price}`;
+	if (tr.cost == null) return `you dug ${tr.qty === 1 ? "it" : "them"} up · +${price}`;
 	return `paid ${tr.cost} · sold for ${price} · ${gainWord(price - tr.cost)}`;
 }
 
@@ -206,17 +227,19 @@ function moveLine(tr: MarketTrade): string {
 	return tr.from != null && tr.to != null ? `${fmtPrice(tr.from)} → ${fmtPrice(tr.to)}` : "";
 }
 
-/** The receipt for a trade YOU made or that happened to your listing. */
-export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): MarketReceipt {
+/** The receipt for a trade YOU made or that happened to your listing. A buy
+ *  never quotes the Ghost Sheep: his double is for finds you did not buy
+ *  (2026-11 balance pass), so a bought set pays him the plain price. */
+export function tradeReceipt(tr: MarketTrade): MarketReceipt {
 	const set = setOf(tr.findId, tr.qty);
+	const yours = ownSetOf(tr.findId, tr.qty);
 	const mv = moveLine(tr);
-	const sheep = sheepPays ? ` · your Ghost Sheep pays ${sheepPays} today` : "";
 	if (tr.kind === "counter") {
 		if (tr.side === "sell") {
 			const crossed = tr.how === "crossed" && tr.listed != null;
 			return {
 				pose: "gavel",
-				title: `Bullion bought your ${set} for ${tr.price}`,
+				title: `Bullion bought your ${yours} for ${tr.price}`,
 				line: crossed
 					? `His buying price reached your ${tr.listed}: a listing at or under it sells to him, at his price.`
 					: `${costLine(tr)} · the price went ${mv}`,
@@ -227,7 +250,7 @@ export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): Market
 		return {
 			pose: "gavel",
 			title: crossed ? `Bullion sold you ${set} for ${tr.price}` : `You bought ${set} from Bullion for ${tr.price}`,
-			line: crossed ? `His selling price came down to your ${tr.listed}: you got his price.` : `${tr.how === "board" ? "From his daily shelf · " : ""}the price went ${mv}${sheep}`,
+			line: crossed ? `His selling price came down to your ${tr.listed}: you got his price.` : `${tr.how === "board" ? "From his daily shelf · " : ""}the price went ${mv}`,
 			tone: "plain",
 		};
 	}
@@ -238,7 +261,7 @@ export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): Market
 			return {
 				pose: "cheer",
 				ribbon: plus > 0 ? "beat the counter" : undefined,
-				title: `${by} bought your ${set} for ${tr.price}`,
+				title: `${by} bought your ${yours} for ${tr.price}`,
 				line:
 					plus > 0
 						? `Bullion would have paid ${tr.bid} · +${plus} ${tr.how === "listing" ? "for listing it" : "for selling to a pig"}`
@@ -253,7 +276,7 @@ export function tradeReceipt(tr: MarketTrade, sheepPays?: number | null): Market
 		return {
 			pose: "cheer",
 			title: tr.how === "wanted" ? `${from} sold you ${set} for ${tr.price}` : `You bought ${set} from ${pigName(tr.seller)} for ${tr.price}`,
-			line: `Bullion charges ${tr.ask}${saved > 0 ? ` · ${saved} saved buying from a pig` : ""}${sheep}`,
+			line: `Bullion charges ${tr.ask}${saved > 0 ? ` · ${saved} saved buying from a pig` : ""}`,
 			tone: "plain",
 		};
 	}
@@ -300,6 +323,7 @@ export function noticeReceipt(n: MarketNotice, t: MarketTuning = MARKET_TUNING, 
 	if (!o) return null;
 	// A listing's qty is its set size, straight from the server.
 	const set = setOf(o.findId, o.qty);
+	const yours = ownSetOf(o.findId, o.qty);
 	// The one friend a listing was offered to left the game: it came down, and
 	// a held set came home (a wanted ad set nothing aside).
 	if (n.kind === "expired" && o.ended === "target_left") {
@@ -313,9 +337,9 @@ export function noticeReceipt(n: MarketNotice, t: MarketTuning = MARKET_TUNING, 
 	}
 	if (n.kind === "expired") {
 		const life = hoursWord(t.offerHours);
-		if (o.side === "sell") return { pose: "shrug", title: `Your ${set} came home`, line: `Nobody took them at ${o.price} in ${life}.`, tone: "meh" };
+		if (o.side === "sell") return { pose: "shrug", title: `Your ${yours} came home`, line: `Nobody took ${o.qty === 1 ? "it" : "them"} at ${o.price} in ${life}.`, tone: "meh" };
 		if (o.side === "buy") return { pose: "shrug", title: `Your wanted ad for ${findPlural(o.findId)} ran out`, line: `Nobody sold at ${o.price} in ${life}.`, tone: "meh" };
-		return { pose: "shrug", title: "Your swap ran out", line: `Your ${set} are back in your bag.`, tone: "meh" };
+		return { pose: "shrug", title: "Your swap ran out", line: `Your ${yours} ${o.qty === 1 ? "is" : "are"} back in your bag.`, tone: "meh" };
 	}
 	// The season's fresh start ended a listing pinned before it. A wanted ad
 	// set nothing aside; a for-sale or swap set was part of the bag that reset.
@@ -330,7 +354,7 @@ export function noticeReceipt(n: MarketNotice, t: MarketTuning = MARKET_TUNING, 
 		}
 		return {
 			pose: "stand",
-			title: o.side === "swap" ? "Your swap went with the fresh start" : `Your ${set} went with the fresh start`,
+			title: o.side === "swap" ? "Your swap went with the fresh start" : `Your ${yours} went with the fresh start`,
 			line: "Season 2 swept every bag clean, so I took your listing down and the set went with it. Pin a fresh one whenever you're ready.",
 			tone: "meh",
 		};
@@ -340,7 +364,7 @@ export function noticeReceipt(n: MarketNotice, t: MarketTuning = MARKET_TUNING, 
 	}
 	if (n.kind === "for_you") {
 		const what = o.side === "swap" && o.wantFindId ? `${set} for ${qtyOf(o.wantFindId, o.wantQty ?? 1)}` : `${set} for ${o.price}`;
-		return { pose: "stand", title: "A friend sent you an offer", line: `${what} · on the noticeboard, For you`, tone: "plain" };
+		return { pose: "stand", title: "A friend sent you an offer", line: `${cap1(what)} · on the noticeboard, For you`, tone: "plain" };
 	}
 	return null;
 }
@@ -361,7 +385,10 @@ export function refusalReceipt(res: Extract<MarketOutcome, { ok: false }>, findI
 		case "not_enough_tickles":
 			return meh("Not enough tickles ready", `You have ${res.ready ?? 0}; it needs ${res.needed ?? "more"}.`);
 		case "not_a_set":
-			return meh(`A set is ${res.setSize ?? "a few"}`, `You have ${res.held ?? 0} ${findId ? findPlural(findId) : "of those"}.`);
+			return meh(
+				res.setSize === 1 ? "A set is just one" : `A set is ${res.setSize ?? "a few"}`,
+				`You have ${findId ? qtyOf(findId, res.held ?? 0) : `${res.held ?? 0} of those`}.`,
+			);
 		case "too_many_offers":
 			return meh(`You have ${openOffers} listings up`, "Take one down to pin another.");
 		case "too_many_today":

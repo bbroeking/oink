@@ -138,6 +138,11 @@ export interface SatchelItem {
 	id: number;
 	find_id: SatchelFindId;
 	source?: SatchelItemSource;
+	/** The row has a market cost basis: bought with tickles at Bullion's
+	 *  counter, his daily shelf, or another pig's listing (a swap is not a
+	 *  buy). The Ghost Sheep pays it the plain price, never his x2. Absent on a
+	 *  server before the 2026-11 balance pass, and read as false. */
+	bought?: boolean;
 }
 
 export interface PigWish {
@@ -216,7 +221,9 @@ export function toBag(raw: unknown): SatchelItem[] {
 		const id = typeof o?.id === "number" ? o.id : Number(o?.id);
 		if (Number.isFinite(id) && isSatchelFindId(o.find_id)) {
 			const source = toSource(o.source);
-			items.push(source ? { id, find_id: o.find_id, source } : { id, find_id: o.find_id });
+			const row: SatchelItem = source ? { id, find_id: o.find_id, source } : { id, find_id: o.find_id };
+			if (o.bought === true) row.bought = true;
+			items.push(row);
 		}
 	}
 	return items;

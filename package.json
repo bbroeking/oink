@@ -70,7 +70,8 @@
 		],
 		"testPathIgnorePatterns": [
 			"/node_modules/",
-			"<rootDir>/server/"
+			"<rootDir>/server/",
+			"<rootDir>/docs/"
 		]
 	},
 	"dependencies": {
