@@ -17,8 +17,8 @@ wanders home.
 
 | Rule | Value (`app_settings.market_tuning`) |
 | --- | --- |
-| Set size | 4 of a common, 3 of an uncommon or a rare |
-| Usual price **U** of a set | the Ghost Sheep's price for one find (`trader_tuning.prices`: 3 / 8 / 20) × the set size (12 / 24 / 60) |
+| Set size | 3 of a common, 2 of an uncommon, the rare (tin whistle) on its own (4 / 3 / 3 until 2026-11-07) |
+| Usual price **U** of a set | the Ghost Sheep's price for one find (`trader_tuning.prices`: 3 / 8 / 20) × the set size (9 / 16 / 20; 12 / 24 / 60 until 2026-11-07) |
 | The price **P** | a float kept in [0.85 U, 1.15 U]; seeded near U |
 | Bullion sells at | max(U + 1, ceil(1.2 P)) |
 | Bullion buys at | min(U, floor(0.8 P)) |
@@ -163,15 +163,19 @@ impact 0.05, wiggle 0.02, listings 48 h. Client: a lost write keeps its nonce an
 wait on a full read; `reset` and "your friend left" notices; persisted notices; foreground refresh; cold-start back;
 the bank cap explained; per-find accessibility labels.
 
-Open, for the founder (from the balance pass): set sizes (3/2/1, 3/3/1 or 4/3/1 all beat 4/3/3; a set of 3 tin
-whistles is unaffordable under any bank cap), the Ghost Sheep paying his ×2 only for finds not bought at the market
-(the always-best loop), and the Sheep's fancy formula (meant 70/25/5 by rarity, in practice a common 99.995% of days).
+Decided 2026-11-07 (founder: "Set sizes should be 3/2/1. The rest seems good."; `20261107120000`, smoke C4):
+**sets of 3 / 2 / 1**, every stored price and point rescaled by new size / old size so P keeps its place in the band;
+**the Ghost Sheep's ×2 only for a find you did not buy** (a bag row with `market_cost` is bought: counter, shelf or a
+pig's listing; dug, given, errand, swapped and traded-up finds still double; `_satchel_bag_json` carries `bought`, a
+trade-up spends bought rows last and passes their cost on, `trader_status` carries `visit.unpaired_paid` so the sheet
+prices a mixed pair exactly); and **his fancy a real 70 / 25 / 5 draw by rarity** from each pig's local 2026-11-09
+(earlier days keep the old order). Pushes say one find as one ("your tin whistle").
 
 ## Open questions for the founder
 
-- **Economy.** Buying a set at the counter and handing it to a Ghost Sheep who fancies it can pay more (in score
-  tickles) than the set cost (in bank tickles). The prototype embraces this ("your Ghost Sheep pays 24 today"); the
-  Sheep's daily visit and per-visit cap bound it. Watch the `market_trades` ledger after launch.
+- **Economy.** Closed 2026-11-07: a bought set no longer earns the Sheep's ×2, so the counter-to-Sheep loop pays at
+  most the pair bonus (about 1.5 U of count for an ask of about 1.2 U of bank). Laundering through a satchel gift or a
+  swap to a friend is bounded by the friend's wish and the daily swap; watch it with `scripts/market-economy.sql`.
 - **Season 2's fresh start** archives and zeroes the bank and the Satchel at the flip. The market handles its side
   without touching `flip_season_2`: any listing pinned before the latest `season_reset_archive` (kind `satchel`) is
   ended by the next market read, and its held set does **not** come home (it was part of the bag that was reset).

@@ -8,6 +8,14 @@ Simulator: `tools/balance_market.py` (seeded, reproducible, `--help`). Every num
 `python3 tools/balance_market.py --compare --seeds 3 --small-seeds 8` and `... --sweep --seeds 3 --small-seeds 8`.
 They are model outputs under the assumptions stated in Method, not measurements.
 
+## Decided (2026-11-07)
+
+Founder: *"Set sizes should be 3/2/1. The rest seems good."* Shipped as recommended: sets 3 / 2 / 1, impact 0.05,
+wiggle 0.02, 48-hour listings (`20261102200000`, applied 2026-11-07), the Ghost Sheep's x2 only for a find you did not
+buy, and his fancy as a real 70 / 25 / 5 draw from each pig's Season 2 day one (`20261107120000`). "Bought" is a bag row
+with a market cost basis, so a *swapped* find still doubles (a straight-up swap is a trade, not a buy); the simulator's
+`fancy_found_only` modelled only counter, shelf and board purchases, which is the same rule. Watch list below unchanged.
+
 ## In one paragraph
 
 The shipped market has one dominant daily move and one dead corner. **The move:** when your Ghost Sheep is at the
