@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-14T23:14:35.024Z",
+  "updatedAt": "2026-11-01T23:28:32.175Z",
   "items": [
     {
       "id": "sounder-capacity-eight",
@@ -870,6 +870,44 @@
       ],
       "status": "queued",
       "queuedAt": "2026-10-14T23:14:35.023Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "bullions-market",
+      "title": "Verify Bullion's Market after public release",
+      "summary": "Counter trading and peer listings add a new bank-tickle economy, escrow ownership, private offers, and season-reset handling.",
+      "owner": "Brian",
+      "checks": [
+        "Verify counter buys and sells reconcile bank balances, price moves, receipts, and replay safety",
+        "Verify public and friend-only listings, cancellation and expiry conserve finds and respect privacy and blocks",
+        "Run scripts/market-economy.sql and review counter/Trader arbitrage and market_trades totals",
+        "Verify unpayable wanted ads are hidden and moved finds clear cost basis",
+        "Verify Season 2 reset and undo behavior against listed escrow"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-10-31T22:58:19.837Z",
+      "build": null,
+      "releaseVersion": null,
+      "releasedAt": null,
+      "notifiedAt": null
+    },
+    {
+      "id": "bullion-daily-board",
+      "title": "Bullion daily Noticeboard stock",
+      "summary": "Three shared daily shelf sets sold by Bullion inside his live counter spread; finite stock, bank spend, normal price impact, and manual board purchases.",
+      "owner": "Brian",
+      "checks": [
+        "Verify three global UTC-day slots and no refill after sale or skipped days",
+        "Audit bank spend, set cost basis and price impact against counter receipts",
+        "Check stale quotes, duplicate retries and simultaneous buyers cannot duplicate stock",
+        "Verify the zero-stock tuning switch hides and refuses purchases",
+        "Watch daily-shelf purchases followed by Ghost Sheep hand-ins for economy effects"
+      ],
+      "status": "queued",
+      "queuedAt": "2026-11-01T23:28:32.175Z",
       "build": null,
       "releaseVersion": null,
       "releasedAt": null,

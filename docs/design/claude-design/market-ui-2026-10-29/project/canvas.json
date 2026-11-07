@@ -1,0 +1,256 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-30T03:43:09Z"
+ },
+ "title": "TTP Market UI: make it a market · 2026-10-29",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Rules.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1240,
+   "h": 820,
+   "title": "0 · The rules and the outlets"
+  },
+  "Main.dc.html": {
+   "x": 0,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A1 · The square: stalls, orders, your stall",
+   "is_interactive": true
+  },
+  "A2.dc.html": {
+   "x": 470,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A2 · Maya's stall: her sets, a swap, your outlets",
+   "is_interactive": true
+  },
+  "A3.dc.html": {
+   "x": 940,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A3 · Set out your stall",
+   "is_interactive": true
+  },
+  "A4.dc.html": {
+   "x": 1410,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A4 · Sold! The bell rings",
+   "is_interactive": true
+  },
+  "B1.dc.html": {
+   "x": 0,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B1 · The Big Board: chalk prices, the ticker",
+   "is_interactive": true
+  },
+  "B2.dc.html": {
+   "x": 470,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B2 · The pinecone ticker",
+   "is_interactive": true
+  },
+  "B3.dc.html": {
+   "x": 940,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B3 · Post an order",
+   "is_interactive": true
+  },
+  "B4.dc.html": {
+   "x": 1410,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B4 · The deal: your line on the tape",
+   "is_interactive": true
+  },
+  "C1.dc.html": {
+   "x": 0,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "C1 · The Sale Ring: Lot 7 in the ring",
+   "is_interactive": true
+  },
+  "C2.dc.html": {
+   "x": 470,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "C2 · Lot 7: the bidding, what it's worth to you",
+   "is_interactive": true
+  },
+  "C3.dc.html": {
+   "x": 940,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "C3 · Put a lot in the ring",
+   "is_interactive": true
+  },
+  "C4.dc.html": {
+   "x": 1410,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "C4 · The gavel falls",
+   "is_interactive": true
+  },
+  "D1.dc.html": {
+   "x": 0,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "D1 · The Hedgerow Herald: front page",
+   "is_interactive": true
+  },
+  "D2.dc.html": {
+   "x": 470,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "D2 · The classifieds",
+   "is_interactive": true
+  },
+  "D3.dc.html": {
+   "x": 940,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "D3 · Place an ad",
+   "is_interactive": true
+  },
+  "D4.dc.html": {
+   "x": 1410,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "D4 · Your ad answered",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A2.dc.html",
+  "A3.dc.html",
+  "A4.dc.html",
+  "Rules.dc.html",
+  "B1.dc.html",
+  "B2.dc.html",
+  "B3.dc.html",
+  "B4.dc.html",
+  "C1.dc.html",
+  "C2.dc.html",
+  "C3.dc.html",
+  "C4.dc.html",
+  "D1.dc.html",
+  "D2.dc.html",
+  "D3.dc.html",
+  "D4.dc.html"
+ ],
+ "notes": {
+  "brief": {
+   "x": 0,
+   "y": -1180,
+   "w": 1240,
+   "fill": "gray",
+   "text": "TTP Market UI: make it a market · round 2 · 2026-10-29\n\nTHE FOUNDER, ON ROUND 1 (his words): 'Maybe make it feel a little more like a market?' · 'The tickles are what are used to trade here. Basically the optimization should be to sell high to others.' · 'We need to think about other outlets.' · 'We need to trade in sets of 3 or 4 of the item. We can also trade straight up.'\n\nSAME ON EVERY ROW (row 0): a set is three of one find, the tin whistle goes alone, the price per find beside every set price · straight up: one set for 1 to 3 of one other find, no tickles · the outlets printed on every find with the buyer's gain ('Pay 11 for these three, fill your miller's order for 14') · money = the coin (tickles ready): buying spends it, selling piles it up past 25 · pig to pig: Bullion hosts and never trades, friends named, 'a pig' for strangers · a good sale is a moment (bell, cheer, 'best pinecone sale today') and demand is on screen (wanted counts, WANTED signs and ads). Only the Sale Ring changes a mechanic: timed auctions.\n\nTHE SUPPLY CATCH: three of one specific find is about 19 days of digging for one pig (about 1.8 finds a day across twelve kinds). Sellers will have a set every week or so of whatever they stacked up; a buyer chasing one set will usually have to buy it. The board will be thin at first. Levers: finds per dig in The Feast's tuning, and errands.\n\nNUMBERS: the Sheep pays 3 a common (9 a set), 6 when he fancies it (18 a set); pinecone sets trade 11 to 14 (16 at a peak); an old key set 27 to 30; Orders pay up to 14. Each row is one market day, internally consistent; receipts show both kinds (dug it up: +14, and paid 9 · sold for 14 · up 5).\n\nPICK: a row, or a mix (e.g. A's square as home with B's board as each find's page; D's WANTED ads inside A's stalls). Also: sets of three for all, or four for commons?\n\nEvery phone board links in Play: home > detail > put a set up > the deal. Art: the new stall, big board, sale ring, basket and Bullion-with-gavel paintings, Bullion (idle, cheer), the twelve find glyphs, Rosie, Maya's Pepper, the Ghost Sheep."
+  },
+  "t0": {
+   "x": 0,
+   "y": -250,
+   "text": "0 · The rules and the outlets (the same on every row)",
+   "kind": "title1",
+   "maxW": 1240
+  },
+  "s0": {
+   "x": 1320,
+   "y": 0,
+   "w": 560,
+   "text": "0 · The rules and the outlets\n\nSETS: a set is three of one find, for every find; the tin whistle trades alone. The price per find is printed beside every set price ('12 · 4 each') so every pinecone compares. The basket is the picture of a set on every row.\n\nSTRAIGHT UP: give one set, ask for 1 to 3 of one other find ('3 pinecones for 1 old key'). Both sides move at once, no tickles, nothing minted. It shows under both finds.\n\nTHE MONEY: the coin (tickles ready). Buying spends it, selling high piles it up, past 25 is fine (the coin reads 'banked'). The tickled total and the Board never move.\n\nOUTLETS (why a pig pays a high price): the Ghost Sheep (live) · a friend's wish (live) · the Stamp Book (NEW: hand Bullion a set, get that find's stamp, every four stamps unlock a cosmetic, mints nothing) · Bullion's Orders (NEW: your own menu of town orders, accept one, a week to fill it, two a week, at most 28 tickles a week enter this way) · the workbench (later) · the herd's Larder (later). Every outlet is printed on the find with the buyer's gain spelled out.\n\nPILLARS: Collect (the Stamp Book, a set for an order or a recipe) · Connect (every trade has a pig on the other side; friends named, 'a pig' for strangers). Contend untouched.\n\nCOST: the Stamp Book is a table plus a stamp page and 12 stamp paintings; Orders are a per-pig menu, an accept, a fill, and the only new faucet (capped).",
+   "fill": "orange"
+  },
+  "tA": {
+   "x": 0,
+   "y": 954,
+   "text": "A · The Market Square (a farmers' market)",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "sA": {
+   "x": 1880,
+   "y": 1204,
+   "w": 560,
+   "text": "A · The Market Square (a farmers' market)\n\nTHE FEEL: a painted square. Every pig selling has a stall (awning, pig face on the counter, baskets of sets with paper price tags, a chalk sign saying what they WANT). Bullion rings the bell from his crate; the day's orders hang on a cork noticeboard; your own stall waits at the front.\n\nBEST AT: every trade has a pig. Demand is on the stall itself (Maya's sign: WANTED 3 pinecones, 13), so 'who wants what, and why' is the first thing you see. The warmest of the four.\n\nCOST TO BUILD: medium-high. A scrolling row of stalls built from one stall painting plus overlays (glyphs, tags, name plank, chalk) is cheap; the square scene, the 'set out your stall' flow and the sale moment are new screens. Same server as round 1 plus sets and swaps.\n\nRISK: browsing by pig hides prices. Comparing pinecones means visiting stalls (fix: the wanted strip, or B's board as each find's page). A thin board looks like an empty square on day one.\n\nSTORY IN PLAY: your Sheep fancies clovers and your miller wants red berries, so Maya's stall has your bargains; Maya's Sheep fancies pinecones, so she buys yours. Square > Maya's stall > Set out your stall > Sold!",
+   "fill": "green"
+  },
+  "tB": {
+   "x": 0,
+   "y": 2158,
+   "text": "B · The Big Board (a stock exchange)",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "sB": {
+   "x": 1880,
+   "y": 2408,
+   "w": 560,
+   "text": "B · The Big Board (a stock exchange)\n\nTHE FEEL: the bigboard painting as the hero, prices written on it in chalk (find · set of 3 · last · up/down · selling · wanted), a ticker tape of real deals across the top, Bullion beside it with the chalk.\n\nBEST AT: reading prices. Closest to the founder's first 'stock market' ask. Demand is a number (sets wanted) and a ladder with friends' names; 'paid 9 · sold for 14 · up 5' teaches profit plainly.\n\nCOST TO BUILD: lowest. It is round 1's order book with sets, straight up and the outlets panel; the board and ticker are one screen over market_status(). The chalk table is a list in a costume.\n\nRISK: the coldest. A table of numbers is the least 'pig' of the four, and six columns are tight on a phone; strangers are 'a pig' so the tape can read anonymous. Thin days look like a dead exchange.\n\nSTORY IN PLAY: pinecones sell from 12 and are wanted at 11; you post yours at 14; the 12 and the 13 go first, then Maya takes yours. Board > Pinecones > Post an order > your line on the tape.",
+   "fill": "blue"
+  },
+  "tC": {
+   "x": 0,
+   "y": 3362,
+   "text": "C · The Sale Ring (a livestock sale)",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "sC": {
+   "x": 1880,
+   "y": 3612,
+   "w": 560,
+   "text": "C · The Sale Ring (a livestock sale)\n\nTHE ONE MECHANIC DIFFERENCE: sets sell at timed auctions (1 hour or 8 hours), not fixed prices. Opening bid, optional buy-it-now, or a swap lot (best offer of finds). Highest bid at the bell wins.\n\nTHE FEEL: Bullion at the podium with the gavel, the lot in its basket on the sawdust, a countdown, a paddle of your live bids.\n\nBEST AT: drama, and it finds the highest price for the seller by itself ('the bidding took it from 10 to 17'). Selling high is literally the show.\n\nCOST TO BUILD: highest. A scheduled close (pg_cron), outbid pushes, held tickles per bid, buy-it-now, swap-lot offers, and the ring scene.\n\nRISK: waiting. You can't buy the set you need now; a pig must be awake when the gavel falls. With a thin board most lots get one bidder and open-price = sale price. Bidding wars between friends can sting (Contend creeping in).\n\nSTORY IN PLAY: Lot 7 (Maya's pinecones) has Biscuit at 13; it goes to a pig at 16, so Biscuit comes for your lot. Ring > Lot 7 > Into the ring > the gavel falls.",
+   "fill": "purple"
+  },
+  "tD": {
+   "x": 0,
+   "y": 4566,
+   "text": "D · The Market Paper (a market-day newspaper)",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "sD": {
+   "x": 1880,
+   "y": 4816,
+   "w": 560,
+   "text": "D · The Market Paper (a market-day newspaper)\n\nTHE FEEL: The Hedgerow Herald. A front page with a headline from yesterday's real trades, Bullion's column, yesterday's prices, orders from town; then the classifieds: FOR SALE, WANTED, WILL SWAP, each ad signed with a pig-face stamp and an 'Answer this ad' button.\n\nBEST AT: straight-up swaps read naturally as ads ('3 blue feathers for 1 old key. A pig.'). WANTED ads make demand visible in words, and 'seller of the day' gives a good sale a byline. Daily rhythm: a new paper each morning.\n\nCOST TO BUILD: medium. The headline and seller-of-the-day need a daily digest of real trades (one cron); ads are offers in a costume. Three narrow columns are tight on small phones.\n\nRISK: reading. It is the wordiest; prices sit in sentences, not columns. A paper with three ads on day one feels empty, and yesterday's headline can go stale by the afternoon.\n\nSTORY IN PLAY: Maya's WANTED ad pays 13; you print a FOR SALE at 14 instead; she answers it. Front page > Classifieds > Place an ad > answered, SOLD.",
+   "fill": "pink"
+  }
+ },
+ "designSystems": [
+  {
+   "title": "Tickle the Pig",
+   "namespace": "tickle-the-pig",
+   "artifact": "https://claude.ai/artifact/A3L11psUnnGUQ36714vrCz",
+   "version": "1793291966-be33",
+   "copiedAt": "2026-10-30T03:43:09Z"
+  }
+ ]
+}

@@ -39,6 +39,10 @@ const NOTIFICATION_ROUTES = {
 	// A pig is back from its errand (20260918120000): the homecoming waits on
 	// the Pen's corkboard, so the push opens the Pen (2026-09-18).
 	pen: "/pen",
+	// Bullion's Market (2026-11-02): a friend sent you an offer, or your
+	// listing filled. The tap opens the market (its home carries the receipt);
+	// opened cold, the market's back goes to the Barn (app/market.tsx).
+	market: "/market",
 	// Matchmade play (2026-10-04). Sent by the Render play server, not by a
 	// migration, so the guard test's migration scan never sees it. A bare
 	// `play` opens the Play hub; with `invite` it opens that invite, with

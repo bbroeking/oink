@@ -137,7 +137,7 @@ export const FIELD_GUIDE_ENTRIES: readonly FieldGuideEntry[] = [
 		name: "The Ghost Sheep Trader",
 		whimsy: "A hooded stranger who drifts by the hedge now and then. Never says where he's been.",
 		value: () =>
-			"Hands finds from your Satchel over for tickles while he stays. The one he fancies pays double. He comes when he comes.",
+			"Hands finds from your Satchel over for tickles while he stays. The one he fancies pays double, unless you bought it. He comes when he comes.",
 		glyph: "trader",
 	},
 	{

@@ -425,6 +425,31 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+	// ── Build 201: Bullion's Market (1.3.1). Facts from SKILL.md 2026-10-31,
+	// 2026-11-01 and 2026-11-07.
+	{
+		version: "1.18.0",
+		date: "2026-11-07",
+		availableFrom: "2026-11-07",
+		headline: "Bullion's Market",
+		items: [
+			{
+				glyph: "market",
+				title: "Buy and sell finds",
+				body: "Bullion the bull buys and sells a set of any find at his counter, any time, and every set you trade moves the price. Find him on the Barn button.",
+			},
+			{
+				glyph: "market",
+				title: "Sell high to other pigs",
+				body: "Pin a set on the noticeboard at your own price, ask for one you want, or swap straight up, with everyone or just one friend. Sets are three of a common, two of an uncommon, or the tin whistle on its own.",
+			},
+			{
+				glyph: "trader",
+				title: "The Ghost Sheep pays double for what you find",
+				body: "He still pays double for the find he fancies when you dug it up, were given it or swapped for it. One you bought pays his usual price.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

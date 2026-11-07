@@ -11,6 +11,11 @@
 //      name, and the price as a real numeral with the tickle mark. The one he
 //      fancies sits on cream with "pays double".
 //
+// Found, not bought (2026-11 balance pass): his double is for a find you did
+// not buy. Each tile prices the row a tap would hand over first (found, then a
+// friend's, then bought), so a fancied find you only bought shows the plain
+// price and says so; a hand that holds a bought one says why it is not doubled.
+//
 // Sets and trade-ups (2026-10-29, the trader canvas's direction A,
 // docs/design/claude-design/trader-2026-10-29 boards A2 to A4): "pairs pay
 // more, three alike go up".
@@ -42,8 +47,8 @@ import type { SatchelItem } from "@/utils/satchel";
 import {
 	bagGroups,
 	findPlural,
+	itemPrice,
 	maxHand,
-	priceFor,
 	priceHand,
 	tradeUpPick,
 	traderGreeting,
@@ -150,7 +155,7 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 	const handGroup: BagGroup | null = hand ? (groups.find((g) => g.findId === hand.findId) ?? null) : null;
 	const handMax = handGroup ? maxHandFor(handGroup) : 0;
 	const handCount = handGroup ? Math.min(hand?.count ?? 0, handMax) : 0;
-	const priced = handGroup && handCount > 0 ? priceHand(handGroup.findId, handCount, status) : null;
+	const priced = handGroup && handCount > 0 ? priceHand(handGroup, handCount, status) : null;
 	const handFind = handGroup ? satchelFind(handGroup.findId) : null;
 	const pickFind = priced?.kind === "tradeUp" ? satchelFind(priced.pickId) : null;
 	const showConfirm = confirming && priced?.kind === "tradeUp" && pickFind != null && handFind != null;
@@ -425,8 +430,11 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 							<View style={styles.offers} accessibilityRole="list">
 								{groups.map((g) => {
 									const f = satchelFind(g.findId);
-									const price = priceFor(g.findId, status);
+									// The row a tap hands over first: bought ones sort last, so a
+									// bought lead means every one of this find was bought.
+									const price = itemPrice(g.items[0], status);
 									const fancied = wantId != null && g.findId === wantId;
+									const fanciedBought = fancied && g.items[0].bought === true;
 									const inHand = handGroup?.findId === g.findId ? handCount : 0;
 									const selected = inHand > 0;
 									const owned = g.items.length;
@@ -437,7 +445,11 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 											: selected && priced?.kind === "tradeUp"
 												? "three alike · up"
 												: fancied
-													? "pays double"
+													? fanciedBought
+														? owned > 1
+															? "bought ones"
+															: "bought one"
+														: "pays double"
 													: openPair && status.tuning.pairMultiplier > 1
 														? "makes a pair"
 														: null;
@@ -452,7 +464,7 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 											disabled={hadEnough}
 											onPress={() => tapTile(g)}
 											accessibilityRole="button"
-											accessibilityLabel={`${f?.name ?? "a find"}, ${price} tickles${fancied ? ", the one he fancies" : ""}${owned > 1 ? `, ${owned} in the bag` : ""}${selected ? `, ${inHand} in your hand` : ""}`}
+											accessibilityLabel={`${f?.name ?? "a find"}, ${price} tickles${fancied ? ", the one he fancies" : ""}${fanciedBought ? ", but bought ones pay the usual price" : ""}${owned > 1 ? `, ${owned} in the bag` : ""}${selected ? `, ${inHand} in your hand` : ""}`}
 											accessibilityHint={
 												hadEnough ? "He has had enough for this visit" : "Adds one to your hand"
 											}
@@ -471,7 +483,7 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 											</T>
 											<View style={styles.price}>
 												<TickleIcon size={ART_SIZE.mark} />
-												<T role="numeral" tone={fancied ? "accent" : "primary"}>{`+${price}`}</T>
+												<T role="numeral" tone={fancied && !fanciedBought ? "accent" : "primary"}>{`+${price}`}</T>
 											</View>
 											{note ? (
 												<T role="kickerPillSm" tone="accent" numberOfLines={1}>
@@ -501,7 +513,15 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 							</View>
 							{/* ── A2: the hand strip, and what one more would do ── */}
 							{priced?.kind === "sell" && handFind && (priced.count >= 2 || priced.openPair) && priced.pair ? (
-								<HandStrip findId={handFind.id} count={priced.count} price={priced.price} total={priced.total} openPair={priced.openPair} />
+								<HandStrip findId={handFind.id} count={priced.count} prices={priced.prices} total={priced.total} openPair={priced.openPair} />
+							) : null}
+							{/* A bought one of his fancy in the hand: why it is not doubled. */}
+							{priced?.kind === "sell" && priced.boughtPlain > 0 ? (
+								<Hand tone="secondary" align="center" style={styles.hint} testID="trader-bought">
+									{priced.count === 1
+										? "a bought one pays the usual price, not double"
+										: "bought ones pay the usual price, not double"}
+								</Hand>
 							) : null}
 							{priced?.kind === "sell" && priced.count === 2 && handGroup && handFind ? (
 								<TradeUpHint
@@ -523,20 +543,21 @@ export function TraderSheet({ open, onClose, status, readAt, items, onSell, onTr
 function HandStrip({
 	findId,
 	count,
-	price,
+	prices,
 	total,
 	openPair,
 }: {
 	findId: SatchelFindId;
 	count: number;
-	price: number;
+	/** Each row's own price, in hand order (a bought one of his fancy is plain). */
+	prices: readonly number[];
 	total: number;
 	openPair: boolean;
 }) {
 	const pairOf = `a pair of ${findPlural(findId)}`;
 	// The sum in words: two now, or the one that pairs with the one he took earlier.
 	const sum = !openPair
-		? `${price} + ${price}, then half again: ${total} tickles`
+		? `${prices[0] ?? 0} + ${prices[1] ?? prices[0] ?? 0}, then half again: ${total} tickles`
 		: count >= 2
 			? `the first pairs with the one he took earlier: ${total} tickles`
 			: `pairs with the one he took earlier: +${total}`;

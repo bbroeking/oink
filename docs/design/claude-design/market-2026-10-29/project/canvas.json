@@ -1,0 +1,198 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-29T23:25:36Z"
+ },
+ "title": "TTP Market: Bullion · 2026-10-29",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Bullion.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1240,
+   "h": 640,
+   "title": "Bullion · three looks, two poses, two hosts",
+   "is_interactive": true
+  },
+  "Main.dc.html": {
+   "x": 0,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A1 · The fan: a Market row",
+   "is_interactive": true
+  },
+  "A2.dc.html": {
+   "x": 470,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A2 · The market: chatter, coin, your offers, the twelve",
+   "is_interactive": true
+  },
+  "A3.dc.html": {
+   "x": 940,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A3 · The pinecone: last sold, the board, three ways in",
+   "is_interactive": true
+  },
+  "A4.dc.html": {
+   "x": 1410,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A4 · Name your price",
+   "is_interactive": true
+  },
+  "A5.dc.html": {
+   "x": 1880,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A5 · Receipt: both sides hear it",
+   "is_interactive": true
+  },
+  "A6.dc.html": {
+   "x": 2350,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "A6 · Quiet moments: moved, empty, lapsed, home",
+   "is_interactive": true
+  },
+  "B1.dc.html": {
+   "x": 0,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B1 · Seal a price before the bell",
+   "is_interactive": true
+  },
+  "B2.dc.html": {
+   "x": 470,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B2 · Six o'clock: the bell clears every find",
+   "is_interactive": true
+  },
+  "B3.dc.html": {
+   "x": 940,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "B3 · Your results",
+   "is_interactive": true
+  },
+  "C1.dc.html": {
+   "x": 0,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "C1 · Bullion's shelf: his quotes and the news",
+   "is_interactive": true
+  },
+  "C2.dc.html": {
+   "x": 470,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "C2 · The draft's find page: worth and spread",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "A2.dc.html",
+  "A3.dc.html",
+  "A4.dc.html",
+  "A5.dc.html",
+  "A6.dc.html",
+  "Bullion.dc.html",
+  "B1.dc.html",
+  "B2.dc.html",
+  "B3.dc.html",
+  "C1.dc.html",
+  "C2.dc.html"
+ ],
+ "notes": {
+  "brief": {
+   "x": 0,
+   "y": -760,
+   "w": 1180,
+   "fill": "gray",
+   "text": "TTP Market: Bullion · 2026-10-29\n\nTHE ASK (founder): a little stock-market-style experience, a simple order book where players buy, sell and trade items for tickles, hosted by a new character (a bull); simple, approachable, fun; players can see what their things are worth and what they made or lost; a playful way to learn how markets work while trading pig to pig.\n\nONE SENTENCE: Post the price you'll pay or take for a find, and Bullion matches you with a pig who agrees.\n\nTHE MONEY: tickles ready (the coin, N of 25). Pig to pig only: every tickle a buyer pays lands with a seller. The market mints nothing, burns nothing, and never touches the tickled count, snouts or the Board. On these boards the coin mark means tickles ready; the pink snout (row C only) means the tickled count.\n\nCUT: Bullion's own shelf and moving quotes, news multipliers, a 'worth' on the whole bag, fees, quantity over 1, charts beyond the seven-day strip.\n\nPICK: A as built / B / C · Bullion look A / B / C.\n\nBoards link in Play: the fan's Market row, then the pinecone, then Buy now or Name your price. Art: Bullion's three looks plus cheer and shrug (Codex ImageGen), the real find glyphs, Rosie, Maya's Pepper, the Ghost Sheep."
+  },
+  "t0": {
+   "x": 0,
+   "y": -250,
+   "text": "Bullion · the host (pick a look)",
+   "kind": "title1",
+   "maxW": 1240
+  },
+  "s0": {
+   "x": 1320,
+   "y": 0,
+   "w": 520,
+   "text": "Bullion · the host\n\nWHAT: a loud, sunny bull who lives at the market all day. He hosts every deal and never buys, sells, holds or takes a cut. He reads yesterday's busiest find off real trades ('14 pinecones changed hooves yesterday, last at 5'), says one tip per visit, and cheers both sides of every deal, whoever did better.\n\nPILLAR: Connect (he names the pig on the other side of your deal) · Collect (the finds he talks about are the twelve you dig).\n\nCHARTER CHECK: a character, never a currency · painted sticker in the Ghost Sheep's hand, never emoji · the two NPCs never blur: one hosts and is always there, one collects and comes once a day. The Sheep's fancy is why two pigs value one pinecone differently, which is why they trade.\n\nSERVER: nothing for him alone; his chatter is market_status().chatter (yesterday UTC, the busiest find, its last price).\n\nCLIENT: BullionArt with three poses (idle, cheer on a fill, shrug on a quiet board or a moved price), g_bullion for the fan row, the rotating tips in constants/market.ts.\n\nPICK: A (visor, waistcoat, chalk slate; the slate's line can follow the chatter) · B (boater, bow tie, bell) · C (apron, spectacles, scale). Recommended: A.",
+   "fill": "orange"
+  },
+  "tA": {
+   "x": 0,
+   "y": 954,
+   "text": "A · Bullion's Market (building this)",
+   "kind": "title1",
+   "maxW": 2740
+  },
+  "sA": {
+   "x": 2820,
+   "y": 1204,
+   "w": 560,
+   "text": "A · Bullion's Market (building this)\n\nONE SENTENCE: Post the price you'll pay or take for a find, and Bullion matches you with a pig who agrees.\n\nWHAT: a pig-to-pig order book for the twelve finds, one per offer, priced in tickles ready (the coin). Per find: Pigs selling (cheapest first) and Pigs buying (highest first); ties go to the earliest; a friend is named, anyone else is 'a pig'. Last sold for (a real trade, never a quote), a seven-day strip, and the Ghost Sheep's price as the anchor. Buy now / Sell now take the best offer at 'at most' / 'at least' the price you saw (worse answers 'the price moved'). Name your price rests 24 h, cancel any time; an offer that meets the board fills at once at the price already waiting. Receipts: Paid 4 · sold for 6 · up 2, or Dug it up · sold for 6. Ledger: spent 23 · took in 31.\n\nPILLAR: Collect first (buy the find you're missing, a third pinecone for a trade-up, a friend's wish) · Connect (every trade has a pig on the other side; 'Maya bought your pinecone for 5'). Contend untouched: no Board points move.\n\nCHARTER CHECK: no new currency (the coin) · pig to pig only: every tickle a buyer pays lands with a seller, the market mints nothing and burns nothing · never the tickled count, snouts or the Board · finds only, never cosmetics or anything bought with money · no fee · no red losses, no shame states (a lapsed offer is a quiet line).\n\nSERVER: 20261030120000_bullions_market.sql. market_offers / market_trades / market_receipts; satchel_items gains cost + source 'market'. market_status, market_book, market_place (nonce-idempotent, per-find advisory lock, price then time, never yourself, fills at the resting price, price_moved + best), market_cancel, dev_market_seed. app_settings.market_tuning: 4 open offers, 24 h, band 1 to 3x the Sheep's price (commons 1 to 9), 30 posts a day. Ships dark; turns on after The Feast's flip (2026-11-09).\n\nCLIENT: constants/market.ts, utils/market.ts (fail-soft: an un-pushed server reads as closed), hooks/useMarket.ts, app/market.tsx + components/market/* (slate, find page, stepper, receipt, BullionArt), a Market row on the Barn fan while enabled.\n\nFLOW IN PLAY: fan Market row > the market > pinecone > Buy now (receipt) or Name your price (sheet). Tin whistle row > quiet moments.\n\nOPEN: which tickles (built: the coin) · Bullion's look · name strangers, or keep 'a pig' until a trade.",
+   "fill": "green"
+  },
+  "tB": {
+   "x": 0,
+   "y": 2158,
+   "text": "B · Market day (alternative)",
+   "kind": "title1",
+   "maxW": 1330
+  },
+  "sB": {
+   "x": 1410,
+   "y": 2408,
+   "w": 520,
+   "text": "B · Market day (alternative)\n\nONE SENTENCE: Post what you'll pay or take before the evening bell; at six Bullion rings it and every find clears at one price.\n\nWHAT: sealed offers all day (you see how many pigs are in, never a price); at 18:00 one clearing price per find; everyone who matched trades at it; unmatched offers come home.\n\nWHY IT'S ATTRACTIVE: no sniping and no camping the board · every pig who traded a pinecone today got the same price, so nobody feels fleeced · a daily rendezvous: the bell is a reason for the herd to show up together, and it gives Bullion a big moment.\n\nWHY NOT FIRST: you wait up to a day to trade (a friend's wish can't be bought now) · less of the stock-market feel the founder asked for: no live board, no Buy now · thinner learning of buying vs selling: one price hides the gap · a scheduled clear and a clearing algorithm to build and test.\n\nPILLAR: Collect · Connect (the bell is a shared moment).\n\nCHARTER CHECK: same money and limits as A; pig to pig, mints nothing.\n\nSERVER: A's tables plus a pg_cron clear at 18:00 computing the uniform price per find (the price that matches the most finds).\n\nCLIENT: sealed-offer page, the bell reveal, the results page. Could layer on A later as a weekly event.",
+   "fill": "blue"
+  },
+  "tC": {
+   "x": 0,
+   "y": 3362,
+   "text": "C · Bullion makes the market (cut)",
+   "kind": "title1",
+   "maxW": 860
+  },
+  "sC": {
+   "x": 940,
+   "y": 3612,
+   "w": 520,
+   "text": "C · Bullion makes the market (the first draft, cut)\n\nWHAT: Bullion as an NPC market maker. A real shelf (he only resells what pigs sold him), his own 'I pay 2 · I ask 4' quotes moved by his stock and a daily news headline, pig offers inside his spread, money = the tickled count (the pink snout), and a 'worth' on your whole bag.\n\nWHY CUT (Codex and ChatGPT, independently):\n· Moving NPC prices mint tickles over time: buy from him at the bottom, sell back at the top, every cycle. His top bid even beat the Sheep's 20.\n· A global shelf is easy to corner: seven units hit the stock clamp, so a few pigs can empty it or flood it.\n· Scheduled news rewards camping the reset.\n· 'Worth 12 now · up 2' promised liquidity nobody had: he might not buy all of it, or stop buying.\n· Spending the tickled count spends the leaderboard, and friends could move Board points by overpaying.\n\nKEPT FROM IT: Bullion himself, the Ghost Sheep's fancy as the reason values differ, a cost on every find, friends named.\n\nPILLAR it claimed: Collect, and Contend by accident (the Board). CHARTER: failed fairness by construction.",
+   "fill": "red"
+  }
+ },
+ "designSystems": [
+  {
+   "title": "Tickle the Pig",
+   "namespace": "tickle-the-pig",
+   "artifact": "https://claude.ai/artifact/A3L11psUnnGUQ36714vrCz",
+   "version": "1793291966-be33",
+   "copiedAt": "2026-10-29T23:25:36Z"
+  }
+ ]
+}

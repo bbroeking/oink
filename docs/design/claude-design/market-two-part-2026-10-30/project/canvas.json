@@ -1,0 +1,283 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-30T14:39:29Z"
+ },
+ "title": "TTP Market: the counter, the noticeboard, onboarding · 2026-10-30",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1400,
+   "h": 760,
+   "title": "0 · One price, two ways to trade"
+  },
+  "C1.dc.html": {
+   "x": 0,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "C1 · The market home: two doors, Bullion, the chalk board",
+   "is_interactive": true
+  },
+  "C2.dc.html": {
+   "x": 470,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "C2 · Pinecones at the counter: the chart, his two prices",
+   "is_interactive": true
+  },
+  "C3.dc.html": {
+   "x": 940,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "C3 · Confirm: the price move before you tap",
+   "is_interactive": true
+  },
+  "C4.dc.html": {
+   "x": 1410,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "C4 · Bought: you moved the price",
+   "is_interactive": true
+  },
+  "C5.dc.html": {
+   "x": 1880,
+   "y": 1204,
+   "w": 390,
+   "h": 844,
+   "title": "C5 · A quiet afternoon: wandering home",
+   "is_interactive": true
+  },
+  "N1.dc.html": {
+   "x": 0,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "N1 · The noticeboard: for sale, wanted, swaps, for you",
+   "is_interactive": true
+  },
+  "N2.dc.html": {
+   "x": 470,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "N2 · Post a listing: the price slider",
+   "is_interactive": true
+  },
+  "N3.dc.html": {
+   "x": 940,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "N3 · A swap, up close",
+   "is_interactive": true
+  },
+  "N4.dc.html": {
+   "x": 1410,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "N4 · For you: an offer from Maya",
+   "is_interactive": true
+  },
+  "N5.dc.html": {
+   "x": 1880,
+   "y": 2408,
+   "w": 390,
+   "h": 844,
+   "title": "N5 · Sold high: +5 for listing it",
+   "is_interactive": true
+  },
+  "T1.dc.html": {
+   "x": 0,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "T1 · Buying: both paths side by side",
+   "is_interactive": true
+  },
+  "T2.dc.html": {
+   "x": 470,
+   "y": 3612,
+   "w": 390,
+   "h": 844,
+   "title": "T2 · Selling: both paths side by side",
+   "is_interactive": true
+  },
+  "O1.dc.html": {
+   "x": 0,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O1 · The fan: Market, new here?",
+   "is_interactive": true
+  },
+  "O2.dc.html": {
+   "x": 470,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O2 · Card 1 of 3: buy or sell any set",
+   "is_interactive": true
+  },
+  "O3.dc.html": {
+   "x": 940,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O3 · Card 2 of 3: prices move",
+   "is_interactive": true
+  },
+  "O4.dc.html": {
+   "x": 1410,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O4 · Card 3 of 3: or trade with a pig",
+   "is_interactive": true
+  },
+  "O5.dc.html": {
+   "x": 1880,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O5 · The guided first trade",
+   "is_interactive": true
+  },
+  "O6.dc.html": {
+   "x": 2350,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O6 · Moment: you moved the price",
+   "is_interactive": true
+  },
+  "O7.dc.html": {
+   "x": 2820,
+   "y": 4816,
+   "w": 390,
+   "h": 844,
+   "title": "O7 · Moment: the price wanders home",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "C1.dc.html",
+  "C2.dc.html",
+  "C3.dc.html",
+  "C4.dc.html",
+  "C5.dc.html",
+  "N1.dc.html",
+  "N2.dc.html",
+  "N3.dc.html",
+  "N4.dc.html",
+  "N5.dc.html",
+  "T1.dc.html",
+  "T2.dc.html",
+  "O1.dc.html",
+  "O2.dc.html",
+  "O3.dc.html",
+  "O4.dc.html",
+  "O5.dc.html",
+  "O6.dc.html",
+  "O7.dc.html"
+ ],
+ "notes": {
+  "brief": {
+   "x": 0,
+   "y": -1180,
+   "w": 1400,
+   "fill": "gray",
+   "text": "TTP Market: the counter, the noticeboard, onboarding · round 4 · 2026-10-30\n\nTHE FOUNDER'S ASK (his words): 'How do we make this work as a two-part system? 1. Instant buying and selling, with trades moving the price over time and slight price jitter when there's no trading activity. 2. Trading directly with other users, possibly through simple straight-up swaps. How should those two mechanisms work together?' Plus designs for both parts and the feature's onboarding.\n\nTHE ANSWER IN ONE BREATH: every find has one price. You can trade at it two ways: instantly at Bullion's counter, where he takes a small cut, or directly with another pig, where there's no cut but you need a partner.\n\nTHE NUMBERS ON EVERY BOARD: a set is 4 of a common, 3 of anything else. Usual prices: pinecones 12, old keys 24, tin whistles 60. Pinecones at 12: Bullion sells 15, buys 9. One set bought: 12 to 12.4. The price stays inside 0.85 to 1.15 of usual. A pig sale moves it a third of the way to what was paid. Quiet: a wiggle of up to 1%, a 5% drift home every 30 minutes.\n\nWHAT TO REACT TO: (1) Does the split feel right: the counter for now, the noticeboard for the better deal, one price under both? (2) Are the sizes right: the counter's cut (20% each side) and the price's swing (15% each side)? The cut must stay wider than the swing or a round trip at the counter could pay. (3) The onboarding copy: three cards in Bullion's voice, the guided first trade, three one-time moments.\n\nROWS: 0 the system on one page · Part 1 the Counter (5 phones) · Part 2 the Noticeboard (5) · Together, one find two paths (2) · Onboarding (7). Every phone links in Play: Market home > Pinecones > Confirm > Bought > later; the board > Post > Sold high; the fan > three cards > first trade > moments.\n\nArt: Bullion at his counter and the cork noticeboard (new this round), the chalk board, the basket, Bullion idle / cheer / shrug, the twelve finds, Rosie, Maya's Pepper, the Ghost Sheep."
+  },
+  "t0": {
+   "x": 0,
+   "y": -250,
+   "text": "0 · One price, two ways to trade",
+   "kind": "title1",
+   "maxW": 1400
+  },
+  "s0": {
+   "x": 1480,
+   "y": 0,
+   "w": 560,
+   "text": "0 · One price, two ways to trade\n\nWHAT IT SHOWS: the whole system on one page. The price of a find in the middle (pinecones, usual 12, moving inside 10.2 to 13.8). Bullion's counter on the left (sells 15, buys 9, instant, his cut). The noticeboard on the right (pig to pig, no cut, needs a partner).\n\nWHAT MOVES THE PRICE: each set bought at the counter, up 3% of usual; each set sold, down 3%; a pig-to-pig sale, a third of the way to what was paid; quiet hours, a wiggle of up to 1% and a 5% drift home every 30 minutes; swaps, nothing.\n\nTHE GAP: Bullion's two prices bracket a shaded gap, 'where pigs trade'. A listing at 9 or under sells to Bullion at once; at 15 or over it just sits. So listings settle inside the gap, and inside the gap both pigs beat the counter.\n\nWHY PRICES DIFFER BETWEEN PIGS: the outlets. Maya's Ghost Sheep fancies pinecones (24 for 4), so she pays you 14 when Bullion pays 9: you're up 5, she's up 10.\n\nPILLARS: Connect (the better deal always has a pig on the other side) and Collect (every set has a home: the counter, a pig, the Sheep).",
+   "fill": "orange"
+  },
+  "tC": {
+   "x": 0,
+   "y": 954,
+   "text": "Part 1 · The Counter: buy and sell any time",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "sC": {
+   "x": 2350,
+   "y": 1204,
+   "w": 560,
+   "text": "Part 1 · The Counter: buy and sell any time\n\nWHAT THE ROW SHOWS: the market home (two doors: the Counter and the Noticeboard; Bullion at his counter; the chalk board of all twelve finds with price per set, per find, the move since yesterday, a sparkline). Pinecones at the counter: the last day in chalk with every trade a dot, Bullion's two prices in his voice, the Ghost Sheep line, a nudge to the cheaper card on the noticeboard. The confirm draws the price move before you tap: 'Buy for 15. The price goes 12 to 12.4.' Bought: the first-time moment. Three quiet hours later: the price wandering home, only the townsfolk on the tape.\n\nTHE RULE IT DEMONSTRATES: Bullion sells at max(usual + 1, 1.2 x price rounded up) and buys at min(usual, 0.8 x price rounded down). One set bought: 12 to 12.4, his prices stay 15 and 9. Pushed to 12.8, they follow: 16 and 10. A round trip at the counter always loses (the 20% cut is wider than the 15% swing).\n\nSTORY: your Ghost Sheep fancies pinecones today (24 for 4), so a set at 15 is worth buying. Market > Pinecones > Confirm > Bought > three hours on.\n\nOPEN: the price prints to one decimal (12.4) while every tickle amount is whole; is that clear, or should the board round? No daily caps by default (the cut and the coin are the limits); caps stay as a tuning valve.",
+   "fill": "green"
+  },
+  "tN": {
+   "x": 0,
+   "y": 2158,
+   "text": "Part 2 · The Noticeboard: trade with pigs",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "sN": {
+   "x": 2350,
+   "y": 2408,
+   "w": 560,
+   "text": "Part 2 · The Noticeboard: trade with pigs\n\nWHAT THE ROW SHOWS: the noticeboard full screen in cork, pinned cards in four sections (For sale · Wanted · Swaps · For you), each card with a pig face (friends named, others 'a pig'), the set, the price and a price-tag chip against the price. Post a listing: pick a set from your bag, For sale / Wanted / Swap, Every pig or Just Maya, a slider marked Bullion buys 9 · the price 12 (suggested) · Bullion sells 15, and the crossing warning if you drag to 9 or under. A swap up close with both sides at today's price. An offer to one friend, in your Inbox and pinned by her door when you visit. Sold high: the receipt against the counter, Bullion's line, and the price nudged a third of the way.\n\nTHE RULE IT DEMONSTRATES: the price is the yardstick for every card; a listing at or under Bullion's buying price sells to him at once; a pig sale moves the price a third of the way toward what was paid (12 to 12.7 on a sale at 14); swaps don't move it. 4 listings up at a time, 24 hours each.\n\nSTORY: you pin 4 pinecones at 14 (2 over the price, 1 under Bullion's 15); Maya, whose Sheep fancies pinecones, takes them: 'Maya paid 14 · Bullion would have paid 9 · +5 for listing it'. Board > Post > Sold high; the swap and Maya's old keys (22, 3 under the price) branch off the board.\n\nOPEN: offers to one friend are new on the server (market_offers.target_user_id + an Inbox row). The counter-offer flow is a button here, not designed. N3 is shown from the taker's side: 'a pig' gives 4 pinecones (about 12) for 1 old key (about 8), so the taker gets 4 more than they give; the why is the pig's Ghost Sheep fancying old keys.",
+   "fill": "yellow"
+  },
+  "tT": {
+   "x": 0,
+   "y": 3362,
+   "text": "Together: one find, two paths",
+   "kind": "title1",
+   "maxW": 860
+  },
+  "sT": {
+   "x": 940,
+   "y": 3612,
+   "w": 560,
+   "text": "Together: one find, two paths\n\nWHAT THE ROW SHOWS: the find page with both ways to trade side by side, so the decision is made for you. Buying: Buy now from Bullion 15 · From Maya on the noticeboard 13 (in sun, 'best price now') · Post a wanted card at your price. Selling: Sell now to Bullion 9 · List it, pigs pay up to 14 here lately (with who paid what).\n\nTHE RULE IT DEMONSTRATES: the counter is the safety net, the noticeboard the better deal. Bullion even says so ('Maya's 13 beats my 15. Buy from her!'). The gap bar puts every option on one line.\n\nOPEN: is this the find page (replacing C2), or a panel under C2? Does the cheapest path always take the sun fill, or does the counter stay first?",
+   "fill": "blue"
+  },
+  "tO": {
+   "x": 0,
+   "y": 4566,
+   "text": "Onboarding",
+   "kind": "title1",
+   "maxW": 3210
+  },
+  "sO": {
+   "x": 3290,
+   "y": 4816,
+   "w": 560,
+   "text": "Onboarding\n\nWHAT THE ROW SHOWS: the Barn fan's Market row wears a 'new here?' tag until the first visit. Then three cards in Bullion's voice (the spec's words): 'Buy or sell any set, any time.' · 'Prices move.' (a small chart: a push up, a pull down, a drift home; his cut on the gap bar) · 'Or trade with a pig.' (two pinned cards, the gap between his prices highlighted). It ends on 'Step up to the counter'. A coach mark then points at a set you hold: 'You've got 4 pinecones. Sell them to me for 9, or put them on the board for more?' Either choice finishes the tour.\n\nMOMENTS (once each, in context): 'You moved the price!' (here on a sale: 12 to 11.6; C4 shows the buy, 12 to 12.4) · 'Nobody's traded pinecones for a while: the price is wandering home' · and the sold-high line on N5.\n\nSAME PATTERN AS the Pop-up Stall's onboarding (2026-10-29): a tag, three cards, one guided action.\n\nOPEN: does Skip still show the coach mark? Does the tag stay until the first trade or only the first visit? Copy: is 'that's my cut' the right word for the spread?",
+   "fill": "pink"
+  }
+ },
+ "designSystems": [
+  {
+   "title": "Tickle the Pig",
+   "namespace": "tickle-the-pig",
+   "artifact": "https://claude.ai/artifact/A3L11psUnnGUQ36714vrCz",
+   "version": "1793291966-be33",
+   "copiedAt": "2026-10-30T14:39:29Z"
+  }
+ ]
+}

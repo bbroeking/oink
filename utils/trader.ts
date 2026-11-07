@@ -14,6 +14,13 @@
 // the next rarity (`visit.trade_ups` names his pick). A server without the
 // feature answers neither key, and the sheet stays the single-find sheet.
 //
+// Found, not bought (the 2026-11 balance pass): his x2 for the fancied find
+// pays only on a bag row without a market cost basis (`bought` on the row), so
+// the sheet prices each row of a hand on its own, and `visit.unpaired_paid`
+// says what the open unpaired sale of a find paid. A server before the pass
+// answers neither: every row reads as found, and an open pair is assumed to
+// have paid what this row pays (what the server did then).
+//
 // FAIL-SOFT: an un-pushed server (trader_status missing) reads as "not here",
 // and no surface draws him. The yard never shows a broken sheep.
 //
@@ -22,7 +29,7 @@
 // without dragging native modules in.
 import { isSatchelFindId, satchelFind, type FindRarity, type SatchelFindId } from "@/constants/satchel";
 import { TRADER_TUNING, nextRarity, traderHandPay, traderPrice, type TraderTuning } from "@/constants/trader";
-import { newSwapNonce, toBag, type SatchelItem } from "@/utils/satchel";
+import { cameFromAFriend, newSwapNonce, toBag, type SatchelItem } from "@/utils/satchel";
 import type { RpcResult } from "@/utils/rpc";
 
 function rpcAction<T = Record<string, never>>(
@@ -49,6 +56,9 @@ export interface TraderVisit {
 	findsLeft: number;
 	/** Finds one sale into a pair this visit: the next one completes it. */
 	unpaired: SatchelFindId[];
+	/** What the open unpaired sale of each of those paid (before any pair
+	 *  bonus). Empty on a server before the 2026-11 balance pass. */
+	unpairedPaid: Partial<Record<SatchelFindId, number>>;
 	/** His trade-up pick, by the rarity three alike come FROM. Only once he
 	 *  is here, and empty when trade-ups are off. */
 	tradeUps: Partial<Record<FindRarity, SatchelFindId>>;
@@ -103,6 +113,15 @@ function toFindIds(raw: unknown): SatchelFindId[] {
 	return Array.isArray(raw) ? raw.filter(isSatchelFindId) : [];
 }
 
+function toPaidByFind(raw: unknown): Partial<Record<SatchelFindId, number>> {
+	const out: Partial<Record<SatchelFindId, number>> = {};
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+	for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+		if (isSatchelFindId(id) && typeof v === "number" && Number.isFinite(v)) out[id] = Math.max(0, Math.floor(v));
+	}
+	return out;
+}
+
 function toTradeUps(raw: unknown): Partial<Record<FindRarity, SatchelFindId>> {
 	const out: Partial<Record<FindRarity, SatchelFindId>> = {};
 	if (!raw || typeof raw !== "object") return out;
@@ -129,6 +148,7 @@ function toVisit(raw: unknown): TraderVisit | null {
 		tickles: Math.max(0, Math.floor(num(v.tickles, 0))),
 		findsLeft: Math.max(0, Math.floor(num(v.finds_left, 0))),
 		unpaired: toFindIds(v.unpaired),
+		unpairedPaid: toPaidByFind(v.unpaired_paid),
 		tradeUps: toTradeUps(v.trade_ups),
 	};
 }
@@ -287,22 +307,28 @@ export async function tradeUpWithTrader(findId: SatchelFindId, nonce: string): P
 
 // ── Pure rules ───────────────────────────────────────────────────────────────
 
-/** What a bag row would pay him right now. */
-export function priceFor(itemFindId: SatchelFindId, status: TraderStatus): number {
+/** What one of a find would pay him right now: a found one, unless `bought`. */
+export function priceFor(itemFindId: SatchelFindId, status: TraderStatus, bought = false): number {
 	const f = satchelFind(itemFindId);
 	if (!f) return 0;
-	return traderPrice(f, status.tuning, status.visit?.wantFindId ?? null);
+	return traderPrice(f, status.tuning, status.visit?.wantFindId ?? null, bought);
 }
 
-/** One kind of find in the bag: its rows, in bag order. */
+/** What this bag row would pay him right now (a bought row is never doubled). */
+export function itemPrice(item: SatchelItem, status: TraderStatus): number {
+	return priceFor(item.find_id, status, item.bought === true);
+}
+
+/** One kind of find in the bag: its rows, the ones he pays most for first. */
 export interface BagGroup {
 	findId: SatchelFindId;
 	items: SatchelItem[];
 }
 
 /** The bag as one tile per find (first appearance first), each row kept so a
- *  hand-over sends real ids. A friend's find sorts last inside its group, so a
- *  hand spends dug ones first (the server's trade-up rule too). */
+ *  hand-over sends real ids. Inside a group the rows he pays most for lead, so
+ *  a hand spends them first: found ones, then a friend's (the server's
+ *  trade-up order too), then bought ones (never doubled); bag order within each. */
 export function bagGroups(items: readonly SatchelItem[]): BagGroup[] {
 	const byFind = new Map<SatchelFindId, SatchelItem[]>();
 	for (const it of items) {
@@ -310,11 +336,10 @@ export function bagGroups(items: readonly SatchelItem[]): BagGroup[] {
 		if (g) g.push(it);
 		else byFind.set(it.find_id, [it]);
 	}
-	const fromFriend = (it: SatchelItem) =>
-		it.source === "swap" || it.source === "gift" || it.source === "migrated_shelf" ? 1 : 0;
+	const rank = (it: SatchelItem) => (it.bought === true ? 2 : cameFromAFriend(it.source) ? 1 : 0);
 	return [...byFind.entries()].map(([findId, rows]) => ({
 		findId,
-		items: [...rows].sort((a, b) => fromFriend(a) - fromFriend(b)),
+		items: [...rows].sort((a, b) => rank(a) - rank(b)),
 	}));
 }
 
@@ -338,33 +363,57 @@ export function maxHand(findId: SatchelFindId, owned: number, status: TraderStat
 	return Math.max(0, Math.min(cap, owned, left));
 }
 
-/** A hand of `count` of one find, priced: the single / the pair (with the
- *  half-again, counting one already unpaired this visit) / the trade-up. */
+/** A hand of the first `count` rows of one find's group, priced: the single /
+ *  the pair (with the half-again, counting one already unpaired this visit) /
+ *  the trade-up. */
 export type TraderHand =
 	| {
 			kind: "sell";
 			findId: SatchelFindId;
 			count: number;
-			/** One find's price (the fancied one already doubled). */
-			price: number;
+			/** Each row's own price, in hand order (his fancy doubled unless bought). */
+			prices: number[];
+			/** Each sale's pay: its price, plus the half-again on the one that
+			 *  completes a pair. */
 			each: number[];
 			total: number;
 			/** Some sale in this hand completes a pair. */
 			pair: boolean;
 			/** One of this find already went this visit, unpaired. */
 			openPair: boolean;
+			/** Rows of his fancy in this hand that were bought, so pay the plain
+			 *  price (0 for any other find). */
+			boughtPlain: number;
 	  }
 	| { kind: "tradeUp"; findId: SatchelFindId; count: number; pickId: SatchelFindId };
 
-export function priceHand(findId: SatchelFindId, count: number, status: TraderStatus): TraderHand {
+/** The hand is `group.items.slice(0, count)`: the rows a hand-over sends. */
+export function priceHand(group: BagGroup, count: number, status: TraderStatus): TraderHand {
+	const { findId } = group;
+	const rows = group.items.slice(0, Math.max(0, count));
+	const n = rows.length;
 	const pick = tradeUpPick(findId, status);
-	if (pick && count >= status.tuning.tradeUpCount) {
-		return { kind: "tradeUp", findId, count, pickId: pick };
+	if (pick && n >= status.tuning.tradeUpCount) {
+		return { kind: "tradeUp", findId, count: n, pickId: pick };
 	}
-	const price = priceFor(findId, status);
+	const prices = rows.map((it) => itemPrice(it, status));
 	const openPair = status.visit?.unpaired.includes(findId) ?? false;
-	const { each, total } = traderHandPay(price, count, status.tuning.pairMultiplier, openPair);
-	return { kind: "sell", findId, count, price, each, total, pair: each.some((p) => p > price), openPair };
+	// What the open sale paid: the server's word, else (a server before the
+	// balance pass) what this row pays, as that server priced every row alike.
+	const openPaid = openPair ? (status.visit?.unpairedPaid[findId] ?? prices[0] ?? null) : null;
+	const { each, total } = traderHandPay(prices, status.tuning.pairMultiplier, openPaid);
+	const doubles = status.visit?.wantFindId === findId && status.tuning.wantMultiplier > 1;
+	return {
+		kind: "sell",
+		findId,
+		count: n,
+		prices,
+		each,
+		total,
+		pair: each.some((p, i) => p > prices[i]),
+		openPair,
+		boughtPlain: doubles ? rows.filter((it) => it.bought === true).length : 0,
+	};
 }
 
 /** Whole minutes until he leaves (0 once gone), measured against the server's
@@ -419,7 +468,7 @@ export function traderGreeting(status: TraderStatus): string {
 		return "Finds for tickles. Bring me a pair and I pay half again. Three alike and I will trade you up.";
 	}
 	if (pairs) return "Finds for tickles. Bring me a pair and I pay half again.";
-	if (want) return `Finds for tickles. Today I fancy ${want.withArticle}. That one pays double.`;
+	if (want) return `Finds for tickles. Today I fancy ${want.withArticle}. That one pays double, unless you bought it.`;
 	return "Finds for tickles, little pig. Sets. Singles. Whatever's in the bag.";
 }
 

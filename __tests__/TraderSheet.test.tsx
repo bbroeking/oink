@@ -16,6 +16,10 @@
 //     first (the confirm) and can step back; the receipt keeps one tally across
 //     the open sheet and a lilac card for what came back; rare stops at a pair;
 //     a sheet without the trade-up mutation stops at a pair too
+//   • found, not bought (2026-11 balance pass): a bought one of his fancy pays
+//     the plain price on its tile, its hand and its ticket, and says why; a
+//     mixed hand spends the found one first and sums both prices; an open pair
+//     pays off what its first sale paid
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -506,6 +510,96 @@ describe("TraderSheet, sets and trade-ups", () => {
 		await act(async () => offers(r)[0].props.onPress());
 		expect(r.root.findByProps({ testID: "trader-sell" }).props.stub).toBe("+6");
 		expect(textOf(r.root)).toContain("pairs with the one he took earlier: +6");
+	});
+
+	it("a fancied find you only bought shows the plain price and says why", async () => {
+		const onSell = jest.fn(async (): Promise<TraderSaleOutcome> => ({ ok: false, reason: "unknown", arrivesAt: null, bag: null }));
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(
+				mount({ status: setsStatus(), items: [{ id: 31, find_id: "blue_feather", bought: true }], onSell, onTradeUp: jest.fn() }),
+			);
+		});
+		const tile = offers(r)[0];
+		expect(tile.props.color).toBe("cream");
+		expect(tile.props.accessibilityLabel).toBe("blue feather, 3 tickles, the one he fancies, but bought ones pay the usual price");
+		let text = textOf(r.root);
+		expect(text).toContain("+3");
+		expect(text).toContain("bought one");
+		expect(text).not.toContain("pays double");
+		await act(async () => tile.props.onPress());
+		const sell = r.root.findByProps({ testID: "trader-sell" });
+		expect(sell.props.stub).toBe("+3");
+		expect(sell.props.accessibilityLabel).toBe("Hand over the blue feather for 3 tickles");
+		text = textOf(r.root);
+		expect(text).toContain("a bought one pays the usual price, not double");
+	});
+
+	it("a mixed hand of his fancy spends the found one first and sums both prices", async () => {
+		const feather = (tickles: number, pair: boolean, before: number): TraderSaleOutcome => ({
+			ok: true,
+			replay: false,
+			findId: "blue_feather",
+			tickles,
+			// The found one was his fancy; the bought one was not doubled.
+			wasWant: !pair,
+			pair,
+			pairBonus: pair ? 4 : 0,
+			before,
+			after: before + tickles,
+			findsLeft: 7,
+			visitTickles: 13,
+			bag: [],
+		});
+		const onSell = jest
+			.fn<Promise<TraderSaleOutcome>, [number]>()
+			.mockResolvedValueOnce(feather(6, false, 100))
+			.mockResolvedValueOnce(feather(7, true, 106));
+		const bag: SatchelItem[] = [
+			{ id: 21, find_id: "blue_feather", bought: true },
+			{ id: 22, find_id: "blue_feather", source: "dig" },
+		];
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(mount({ status: setsStatus(), items: bag, onSell, onTradeUp: jest.fn() }));
+		});
+		// The tile prices the one a tap hands over first: the found one, doubled.
+		expect(offers(r)[0].props.accessibilityLabel).toBe("blue feather, 6 tickles, the one he fancies, 2 in the bag");
+		expect(textOf(r.root)).toContain("pays double");
+		await act(async () => offers(r)[0].props.onPress());
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.stub).toBe("+6");
+		expect(hostCount(r.root, "trader-bought")).toBe(0);
+		await act(async () => offers(r)[0].props.onPress());
+		// 6 + 3, and half again of the two: FLOOR(9 x 0.5) = 4.
+		const text = textOf(r.root);
+		expect(text).toContain("6 + 3, then half again: 13 tickles");
+		expect(text).toContain("a pair · +13");
+		expect(text).toContain("bought ones pay the usual price, not double");
+		const sell = r.root.findByProps({ testID: "trader-sell" });
+		expect(sell.props.stub).toBe("+13");
+		expect(sell.props.accessibilityLabel).toBe("Hand over two blue feathers for 13 tickles");
+		const strip = r.root.findAll((n) => n.props.testID === "trader-hand" && typeof n.type !== "string")[0];
+		expect(strip.props.accessibilityLabel).toBe("a pair of blue feathers. 6 + 3, then half again: 13 tickles");
+		await act(async () => sell.props.onPress());
+		expect(onSell.mock.calls.map((c) => c[0])).toEqual([22, 21]);
+		expect(textOf(r.root)).toContain("a pair of blue feathers went into his satchel · +13");
+	});
+
+	it("an open pair pays off what its first sale paid", async () => {
+		let r!: TestRenderer.ReactTestRenderer;
+		await act(async () => {
+			r = TestRenderer.create(
+				mount({
+					status: setsStatus({ unpaired: ["blue_feather"], unpaired_paid: { blue_feather: 3 } }),
+					items: [{ id: 22, find_id: "blue_feather", source: "dig" }],
+					onTradeUp: jest.fn(),
+				}),
+			);
+		});
+		await act(async () => offers(r)[0].props.onPress());
+		// He took a bought one (3) earlier; this found one (6) completes it: 6 + FLOOR(9 x 0.5).
+		expect(r.root.findByProps({ testID: "trader-sell" }).props.stub).toBe("+10");
+		expect(textOf(r.root)).toContain("pairs with the one he took earlier: +10");
 	});
 
 	it("rare stops at a pair, and so does a sheet without the trade-up", async () => {

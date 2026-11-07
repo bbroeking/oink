@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Bullion's Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&amp;family=Fredoka:wght@600;700&amp;family=Nunito:wght@600;700;800;900&amp;family=Patrick+Hand&amp;display=swap" rel="stylesheet">
+<style>
+/* Tokens: constants/theme.ts (WHIMSY, RADII, SPACE, BORDER, TYPE), copied verbatim. */
+:root{
+  --ink:#2a1f15;--paper:#fffaf0;--cream:#fbeee2;--cream2:#f6e6d4;--rose:#ffd6dc;--roseDeep:#f8a8b3;--sky:#c8e3f0;
+  --sage:#c9dec1;--sun:#ffd87a;--lilac:#d6c8f0;--peach:#ffc8a8;--accent:#a03e2f;--goldInk:#5A3F00;--sageInk:#7A9B63;
+  --mute:#605449;--muteSoft:#8c7e71;--muteDim:#6a5c50;--bark:#3a2c1e;--barkText:#fff3e2;--barkMute:#e8d9c6;
+  --dirt:#8d5a2c;--dirtDeep:#74441e;--cork:#d9b27f;--tape:#EAD59E;--tapeEdge:#C8AD77;--slopBand:#FFE7AD;
+  --success:#476436;--danger:#983a2c;
+  --tintYou:#FDE4E8;--tintMaya:#E3E2E5;--tintBiscuit:#F5E6D6;            /* PIG_ACCENT tints */
+  --scrim:rgba(42,31,21,.55);--inkWash:rgba(42,31,21,.08);--well:rgba(42,31,21,.12);--chalkRule:rgba(255,243,226,.42);
+  --r-hair:2px;--r-sm:8px;--r-md:12px;--r-lg:14px;--r-xl:18px;--r-xxl:22px;--r-pill:999px;
+  --s-xxs:2px;--s-xs:4px;--s-sm:8px;--s-md:12px;--s-card:14px;--s-lg:16px;--s-xl:24px;--s-xxl:32px;
+  --b-thin:1.5px;--b-ink:2px;--b-heavy:3px;
+  --shadow:4px 4px 0 var(--ink);--shadow-sm:2px 2px 0 var(--ink);
+  --f-whimsy:'Caprasimo',Georgia,serif;--f-display:'Fredoka','Nunito',sans-serif;--f-body:'Nunito',sans-serif;--f-hand:'Patrick Hand','Nunito',cursive;
+  --tap:44px;
+  /* washes of existing tokens (barkText, dirtDeep, paper) for chalk and cork; no new hues */
+  --chalkWash:rgba(255,243,226,.08);--chalkBand:rgba(255,243,226,.1);--chalkGlow:rgba(255,243,226,.35);
+  --corkSpeck:rgba(116,68,30,.34);--corkSpeck2:rgba(141,90,44,.28);--corkLight:rgba(255,250,240,.3);
+}
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--cream2);color:var(--ink);font-family:var(--f-body);font-weight:700;font-size:15px;line-height:21px;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+img{display:block}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* type roles (TYPE) */
+.hero{font-family:var(--f-display);font-weight:700;font-size:44px;line-height:48px}
+.pageTitle{font-family:var(--f-whimsy);font-weight:400;font-size:26px;line-height:28px;margin:0}
+.sectionTitle{font-family:var(--f-whimsy);font-weight:400;font-size:22px;line-height:24px;letter-spacing:.2px;margin:0}
+.cardTitle{font-family:var(--f-whimsy);font-weight:400;font-size:18px;line-height:22px;letter-spacing:.2px;margin:0}
+.cardTitleSm{font-family:var(--f-whimsy);font-weight:400;font-size:15px;line-height:20px;letter-spacing:.2px}
+.numeralLg{font-family:var(--f-whimsy);font-weight:400;font-size:26px;line-height:28px}
+.numeral{font-family:var(--f-whimsy);font-weight:400;font-size:16px;line-height:20px}
+.numIn{font-family:var(--f-whimsy);font-weight:400;font-size:1.06em;letter-spacing:.2px}
+.bodySm{font-size:13px;line-height:18px}
+.label{font-weight:800;font-size:12px;line-height:16px;letter-spacing:.3px}
+.kicker{font-family:var(--f-hand);font-weight:400;font-size:13px;line-height:18px;letter-spacing:.4px}
+.handT{font-family:var(--f-hand);font-weight:400;font-size:14px;line-height:19px}
+.handLg{font-family:var(--f-hand);font-weight:400;font-size:17px;line-height:23px}
+.kickerPill{font-weight:800;font-size:11px;line-height:14px;letter-spacing:1.6px;text-transform:uppercase}
+.mute{color:var(--fgMute,var(--mute))}
+.kick{color:var(--kick,var(--accent))}
+.up{color:var(--upInk,var(--success))}
+.down{color:var(--downInk,var(--danger))}
+p{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+.coinMark{flex:none;display:inline-block;vertical-align:-2px}
+.cmFace{fill:var(--paper);stroke:var(--ink);stroke-width:2.4}
+.cmRing{fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:2.2 1.8;opacity:.45}
+.cmChip{fill:var(--rose);stroke:var(--ink);stroke-width:1.4}
+.pr{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.tnum{display:inline-block;font-variant-numeric:tabular-nums}
+.tnum.nUp{animation:nUp .9s ease-out}
+.tnum.nDown{animation:nDown .9s ease-out}
+@keyframes nUp{0%{color:var(--upInk,var(--success));transform:translateY(-2px) scale(1.12)}100%{transform:none}}
+@keyframes nDown{0%{color:var(--downInk,var(--danger));transform:translateY(2px) scale(1.12)}100%{transform:none}}
+
+/* buttons (real <button>s, 44px targets) */
+.btn{appearance:none;-webkit-appearance:none;margin:0;cursor:pointer;color:var(--ink);background:var(--paper);border:var(--b-ink) solid var(--ink);border-radius:var(--r-xxl);min-height:var(--tap);padding:0 var(--s-card);font-weight:800;font-size:14px;line-height:18px;display:inline-flex;align-items:center;justify-content:center;gap:var(--s-xs);box-shadow:var(--shadow-sm);transition:transform .12s cubic-bezier(.3,1.6,.5,1),box-shadow .12s}
+.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:none}
+.btn:disabled{cursor:default;background:var(--cream);color:var(--muteDim);box-shadow:none;border-color:var(--muteSoft)}
+.btn.sun{background:var(--sun)}
+.btn.cream{background:var(--cream)}
+.btn.sage{background:var(--sage)}
+.btn.rose{background:var(--rose)}
+.btn.lilac{background:var(--lilac)}
+.btn.flat{box-shadow:none}
+.btn.pill{border-radius:var(--r-pill)}
+.btn.x{width:var(--tap);min-width:var(--tap);padding:0;border-radius:var(--r-pill);box-shadow:none;background:var(--cream)}
+.btn.link{background:transparent;border-color:transparent;box-shadow:none;text-decoration:underline;text-underline-offset:3px}
+.seg{display:inline-flex;border:var(--b-ink) solid var(--ink);border-radius:var(--r-pill);overflow:hidden;background:var(--cream);box-shadow:var(--shadow-sm);color:var(--ink)}
+.seg button{appearance:none;border:0;background:transparent;min-height:var(--tap);min-width:var(--tap);padding:0 12px;font-weight:800;font-size:13px;cursor:pointer;color:var(--ink);border-left:var(--b-ink) solid var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--sun)}
+.seg.full{display:flex;width:100%}
+.seg.full button{flex:1;padding:0 6px}
+
+/* page layout: the phone and the side panel */
+.stage{display:flex;gap:40px;align-items:flex-start;justify-content:center;padding:28px 24px 56px}
+.phoneWrap{flex:none;position:sticky;top:20px}
+.bezel{width:414px;height:868px;border-radius:58px;background:var(--ink);padding:12px;box-shadow:6px 6px 0 var(--dirtDeep)}
+.phone{position:relative;width:390px;height:844px;border-radius:46px;overflow:hidden;display:flex;flex-direction:column;background:var(--app);color:var(--fg);
+  --app:var(--paper);--fg:var(--ink);--fgMute:var(--mute);--kick:var(--accent);--card:var(--paper);--cardBorder:var(--b-ink) solid var(--ink);--cardShadow:var(--shadow-sm);--rowLine:var(--well)}
+.statusbar{flex:none;height:34px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0;font-weight:800;font-size:14px;color:var(--fg);position:relative;z-index:3;background:var(--paper)}
+.statusbar .sDay{font-family:var(--f-hand);font-weight:400;font-size:14px}
+.appbar{flex:none;position:relative;z-index:2;padding:4px 16px 8px;display:flex;align-items:center;justify-content:space-between;gap:var(--s-md);min-height:78px;background:var(--paper);border-bottom:var(--b-ink) solid var(--ink)}
+.crown{min-width:0}
+.crown .rule{height:2px;width:72px;background:var(--fg);border-radius:var(--r-hair);margin-top:6px}
+.scroller{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px 24px;scrollbar-width:none;position:relative}
+.scroller::-webkit-scrollbar{display:none}
+.actionbar{flex:none;padding:10px 16px 26px;border-top:var(--b-ink) solid var(--ink);background:var(--paper);position:relative;z-index:2}
+.actionbar[hidden]{display:none}
+.abGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.abGrid .btn{min-height:52px;flex-direction:column;gap:0;line-height:16px}
+.abGrid .btn.half{min-height:var(--tap);flex-direction:row;grid-column:1 / 3}
+.abGrid .btn.solo{grid-column:1 / 3;min-height:54px;flex-direction:row;font-size:16px;border-radius:var(--r-pill)}
+.abL{font-weight:900;font-size:15px;display:inline-flex;align-items:center;gap:4px}
+.abS{font-family:var(--f-hand);font-weight:400;font-size:13px;line-height:16px}
+
+/* cards */
+.card{background:var(--card);border:var(--cardBorder);box-shadow:var(--cardShadow);border-radius:var(--r-lg);color:var(--fg);padding:var(--s-md) var(--s-card)}
+.card + .card,.gapT{margin-top:var(--s-md)}
+.tiltL{transform:rotate(-1deg)}
+.tiltR{transform:rotate(.7deg)}
+.cardHead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-sm);margin-bottom:var(--s-sm)}
+.secHead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-sm);margin:var(--s-lg) 0 var(--s-sm)}
+.foot{margin-top:var(--s-lg);text-align:center}
+
+/* the coin (TickleCoin, small) */
+.coinBox{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
+.coin{position:relative;width:58px;height:58px;border-radius:var(--r-pill);border:var(--b-heavy) solid var(--ink);background:var(--paper);box-shadow:var(--shadow);transform:rotate(4deg);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink)}
+.coinRing{position:absolute;inset:4px;border-radius:var(--r-pill);border:var(--b-ink) dashed var(--ink);opacity:.3}
+.coinChip{position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:var(--r-pill);border:var(--b-ink) solid var(--ink);background:var(--rose);box-shadow:var(--shadow-sm);transform:rotate(-8deg);display:flex;align-items:center;justify-content:center}
+.coinN{font-family:var(--f-whimsy);font-size:22px;line-height:24px;margin-top:-2px}
+.coinCap{font-family:var(--f-hand);font-size:12px;line-height:13px;color:var(--mute);margin-top:-1px}
+.coinLab{font-family:var(--f-hand);font-size:13px;line-height:15px;color:var(--fg);white-space:nowrap}
+.coin.bump{animation:bump .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bump{0%{transform:rotate(4deg) scale(1)}40%{transform:rotate(-3deg) scale(1.14)}100%{transform:rotate(4deg) scale(1)}}
+
+/* faces */
+.face{position:relative;display:inline-block;flex:none;border-radius:var(--r-pill);overflow:hidden;border:var(--b-thin) solid var(--ink);background:var(--cream)}
+.face img{position:absolute;max-width:none}
+.back{display:inline-flex;align-items:center;gap:6px;background:var(--cream);border-radius:var(--r-pill);padding:0 16px 0 12px;box-shadow:none}
+.back .chev{font-family:var(--f-whimsy);font-size:20px;line-height:20px;margin-top:-2px}
+
+/* tags and chips */
+.tag{display:inline-flex;align-items:center;gap:3px;border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);padding:0 7px;font-weight:800;font-size:10px;line-height:16px;letter-spacing:.8px;text-transform:uppercase;background:var(--sun);color:var(--ink);white-space:nowrap;flex:none}
+.vs{display:inline-flex;align-items:center;border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);padding:0 8px;font-weight:800;font-size:11px;line-height:17px;white-space:nowrap;color:var(--ink);background:var(--cream)}
+.vs.under{background:var(--sage)}.vs.over{background:var(--rose)}.vs.at{background:var(--tape)}
+
+/* ── places: the paper market, the chalk counter, the cork noticeboard ── */
+.chalkVars{--fg:var(--barkText);--fgMute:var(--barkMute);--kick:var(--sun);--rowLine:var(--chalkRule);--upInk:var(--sage);--downInk:var(--roseDeep);--card:transparent;--cardBorder:var(--b-ink) dashed var(--chalkRule);--cardShadow:none}
+.phone.place-chalk{--app:var(--bark) url(img/slate.jpg) 0 0/395px auto repeat}
+.phone.place-cork{--app:var(--cork)}
+.place-chalk .statusbar,.place-cork .statusbar{background:var(--dirt);color:var(--barkText)}
+.place-chalk .appbar,.place-cork .appbar{background:var(--dirt);border-bottom:var(--b-heavy) solid var(--ink);box-shadow:inset 0 -6px 0 var(--dirtDeep)}
+.place-chalk .coinLab,.place-cork .coinLab{color:var(--barkText)}
+.place-chalk .actionbar,.place-cork .actionbar{background:var(--dirt);border-top:var(--b-heavy) solid var(--ink);box-shadow:inset 0 6px 0 var(--dirtDeep)}
+.corkBg,.place-cork .scroller{background:
+  radial-gradient(circle at 30% 40%,var(--corkSpeck) 0 1.3px,transparent 1.8px) 0 0/11px 13px,
+  radial-gradient(circle at 70% 70%,var(--corkSpeck2) 0 1.1px,transparent 1.6px) 3px 5px/17px 15px,
+  radial-gradient(circle at 50% 20%,var(--corkLight) 0 1px,transparent 1.5px) 6px 2px/19px 23px,
+  var(--cork)}
+.chalkT{font-family:var(--f-hand);font-weight:400;color:var(--fg);text-shadow:0 0 1px var(--chalkGlow)}
+.chalkTitle{font-family:var(--f-hand);font-weight:400;font-size:36px;line-height:38px;margin:0;color:var(--fg);text-shadow:0 0 1px var(--chalkGlow);letter-spacing:.3px}
+.chalkLine{font-family:var(--f-hand);font-weight:400;font-size:15px;line-height:20px;color:var(--fg)}
+.chalkLine.mute{color:var(--fgMute)}
+.chalkRule{height:0;border-top:var(--b-ink) dashed var(--chalkRule);margin:10px 0}
+/* paper keeps paper ink wherever it sits */
+.sheet,.toast,.btn,.paper,.tag,.vs,.seg,.pcard,.note,.coachBubble,.ticker{--fg:var(--ink);--fgMute:var(--mute);--kick:var(--accent);--card:var(--paper);--cardBorder:var(--b-ink) solid var(--ink);--cardShadow:var(--shadow-sm);--rowLine:var(--well);--upInk:var(--success);--downInk:var(--danger)}
+.paper{background:var(--paper);color:var(--ink);border:var(--b-ink) solid var(--ink);box-shadow:var(--shadow-sm);border-radius:var(--r-lg);padding:var(--s-md) var(--s-card)}
+
+/* ── home (a stub of the fan row, for the "new here?" tag) ── */
+.homeRosie{display:flex;align-items:flex-end;gap:10px;margin:4px 0 14px}
+.homeRosie img{width:120px;height:120px;object-fit:contain}
+.fanTiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fanTile{appearance:none;cursor:pointer;position:relative;border:var(--b-ink) solid var(--ink);border-radius:var(--r-lg);background:var(--paper);box-shadow:var(--shadow-sm);padding:10px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;color:var(--ink);min-height:150px}
+.fanTile img{width:84px;height:84px;object-fit:contain}
+.fanTile:active{transform:translate(2px,2px);box-shadow:none}
+.fanTile.off{cursor:default;background:var(--cream);box-shadow:none;border-color:var(--muteSoft)}
+.newTag{position:absolute;top:-10px;right:-6px;transform:rotate(6deg);box-shadow:var(--shadow-sm);font-size:11px;line-height:18px;padding:0 9px}
+
+/* ── the market home ── */
+.bull{display:flex;align-items:center;gap:6px;margin:2px 0 var(--s-md)}
+.bull img{width:86px;height:86px;object-fit:contain;flex:none;margin-left:-6px}
+.say{flex:1;min-width:0;padding:var(--s-sm) var(--s-md);border-radius:var(--r-xl)}
+.ledger{display:flex;align-items:center;justify-content:space-between;gap:var(--s-sm);padding:var(--s-sm) var(--s-sm) var(--s-sm) var(--s-card);background:var(--cream)}
+.ledgerLine{font-weight:800;font-size:13px;line-height:18px;margin-top:2px}
+.ticker{margin:var(--s-md) -16px 0;height:36px;background:var(--cream);border-top:var(--b-ink) solid var(--ink);border-bottom:var(--b-ink) solid var(--ink);display:flex;align-items:center;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;color:var(--ink)}
+.ticker::-webkit-scrollbar{display:none}
+.tk{flex:none;display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 10px;white-space:nowrap;font-weight:800;font-size:11px;line-height:14px;letter-spacing:1.1px;text-transform:uppercase;border-right:var(--b-thin) dashed var(--muteSoft)}
+.tk img{width:18px;height:18px}
+.tk .tTag{background:var(--tape);border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);padding:0 6px;letter-spacing:.8px;font-size:10px}
+.tk .tYou{background:var(--sun)}.tk .tCounter{background:var(--sage)}.tk .tPig{background:var(--rose)}.tk .tSwap{background:var(--lilac)}
+.tk.new{animation:tkIn .9s ease-out}
+@keyframes tkIn{0%{background:var(--sun)}100%{background:transparent}}
+.places{display:flex;flex-direction:column;gap:16px;margin-top:var(--s-lg)}
+.placeTile{appearance:none;cursor:pointer;position:relative;display:grid;grid-template-columns:118px 1fr;gap:10px;align-items:center;text-align:left;width:100%;min-height:150px;padding:10px 12px 10px 6px;border:var(--b-heavy) solid var(--ink);border-radius:var(--r-lg);box-shadow:var(--shadow);transition:transform .12s cubic-bezier(.3,1.6,.5,1),box-shadow .12s}
+.placeTile:active{transform:translate(3px,3px) !important;box-shadow:none}
+.placeTile .ptArt{width:118px;height:118px;object-fit:contain}
+.placeTile .ptText{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pt-counter{background:var(--bark) url(img/slate.jpg) 0 0/395px auto;box-shadow:inset 0 0 0 6px var(--dirt),inset 0 0 0 8px var(--dirtDeep),var(--shadow);transform:rotate(-.6deg);color:var(--barkText);padding-left:12px}
+.pt-counter .kickerPill{color:var(--sun)}
+.pt-counter .ptTitle{font-family:var(--f-hand);font-size:32px;line-height:34px;text-shadow:0 0 1px var(--chalkGlow)}
+.pt-counter .ptLine{font-family:var(--f-hand);font-size:15px;line-height:19px}
+.pt-counter .ptStat{font-family:var(--f-hand);font-size:14px;line-height:18px;color:var(--barkMute)}
+.pt-board{box-shadow:inset 0 0 0 6px var(--dirt),inset 0 0 0 8px var(--dirtDeep),var(--shadow);transform:rotate(.5deg);color:var(--ink);padding-left:12px}
+.pt-board .ptText{background:var(--paper);border:var(--b-ink) solid var(--ink);border-radius:var(--r-sm);padding:8px 10px;box-shadow:var(--shadow-sm);transform:rotate(-1.2deg);position:relative}
+.pt-board .ptText::before{content:"";position:absolute;top:-8px;left:50%;margin-left:-8px;width:15px;height:15px;border-radius:var(--r-pill);background:var(--accent);border:var(--b-thin) solid var(--ink);box-shadow:1px 2px 0 var(--ink)}
+.pt-board .kickerPill{color:var(--accent)}
+.pt-board .ptTitle{font-family:var(--f-whimsy);font-size:20px;line-height:24px}
+.pt-board .ptLine{font-size:13px;line-height:17px}
+.pt-board .ptStat{font-family:var(--f-hand);font-size:14px;line-height:18px;color:var(--mute);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mineRow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:var(--b-thin) dashed var(--rowLine)}
+.mineRow:first-of-type{border-top:0}
+.mineRow img{width:30px;height:30px;object-fit:contain;flex:none}
+.mineRow .mT{flex:1;min-width:0}
+.mineRow .mSub{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+
+/* ── the counter (chalk) ── */
+.placeHead{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-bottom:6px}
+.placeHead .phArt{width:104px;height:104px;object-fit:contain;margin-left:-8px}
+.boardKey{display:grid;grid-template-columns:46px 1fr 74px 70px;gap:8px;padding:0 6px 2px;font-family:var(--f-hand);font-size:13px;color:var(--fgMute)}
+.boardKey span:nth-child(3),.boardKey span:nth-child(4){text-align:right;justify-self:end;white-space:nowrap}
+.crows{display:flex;flex-direction:column;border-top:var(--b-ink) solid var(--chalkRule)}
+.crow{appearance:none;cursor:pointer;width:100%;display:grid;grid-template-columns:46px 1fr 74px 70px;gap:8px;align-items:center;min-height:62px;padding:6px;border:0;border-bottom:var(--b-ink) dashed var(--chalkRule);background:transparent;color:var(--fg);text-align:left;border-radius:var(--r-sm);position:relative}
+.crow:hover{background:var(--chalkWash)}
+.crow.fancy{background:var(--chalkBand)}
+.crow.flash{animation:flash 1.2s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--sun)}100%{box-shadow:0 0 0 0 transparent}}
+.crG{position:relative;width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+.crG .gl{width:42px;height:42px;object-fit:contain}
+.fancyStar{position:absolute;right:-5px;top:-5px;width:22px;height:22px;border-radius:var(--r-pill);background:var(--sun);border:var(--b-thin) solid var(--ink);display:flex;align-items:center;justify-content:center;transform:rotate(10deg);z-index:1}
+.crName{min-width:0;display:flex;flex-direction:column}
+.chalkName{font-family:var(--f-hand);font-size:20px;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 1px var(--chalkGlow)}
+.chalkSub{font-family:var(--f-hand);font-size:13px;line-height:16px;color:var(--fgMute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crPrice{display:flex;flex-direction:column;align-items:flex-end}
+.chalkNum{font-family:var(--f-hand);font-size:28px;line-height:28px;text-shadow:0 0 1px var(--chalkGlow)}
+.crSpark{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.spark{display:block;overflow:visible}
+.spark .spU{stroke:var(--fgMute);stroke-width:1;stroke-dasharray:2 3;opacity:.6}
+.spark .spL{fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.spark .spD{fill:var(--sun);stroke:var(--ink);stroke-width:1;animation:dotPulse .9s ease-out}
+@keyframes dotPulse{0%{r:5}100%{r:2.6}}
+.chg{font-family:var(--f-hand);font-size:13px;line-height:15px;white-space:nowrap}
+.chg.up{color:var(--upInk)}.chg.down{color:var(--downInk)}.chg.flat{color:var(--fgMute)}
+.youHave{color:var(--sun)}
+
+/* ── a find at the counter (chalk) ── */
+.fHead{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin-bottom:8px}
+.fHead .gl{width:64px;height:64px;object-fit:contain}
+.fPrice{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+.fPrice .chalkNum{font-size:46px;line-height:46px}
+.chartBox{padding:8px 8px 6px;border:var(--b-ink) dashed var(--chalkRule);border-radius:var(--r-lg);background:var(--chalkWash)}
+.chart{display:block;width:100%;height:auto}
+.chart .cGrid{stroke:var(--fg);stroke-width:1;opacity:.14}
+.chart .cAxT{fill:var(--fgMute);font-family:var(--f-hand);font-size:11px}
+.chart .cDay{stroke:var(--fg);stroke-width:1;stroke-dasharray:2 3;opacity:.35}
+.chart .cGap{fill:var(--chalkBand);stroke:none}
+.chart .cAsk{fill:none;stroke:var(--roseDeep);stroke-width:1.6;stroke-dasharray:5 4}
+.chart .cBid{fill:none;stroke:var(--sage);stroke-width:1.6;stroke-dasharray:5 4}
+.chart .cU{stroke:var(--fgMute);stroke-width:1;stroke-dasharray:1 4;opacity:.8}
+.chart .cAskT{fill:var(--roseDeep);font-family:var(--f-hand);font-size:13px}
+.chart .cBidT{fill:var(--sage);font-family:var(--f-hand);font-size:13px}
+.chart .cPT{fill:var(--fg);font-family:var(--f-hand);font-size:13px}
+.chart .cLine{fill:none;stroke:var(--fg);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.chart .mC{fill:var(--sun);stroke:var(--ink);stroke-width:1}
+.chart .mP{fill:var(--roseDeep);stroke:var(--ink);stroke-width:1}
+.chart .mT{fill:none;stroke:var(--fg);stroke-width:1.2;opacity:.7}
+.chart .cLast{fill:var(--sun);stroke:var(--ink);stroke-width:2;animation:dotPulse2 .9s ease-out}
+@keyframes dotPulse2{0%{r:9}100%{r:5.5}}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px;font-family:var(--f-hand);font-size:13px;color:var(--fgMute)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.dot{width:9px;height:9px;border-radius:var(--r-pill);display:inline-block;border:1px solid var(--ink)}
+.dot.c{background:var(--sun)}.dot.p{background:var(--roseDeep)}.dot.t{background:transparent;border:1.4px solid var(--fg)}
+.dash{width:14px;height:0;border-top:2px solid var(--fg);display:inline-block}
+.quote{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center;margin-top:14px;padding:8px 12px 8px 4px;transform:rotate(-.6deg)}
+.quote img{width:96px;height:96px;object-fit:contain}
+.quote .qBig{font-family:var(--f-hand);font-size:22px;line-height:27px}
+.quote .qBig b{font-family:var(--f-whimsy);font-weight:400;font-size:22px}
+.note{appearance:none;cursor:pointer;display:block;width:100%;text-align:left;position:relative;margin-top:16px;padding:12px 14px 10px;background:var(--paper);border:var(--b-ink) solid var(--ink);border-radius:var(--r-sm);box-shadow:var(--shadow-sm);color:var(--ink);transform:rotate(.8deg);min-height:var(--tap)}
+.note.alt{transform:rotate(-.7deg);background:var(--cream)}
+.note:active{transform:translate(2px,2px);box-shadow:none}
+.note:disabled{cursor:default}
+.note .pin,.pcard .pin{position:absolute;top:-8px;left:50%;margin-left:-8px;width:16px;height:16px;border-radius:var(--r-pill);border:var(--b-thin) solid var(--ink);background:var(--accent);box-shadow:1px 2px 0 var(--ink)}
+.note .nLine{display:flex;align-items:center;gap:8px}
+.note .nLine img{width:30px;height:30px;object-fit:contain}
+.holdCard{margin-top:16px}
+.holdNums{display:flex;gap:18px;margin:2px 0 4px}
+.holdNums div{display:flex;flex-direction:column}
+.holdNums .chalkNum{font-size:30px;line-height:30px}
+.who2{display:flex;align-items:center;gap:10px}
+.who2 > img{width:48px;height:48px;object-fit:contain;flex:none}
+.who2 .wtxt{flex:1;min-width:0}
+.trs li{display:flex;align-items:center;gap:8px;min-height:32px;border-top:var(--b-thin) dashed var(--rowLine);padding:3px 0}
+.trs li:first-child{border-top:0}
+.trs .tm{font-family:var(--f-hand);font-size:13px;color:var(--fgMute);width:40px;flex:none}
+.trs .tw{flex:1;min-width:0;font-family:var(--f-hand);font-size:15px;line-height:18px;color:var(--fg)}
+.trs .tp{flex:none;font-family:var(--f-hand);font-size:17px;color:var(--fg)}
+.ttag{display:inline-block;background:var(--tape);border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);padding:0 6px;font-family:var(--f-body);font-weight:800;font-size:9.5px;line-height:15px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink);margin-left:3px;vertical-align:1px}
+.ttag.c{background:var(--sage)}.ttag.p{background:var(--rose)}.ttag.s{background:var(--lilac)}
+
+/* ── the noticeboard (cork) ── */
+.boardHead{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:12px;padding:10px 12px;transform:rotate(-.8deg)}
+.boardHead img{width:72px;height:72px;object-fit:contain;margin:-6px -4px -6px 0}
+.boardF{margin:4px 0 14px}
+.boardF .seg button{font-size:12px;padding:0 4px}
+.boardF .seg .cnt{font-family:var(--f-whimsy);font-weight:400;font-size:12px}
+.pcards{display:grid;grid-template-columns:1fr 1fr;gap:18px 12px;padding:4px 2px 6px}
+.pcard{position:relative;background:var(--paper);border:var(--b-ink) solid var(--ink);border-radius:var(--r-sm);box-shadow:var(--shadow-sm);padding:14px 9px 9px;display:flex;flex-direction:column;gap:5px;color:var(--ink);min-width:0}
+.pcard:nth-child(4n+1){transform:rotate(-1.1deg)}.pcard:nth-child(4n+2){transform:rotate(.9deg)}.pcard:nth-child(4n+3){transform:rotate(.5deg)}.pcard:nth-child(4n){transform:rotate(-.6deg)}
+.pcard.k-sell .pin{background:var(--roseDeep)}.pcard.k-buy .pin{background:var(--sageInk)}.pcard.k-swap .pin{background:var(--lilac)}
+.pcard.forYou{background:var(--slopBand)}
+.pcard.forYou .pin{display:none}
+.pcard.forYou::before{content:"";position:absolute;top:-10px;left:50%;width:58px;height:18px;margin-left:-29px;background:var(--tape);border:var(--b-thin) solid var(--tapeEdge);transform:rotate(-8deg);opacity:.95}
+.pcard.mine{background:var(--sun)}
+.pcard .kind{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.pcard .kind .kickerPill{font-size:10px;letter-spacing:1.2px}
+.pcard .what{display:flex;align-items:center;gap:6px;min-width:0}
+.pcard .what img{width:34px;height:34px;object-fit:contain;flex:none}
+.pcard .what .wn{font-family:var(--f-whimsy);font-size:14px;line-height:17px;min-width:0}
+.pcard .pp{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap}
+.pcard .who{display:flex;align-items:center;gap:5px;font-weight:800;font-size:12px;line-height:15px;min-width:0}
+.pcard .bull2{font-family:var(--f-hand);font-size:13px;line-height:16px;color:var(--mute)}
+.pcard .btn{min-height:var(--tap);border-radius:var(--r-pill);margin-top:2px;font-size:13px;padding:0 8px}
+.pcard .swapSides{display:flex;flex-direction:column;gap:2px;font-size:12px;line-height:15px}
+.pcard .swapSides span{display:flex;align-items:center;gap:4px}
+.pcard .swapSides img{width:22px;height:22px;object-fit:contain}
+.emptyBoard{text-align:center;padding:24px 16px}
+.emptyBoard img{width:120px;height:120px;object-fit:contain;margin:0 auto 6px}
+
+/* ── sheets ── */
+.sheetLayer{position:absolute;inset:0;z-index:5;pointer-events:none}
+.sheetLayer.open{pointer-events:auto}
+.scrimEl{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity .2s;border:0;width:100%;cursor:pointer}
+.sheetLayer.open .scrimEl{opacity:1}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:91%;display:flex;flex-direction:column;background:var(--paper);color:var(--ink);border-top:var(--b-ink) solid var(--ink);border-radius:var(--r-xxl) var(--r-xxl) 0 0;transform:translateY(102%);transition:transform .32s cubic-bezier(.25,1.25,.45,1)}
+.sheetLayer.open .sheet{transform:translateY(0)}
+.grab{width:44px;height:5px;border-radius:var(--r-pill);background:var(--muteSoft);margin:8px auto 2px}
+.sheetHead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s-sm);padding:4px 16px 8px}
+.sheetBody{overflow-y:auto;padding:0 16px 10px;flex:1}
+.sheetFoot{padding:10px 16px 26px;border-top:var(--b-ink) solid var(--ink);background:var(--cream)}
+.sheetFoot .btn{width:100%;min-height:54px;border-radius:var(--r-pill);font-size:17px;font-weight:900}
+.sheetFoot .two{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.sheetFoot .two .btn{font-size:15px}
+.stepper{display:grid;grid-template-columns:var(--tap) 1fr var(--tap);gap:10px;align-items:center;margin:8px 0 4px}
+.stepper .btn{width:var(--tap);padding:0;border-radius:var(--r-pill)}
+.stepVal{text-align:center}
+.err{margin-top:8px;color:var(--danger);font-weight:800;font-size:13px}
+/* the confirm: the price move before you tap */
+.cfTop{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center}
+.cfTop img{width:96px;height:96px;object-fit:contain}
+.cfBig{font-family:var(--f-whimsy);font-size:24px;line-height:30px}
+.cfMove{font-family:var(--f-hand);font-size:19px;line-height:24px;margin-top:2px}
+.move{position:relative;margin:18px 6px 6px;height:58px}
+.move .mTrack{position:absolute;left:0;right:0;top:22px;height:12px;border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);background:var(--cream);overflow:hidden}
+.move .mGap{position:absolute;top:0;bottom:0;background:var(--sage)}
+.move .mMark{position:absolute;top:10px;width:0;height:36px}
+.move .mMark i{position:absolute;left:-8px;top:8px;width:16px;height:16px;border-radius:var(--r-pill);border:var(--b-ink) solid var(--ink);background:var(--paper)}
+.move .mMark.to i{background:var(--sun);animation:breathe 1.4s ease-in-out infinite}
+.move .mMark b{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:var(--f-hand);font-weight:400;font-size:13px;white-space:nowrap}
+.move .mMark.to b{top:auto;bottom:-14px}
+.move .mArrow{position:absolute;top:27px;height:2px;background:var(--ink)}
+.move .uLab{position:absolute;bottom:-16px;font-family:var(--f-hand);font-size:12px;color:var(--mute);transform:translateX(-50%);white-space:nowrap}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.hintBox{margin-top:18px;padding:10px 12px;border-radius:var(--r-md);background:var(--cream);border:var(--b-ink) dashed var(--ink);display:flex;align-items:center;gap:10px}
+.hintBox .hT{flex:1;min-width:0}
+.hintBox .btn{flex:none}
+/* the post sheet */
+.fpick{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:thin;margin:0 -2px}
+.fbtn{appearance:none;cursor:pointer;flex:none;width:68px;min-height:72px;border:var(--b-ink) solid var(--ink);border-radius:var(--r-md);background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;font-weight:800;font-size:10px;line-height:12px;color:var(--ink)}
+.fbtn img{width:30px;height:30px;object-fit:contain}
+.fbtn .fh{font-family:var(--f-hand);font-weight:400;font-size:12px;color:var(--mute)}
+.fbtn[aria-pressed="true"]{background:var(--sun);box-shadow:var(--shadow-sm)}
+.fbtn:disabled{cursor:default;background:var(--cream);border-color:var(--muteSoft);color:var(--muteDim)}
+.fbtn:disabled img{opacity:.45}
+.lab2{margin:10px 0 4px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.bigPrice{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 0}
+.bigPrice .hero{line-height:46px}
+.slider{position:relative;height:62px;margin:6px 4px 0}
+.slider .slTrack{position:absolute;left:14px;right:14px;top:16px;height:14px;border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);overflow:hidden;background:var(--cream)}
+.slider .zone{position:absolute;top:0;bottom:0}
+.slider .zCross{background:var(--tape)}
+.slider .zGap{background:var(--sage)}
+.slider .zSit{background:repeating-linear-gradient(45deg,var(--cream) 0 5px,var(--cream2) 5px 10px)}
+.slider input{position:absolute;left:0;right:0;top:0;width:100%;height:46px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+.slider input::-webkit-slider-runnable-track{height:46px;background:transparent}
+.slider input::-moz-range-track{height:46px;background:transparent}
+.slider input::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:9px;border-radius:var(--r-pill);background:var(--sun);border:var(--b-ink) solid var(--ink);box-shadow:var(--shadow-sm)}
+.slider input::-moz-range-thumb{width:26px;height:26px;border-radius:var(--r-pill);background:var(--sun);border:var(--b-ink) solid var(--ink);box-shadow:var(--shadow-sm)}
+.slider .slMark{position:absolute;top:34px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;font-family:var(--f-hand);font-size:13px;line-height:15px;white-space:nowrap;pointer-events:none}
+.slider .slMark i{width:2px;height:8px;background:var(--ink);margin-bottom:2px}
+.slider .slMark.mid i{height:12px;background:var(--accent)}
+.slider .slMark.mid{color:var(--accent);top:30px}
+.verdict{margin-top:10px;padding:8px 12px;border-radius:var(--r-md);background:var(--cream);border:var(--b-ink) solid var(--ink)}
+.verdict.warn{background:var(--tape)}
+.verdict.good{background:var(--sage)}
+.verdict .handLg{display:block}
+.toRow{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-top:12px}
+.swapLine{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0;font-weight:800;font-size:14px}
+.swapLine img{width:30px;height:30px;object-fit:contain}
+.swapVals{text-align:center;font-family:var(--f-hand);font-size:16px;line-height:21px}
+.bagGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
+.bagT{appearance:none;cursor:pointer;border:var(--b-ink) solid var(--ink);border-radius:var(--r-lg);background:var(--paper);box-shadow:var(--shadow-sm);padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--ink);min-height:120px}
+.bagT img{width:40px;height:40px;object-fit:contain}
+.bagT .bn{font-family:var(--f-whimsy);font-size:22px;line-height:24px}
+.bagT.zero{background:var(--cream);box-shadow:none;border-color:var(--muteSoft)}
+.bagT .bc{font-family:var(--f-hand);font-size:12px;line-height:14px;color:var(--mute);text-align:center}
+
+/* ── onboarding ── */
+.obSheet{max-height:94%}
+.obDots{display:flex;gap:6px;align-items:center}
+.obDots i{width:10px;height:10px;border-radius:var(--r-pill);border:var(--b-thin) solid var(--ink);background:var(--cream)}
+.obDots i.on{background:var(--sun);width:22px}
+.obArt{display:flex;justify-content:center;margin:2px 0 8px;position:relative}
+.obArt > img{width:200px;height:200px;object-fit:contain}
+.obTitle{font-family:var(--f-whimsy);font-weight:400;font-size:24px;line-height:28px;margin:0 0 8px;text-align:center}
+.obSay{position:relative;padding:10px 14px;border-radius:var(--r-xl);transform:rotate(-.6deg)}
+.obSay::before{content:"";position:absolute;top:-9px;left:50%;margin-left:-8px;width:16px;height:16px;background:var(--paper);border-left:var(--b-ink) solid var(--ink);border-top:var(--b-ink) solid var(--ink);transform:rotate(45deg)}
+.slatePanel{background:var(--bark) url(img/slate.jpg) 0 0/395px auto;border:var(--b-heavy) solid var(--ink);box-shadow:inset 0 0 0 5px var(--dirt),var(--shadow-sm);border-radius:var(--r-md);padding:14px 14px 8px;width:100%;color:var(--barkText)}
+.slatePanel .spRow{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.slatePanel .spRow img{width:56px;height:56px;object-fit:contain}
+.miniBoard{position:relative;width:100%;height:214px;border:var(--b-heavy) solid var(--ink);border-radius:var(--r-md);box-shadow:inset 0 0 0 6px var(--dirt),inset 0 0 0 8px var(--dirtDeep),var(--shadow-sm);overflow:hidden}
+.miniBoard .pcard{position:absolute;width:150px}
+.miniBoard .pcard:first-child{left:18px;top:24px;transform:rotate(-2deg)}
+.miniBoard .pcard:last-child{right:18px;top:40px;transform:rotate(2.2deg)}
+
+/* ── the coach mark ── */
+.coachLayer{position:absolute;inset:0;z-index:4;pointer-events:none}
+.coachLayer.on{pointer-events:auto}
+.coachSpot{position:absolute;border-radius:var(--r-md);box-shadow:0 0 0 2000px var(--scrim);border:var(--b-heavy) solid var(--sun);transition:all .25s ease}
+.coachBubble{position:absolute;left:14px;right:14px;background:var(--paper);border:var(--b-ink) solid var(--ink);box-shadow:var(--shadow);border-radius:var(--r-xl);padding:10px 12px 12px;color:var(--ink);animation:tIn .45s cubic-bezier(.3,1.5,.5,1)}
+.coachBubble .cbTop{display:grid;grid-template-columns:64px 1fr;gap:8px;align-items:center}
+.coachBubble .cbTop img{width:64px;height:64px;object-fit:contain}
+.coachBubble .cbBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.coachBubble .cbBtns .btn{border-radius:var(--r-pill);font-size:14px}
+.coachBubble .cbLater{display:flex;justify-content:center;margin-top:4px}
+.coachBubble .arrowUp,.coachBubble .arrowDown{position:absolute;left:70px;width:16px;height:16px;background:var(--paper);transform:rotate(45deg)}
+.coachBubble .arrowUp{top:-9px;border-left:var(--b-ink) solid var(--ink);border-top:var(--b-ink) solid var(--ink)}
+.coachBubble .arrowDown{bottom:-9px;border-right:var(--b-ink) solid var(--ink);border-bottom:var(--b-ink) solid var(--ink)}
+
+/* toasts (receipts and one-time moments) */
+.toasts{position:absolute;left:10px;right:10px;top:40px;z-index:8;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;position:relative;display:flex;align-items:center;gap:8px;background:var(--paper);color:var(--ink);border:var(--b-ink) solid var(--ink);box-shadow:var(--shadow);border-radius:var(--r-xl);padding:8px 6px 8px 8px;animation:tIn .45s cubic-bezier(.3,1.5,.5,1)}
+.toast.meh{background:var(--cream)}
+.toast.moment{background:var(--slopBand)}
+.toast .tImg{width:60px;height:60px;object-fit:contain;flex:none}
+.toast .tTxt{flex:1;min-width:0}
+.toast .tLine{margin-top:2px}
+.toast.withRibbon{margin-top:16px}
+.ribbon{position:absolute;top:-16px;left:62px;background:var(--sun);border:var(--b-ink) solid var(--ink);box-shadow:var(--shadow-sm);padding:2px 14px;font-weight:900;font-size:11px;line-height:16px;letter-spacing:1.4px;text-transform:uppercase;transform:rotate(-2.5deg);border-radius:var(--r-sm);white-space:nowrap}
+@keyframes tIn{0%{transform:translateY(-30px) rotate(-2deg);opacity:0}100%{transform:none;opacity:1}}
+
+/* side panel */
+.panel{width:368px;flex:none;display:flex;flex-direction:column;gap:16px}
+.panel .card{--fg:var(--ink);--card:var(--paper);--cardBorder:var(--b-ink) solid var(--ink);--cardShadow:var(--shadow-sm);--rowLine:var(--well)}
+.panel .lead{box-shadow:var(--shadow);transform:rotate(-.6deg)}
+.tries{counter-reset:t;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.tries li{counter-increment:t;display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start;font-size:14px;line-height:19px}
+.tries li::before{content:counter(t);font-family:var(--f-whimsy);width:24px;height:24px;border-radius:var(--r-pill);background:var(--sun);border:var(--b-ink) solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1}
+.clock{font-family:var(--f-whimsy);font-size:22px;line-height:26px;margin-top:2px}
+.tickbar{height:8px;border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);background:var(--cream);margin:8px 0 12px;overflow:hidden}
+.tickbar span{display:block;height:100%;width:0;background:var(--sun)}
+.tickbar span.run{animation:fillbar linear forwards}
+@keyframes fillbar{from{width:0}to{width:100%}}
+.ctl{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.tapeHead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tape{margin-top:10px;max-height:470px;overflow-y:auto;border-top:var(--b-ink) solid var(--ink);padding-top:4px}
+.tape li{display:grid;grid-template-columns:40px 66px 1fr;gap:6px;align-items:start;padding:5px 0;border-bottom:var(--b-thin) dashed var(--well);font-size:13px;line-height:17px}
+.tape li.dim{color:var(--mute)}
+.tape li.youRow{background:var(--slopBand)}
+.tape .tt{font-family:var(--f-hand);font-size:13px;color:var(--mute)}
+.lb{justify-self:start;border:var(--b-thin) solid var(--ink);border-radius:var(--r-pill);padding:0 6px;font-weight:900;font-size:9.5px;line-height:15px;letter-spacing:1px;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.lb.TOWN{background:var(--tape)}.lb.PIGS{background:var(--rose)}.lb.YOU{background:var(--sun)}.lb.POST{background:var(--cream)}.lb.SWAP{background:var(--lilac)}.lb.SHEEP{background:var(--sky)}.lb.COUNTER{background:var(--sage)}
+.tape img{width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:2px}
+.simNote{font-family:var(--f-hand);font-size:14px;line-height:19px;color:var(--mute)}
+
+@media (max-width:820px){
+  .stage{flex-direction:column;align-items:center;padding:16px 8px 40px}
+  .phoneWrap{position:static}
+  .panel{width:min(100%,414px)}
+}
+@media (max-width:430px){
+  .bezel{width:100%;height:auto;padding:0;border-radius:0;box-shadow:none;background:none}
+  .phone{width:100%;border-radius:0;border:var(--b-ink) solid var(--ink)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<main class="stage">
+  <div class="phoneWrap">
+    <div class="bezel">
+      <div class="phone place-paper" id="phone" aria-label="Tickle the Pig, Bullion's Market">
+        <div class="statusbar"><span id="sTime">14:30</span><span class="sDay" id="sDay">Thursday</span></div>
+        <header class="appbar" id="appbar"></header>
+        <div class="scroller" id="scroller"></div>
+        <div class="actionbar" id="actionbar" hidden></div>
+        <div class="coachLayer" id="coachLayer"></div>
+        <div class="sheetLayer" id="sheetLayer"></div>
+        <div class="toasts" id="toasts" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+  <aside class="panel" aria-label="Prototype controls">
+    <section class="card lead">
+      <div class="kickerPill kick">&#9733; Bullion's Market &middot; playable prototype</div>
+      <h1 class="pageTitle" style="margin-top:4px">Try the two-part market</h1>
+      <ol class="tries" id="tries">
+        <li><span><b>Sell a set instantly and watch the price move.</b> Open the Counter, tap <b>pinecones</b>, Sell: the confirm shows where the price goes before you tap.</span></li>
+        <li><span><b>List a set between Bullion's prices and sell high to a pig.</b> On the Noticeboard, Post a listing and keep the slider in the green gap.</span></li>
+        <li><span><b>Swap straight up, or offer a set to Maya.</b> Post a listing, pick Swap, or send it to Just Maya. Biscuit has an offer waiting for you too.</span></li>
+      </ol>
+    </section>
+    <section class="card">
+      <div class="kicker mute">the market clock</div>
+      <div class="clock" id="clock">Thursday 14:30 &middot; day 1</div>
+      <div class="tickbar" aria-hidden="true"><span id="tickfill"></span></div>
+      <div class="ctl"><span class="label">Speed</span>
+        <div class="seg" role="group" aria-label="Speed" id="speedSeg">
+          <button type="button" data-act="speed" data-speed="0" aria-pressed="false">Pause</button><button type="button" data-act="speed" data-speed="1" aria-pressed="true">1x</button><button type="button" data-act="speed" data-speed="4" aria-pressed="false">4x</button><button type="button" data-act="speed" data-speed="16" aria-pressed="false">16x</button>
+        </div>
+      </div>
+      <div class="ctl"><span class="handT mute">1x is half an hour every 2.5 seconds. Watch a quiet price wander home at 16x.</span></div>
+      <div class="ctl">
+        <button type="button" class="btn pill cream" data-act="reset">Reset the day</button>
+        <button type="button" class="btn pill sun" data-act="replay-onboarding">Replay onboarding</button>
+      </div>
+    </section>
+    <section class="card">
+      <div class="tapeHead">
+        <h2 class="sectionTitle">The tape</h2>
+        <div class="seg" role="group" aria-label="What the tape shows" id="tapeSeg">
+          <button type="button" data-act="tape" data-f="all" aria-pressed="true">Everything</button><button type="button" data-act="tape" data-f="trades" aria-pressed="false">Trades</button><button type="button" data-act="tape" data-f="find" aria-pressed="false" id="tapeFindBtn">This find</button>
+        </div>
+      </div>
+      <ul class="tape" id="tape"></ul>
+    </section>
+    <p class="simNote" id="simNote"></p>
+  </aside>
+</main>
+<noscript><p style="padding:24px">This prototype needs JavaScript.</p></noscript>
+<script src="engine.js"></script>
+<script>
+"use strict";
+(function () {
+const E = window.MarketEngine;
+const FINDS = E.FINDS, BY = E.BY_ID, T = E.TUNING;
+const SEED = 20261030, WARM = 77; // from Wednesday 00:00 to Thursday 14:30: a day and a half already traded
+const $ = (s) => document.querySelector(s);
+const phone = $("#phone"), scroller = $("#scroller"), appbar = $("#appbar"), actionbar = $("#actionbar");
+const sheetLayer = $("#sheetLayer"), coachLayer = $("#coachLayer"), toastLayer = $("#toasts"), tapeEl = $("#tape");
+const TIPS = [
+  "Every find has one price. Trade it with me right now, or with a pig for a better deal.",
+  "I buy a little under the price and sell a little over. That's my cut.",
+  "Price it between my two prices and you'll both beat my counter.",
+  "Every set you buy from me pushes the price up. Every set you sell pulls it down.",
+  "When it's quiet the price wiggles, then wanders back home.",
+  "A swap doesn't move the price. A sale between pigs nudges it.",
+  "Every pig's Ghost Sheep fancies something different. That's why we trade!",
+];
+
+// ── "seen" flags, in localStorage when it works, in memory when it doesn't ──
+const KEY_ON = "ttp.market.r4.onboarded", KEY_MO = "ttp.market.r4.moments";
+const mem = {};
+const store = {
+  get(k) { try { const v = window.localStorage.getItem(k); if (v != null) return v; } catch (e) { /* private mode */ } return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+  set(k, v) { mem[k] = v; try { window.localStorage.setItem(k, v); } catch (e) { /* memory only */ } },
+  del(k) { delete mem[k]; try { window.localStorage.removeItem(k); } catch (e) { /* memory only */ } },
+};
+function onboarded() { return ui.skipOnboard || store.get(KEY_ON) === "1"; }
+function moments() { try { return JSON.parse(store.get(KEY_MO) || "{}") || {}; } catch (e) { return {}; } }
+function markMoment(k) { const m = moments(); m[k] = 1; store.set(KEY_MO, JSON.stringify(m)); }
+
+let M;
+const ui = {
+  screen: "market", find: "pinecone", sheet: null, cf: null,
+  post: { side: "sell", find: "pinecone", price: 12, want: "old_key", qty: 1, target: null, min: 6, max: 18, err: null },
+  boardF: "all", boardMore: 24, ob: 0, coach: false, skipOnboard: false,
+  speed: 1, tapeF: "all", sayTurn: 0, say: "", toasts: [], prevLast: {}, tickerSeen: 0,
+};
+
+// ── helpers ───────────────────────────────────────────────────────────────
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const cap1 = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const sz = (f) => E.setSize(f);
+const pl = (f) => BY[f].plural;
+const nm = (f) => BY[f].name;
+const fp = (p) => E.fmtPrice(p);
+const setOf = (f) => sz(f) + " " + pl(f);
+const qtyOf = (f, n) => n + " " + (n === 1 ? nm(f) : pl(f));
+const SHORT = { river_pebble: "pebble", blue_feather: "feather", clover: "clover", snail_shell: "snail", brass_button: "button", wool_tuft: "wool", red_berries: "berries", pinecone: "pinecone", old_key: "old key", honeycomb: "honeycomb", marble: "marble", tin_whistle: "whistle" };
+function pigName(id) { if (id == null) return ""; if (id === "you") return "you"; const p = M.state.byPig[id]; return p ? p.name : id; }
+function pigPoss(id) { return id === "you" ? "your" : pigName(id) + "'s"; }
+function hoursLeft(o) { const h = ((o.exp - M.state.tick) * T.tickMinutes) / 60; return h >= 1 ? Math.round(h) + " h left" : "under an hour left"; }
+function coinMark(s) { s = s || 14; return '<svg class="coinMark" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(4 12 12)"><circle cx="12.6" cy="13" r="9.3" class="cmFace"/><circle cx="12.6" cy="13" r="5.5" class="cmRing"/></g><circle cx="5.2" cy="5.4" r="3.7" class="cmChip"/></svg>'; }
+function star(s, fill) { return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.8 6 6.6.8-4.9 4.5 1.3 6.5L12 17.2l-5.8 3.2 1.3-6.5-4.9-4.5 6.6-.8z" fill="' + (fill || "var(--ink)") + '" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/></svg>'; }
+function xIcon() { return '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" fill="none"/></svg>'; }
+function arrows(s) { return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M5 11 H25 M20 6 L25.5 11 L20 16"/><path d="M27 21 H7 M12 16 L6.5 21 L12 26"/></svg>'; }
+function pmIcon(plus) { return '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" stroke="var(--ink)" stroke-width="3.2" fill="none"><path d="M5 12 H19" stroke-linecap="round"/>' + (plus ? '<path d="M12 5 V19" stroke-linecap="round"/>' : "") + "</svg>"; }
+function glyph(f, s, cls) { return '<img class="gl ' + (cls || "") + '" src="img/' + f + '.png" alt="" width="' + s + '" height="' + s + '">'; }
+function price(n, cls, m) { return '<span class="pr"><span class="' + (cls || "numeral") + '">' + n + "</span>" + coinMark(m || 14) + "</span>"; }
+// a number that ticks from its old value to its new one
+function tnum(v, k, cls, dp) { return '<span class="tnum ' + (cls || "") + '" data-k="' + k + '" data-v="' + v + '" data-dp="' + (dp == null ? 1 : dp) + '">' + (dp === 0 ? Math.round(v) : fp(v)) + "</span>"; }
+const FACE = { you: { img: "rosie", fx: 0.5, fy: 0.37, tint: "var(--tintYou)" }, maya: { img: "maya", fx: 0.55, fy: 0.37, tint: "var(--tintMaya)" }, biscuit: { img: "biscuit", fx: 0.45, fy: 0.37, tint: "var(--tintBiscuit)" } };
+function face(id, s) {
+  s = s || 24;
+  const F = FACE[id];
+  if (!F) return '<span class="face" style="width:' + s + "px;height:" + s + 'px"><img src="img/pigface.png" alt="" style="inset:' + Math.round(s * 0.08) + "px;width:" + Math.round(s * 0.84) + "px;height:" + Math.round(s * 0.84) + 'px"></span>';
+  const z = s * 1.9, zh = (z * 256) / 247;
+  return '<span class="face" style="width:' + s + "px;height:" + s + "px;background:" + F.tint + '"><img src="img/' + F.img + '.png" alt="" style="width:' + z.toFixed(1) + "px;height:" + zh.toFixed(1) + "px;left:" + (s / 2 - F.fx * z - 1.5).toFixed(1) + "px;top:" + (s / 2 - F.fy * zh - 1.5).toFixed(1) + 'px"></span>';
+}
+function haveWords(H) {
+  if (!H.held) return "none in your bag";
+  if (!H.sets) return "you have " + H.held + " of " + H.size;
+  return "you have " + H.sets + (H.sets === 1 ? " set" : " sets") + (H.spare ? " + " + H.spare : "");
+}
+function chgWords(c) { const a = Math.round(Math.abs(c) * 10) / 10; if (a < 0.05) return { cls: "flat", w: "steady" }; return c > 0 ? { cls: "up", w: "up " + fp(a) } : { cls: "down", w: "down " + fp(a) }; }
+function vsChip(vs) { return '<span class="vs ' + (vs.diff < 0 ? "under" : vs.diff > 0 ? "over" : "at") + '">' + esc(vs.word) + "</span>"; }
+
+// ── keyed DOM patching: rows stay the same buttons between ticks, so taps land at 16x ──
+function patch(el, html) { const tpl = document.createElement("template"); tpl.innerHTML = html; morphChildren(el, tpl.content); }
+function keyOf(n) { return n.nodeType === 1 ? n.getAttribute("data-k") : null; }
+function morphNode(f, t) {
+  if (f.nodeType === 3 || f.nodeType === 8) { if (f.nodeValue !== t.nodeValue) f.nodeValue = t.nodeValue; return; }
+  for (const a of Array.from(f.attributes)) if (!t.hasAttribute(a.name)) f.removeAttribute(a.name);
+  for (const a of Array.from(t.attributes)) if (f.getAttribute(a.name) !== a.value) f.setAttribute(a.name, a.value);
+  if (f._flash) f.classList.add(f._flash);
+  if (f._anim) return; // a ticking number owns its text until it lands
+  if (f.tagName === "INPUT" && f.type === "range" && document.activeElement !== f && f.value !== t.getAttribute("value")) f.value = t.getAttribute("value");
+  morphChildren(f, t);
+}
+function morphChildren(from, to) {
+  const keyed = new Map();
+  for (const c of Array.from(from.childNodes)) { const k = keyOf(c); if (k) keyed.set(k, c); }
+  let cur = from.firstChild;
+  for (const t of Array.from(to.childNodes)) {
+    const k = keyOf(t);
+    let match = null;
+    if (k) { match = keyed.get(k) || null; if (match) keyed.delete(k); }
+    else if (cur && !keyOf(cur) && cur.nodeType === t.nodeType && (t.nodeType !== 1 || cur.tagName === t.tagName)) match = cur;
+    if (match) { if (match === cur) cur = cur.nextSibling; else from.insertBefore(match, cur); morphNode(match, t); }
+    else from.insertBefore(t, cur);
+  }
+  while (cur) { const n = cur.nextSibling; from.removeChild(cur); cur = n; }
+}
+function fmtN(x, dp) { return dp === 0 ? String(Math.round(x)) : fp(x); }
+function animateNums(root) {
+  root.querySelectorAll(".tnum").forEach((el) => {
+    const v = Number(el.dataset.v), dp = Number(el.dataset.dp);
+    if (el._v === undefined) { el._v = v; el._shown = v; return; }
+    if (el._v === v) return;
+    const from = el._shown; el._v = v;
+    if (Math.abs(v - from) < 1e-9) return;
+    const cls = v > from ? "nUp" : "nDown";
+    el.classList.remove("nUp", "nDown"); void el.offsetWidth; el.classList.add(cls); el._flash = cls;
+    clearTimeout(el._ft); el._ft = setTimeout(() => { el._flash = null; el.classList.remove(cls); }, 900);
+    if (el._anim) cancelAnimationFrame(el._anim);
+    const t0 = performance.now(), dur = 650;
+    const stepA = (now) => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el._shown = from + (v - from) * e;
+      el.textContent = fmtN(k < 1 ? el._shown : v, dp);
+      if (k < 1) el._anim = requestAnimationFrame(stepA); else { el._anim = 0; el._shown = v; }
+    };
+    el._anim = requestAnimationFrame(stepA);
+  });
+}
+
+// ── the app bar ────────────────────────────────────────────────────────────
+function coinHTML() {
+  const n = M.state.coin.you, banked = n > T.coinCap;
+  return '<div class="coinBox" data-k="coin"><div class="coin" id="coin" role="img" aria-label="' + n + (banked ? " tickles banked" : " of 25 tickles ready") + '"><span class="coinRing"></span><span class="coinChip">' + star(12, "var(--sun)") + '</span><span class="coinN">' + n + '</span><span class="coinCap">' + (banked ? "banked" : "of 25") + '</span></div><div class="coinLab">tickles ready</div></div>';
+}
+function backBtn(to, label) { return '<button type="button" class="btn back" data-act="go" data-to="' + to + '" data-k="back" aria-label="Back to ' + label + '"><span class="chev" aria-hidden="true">&#8249;</span><span class="label">' + label + "</span></button>"; }
+function appbarHTML() {
+  let left;
+  if (ui.screen === "home") left = '<div class="crown" data-k="crown"><div class="kickerPill kick">&#9733; Tickle the Pig</div><h1 class="pageTitle">Rosie\'s pen</h1><div class="rule"></div></div>';
+  else if (ui.screen === "market") left = backBtn("home", "Home");
+  else if (ui.screen === "find") left = backBtn("counter", "Counter");
+  else left = backBtn("market", "Market");
+  return left + coinHTML();
+}
+
+// ── Home (a stub, for the Market's entry and its "new here?" tag) ──
+function homeHTML() {
+  const fresh = !onboarded();
+  let h = '<div class="homeRosie" data-k="rosie"><img src="img/rosie.png" alt="Rosie"><div class="say paper tiltL"><p class="handLg">Bullion set up shop by the gate. Shall we have a look?</p></div></div>';
+  h += '<section class="card" data-k="fan"><div class="cardHead"><h2 class="cardTitle">Who\'s around today</h2></div><div class="fanTiles">';
+  h += '<button type="button" class="fanTile" data-act="go" data-to="market" data-k="fanM" aria-label="Bullion\'s Market' + (fresh ? ", new here" : "") + '"><img src="img/bullion.png" alt=""><span class="cardTitleSm">Bullion\'s Market</span><span class="handT mute">buy, sell, swap</span>' + (fresh ? '<span class="tag newTag">new here?</span>' : "") + "</button>";
+  h += '<div class="fanTile off" aria-disabled="true" data-k="fanS"><img src="img/trader.png" alt=""><span class="cardTitleSm">Ghost Sheep</span><span class="handT mute">comes by at feeding time</span></div>';
+  h += "</div></section>";
+  h += '<p class="foot handT mute" data-k="foot">Prototype: the Market is the only door that opens here.</p>';
+  return h;
+}
+
+// ── the Market home: two places ─────────────────────────────────────────────
+function sayLine() {
+  const y = M.state.dayStats[M.dayOf(M.state.tick) - 1] || {};
+  let best = null;
+  Object.keys(y).forEach((f) => { const n = y[f].counterBuys + y[f].counterSells + y[f].pigSales; if (!best || n > best.n) best = { f, n, st: y[f] }; });
+  if (ui.sayTurn % 2 === 0 && best && best.n) return cap1(pl(best.f)) + " were busy yesterday: " + best.n + " sets, the price between " + fp(best.st.lo) + " and " + fp(best.st.hi) + ".";
+  return TIPS[Math.floor(ui.sayTurn / 2) % TIPS.length];
+}
+function tickerHTML() {
+  const trs = M.lastTrades(null, 14, ["counter", "pig", "print", "swap"]);
+  const lastSeen = ui.tickerSeen || 0;
+  const out = trs.map((tr) => {
+    const f = tr.find;
+    let txt, tag;
+    if (tr.kind === "counter") { txt = tr.side === "buy" ? cap1(pigName(tr.buyer)) + " bought " + setOf(f) + " from Bullion &middot; " + tr.price : cap1(pigName(tr.seller)) + " sold Bullion " + setOf(f) + " &middot; " + tr.price; tag = '<span class="tTag tCounter">counter</span>'; }
+    else if (tr.kind === "pig") { txt = cap1(pigName(tr.buyer)) + " bought " + setOf(f) + " from " + pigName(tr.seller) + " &middot; " + tr.price; tag = '<span class="tTag tPig">board</span>'; }
+    else if (tr.kind === "print") { txt = esc(cap1(tr.who)) + (tr.dir === "up" ? " bought " : " sold ") + setOf(f) + " &middot; " + tr.price; tag = '<span class="tTag">town</span>'; }
+    else { txt = cap1(pigName(tr.buyer)) + " swapped " + qtyOf(tr.wantFind, tr.wantQty) + " for " + setOf(f); tag = '<span class="tTag tSwap">swap</span>'; }
+    if (tr.buyer === "you" || tr.seller === "you") tag = '<span class="tTag tYou">you</span>';
+    return '<span class="tk' + (tr.id > lastSeen && lastSeen ? " new" : "") + '" data-k="tk' + tr.id + '">' + glyph(f, 18) + tag + "<span>" + txt + "</span></span>";
+  });
+  ui.tickerSeen = trs.length ? trs[0].id : lastSeen;
+  return '<div class="ticker" data-k="ticker" role="list" aria-label="Recent trades, one tape for the counter and the noticeboard">' + out.join("") + "</div>";
+}
+function mineHTML(list, where) {
+  if (!list.length) return "";
+  const rows = list.map((o) => {
+    const q = M.quote(o.find);
+    let what, sub = "";
+    if (o.side === "sell") { what = "Selling " + setOf(o.find) + " for <b>" + o.price + "</b>"; sub = vsChip(E.vsPrice(o.price, q.P)); }
+    else if (o.side === "buy") { what = "Wanted: " + setOf(o.find) + " for <b>" + o.price + "</b>"; sub = vsChip(E.vsPrice(o.price, q.P)); }
+    else what = "Swapping " + setOf(o.find) + " for " + qtyOf(o.wantFind, o.wantQty);
+    sub += '<span class="kicker mute">' + (o.target ? "to " + pigName(o.target) + " only &middot; " : "") + hoursLeft(o) + "</span>";
+    return '<li class="mineRow" data-k="o' + o.id + '">' + glyph(o.find, 30) + '<div class="mT"><div class="bodySm">' + what + '</div><div class="mSub">' + sub + '</div></div><button type="button" class="btn flat cream pill" data-act="cancel" data-id="' + o.id + '" data-k="oc' + o.id + '">Take down</button></li>';
+  });
+  return '<section class="paper gapT" data-k="mine-' + where + '"><div class="cardHead"><h2 class="cardTitle">Your listings</h2><span class="handT mute">' + list.length + " of " + T.openOffers + " up &middot; 24 hours each</span></div><ul>" + rows.join("") + "</ul></section>";
+}
+function marketHTML() {
+  const L = M.state.ledger.you, net = L.tookIn - L.spent;
+  const rows = M.counterRows("you");
+  const ups = rows.filter((r) => r.change >= 0.05).length, downs = rows.filter((r) => r.change <= -0.05).length;
+  const cards = M.boardView("you"), forYou = cards.filter((c) => c.forYou).length;
+  let h = '<div class="crown" data-k="crown" style="margin-bottom:8px"><div class="kickerPill kick">&#9733; Bullion\'s Market</div><h1 class="pageTitle">One price, two ways to trade</h1><div class="rule"></div></div>';
+  h += '<div class="bull" data-k="bull"><img src="img/bullion.png" alt="Bullion the bull"><div class="say paper tiltL"><p class="handLg">' + esc(ui.say) + "</p></div></div>";
+  h += '<div class="ledger paper" data-k="ledger"><div><div class="kickerPill kick">Your ledger</div><div class="ledgerLine">spent <span class="numIn">' + L.spent + '</span> &middot; took in <span class="numIn">' + L.tookIn + '</span> &middot; <span class="' + (net > 0 ? "up" : net < 0 ? "down" : "mute") + '">' + E.gainWord(net) + '</span></div></div><button type="button" class="btn pill sun" data-act="bag" data-k="bagbtn">Your bag</button></div>';
+  h += tickerHTML();
+  h += '<div class="places" data-k="places">';
+  h += '<button type="button" class="placeTile pt-counter" data-act="go" data-to="counter" data-k="ptc" aria-label="The Counter: buy or sell any set right now"><img class="ptArt" src="img/bullion_counter.png" alt=""><span class="ptText"><span class="kickerPill">Part 1 &middot; instant</span><span class="ptTitle">The Counter</span><span class="ptLine">Buy or sell any set, right now. Bullion takes a small cut.</span><span class="ptStat">' + ups + " up &middot; " + downs + " down since yesterday</span></span></button>";
+  h += '<button type="button" class="placeTile pt-board corkBg" data-act="go" data-to="board" data-k="ptb" aria-label="The Noticeboard: trade with pigs, ' + cards.length + " listings" + (forYou ? ", " + forYou + " for you" : "") + '"><img class="ptArt" src="img/corkboard.png" alt=""><span class="ptText"><span class="kickerPill">Part 2 &middot; with pigs</span><span class="ptTitle">The Noticeboard</span><span class="ptLine">Sell high, buy cheap, swap straight up. No cut.</span><span class="ptStat">' + cards.length + " pinned" + (forYou ? '<span class="tag">' + forYou + " for you</span>" : "") + "</span></span></button>";
+  h += "</div>";
+  h += mineHTML(M.openOffers("you"), "m");
+  h += '<p class="foot handT mute" data-k="foot">Every find has one price. Trade it at the counter now, or with a pig for a better deal.</p>';
+  return h;
+}
+
+// ── sparkline and chart ────────────────────────────────────────────────────
+function sparkSVG(series, U, f) {
+  const W = 66, H = 24, pad = 3;
+  const ps = series.map((s) => s.p);
+  let lo = Math.min.apply(null, ps), hi = Math.max.apply(null, ps);
+  const span = 0.06 * U;
+  if (hi - lo < span) { const c = (hi + lo) / 2; lo = c - span / 2; hi = c + span / 2; }
+  const n = ps.length, x = (i) => pad + (n <= 1 ? 0 : (i * (W - 2 * pad)) / (n - 1)), y = (p) => pad + ((hi - p) / (hi - lo)) * (H - 2 * pad);
+  const uy = y(U);
+  const last = series[n - 1];
+  return '<svg class="spark" data-k="sp' + f + '" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">' + (uy >= 0 && uy <= H ? '<line class="spU" data-k="u" x1="0" x2="' + W + '" y1="' + uy.toFixed(1) + '" y2="' + uy.toFixed(1) + '"/>' : "") + '<polyline class="spL" data-k="l" points="' + ps.map((p, i) => x(i).toFixed(1) + "," + y(p).toFixed(1)).join(" ") + '"/><circle class="spD" data-k="d' + last.t + '" cx="' + x(n - 1).toFixed(1) + '" cy="' + y(last.p).toFixed(1) + '" r="2.6"/></svg>';
+}
+function chartSVG(v, mini) {
+  const W = 334, H = mini ? 112 : 140, Lp = 26, Rp = 66, Tp = 10, Bp = 18;
+  const f = v.find, hs = v.hist, q = v.q;
+  const asks = hs.map((h) => E.askAt(f, h.p)), bids = hs.map((h) => E.bidAt(f, h.p));
+  const marks = mini ? [] : v.marks.slice(-80);
+  let lo = Math.min.apply(null, bids.concat(marks.map((m) => m.price))), hi = Math.max.apply(null, asks.concat(marks.map((m) => m.price)));
+  lo = Math.floor(lo - 1); hi = Math.ceil(hi + 1);
+  const n = hs.length, t0 = hs[0].t, t1 = hs[n - 1].t;
+  const x = (t) => Lp + (t1 === t0 ? W - Lp - Rp : ((t - t0) * (W - Lp - Rp)) / (t1 - t0)), y = (p) => Tp + ((hi - p) / (hi - lo)) * (H - Tp - Bp);
+  let s = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc("The price of " + pl(f) + " over the last " + (mini ? "day" : "two days") + ", now " + fp(q.P) + ". Bullion sells at " + q.ask + " and buys at " + q.bid + ".") + '">';
+  [q.U, Math.round(q.U * 0.85), Math.round(q.U * 1.15)].forEach((g, i) => { s += '<line class="' + (i === 0 ? "cU" : "cGrid") + '" x1="' + Lp + '" x2="' + (W - Rp + 4) + '" y1="' + y(g).toFixed(1) + '" y2="' + y(g).toFixed(1) + '"/><text class="cAxT" x="' + (Lp - 5) + '" y="' + (y(g) + 4).toFixed(1) + '" text-anchor="end">' + g + "</text>"; });
+  if (!mini) hs.forEach((h, i) => { if (i > 0 && h.t % T.ticksPerDay === 0) { const xx = x(h.t).toFixed(1); s += '<line class="cDay" x1="' + xx + '" x2="' + xx + '" y1="' + Tp + '" y2="' + (H - Bp) + '"/><text class="cAxT" x="' + (Number(xx) + 3) + '" y="' + (H - 5) + '">' + M.clock(h.t).weekday.slice(0, 3) + "</text>"; } });
+  const up = hs.map((h, i) => x(h.t).toFixed(1) + "," + y(asks[i]).toFixed(1));
+  const dn = hs.map((h, i) => x(h.t).toFixed(1) + "," + y(bids[i]).toFixed(1));
+  s += '<polygon class="cGap" points="' + up.concat(dn.slice().reverse()).join(" ") + '"/>';
+  s += '<polyline class="cAsk" points="' + up.join(" ") + '"/><polyline class="cBid" points="' + dn.join(" ") + '"/>';
+  s += '<polyline class="cLine" points="' + hs.map((h) => x(h.t).toFixed(1) + "," + y(h.p).toFixed(1)).join(" ") + '"/>';
+  marks.forEach((m) => {
+    const cx = x(Math.max(t0, m.t)).toFixed(1), cy = y(m.price).toFixed(1);
+    if (m.kind === "print") s += '<circle class="mT" cx="' + cx + '" cy="' + cy + '" r="2.2"/>';
+    else s += '<circle class="' + (m.kind === "counter" ? "mC" : "mP") + '" cx="' + cx + '" cy="' + cy + '" r="3.4"/>';
+  });
+  const lx = x(t1), ly = y(q.P);
+  s += '<circle class="cLast" data-k="last' + t1 + '" cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="5.5"/>';
+  let ya = y(q.ask) + 4, yp = ly + 4, yb = y(q.bid) + 4;
+  if (yp - ya < 14) ya = yp - 14; if (yb - yp < 14) yb = yp + 14;
+  s += '<text class="cAskT" x="' + (W - Rp + 10) + '" y="' + ya.toFixed(1) + '">I sell ' + q.ask + '</text><text class="cPT" x="' + (W - Rp + 10) + '" y="' + yp.toFixed(1) + '">price ' + fp(q.P) + '</text><text class="cBidT" x="' + (W - Rp + 10) + '" y="' + yb.toFixed(1) + '">I buy ' + q.bid + "</text>";
+  return s + "</svg>";
+}
+
+// ── Part 1: the Counter (chalk) ─────────────────────────────────────────────
+function counterHTML() {
+  const rows = M.counterRows("you");
+  let h = '<div class="placeHead" data-k="ph"><img class="phArt" src="img/bullion_counter.png" alt="Bullion behind his counter"><div><div class="kickerPill kick">&#9733; Part 1 &middot; instant</div><h1 class="chalkTitle">The Counter</h1><p class="chalkLine">I always buy and always sell. A little under the price, a little over: that\'s my cut.</p></div></div>';
+  h += '<div class="boardKey" data-k="bk" aria-hidden="true"><span></span><span>a set of</span><span>price</span><span>since yesterday</span></div>';
+  h += '<ul class="crows" data-k="crows">' + rows.map(crowHTML).join("") + "</ul>";
+  h += '<p class="foot chalkLine mute" data-k="foot">Every set bought here pushes its price up; every set sold pulls it down. When it\'s quiet the price wiggles and wanders home.</p>';
+  return h;
+}
+function crowHTML(r) {
+  const f = r.find, H = r.holding, c = chgWords(r.change);
+  const lt = M.lastTrades(f, 1, ["counter", "pig"]);
+  const id = lt.length ? lt[0].id : 0;
+  const flash = ui.prevLast[f] != null && ui.prevLast[f] !== id;
+  ui.prevLast[f] = id;
+  const aria = cap1(pl(f)) + ", a set of " + r.size + ". The price is " + fp(r.q.P) + ", " + c.w + " since yesterday. Bullion sells at " + r.q.ask + " and buys at " + r.q.bid + ". " + cap1(haveWords(H)) + "." + (r.fancy ? " Your Ghost Sheep fancies these today." : "");
+  return '<li data-k="cr:' + f + '"><button type="button" class="crow' + (r.fancy ? " fancy" : "") + (flash ? " flash" : "") + '" data-act="open" data-find="' + f + '" data-k="crb:' + f + '" aria-label="' + esc(aria) + '">' +
+    '<span class="crG">' + glyph(f, 42) + (r.fancy ? '<span class="fancyStar">' + star(13, "var(--paper)") + "</span>" : "") + "</span>" +
+    '<span class="crName"><span class="chalkName">' + cap1(pl(f)) + '</span><span class="chalkSub">' + r.size + (H.sets ? ' &middot; <span class="youHave">you have ' + H.sets + (H.sets === 1 ? " set" : " sets") + "</span>" : H.held ? " &middot; you have " + H.held : "") + "</span></span>" +
+    '<span class="crPrice">' + tnum(r.q.P, "p:" + f, "chalkNum") + '<span class="chalkSub">' + fp(r.q.each) + " each</span></span>" +
+    '<span class="crSpark">' + sparkSVG(r.spark, r.q.U, f) + '<span class="chg ' + c.cls + '">' + c.w + "</span></span></button></li>";
+}
+function findHTML() {
+  const f = ui.find, v = M.findView(f, "you"), q = v.q, H = v.holding, c = chgWords(v.change);
+  let h = '<div class="fHead" data-k="fh">' + glyph(f, 64) + '<div><div class="kickerPill kick">&#9733; A set of ' + v.size + '</div><h1 class="chalkTitle" style="font-size:32px;line-height:34px">' + cap1(pl(f)) + '</h1><div class="chalkSub">usual price ' + q.U + " &middot; " + fp(q.each) + ' each</div></div><div class="fPrice"><span class="kicker mute">the price</span>' + tnum(q.P, "fp:" + f, "chalkNum") + '<span class="chg ' + c.cls + '">' + c.w + " since yesterday</span></div></div>";
+  h += '<div class="chartBox" data-k="chart">' + chartSVG(v, false) + '<div class="legend"><span><i class="dash"></i>the price</span><span><i class="dot c"></i>Bullion\'s counter</span><span><i class="dot p"></i>a pig sale</span><span><i class="dot t"></i>the townsfolk</span></div></div>';
+  h += '<section class="quote paper" data-k="quote"><img src="img/bullion_counter.png" alt="Bullion at his counter"><div><p class="qBig">&ldquo;I\'ll sell for <b>' + tnum(q.ask, "qa", "", 0) + "</b> &middot; I'll buy for <b>" + tnum(q.bid, "qb", "", 0) + '</b>&rdquo;</p><p class="kicker mute">The price is ' + fp(q.P) + ". My cut is the gap. Buy or sell below.</p></div></section>";
+  const sale = v.board.sale, want = v.board.wanted;
+  if (sale && sale.price < q.ask) h += '<button type="button" class="note" data-act="take" data-id="' + sale.id + '" data-k="hs"><span class="pin"></span><span class="kickerPill kick">Cheaper on the noticeboard</span><span class="nLine">' + glyph(f, 30) + '<span class="handLg">' + esc(cap1(pigPoss(sale.pig))) + " " + sale.qty + " for <b>" + sale.price + '</b></span></span><span class="kicker mute">' + (q.ask - sale.price) + " under what Bullion charges" + (sale.target === "you" ? " &middot; sent to you" : "") + " &middot; tap to buy</span></button>";
+  if (want && want.price > q.bid) h += '<button type="button" class="note alt" data-act="take" data-id="' + want.id + '" data-k="hw"' + (H.sets ? "" : " disabled") + '><span class="pin"></span><span class="kickerPill kick">Pays more on the noticeboard</span><span class="nLine">' + glyph(f, 30) + '<span class="handLg">' + esc(cap1(pigName(want.pig))) + " wants " + want.qty + " for <b>" + want.price + '</b></span></span><span class="kicker mute">' + (want.price - q.bid) + " more than Bullion pays &middot; " + (H.sets ? "tap to sell" : "you'd need a set of " + v.size) + "</span></button>";
+  const paidLine = H.held ? (H.paidUnits ? H.paidUnits + " bought for " + H.paid + (H.dugUnits ? " &middot; " + H.dugUnits + " dug up" : "") : "all dug up, so a sale is all gain") : "none in your bag";
+  h += '<section class="card holdCard" data-k="hold"><div class="cardHead"><h2 class="chalkLine" style="font-size:20px">Your ' + pl(f) + '</h2><span class="chalkSub">' + esc(paidLine) + '</span></div><div class="holdNums"><div><span class="chalkNum">' + H.held + '</span><span class="chalkSub">in your bag</span></div><div><span class="chalkNum">' + H.sets + '</span><span class="chalkSub">' + (H.sets === 1 ? "set" : "sets") + " of " + H.size + "</span></div>" + (H.onOffer ? '<div><span class="chalkNum">' + H.onOffer + '</span><span class="chalkSub">pinned up</span></div>' : "") + "</div></section>";
+  const sheep = v.sheep, fz = M.state.fancy.you;
+  const sh = sheep.fancy ? "Yours fancies " + pl(f) + " today: <b>" + sheep.each + "</b> each, <b>" + sheep.set + "</b> a set." : "Yours pays " + sheep.each + " each for " + pl(f) + " (" + sheep.set + " a set). Today he fancies " + pl(fz) + ".";
+  let shBtn = "";
+  if (M.state.sheepDone.you) shBtn = '<p class="kicker mute">He took a set from you today. Back tomorrow.</p>';
+  else if (H.sets) shBtn = '<button type="button" class="btn ' + (sheep.fancy ? "sun" : "cream") + ' pill gapT" data-act="sheep" data-k="sheepbtn">Sell him a set &middot; ' + price(sheep.set, "numIn", 13) + "</button>";
+  else if (!sheep.fancy) shBtn = '<button type="button" class="btn cream pill flat gapT" data-act="open" data-find="' + fz + '" data-k="sheepgo">See ' + pl(fz) + "</button>";
+  h += '<section class="paper gapT tiltR" data-k="sheep"><div class="who2"><img src="img/trader.png" alt="The Ghost Sheep"><div class="wtxt"><h2 class="cardTitleSm">Your Ghost Sheep</h2><p class="bodySm">' + sh + '</p><p class="kicker mute">An outlet, outside the market: he takes one set a day in this demo.</p></div></div>' + shBtn + "</section>";
+  h += mineHTML(v.mine, "f");
+  const rec = v.recent.map((tr) => '<li data-k="rt' + tr.id + '"><span class="tm">' + M.clock(tr.t).time + '</span><span class="tw">' + tradeLine(tr) + '</span><span class="tp">' + (tr.price != null ? tr.price : "") + "</span></li>").join("");
+  h += '<section class="card gapT" data-k="recent"><div class="cardHead"><h2 class="chalkLine" style="font-size:20px">Last trades</h2><span class="chalkSub">counter, board and town on one tape</span></div><ul class="trs">' + (rec || '<li class="chalkSub">No trades yet.</li>') + "</ul></section>";
+  return h;
+}
+function tradeLine(tr) {
+  const f = tr.find;
+  if (tr.kind === "counter") return (tr.side === "buy" ? cap1(pigName(tr.buyer)) + " bought from Bullion" : cap1(pigName(tr.seller)) + " sold to Bullion") + '<span class="ttag c">counter</span>';
+  if (tr.kind === "pig") return cap1(pigName(tr.buyer)) + " bought from " + pigName(tr.seller) + '<span class="ttag p">board</span>';
+  if (tr.kind === "print") return esc(cap1(tr.who)) + (tr.dir === "up" ? " bought" : " sold") + '<span class="ttag">town</span>';
+  if (tr.kind === "swap") return cap1(pigName(tr.buyer)) + (tr.find === ui.find ? " swapped " + qtyOf(tr.wantFind, tr.wantQty) + " for these" : " swapped these for " + setOf(f)) + '<span class="ttag s">swap</span>';
+  return nm(f);
+}
+function actionbarHTML() {
+  if (ui.screen === "board") return '<div class="abGrid"><button type="button" class="btn sun solo" data-act="post" data-k="abPost">Post a listing</button></div>';
+  const f = ui.find, q = M.quote(f), H = M.holding("you", f), coin = M.state.coin.you;
+  const buy = coin >= q.ask
+    ? '<button type="button" class="btn sun" data-act="cbuy" data-k="abBuy" aria-label="Buy a set of ' + setOf(f) + " from Bullion for " + q.ask + '"><span class="abL">Buy for ' + tnum(q.ask, "abq", "numIn", 0) + coinMark(14) + '</span><span class="abS">from Bullion, now</span></button>'
+    : '<button type="button" class="btn" disabled data-k="abBuy"><span class="abL">Buy for ' + q.ask + '</span><span class="abS">you have ' + coin + " ready</span></button>";
+  const sell = H.sets
+    ? '<button type="button" class="btn sage" data-act="csell" data-k="abSell" aria-label="Sell a set of ' + setOf(f) + " to Bullion for " + q.bid + '"><span class="abL">Sell for ' + tnum(q.bid, "abs", "numIn", 0) + coinMark(14) + '</span><span class="abS">to Bullion, now</span></button>'
+    : '<button type="button" class="btn" disabled data-k="abSell"><span class="abL">Sell for ' + q.bid + '</span><span class="abS">you have ' + H.held + " of " + H.size + "</span></button>";
+  return '<div class="abGrid">' + buy + sell + '<button type="button" class="btn cream half" data-act="post-here" data-k="abPost">Put it on the noticeboard instead</button></div>';
+}
+
+// ── Part 2: the Noticeboard (cork) ──────────────────────────────────────────
+const BOARD_F = [["all", "All"], ["sell", "For sale"], ["buy", "Wanted"], ["swap", "Swaps"], ["you", "For you"]];
+function boardHTML() {
+  const all = M.boardView("you");
+  const n = { all: all.length, sell: 0, buy: 0, swap: 0, you: 0 };
+  all.forEach((c) => { n[c.offer.side] += 1; if (c.forYou) n.you += 1; });
+  let cards = all.filter((c) => ui.boardF === "all" || (ui.boardF === "you" ? c.forYou : c.offer.side === ui.boardF));
+  // for you first, then by find, the best price first
+  cards.sort((a, b) => (b.forYou ? 1 : 0) - (a.forYou ? 1 : 0) || BY[a.offer.find].idx - BY[b.offer.find].idx || sideRank(a.offer) - sideRank(b.offer) || (a.offer.side === "buy" ? b.offer.price - a.offer.price : (a.offer.price || 0) - (b.offer.price || 0)) || a.offer.seq - b.offer.seq);
+  let h = '<div class="boardHead paper" data-k="bh"><div><div class="kickerPill kick">&#9733; Part 2 &middot; with pigs</div><h1 class="pageTitle">The Noticeboard</h1><p class="handT mute">No cut. Price it between Bullion\'s two prices and you both beat his counter.</p></div><img src="img/corkboard.png" alt=""></div>';
+  h += mineHTML(M.openOffers("you"), "b");
+  h += '<div class="boardF" data-k="bf"><div class="seg full" role="group" aria-label="Show">' + BOARD_F.map((x) => '<button type="button" data-act="board-f" data-f="' + x[0] + '" aria-pressed="' + (ui.boardF === x[0]) + '" data-k="bf' + x[0] + '">' + x[1] + (x[0] === "you" && n.you ? ' <span class="cnt">' + n.you + "</span>" : "") + "</button>").join("") + "</div></div>";
+  if (!cards.length) h += '<div class="emptyBoard paper" data-k="empty"><img src="img/corkboard.png" alt=""><p class="handLg">' + (ui.boardF === "you" ? "Nothing sent to you yet. Maya and Biscuit post now and then." : "Nothing pinned here right now. Be the first.") + "</p></div>";
+  const shown = cards.slice(0, ui.boardMore);
+  h += '<div class="pcards" data-k="cards">' + shown.map(pcardHTML).join("") + "</div>";
+  if (cards.length > shown.length) h += '<div class="foot" data-k="more"><button type="button" class="btn pill cream" data-act="board-more">' + (cards.length - shown.length) + " more pinned below</button></div>";
+  return h;
+}
+function sideRank(o) { return o.side === "sell" ? 0 : o.side === "buy" ? 1 : 2; }
+const KIND = { sell: "For sale", buy: "Wanted", swap: "Swap" };
+function pcardHTML(c) {
+  const o = c.offer, q = c.q, f = o.find;
+  const who = '<span class="who">' + face(M.state.byPig[o.pig].kind === "stranger" ? "stranger" : o.pig, 20) + "<span>" + esc(cap1(pigName(o.pig))) + "</span></span>";
+  let body, btn;
+  if (o.side === "swap") {
+    const can = M.count("you", o.wantFind) >= o.wantQty;
+    body = '<div class="what">' + glyph(f, 34) + '<span class="wn">' + setOf(f) + '</span></div><div class="swapSides"><span>' + arrows(14) + " for " + glyph(o.wantFind, 22) + qtyOf(o.wantFind, o.wantQty) + '</span><span class="bull2">' + setOf(f) + " &asymp; " + Math.round(c.giveVal) + " &middot; " + qtyOf(o.wantFind, o.wantQty) + " &asymp; " + Math.round(c.wantVal) + "</span></div>";
+    btn = can ? '<button type="button" class="btn lilac" data-act="take" data-id="' + o.id + '" data-k="tb' + o.id + '">Swap</button>' : '<button type="button" class="btn" disabled data-k="tb' + o.id + '">you have ' + M.count("you", o.wantFind) + " of " + o.wantQty + "</button>";
+  } else {
+    body = '<div class="what">' + glyph(f, 34) + '<span class="wn">' + setOf(f) + '</span></div><div class="pp">' + price(o.price, "numeralLg", 18) + vsChip(c.vs) + '</div><div class="bull2">Bullion would pay ' + q.bid + " / charge " + q.ask + "</div>";
+    if (o.side === "sell") btn = M.state.coin.you >= o.price ? '<button type="button" class="btn rose" data-act="take" data-id="' + o.id + '" data-k="tb' + o.id + '">Buy for ' + o.price + "</button>" : '<button type="button" class="btn" disabled data-k="tb' + o.id + '">you have ' + M.state.coin.you + " ready</button>";
+    else btn = M.holding("you", f).sets ? '<button type="button" class="btn sage" data-act="take" data-id="' + o.id + '" data-k="tb' + o.id + '">Sell for ' + o.price + "</button>" : '<button type="button" class="btn" disabled data-k="tb' + o.id + '">you have ' + M.count("you", f) + " of " + sz(f) + "</button>";
+  }
+  return '<article class="pcard k-' + o.side + (c.forYou ? " forYou" : "") + '" data-k="pc' + o.id + '"><span class="pin"></span><div class="kind"><span class="kickerPill' + (c.forYou ? "" : " kick") + '">' + (c.forYou ? "For you" : KIND[o.side]) + '</span><span class="kicker mute">' + hoursLeft(o).replace(" left", "") + "</span></div>" + body + who + btn + "</article>";
+}
+
+// ── sheets ─────────────────────────────────────────────────────────────────
+function sheetFrame(kicker, title, body, foot, labelId, cls) {
+  return '<button type="button" class="scrimEl" data-act="close-sheet" data-k="scrim" aria-label="Close" tabindex="-1"></button><section class="sheet ' + (cls || "") + '" role="dialog" aria-modal="true" aria-labelledby="' + labelId + '" data-k="sheet"><div class="grab"></div><div class="sheetHead"><div><div class="kickerPill kick">&#9733; ' + kicker + '</div><h2 class="sectionTitle" id="' + labelId + '">' + title + '</h2></div><button type="button" class="btn x" data-act="close-sheet" data-k="sheetx" aria-label="Close">' + xIcon() + '</button></div><div class="sheetBody" data-k="sbody">' + body + "</div>" + (foot ? '<div class="sheetFoot" data-k="sfoot">' + foot + "</div>" : "") + "</section>";
+}
+// the price move, drawn on the band before you tap
+function moveHTML(f, from, to, extra) {
+  const lo = E.priceLo(f), hi = E.priceHi(f), U = E.usual(f);
+  const pc = (p) => ((Math.max(lo, Math.min(hi, p)) - lo) / (hi - lo)) * 100;
+  const a = pc(from), b = pc(to);
+  let h = '<div class="move" data-k="move" aria-hidden="true"><div class="mTrack"></div>';
+  h += '<span class="mArrow" style="left:' + Math.min(a, b).toFixed(1) + "%;width:" + Math.abs(b - a).toFixed(1) + '%"></span>';
+  h += '<span class="mMark" style="left:' + a.toFixed(1) + '%"><i></i><b>now ' + fp(from) + '</b></span><span class="mMark to" style="left:' + b.toFixed(1) + '%"><i></i><b>after ' + fp(to) + "</b></span>";
+  h += '<span class="uLab" style="left:0%">' + fp(lo) + '</span><span class="uLab" style="left:' + pc(U).toFixed(1) + '%">usual ' + U + '</span><span class="uLab" style="left:100%">' + fp(hi) + "</span>";
+  return h + "</div>" + (extra || "");
+}
+function confirmSheet() {
+  const cf = ui.cf;
+  if (cf.via === "counter") {
+    const f = cf.find, pv = M.previewCounter(f, cf.side), H = M.holding("you", f), coin = M.state.coin.you;
+    const buy = cf.side === "buy";
+    let body = '<div class="cfTop" data-k="cft"><img src="img/bullion_counter.png" alt="Bullion at his counter"><div><div class="cfBig">' + (buy ? "Buy for " : "Sell for ") + tnum(pv.price, "cfp", "", 0) + '.</div><div class="cfMove">The price goes ' + fp(pv.from) + " &rarr; " + fp(pv.to) + '.</div><p class="kicker mute">' + (buy ? "Every set bought here pushes it up 3% of the usual price." : "Every set sold here pulls it down 3% of the usual price.") + "</p></div></div>";
+    body += moveHTML(f, pv.from, pv.to);
+    const bb = M.boardBest("you", f);
+    if (buy && bb.sale && bb.sale.price < pv.price) body += '<div class="hintBox" data-k="hint"><div class="hT"><div class="kickerPill kick">Cheaper on the noticeboard</div><div class="handLg">' + esc(cap1(pigPoss(bb.sale.pig))) + " " + bb.sale.qty + " for " + bb.sale.price + '</div></div><button type="button" class="btn pill rose" data-act="take" data-id="' + bb.sale.id + '" data-k="hintgo">Buy that</button></div>';
+    if (!buy && bb.wanted && bb.wanted.price > pv.price) body += '<div class="hintBox" data-k="hint"><div class="hT"><div class="kickerPill kick">Pays more on the noticeboard</div><div class="handLg">' + esc(cap1(pigName(bb.wanted.pig))) + " wants " + bb.wanted.qty + " for " + bb.wanted.price + '</div></div><button type="button" class="btn pill sage" data-act="take" data-id="' + bb.wanted.id + '" data-k="hintgo">Sell there</button></div>';
+    else if (!buy) body += '<div class="hintBox" data-k="hint2"><div class="hT"><div class="kickerPill kick">Or sell high</div><div class="handT">Pin it on the noticeboard between ' + (pv.bid + 1) + " and " + (pv.ask - 1) + ": a pig pays more than " + pv.bid + '.</div></div><button type="button" class="btn pill cream" data-act="post-here" data-k="hintpost">List it</button></div>';
+    let blocked = null;
+    if (buy && coin < pv.price) blocked = "You have " + coin + " tickles ready.";
+    if (!buy && !H.sets) blocked = "You have " + H.held + " of " + H.size + ".";
+    body += '<p class="kicker mute gapT" data-k="cfinfo">' + (buy ? "You have " + coin + " tickles ready &middot; " + H.held + " " + pl(f) + " in your bag" : "You have " + H.held + " " + pl(f) + " &middot; " + coin + " tickles ready") + "</p>";
+    if (blocked) body += '<p class="err" data-k="err">' + esc(blocked) + "</p>";
+    const foot = '<button type="button" class="btn ' + (buy ? "sun" : "sage") + '" data-act="cf-go" data-price="' + pv.price + '" data-k="cfgo"' + (blocked ? " disabled" : "") + ">" + (buy ? "Buy for " : "Sell for ") + pv.price + coinMark(18) + "</button>";
+    return sheetFrame("Bullion's counter", (buy ? "Buy " : "Sell ") + setOf(f), body, foot, "cfTitle");
+  }
+  // a listing from the board
+  const o = M.findOffer(cf.id);
+  if (!o) return sheetFrame("The noticeboard", "That listing is gone", '<p class="handLg" data-k="gone">Another pig got there first, or it was taken down.</p>', '<button type="button" class="btn cream" data-act="close-sheet" data-k="cfgo">Back to the board</button>', "cfTitle");
+  const f = o.find, q = M.quote(f), who = cap1(pigName(o.pig));
+  let body, foot, title, blocked = null;
+  if (o.side === "swap") {
+    const can = M.count("you", o.wantFind);
+    const gv = M.state.P[BY[f].idx], wv = (M.state.P[BY[o.wantFind].idx] / sz(o.wantFind)) * o.wantQty;
+    title = "Swap with " + who;
+    body = '<div class="swapLine" data-k="sl">' + glyph(o.wantFind, 36) + arrows(26) + glyph(f, 36) + '</div><p class="cfBig" style="text-align:center" data-k="sw1">Give ' + qtyOf(o.wantFind, o.wantQty) + ", get " + setOf(f) + '.</p><p class="swapVals" data-k="sw2">At today\'s price: ' + qtyOf(o.wantFind, o.wantQty) + " &asymp; " + Math.round(wv) + " &middot; " + setOf(f) + " &asymp; " + Math.round(gv) + '</p><p class="kicker mute" style="text-align:center" data-k="sw3">Straight up: no tickles change hooves and the price stays put.' + (o.target === "you" ? " " + who + " sent this to you." : "") + "</p>";
+    if (can < o.wantQty) blocked = "You have " + can + " of " + o.wantQty + " " + (o.wantQty === 1 ? nm(o.wantFind) : pl(o.wantFind)) + ".";
+    foot = '<button type="button" class="btn lilac" data-act="cf-go" data-k="cfgo"' + (blocked ? " disabled" : "") + ">Swap straight up</button>";
+  } else {
+    const pv = M.previewPig(f, o.price), buying = o.side === "sell";
+    title = buying ? "Buy " + pigPoss(o.pig) + " " + setOf(f) : "Sell " + setOf(f) + " to " + pigName(o.pig);
+    const vsC = buying ? q.ask - o.price : o.price - q.bid;
+    body = '<div class="cfTop" data-k="cft"><img src="img/' + (FACE[o.pig] ? FACE[o.pig].img : "pigface") + '.png" alt=""><div><div class="cfBig">' + (buying ? "Buy for " : "Sell for ") + o.price + '.</div><div class="cfMove">' + (buying ? "Bullion charges " + q.ask + (vsC > 0 ? ": you save " + vsC + "." : ".") : "Bullion would pay " + q.bid + (vsC > 0 ? ": +" + vsC + " for selling to a pig." : ".")) + '</div><p class="kicker mute">A pig sale nudges the price a third of the way to what was paid: ' + fp(pv.from) + " &rarr; " + fp(pv.to) + ".</p></div></div>";
+    body += moveHTML(f, pv.from, pv.to);
+    if (buying) { if (M.state.coin.you < o.price) blocked = "You have " + M.state.coin.you + " tickles ready."; }
+    else if (!M.holding("you", f).sets) blocked = "You have " + M.count("you", f) + " of " + sz(f) + ".";
+    if (o.target === "you") body += '<p class="kicker mute gapT" data-k="fy">' + who + " sent this to you; nobody else can see it.</p>";
+    foot = '<button type="button" class="btn ' + (buying ? "rose" : "sage") + '" data-act="cf-go" data-price="' + o.price + '" data-k="cfgo"' + (blocked ? " disabled" : "") + ">" + (buying ? "Buy for " : "Sell for ") + o.price + coinMark(18) + "</button>";
+  }
+  if (blocked) body += '<p class="err" data-k="err">' + esc(blocked) + "</p>";
+  return sheetFrame(o.target === "you" ? "For you, from " + who : "The noticeboard", title, body, foot, "cfTitle");
+}
+function middle(q) { return Math.round((q.bid + q.ask) / 2); }
+function openPost(side, find) {
+  const p = ui.post;
+  p.side = side; p.find = find; p.err = null; p.target = p.target || null;
+  if ((side === "sell" || side === "swap") && M.count("you", find) < sz(find)) {
+    const held = FINDS.find((x) => M.count("you", x.id) >= sz(x.id));
+    if (held) p.find = held.id; else p.side = "buy";
+  }
+  setPostRange();
+  p.price = middle(M.quote(p.find));
+  if (p.want === p.find) p.want = FINDS.find((x) => x.id !== p.find).id;
+  p.qty = Math.max(1, Math.min(sz(p.want), p.qty));
+  openSheet("post");
+  showPicked();
+}
+// bring the picked find into view in the picker (on open and when the kind changes, not on every tick)
+function showPicked() {
+  const row = sheetLayer.querySelector('[data-k="fpick"]'), b = row && row.querySelector('[aria-pressed="true"]');
+  if (b && (b.offsetLeft < row.scrollLeft || b.offsetLeft + b.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollLeft = b.offsetLeft - 8;
+}
+function setPostRange() { const p = ui.post, q = M.quote(p.find), w = Math.max(3, Math.round(q.U * 0.25)); p.min = Math.max(1, q.bid - w); p.max = q.ask + w; }
+function postSheet() {
+  const p = ui.post, f = p.find, q = M.quote(f), H = M.holding("you", f), side = p.side;
+  const tabs = [["sell", "For sale"], ["buy", "Wanted"], ["swap", "Swap"]];
+  let body = '<div class="seg full" role="group" aria-label="What kind of listing" data-k="pk">' + tabs.map((t) => '<button type="button" data-act="pf-side" data-side="' + t[0] + '" aria-pressed="' + (side === t[0]) + '" data-k="pk' + t[0] + '">' + t[1] + "</button>").join("") + "</div>";
+  body += '<div class="lab2" data-k="l1"><span class="kickerPill kick">' + (side === "buy" ? "A set you want" : "A set you hold") + '</span><span class="kicker mute">' + (side === "buy" ? "any find" : "four of a common, three of the rest") + "</span></div>";
+  const order = side === "buy" ? FINDS : FINDS.filter((x) => M.holding("you", x.id).sets).concat(FINDS.filter((x) => !M.holding("you", x.id).sets));
+  body += '<div class="fpick" data-k="fpick">' + order.map((x) => {
+    const Hx = M.holding("you", x.id), ok = side === "buy" || Hx.sets > 0;
+    return '<button type="button" class="fbtn" data-act="pf-find" data-find="' + x.id + '" aria-pressed="' + (x.id === f) + '" data-k="pf' + x.id + '"' + (ok ? "" : " disabled") + ' aria-label="' + esc(cap1(pl(x.id)) + ", " + haveWords(Hx)) + '">' + glyph(x.id, 30) + "<span>" + esc(SHORT[x.id]) + '</span><span class="fh">' + (side === "buy" ? "price " + fp(M.quote(x.id).P) : Hx.sets ? Hx.sets + (Hx.sets === 1 ? " set" : " sets") : Hx.held + " of " + Hx.size) + "</span></button>";
+  }).join("") + "</div>";
+  let verdict = "", vcls = "", label, blocked = null, go = "pf-go";
+  if (side === "swap") {
+    if (p.want === f) p.want = FINDS.find((x) => x.id !== f).id;
+    const want = p.want, maxQ = sz(want);
+    p.qty = Math.max(1, Math.min(maxQ, p.qty));
+    const gv = q.P, wv = (M.quote(want).P / maxQ) * p.qty;
+    body += '<div class="lab2" data-k="l2"><span class="kickerPill kick">Ask for</span><span class="kicker mute">1 to ' + maxQ + " of one other find</span></div>";
+    body += '<div class="fpick" data-k="wpick">' + FINDS.filter((x) => x.id !== f).map((x) => '<button type="button" class="fbtn" data-act="pf-want" data-find="' + x.id + '" aria-pressed="' + (x.id === want) + '" data-k="pw' + x.id + '">' + glyph(x.id, 30) + "<span>" + esc(SHORT[x.id]) + '</span><span class="fh">' + fp(M.quote(x.id).each) + " each</span></button>").join("") + "</div>";
+    body += '<div class="stepper" data-k="swstp"><button type="button" class="btn" data-act="pf-qty" data-d="-1" data-k="sqm" aria-label="One fewer"' + (p.qty <= 1 ? " disabled" : "") + ">" + pmIcon(false) + '</button><div class="stepVal" aria-live="polite"><div class="swapLine">' + glyph(f, 34) + arrows(24) + glyph(want, 34) + '</div><div class="cardTitleSm">' + setOf(f) + " for " + qtyOf(want, p.qty) + '</div></div><button type="button" class="btn" data-act="pf-qty" data-d="1" data-k="sqp" aria-label="One more"' + (p.qty >= maxQ ? " disabled" : "") + ">" + pmIcon(true) + "</button></div>";
+    body += '<p class="swapVals" data-k="swv">Both sides at today\'s price: ' + setOf(f) + " &asymp; " + Math.round(gv) + " &middot; " + qtyOf(want, p.qty) + " &asymp; " + Math.round(wv) + "</p>";
+    if (wv > gv * 1.1) { verdict = "You're asking a little more than you give at today's price. A pig who needs " + pl(want) + " may still take it."; vcls = ""; }
+    else if (wv < gv * 0.9) { verdict = "You're giving more than you ask at today's price. A pig will snap it up."; vcls = "warn"; }
+    else { verdict = "Fair at today's price. A swap doesn't move either price."; vcls = "good"; }
+    label = "Pin it: " + setOf(f) + " for " + qtyOf(want, p.qty);
+    if (H.sets < 1) blocked = "You have " + H.held + " " + pl(f) + "; a swap gives a set of " + H.size + ".";
+  } else {
+    const pr = Math.max(p.min, Math.min(p.max, p.price));
+    p.price = pr;
+    const vs = E.vsPrice(pr, q.P), mid = middle(q);
+    const pv = M.previewList("you", { side, find: f, price: pr, target: p.target });
+    body += '<div class="bigPrice" data-k="bp"><button type="button" class="btn" data-act="pf-step" data-d="-1" aria-label="One less" data-k="pm"' + (pr <= p.min ? " disabled" : "") + ">" + pmIcon(false) + '</button><span class="pr"><span class="hero">' + pr + "</span>" + coinMark(26) + '</span><button type="button" class="btn" data-act="pf-step" data-d="1" aria-label="One more" data-k="pp"' + (pr >= p.max ? " disabled" : "") + ">" + pmIcon(true) + "</button></div>";
+    body += '<div style="text-align:center" data-k="bpv">' + vsChip(vs) + ' <span class="kicker mute">a set of ' + sz(f) + " &middot; " + E.eachWord(pr, sz(f)) + "</span></div>";
+    const span = p.max - p.min, pc = (v) => "calc(14px + (100% - 28px) * " + ((Math.max(p.min, Math.min(p.max, v)) - p.min) / span).toFixed(4) + ")";
+    const bidF = (Math.max(p.min, Math.min(p.max, q.bid)) - p.min) / span, askF = (Math.max(p.min, Math.min(p.max, q.ask)) - p.min) / span;
+    const crossL = side === "sell" ? [0, bidF] : [askF, 1], sitL = side === "sell" ? [askF, 1] : [0, bidF];
+    const z = (cls, a, b) => '<span class="zone ' + cls + '" style="left:' + (a * 100).toFixed(2) + "%;width:" + ((b - a) * 100).toFixed(2) + '%"></span>';
+    body += '<div class="slider" data-k="slider"><div class="slTrack" aria-hidden="true">' + z("zCross", crossL[0], crossL[1]) + z("zGap", bidF, askF) + z("zSit", sitL[0], sitL[1]) + '</div><input type="range" data-k="range" data-input="pf-price" min="' + p.min + '" max="' + p.max + '" step="1" value="' + pr + '" aria-label="Price per set" aria-valuetext="' + pr + " tickles, " + esc(vs.word) + '">' +
+      '<span class="slMark" style="left:' + pc(q.bid) + '"><i></i>I buy ' + q.bid + '</span><span class="slMark mid" style="left:' + pc(mid) + '"><i></i>middle ' + mid + '</span><span class="slMark" style="left:' + pc(q.ask) + '"><i></i>I sell ' + q.ask + "</span></div>";
+    if (side === "sell") {
+      if (pv.fills === "pig") { verdict = cap1(pigPoss(pv.who)) + " wanted ad pays " + pv.at + ": it sells now, " + (pv.at - q.bid) + " more than Bullion pays."; vcls = "good"; label = "Sell to " + pigName(pv.who) + " for " + pv.at; }
+      else if (pv.fills === "counter") { verdict = "At " + q.bid + " or under, Bullion buys it at once for " + q.bid + ". You get his price, and the price drops."; vcls = "warn"; label = "Sell to Bullion now for " + q.bid; }
+      else if (pv.sits) { verdict = "At " + q.ask + " or over it will just sit: a buyer would go to Bullion for " + q.ask + "."; vcls = "warn"; label = "Pin it anyway: " + pr; }
+      else { verdict = "Between his prices: you beat Bullion's " + q.bid + ", and a buyer beats his " + q.ask + "."; vcls = "good"; label = "Pin it: " + setOf(f) + " for " + pr; }
+      if (H.sets < 1) blocked = "You have " + H.held + " " + pl(f) + "; a set is " + H.size + ".";
+    } else {
+      const need = M.openBuyTotal("you") + pr;
+      if (pv.fills === "pig") { verdict = cap1(pigPoss(pv.who)) + " listing is " + pv.at + ": you buy it now, " + (q.ask - pv.at) + " under the counter."; vcls = "good"; label = "Buy from " + pigName(pv.who) + " for " + pv.at; }
+      else if (pv.fills === "counter") { verdict = "At " + q.ask + " or over, Bullion sells you a set at once for " + q.ask + ". You get his price, and the price rises."; vcls = "warn"; label = "Buy from Bullion now for " + q.ask; }
+      else if (pv.sits) { verdict = "At " + q.bid + " or under it will just sit: a seller would go to Bullion for " + q.bid + "."; vcls = "warn"; label = "Pin it anyway: " + pr; }
+      else { verdict = "Between his prices: a seller beats Bullion's " + q.bid + ", and you beat his " + q.ask + "."; vcls = "good"; label = "Pin it: wanted, " + setOf(f) + " for " + pr; }
+      if (pv.fills && M.state.coin.you < pv.at) blocked = "You have " + M.state.coin.you + " tickles ready.";
+      else if (!pv.fills && M.state.coin.you < need) blocked = "Not set aside, but you need " + need + " tickles ready for all your wanted ads (you have " + M.state.coin.you + ").";
+    }
+  }
+  body += '<div class="verdict ' + vcls + '" data-k="verdict" role="status"><span class="handLg">' + esc(verdict) + "</span></div>";
+  body += '<div class="toRow" data-k="to"><span class="kickerPill kick">Who sees it</span><div class="seg full" role="group" aria-label="Who sees it"><button type="button" data-act="pf-to" data-to="" aria-pressed="' + !p.target + '" data-k="toe">Everyone</button><button type="button" data-act="pf-to" data-to="maya" aria-pressed="' + (p.target === "maya") + '" data-k="tom">' + face("maya", 20) + 'Just Maya</button><button type="button" data-act="pf-to" data-to="biscuit" aria-pressed="' + (p.target === "biscuit") + '" data-k="tob">' + face("biscuit", 20) + "Biscuit</button></div></div>";
+  const info = (p.target ? "Only " + pigName(p.target) + " sees it: it lands in her Inbox and on a visit to your Barn. " : "") + (side === "buy" ? "Not set aside: paid when a pig fills it, and it lapses if you've tickled the tickles away." : "Your set leaves your bag while it's pinned; take it down any time and it comes home.") + " Up to " + T.openOffers + " listings, 24 hours each.";
+  body += '<p class="kicker mute gapT" data-k="info">' + esc(info.replace("her Inbox", p.target === "biscuit" ? "his Inbox" : "her Inbox")) + "</p>";
+  if (!blocked && M.openOffers("you").length >= T.openOffers && !(side !== "swap" && M.previewList("you", { side, find: f, price: p.price, target: p.target }).fills)) blocked = "You have " + T.openOffers + " listings up. Take one down to pin another.";
+  if (p.err) body += '<p class="err" role="alert" data-k="err">' + esc(p.err) + "</p>";
+  else if (blocked) body += '<p class="err" data-k="err">' + esc(blocked) + "</p>";
+  const foot = '<button type="button" class="btn ' + (side === "swap" ? "lilac" : "sun") + '" data-act="' + go + '" data-k="pfgo"' + (blocked ? " disabled" : "") + ">" + esc(label) + "</button>";
+  return sheetFrame("The noticeboard", "Post a listing", body, foot, "pfTitle");
+}
+function bagSheet() {
+  const L = M.state.ledger.you, net = L.tookIn - L.spent;
+  let body = '<p class="bodySm"><span class="numIn">' + M.state.coin.you + '</span> tickles ready &middot; spent <span class="numIn">' + L.spent + '</span> &middot; took in <span class="numIn">' + L.tookIn + '</span> &middot; <span class="' + (net > 0 ? "up" : net < 0 ? "down" : "mute") + '">' + E.gainWord(net) + "</span></p>";
+  body += '<div class="bagGrid" data-k="bag">' + FINDS.map((x) => {
+    const H = M.holding("you", x.id);
+    const cost = !H.held ? "none" : H.paidUnits ? H.paidUnits + " paid " + H.paid + (H.dugUnits ? ", " + H.dugUnits + " dug" : "") : "all dug up";
+    const sets = H.held ? (H.sets ? H.sets + (H.sets === 1 ? " set" : " sets") + (H.spare ? " + " + H.spare : "") : H.held + " of " + H.size) : "set of " + H.size;
+    return '<button type="button" class="bagT' + (H.held ? "" : " zero") + '" data-act="open" data-find="' + x.id + '" data-k="bg' + x.id + '" aria-label="' + esc(cap1(pl(x.id)) + ": " + H.held + ", " + sets + ", " + cost) + '">' + glyph(x.id, 40) + '<span class="bn">' + H.held + '</span><span class="label">' + esc(sets) + '</span><span class="bc">' + esc(cost) + (H.onOffer ? " &middot; " + H.onOffer + " pinned up" : "") + "</span></button>";
+  }).join("") + "</div>";
+  return sheetFrame("Your bag", "What you hold", body, null, "bagTitle");
+}
+
+// ── onboarding: three cards in Bullion's voice, then the guided first trade ──
+const OB = [
+  { title: "Buy or sell any set, any time.", say: "Hand me a set and I'll pay you on the spot. Need a set? I've always got one. Four of a common, three of anything else." },
+  { title: "Prices move.", say: "Every set you buy from me pushes the price up. Every set you sell pulls it down. When it's quiet the price wiggles, then wanders back home. I buy a little under the price and sell a little over: that's my cut." },
+  { title: "Or trade with a pig.", say: "Post your set on the noticeboard at your own price, or swap it straight up. Price it between my two prices and you'll both beat my counter. That's how you sell high." },
+];
+function obArt(i) {
+  if (i === 0) return '<div class="obArt" data-k="art0"><img src="img/bullion_counter.png" alt="Bullion behind his counter"></div>';
+  if (i === 1) {
+    const v = M.findView("pinecone", "you");
+    v.hist = M.series("pinecone", T.ticksPerDay + 1);
+    return '<div class="obArt" data-k="art1"><div class="slatePanel chalkVars"><div class="spRow"><img src="img/bullion.png" alt=""><div><div class="chalkLine" style="font-size:18px">Pinecones, live</div><div class="chalkSub">the price ' + tnum(v.q.P, "obp", "", 1) + " &middot; I sell " + v.q.ask + " &middot; I buy " + v.q.bid + "</div></div></div>" + chartSVG(v, true) + "</div></div>";
+  }
+  const q1 = M.quote("pinecone"), q2 = M.quote("old_key"), m1 = middle(q1);
+  const c1 = '<article class="pcard k-sell" data-k="ob1"><span class="pin"></span><div class="kind"><span class="kickerPill kick">For sale</span></div><div class="what">' + glyph("pinecone", 30) + '<span class="wn">4 pinecones</span></div><div class="pp">' + price(m1, "numeralLg", 16) + "</div>" + vsChip(E.vsPrice(m1, q1.P)) + "</article>";
+  const c2 = '<article class="pcard k-swap" data-k="ob2"><span class="pin"></span><div class="kind"><span class="kickerPill kick">Swap</span></div><div class="what">' + glyph("pinecone", 30) + '<span class="wn">4 pinecones</span></div><div class="swapSides"><span>' + arrows(14) + " for " + glyph("old_key", 22) + "1 old key</span><span class=\"bull2\">4 pinecones &asymp; " + Math.round(q1.P) + " &middot; 1 old key &asymp; " + Math.round(q2.each) + "</span></div></article>";
+  return '<div class="obArt" data-k="art2"><div class="miniBoard corkBg">' + c1 + c2 + "</div></div>";
+}
+function onboardSheet() {
+  const i = ui.ob, c = OB[i];
+  const dots = '<div class="obDots" aria-label="Card ' + (i + 1) + " of 3\">" + OB.map((_, k) => '<i class="' + (k === i ? "on" : "") + '"></i>').join("") + "</div>";
+  const body = obArt(i) + '<h3 class="obTitle" id="obTitle">' + esc(c.title) + '</h3><div class="obSay paper" data-k="say' + i + '"><p class="handLg">' + esc(c.say) + "</p></div>";
+  const foot = i < 2
+    ? '<div class="two">' + (i ? '<button type="button" class="btn cream" data-act="ob-back" data-k="obb">Back</button>' : '<button type="button" class="btn cream" data-act="close-sheet" data-k="obb">Not now</button>') + '<button type="button" class="btn sun" data-act="ob-next" data-k="obn">Next</button></div>'
+    : '<div class="two"><button type="button" class="btn cream" data-act="ob-back" data-k="obb">Back</button><button type="button" class="btn sun" data-act="ob-done" data-k="obn">Step up to the counter</button></div>';
+  return '<button type="button" class="scrimEl" data-act="close-sheet" data-k="scrim" aria-label="Close" tabindex="-1"></button><section class="sheet obSheet" role="dialog" aria-modal="true" aria-labelledby="obTitle" data-k="sheet"><div class="grab"></div><div class="sheetHead"><div><div class="kickerPill kick">&#9733; Bullion\'s Market &middot; new here?</div>' + dots + '</div><button type="button" class="btn x" data-act="close-sheet" data-k="sheetx" aria-label="Close">' + xIcon() + '</button></div><div class="sheetBody" data-k="sbody' + i + '">' + body + '</div><div class="sheetFoot" data-k="sfoot">' + foot + "</div></section>";
+}
+// the guided first trade: a coach mark on a set you already hold
+function coachFind() { if (M.holding("you", "pinecone").sets) return "pinecone"; const x = FINDS.find((f) => M.holding("you", f.id).sets); return x ? x.id : null; }
+function renderCoach() {
+  const f = ui.coach && ui.screen === "counter" ? coachFind() : null;
+  if (!f) { coachLayer.classList.remove("on"); if (coachLayer.firstChild) coachLayer.innerHTML = ""; return; }
+  const row = scroller.querySelector('[data-k="cr:' + f + '"]');
+  if (!row) return;
+  const pr = phone.getBoundingClientRect(), r = row.getBoundingClientRect();
+  if (r.top < pr.top + 130 || r.bottom > pr.bottom - 260) { scroller.scrollTop += r.top - pr.top - 150; return requestAnimationFrame(renderCoach); }
+  const top = r.top - pr.top, left = r.left - pr.left;
+  const n = M.count("you", f), bid = M.quote(f).bid;
+  const below = top + r.height + 12;
+  const html = '<div class="coachSpot" data-k="spot" style="left:' + (left - 4) + "px;top:" + (top - 4) + "px;width:" + (r.width + 8) + "px;height:" + (r.height + 8) + 'px"></div>' +
+    '<div class="coachBubble" role="dialog" aria-label="Your first trade" data-k="cb" style="top:' + below + 'px"><span class="arrowUp"></span><div class="cbTop"><img src="img/bullion_counter.png" alt=""><p class="handLg">You\'ve got ' + n + " " + (n === 1 ? nm(f) : pl(f)) + ". Sell them to me for " + bid + ', or put them on the board for more?</p></div><div class="cbBtns"><button type="button" class="btn sage" data-act="coach-sell" data-find="' + f + '" data-k="cbs">Sell to Bullion for ' + bid + '</button><button type="button" class="btn sun" data-act="coach-list" data-find="' + f + '" data-k="cbl">List on the board</button></div><div class="cbLater"><button type="button" class="btn link" data-act="coach-later" data-k="cbx">Just look around</button></div></div>';
+  patch(coachLayer, html);
+  coachLayer.classList.add("on");
+}
+function renderSheet() {
+  if (!ui.sheet) { sheetLayer.classList.remove("open"); return; }
+  const html = ui.sheet === "confirm" ? confirmSheet() : ui.sheet === "post" ? postSheet() : ui.sheet === "onboard" ? onboardSheet() : bagSheet();
+  const wasOpen = sheetLayer.classList.contains("open");
+  patch(sheetLayer, html);
+  animateNums(sheetLayer);
+  if (!wasOpen) {
+    sheetLayer.getBoundingClientRect();
+    sheetLayer.classList.add("open");
+    setTimeout(() => { const x = sheetLayer.querySelector('[data-k="sheetx"]'); if (x) x.focus({ preventScroll: true }); }, 30);
+  }
+}
+function openSheet(kind) { ui.sheet = kind; ui.post.err = null; renderSheet(); }
+function closeSheet() {
+  const was = ui.sheet;
+  ui.sheet = null;
+  sheetLayer.classList.remove("open");
+  setTimeout(() => { if (!ui.sheet) sheetLayer.innerHTML = ""; }, 340);
+  if (was === "onboard" && !onboarded()) renderAll(); // skipped: the "new here?" tag stays
+}
+
+// ── receipts and moments ───────────────────────────────────────────────────
+let toastSeq = 1;
+function toast(t) {
+  t.id = toastSeq++;
+  ui.toasts.unshift(t);
+  ui.toasts = ui.toasts.slice(0, 3);
+  renderToasts();
+  setTimeout(() => dismissToast(t.id), t.ms || 7000);
+}
+function dismissToast(id) { ui.toasts = ui.toasts.filter((t) => t.id !== id); renderToasts(); }
+function renderToasts() {
+  patch(toastLayer, ui.toasts.map((t) => '<div class="toast ' + (t.tone || "") + (t.ribbon ? " withRibbon" : "") + '" data-k="t' + t.id + '">' + (t.ribbon ? '<div class="ribbon">' + esc(t.ribbon) + "</div>" : "") + '<img class="tImg" src="img/' + t.img + '.png" alt="">' + '<div class="tTxt"><div class="cardTitleSm">' + esc(t.title) + "</div>" + (t.line ? '<div class="tLine handT">' + t.line + "</div>" : "") + '</div><button type="button" class="btn x" data-act="toast-x" data-id="' + t.id + '" aria-label="Dismiss">' + xIcon() + "</button></div>").join(""));
+}
+function bumpCoin() { const c = document.getElementById("coin"); if (c) { c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); } }
+function shrug(title, line) { toast({ img: "bullion_shrug", title, line: line || "", tone: "meh" }); }
+function moment(key, t) {
+  if (!onboarded() || moments()[key]) return;
+  markMoment(key);
+  t.tone = "moment"; t.ms = 9000;
+  setTimeout(() => toast(t), 700);
+}
+function costLine(tr) {
+  const g = tr.cost == null ? tr.price : tr.price - tr.cost;
+  const gw = '<b class="' + (g > 0 ? "up" : g < 0 ? "down" : "") + '">' + (tr.cost == null ? "+" + tr.price : E.gainWord(g)) + "</b>";
+  if (tr.cost == null) return "you dug them up &middot; " + gw;
+  return "paid " + tr.cost + " &middot; sold for " + tr.price + " &middot; " + gw;
+}
+function receipt(tr) {
+  const f = tr.find, mv = fp(tr.from) + " &rarr; " + fp(tr.to);
+  if (tr.kind === "counter") {
+    if (tr.seller === "you") toast({ img: "bullion_gavel", title: "Bullion bought your " + setOf(f) + " for " + tr.price, line: costLine(tr) + " &middot; the price went " + mv });
+    else {
+      const sp = M.sheepPrice("you", f);
+      toast({ img: "bullion_gavel", title: "You bought " + setOf(f) + " from Bullion for " + tr.price, line: "the price went " + mv + " &middot; " + M.count("you", f) + " in your bag" + (sp.fancy && !M.state.sheepDone.you ? " &middot; your Ghost Sheep pays " + sp.set + " today" : "") });
+    }
+    moment("moved", { img: "bullion_cheer", title: "You moved the price!", line: cap1(pl(f)) + " " + mv + ". Every set at my counter nudges it." });
+  } else if (tr.kind === "pig") {
+    if (tr.seller === "you") {
+      const by = cap1(pigName(tr.buyer)), plus = tr.price - tr.bid;
+      toast({ img: "bullion_cheer", ribbon: plus > 0 ? "beat the counter" : null, title: by + " bought your " + setOf(f) + " for " + tr.price, line: by + " paid " + tr.price + " &middot; Bullion would have paid " + tr.bid + " &middot; " + (plus > 0 ? "+" + plus + (tr.how === "listing" ? " for listing it" : " for selling to a pig") : "the same as the counter") });
+      if (plus > 0) moment("beat", { img: "bullion_cheer", title: by + " paid " + plus + " more than I would have. Nice selling.", line: by + " paid " + tr.price + " &middot; I'd have paid " + tr.bid });
+    } else {
+      const from = cap1(pigName(tr.seller)), saved = tr.ask - tr.price, sp = M.sheepPrice("you", f);
+      toast({ img: "bullion_cheer", title: (tr.how === "wanted" ? from + " sold you " : "You bought ") + setOf(f) + (tr.how === "wanted" ? "" : " from " + pigName(tr.seller)) + " for " + tr.price, line: "Bullion charges " + tr.ask + (saved > 0 ? " &middot; " + saved + " saved buying from a pig" : "") + (sp.fancy && !M.state.sheepDone.you ? " &middot; your Ghost Sheep pays " + sp.set + " today" : "") });
+    }
+    moment("moved", { img: "bullion_cheer", title: "You moved the price!", line: cap1(pl(f)) + " " + mv + ". A pig sale nudges it a third of the way." });
+  }
+  bumpCoin();
+}
+function noticeToast(n) {
+  if (n.type === "filled") { receipt(n.trade); return; }
+  const o = n.offer || {};
+  if (n.type === "crossed") {
+    const tr = n.trade;
+    if (tr.side === "sell") toast({ img: "bullion_gavel", title: "Bullion bought your " + setOf(tr.find) + " for " + tr.price, line: "His buying price reached your " + o.price + ": a listing at or under it sells to him, at his price." });
+    else toast({ img: "bullion_gavel", title: "Bullion sold you " + setOf(tr.find) + " for " + tr.price, line: "His selling price came down to your " + o.price + ": you got his price." });
+    bumpCoin();
+  } else if (n.type === "expired") {
+    if (o.side === "sell") shrug("Your " + setOf(o.find) + " came home", "Nobody took them at " + o.price + " in a day.");
+    else if (o.side === "buy") shrug("Your wanted ad for " + pl(o.find) + " ran out", "Nobody sold at " + o.price + " in a day.");
+    else shrug("Your swap ran out", "Your " + setOf(o.find) + " are back in your bag.");
+  } else if (n.type === "lapsed") shrug("Your wanted ad for " + pl(o.find) + " lapsed", "A seller came, but you had fewer than " + o.price + " tickles ready.");
+  else if (n.type === "swapped") toast({ img: "bullion_cheer", title: cap1(pigName(n.trade.buyer)) + " took your swap", line: "Gave " + setOf(n.trade.find) + ", got " + qtyOf(n.trade.wantFind, n.trade.wantQty) + " &middot; straight up" });
+  else if (n.type === "forYou") {
+    const who = cap1(pigName(o.pig));
+    toast({ img: FACE[o.pig] ? FACE[o.pig].img : "bullion", title: who + " sent you an offer", line: (o.side === "swap" ? setOf(o.find) + " for " + qtyOf(o.wantFind, o.wantQty) : setOf(o.find) + " for " + o.price) + " &middot; on the noticeboard, For you", ms: 6000 });
+  }
+}
+function failToast(res, f) {
+  const r = res.reason;
+  if (r === "price_moved") shrug("The price moved", "It's " + res.now + " now. Take another look.");
+  else if (r === "not_enough_tickles") shrug("Not enough tickles ready", "You have " + res.ready + "; it needs " + res.needed + ".");
+  else if (r === "not_a_set") shrug("A set is " + res.set_size, "You have " + res.held + " " + pl(f) + ".");
+  else if (r === "too_many_offers") shrug("You have " + T.openOffers + " listings up", "Take one down to pin another.");
+  else if (r === "too_many_today") shrug("That's " + T.dailyPosts + " listings today", "Try again tomorrow.");
+  else if (r === "sheep_done") shrug("Your Ghost Sheep took a set today", "He'll be back tomorrow.");
+  else if (r === "not_enough") shrug("You need " + res.needed, "You have " + res.held + ".");
+  else if (r === "lapsed") shrug("That wanted ad lapsed", "The pig had tickled its tickles away.");
+  else if (r === "not_found") shrug("That listing is gone", "Another pig got there first.");
+  else shrug("That didn't go through", r);
+}
+// the first quiet drift you watch: a find nobody has traded for a while, its price wandering home
+function checkDrift() {
+  if (!onboarded() || moments().drift || (ui.screen !== "counter" && ui.screen !== "find") || ui.sheet) return;
+  const finds = ui.screen === "find" ? [ui.find] : FINDS.map((x) => x.id);
+  let best = null;
+  finds.forEach((f) => {
+    const q = M.quote(f), quiet = M.state.tick - M.state.lastActive[BY[f].idx];
+    const s = M.series(f, 4);
+    if (quiet < 3 || s.length < 4) return;
+    const gapNow = Math.abs(q.P - q.U), gapThen = Math.abs(s[0].p - q.U);
+    if (gapNow >= 0.02 * q.U && gapThen - gapNow >= 0.004 * q.U && (!best || gapNow > best.gap)) best = { f, gap: gapNow, from: s[0].p, to: q.P, U: q.U };
+  });
+  if (best) moment("drift", { img: "bullion", title: "Nobody's traded " + pl(best.f) + " for a while: the price is wandering home", line: fp(best.from) + " &rarr; " + fp(best.to) + ", back toward " + best.U + "." });
+}
+
+// ── actions ────────────────────────────────────────────────────────────────
+function navigate(to) {
+  ui.screen = to; ui.sheet = null; sheetLayer.classList.remove("open"); sheetLayer.innerHTML = "";
+  if (to === "market") { ui.sayTurn++; ui.say = sayLine(); if (!onboarded() && !ui.coach) { ui.ob = 0; ui.sheet = "onboard"; } }
+  if (to === "board") ui.boardMore = 24;
+  scroller.scrollTop = 0;
+  renderAll();
+}
+function finishOnboarding() { store.set(KEY_ON, "1"); ui.coach = false; }
+const act = {
+  go(el) { navigate(el.dataset.to); },
+  open(el) { ui.find = el.dataset.find; navigate("find"); },
+  bag() { openSheet("bag"); },
+  cbuy() { ui.cf = { via: "counter", side: "buy", find: ui.find }; openSheet("confirm"); },
+  csell() { ui.cf = { via: "counter", side: "sell", find: ui.find }; openSheet("confirm"); },
+  take(el) { ui.cf = { via: "board", id: Number(el.dataset.id) }; openSheet("confirm"); },
+  "cf-go"(el) {
+    const cf = ui.cf;
+    let res, f;
+    if (cf.via === "counter") { f = cf.find; res = M.counter("you", f, cf.side, Number(el.dataset.price)); }
+    else { const o = M.findOffer(cf.id); f = o ? o.find : ui.find; res = M.take("you", cf.id, el.dataset.price ? Number(el.dataset.price) : undefined); }
+    if (!res.ok) { failToast(res, f); renderAll(); return; }
+    const tr = res.trade;
+    if (tr.kind === "swap") toast({ img: "bullion_cheer", title: "You swapped with " + pigName(tr.seller), line: "Gave " + qtyOf(tr.wantFind, tr.wantQty) + " (&asymp; " + Math.round(tr.wantVal) + "), got " + setOf(tr.find) + " (&asymp; " + Math.round(tr.giveVal) + ") &middot; straight up" });
+    else receipt(tr);
+    closeSheet(); renderAll();
+  },
+  post() { openPost("sell", ui.find); },
+  "post-here"() { openPost(M.holding("you", ui.find).sets ? "sell" : "buy", ui.find); },
+  "pf-side"(el) { const p = ui.post; p.side = el.dataset.side; p.err = null; if (p.side !== "buy" && !M.holding("you", p.find).sets) { const h = FINDS.find((x) => M.holding("you", x.id).sets); if (h) p.find = h.id; } setPostRange(); p.price = middle(M.quote(p.find)); renderSheet(); showPicked(); },
+  "pf-find"(el) { const p = ui.post; p.find = el.dataset.find; p.err = null; setPostRange(); p.price = middle(M.quote(p.find)); if (p.want === p.find) p.want = FINDS.find((x) => x.id !== p.find).id; renderSheet(); },
+  "pf-step"(el) { const p = ui.post; p.price = Math.max(p.min, Math.min(p.max, p.price + Number(el.dataset.d))); p.err = null; renderSheet(); },
+  "pf-want"(el) { const p = ui.post; p.want = el.dataset.find; p.qty = Math.min(p.qty, sz(p.want)); renderSheet(); },
+  "pf-qty"(el) { const p = ui.post; p.qty = Math.max(1, Math.min(sz(p.want), p.qty + Number(el.dataset.d))); renderSheet(); },
+  "pf-to"(el) { ui.post.target = el.dataset.to || null; renderSheet(); },
+  "pf-go"() {
+    const p = ui.post, f = p.find;
+    const spec = p.side === "swap" ? { side: "swap", find: f, wantFind: p.want, wantQty: p.qty, target: p.target } : { side: p.side, find: f, price: p.price, target: p.target };
+    const res = M.list("you", spec);
+    if (!res.ok) { failToast(res, f); renderAll(); return; }
+    if (res.filled) {
+      if (res.via === "counter") {
+        const tr = res.trade;
+        toast({ img: "bullion_gavel", title: tr.side === "sell" ? "Bullion bought your " + setOf(f) + " at once for " + tr.price : "Bullion sold you " + setOf(f) + " at once for " + tr.price, line: (tr.side === "sell" ? "Priced at or under what he pays, so he took it at his price" : "Priced at or over what he charges, so he sold at his price") + " &middot; the price went " + fp(tr.from) + " &rarr; " + fp(tr.to) });
+        bumpCoin();
+        moment("moved", { img: "bullion_cheer", title: "You moved the price!", line: cap1(pl(f)) + " " + fp(tr.from) + " &rarr; " + fp(tr.to) + "." });
+      } else receipt(res.trade);
+    } else {
+      const o = res.offer;
+      toast({ img: "bullion", title: o.side === "swap" ? "Your swap is pinned up" : o.side === "sell" ? "Your " + setOf(f) + " are pinned up at " + o.price : "Your wanted ad is up: " + setOf(f) + " for " + o.price, line: (o.target ? "Only " + pigName(o.target) + " can see it" : "Every pig can see it") + " &middot; stays up 24 hours", ms: 5000 });
+    }
+    closeSheet(); renderAll();
+  },
+  cancel(el) {
+    const id = Number(el.dataset.id), o = M.findOffer(id), res = M.cancel("you", id);
+    if (res.ok && o) toast({ img: "bullion", title: "Taken down", line: o.side === "buy" ? "Your wanted ad for " + pl(o.find) + " is off the board." : "Your " + setOf(o.find) + " are back in your bag.", tone: "meh", ms: 4000 });
+    renderAll();
+  },
+  sheep() { const res = M.sellToSheep("you", ui.find); if (!res.ok) { failToast(res, ui.find); return; } toast({ img: "trader", title: "Your Ghost Sheep bought " + setOf(ui.find) + " for " + res.trade.price, line: costLine(res.trade) }); bumpCoin(); renderAll(); },
+  "board-f"(el) { ui.boardF = el.dataset.f; ui.boardMore = 24; renderAll(); },
+  "board-more"() { ui.boardMore += 24; renderAll(); },
+  "ob-next"() { ui.ob = Math.min(2, ui.ob + 1); renderSheet(); },
+  "ob-back"() { ui.ob = Math.max(0, ui.ob - 1); renderSheet(); },
+  "ob-done"() { ui.coach = true; ui.sheet = null; sheetLayer.classList.remove("open"); setTimeout(() => { if (!ui.sheet) sheetLayer.innerHTML = ""; }, 340); ui.screen = "counter"; scroller.scrollTop = 0; renderAll(); },
+  "coach-sell"(el) { finishOnboarding(); coachLayer.classList.remove("on"); coachLayer.innerHTML = ""; ui.find = el.dataset.find; ui.screen = "find"; scroller.scrollTop = 0; renderAll(); act.csell(); },
+  "coach-list"(el) { finishOnboarding(); coachLayer.classList.remove("on"); coachLayer.innerHTML = ""; ui.find = el.dataset.find; ui.screen = "board"; scroller.scrollTop = 0; renderAll(); openPost("sell", el.dataset.find); },
+  "coach-later"() { ui.coach = false; renderAll(); },
+  "close-sheet"() { closeSheet(); },
+  "toast-x"(el) { dismissToast(Number(el.dataset.id)); },
+  speed(el) { ui.speed = Number(el.dataset.speed); syncSeg("#speedSeg", "speed", String(ui.speed)); schedule(); },
+  tape(el) { ui.tapeF = el.dataset.f; syncSeg("#tapeSeg", "f", ui.tapeF); renderTapeFull(); },
+  reset() { boot(); },
+  "replay-onboarding"() { store.del(KEY_ON); store.del(KEY_MO); ui.skipOnboard = false; ui.coach = false; ui.ob = 0; navigate("market"); },
+};
+function syncSeg(sel, attr, val) { document.querySelectorAll(sel + " button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset[attr] === val))); }
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-act]");
+  if (!el || el.disabled) return;
+  const fn = act[el.dataset.act];
+  if (fn) fn(el);
+});
+document.addEventListener("input", (e) => {
+  if (e.target.dataset && e.target.dataset.input === "pf-price") { ui.post.price = Number(e.target.value); ui.post.err = null; renderSheet(); }
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && ui.sheet) closeSheet(); });
+
+// ── the tape (side panel) ──────────────────────────────────────────────────
+function tapeItem(e) {
+  let lab, txt, dim = false, f = null, you = false;
+  if (e.kind === "trade") {
+    const tr = e.trade; f = tr.find;
+    you = tr.buyer === "you" || tr.seller === "you";
+    const mv = tr.from != null ? " &middot; price " + fp(tr.from) + " &rarr; " + fp(tr.to) : "";
+    if (tr.kind === "counter") { lab = "COUNTER"; txt = (tr.side === "buy" ? cap1(pigName(tr.buyer)) + " bought " + setOf(f) + " from Bullion" : cap1(pigName(tr.seller)) + " sold Bullion " + setOf(f)) + " &middot; <b>" + tr.price + "</b>" + mv + (tr.how === "crossed" ? " (a crossed listing)" : ""); }
+    else if (tr.kind === "pig") { lab = "PIGS"; txt = cap1(pigName(tr.buyer)) + " bought " + setOf(f) + " from " + pigName(tr.seller) + " &middot; <b>" + tr.price + "</b>" + mv + (tr.target ? " (an offer to a friend)" : ""); }
+    else if (tr.kind === "print") { lab = "TOWN"; dim = true; txt = esc(cap1(tr.who)) + (tr.dir === "up" ? " bought " : " sold ") + setOf(f) + " &middot; " + tr.price; }
+    else if (tr.kind === "swap") { lab = "SWAP"; txt = cap1(pigName(tr.buyer)) + " swapped " + qtyOf(tr.wantFind, tr.wantQty) + " for " + pigPoss(tr.seller) + " " + setOf(f) + " &middot; the price stays put"; }
+    else { lab = "SHEEP"; txt = cap1(pigName(tr.seller)) + " sold " + setOf(f) + " to " + (tr.seller === "you" ? "your" : "a") + " Ghost Sheep &middot; <b>" + tr.price + "</b>"; }
+  } else {
+    const o = e.offer; f = o.find; you = o.pig === "you";
+    if (o.target && o.target !== "you" && o.pig !== "you") return null; // an offer to someone else's friend is theirs
+    const who = cap1(pigName(o.pig)), to = o.target ? " (to " + (o.target === "you" ? "you" : pigName(o.target)) + ")" : "";
+    lab = "POST";
+    if (e.kind === "offer") txt = o.side === "sell" ? who + " pinned " + setOf(f) + " for sale at <b>" + o.price + "</b>" + to : o.side === "buy" ? who + " wants " + setOf(f) + " for <b>" + o.price + "</b>" + to : who + " offers " + setOf(f) + " for " + qtyOf(o.wantFind, o.wantQty) + to;
+    else { dim = true; const what = o.side === "swap" ? "swap of " + pl(f) : (o.side === "sell" ? "listing of " : "wanted ad for ") + pl(f) + " at " + o.price; txt = e.kind === "cancel" ? who + " took down " + (o.pig === "you" ? "your " : "its ") + what : e.kind === "expire" ? (o.pig === "you" ? "Your " : who + "'s ") + what + " ran out" : (o.pig === "you" ? "Your " : who + "'s ") + what + " lapsed (short of tickles)"; }
+  }
+  if (you) lab = "YOU";
+  if (ui.tapeF === "trades" && e.kind !== "trade") return null;
+  if (ui.tapeF === "find" && f !== ui.find && !(e.offer && e.offer.wantFind === ui.find) && !(e.trade && e.trade.wantFind === ui.find)) return null;
+  const li = document.createElement("li");
+  if (dim) li.className = "dim";
+  if (you) li.className += " youRow";
+  li.innerHTML = '<span class="tt">' + M.clock(e.t).time + '</span><span class="lb ' + lab + '">' + lab.toLowerCase() + "</span><span>" + (f ? '<img src="img/' + f + '.png" alt="">' : "") + txt + "</span>";
+  return li;
+}
+function renderTapeFull() {
+  tapeEl.innerHTML = "";
+  const frag = document.createDocumentFragment(), list = M.state.tape;
+  let n = 0;
+  for (let i = list.length - 1; i >= 0 && n < 220; i--) { const li = tapeItem(list[i]); if (li) { frag.appendChild(li); n++; } }
+  tapeEl.appendChild(frag);
+  $("#tapeFindBtn").textContent = cap1(pl(ui.find));
+}
+function appendTape(entries) {
+  for (const e of entries) { const li = tapeItem(e); if (li) tapeEl.insertBefore(li, tapeEl.firstChild); }
+  while (tapeEl.childNodes.length > 240) tapeEl.removeChild(tapeEl.lastChild);
+}
+
+// ── render ─────────────────────────────────────────────────────────────────
+function placeOf(s) { return s === "counter" || s === "find" ? "chalk" : s === "board" ? "cork" : "paper"; }
+function renderStatus() {
+  const c = M.clock();
+  $("#sTime").textContent = c.time;
+  $("#sDay").textContent = c.weekday + " · day " + c.day;
+  $("#clock").textContent = c.label;
+  $("#tapeFindBtn").textContent = cap1(pl(ui.find));
+}
+function renderAll() {
+  renderStatus();
+  const place = placeOf(ui.screen);
+  const cls = "phone place-" + place + (place === "chalk" ? " chalkVars" : "");
+  if (phone.className !== cls) phone.className = cls;
+  patch(appbar, appbarHTML());
+  const html = ui.screen === "home" ? homeHTML() : ui.screen === "market" ? marketHTML() : ui.screen === "counter" ? counterHTML() : ui.screen === "find" ? findHTML() : boardHTML();
+  patch(scroller, html);
+  if (ui.screen === "find" || ui.screen === "board") { actionbar.hidden = false; patch(actionbar, actionbarHTML()); } else actionbar.hidden = true;
+  animateNums(scroller); animateNums(actionbar);
+  if (ui.sheet) renderSheet();
+  renderCoach();
+}
+
+// ── the clock ──────────────────────────────────────────────────────────────
+let timer = null;
+function schedule() {
+  clearTimeout(timer);
+  const bar = $("#tickfill");
+  bar.classList.remove("run");
+  if (!ui.speed) return;
+  const ms = 2500 / ui.speed;
+  void bar.offsetWidth;
+  bar.style.animationDuration = ms + "ms";
+  bar.classList.add("run");
+  timer = setTimeout(step, ms);
+}
+function step() {
+  const r = M.tick();
+  M.drainNotices();
+  r.notices.forEach(noticeToast);
+  appendTape(r.tape);
+  renderAll();
+  checkDrift();
+  schedule();
+}
+function boot() {
+  clearTimeout(timer);
+  M = E.create({ seed: SEED, startTick: 0 });
+  M.run(WARM);
+  M.seedDemo();
+  M.drainNotices();
+  ui.prevLast = {}; ui.toasts = []; ui.tickerSeen = 0; ui.sheet = null; ui.cf = null;
+  sheetLayer.classList.remove("open"); sheetLayer.innerHTML = "";
+  ui.say = sayLine();
+  const strangers = M.state.pigs.filter((p) => p.kind === "stranger").length;
+  $("#simNote").textContent = "Pigs are simulated for this demo: Maya and Biscuit (your friends, named), " + strangers + " strangers who show as “a pig”, and six townsfolk whose small trades are the quiet-hours wiggle. Bullion's counter and the price follow the rules that would ship; the pigs stand in for real players.";
+  renderToasts();
+  renderTapeFull();
+  if (!onboarded() && ui.screen === "market") { ui.ob = 0; ui.sheet = "onboard"; }
+  renderAll();
+  schedule();
+}
+// deep links: ?screen=home|market|counter|find|board &find=pinecone &sheet=onboard|post|buy|sell|bag &ob=0|1|2
+// &speed=0|1|4|16 &onboard=skip (this load only) &board=all|sell|buy|swap|you &coach=1
+(function fromUrl() {
+  const q = new URLSearchParams(location.search);
+  const speed = q.get("speed"), find = q.get("find"), sheet = q.get("sheet"), screen = q.get("screen");
+  if (q.get("onboard") === "skip") ui.skipOnboard = true;
+  if (speed && ["0", "1", "4", "16"].indexOf(speed) >= 0) { ui.speed = Number(speed); syncSeg("#speedSeg", "speed", speed); }
+  if (find && BY[find]) ui.find = find;
+  if (screen && ["home", "market", "counter", "find", "board"].indexOf(screen) >= 0) ui.screen = screen;
+  if (q.get("board")) ui.boardF = q.get("board");
+  boot();
+  if (q.get("coach") === "1") { ui.coach = true; ui.sheet = null; ui.screen = "counter"; renderAll(); }
+  if (sheet === "onboard") { ui.ob = Math.max(0, Math.min(2, Number(q.get("ob") || 0))); openSheet("onboard"); }
+  else if (sheet === "post") openPost(q.get("side") || "sell", ui.find);
+  else if (sheet === "buy") act.cbuy();
+  else if (sheet === "sell") act.csell();
+  else if (sheet === "bag") act.bag();
+})();
+})();
+</script>
+</body>
+</html>

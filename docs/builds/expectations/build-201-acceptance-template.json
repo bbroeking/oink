@@ -1,0 +1,196 @@
+{
+ "build": 201,
+ "instructions": "Copy this file outside the repo (it will hold your account details), fill every field, set each row's result to pass | fail | pending | waived (waived = an accepted residual risk; say who accepted it and why in notes), then run: python3 scripts/release/promote_build.py device 201 --record <your copy>. Every row must be on the exact TestFlight 1.3.1 (201) binary on a physical iPhone.",
+ "fields": {
+  "tester": "",
+  "device": "",
+  "ios": "",
+  "date": "",
+  "account_type": "",
+  "testflight_build": "1.3.1 (201)"
+ },
+ "rows": [
+  {
+   "id": "install-exact-binary",
+   "area": "Core",
+   "check": "Installed 1.3.1 (201) from TestFlight on a physical iPhone; device, iOS and date recorded above.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "upgrade-from-200",
+   "area": "Core",
+   "check": "Upgrade from 1.3 (200) keeps the account, pig, Satchel and owned items; What's new shows Bullion's Market once.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-fan-row",
+   "area": "Market",
+   "check": "Barn button + shows a Market row reading \"new here? · buy, sell, swap\" until onboarding is done.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-onboarding",
+   "area": "Market",
+   "check": "Three cards in Bullion's voice say sets are three of a common, two of an uncommon, or a rare on its own; the guided first trade offers a set you hold.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-counter-sell-buy",
+   "area": "Market",
+   "check": "Sell a set at the counter: the confirm shows the price move, the gavel receipt appears, tickles ready go up. Buy one back: the price rises, tickles go down.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-whistle-single",
+   "area": "Market",
+   "check": "The tin whistle trades on its own: the find view says one at a time, and the copy reads \"a tin whistle\", never \"1 tin whistles\".",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-listing",
+   "area": "Market",
+   "check": "Pin a For sale listing between Bullion's prices: it shows under Your listings with 48 hours; Take down brings the set home.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-daily-shelf",
+   "area": "Market",
+   "check": "Bullion's daily shelf shows up to three sets inside his gap; one buy a day per pig (a second says so).",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-for-you",
+   "area": "Market",
+   "check": "With a second account: a friend-only listing shows as For you, the friend gets the push, the sale lands and the seller gets \"Your ... sold\" and \"Nice selling.\" when it beat Bullion.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "market-lost-answer",
+   "area": "Market",
+   "check": "Airplane mode mid-trade: the sheet says it couldn't hear back from Bullion; a retry after reconnecting trades once, not twice.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "trader-found-double",
+   "area": "Trader",
+   "check": "With the Ghost Sheep here and fancying a find you dug: it pays double. One you bought at the market pays his usual price, and the sheet says bought ones pay the usual price.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "trader-pair-mixed",
+   "area": "Trader",
+   "check": "A pair of the fancied find, one dug and one bought: the strip shows each price (for example 6 + 3) and the receipt pays what it showed.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "trader-trade-up",
+   "area": "Trader",
+   "check": "Three alike trade up one rarity; the receipt and the Satchel agree.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "regression-tickle-loop",
+   "area": "Regression",
+   "check": "Tickle loop, bank reconciliation, Snout earning (pre-ship smoke checklist).",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "regression-visits",
+   "area": "Regression",
+   "check": "Visits, visit cap, friend Barn ownership.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "regression-satchel-swaps",
+   "area": "Regression",
+   "check": "Satchel swaps and gifts on a visit.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "regression-dig-receipt",
+   "area": "Regression",
+   "check": "Dig and its receipt, exactly-once rewards.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "regression-feed-draw-pass",
+   "area": "Regression",
+   "check": "Season Feed / Draw / Pass, claims and navigation.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "a11y-voiceover-market",
+   "area": "Accessibility",
+   "check": "VoiceOver reads the market's counter rows, board cards, confirm sheets and the Sheep's tiles with the numbers shown on screen.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "a11y-large-text",
+   "area": "Accessibility",
+   "check": "Large text.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "a11y-reduce-motion",
+   "area": "Accessibility",
+   "check": "Reduce Motion.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "layouts-contrast",
+   "area": "Accessibility",
+   "check": "Smallest and largest phone layouts, contrast.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "lifecycle-offline",
+   "area": "Core",
+   "check": "Cold launch, background/resume, offline then reconnect: no silent core failure.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "notification-market",
+   "area": "Routes",
+   "check": "A market push opens the market cold, warm and in the foreground.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "sentry-build-201",
+   "area": "Observability",
+   "check": "Production Sentry release com.broeking.ttp@1.3.1+201: no unexplained errors; symbols uploaded.",
+   "result": "pending",
+   "notes": ""
+  },
+  {
+   "id": "disposition-quality-check",
+   "area": "Disposition",
+   "check": "Owner decision on the pre-existing quality:check debt (138 clamps > 91; six older security findings), unchanged by the market.",
+   "result": "pending",
+   "notes": ""
+  }
+ ]
+}

@@ -44,6 +44,8 @@ export type IconName =
 	| "check"
 	| "x"
 	| "plus"
+	// The stepper's "one less" (Bullion's Market price, 2026-10-31).
+	| "minus"
 	| "arrowRight"
 	| "globe"
 	| "friends"
@@ -407,6 +409,8 @@ function Render({
 					<Path d="M5 12 H19" stroke={c} strokeWidth={sw} />
 				</G>
 			);
+		case "minus":
+			return <Path d="M5 12 H19" stroke={c} strokeWidth={sw} strokeLinecap="round" />;
 		case "arrowRight":
 			return (
 				<G
