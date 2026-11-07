@@ -542,8 +542,10 @@ def cmd_binary(n: int) -> int:
 # ── server ───────────────────────────────────────────────────────────────────
 
 def run_readonly_query(sql: str) -> list[dict]:
+    # Supabase CLI 3 rejects this repo's config.toml ([inbucket]), so the 2.x
+    # line is pinned unless SUPABASE_BIN names another binary.
     script = ('set -a; source .env.supabase; set +a; '
-              f'exec perl -e "alarm {QUERY_TIMEOUT_S}; exec @ARGV" npx supabase db query --linked "$1"')
+              f'exec perl -e "alarm {QUERY_TIMEOUT_S}; exec @ARGV" ${{SUPABASE_BIN:-npx -y supabase@2}} db query --linked "$1"')
     r = subprocess.run(["bash", "-c", script, "_", "set transaction read only; " + sql],
                        cwd=ROOT, capture_output=True, text=True)
     if r.returncode != 0:
