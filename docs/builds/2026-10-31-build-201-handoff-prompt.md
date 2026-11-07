@@ -2,7 +2,7 @@ You are picking up **Bullion's Market** in the Tickle the Pig repo (`bbroeking/o
 
 ## Where things stand
 
-- All code is on branch `claude/backend-ui-implementation-buzz5y` (pushed). Spec: `docs/design/market-2026-10-31/bullions-market.md` (rules, RPCs, audit notes, open questions). Draft changelog: `docs/builds/2026-10-31-build-201.md`.
+- All code is on branch `claude/backend-ui-implementation-buzz5y` (pushed). Spec: `docs/design/market-2026-10-31/bullions-market.md` (rules, RPCs, audit notes, open questions). Draft changelog: `docs/builds/2026-11-07-build-201.md`.
 - Server:
   - `supabase/migrations/20261031100000_bullions_market.sql`: the market. Its dry run listed only this file; I may or may not have pushed it. **Check, don't assume.** Run `npx supabase migration list --linked` and see whether `20261031100000` shows on the remote.
   - `supabase/migrations/20261031110000_market_followups.sql`: authored, unpushed. It hides unpayable wanted ads, restores listed sets if the Season 2 flip is undone, and clears a moved find's cost via a trigger.
@@ -32,7 +32,7 @@ You are picking up **Bullion's Market** in the Tickle the Pig repo (`bbroeking/o
 5. **Merge.** Open a PR from `claude/backend-ui-implementation-buzz5y` to `main` (use the repo's PR template if there is one). Wait for my OK to merge.
 
 6. **Cut build 201** from `main` after the merge:
-   - Finalise `docs/builds/2026-10-31-build-201.md` with the date, version string, candidate commit, server table state, and gates.
+   - Finalise `docs/builds/2026-11-07-build-201.md` with the date, version string, candidate commit, server table state, and gates.
    - Write `docs/builds/expectations/build-201.json`, modelled on `build-200.json`.
    - Commit both **before** building.
    - Gates, recorded in the changelog: full `npx jest --ci`, `npx tsc --noEmit` (only the 3 errors already on `main` are allowed), `npm run lint` (0 errors), `npm run lint:web`, and `NODE_OPTIONS="--max-old-space-size=16384" npx expo export --platform ios`.

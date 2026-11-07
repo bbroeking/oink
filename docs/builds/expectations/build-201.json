@@ -1,0 +1,92 @@
+[
+  {
+    "name": "every local migration is applied except the three held ones (the five market migrations included)",
+    "sql": "select version from supabase_migrations.schema_migrations order by version",
+    "expect": {
+      "migrations_applied": {
+        "held": [
+          "20261004230000",
+          "20261014180000",
+          "20261014200000"
+        ],
+        "held_must_be_unapplied": true
+      }
+    }
+  },
+  {
+    "name": "market_tuning (effective): open, sets 3 / 2 / 1, impact 0.05, wiggle 0.02, 48 h listings, one shelf set per pig a day (20261102200000, 20261107120000)",
+    "sql": "select (t->>'enabled')::boolean as enabled, t->'set_size' as set_size, (t->'price'->>'impact')::numeric = 0.05 as impact_ok, (t->'price'->>'wiggle')::numeric = 0.02 as wiggle_ok, (t->>'offer_hours')::int as offer_hours, (t->'bullion_board'->>'per_pig')::int as per_pig from (select public._market_tuning() as t) x",
+    "expect": {
+      "row": {
+        "enabled": true,
+        "set_size": {
+          "common": 3,
+          "uncommon": 2,
+          "rare": 1
+        },
+        "impact_ok": true,
+        "wiggle_ok": true,
+        "offer_hours": 48,
+        "per_pig": 1
+      }
+    }
+  },
+  {
+    "name": "every market price sits inside its band (0.85 to 1.15 of usual) after the 3 / 2 / 1 rescale",
+    "sql": "select count(*) as out_of_band from public.market_prices mp where mp.price < 0.85 * public._market_usual(mp.find_id, public._market_tuning()) - 0.000001 or mp.price > 1.15 * public._market_usual(mp.find_id, public._market_tuning()) + 0.000001",
+    "expect": {
+      "row": {
+        "out_of_band": 0
+      }
+    }
+  },
+  {
+    "name": "the Season 2 flip runs under the market lock: season2-flip calls _season2_flip_market_locked, or the flip has already run",
+    "sql": "select (exists (select 1 from cron.job where jobname = 'season2-flip' and position('_season2_flip_market_locked' in command) > 0) or coalesce((select c.enabled from public.app_config c where c.key = 'season2_flipped'), false)) as ok",
+    "expect": {
+      "row": {
+        "ok": true
+      }
+    }
+  },
+  {
+    "name": "the Ghost Sheep doubles only unbought finds, and the bag says which were bought (20261107120000)",
+    "sql": "select position('item.market_cost IS NULL' in pg_get_functiondef('public.trade_with_trader(bigint, uuid)'::regprocedure)) > 0 as found_only, position('''bought''' in pg_get_functiondef('public._satchel_bag_json(uuid)'::regprocedure)) > 0 as bag_bought, position('unpaired_paid' in pg_get_functiondef('public._trader_status_json(uuid)'::regprocedure)) > 0 as unpaired_paid",
+    "expect": {
+      "row": {
+        "found_only": true,
+        "bag_bought": true,
+        "unpaired_paid": true
+      }
+    }
+  },
+  {
+    "name": "trader_tuning: pair_multiplier 1.5, trade_up true, finds_per_visit 9",
+    "sql": "select value -> 'pair_multiplier' as pair_multiplier, value -> 'trade_up' as trade_up, value -> 'finds_per_visit' as finds_per_visit from public.app_settings where key = 'trader_tuning'",
+    "expect": {
+      "row": {
+        "pair_multiplier": 1.5,
+        "trade_up": true,
+        "finds_per_visit": 9
+      }
+    }
+  },
+  {
+    "name": "min_build is inert (build 0)",
+    "sql": "select value -> 'build' as build from public.app_settings where key = 'min_build'",
+    "expect": {
+      "row": {
+        "build": 0
+      }
+    }
+  },
+  {
+    "name": "any pig may wear a costume: equip_cosmetic has no costume_rosie_only gate (20261029280000)",
+    "sql": "select position('costume_rosie_only' in pg_get_functiondef(p.oid)) = 0 as ok from pg_proc p where p.proname = 'equip_cosmetic' and p.pronamespace = 'public'::regnamespace",
+    "expect": {
+      "row": {
+        "ok": true
+      }
+    }
+  }
+]
